@@ -1,0 +1,173 @@
+{
+ "type": "StyleSheet",
+ "location": {
+  "start": {
+   "index": 0,
+   "line": 1,
+   "column": 1
+  },
+  "end": {
+   "index": 443,
+   "line": 6,
+   "column": 1
+  }
+ },
+ "children": [
+  {
+   "location": {
+    "start": {
+     "index": 1,
+     "line": 1,
+     "column": 2
+    },
+    "end": {
+     "index": 442,
+     "line": 5,
+     "column": 2
+    }
+   },
+   "type": "AtRule",
+   "value": "all",
+   "name": "media",
+   "children": [
+    {
+     "location": {
+      "start": {
+       "index": 13,
+       "line": 1,
+       "column": 14
+      },
+      "end": {
+       "index": 441,
+       "line": 5,
+       "column": 1
+      }
+     },
+     "type": "Rule",
+     "selector": ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"]",
+     "children": [
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 129,
+         "line": 2,
+         "column": 5
+        },
+        "end": {
+         "index": 183,
+         "line": 2,
+         "column": 59
+        }
+       },
+       "name": "--color-canvas-default-transparent",
+       "value": "rgba(255,255,255,0)"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 190,
+         "line": 3,
+         "column": 5
+        },
+        "end": {
+         "index": 220,
+         "line": 3,
+         "column": 35
+        }
+       },
+       "name": "--color-page-header-bg",
+       "value": "#f6f8fa"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 223,
+         "line": 3,
+         "column": 38
+        },
+        "end": {
+         "index": 261,
+         "line": 3,
+         "column": 76
+        }
+       },
+       "name": "--color-marketing-icon-primary",
+       "value": "#218bff"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 264,
+         "line": 3,
+         "column": 79
+        },
+        "end": {
+         "index": 304,
+         "line": 3,
+         "column": 119
+        }
+       },
+       "name": "--color-marketing-icon-secondary",
+       "value": "#54aeff"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 311,
+         "line": 4,
+         "column": 5
+        },
+        "end": {
+         "index": 354,
+         "line": 4,
+         "column": 48
+        }
+       },
+       "name": "--color-diff-blob-addition-num-text",
+       "value": "#24292f"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 357,
+         "line": 4,
+         "column": 51
+        },
+        "end": {
+         "index": 394,
+         "line": 4,
+         "column": 88
+        }
+       },
+       "name": "--color-diff-blob-addition-fg",
+       "value": "#24292f"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 397,
+         "line": 4,
+         "column": 91
+        },
+        "end": {
+         "index": 438,
+         "line": 4,
+         "column": 132
+        }
+       },
+       "name": "--color-diff-blob-addition-num-bg",
+       "value": "#ccffd8"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

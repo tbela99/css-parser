@@ -1,0 +1,27 @@
+{
+  "main": "dist/index.js",
+  "browser": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "mocha \"test/**/*.test.js\"",
+    "test2": "bun run test/parse.ts",
+    "syntax-update": "./update.sh"
+  },
+  "devDependencies": {
+    "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.15.10",
+    "mocha": "^10.2.0",
+    "rollup": "^3.20.1",
+    "rollup-plugin-dts": "^5.3.0",
+    "rollup-plugin-folder-input": "^1.0.1",
+    "tslib": "^2.5.0"
+  },
+  "dependencies": {
+    "@tbela99/observer": "^0.1.1"
+  }
+}

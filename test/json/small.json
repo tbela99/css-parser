@@ -1,0 +1,241 @@
+{
+ "type": "StyleSheet",
+ "location": {
+  "start": {
+   "index": 0,
+   "line": 1,
+   "column": 1
+  },
+  "end": {
+   "index": 685,
+   "line": 10,
+   "column": 1
+  }
+ },
+ "children": [
+  {
+   "location": {
+    "start": {
+     "index": 0,
+     "line": 1,
+     "column": 1
+    },
+    "end": {
+     "index": 96,
+     "line": 1,
+     "column": 97
+    }
+   },
+   "type": "Comment",
+   "value": "/* file: https://github.githubassets.com/assets/light-fe3f886b577a.css isWhiteSpace 🚀🚀🚀🚀🚀✋ 123 */"
+  },
+  {
+   "location": {
+    "start": {
+     "index": 98,
+     "line": 2,
+     "column": 1
+    },
+    "end": {
+     "index": 114,
+     "line": 3,
+     "column": 2
+    }
+   },
+   "type": "Comment",
+   "value": "/*@media all {\n*/"
+  },
+  {
+   "location": {
+    "start": {
+     "index": 116,
+     "line": 4,
+     "column": 1
+    },
+    "end": {
+     "index": 241,
+     "line": 4,
+     "column": 126
+    }
+   },
+   "type": "AtRule",
+   "value": "all",
+   "name": "media",
+   "children": [
+    {
+     "location": {
+      "start": {
+       "index": 128,
+       "line": 4,
+       "column": 13
+      },
+      "end": {
+       "index": 240,
+       "line": 4,
+       "column": 125
+      }
+     },
+     "type": "Rule",
+     "selector": ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"]",
+     "children": []
+    }
+   ]
+  },
+  {
+   "location": {
+    "start": {
+     "index": 243,
+     "line": 5,
+     "column": 1
+    },
+    "end": {
+     "index": 684,
+     "line": 9,
+     "column": 2
+    }
+   },
+   "type": "AtRule",
+   "value": "all",
+   "name": "media",
+   "children": [
+    {
+     "location": {
+      "start": {
+       "index": 255,
+       "line": 5,
+       "column": 13
+      },
+      "end": {
+       "index": 683,
+       "line": 9,
+       "column": 1
+      }
+     },
+     "type": "Rule",
+     "selector": ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"]",
+     "children": [
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 371,
+         "line": 6,
+         "column": 5
+        },
+        "end": {
+         "index": 425,
+         "line": 6,
+         "column": 59
+        }
+       },
+       "name": "--color-canvas-default-transparent",
+       "value": "rgba(255,255,255,0)"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 432,
+         "line": 7,
+         "column": 5
+        },
+        "end": {
+         "index": 462,
+         "line": 7,
+         "column": 35
+        }
+       },
+       "name": "--color-page-header-bg",
+       "value": "#f6f8fa"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 465,
+         "line": 7,
+         "column": 38
+        },
+        "end": {
+         "index": 503,
+         "line": 7,
+         "column": 76
+        }
+       },
+       "name": "--color-marketing-icon-primary",
+       "value": "#218bff"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 506,
+         "line": 7,
+         "column": 79
+        },
+        "end": {
+         "index": 546,
+         "line": 7,
+         "column": 119
+        }
+       },
+       "name": "--color-marketing-icon-secondary",
+       "value": "#54aeff"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 553,
+         "line": 8,
+         "column": 5
+        },
+        "end": {
+         "index": 596,
+         "line": 8,
+         "column": 48
+        }
+       },
+       "name": "--color-diff-blob-addition-num-text",
+       "value": "#24292f"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 599,
+         "line": 8,
+         "column": 51
+        },
+        "end": {
+         "index": 636,
+         "line": 8,
+         "column": 88
+        }
+       },
+       "name": "--color-diff-blob-addition-fg",
+       "value": "#24292f"
+      },
+      {
+       "type": "Declaration",
+       "location": {
+        "start": {
+         "index": 639,
+         "line": 8,
+         "column": 91
+        },
+        "end": {
+         "index": 680,
+         "line": 8,
+         "column": 132
+        }
+       },
+       "name": "--color-diff-blob-addition-num-bg",
+       "value": "#ccffd8"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
