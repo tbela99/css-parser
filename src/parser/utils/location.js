@@ -1,14 +1,15 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.update = void 0;
-var syntax_1 = require("./syntax");
-function update(location, str) {
-    var i = -1;
-    var j = str.length - 1;
-    while (i++ < j) {
-        if ((str[i] == '\r' && str[i + 1] == '\n') || (0, syntax_1.isNewLine)(str[i])) {
+import { isNewLine } from "./syntax";
+export function update(location, css) {
+    const str = Array.isArray(css) ? css : [...css];
+    if (str.length == 0) {
+        return location;
+    }
+    let i = -1;
+    const j = str.length - 1;
+    while (++i <= j) {
+        if (isNewLine(str[i])) {
             location.line++;
-            location.column = 1;
+            location.column = 0;
             if (str[i] == '\r' && str[i + 1] == '\n') {
                 i++;
                 location.index++;
@@ -21,4 +22,3 @@ function update(location, str) {
     }
     return location;
 }
-exports.update = update;

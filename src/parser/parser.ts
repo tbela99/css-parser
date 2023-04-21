@@ -6,7 +6,7 @@ export class Parser {
 
     #options: ParserOptions;
     #observer: Observer;
-    #lexer: Tokenizer;
+    #tokenizer: Tokenizer;
     #root: AstRuleStyleSheet;
     #errors: Error[] = [];
 
@@ -17,16 +17,17 @@ export class Parser {
         this.#options = {strict: false, ...options};
         this.#observer = new Observer();
         this.#root = this.#createRoot();
-        this.#lexer = new Tokenizer(this.#root);
+        this.#tokenizer = new Tokenizer(this.#root);
     }
 
     parse(css: string) {
 
         this.#errors = [];
         const stack: AstRuleList[] = [];
+        const hasListeners = this.#observer.hasListeners('traverse');
         let context:AstRuleStyleSheet = this.#root;
 
-        for (const {node, direction, error} of this.#lexer.parse(css)) {
+        for (const {node, direction, error} of this.#tokenizer.parse(css)) {
 
             if (error) {
 
@@ -70,7 +71,10 @@ export class Parser {
                 context = stack[stack.length - 1] || this.#root;
             }
 
-            this.#observer.trigger('traverse', node, direction, context);
+            if (hasListeners) {
+
+                this.#observer.trigger('traverse', node, direction, context);
+            }
         }
 
         return this;

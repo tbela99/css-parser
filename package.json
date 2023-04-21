@@ -5,8 +5,9 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
-    "test": "mocha \"test/**/*.test.js\"",
+    "test": "mocha \"test/**/*.test.mjs\"",
     "test2": "bun run test/parse.ts",
+    "watch": "rollup -c --watch --watch.onBundleEnd 'npm run test' &",
     "syntax-update": "./update.sh"
   },
   "devDependencies": {
@@ -18,7 +19,6 @@
     "mocha": "^10.2.0",
     "rollup": "^3.20.1",
     "rollup-plugin-dts": "^5.3.0",
-    "rollup-plugin-folder-input": "^1.0.1",
     "tslib": "^2.5.0"
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import {match_pair} from "./match_pair";
 
 export function getType(block: string): 'Rule' | 'AtRule' | null {
 
-    const ch = block.trimStart()[0];
+    const ch: string = block.trimStart()[0];
 
     if (ch == '@') {
 
@@ -19,21 +19,21 @@ export function getType(block: string): 'Rule' | 'AtRule' | null {
     return null;
 }
 
-export function parseBlock(str: string | string[], startIndex: number, matchIndex: number | null = null): ParsedBlock {
+export function parseBlock(str: string , startIndex: number, matchIndex: number | null = null): ParsedBlock {
 
-    const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
     // @ts-ignore
-    let endPos: number | null = Number.isInteger(matchIndex) ? matchIndex : find(css, startIndex, ';}{');
+    let chr: string;
+    let endPos: number | null = Number.isInteger(matchIndex) ? matchIndex : find(str, startIndex, ';}{');
     let endBody: number | null = null;
 
     if (endPos != null) {
 
-        if (css[endPos] == '{') {
+        if (str.charAt(endPos) == '{') {
 
-            endBody = match_pair(css, endPos, '{', '}');
+            endBody = match_pair(str, endPos, '{', '}');
         } else {
 
-            const match: string[] = css.slice(startIndex, endPos);
+            const match: string= str.slice(startIndex, endPos);
             const type = match[0] == '@' ? 'AtRule' : 'Declaration';
 
             // @ts-ignore
@@ -41,28 +41,28 @@ export function parseBlock(str: string | string[], startIndex: number, matchInde
 
             return <ParsedBlock>{
                 type,
-                name: Array.isArray(name) ? name : [...name],
-                value: Array.isArray(value) ? value : [...value],
+                name,
+                value,
                 body: match,
-                block: match.concat(css[endPos])
+                block: match + str.charAt(endPos)
             }
         }
     }
 
     // @ts-ignore
-    const selector: string[] = css.slice(startIndex, matchIndex == null ? endPos : matchIndex);
+    const selector: string = str.slice(startIndex, matchIndex == null ? endPos : matchIndex);
 
     return <ParsedBlock>{
-        type: (endBody == null ? 'Invalid' : '') + (selector[0] == '@' ? 'AtRule' : 'Rule'),
+        type: selector[0] == '@' ? 'AtRule' : 'Rule',
         selector,
-        body: endBody == null ? css.slice(startIndex + selector.length + 1) : css.slice(startIndex + selector.length + 1, endBody),
-        block: endPos == null ? css.slice(startIndex + 1) : css.slice(startIndex, endBody == null ? endPos + 1 : endBody + 1)
+        body: endBody == null ? str.slice(startIndex + selector.length + 1) : str.slice(startIndex + selector.length + 1, endBody),
+        block: endPos == null || endBody == null ? str.slice(startIndex) : str.slice(startIndex, endBody + 1)
     }
 }
 
-export function parseAtRule(block: string | string[]): string[] {
+export function parseAtRule(block: string): string[] {
 
-    const match = (Array.isArray(block) ? block.join('') : block).trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
+    const match = block.trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
 
     if (match) {
 
@@ -72,22 +72,13 @@ export function parseAtRule(block: string | string[]): string[] {
     return [];
 }
 
-export function parseDeclaration(str: string | string[]): string[] | null {
+export function parseDeclaration(str: string): string[] | null {
 
     const index: number | null = find(str, 0, ':');
 
     if (index == null) {
 
-        return null
-    }
-
-    if (Array.isArray(str)) {
-
-        return [
-
-            str.slice(0, index).join('').trim(),
-            str.slice(index + 1).join('').trim()
-        ]
+        return [];
     }
 
     return [

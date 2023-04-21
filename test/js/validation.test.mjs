@@ -1,142 +1,4 @@
-/**
- * find the position of chr
- * @param css
- * @param start
- * @param chr
- */
-function find(css, start, chr) {
-    const str = Array.isArray(css) ? css : [...css];
-    let position = start - 1;
-    let k;
-    const j = str.length - 1;
-    while (position++ < j) {
-        if (str[position] == '\\') {
-            position++;
-        }
-        else if (str[position] == '"' || str[position] == "'") {
-            // match quoted string
-            const match = str[position];
-            k = position;
-            while (k++ < j) {
-                if (str[k] == '\\') {
-                    k++;
-                }
-                else if (str[k] == match) {
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (str[position] == '/' && str[position + 1] == '*') {
-            k = position + 1;
-            while (k++ < j) {
-                if (str[k] == '\\') {
-                    k++;
-                }
-                else if (str[k] == '*' && str[k + 1] == '/') {
-                    k++;
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (chr.includes(str[position])) {
-            return position;
-        }
-    }
-    return null;
-}
-
-function match_pair(css, index, open, close) {
-    const str = Array.isArray(css) ? css : [...css];
-    let count = 1;
-    let currentIndex = index;
-    let j = str.length;
-    while (currentIndex++ < j) {
-        if (str[currentIndex] == '\\') {
-            currentIndex++;
-            continue;
-        }
-        if ('"\''.includes(str[currentIndex])) {
-            let end = currentIndex;
-            while (end++ < j) {
-                if (str[end] == '\\') ;
-                else if (str[end] == str[currentIndex]) {
-                    break;
-                }
-            }
-            currentIndex = end;
-            continue;
-        }
-        if (str[currentIndex] == close) {
-            count--;
-            if (count == 0) {
-                return currentIndex;
-            }
-        }
-        else if (str[currentIndex] == open) {
-            count++;
-        }
-    }
-    return null;
-}
-
-function parseBlock(str, startIndex, matchIndex = null) {
-    const css = Array.isArray(str) ? str : [...str];
-    // @ts-ignore
-    let endPos = Number.isInteger(matchIndex) ? matchIndex : find(css, startIndex, ';}{');
-    let endBody = null;
-    if (endPos != null) {
-        if (css[endPos] == '{') {
-            endBody = match_pair(css, endPos, '{', '}');
-        }
-        else {
-            const match = css.slice(startIndex, endPos);
-            const type = match[0] == '@' ? 'AtRule' : 'Declaration';
-            // @ts-ignore
-            const [name, value] = type == 'AtRule' ? parseAtRule(match) : parseDeclaration(match);
-            return {
-                type,
-                name: Array.isArray(name) ? name : [...name],
-                value: Array.isArray(value) ? value : [...value],
-                body: match,
-                block: match.concat(css[endPos])
-            };
-        }
-    }
-    // @ts-ignore
-    const selector = css.slice(startIndex, matchIndex == null ? endPos : matchIndex);
-    return {
-        type: (endBody == null ? 'Invalid' : '') + (selector[0] == '@' ? 'AtRule' : 'Rule'),
-        selector,
-        body: endBody == null ? css.slice(startIndex + selector.length + 1) : css.slice(startIndex + selector.length + 1, endBody),
-        block: endPos == null ? css.slice(startIndex + 1) : css.slice(startIndex, endBody == null ? endPos + 1 : endBody + 1)
-    };
-}
-function parseAtRule(block) {
-    const match = (Array.isArray(block) ? block.join('') : block).trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
-    if (match) {
-        return [match[1].trim(), match[3].trim()];
-    }
-    return [];
-}
-function parseDeclaration(str) {
-    const index = find(str, 0, ':');
-    if (index == null) {
-        return null;
-    }
-    if (Array.isArray(str)) {
-        return [
-            str.slice(0, index).join('').trim(),
-            str.slice(index + 1).join('').trim()
-        ];
-    }
-    return [
-        str.slice(0, index).trim(),
-        str.slice(index + 1).trim()
-    ];
-}
-
+/* generate from ./test/specs/validation.test.ts */
 var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{};function t(e){throw new Error('Could not dynamically require "'+e+'". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.')}var o=function(){function e(n,o,r){function i(a,c){if(!o[a]){if(!n[a]){if(!c&&t)return t(a);if(s)return s(a,!0);var u=new Error("Cannot find module '"+a+"'");throw u.code="MODULE_NOT_FOUND",u}var f=o[a]={exports:{}};n[a][0].call(f.exports,(function(e){return i(n[a][1][e]||e)}),f,f.exports,e,n,o,r);}return o[a].exports}for(var s=t,a=0;a<r.length;a++)i(r[a]);return i}return e}()({1:[function(e,t,n){t.exports=e("./lib/chai");},{"./lib/chai":2}],2:[function(e,t,n){
 /*!
  * chai
@@ -707,684 +569,665 @@ var o=e("type-detect");function r(){this._key="chai/deep-eql__"+Math.random()+Da
  * @return {Boolean} result
  */function O(e){return null===e||"object"!=typeof e}t.exports=c,t.exports.MemoizeMap=i;},{"type-detect":39}],37:[function(e,t,n){var o=Function.prototype.toString,r=/\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\s\(\/]+)/;function i(e){if("function"!=typeof e)return null;var t="";if(void 0===Function.prototype.name&&void 0===e.name){var n=o.call(e).match(r);n&&(t=n[1]);}else t=e.name;return t}t.exports=i;},{}],38:[function(e,t,n){function o(e,t){return null!=e&&t in Object(e)}function r(e){return e.replace(/([^\\])\[/g,"$1.[").match(/(\\\.|[^.]+?)+/g).map((function(e){if("constructor"===e||"__proto__"===e||"prototype"===e)return {};var t=/^\[(\d+)\]$/.exec(e);return t?{i:parseFloat(t[1])}:{p:e.replace(/\\([.[\]])/g,"$1")}}))}function i(e,t,n){var o=e,r=null;n=void 0===n?t.length:n;for(var i=0;i<n;i++){var s=t[i];o&&(o=void 0===s.p?o[s.i]:o[s.p],i===n-1&&(r=o));}return r}function s(e,t,n){for(var o=e,r=n.length,i=null,s=0;s<r;s++){var a=null,c=null;if(i=n[s],s===r-1)o[a=void 0===i.p?i.i:i.p]=t;else if(void 0!==i.p&&o[i.p])o=o[i.p];else if(void 0!==i.i&&o[i.i])o=o[i.i];else {var u=n[s+1];a=void 0===i.p?i.i:i.p,c=void 0===u.p?[]:{},o[a]=c,o=o[a];}}}function a(e,t){var n=r(t),s=n[n.length-1],a={parent:n.length>1?i(e,n,n.length-1):e,name:s.p||s.i,value:i(e,n)};return a.exists=o(a.parent,a.name),a}function c(e,t){return a(e,t).value}function u(e,t,n){return s(e,n,r(t)),e}t.exports={hasProperty:o,getPathInfo:a,getPathValue:c,setPathValue:u};},{}],39:[function(t,n,o){!function(e,t){"object"==typeof o&&void 0!==n?n.exports=t():e.typeDetect=t();}(this,(function(){var t="function"==typeof Promise,n="object"==typeof self?self:e,o="undefined"!=typeof Symbol,r="undefined"!=typeof Map,i="undefined"!=typeof Set,s="undefined"!=typeof WeakMap,a="undefined"!=typeof WeakSet,c="undefined"!=typeof DataView,u=o&&void 0!==Symbol.iterator,f=o&&void 0!==Symbol.toStringTag,p=i&&"function"==typeof Set.prototype.entries,l=r&&"function"==typeof Map.prototype.entries,h=p&&Object.getPrototypeOf((new Set).entries()),d=l&&Object.getPrototypeOf((new Map).entries()),y=u&&"function"==typeof Array.prototype[Symbol.iterator],b=y&&Object.getPrototypeOf([][Symbol.iterator]()),g=u&&"function"==typeof String.prototype[Symbol.iterator],w=g&&Object.getPrototypeOf(""[Symbol.iterator]()),m=8,v=-1;function x(e){var o=typeof e;if("object"!==o)return o;if(null===e)return "null";if(e===n)return "global";if(Array.isArray(e)&&(!1===f||!(Symbol.toStringTag in e)))return "Array";if("object"==typeof window&&null!==window){if("object"==typeof window.location&&e===window.location)return "Location";if("object"==typeof window.document&&e===window.document)return "Document";if("object"==typeof window.navigator){if("object"==typeof window.navigator.mimeTypes&&e===window.navigator.mimeTypes)return "MimeTypeArray";if("object"==typeof window.navigator.plugins&&e===window.navigator.plugins)return "PluginArray"}if(("function"==typeof window.HTMLElement||"object"==typeof window.HTMLElement)&&e instanceof window.HTMLElement){if("BLOCKQUOTE"===e.tagName)return "HTMLQuoteElement";if("TD"===e.tagName)return "HTMLTableDataCellElement";if("TH"===e.tagName)return "HTMLTableHeaderCellElement"}}var u=f&&e[Symbol.toStringTag];if("string"==typeof u)return u;var p=Object.getPrototypeOf(e);return p===RegExp.prototype?"RegExp":p===Date.prototype?"Date":t&&p===Promise.prototype?"Promise":i&&p===Set.prototype?"Set":r&&p===Map.prototype?"Map":a&&p===WeakSet.prototype?"WeakSet":s&&p===WeakMap.prototype?"WeakMap":c&&p===DataView.prototype?"DataView":r&&p===d?"Map Iterator":i&&p===h?"Set Iterator":y&&p===b?"Array Iterator":g&&p===w?"String Iterator":null===p?"Object":Object.prototype.toString.call(e).slice(m,v)}return x}));},{}]},{},[1])(1);o.version;o.AssertionError;o.use;o.util;o.config;o.Assertion;var f=o.expect;o.should;o.Should;o.assert;
 
-function parse_comment(str, index) {
+function match_pair(css, index, open, close) {
+    const str = Array.isArray(css) ? css : [...css];
+    let count = 1;
     let currentIndex = index;
-    if (str[currentIndex] != '/' || str[++currentIndex] != '*') {
-        return null;
-    }
-    while (currentIndex++ < str.length) {
-        if (str[currentIndex] == '*' && str[currentIndex + 1] == '/') {
-            return currentIndex + 1;
+    let j = str.length;
+    while (currentIndex++ < j) {
+        if (str[currentIndex] == '\\') {
+            currentIndex++;
+            continue;
+        }
+        if (open != str[currentIndex] && close != str[currentIndex] && '"\''.includes(str[currentIndex])) {
+            let end = currentIndex;
+            while (end++ < j) {
+                if (str[end] == '\\') ;
+                else if (str[end] == str[currentIndex]) {
+                    break;
+                }
+            }
+            currentIndex = end;
+            continue;
+        }
+        if (str[currentIndex] == close) {
+            count--;
+            if (count == 0) {
+                return currentIndex;
+            }
+        }
+        else if (str[currentIndex] == open) {
+            count++;
         }
     }
     return null;
 }
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
-// https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
-const nonascii = `[^\u{0}-\u{0ed}]`;
-const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
-const escape = `${unicode}|\\[^\n\r\f0-9a-f]`;
-const nmstart = `[_a-z]|${nonascii}|${escape}`;
-const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`;
-const ident = `[-]{0,2}${nmstart}${nmchar}*`;
-function isIdent(name) {
-    if (Array.isArray(name)) {
-        name = name.join('');
-    }
-    return name != null && new RegExp(`^${ident}$`).test(name);
-}
-function isNewLine(str) {
-    return str == '\n' || str == '\r\n' || str == '\r' || str == '\f';
-}
 function isWhiteSpace(str) {
     return /^\s$/sm.test(str);
 }
 
-function update(location, css) {
-    const str = Array.isArray(css) ? css : [...css];
-    if (str.length == 0) {
-        return location;
-    }
-    let i = -1;
-    const j = str.length - 1;
-    while (++i <= j) {
-        if (isNewLine(str[i])) {
-            location.line++;
-            location.column = 0;
-            if (str[i] == '\r' && str[i + 1] == '\n') {
+function parse(syntax, context = '') {
+    const list = [];
+    const stream = Array.isArray(syntax) ? syntax : [...syntax];
+    let i = 0;
+    let j = stream.length - 1;
+    let buffer = '';
+    while (i <= j) {
+        if (isWhiteSpace(stream[i])) {
+            while (i < j && isWhiteSpace(stream[i])) {
                 i++;
-                location.index++;
             }
-        }
-        else {
-            location.column++;
-        }
-        location.index++;
-    }
-    return location;
-}
-
-class Tokenizer {
-    #root;
-    constructor(root) {
-        this.#root = root;
-    }
-    *parse(str) {
-        if (str === '') {
-            return;
-        }
-        let value;
-        let node;
-        let index;
-        let info;
-        this.#root.location.src || '';
-        let i = 0;
-        const css = Array.isArray(str) ? str : [...str];
-        const j = css.length - 1;
-        const position = this.#root.location.end;
-        while (i <= j) {
-            if (isWhiteSpace(css[i])) {
-                let whitespace = '';
-                do {
-                    whitespace += css[i++];
-                } while (i <= j && isWhiteSpace(css[i]));
-                update(position, whitespace);
-            }
-            if (i > j) {
+            if (i >= j) {
                 break;
             }
-            // parse comment
-            if (css[i] == '/' && css[i + 1] == '*') {
-                index = parse_comment(css, i);
-                if (index == null) {
-                    value = css.slice(i);
-                    node = {
-                        location: {
-                            start: update({ ...position }, value[0]),
-                            end: { ...update(position, value) }
-                        },
-                        type: 'InvalidComment',
-                        value: value.join('')
-                    };
-                    Object.assign(position, node.location.end);
-                    yield { node, direction: 'enter' };
-                    return;
-                }
-                value = css.slice(i, index + 1);
-                node = {
-                    location: {
-                        start: update({ ...position }, value[0]),
-                        end: { ...update({ ...position }, value) }
-                    },
-                    type: 'Comment',
-                    value: value.join('')
-                };
-                Object.assign(position, node.location.end);
-                yield { node, direction: 'enter' };
-                i += value.length;
-                continue;
+            if (buffer !== '') {
+                list.push(getTokenType(buffer));
+                buffer = '';
+            }
+            // list.push({type: 'whitespace'});
+        }
+        // optional
+        if (stream[i] == '?') {
+            list[list.length - 1] = augment(list[list.length - 1], { optional: true });
+            i++;
+            continue;
+        }
+        // optional
+        if (stream[i] == '*') {
+            list[list.length - 1] = augment(list[list.length - 1], { optional: true, multiple: true });
+            i++;
+            continue;
+        }
+        // required
+        if (stream[i] == '#') {
+            i++;
+            continue;
+        }
+        if (stream[i] == "'") {
+            if (buffer !== '') {
+                list.push(getTokenType(buffer));
+                buffer = '';
+            }
+            const index = match_pair(stream, i, "'", "'");
+            list.push({
+                type: 'literal',
+                value: stream.slice(i + 1, index).join('')
+            });
+            i = index + 1;
+            continue;
+        }
+        if (stream[i] == '<') {
+            if (buffer !== '') {
+                list.push(getTokenType(buffer));
+                buffer = '';
+            }
+            const index = match_pair(stream, i, '<', '>');
+            const type = stream.slice(i + 1, index).join('');
+            // parsing integer [0,∞]>
+            if (type.includes(' ')) {
+                const result = parse(type, stream[i])[0];
+                result.type = result.value;
+                delete result.value;
+                list.push(result);
             }
             else {
-                index = find(css, i + 1, ';{}');
-                if (index == null) {
-                    value = css.slice(i);
-                    console.log(`Declaration or AtRule block? - "${value.join('')}`);
-                    update(position, value);
-                    break;
-                }
-                else if (css[index] == '{') {
-                    // parse block
-                    info = parseBlock(css, i, index);
-                    if (info.type == 'AtRule' || info.type == 'InvalidAtRule') {
-                        yield* this.#parseAtRule(position, info);
-                    }
-                    else {
-                        yield* this.#parseRule(position, info);
-                    }
-                }
-                else {
-                    const match = css.slice(i, index + 1);
-                    info = parseBlock(css, i, index);
-                    if (match[0] == '@') {
-                        yield* this.#parseAtRule(position, info);
-                    }
-                    else {
-                        yield* this.#parseDeclaration(position, info);
-                    }
-                }
-                i += info.block.length;
-                if (i == info.block.length) {
-                    break;
-                }
+                list.push({
+                    type
+                });
             }
-        }
-        if (this.#root.type == 'StyleSheet') {
-            position.column = Math.max(1, position.column - 1);
-        }
-    }
-    *#parseAtRule(position, info) {
-        let node;
-        // @ts-ignore
-        const { body, selector, block } = info;
-        if (!('selector' in info)) {
-            const { name, value } = info;
-            node = {
-                location: {
-                    start: update({ ...position }, name[0]),
-                    end: update({ ...position }, block)
-                },
-                type: !isIdent(name) ? 'InvalidAtRule' : 'AtRule',
-                value: value.join(''),
-                name: name.join('')
-            };
-            yield { node, direction: 'enter' };
-        }
-        else {
-            const [name, value] = parseAtRule(selector);
-            if (!isIdent(name)) {
-                node = body == null ? {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'InvalidAtRule',
-                    value,
-                    name
-                } : {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'InvalidAtRule',
-                    value: value,
-                    name,
-                    body: body.join('')
-                };
-                Object.assign(position, node.location.end);
-                yield { node, direction: 'enter' };
+            // parse <'length'> as <length>
+            const result = list[list.length - 1];
+            if (result.type.length > 2 && result.type[0] == "'" && result.type.slice(-1) == "'") {
+                result.type = result.type.slice(1, -1);
             }
-            else {
-                node = body == null ? {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'AtRule',
-                    value: value,
-                    name
-                } : {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, selector.concat('{'))
-                    },
-                    type: 'AtRule',
-                    value,
-                    name,
-                    children: []
-                };
-                yield { node, direction: 'enter' };
-                // node.location.end = pos;
-                if (body.length > 0) {
-                    // @ts-ignore
-                    const tokenizer = new Tokenizer(node);
-                    // @ts-ignore
-                    yield* tokenizer.parse(body);
-                }
+            i = index + 1;
+            continue;
+        }
+        if (stream[i] == '{') {
+            if (buffer !== '') {
+                list.push(getTokenType(buffer));
+                buffer = '';
             }
-        }
-        const str = block.slice(selector.length + 1 + (body != null ? body.length : 0));
-        if (str.length > 0) {
-            update(node.location.end, str);
-        }
-        Object.assign(position, node.location.end);
-        if ('children' in node) {
-            yield { node, direction: 'exit' };
-        }
-    }
-    *#parseRule(position, info) {
-        let node;
-        // @ts-ignore
-        const { body, selector, block } = info;
-        // @ts-ignore
-        node = {
-            location: {
-                start: update({ ...position }, selector[0]),
-                end: update({ ...position }, selector.concat('{'))
-            },
-            type: 'Rule',
-            selector: selector.join('').trimEnd(),
-            children: []
-        };
-        // @ts-ignore
-        yield { node, direction: 'enter' };
-        if (body != null) {
-            // @ts-ignore
-            const tokenizer = new Tokenizer(node);
-            // @ts-ignore
-            yield* tokenizer.parse(body);
-        }
-        const str = block.slice(selector.length + 1 + (body != null ? body.length : 0));
-        if (str.length > 0) {
-            update(node.location.end, str);
-        }
-        Object.assign(position, node.location.end);
-        if ('children' in node) {
-            yield { node, direction: 'exit' };
-        }
-    }
-    *#parseDeclaration(position, info) {
-        // @ts-ignore
-        const [name, value] = parseDeclaration(info.body);
-        const node = {
-            type: 'Declaration',
-            location: {
-                start: update({ ...position }, name[0]),
-                end: update({ ...position }, info.body),
-                // src
-            },
-            name,
-            value
-        };
-        Object.assign(position, node.location.end);
-        const str = info.block.slice(info.body.length);
-        if (str.length > 0) {
-            update(position, str);
-        }
-        yield { node, direction: 'enter' };
-    }
-}
-
-/**
- * a handler that is executed only once
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:once', () => console.log('click'));
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // nothing ...
- *
- */
-function once(name, handler, params, observer) {
-    return function (...args) {
-        handler(...args);
-        observer.off(name, handler);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:times(3)', () => console.log('click'));
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // nothing ...
- *
- */
-function times(name, handler, params, observer) {
-    let counter = +params - 1;
-    if (!Number.isInteger(counter)) {
-        throw new Error(`Invalid argument :times(int). expecting number, found ${params}`);
-    }
-    if (counter < 0) {
-        throw new Error(`Invalid argument :times(arg). counter must be greater than 0, found ${params}`);
-    }
-    return (...args) => {
-        if (counter-- === 0) {
-            observer.off(name, handler);
-        }
-        handler(...args);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:debounce(250)', () => console.log('click'));
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); // 'click' after at least 250ms since the last call
- *
- */
-function debounce(name, handler, params) {
-    let duration = +params;
-    if (!Number.isInteger(duration)) {
-        throw new Error(`Invalid argument :debounce(int). expecting number, found ${params}`);
-    }
-    if (duration < 0) {
-        throw new Error(`Invalid argument :debounce(arg). counter must be greater or equal to 0, found ${params}`);
-    }
-    // @ts-ignore
-    let timer = null;
-    return (...args) => {
-        if (timer != null) {
-            clearTimeout(timer);
-        }
-        timer = setTimeout(() => handler(...args), duration);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:debounce(250)', () => console.log('click'));
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); // 'click' after at least 250ms since the last call
- *
- */
-function throttle(name, handler, params) {
-    let duration = +params;
-    if (!Number.isInteger(duration)) {
-        throw new Error(`Invalid argument :throttle(int). expecting number, found ${params}`);
-    }
-    if (duration < 0) {
-        throw new Error(`Invalid argument :throttle(arg). counter must be greater or equal to 0, found ${params}`);
-    }
-    // @ts-ignore
-    let timer = null;
-    return (...args) => {
-        if (timer != null) {
-            return;
-        }
-        timer = setTimeout(() => {
-            timer = null;
-            handler(...args);
-        }, duration);
-    };
-}
-
-var pseudos = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    debounce: debounce,
-    once: once,
-    throttle: throttle,
-    times: times
-});
-
-class Observer {
-    #handlers = new Map;
-    #pseudo = new Map;
-    constructor() {
-        for (const entry of Object.entries(pseudos)) {
-            // @ts-ignore
-            this.definePseudo(entry[0], entry[1]);
-        }
-    }
-    on(name, handler, signal) {
-        const match = name.match(/(.*):([^:()]+)(\((.*?)\))?$/);
-        let callback = handler;
-        if (match != null && this.#pseudo.has(match[2])) {
-            name = match[1];
-            // @ts-ignore
-            callback = this.#pseudo.get(match[2])(name, handler, match[4], this);
-        }
-        if (!this.#handlers.has(name)) {
-            this.#handlers.set(name, new Map);
-        }
-        signal?.addEventListener('abort', () => this.off(name, handler));
-        // @ts-ignore
-        this.#handlers.get(name).set(handler, callback);
-        return this;
-    }
-    off(name, handler) {
-        if (handler == null) {
-            this.#handlers.delete(name);
-        }
-        else if (this.#handlers.has(name)) {
-            // @ts-ignore
-            this.#handlers.get(name).delete(handler);
-            // @ts-ignore
-            if (this.#handlers.get(name).size === 0) {
-                this.#handlers.delete(name);
-            }
-        }
-        return this;
-    }
-    trigger(name, ...args) {
-        if (this.#handlers.has(name)) {
-            // @ts-ignore
-            for (const handler of this.#handlers.get(name).values()) {
-                handler(...args);
-            }
-        }
-    }
-    definePseudo(pseudo, parser) {
-        this.#pseudo.set(pseudo, parser);
-    }
-    hasListeners(name) {
-        if (arguments.length > 0) {
-            // @ts-ignore
-            return this.#handlers.has(name);
-        }
-        return this.#handlers.size > 0;
-    }
-    getListeners(...args) {
-        if (args.length == 0 || args.length > 1) {
-            return [...(args.length > 1 ? args : this.#handlers.keys())].reduce((acc, curr) => {
-                if (this.#handlers.has(curr)) {
-                    // @ts-ignore
-                    acc[curr] = [...this.#handlers.get(curr).keys()];
-                }
-                return acc;
-            }, Object.create(null));
-        }
-        if (this.#handlers.has(args[0])) {
-            // @ts-ignore
-            return [...this.#handlers.get(args[0]).keys()];
-        }
-        return [];
-    }
-}
-
-class Parser {
-    #options;
-    #observer;
-    #lexer;
-    #root;
-    #errors = [];
-    constructor(options = {
-        strict: false
-    }) {
-        this.#options = { strict: false, ...options };
-        this.#observer = new Observer();
-        this.#root = this.#createRoot();
-        this.#lexer = new Tokenizer(this.#root);
-    }
-    parse(css) {
-        this.#errors = [];
-        const stack = [];
-        let context = this.#root;
-        for (const { node, direction, error } of this.#lexer.parse(css)) {
-            if (error) {
-                if (this.#options.strict) {
-                    throw error;
-                }
-                this.#observer.trigger('error', error, node);
-                this.#errors.push(error);
+            const index = match_pair(stream, i, '{', '}');
+            const match = stream.slice(i + 1, index).join('');
+            if (Number.isInteger(+match)) {
+                list[list.length - 1].occurrence = +match;
+                i = index + 1;
                 continue;
             }
-            if (direction == 'enter') {
-                // @ts-ignore
-                if (node.type == 'StyleSheet') {
+            else if (match.includes(',')) {
+                const parts = match.split(',');
+                if (parts.length == 2) {
+                    if (Number.isInteger(+parts[0])) {
+                        if (Number.isInteger(+parts[1])) {
+                            list[list.length - 1].occurrence = {
+                                min: +parts[0],
+                                max: +parts[1]
+                            };
+                            i = index + 1;
+                            continue;
+                        }
+                        else if (parts[1] === '') {
+                            list[list.length - 1].occurrence = {
+                                min: +parts[0]
+                            };
+                            i = index + 1;
+                            continue;
+                        }
+                    }
+                }
+            }
+            const result = parse(match, stream[i]);
+            list.push({
+                type: 'children',
+                value: result.length == 1 ? result[0] : result
+            });
+            i = index + 1;
+            continue;
+        }
+        if (stream[i] == '[') {
+            if (buffer !== '') {
+                list.push(getTokenType(buffer));
+                buffer = '';
+            }
+            const index = match_pair(stream, i, '[', ']');
+            const match = stream.slice(i + 1, index).join((''));
+            if (match.includes(',')) {
+                const parts = match.split(',');
+                if (parts.length == 2) {
+                    if (!Number.isNaN(+parts[0])) {
+                        if (!Number.isNaN(+parts[1])) {
+                            // if (list[list.length - 1].type == 'whitespace') {
+                            //
+                            //     list.pop();
+                            // }
+                            list[list.length - 1].range = {
+                                min: +parts[0],
+                                max: +parts[1]
+                            };
+                            i = index + 1;
+                            continue;
+                        }
+                        else if (parts[1] === '' || parts[1] == '∞') {
+                            // if (list[list.length - 1].type == 'whitespace') {
+                            //
+                            //     list.pop();
+                            // }
+                            list[list.length - 1].range = {
+                                min: +parts[0]
+                            };
+                            i = index + 1;
+                            continue;
+                        }
+                    }
+                }
+            }
+            const result = parse(match, stream[i]);
+            let k = result.length;
+            while (k--) {
+                if ( /* result[k].type == 'whitespace' ||*/(result[k].type == 'literal' &&
                     // @ts-ignore
-                    context.children.push(...node.children);
+                    result[k].value == ';')) {
+                    result.splice(k, 1);
                 }
                 else {
-                    // @ts-ignore
-                    context.children.push(node);
-                }
-                // @ts-ignore
-                if ('children' in node) {
-                    // @ts-ignore
-                    stack.push(node);
-                    // @ts-ignore
-                    context = node;
+                    if (result[k].type == 'literal' &&
+                        // @ts-ignore
+                        '||'.includes(result[k].value)) {
+                        result.splice(k, 1);
+                    }
                 }
             }
-            else if (direction == 'exit') {
-                stack.pop();
-                // @ts-ignore
-                context = stack[stack.length - 1] || this.#root;
-            }
-            this.#observer.trigger('traverse', node, direction, context);
+            const value = result.filter(t => t.type !== '');
+            list.push(value.length == 1 ? value[0] : {
+                type: 'any',
+                value
+            });
+            //
+            // list.push(<ValidationToken>(stream[i] == '[' ? (
+            //     isAny ? <ValidationTokenGroup>{
+            //             type: 'any',
+            //             value: result.filter(t => t.type !== '')
+            //         } :
+            //         result
+            // ) : result.reduce((acc: ValidationToken, curr: ValidationToken) => Object.assign(acc, curr), <ValidationToken>{})));
+            i = index + 1;
+            continue;
         }
-        return this;
-    }
-    on(name, handler, signal) {
-        this.#observer.on(name, handler, signal);
-        return this;
-    }
-    off(name, handler) {
-        this.#observer.off(name, handler);
-        return this;
-    }
-    #compactRuleList(node) {
-    }
-    compact() {
-        let i = this.#root.children.length;
-        let previous = null;
-        while (i--) {
-            const node = this.#root.children[i];
-            // if
-            // @ts-ignore
-            if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-                console.log({ previous });
-                if (!('children' in node)) {
-                    // @ts-ignore
-                    node.children = [];
-                }
-                if ('children' in previous) {
-                    // @ts-ignore
-                    node.children.push(...previous.children);
-                }
-                this.#root.children.splice(i, 1);
-            }
-            // @ts-ignore
-            else if (node.type == 'AtRule' && node.name == 'media' && node.value == 'all') {
-                // @ts-ignore
-                this.#root.children.splice(i, 1, ...node.children);
-                i += node.children.length;
-            }
-            // @ts-ignore
-            previous = node;
+        if (stream[i] == '(') {
+            const index = match_pair(stream, i, '(', ')');
+            list.push({
+                type: 'function',
+                name: buffer,
+                arguments: parse(stream.slice(i + 1, index), stream[i])
+            });
+            buffer = '';
+            i = index + 1;
+            continue;
         }
-        return this;
+        buffer += stream[i++];
     }
-    #compactRule(node) {
+    if (buffer !== '') {
+        list.push(getTokenType(buffer));
     }
-    getAst() {
-        return this.#root;
+    let k = list.length;
+    let type = '';
+    while (k--) {
+        /* if (list[k].type == 'whitespace') {
+
+            list.splice(k, 1);
+        } else */
+        if (list[k].type == 'literal' &&
+            // @ts-ignore
+            list[k].value == ';') {
+            list.splice(k, 1);
+        }
+        else { // @ts-ignore
+            if (list[k].type == 'literal' && list[k].value == '&&') {
+                type = 'all';
+                list.splice(k, 1);
+            }
+            else { // @ts-ignore
+                if (list[k].type == 'literal' && '||'.includes(list[k].value)) {
+                    type = 'any';
+                    list.splice(k, 1);
+                }
+            }
+        }
     }
-    getErrors() {
-        return this.#errors;
+    // parse declaration: [ system: <counter-system>; ] -> {type: counter-system, name: system}
+    if (list.length == 2 && list[0].type == 'declaration') {
+        list[0].type = list[1].type;
+        list.length = 1;
     }
-    #createRoot() {
+    if (type !== '') {
+        const value = list.filter(t => t.type !== '');
+        if (context != '[' && type == 'all') {
+            return value;
+        }
+        if (type == 'any' && context == '{') {
+            return [{
+                    type,
+                    value: value.reduce((acc, curr) => {
+                        if (Array.isArray(curr.value)) {
+                            // @ts-ignore
+                            acc.push(curr.value);
+                        }
+                        else {
+                            acc.push(curr);
+                        }
+                        return acc;
+                    }, [])
+                }];
+        }
+        return [
+            {
+                type,
+                value
+            }
+        ];
+    }
+    if (context != '[') {
+        return list.reduce((acc, curr) => {
+            if (!Array.isArray(curr) && curr.type == 'all') {
+                // @ts-ignore
+                acc.push(curr.value);
+            }
+            else {
+                acc.push(curr);
+            }
+            return acc;
+        }, []);
+    }
+    return list;
+}
+function getTokenType(buffer) {
+    if (buffer.endsWith(':')) {
         return {
-            type: "StyleSheet",
-            location: {
-                start: {
-                    index: 0,
-                    line: 1,
-                    column: 1
-                },
-                end: {
-                    index: -1,
-                    line: 1,
-                    column: 0
-                }
-            },
-            children: []
+            type: 'declaration',
+            name: buffer.slice(0, -1)
         };
     }
+    return {
+        type: 'literal',
+        value: buffer
+    };
+}
+function augment(value, data) {
+    return Object.assign(Array.isArray(value) ? {
+        type: 'all',
+        value
+    } : value, data);
 }
 
-// import {dirname} from "path";
-const {readFile} = require("fs/promises");
-
-const atRule = `@media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
-    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
-    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
-}}
-`;
-
-const Rule = `:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
-    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
-    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
-}
-`;
-
-function toStringProperties(info) {
-
-
-    const result = Object.entries(info).reduce((acc, curr) => {
-
-        // @ts-ignore
-        acc[curr[0]] = Array.isArray(curr[1]) ? curr[1].join('') : curr[1];
-
-        return acc;
-    }, {});
-
-    return result;
-
-}
-
-describe('parse block', function () {
-
-    it('parse at-rules block', function () {
-
-        const info = toStringProperties(parseBlock(atRule, 0));
-        const info2 = toStringProperties(parseBlock(atRule, 0, find(atRule, 1, ';{}')));
-
-        f(info).deep.equals({
-            type: "AtRule",
-            selector: "@media all ",
-            body: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}",
-            block: "@media all {:root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}}"
-        });
-
-        f(info).deep.equals(info2);
+describe('test validation parsing rules', function () {
+    it('type with quotes', function () {
+        f(parse("<'length'>{1,2}")).deep.equals([
+            {
+                type: "length",
+                occurrence: {
+                    min: 1,
+                    max: 2
+                }
+            }
+        ]);
     });
-
-    it('parse rules block', function () {
-
-        const info = toStringProperties(parseBlock(Rule, 0));
-        const info2 = toStringProperties(parseBlock(Rule, 0, find(Rule, 1, ';{}')));
-
-        f(info).deep.equals({
-            type: "Rule",
-            selector: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] ",
-            body: "\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n",
-            block: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}"
-        });
-
-        f(info2).deep.equals(info);
+    it('type with range', function () {
+        f(parse('<length>{1,2}')).deep.equals([
+            {
+                type: "length",
+                occurrence: {
+                    min: 1,
+                    max: 2
+                }
+            }
+        ]);
     });
-
-    it('parse file', async function () {
-
-        const dir = __dirname + '/..';
-        const file = (await readFile(`${dir}/smalli.css`)).toString();
-
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
+    it('property descriptor', function () {
+        f(parse('[ <integer> && <symbol> ]#')).deep.equals([
+            [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "symbol"
+                }
+            ]
+        ]);
     });
-
-    it('parse file #2', async function () {
-
-        const dir = __dirname + '/..';
-        const file = (await readFile(`${dir}/small.css`)).toString();
-
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
+    it('parse declaration', function () {
+        f(parse('[ system: <counter-system>; ]')).deep.equals([
+            {
+                "type": "counter-system",
+                "name": "system"
+            }
+        ]);
+    });
+    it('optional symbol', function () {
+        f(parse('<symbol> <symbol>?')).deep.equals([
+            {
+                "type": "symbol"
+            },
+            {
+                "type": "symbol",
+                "optional": true
+            }
+        ]);
+        f(parse('[ <url> [ format( <string># ) ]? | local( <family-name> ) ]#')).deep.equals([
+            {
+                type: "any",
+                value: [
+                    {
+                        type: "url"
+                    }, {
+                        type: "function",
+                        name: "format",
+                        arguments: [
+                            {
+                                type: "string"
+                            }
+                        ],
+                        optional: true
+                    }, {
+                        type: "function",
+                        name: "local",
+                        arguments: [
+                            {
+                                type: "family-name"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]);
+    });
+    it('parse @document', function () {
+        f(parse('@document [ <url> | url-prefix(<string>) | domain(<string>) | media-document(<string>) | regexp(<string>) ]# {\n  <group-rule-body>\n}')).deep.equals([
+            {
+                type: "literal",
+                value: "@document"
+            }, {
+                type: "any",
+                value: [
+                    {
+                        type: "url"
+                    }, {
+                        type: "function",
+                        name: "url-prefix",
+                        arguments: [
+                            {
+                                type: "string"
+                            }
+                        ]
+                    }, {
+                        type: "function",
+                        name: "domain",
+                        arguments: [
+                            {
+                                type: "string"
+                            }
+                        ]
+                    }, {
+                        type: "function",
+                        name: "media-document",
+                        arguments: [
+                            {
+                                type: "string"
+                            }
+                        ]
+                    }, {
+                        type: "function",
+                        name: "regexp",
+                        arguments: [
+                            {
+                                type: "string"
+                            }
+                        ]
+                    }
+                ]
+            }, {
+                type: "children",
+                value: {
+                    type: "group-rule-body"
+                }
+            }
+        ]);
+    });
+    it('speak-as syntax', function () {
+        f(parse('auto | bullets | numbers | words | spell-out | <counter-style-name>')).deep.equals([
+            {
+                "type": "any",
+                "value": [
+                    {
+                        "type": "literal",
+                        "value": "auto"
+                    },
+                    {
+                        "type": "literal",
+                        "value": "bullets"
+                    },
+                    {
+                        "type": "literal",
+                        "value": "numbers"
+                    },
+                    {
+                        "type": "literal",
+                        "value": "words"
+                    },
+                    {
+                        "type": "literal",
+                        "value": "spell-out"
+                    },
+                    {
+                        "type": "counter-style-name"
+                    }
+                ]
+            }
+        ]);
+    });
+    it('system syntax', function () {
+        f(parse('cyclic | numeric | alphabetic | symbolic | additive | [ fixed <integer>? ] | [ extends <counter-style-name> ]')).deep.equals([
+            {
+                type: "any",
+                value: [
+                    {
+                        type: "literal",
+                        value: "cyclic"
+                    }, {
+                        type: "literal",
+                        value: "numeric"
+                    }, {
+                        type: "literal",
+                        value: "alphabetic"
+                    }, {
+                        type: "literal",
+                        value: "symbolic"
+                    }, {
+                        type: "literal",
+                        value: "additive"
+                    }, {
+                        type: "any",
+                        value: [
+                            {
+                                type: "literal",
+                                value: "fixed"
+                            }, {
+                                type: "integer",
+                                optional: true
+                            }
+                        ]
+                    }, {
+                        type: "any",
+                        value: [
+                            {
+                                type: "literal",
+                                value: "extends"
+                            }, {
+                                type: "counter-style-name"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]);
+    });
+    it('required symbol', function () {
+        f(parse('<integer> && <symbol>')).deep.equals([
+            {
+                "type": "integer"
+            },
+            {
+                "type": "symbol"
+            }
+        ]);
+    });
+    it('type with range #2', function () {
+        f(parse('<integer [0,∞]>')).deep.equals([
+            {
+                type: "integer",
+                range: {
+                    min: 0
+                }
+            }
+        ]);
+        f(parse('[ <integer [0,∞]> <absolute-color-base> ]#')).deep.equals([
+            {
+                type: "any",
+                value: [
+                    {
+                        type: "integer",
+                        range: {
+                            min: 0
+                        }
+                    }, {
+                        type: "absolute-color-base"
+                    }
+                ]
+            }
+        ]);
+    });
+    it('type with range and values', function () {
+        f(parse('<light | dark | <integer [0,∞]>')).deep.equals([
+            {
+                "type": "any",
+                "value": [
+                    {
+                        "type": "literal",
+                        "value": "light"
+                    },
+                    {
+                        "type": "literal",
+                        "value": "dark"
+                    },
+                    {
+                        "type": "integer",
+                        "range": {
+                            "min": 0
+                        }
+                    }
+                ]
+            }
+        ]);
+    });
+    it('counter-style at-rule', function () {
+        f(parse('@counter-style <counter-style-name> {\n  [ system: <counter-system>; ] ||\n  [ symbols: <counter-symbols>; ] ||\n  [ additive-symbols: <additive-symbols>; ] ||\n  [ negative: <negative-symbol>; ] ||\n  [ prefix: <prefix>; ] ||\n  [ suffix: <suffix>; ] ||\n  [ range: <range>; ] ||\n  [ pad: <padding>; ] ||\n  [ speak-as: <speak-as>; ] ||\n  [ fallback: <counter-style-name>; ]\n}')).deep.equals([
+            {
+                "type": "literal",
+                "value": "@counter-style"
+            },
+            {
+                "type": "counter-style-name"
+            },
+            {
+                "type": "children",
+                "value": {
+                    "type": "any",
+                    "value": [
+                        {
+                            "type": "counter-system",
+                            "name": "system"
+                        },
+                        {
+                            "type": "counter-symbols",
+                            "name": "symbols"
+                        },
+                        {
+                            "type": "additive-symbols",
+                            "name": "additive-symbols"
+                        },
+                        {
+                            "type": "negative-symbol",
+                            "name": "negative"
+                        },
+                        {
+                            "type": "prefix",
+                            "name": "prefix"
+                        },
+                        {
+                            "type": "suffix",
+                            "name": "suffix"
+                        },
+                        {
+                            "type": "range",
+                            "name": "range"
+                        },
+                        {
+                            "type": "padding",
+                            "name": "pad"
+                        },
+                        {
+                            "type": "speak-as",
+                            "name": "speak-as"
+                        },
+                        {
+                            "type": "counter-style-name",
+                            "name": "fallback"
+                        }
+                    ]
+                }
+            }
+        ]);
     });
 });

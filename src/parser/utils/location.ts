@@ -1,26 +1,32 @@
 import {Position} from "../../@types";
 import {isNewLine} from "./syntax";
 
-export function update(location: Position, css: string | Array<string>): Position {
+export function update(location: Position, css: string): Position {
 
-    const str: Array<string> = Array.isArray(css) ? css : [...css];
-
-    if (str.length == 0) {
+    if (css.length == 0) {
 
         return location;
     }
 
+    let chr: string;
     let i: number = -1;
-    const j: number = str.length - 1;
+    const j: number = css.length - 1;
 
     while (++i <= j) {
 
-        if (isNewLine(str[i])) {
+        chr = css.charAt(i);
+
+        if (chr === '') {
+
+            break;
+        }
+
+        if (isNewLine(chr)) {
 
             location.line++;
             location.column = 0;
 
-            if (str[i] == '\r' && str[i + 1] == '\n') {
+            if (chr == '\r' && css.charAt(i + 1) == '\n') {
 
                 i++;
                 location.index++;

@@ -1,11 +1,11 @@
 import {parseBlock} from "../../src/parser/utils/block";
 import {expect} from "@esm-bundle/chai";
-// import {dirname} from "path";
-const {readFile} = require("fs/promises");
+import {readFile} from "fs/promises";
 import {Parser} from "../../src";
-import {find} from "../../src/parser/utils/find";
+import {find} from "../../src/parser/utils";
+import {dirname} from "path";
 
-const dir = __dirname + '/../files';
+const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 const atRule = `@media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
     --color-canvas-default-transparent: rgba(255,255,255,0);
     --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
@@ -20,18 +20,15 @@ const Rule = `:root, [data-color-mode="light"][data-light-theme="light"], [data-
 }
 `;
 
-function toStringProperties(info) {
+function toStringProperties(info: { [s: string]: unknown; } | ArrayLike<unknown>) {
 
-    const result = Object.entries(info).reduce((acc, curr) => {
+    return Object.entries(info).reduce((acc, curr) => {
 
         // @ts-ignore
         acc[curr[0]] = Array.isArray(curr[1]) ? curr[1].join('') : curr[1]
 
         return acc;
     }, {});
-
-    return result;
-
 }
 
 describe('parse block', function () {
@@ -68,15 +65,29 @@ describe('parse block', function () {
 
     it('parse file', async function () {
 
-        const file = (await readFile(`${dir}/smalli.css`)).toString();
+        const file = (await readFile(`${dir}/css/smalli.css`)).toString();
 
         expect(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()))
     });
 
     it('parse file #2', async function () {
 
-        const file = (await readFile(`${dir}/small.css`)).toString();
+        const file = (await readFile(`${dir}/css/small.css`)).toString();
 
         expect(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()))
+    });
+
+    it('parse file #3', async function () {
+
+        const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
+
+        expect(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()))
+    });
+
+    it('parse file #4', async function () {
+
+        const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
+
+        expect(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()))
     });
 });

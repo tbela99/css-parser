@@ -13,7 +13,7 @@ export function match_pair(css: string | string[], index: number, open: string, 
             continue;
         }
 
-        if ('"\''.includes(str[currentIndex])) {
+        if (open != str[currentIndex] && close != str[currentIndex] && '"\''.includes(str[currentIndex])) {
 
             let end: number = currentIndex;
 

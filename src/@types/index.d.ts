@@ -1,3 +1,5 @@
+export * from './validation';
+
 export type NodeTraversalDirection = 'enter' | 'exit';
 
 export interface ParserOptions {
@@ -40,14 +42,14 @@ export interface AstInvalidComment extends Node {
     value: string;
 }
 
-interface AstDeclaration extends Node {
+export interface AstDeclaration extends Node {
 
     name: string,
     value: string;
     type: 'Declaration'
 }
 
-interface AstInvalidDeclaration extends Node {
+export interface AstInvalidDeclaration extends Node {
 
     name: string,
     value: string;
@@ -101,15 +103,15 @@ export type AstNode = AstComment | AstInvalidComment | AstInvalidAtRule | AstAtR
 export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;
 
 export type ParsedBlock = {
-    type: 'Rule' | 'AtRule' | 'InvalidRule' | 'InvalidAtRule',
-    selector: string[],
-    body: string[];
-    block: string[];
+    type: 'Rule' | 'AtRule',
+    selector: string,
+    body: string;
+    block: string;
 } | {
 
-    type: 'AtRule' | 'InvalidAtRule' | 'Declaration',
-    name: string[];
-    value: string[];
-    body: string[];
-    block: string[];
+    type: 'AtRule' | 'Declaration',
+    name: string;
+    value: string;
+    body: string;
+    block: string;
 }

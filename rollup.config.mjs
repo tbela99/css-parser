@@ -1,9 +1,34 @@
 import dts from 'rollup-plugin-dts';
 import typescript from "@rollup/plugin-typescript";
 import nodeResolve from "@rollup/plugin-node-resolve";
-import {folderInput} from "rollup-plugin-folder-input";
+import glob from "glob";
 
-export default [
+export default [...await new Promise((resolve, reject) => {
+
+    glob('./test/specs/**/*.ts', (err, files) => {
+
+        if (err) {
+
+            reject(err);
+        }
+
+        resolve(files.map(input => {
+            return {
+                input,
+                plugins: [nodeResolve(), typescript()],
+                output:
+                {
+                    banner: `/* generate from ${input} */`,
+                    file: `./test/js/${input.replace(/^\.\/test\/specs/, '').replace(/\.ts$/, '.mjs')}`,
+                        // entryFileNames: '[name].mjs',
+                        // chunkFileNames: '[name].[hash].mjs',
+                        format: 'es'
+                }
+            }
+        }));
+    })
+
+})].concat([
     {
         input: 'src/index.ts',
         plugins: [nodeResolve(), typescript()],
@@ -20,15 +45,6 @@ export default [
         ]
     },
     {
-        input: './test/specs/*.ts',
-        plugins: [nodeResolve(), folderInput(), typescript()],
-        output:
-            {
-                dir: './test/js',
-                format: 'es',
-            }
-    },
-    {
         input: 'src/index.ts',
         plugins: [dts()],
         output: {
@@ -37,4 +53,4 @@ export default [
             format: 'es'
         }
     }
-]
+])

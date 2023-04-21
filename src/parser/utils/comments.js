@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parse_comment = void 0;
-function parse_comment(str, index) {
-    var currentIndex = index;
+export function parse_comment(str, index) {
+    let currentIndex = index;
     if (str[currentIndex] != '/' || str[++currentIndex] != '*') {
         return null;
     }
@@ -13,4 +10,3 @@ function parse_comment(str, index) {
     }
     return null;
 }
-exports.parse_comment = parse_comment;

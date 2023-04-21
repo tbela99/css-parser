@@ -1,10 +1,153 @@
+function match_pair(css, index, open, close) {
+    const str = Array.isArray(css) ? css : [...css];
+    let count = 1;
+    let currentIndex = index;
+    let j = str.length;
+    while (currentIndex++ < j) {
+        if (str[currentIndex] == '\\') {
+            currentIndex++;
+            continue;
+        }
+        if (open != str[currentIndex] && close != str[currentIndex] && '"\''.includes(str[currentIndex])) {
+            let end = currentIndex;
+            while (end++ < j) {
+                if (str[end] == '\\') ;
+                else if (str[end] == str[currentIndex]) {
+                    break;
+                }
+            }
+            currentIndex = end;
+            continue;
+        }
+        if (str[currentIndex] == close) {
+            count--;
+            if (count == 0) {
+                return currentIndex;
+            }
+        }
+        else if (str[currentIndex] == open) {
+            count++;
+        }
+    }
+    return null;
+}
+
+/**
+ * find the position of chr
+ * @param css
+ * @param start
+ * @param chr
+ */
+function find(css, start, chr) {
+    let char;
+    let position = start - 1;
+    let k;
+    const j = css.length - 1;
+    while (position++ < j) {
+        char = css.charAt(position);
+        if (char === '') {
+            return null;
+        }
+        if (char == '\\') {
+            position++;
+        }
+        else if (char == '"' || char == "'") {
+            // match quoted string
+            const match = char;
+            k = position;
+            while (k++ < j) {
+                char = css.charAt(k);
+                if (char === '') {
+                    return null;
+                }
+                if (char == '\\') {
+                    k++;
+                }
+                else if (char == match) {
+                    break;
+                }
+            }
+            position = k;
+        }
+        else if (css.charAt(position) == '/' && css.charAt(position + 1) == '*') {
+            k = position + 1;
+            while (k++ < j) {
+                char = css.charAt(k);
+                if (char === '') {
+                    return null;
+                }
+                if (char == '\\') {
+                    k++;
+                }
+                else if (char == '*' && css.charAt(k + 1) == '/') {
+                    k++;
+                    break;
+                }
+            }
+            position = k;
+        }
+        else if (chr.includes(char)) {
+            return position;
+        }
+    }
+    return null;
+}
+
+function parseBlock(str, startIndex, matchIndex = null) {
+    let endPos = Number.isInteger(matchIndex) ? matchIndex : find(str, startIndex, ';}{');
+    let endBody = null;
+    if (endPos != null) {
+        if (str.charAt(endPos) == '{') {
+            endBody = match_pair(str, endPos, '{', '}');
+        }
+        else {
+            const match = str.slice(startIndex, endPos);
+            const type = match[0] == '@' ? 'AtRule' : 'Declaration';
+            // @ts-ignore
+            const [name, value] = type == 'AtRule' ? parseAtRule(match) : parseDeclaration(match);
+            return {
+                type,
+                name,
+                value,
+                body: match,
+                block: match + str.charAt(endPos)
+            };
+        }
+    }
+    // @ts-ignore
+    const selector = str.slice(startIndex, matchIndex == null ? endPos : matchIndex);
+    return {
+        type: selector[0] == '@' ? 'AtRule' : 'Rule',
+        selector,
+        body: endBody == null ? str.slice(startIndex + selector.length + 1) : str.slice(startIndex + selector.length + 1, endBody),
+        block: endPos == null || endBody == null ? str.slice(startIndex) : str.slice(startIndex, endBody + 1)
+    };
+}
+function parseAtRule(block) {
+    const match = block.trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
+    if (match) {
+        return [match[1].trim(), match[3].trim()];
+    }
+    return [];
+}
+function parseDeclaration(str) {
+    const index = find(str, 0, ':');
+    if (index == null) {
+        return [];
+    }
+    return [
+        str.slice(0, index).trim(),
+        str.slice(index + 1).trim()
+    ];
+}
+
 function parse_comment(str, index) {
     let currentIndex = index;
     if (str[currentIndex] != '/' || str[++currentIndex] != '*') {
         return null;
     }
     while (currentIndex++ < str.length) {
-        if (str[currentIndex] == '*' && str[currentIndex + 1] == '/') {
+        if (str.charAt(currentIndex) == '*' && str.charAt(currentIndex + 1) == '/') {
             return currentIndex + 1;
         }
     }
@@ -33,17 +176,21 @@ function isWhiteSpace(str) {
 }
 
 function update(location, css) {
-    const str = Array.isArray(css) ? css : [...css];
-    if (str.length == 0) {
+    if (css.length == 0) {
         return location;
     }
+    let chr;
     let i = -1;
-    const j = str.length - 1;
+    const j = css.length - 1;
     while (++i <= j) {
-        if (isNewLine(str[i])) {
+        chr = css.charAt(i);
+        if (chr === '') {
+            break;
+        }
+        if (isNewLine(chr)) {
             location.line++;
             location.column = 0;
-            if (str[i] == '\r' && str[i + 1] == '\n') {
+            if (chr == '\r' && css.charAt(i + 1) == '\n') {
                 i++;
                 location.index++;
             }
@@ -54,145 +201,6 @@ function update(location, css) {
         location.index++;
     }
     return location;
-}
-
-/**
- * find the position of chr
- * @param css
- * @param start
- * @param chr
- */
-function find(css, start, chr) {
-    const str = Array.isArray(css) ? css : [...css];
-    let position = start - 1;
-    let k;
-    const j = str.length - 1;
-    while (position++ < j) {
-        if (str[position] == '\\') {
-            position++;
-        }
-        else if (str[position] == '"' || str[position] == "'") {
-            // match quoted string
-            const match = str[position];
-            k = position;
-            while (k++ < j) {
-                if (str[k] == '\\') {
-                    k++;
-                }
-                else if (str[k] == match) {
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (str[position] == '/' && str[position + 1] == '*') {
-            k = position + 1;
-            while (k++ < j) {
-                if (str[k] == '\\') {
-                    k++;
-                }
-                else if (str[k] == '*' && str[k + 1] == '/') {
-                    k++;
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (chr.includes(str[position])) {
-            return position;
-        }
-    }
-    return null;
-}
-
-function match_pair(css, index, open, close) {
-    const str = Array.isArray(css) ? css : [...css];
-    let count = 1;
-    let currentIndex = index;
-    let j = str.length;
-    while (currentIndex++ < j) {
-        if (str[currentIndex] == '\\') {
-            currentIndex++;
-            continue;
-        }
-        if ('"\''.includes(str[currentIndex])) {
-            let end = currentIndex;
-            while (end++ < j) {
-                if (str[end] == '\\') ;
-                else if (str[end] == str[currentIndex]) {
-                    break;
-                }
-            }
-            currentIndex = end;
-            continue;
-        }
-        if (str[currentIndex] == close) {
-            count--;
-            if (count == 0) {
-                return currentIndex;
-            }
-        }
-        else if (str[currentIndex] == open) {
-            count++;
-        }
-    }
-    return null;
-}
-
-function parseBlock(str, startIndex, matchIndex = null) {
-    const css = Array.isArray(str) ? str : [...str];
-    // @ts-ignore
-    let endPos = Number.isInteger(matchIndex) ? matchIndex : find(css, startIndex, ';}{');
-    let endBody = null;
-    if (endPos != null) {
-        if (css[endPos] == '{') {
-            endBody = match_pair(css, endPos, '{', '}');
-        }
-        else {
-            const match = css.slice(startIndex, endPos);
-            const type = match[0] == '@' ? 'AtRule' : 'Declaration';
-            // @ts-ignore
-            const [name, value] = type == 'AtRule' ? parseAtRule(match) : parseDeclaration(match);
-            return {
-                type,
-                name: Array.isArray(name) ? name : [...name],
-                value: Array.isArray(value) ? value : [...value],
-                body: match,
-                block: match.concat(css[endPos])
-            };
-        }
-    }
-    // @ts-ignore
-    const selector = css.slice(startIndex, matchIndex == null ? endPos : matchIndex);
-    return {
-        type: (endBody == null ? 'Invalid' : '') + (selector[0] == '@' ? 'AtRule' : 'Rule'),
-        selector,
-        body: endBody == null ? css.slice(startIndex + selector.length + 1) : css.slice(startIndex + selector.length + 1, endBody),
-        block: endPos == null ? css.slice(startIndex + 1) : css.slice(startIndex, endBody == null ? endPos + 1 : endBody + 1)
-    };
-}
-function parseAtRule(block) {
-    const match = (Array.isArray(block) ? block.join('') : block).trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
-    if (match) {
-        return [match[1].trim(), match[3].trim()];
-    }
-    return [];
-}
-function parseDeclaration(str) {
-    const index = find(str, 0, ':');
-    if (index == null) {
-        return null;
-    }
-    if (Array.isArray(str)) {
-        return [
-            str.slice(0, index).join('').trim(),
-            str.slice(index + 1).join('').trim()
-        ];
-    }
-    return [
-        str.slice(0, index).trim(),
-        str.slice(index + 1).trim()
-    ];
 }
 
 class Tokenizer {
@@ -210,45 +218,51 @@ class Tokenizer {
         let info;
         this.#root.location.src || '';
         let i = 0;
-        const css = Array.isArray(str) ? str : [...str];
-        const j = css.length - 1;
+        let chr;
+        // const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
+        const j = str.length - 1;
         const position = this.#root.location.end;
         while (i <= j) {
-            if (isWhiteSpace(css[i])) {
+            chr = str.charAt(i);
+            if (chr === '') {
+                break;
+            }
+            if (isWhiteSpace(chr)) {
                 let whitespace = '';
                 do {
-                    whitespace += css[i++];
-                } while (i <= j && isWhiteSpace(css[i]));
+                    whitespace += chr;
+                    chr = str.charAt(++i);
+                } while (i <= j && isWhiteSpace(chr));
                 update(position, whitespace);
             }
             if (i > j) {
                 break;
             }
             // parse comment
-            if (css[i] == '/' && css[i + 1] == '*') {
-                index = parse_comment(css, i);
+            if (chr == '/' && str.charAt(i + 1) == '*') {
+                index = parse_comment(str, i);
                 if (index == null) {
-                    value = css.slice(i);
+                    value = str.slice(i);
                     node = {
                         location: {
-                            start: update({ ...position }, value[0]),
+                            start: update({ ...position }, value.charAt(0)),
                             end: { ...update(position, value) }
                         },
                         type: 'InvalidComment',
-                        value: value.join('')
+                        value: value
                     };
                     Object.assign(position, node.location.end);
                     yield { node, direction: 'enter' };
-                    return;
+                    break;
                 }
-                value = css.slice(i, index + 1);
+                value = str.slice(i, index + 1);
                 node = {
                     location: {
-                        start: update({ ...position }, value[0]),
+                        start: update({ ...position }, value.charAt(0)),
                         end: { ...update({ ...position }, value) }
                     },
                     type: 'Comment',
-                    value: value.join('')
+                    value: value
                 };
                 Object.assign(position, node.location.end);
                 yield { node, direction: 'enter' };
@@ -256,17 +270,25 @@ class Tokenizer {
                 continue;
             }
             else {
-                index = find(css, i + 1, ';{}');
+                index = find(str, i + 1, ';{}');
+                // console.log({index})
                 if (index == null) {
-                    value = css.slice(i);
-                    console.log(`Declaration or AtRule block? - "${value.join('')}`);
+                    console.debug({ 'i+1': i + 1, index, str: str.slice(i, i + 15) });
+                    value = str.slice(i);
+                    console.log(`Declaration or AtRule block? - "${value}`);
                     update(position, value);
                     break;
                 }
-                else if (css[index] == '{') {
+                else if (str.charAt(index) == '{') {
                     // parse block
-                    info = parseBlock(css, i, index);
-                    if (info.type == 'AtRule' || info.type == 'InvalidAtRule') {
+                    info = parseBlock(str, i, index);
+                    // console.log({info: Object.entries(info).reduce((acc, entry) => {
+                    //
+                    //         acc[entry[0]] = Array.isArray(entry[1]) ? entry[1].join('') : entry[1];
+                    //
+                    //         return acc;
+                    //     }, {})});
+                    if (info.type == 'AtRule') {
                         yield* this.#parseAtRule(position, info);
                     }
                     else {
@@ -274,8 +296,8 @@ class Tokenizer {
                     }
                 }
                 else {
-                    const match = css.slice(i, index + 1);
-                    info = parseBlock(css, i, index);
+                    const match = str.slice(i, index + 1);
+                    info = parseBlock(str, i, index);
                     if (match[0] == '@') {
                         yield* this.#parseAtRule(position, info);
                     }
@@ -284,19 +306,20 @@ class Tokenizer {
                     }
                 }
                 i += info.block.length;
-                if (i == info.block.length) {
+                if (j <= info.block.length) {
                     break;
                 }
             }
         }
-        if (this.#root.type == 'StyleSheet') {
-            position.column = Math.max(1, position.column - 1);
+        //
+        if (this.#root.type == 'StyleSheet' && position.column == 0) {
+            position.column = 1;
         }
     }
     *#parseAtRule(position, info) {
         let node;
         // @ts-ignore
-        const { body, selector, block } = info;
+        const { body, selector, block, type } = info;
         if (!('selector' in info)) {
             const { name, value } = info;
             node = {
@@ -304,16 +327,20 @@ class Tokenizer {
                     start: update({ ...position }, name[0]),
                     end: update({ ...position }, block)
                 },
-                type: !isIdent(name) ? 'InvalidAtRule' : 'AtRule',
-                value: value.join(''),
-                name: name.join('')
+                type,
+                value,
+                name
             };
+            if (node.location.end.column == 0) {
+                node.location.end.column = 1;
+            }
             yield { node, direction: 'enter' };
+            return;
         }
         else {
             const [name, value] = parseAtRule(selector);
             if (!isIdent(name)) {
-                node = body == null ? {
+                node = (body == null ? {
                     location: {
                         start: update({ ...position }, name[0]),
                         end: update({ ...position }, block)
@@ -329,18 +356,24 @@ class Tokenizer {
                     type: 'InvalidAtRule',
                     value: value,
                     name,
-                    body: body.join('')
-                };
+                    body
+                });
                 Object.assign(position, node.location.end);
+                if (node.location.end.column == 0) {
+                    node.location.end.column = 1;
+                }
                 yield { node, direction: 'enter' };
+                return;
             }
             else {
+                // @ts-ignore
+                const { type } = info;
                 node = body == null ? {
                     location: {
                         start: update({ ...position }, name[0]),
                         end: update({ ...position }, block)
                     },
-                    type: 'AtRule',
+                    type,
                     value: value,
                     name
                 } : {
@@ -348,7 +381,7 @@ class Tokenizer {
                         start: update({ ...position }, name[0]),
                         end: update({ ...position }, selector.concat('{'))
                     },
-                    type: 'AtRule',
+                    type,
                     value,
                     name,
                     children: []
@@ -368,6 +401,9 @@ class Tokenizer {
             update(node.location.end, str);
         }
         Object.assign(position, node.location.end);
+        if (node.location.end.column == 0) {
+            node.location.end.column = 1;
+        }
         if ('children' in node) {
             yield { node, direction: 'exit' };
         }
@@ -383,7 +419,7 @@ class Tokenizer {
                 end: update({ ...position }, selector.concat('{'))
             },
             type: 'Rule',
-            selector: selector.join('').trimEnd(),
+            selector: selector.trimEnd(),
             children: []
         };
         // @ts-ignore
@@ -399,17 +435,22 @@ class Tokenizer {
             update(node.location.end, str);
         }
         Object.assign(position, node.location.end);
+        if (node.location.end.column == 0) {
+            node.location.end.column = 1;
+        }
         if ('children' in node) {
             yield { node, direction: 'exit' };
         }
     }
     *#parseDeclaration(position, info) {
         // @ts-ignore
-        const [name, value] = parseDeclaration(info.body);
+        // const [name, value] = parseDeclaration(info.body);
+        // console.debug({info, name, value});
+        const { name, value } = info;
         const node = {
             type: 'Declaration',
             location: {
-                start: update({ ...position }, name[0]),
+                start: update({ ...position }, name.charAt(0)),
                 end: update({ ...position }, info.body),
                 // src
             },
@@ -619,7 +660,7 @@ class Observer {
 class Parser {
     #options;
     #observer;
-    #lexer;
+    #tokenizer;
     #root;
     #errors = [];
     constructor(options = {
@@ -628,13 +669,14 @@ class Parser {
         this.#options = { strict: false, ...options };
         this.#observer = new Observer();
         this.#root = this.#createRoot();
-        this.#lexer = new Tokenizer(this.#root);
+        this.#tokenizer = new Tokenizer(this.#root);
     }
     parse(css) {
         this.#errors = [];
         const stack = [];
+        const hasListeners = this.#observer.hasListeners('traverse');
         let context = this.#root;
-        for (const { node, direction, error } of this.#lexer.parse(css)) {
+        for (const { node, direction, error } of this.#tokenizer.parse(css)) {
             if (error) {
                 if (this.#options.strict) {
                     throw error;
@@ -666,7 +708,9 @@ class Parser {
                 // @ts-ignore
                 context = stack[stack.length - 1] || this.#root;
             }
-            this.#observer.trigger('traverse', node, direction, context);
+            if (hasListeners) {
+                this.#observer.trigger('traverse', node, direction, context);
+            }
         }
         return this;
     }

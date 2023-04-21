@@ -4,56 +4,68 @@
  * @param start
  * @param chr
  */
-export function find(css: string | string[], start: number, chr: string): number | null {
+export function find(css: string, start: number, chr: string): number | null {
 
-    const str: string[] = Array.isArray(css) ? css : [...css];
+    let char: string;
     let position: number = start - 1;
-    let k;
-    const j: number = str.length - 1;
+    let k: number;
+    const j: number = css.length - 1;
 
     while (position++ < j) {
 
-        if (str[position] == '\\') {
+        char = css.charAt(position);
 
-            position++
+        if (char === '') {
+
+            return null;
         }
 
-        else if (str[position] == '"' || str[position] == "'") {
+        if (char == '\\') {
+
+            position++
+        } else if (char == '"' || char == "'") {
 
             // match quoted string
-            const match = str[position];
+            const match = char;
 
             k = position;
 
             while (k++ < j) {
 
-                if (str[k] == '\\') {
+                char = css.charAt(k);
 
-                    k++
+                if (char === '') {
+
+                    return null;
                 }
 
-                else if (str[k] == match) {
+                if (char == '\\') {
+
+                    k++;
+                } else if (char == match) {
 
                     break;
                 }
             }
 
             position = k;
-
-        }
-
-        else if (str[position] == '/' && str[position + 1] == '*') {
+        } else if (css.charAt(position) == '/' && css.charAt(position + 1) == '*') {
 
             k = position + 1;
 
             while (k++ < j) {
 
-                if (str[k] == '\\') {
+                char = css.charAt(k);
 
-                    k++
+                if (char === '') {
+
+                    return null;
                 }
 
-                else if (str[k] == '*' && str[k + 1] == '/') {
+                if (char == '\\') {
+
+                    k++;
+                } else if (char == '*' && css.charAt(k + 1) == '/') {
 
                     k++;
                     break;
@@ -61,9 +73,7 @@ export function find(css: string | string[], start: number, chr: string): number
             }
 
             position = k;
-        }
-
-        else if (chr.includes(str[position])) {
+        } else if (chr.includes(char)) {
 
             return position;
         }

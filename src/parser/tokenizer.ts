@@ -26,14 +26,14 @@ export class Tokenizer {
         this.#root = root;
     }
 
-    * parse(str: string | string[]): Generator<{ node?: AstNode, direction?: NodeTraversalDirection, error?: Error }> {
+    * parse(str: string): Generator<{ node?: AstNode, direction?: NodeTraversalDirection, error?: Error }> {
 
         if (str === '') {
 
             return;
         }
 
-        let value: string[];
+        let value: string;
         let name: string;
         let body: string;
         let node: AstNode;
@@ -43,23 +43,32 @@ export class Tokenizer {
         let tokenizer: Tokenizer;
 
         let i: number = 0;
-        const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
+        let chr: string;
+        // const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
 
-        const j: number = css.length - 1;
+        const j: number = str.length - 1;
         const position: Position = this.#root.location.end;
 
         while (i <= j) {
 
-            if (isWhiteSpace(css[i])) {
+            chr = str.charAt(i);
+
+            if (chr === '') {
+
+                break;
+            }
+
+            if (isWhiteSpace(chr)) {
 
                 let whitespace: string = '';
 
                 do {
 
-                    whitespace += css[i++];
+                    whitespace += chr;
+                    chr = str.charAt(++i);
                 }
 
-                while (i <= j && isWhiteSpace(css[i])) ;
+                while (i <= j && isWhiteSpace(chr)) ;
 
                 update(position, whitespace);
             }
@@ -70,39 +79,39 @@ export class Tokenizer {
             }
 
             // parse comment
-            if (css[i] == '/' && css[i + 1] == '*') {
+            if (chr == '/' && str.charAt(i + 1) == '*') {
 
-                index = parse_comment(css, i);
+                index = parse_comment(str, i);
 
                 if (index == null) {
 
-                    value = css.slice(i);
+                    value = str.slice(i);
 
                     node = {
                         location: {
-                            start: update({...position}, value[0]),
+                            start: update({...position}, value.charAt(0)),
                             end: {...update(position, value)}
                         },
                         type: 'InvalidComment',
-                        value: value.join('')
+                        value: value
                     }
 
                     Object.assign(position, node.location.end);
 
                     yield {node, direction: 'enter'};
 
-                    return
+                    break;
                 }
 
-                value = css.slice(i, index + 1);
+                value = str.slice(i, index + 1);
 
                 node = {
                     location: {
-                        start: update({...position}, value[0]),
+                        start: update({...position}, value.charAt(0)),
                         end: {...update({...position}, value)}
                     },
                     type: 'Comment',
-                    value: value.join('')
+                    value: value
                 }
 
                 Object.assign(position, node.location.end);
@@ -114,22 +123,33 @@ export class Tokenizer {
                 continue;
             } else {
 
-                index = find(css, i + 1, ';{}');
+                index = find(str, i + 1, ';{}');
+
+                // console.log({index})
 
                 if (index == null) {
 
-                    value = css.slice(i);
+                    console.debug({'i+1': i + 1, index, str: str.slice(i, i + 15)});
 
-                    console.log(`Declaration or AtRule block? - "${value.join('')}`);
+                    value = str.slice(i);
+
+                    console.log(`Declaration or AtRule block? - "${value}`);
 
                     update(position, value);
                     break;
-                } else if (css[index] == '{') {
+                } else if (str.charAt(index) == '{') {
 
                     // parse block
-                    info = parseBlock(css, i, index);
+                    info = parseBlock(str, i, index);
 
-                    if (info.type == 'AtRule' || info.type == 'InvalidAtRule') {
+                    // console.log({info: Object.entries(info).reduce((acc, entry) => {
+                    //
+                    //         acc[entry[0]] = Array.isArray(entry[1]) ? entry[1].join('') : entry[1];
+                    //
+                    //         return acc;
+                    //     }, {})});
+
+                    if (info.type == 'AtRule') {
 
                         yield* this.#parseAtRule(position, info);
                     } else {
@@ -139,9 +159,9 @@ export class Tokenizer {
 
                 } else {
 
-                    const match: string[] = css.slice(i, index + 1);
+                    const match: string = str.slice(i, index + 1);
 
-                    info = parseBlock(css, i, index);
+                    info = parseBlock(str, i, index);
 
                     if (match[0] == '@') {
 
@@ -154,16 +174,16 @@ export class Tokenizer {
 
                 i += info.block.length;
 
-                if (i == info.block.length) {
+                if (j <= info.block.length) {
 
                     break;
                 }
             }
         }
+        //
+        if (this.#root.type == 'StyleSheet' && position.column == 0) {
 
-        if (this.#root.type == 'StyleSheet') {
-
-            position.column = Math.max(1, position.column - 1);
+            position.column = 1;
         }
     }
 
@@ -174,30 +194,37 @@ export class Tokenizer {
 
         let node: AstAtRule | AstInvalidAtRule;
         // @ts-ignore
-        const {body, selector, block} = info;
+        const {body, selector, block, type} = info;
 
         if (!('selector' in info)) {
 
             const {name, value} = info;
 
-            node = {
+            node = <AstInvalidAtRule | AstAtRule>{
                 location: {
                     start: update({...position}, name[0]),
                     end: update({...position}, block)
                 },
-                type: !isIdent(name) ? 'InvalidAtRule' : 'AtRule',
-                value: value.join(''),
-                name: name.join('')
+                type,
+                value,
+                name
+            }
+
+            if (node.location.end.column == 0) {
+
+                node.location.end.column = 1;
             }
 
             yield {node, direction: 'enter'};
+
+            return;
         } else {
 
             const [name, value] = parseAtRule(selector);
 
             if (!isIdent(name)) {
 
-                node = body == null ? {
+                node = <AstInvalidAtRule>(body == null ? {
                     location: {
                         start: update({...position}, name[0]),
                         end: update({...position}, block)
@@ -213,20 +240,31 @@ export class Tokenizer {
                     type: 'InvalidAtRule',
                     value: value,
                     name,
-                    body: body.join('')
-                };
+                    body
+                });
 
                 Object.assign(position, node.location.end);
 
+                if (node.location.end.column == 0) {
+
+                    node.location.end.column = 1;
+                }
+
                 yield {node, direction: 'enter'};
+
+                return;
+
             } else {
+
+                // @ts-ignore
+                const {type}: 'AtRule' | 'InvalidAtRule' = info
 
                 node = body == null ? {
                     location: {
                         start: update({...position}, name[0]),
                         end: update({...position}, block)
                     },
-                    type: 'AtRule',
+                    type,
                     value: value,
                     name
                 } : {
@@ -234,7 +272,7 @@ export class Tokenizer {
                         start: update({...position}, name[0]),
                         end: update({...position}, selector.concat('{'))
                     },
-                    type: 'AtRule',
+                    type,
                     value,
                     name,
                     children: []
@@ -255,7 +293,7 @@ export class Tokenizer {
             }
         }
 
-        const str: string[] = block.slice(selector.length + 1 + (body != null ? body.length : 0));
+        const str: string = block.slice(selector.length + 1 + (body != null ? body.length : 0));
 
         if (str.length > 0) {
 
@@ -263,6 +301,11 @@ export class Tokenizer {
         }
 
         Object.assign(position, node.location.end);
+
+        if (node.location.end.column == 0) {
+
+            node.location.end.column = 1;
+        }
 
         if ('children' in node) {
 
@@ -288,7 +331,7 @@ export class Tokenizer {
                 end: update({...position}, selector.concat('{'))
             },
             type: 'Rule',
-            selector: selector.join('').trimEnd(),
+            selector: selector.trimEnd(),
             children: []
         }
 
@@ -303,7 +346,7 @@ export class Tokenizer {
             yield* tokenizer.parse(body);
         }
 
-        const str: string[] = block.slice(selector.length + 1 + (body != null ? body.length : 0));
+        const str: string = block.slice(selector.length + 1 + (body != null ? body.length : 0));
 
         if (str.length > 0) {
 
@@ -311,6 +354,11 @@ export class Tokenizer {
         }
 
         Object.assign(position, node.location.end);
+
+        if (node.location.end.column == 0) {
+
+            node.location.end.column = 1;
+        }
 
         if ('children' in node) {
 
@@ -324,12 +372,16 @@ export class Tokenizer {
     }> {
 
         // @ts-ignore
-        const [name, value] = parseDeclaration(info.body);
+        // const [name, value] = parseDeclaration(info.body);
+        // console.debug({info, name, value});
+
+        const {name, value} = info;
+
         const node: AstDeclaration = {
 
             type: 'Declaration',
             location: {
-                start: update({...position}, name[0]),
+                start: update({...position}, name.charAt(0)),
                 end: update({...position}, info.body),
                 // src
             },
@@ -339,7 +391,7 @@ export class Tokenizer {
 
         Object.assign(position, node.location.end);
 
-        const str: string[] = info.block.slice(info.body.length);
+        const str: string = info.block.slice(info.body.length);
 
         if (str.length > 0) {
 
