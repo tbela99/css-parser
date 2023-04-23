@@ -3,7 +3,7 @@ import {update} from "./location";
 import {Position} from "../../@types";
 
 
-export function ltrim(position: Position, buffer: string): string {
+export function ltrim(position: Position, buffer: string[]): string {
 
     let l = -1;
     const k = buffer.length - 1;
@@ -21,8 +21,8 @@ export function ltrim(position: Position, buffer: string): string {
     if (l > 0) {
 
         update(position, buffer.slice(0, l));
-        return buffer.substring(l);
+        return buffer.slice(l).join('');
     }
 
-    return buffer
+    return buffer.join('')
 }

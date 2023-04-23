@@ -20,7 +20,7 @@ const Rule = `:root, [data-color-mode="light"][data-light-theme="light"], [data-
 }
 `;
 
-function toStringProperties(info: { [s: string]: unknown; } | ArrayLike<unknown>) {
+function toStringProperties(info: { [s: string]: string | string[]; } | ArrayLike<unknown>) {
 
     return Object.entries(info).reduce((acc, curr) => {
 
@@ -35,8 +35,8 @@ describe('parse block', function () {
 
     it('parse at-rules block', function () {
 
-        const info = toStringProperties(parseBlock(atRule, 0));
-        const info2 = toStringProperties(parseBlock(atRule, 0, find(atRule, 1, ';{}')));
+        const info = toStringProperties(parseBlock([...atRule], 0));
+        const info2 = toStringProperties(parseBlock([...atRule], 0, find([...atRule], 1, ';{}')));
 
         expect(info).deep.equals({
             type: "AtRule",
@@ -50,8 +50,8 @@ describe('parse block', function () {
 
     it('parse rules block', function () {
 
-        const info = toStringProperties(parseBlock(Rule, 0));
-        const info2 = toStringProperties(parseBlock(Rule, 0, find(Rule, 1, ';{}')));
+        const info = toStringProperties(parseBlock([...Rule], 0));
+        const info2 = toStringProperties(parseBlock([...Rule], 0, find([...Rule], 1, ';{}')));
 
         expect(info).deep.equals({
             type: "Rule",

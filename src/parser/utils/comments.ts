@@ -1,4 +1,4 @@
-export function parse_comment(str: string, index: number): number | null {
+export function parse_comment(str: string[], index: number): number | null {
 
     let currentIndex: number = index;
 
@@ -9,7 +9,7 @@ export function parse_comment(str: string, index: number): number | null {
 
     while (currentIndex++ < str.length) {
 
-        if (str.charAt(currentIndex) == '*' && str.charAt(currentIndex + 1) == '/') {
+        if (str[currentIndex]== '*' && str[currentIndex + 1] == '/') {
 
             return currentIndex + 1;
         }

@@ -43,8 +43,10 @@ function find(css, start, chr) {
     let position = start - 1;
     let k;
     const j = css.length - 1;
+    // console.log({'css[start]': css.charAt(start)});
     while (position++ < j) {
-        char = css.charAt(position);
+        char = css[position];
+        // console.log({char});
         if (char === '') {
             return null;
         }
@@ -56,7 +58,7 @@ function find(css, start, chr) {
             const match = char;
             k = position;
             while (k++ < j) {
-                char = css.charAt(k);
+                char = css[k];
                 if (char === '') {
                     return null;
                 }
@@ -69,17 +71,17 @@ function find(css, start, chr) {
             }
             position = k;
         }
-        else if (css.charAt(position) == '/' && css.charAt(position + 1) == '*') {
+        else if (css[position] == '/' && css[position + 1] == '*') {
             k = position + 1;
             while (k++ < j) {
-                char = css.charAt(k);
+                char = css[k];
                 if (char === '') {
                     return null;
                 }
                 if (char == '\\') {
                     k++;
                 }
-                else if (char == '*' && css.charAt(k + 1) == '/') {
+                else if (char == '*' && css[k + 1] == '/') {
                     k++;
                     break;
                 }
@@ -94,13 +96,15 @@ function find(css, start, chr) {
 }
 
 function parseBlock(str, startIndex, matchIndex = null) {
+    // @ts-ignore
     let endPos = Number.isInteger(matchIndex) ? matchIndex : find(str, startIndex, ';}{');
     let endBody = null;
     if (endPos != null) {
-        if (str.charAt(endPos) == '{') {
+        if (str[endPos] == '{') {
             endBody = match_pair(str, endPos, '{', '}');
         }
         else {
+            // console.debug({startIndex, endPos, str: str.slice(startIndex, endPos)});
             const match = str.slice(startIndex, endPos);
             const type = match[0] == '@' ? 'AtRule' : 'Declaration';
             // @ts-ignore
@@ -110,7 +114,7 @@ function parseBlock(str, startIndex, matchIndex = null) {
                 name,
                 value,
                 body: match,
-                block: match + str.charAt(endPos)
+                block: match.concat(str[endPos])
             };
         }
     }
@@ -124,7 +128,7 @@ function parseBlock(str, startIndex, matchIndex = null) {
     };
 }
 function parseAtRule(block) {
-    const match = block.trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
+    const match = block.join('').trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
     if (match) {
         return [match[1].trim(), match[3].trim()];
     }
@@ -136,8 +140,8 @@ function parseDeclaration(str) {
         return [];
     }
     return [
-        str.slice(0, index).trim(),
-        str.slice(index + 1).trim()
+        str.slice(0, index).join('').trim(),
+        str.slice(index + 1).join('').trim()
     ];
 }
 
@@ -147,7 +151,7 @@ function parse_comment(str, index) {
         return null;
     }
     while (currentIndex++ < str.length) {
-        if (str.charAt(currentIndex) == '*' && str.charAt(currentIndex + 1) == '/') {
+        if (str[currentIndex] == '*' && str[currentIndex + 1] == '/') {
             return currentIndex + 1;
         }
     }
@@ -179,18 +183,16 @@ function update(location, css) {
     if (css.length == 0) {
         return location;
     }
-    let chr;
     let i = -1;
     const j = css.length - 1;
+    if (location.line == 0) {
+        location.line = 1;
+    }
     while (++i <= j) {
-        chr = css.charAt(i);
-        if (chr === '') {
-            break;
-        }
-        if (isNewLine(chr)) {
+        if (isNewLine(css[i])) {
             location.line++;
             location.column = 0;
-            if (chr == '\r' && css.charAt(i + 1) == '\n') {
+            if (css[i] == '\r' && css[i + 1] == '\n') {
                 i++;
                 location.index++;
             }
@@ -209,7 +211,7 @@ class Tokenizer {
         this.#root = root;
     }
     *parse(str) {
-        if (str === '') {
+        if (str.length == 0) {
             return;
         }
         let value;
@@ -219,37 +221,39 @@ class Tokenizer {
         this.#root.location.src || '';
         let i = 0;
         let chr;
+        this.#root.children;
         // const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
         const j = str.length - 1;
         const position = this.#root.location.end;
         while (i <= j) {
-            chr = str.charAt(i);
+            chr = str[i];
             if (chr === '') {
                 break;
             }
             if (isWhiteSpace(chr)) {
-                let whitespace = '';
-                do {
-                    whitespace += chr;
-                    chr = str.charAt(++i);
-                } while (i <= j && isWhiteSpace(chr));
-                update(position, whitespace);
+                let k = i + 1;
+                while (k <= j && isWhiteSpace(str[k])) {
+                    k++;
+                }
+                update(position, str.slice(i, k));
+                i = k;
+                chr = str[k];
             }
             if (i > j) {
                 break;
             }
             // parse comment
-            if (chr == '/' && str.charAt(i + 1) == '*') {
+            if (chr == '/' && str[i + 1] == '*') {
                 index = parse_comment(str, i);
                 if (index == null) {
                     value = str.slice(i);
                     node = {
                         location: {
-                            start: update({ ...position }, value.charAt(0)),
+                            start: update({ ...position }, value.slice(0, 1)),
                             end: { ...update(position, value) }
                         },
                         type: 'InvalidComment',
-                        value: value
+                        value: value.join('')
                     };
                     Object.assign(position, node.location.end);
                     yield { node, direction: 'enter' };
@@ -258,36 +262,33 @@ class Tokenizer {
                 value = str.slice(i, index + 1);
                 node = {
                     location: {
-                        start: update({ ...position }, value.charAt(0)),
+                        start: update({ ...position }, value.slice(0, 1)),
                         end: { ...update({ ...position }, value) }
                     },
                     type: 'Comment',
-                    value: value
+                    value: value.join('')
                 };
                 Object.assign(position, node.location.end);
+                if (node.location.end.column == 0) {
+                    node.location.end.column = 1;
+                }
                 yield { node, direction: 'enter' };
                 i += value.length;
                 continue;
             }
             else {
                 index = find(str, i + 1, ';{}');
-                // console.log({index})
+                // console.log({index, chr: str.charAt(i + 1)})
                 if (index == null) {
-                    console.debug({ 'i+1': i + 1, index, str: str.slice(i, i + 15) });
+                    // console.debug({'i+1': i + 1, index, str: str.slice(i)}, new Error(`missing chars`));
                     value = str.slice(i);
-                    console.log(`Declaration or AtRule block? - "${value}`);
+                    console.error(`Declaration or AtRule block? - "${value}`);
                     update(position, value);
                     break;
                 }
-                else if (str.charAt(index) == '{') {
+                else if (str[index] == '{') {
                     // parse block
                     info = parseBlock(str, i, index);
-                    // console.log({info: Object.entries(info).reduce((acc, entry) => {
-                    //
-                    //         acc[entry[0]] = Array.isArray(entry[1]) ? entry[1].join('') : entry[1];
-                    //
-                    //         return acc;
-                    //     }, {})});
                     if (info.type == 'AtRule') {
                         yield* this.#parseAtRule(position, info);
                     }
@@ -324,16 +325,14 @@ class Tokenizer {
             const { name, value } = info;
             node = {
                 location: {
-                    start: update({ ...position }, name[0]),
+                    start: update({ ...position }, [name[0]]),
                     end: update({ ...position }, block)
                 },
                 type,
                 value,
                 name
             };
-            if (node.location.end.column == 0) {
-                node.location.end.column = 1;
-            }
+            node.location.end.column = Math.max(1, node.location.end.column - 1);
             yield { node, direction: 'enter' };
             return;
         }
@@ -342,7 +341,7 @@ class Tokenizer {
             if (!isIdent(name)) {
                 node = (body == null ? {
                     location: {
-                        start: update({ ...position }, name[0]),
+                        start: update({ ...position }, [name[0]]),
                         end: update({ ...position }, block)
                     },
                     type: 'InvalidAtRule',
@@ -350,7 +349,7 @@ class Tokenizer {
                     name
                 } : {
                     location: {
-                        start: update({ ...position }, name[0]),
+                        start: update({ ...position }, [name[0]]),
                         end: update({ ...position }, block)
                     },
                     type: 'InvalidAtRule',
@@ -358,6 +357,7 @@ class Tokenizer {
                     name,
                     body
                 });
+                // node.location.end.column = Math.max(1, node.location.end.column - 1);
                 Object.assign(position, node.location.end);
                 if (node.location.end.column == 0) {
                     node.location.end.column = 1;
@@ -370,7 +370,7 @@ class Tokenizer {
                 const { type } = info;
                 node = body == null ? {
                     location: {
-                        start: update({ ...position }, name[0]),
+                        start: update({ ...position }, [name[0]]),
                         end: update({ ...position }, block)
                     },
                     type,
@@ -378,7 +378,7 @@ class Tokenizer {
                     name
                 } : {
                     location: {
-                        start: update({ ...position }, name[0]),
+                        start: update({ ...position }, [name[0]]),
                         end: update({ ...position }, selector.concat('{'))
                     },
                     type,
@@ -387,7 +387,6 @@ class Tokenizer {
                     children: []
                 };
                 yield { node, direction: 'enter' };
-                // node.location.end = pos;
                 if (body.length > 0) {
                     // @ts-ignore
                     const tokenizer = new Tokenizer(node);
@@ -419,12 +418,13 @@ class Tokenizer {
                 end: update({ ...position }, selector.concat('{'))
             },
             type: 'Rule',
-            selector: selector.trimEnd(),
+            selector: selector.join('').trimEnd(),
             children: []
         };
         // @ts-ignore
         yield { node, direction: 'enter' };
         if (body != null) {
+            // node.location.end.column = Math.max(1, node.location.end.column - 1);
             // @ts-ignore
             const tokenizer = new Tokenizer(node);
             // @ts-ignore
@@ -434,6 +434,9 @@ class Tokenizer {
         if (str.length > 0) {
             update(node.location.end, str);
         }
+        // if (node.location.end.column == 0) {
+        // node.location.end.column = Math.max(1, node.location.end.column - 1);
+        // }
         Object.assign(position, node.location.end);
         if (node.location.end.column == 0) {
             node.location.end.column = 1;
@@ -447,6 +450,7 @@ class Tokenizer {
         // const [name, value] = parseDeclaration(info.body);
         // console.debug({info, name, value});
         const { name, value } = info;
+        // console.log({info});
         const node = {
             type: 'Declaration',
             location: {
@@ -462,6 +466,8 @@ class Tokenizer {
         if (str.length > 0) {
             update(position, str);
         }
+        // node.location.start.column = Math.max(1, node.location.start.column - 1);
+        // node.location.end.column = Math.max(1, node.location.end.column - 1);
         yield { node, direction: 'enter' };
     }
 }
@@ -676,7 +682,7 @@ class Parser {
         const stack = [];
         const hasListeners = this.#observer.hasListeners('traverse');
         let context = this.#root;
-        for (const { node, direction, error } of this.#tokenizer.parse(css)) {
+        for (const { node, direction, error } of this.#tokenizer.parse([...css])) {
             if (error) {
                 if (this.#options.strict) {
                     throw error;
@@ -732,7 +738,7 @@ class Parser {
             // if
             // @ts-ignore
             if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-                console.log({ previous });
+                // console.log({previous})
                 if (!('children' in node)) {
                     // @ts-ignore
                     node.children = [];

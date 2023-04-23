@@ -1,4 +1,4 @@
-export function match_pair(css: string | string[], index: number, open: string, close: string): number | null {
+export function match_pair(css: string[], index: number, open: string, close: string): number | null {
 
     const str: string[] = Array.isArray(css) ? css : [...css];
     let count: number = 1;

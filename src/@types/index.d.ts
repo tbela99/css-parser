@@ -7,6 +7,14 @@ export interface ParserOptions {
     strict?: boolean
 }
 
+export interface RenderOptions {
+
+    compress?: boolean;
+    indent?: string;
+    newLine?: string;
+    removeComments?: boolean;
+}
+
 export interface Position {
 
     index: number;
@@ -68,7 +76,7 @@ export interface AstRule extends Node {
 
     type: 'Rule',
     selector: string,
-    children?: Array<AstDeclaration | AstComment>
+    children: Array<AstDeclaration | AstComment | AstRuleList>
 }
 
 export interface AstAtRule extends Node {
@@ -98,20 +106,20 @@ export interface AstRuleStyleSheet extends AstRuleList {
     children: Array<AstRuleList | AstComment>
 }
 
-export type AstNode = AstComment | AstInvalidComment | AstInvalidAtRule | AstAtRule | AstRule | AstDeclaration | AstInvalidDeclaration;
+export type AstNode = AstRuleStyleSheet  | AstRuleList | AstComment | AstInvalidComment | AstInvalidAtRule | AstAtRule | AstRule | AstDeclaration | AstInvalidDeclaration;
 
 export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;
 
 export type ParsedBlock = {
     type: 'Rule' | 'AtRule',
-    selector: string,
-    body: string;
-    block: string;
+    selector: string[],
+    body: string[];
+    block: string[];
 } | {
 
     type: 'AtRule' | 'Declaration',
     name: string;
     value: string;
-    body: string;
-    block: string;
+    body: string[];
+    block: string[];
 }

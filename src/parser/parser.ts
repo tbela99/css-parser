@@ -1,6 +1,7 @@
 import {Tokenizer} from "./tokenizer";
 import {AstNode, AstRule, AstRuleList, AstRuleStyleSheet, AstTraverserHandler, ParserOptions} from "../@types";
 import {Observer} from "@tbela99/observer";
+import {Renderer} from "../renderer";
 
 export class Parser {
 
@@ -27,7 +28,7 @@ export class Parser {
         const hasListeners = this.#observer.hasListeners('traverse');
         let context:AstRuleStyleSheet = this.#root;
 
-        for (const {node, direction, error} of this.#tokenizer.parse(css)) {
+        for (const {node, direction, error} of this.#tokenizer.parse([...css])) {
 
             if (error) {
 
@@ -111,7 +112,7 @@ export class Parser {
             // @ts-ignore
             if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
 
-                console.log({previous})
+                // console.log({previous})
 
                 if (!('children' in node)) {
 
@@ -179,5 +180,10 @@ export class Parser {
             },
             children: []
         }
+    }
+
+    toString() {
+
+        return new Renderer().render(this);
     }
 }
