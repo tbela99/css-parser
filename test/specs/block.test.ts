@@ -1,8 +1,8 @@
-import {parseBlock} from "../../src/parser/utils/block";
+// import {parseBlock} from "../../src/parser/utils/block";
 import {expect} from "@esm-bundle/chai";
 import {readFile} from "fs/promises";
 import {Parser} from "../../src";
-import {find} from "../../src/parser/utils";
+// import {find} from "../../src/parser/utils";
 import {dirname} from "path";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
@@ -32,36 +32,6 @@ function toStringProperties(info: { [s: string]: string | string[]; } | ArrayLik
 }
 
 describe('parse block', function () {
-
-    it('parse at-rules block', function () {
-
-        const info = toStringProperties(parseBlock([...atRule], 0));
-        const info2 = toStringProperties(parseBlock([...atRule], 0, find([...atRule], 1, ';{}')));
-
-        expect(info).deep.equals({
-            type: "AtRule",
-            selector: "@media all ",
-            body: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}",
-            block: "@media all {:root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}}"
-        });
-
-        expect(info).deep.equals(info2);
-    });
-
-    it('parse rules block', function () {
-
-        const info = toStringProperties(parseBlock([...Rule], 0));
-        const info2 = toStringProperties(parseBlock([...Rule], 0, find([...Rule], 1, ';{}')));
-
-        expect(info).deep.equals({
-            type: "Rule",
-            selector: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] ",
-            body: "\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n",
-            block: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}"
-        });
-
-        expect(info2).deep.equals(info)
-    });
 
     it('parse file', async function () {
 

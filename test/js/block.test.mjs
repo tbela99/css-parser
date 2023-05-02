@@ -2,153 +2,6 @@
 import { readFile } from 'fs/promises';
 import { dirname } from 'path';
 
-/**
- * find the position of chr
- * @param css
- * @param start
- * @param chr
- */
-function find(css, start, chr) {
-    let char;
-    let position = start - 1;
-    let k;
-    const j = css.length - 1;
-    // console.log({'css[start]': css.charAt(start)});
-    while (position++ < j) {
-        char = css[position];
-        // console.log({char});
-        if (char === '') {
-            return null;
-        }
-        if (char == '\\') {
-            position++;
-        }
-        else if (char == '"' || char == "'") {
-            // match quoted string
-            const match = char;
-            k = position;
-            while (k++ < j) {
-                char = css[k];
-                if (char === '') {
-                    return null;
-                }
-                if (char == '\\') {
-                    k++;
-                }
-                else if (char == match) {
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (css[position] == '/' && css[position + 1] == '*') {
-            k = position + 1;
-            while (k++ < j) {
-                char = css[k];
-                if (char === '') {
-                    return null;
-                }
-                if (char == '\\') {
-                    k++;
-                }
-                else if (char == '*' && css[k + 1] == '/') {
-                    k++;
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (chr.includes(char)) {
-            return position;
-        }
-    }
-    return null;
-}
-
-function match_pair(css, index, open, close) {
-    const str = Array.isArray(css) ? css : [...css];
-    let count = 1;
-    let currentIndex = index;
-    let j = str.length;
-    while (currentIndex++ < j) {
-        if (str[currentIndex] == '\\') {
-            currentIndex++;
-            continue;
-        }
-        if (open != str[currentIndex] && close != str[currentIndex] && '"\''.includes(str[currentIndex])) {
-            let end = currentIndex;
-            while (end++ < j) {
-                if (str[end] == '\\') ;
-                else if (str[end] == str[currentIndex]) {
-                    break;
-                }
-            }
-            currentIndex = end;
-            continue;
-        }
-        if (str[currentIndex] == close) {
-            count--;
-            if (count == 0) {
-                return currentIndex;
-            }
-        }
-        else if (str[currentIndex] == open) {
-            count++;
-        }
-    }
-    return null;
-}
-
-function parseBlock(str, startIndex, matchIndex = null) {
-    // @ts-ignore
-    let endPos = Number.isInteger(matchIndex) ? matchIndex : find(str, startIndex, ';}{');
-    let endBody = null;
-    if (endPos != null) {
-        if (str[endPos] == '{') {
-            endBody = match_pair(str, endPos, '{', '}');
-        }
-        else {
-            // console.debug({startIndex, endPos, str: str.slice(startIndex, endPos)});
-            const match = str.slice(startIndex, endPos);
-            const type = match[0] == '@' ? 'AtRule' : 'Declaration';
-            // @ts-ignore
-            const [name, value] = type == 'AtRule' ? parseAtRule(match) : parseDeclaration(match);
-            return {
-                type,
-                name,
-                value,
-                body: match,
-                block: match.concat(str[endPos])
-            };
-        }
-    }
-    // @ts-ignore
-    const selector = str.slice(startIndex, matchIndex == null ? endPos : matchIndex);
-    return {
-        type: selector[0] == '@' ? 'AtRule' : 'Rule',
-        selector,
-        body: endBody == null ? str.slice(startIndex + selector.length + 1) : str.slice(startIndex + selector.length + 1, endBody),
-        block: endPos == null || endBody == null ? str.slice(startIndex) : str.slice(startIndex, endBody + 1)
-    };
-}
-function parseAtRule(block) {
-    const match = block.join('').trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
-    if (match) {
-        return [match[1].trim(), match[3].trim()];
-    }
-    return [];
-}
-function parseDeclaration(str) {
-    const index = find(str, 0, ':');
-    if (index == null) {
-        return [];
-    }
-    return [
-        str.slice(0, index).join('').trim(),
-        str.slice(index + 1).join('').trim()
-    ];
-}
-
 var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{};function t(e){throw new Error('Could not dynamically require "'+e+'". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.')}var o=function(){function e(n,o,r){function i(a,c){if(!o[a]){if(!n[a]){if(!c&&t)return t(a);if(s)return s(a,!0);var u=new Error("Cannot find module '"+a+"'");throw u.code="MODULE_NOT_FOUND",u}var f=o[a]={exports:{}};n[a][0].call(f.exports,(function(e){return i(n[a][1][e]||e)}),f,f.exports,e,n,o,r);}return o[a].exports}for(var s=t,a=0;a<r.length;a++)i(r[a]);return i}return e}()({1:[function(e,t,n){t.exports=e("./lib/chai");},{"./lib/chai":2}],2:[function(e,t,n){
 /*!
  * chai
@@ -719,333 +572,6 @@ var o=e("type-detect");function r(){this._key="chai/deep-eql__"+Math.random()+Da
  * @return {Boolean} result
  */function O(e){return null===e||"object"!=typeof e}t.exports=c,t.exports.MemoizeMap=i;},{"type-detect":39}],37:[function(e,t,n){var o=Function.prototype.toString,r=/\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\s\(\/]+)/;function i(e){if("function"!=typeof e)return null;var t="";if(void 0===Function.prototype.name&&void 0===e.name){var n=o.call(e).match(r);n&&(t=n[1]);}else t=e.name;return t}t.exports=i;},{}],38:[function(e,t,n){function o(e,t){return null!=e&&t in Object(e)}function r(e){return e.replace(/([^\\])\[/g,"$1.[").match(/(\\\.|[^.]+?)+/g).map((function(e){if("constructor"===e||"__proto__"===e||"prototype"===e)return {};var t=/^\[(\d+)\]$/.exec(e);return t?{i:parseFloat(t[1])}:{p:e.replace(/\\([.[\]])/g,"$1")}}))}function i(e,t,n){var o=e,r=null;n=void 0===n?t.length:n;for(var i=0;i<n;i++){var s=t[i];o&&(o=void 0===s.p?o[s.i]:o[s.p],i===n-1&&(r=o));}return r}function s(e,t,n){for(var o=e,r=n.length,i=null,s=0;s<r;s++){var a=null,c=null;if(i=n[s],s===r-1)o[a=void 0===i.p?i.i:i.p]=t;else if(void 0!==i.p&&o[i.p])o=o[i.p];else if(void 0!==i.i&&o[i.i])o=o[i.i];else {var u=n[s+1];a=void 0===i.p?i.i:i.p,c=void 0===u.p?[]:{},o[a]=c,o=o[a];}}}function a(e,t){var n=r(t),s=n[n.length-1],a={parent:n.length>1?i(e,n,n.length-1):e,name:s.p||s.i,value:i(e,n)};return a.exists=o(a.parent,a.name),a}function c(e,t){return a(e,t).value}function u(e,t,n){return s(e,n,r(t)),e}t.exports={hasProperty:o,getPathInfo:a,getPathValue:c,setPathValue:u};},{}],39:[function(t,n,o){!function(e,t){"object"==typeof o&&void 0!==n?n.exports=t():e.typeDetect=t();}(this,(function(){var t="function"==typeof Promise,n="object"==typeof self?self:e,o="undefined"!=typeof Symbol,r="undefined"!=typeof Map,i="undefined"!=typeof Set,s="undefined"!=typeof WeakMap,a="undefined"!=typeof WeakSet,c="undefined"!=typeof DataView,u=o&&void 0!==Symbol.iterator,f=o&&void 0!==Symbol.toStringTag,p=i&&"function"==typeof Set.prototype.entries,l=r&&"function"==typeof Map.prototype.entries,h=p&&Object.getPrototypeOf((new Set).entries()),d=l&&Object.getPrototypeOf((new Map).entries()),y=u&&"function"==typeof Array.prototype[Symbol.iterator],b=y&&Object.getPrototypeOf([][Symbol.iterator]()),g=u&&"function"==typeof String.prototype[Symbol.iterator],w=g&&Object.getPrototypeOf(""[Symbol.iterator]()),m=8,v=-1;function x(e){var o=typeof e;if("object"!==o)return o;if(null===e)return "null";if(e===n)return "global";if(Array.isArray(e)&&(!1===f||!(Symbol.toStringTag in e)))return "Array";if("object"==typeof window&&null!==window){if("object"==typeof window.location&&e===window.location)return "Location";if("object"==typeof window.document&&e===window.document)return "Document";if("object"==typeof window.navigator){if("object"==typeof window.navigator.mimeTypes&&e===window.navigator.mimeTypes)return "MimeTypeArray";if("object"==typeof window.navigator.plugins&&e===window.navigator.plugins)return "PluginArray"}if(("function"==typeof window.HTMLElement||"object"==typeof window.HTMLElement)&&e instanceof window.HTMLElement){if("BLOCKQUOTE"===e.tagName)return "HTMLQuoteElement";if("TD"===e.tagName)return "HTMLTableDataCellElement";if("TH"===e.tagName)return "HTMLTableHeaderCellElement"}}var u=f&&e[Symbol.toStringTag];if("string"==typeof u)return u;var p=Object.getPrototypeOf(e);return p===RegExp.prototype?"RegExp":p===Date.prototype?"Date":t&&p===Promise.prototype?"Promise":i&&p===Set.prototype?"Set":r&&p===Map.prototype?"Map":a&&p===WeakSet.prototype?"WeakSet":s&&p===WeakMap.prototype?"WeakMap":c&&p===DataView.prototype?"DataView":r&&p===d?"Map Iterator":i&&p===h?"Set Iterator":y&&p===b?"Array Iterator":g&&p===w?"String Iterator":null===p?"Object":Object.prototype.toString.call(e).slice(m,v)}return x}));},{}]},{},[1])(1);o.version;o.AssertionError;o.use;o.util;o.config;o.Assertion;var f=o.expect;o.should;o.Should;o.assert;
 
-function parse_comment(str, index) {
-    let currentIndex = index;
-    if (str[currentIndex] != '/' || str[++currentIndex] != '*') {
-        return null;
-    }
-    while (currentIndex++ < str.length) {
-        if (str[currentIndex] == '*' && str[currentIndex + 1] == '/') {
-            return currentIndex + 1;
-        }
-    }
-    return null;
-}
-
-// https://www.w3.org/TR/CSS21/syndata.html#syntax
-// https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
-const nonascii = `[^\u{0}-\u{0ed}]`;
-const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
-const escape = `${unicode}|\\[^\n\r\f0-9a-f]`;
-const nmstart = `[_a-z]|${nonascii}|${escape}`;
-const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`;
-const ident = `[-]{0,2}${nmstart}${nmchar}*`;
-function isIdent(name) {
-    if (Array.isArray(name)) {
-        name = name.join('');
-    }
-    return name != null && new RegExp(`^${ident}$`).test(name);
-}
-function isNewLine(str) {
-    return str == '\n' || str == '\r\n' || str == '\r' || str == '\f';
-}
-function isWhiteSpace(str) {
-    return /^\s$/sm.test(str);
-}
-
-function update(location, css) {
-    if (css.length == 0) {
-        return location;
-    }
-    let i = -1;
-    const j = css.length - 1;
-    if (location.line == 0) {
-        location.line = 1;
-    }
-    while (++i <= j) {
-        if (isNewLine(css[i])) {
-            location.line++;
-            location.column = 0;
-            if (css[i] == '\r' && css[i + 1] == '\n') {
-                i++;
-                location.index++;
-            }
-        }
-        else {
-            location.column++;
-        }
-        location.index++;
-    }
-    return location;
-}
-
-class Tokenizer {
-    #root;
-    constructor(root) {
-        this.#root = root;
-    }
-    *parse(str) {
-        if (str.length == 0) {
-            return;
-        }
-        let value;
-        let node;
-        let index;
-        let info;
-        this.#root.location.src || '';
-        let i = 0;
-        let chr;
-        this.#root.children;
-        // const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
-        const j = str.length - 1;
-        const position = this.#root.location.end;
-        while (i <= j) {
-            chr = str[i];
-            if (chr === '') {
-                break;
-            }
-            if (isWhiteSpace(chr)) {
-                let k = i + 1;
-                while (k <= j && isWhiteSpace(str[k])) {
-                    k++;
-                }
-                update(position, str.slice(i, k));
-                i = k;
-                chr = str[k];
-            }
-            if (i > j) {
-                break;
-            }
-            // parse comment
-            if (chr == '/' && str[i + 1] == '*') {
-                index = parse_comment(str, i);
-                if (index == null) {
-                    value = str.slice(i);
-                    node = {
-                        location: {
-                            start: update({ ...position }, value.slice(0, 1)),
-                            end: { ...update(position, value) }
-                        },
-                        type: 'InvalidComment',
-                        value: value.join('')
-                    };
-                    Object.assign(position, node.location.end);
-                    yield { node, direction: 'enter' };
-                    break;
-                }
-                value = str.slice(i, index + 1);
-                node = {
-                    location: {
-                        start: update({ ...position }, value.slice(0, 1)),
-                        end: { ...update({ ...position }, value) }
-                    },
-                    type: 'Comment',
-                    value: value.join('')
-                };
-                Object.assign(position, node.location.end);
-                if (node.location.end.column == 0) {
-                    node.location.end.column = 1;
-                }
-                yield { node, direction: 'enter' };
-                i += value.length;
-                continue;
-            }
-            else {
-                index = find(str, i + 1, ';{}');
-                // console.log({index, chr: str.charAt(i + 1)})
-                if (index == null) {
-                    // console.debug({'i+1': i + 1, index, str: str.slice(i)}, new Error(`missing chars`));
-                    value = str.slice(i);
-                    console.error(`Declaration or AtRule block? - "${value}`);
-                    update(position, value);
-                    break;
-                }
-                else if (str[index] == '{') {
-                    // parse block
-                    info = parseBlock(str, i, index);
-                    if (info.type == 'AtRule') {
-                        yield* this.#parseAtRule(position, info);
-                    }
-                    else {
-                        yield* this.#parseRule(position, info);
-                    }
-                }
-                else {
-                    const match = str.slice(i, index + 1);
-                    info = parseBlock(str, i, index);
-                    if (match[0] == '@') {
-                        yield* this.#parseAtRule(position, info);
-                    }
-                    else {
-                        yield* this.#parseDeclaration(position, info);
-                    }
-                }
-                i += info.block.length;
-                if (j <= info.block.length) {
-                    break;
-                }
-            }
-        }
-        //
-        if (this.#root.type == 'StyleSheet' && position.column == 0) {
-            position.column = 1;
-        }
-    }
-    *#parseAtRule(position, info) {
-        let node;
-        // @ts-ignore
-        const { body, selector, block, type } = info;
-        if (!('selector' in info)) {
-            const { name, value } = info;
-            node = {
-                location: {
-                    start: update({ ...position }, [name[0]]),
-                    end: update({ ...position }, block)
-                },
-                type,
-                value,
-                name
-            };
-            node.location.end.column = Math.max(1, node.location.end.column - 1);
-            yield { node, direction: 'enter' };
-            return;
-        }
-        else {
-            const [name, value] = parseAtRule(selector);
-            if (!isIdent(name)) {
-                node = (body == null ? {
-                    location: {
-                        start: update({ ...position }, [name[0]]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'InvalidAtRule',
-                    value,
-                    name
-                } : {
-                    location: {
-                        start: update({ ...position }, [name[0]]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'InvalidAtRule',
-                    value: value,
-                    name,
-                    body
-                });
-                // node.location.end.column = Math.max(1, node.location.end.column - 1);
-                Object.assign(position, node.location.end);
-                if (node.location.end.column == 0) {
-                    node.location.end.column = 1;
-                }
-                yield { node, direction: 'enter' };
-                return;
-            }
-            else {
-                // @ts-ignore
-                const { type } = info;
-                node = body == null ? {
-                    location: {
-                        start: update({ ...position }, [name[0]]),
-                        end: update({ ...position }, block)
-                    },
-                    type,
-                    value: value,
-                    name
-                } : {
-                    location: {
-                        start: update({ ...position }, [name[0]]),
-                        end: update({ ...position }, selector.concat('{'))
-                    },
-                    type,
-                    value,
-                    name,
-                    children: []
-                };
-                yield { node, direction: 'enter' };
-                if (body.length > 0) {
-                    // @ts-ignore
-                    const tokenizer = new Tokenizer(node);
-                    // @ts-ignore
-                    yield* tokenizer.parse(body);
-                }
-            }
-        }
-        const str = block.slice(selector.length + 1 + (body != null ? body.length : 0));
-        if (str.length > 0) {
-            update(node.location.end, str);
-        }
-        Object.assign(position, node.location.end);
-        if (node.location.end.column == 0) {
-            node.location.end.column = 1;
-        }
-        if ('children' in node) {
-            yield { node, direction: 'exit' };
-        }
-    }
-    *#parseRule(position, info) {
-        let node;
-        // @ts-ignore
-        const { body, selector, block } = info;
-        // @ts-ignore
-        node = {
-            location: {
-                start: update({ ...position }, selector[0]),
-                end: update({ ...position }, selector.concat('{'))
-            },
-            type: 'Rule',
-            selector: selector.join('').trimEnd(),
-            children: []
-        };
-        // @ts-ignore
-        yield { node, direction: 'enter' };
-        if (body != null) {
-            // node.location.end.column = Math.max(1, node.location.end.column - 1);
-            // @ts-ignore
-            const tokenizer = new Tokenizer(node);
-            // @ts-ignore
-            yield* tokenizer.parse(body);
-        }
-        const str = block.slice(selector.length + 1 + (body != null ? body.length : 0));
-        if (str.length > 0) {
-            update(node.location.end, str);
-        }
-        // if (node.location.end.column == 0) {
-        // node.location.end.column = Math.max(1, node.location.end.column - 1);
-        // }
-        Object.assign(position, node.location.end);
-        if (node.location.end.column == 0) {
-            node.location.end.column = 1;
-        }
-        if ('children' in node) {
-            yield { node, direction: 'exit' };
-        }
-    }
-    *#parseDeclaration(position, info) {
-        // @ts-ignore
-        // const [name, value] = parseDeclaration(info.body);
-        // console.debug({info, name, value});
-        const { name, value } = info;
-        // console.log({info});
-        const node = {
-            type: 'Declaration',
-            location: {
-                start: update({ ...position }, name.charAt(0)),
-                end: update({ ...position }, info.body),
-                // src
-            },
-            name,
-            value
-        };
-        Object.assign(position, node.location.end);
-        const str = info.block.slice(info.body.length);
-        if (str.length > 0) {
-            update(position, str);
-        }
-        // node.location.start.column = Math.max(1, node.location.start.column - 1);
-        // node.location.end.column = Math.max(1, node.location.end.column - 1);
-        yield { node, direction: 'enter' };
-    }
-}
-
 /**
  * a handler that is executed only once
  * <code>
@@ -1237,59 +763,843 @@ class Observer {
     }
 }
 
+class Renderer {
+    #options;
+    #indents = [];
+    constructor(options = {}) {
+        this.#options = Object.assign({
+            indent: ' ',
+            newLine: '\n',
+            compress: false,
+            removeComments: false
+        }, options);
+    }
+    render(data) {
+        if (data instanceof Parser) {
+            data = data.getAst();
+        }
+        return this.#doRender(data);
+    }
+    #doRender(data, level = 0) {
+        if (this.#indents.length < level + 1) {
+            this.#indents.push(this.#options.indent.repeat(level));
+        }
+        if (this.#indents.length < level + 2) {
+            this.#indents.push(this.#options.indent.repeat(level + 1));
+        }
+        const indent = this.#indents[level];
+        const indentSub = this.#indents[level + 1];
+        const reducer = (acc, curr) => {
+            acc += this.renderToken(curr);
+            return acc;
+        };
+        switch (data.type) {
+            case 'StyleSheet':
+                return data.children.reduce((css, node) => {
+                    const str = this.#doRender(node, 0);
+                    if (str === '') {
+                        return css;
+                    }
+                    if (css === '') {
+                        return str;
+                    }
+                    return `${css}${this.#options.newLine}${str}`;
+                }, '');
+            case 'AtRule':
+            case 'Rule':
+                if (data.type == 'AtRule' && !('children' in data)) {
+                    return `${indent}@${data.name.reduce(reducer, '')} ${data.value.reduce(reducer, '')};`;
+                }
+                const children = data.children.reduce((css, node) => {
+                    let str;
+                    if (node.type == 'Comment') {
+                        str = this.#options.removeComments ? '' : node.value;
+                    }
+                    else if (node.type == 'Declaration') {
+                        str = `${node.name.reduce(reducer, '')}:${this.#options.indent}${node.value.reduce(reducer, '')};`;
+                    }
+                    else if (node.type == 'AtRule' && !('children' in node)) {
+                        str = `@${node.name.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${node.value.reduce(reducer, '')};`;
+                    }
+                    else {
+                        str = this.#doRender(node, level + 1);
+                    }
+                    if (css === '') {
+                        return str;
+                    }
+                    if (str === '') {
+                        return css;
+                    }
+                    return `${css}${this.#options.newLine}${indentSub}${str}`;
+                }, '');
+                if (data.type == 'AtRule') {
+                    return indent + '@' + data.name.reduce(reducer, '') + `${this.#options.indent}${data.value ? data.value.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                }
+                return indent + data.selector.reduce(reducer, '') + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+        }
+        return '';
+    }
+    renderToken(token) {
+        /*
+        |
+     | FunctionToken |
+    | CDOCommentToken |
+    BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
+    DashMatchToken | LessThanToken | GreaterThanToken;
+         */
+        switch (token.type) {
+            case 'function':
+                return token.value + '(';
+            case 'includes':
+                return '~=';
+            case 'dash-match':
+                return '|=';
+            case 'less-than':
+                return '<';
+            case 'greater-than':
+                return '>';
+            case 'start-parens':
+                return '(';
+            case 'end-parens':
+                return ')';
+            case 'attr-start':
+                return '[';
+            case 'attr-end':
+                return ']';
+            case 'whitespace':
+                return ' ';
+            case 'colon':
+                return ':';
+            case 'semi-colon':
+                return ';';
+            case 'comma':
+                return ',';
+            case 'dimension':
+            case 'percentage':
+                return token.value + token.type;
+            case 'at-rule':
+            case 'number':
+            case 'hash':
+            case 'comment':
+            case 'literal':
+            case 'string':
+            case 'ident':
+                return token.value;
+        }
+        throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    }
+}
+
+// https://www.w3.org/TR/CSS21/syndata.html#syntax
+// https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
+const num = `[0-9]+|[0-9]*\\.[0-9]+`;
+const nl = `\n|\r\n|\r|\f`;
+const nonascii = `[^\u{0}-\u{0ed}]`;
+const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
+const escape = `(${unicode})|(\\[^\n\r\f0-9a-f])`;
+const nmstart = `[_a-z]|${nonascii}|${escape}`;
+const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`;
+const ident = `[-]{0,2}(${nmstart})(${nmchar})*`;
+const string1 = `\"([^\n\r\f\\"]|\\${nl}|${escape})*\"`;
+const string2 = `\'([^\n\r\f\\']|\\${nl}|${escape})*\'`;
+const string = `(${string1})|(${string2})`;
+const name = `${nmchar}+`;
+const hash = `#${name}`;
+function isIdent(name) {
+    return name != null && new RegExp(`^${ident}$`).test(name);
+}
+function isHash(name) {
+    return name != null && new RegExp(`^(${hash})$`).test(name);
+}
+function isNumber(name) {
+    return name != null && new RegExp(`^(${num})$`).test(name);
+}
+function isDimension(name) {
+    return name != null && new RegExp(`^(${num})(${ident})$`).test(name);
+}
+function isPercentage(name) {
+    return name != null && new RegExp(`^(${num})%$`).test(name);
+}
+function isFunction(name) {
+    return name != null && new RegExp(`^(${ident})\\($`).test(name);
+}
+function isAtKeyword(name) {
+    return name != null && new RegExp(`^@${ident}$`).test(name);
+}
+function isString(value) {
+    return value != null && new RegExp(`^${string}$`, 'sm').test(value);
+}
+function isNewLine(str) {
+    return str == '\n' || str == '\r\n' || str == '\r' || str == '\f';
+}
+
+function update(location, css) {
+    if (css.length == 0) {
+        return location;
+    }
+    let i = -1;
+    const j = css.length - 1;
+    if (location.line == 0) {
+        location.line = 1;
+    }
+    while (++i <= j) {
+        if (isNewLine(css[i])) {
+            location.line++;
+            location.column = 0;
+            if (css[i] == '\r' && css[i + 1] == '\n') {
+                i++;
+                location.index++;
+            }
+        }
+        else {
+            location.column++;
+        }
+        location.index++;
+    }
+    return location;
+}
+
+function* tokenize(iterator, position) {
+    let result;
+    const buffer = [];
+    while (true) {
+        result = iterator.next();
+        if (result.done) {
+            break;
+        }
+        if (/\s/.test(result.value)) {
+            if (buffer.length > 0) {
+                yield getType(buffer);
+                update(position, buffer);
+                buffer.length = 0;
+            }
+            const whitespace = [result.value];
+            while (!result.done) {
+                result = iterator.next();
+                if (result.done) {
+                    update(position, whitespace);
+                    break;
+                }
+                if (!/\s/.test(result.value)) {
+                    break;
+                }
+                whitespace.push(result.value);
+            }
+            yield { type: 'whitespace' };
+            update(position, whitespace);
+            if (result.done) {
+                break;
+            }
+        }
+        switch (result.value) {
+            case '/':
+                if (buffer.length > 0) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                buffer.push(result.value);
+                result = iterator.next();
+                if (result.done) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    return;
+                }
+                buffer.push(result.value);
+                if (result.value != '*') {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                    buffer.push(result.value);
+                    break;
+                }
+                while (!result.done) {
+                    result = iterator.next();
+                    if (result.done) {
+                        yield { type: 'bad-comment', value: buffer.join('')
+                        };
+                        update(position, buffer);
+                        return;
+                    }
+                    if (result.value == '\\') {
+                        buffer.push(result.value);
+                        result = iterator.next();
+                        if (result.done) {
+                            yield { type: 'bad-comment',
+                                value: buffer.join('') };
+                            update(position, buffer);
+                            return;
+                        }
+                        buffer.push(result.value);
+                        continue;
+                    }
+                    if (result.value == '*') {
+                        buffer.push(result.value);
+                        result = iterator.next();
+                        if (result.done) {
+                            yield { type: 'bad-comment', value: buffer.join('')
+                            };
+                            update(position, buffer);
+                            return;
+                        }
+                        buffer.push(result.value);
+                        if (result.value == '/') {
+                            yield { type: 'comment', value: buffer.join('') };
+                            update(position, buffer);
+                            buffer.length = 0;
+                            break;
+                        }
+                    }
+                    else {
+                        buffer.push(result.value);
+                    }
+                }
+                break;
+            case '<':
+                if (buffer.length > 0) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                buffer.push(result.value);
+                result = iterator.next();
+                if (result.done) {
+                    break;
+                }
+                if (result.value != '!') {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                    buffer.push(result.value);
+                    break;
+                }
+                buffer.push(result.value);
+                result = iterator.next();
+                if (result.done) {
+                    break;
+                }
+                if (result.value != '-') {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                    buffer.push(result.value);
+                    break;
+                }
+                buffer.push(result.value);
+                result = iterator.next();
+                if (result.done) {
+                    break;
+                }
+                if (result.value != '-') {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                    buffer.push(result.value);
+                    break;
+                }
+                buffer.push(result.value);
+                while (!result.done) {
+                    result = iterator.next();
+                    if (result.done) {
+                        break;
+                    }
+                    buffer.push(result.value);
+                    if (result.value == '>' && buffer[buffer.length - 2] == '-' && buffer[buffer.length - 3] == '-') {
+                        yield {
+                            type: 'cdo-comment',
+                            value: buffer.join('')
+                        };
+                        update(position, buffer);
+                        buffer.length = 0;
+                        break;
+                    }
+                }
+                if (result.done) {
+                    yield { type: 'bad-cdo-comment', value: buffer.join('') };
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                break;
+            case '\\':
+                buffer.push(result.value);
+                result = iterator.next();
+                if (result.done) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                buffer.push(result.value);
+                break;
+            case '"':
+            case "'":
+                const quote = result.value;
+                let hasNewLine = false;
+                if (buffer.length > 0) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                buffer.push(result.value);
+                while (!result.done) {
+                    result = iterator.next();
+                    if (result.done) {
+                        yield { type: hasNewLine ? 'bad-string' : 'unclosed-string', value: buffer.join('') };
+                        update(position, buffer);
+                        return;
+                    }
+                    if (result.value == '\\') {
+                        buffer.push(result.value);
+                        result = iterator.next();
+                        if (result.done) {
+                            yield getType(buffer);
+                            update(position, buffer);
+                            return;
+                        }
+                        buffer.push(result.value);
+                        continue;
+                    }
+                    if (result.value == quote) {
+                        buffer.push(result.value);
+                        yield { type: hasNewLine ? 'bad-string' : 'string', value: buffer.join('') };
+                        update(position, buffer);
+                        buffer.length = 0;
+                        break;
+                    }
+                    if (isNewLine(result.value)) {
+                        hasNewLine = true;
+                    }
+                    if (hasNewLine && result.value == ';') {
+                        yield { type: 'bad-string', value: buffer.join('') };
+                        update(position, buffer);
+                        yield getType([result.value]);
+                        update(position, [result.value]);
+                        buffer.length = 0;
+                        break;
+                    }
+                    buffer.push(result.value);
+                }
+                break;
+            case '~':
+            case '|':
+                if (buffer.length > 0) {
+                    yield getType(buffer);
+                    buffer.length = 0;
+                }
+                buffer.push(result.value);
+                result = iterator.next();
+                if (result.done) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    return;
+                }
+                if (result.value == '=') {
+                    buffer.push(result.value);
+                    yield { type: buffer[0] == '~' ? 'includes' : 'dash-matches', value: buffer.join('') };
+                    update(position, buffer);
+                    buffer.length = 0;
+                    break;
+                }
+                yield getType(buffer);
+                update(position, buffer);
+                buffer.length = 0;
+                buffer.push(result.value);
+                break;
+            case ':':
+            case ',':
+            case ';':
+            case '=':
+                if (buffer.length > 0) {
+                    update(position, buffer);
+                    yield getType(buffer);
+                    buffer.length = 0;
+                }
+                yield getType([result.value]);
+                update(position, [result.value]);
+                break;
+            case ')':
+                if (buffer.length > 0) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                yield { type: 'end-parens' };
+                update(position, [result.value]);
+                break;
+            case '(':
+                if (buffer.length == 0) {
+                    yield { type: 'start-parens' };
+                    update(position, [result.value]);
+                }
+                else {
+                    buffer.push(result.value);
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                break;
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+                if (buffer.length > 0) {
+                    yield getType(buffer);
+                    update(position, buffer);
+                    buffer.length = 0;
+                }
+                yield getBlockType(result.value);
+                update(position, [result.value]);
+                break;
+            default:
+                buffer.push(result.value);
+                break;
+        }
+    }
+    if (buffer.length > 0) {
+        yield getType(buffer);
+        update(position, buffer);
+    }
+}
+function getBlockType(chr) {
+    if (chr == '{') {
+        return { type: 'block-start' };
+    }
+    if (chr == '}') {
+        return { type: 'block-end' };
+    }
+    if (chr == '[') {
+        return { type: 'attr-start' };
+    }
+    if (chr == ']') {
+        return { type: 'attr-end' };
+    }
+    throw new Error(`unhandled token: '${chr}'`);
+}
+function getType(buffer) {
+    const value = buffer.join('');
+    if (value === '') {
+        throw new Error('empty string?');
+    }
+    if (value == ':') {
+        return { type: 'colon' };
+    }
+    if (value == ';') {
+        return { type: 'semi-colon' };
+    }
+    if (value == ',') {
+        return { type: 'comma' };
+    }
+    if (value == '<') {
+        return { type: 'less-than' };
+    }
+    if (value == '>') {
+        return { type: 'greater-than' };
+    }
+    if (isAtKeyword(value)) {
+        return {
+            type: 'at-rule',
+            value: value.slice(1),
+            // buffer: buffer.slice()
+        };
+    }
+    if (isNumber(value)) {
+        return {
+            type: 'number',
+            value: value,
+            // buffer: buffer.slice()
+        };
+    }
+    if (isPercentage(value)) {
+        return {
+            type: 'percentage',
+            value: value.slice(0, -1)
+        };
+    }
+    if (isDimension(value)) {
+        const match = value.match(new RegExp(`^(${num})(${ident})$`));
+        return {
+            type: 'dimension',
+            value: match[1],
+            unit: match[2]
+        };
+    }
+    if (isFunction(value)) {
+        return {
+            type: 'function',
+            value: value.slice(0, -1)
+        };
+    }
+    if (isIdent(value)) {
+        return {
+            type: 'ident',
+            value
+        };
+    }
+    if (value.charAt(0) == '#' && isHash(value)) {
+        return {
+            type: 'hash',
+            value
+        };
+    }
+    if (isString(value)) {
+        return {
+            type: 'string',
+            value
+        };
+    }
+    if ('"\''.includes(value.charAt(0))) {
+        return {
+            type: 'unclosed-string',
+            value
+        };
+    }
+    return {
+        type: 'literal',
+        value
+    };
+}
+
+function matchComponents(iterator, position, src, endBlock, states) {
+    // const states: string[] = [];
+    const errors = [];
+    const tokens = [];
+    const pairs = { 'end-parens': 'start-parens', 'block-end': 'block-start', 'attr-end': 'attr-start' };
+    let result = iterator.next();
+    while (!result.done) {
+        if (endBlock.includes(result.value.type)) {
+            // console.debug({endBlock: result.value});
+            tokens.push(result.value);
+            break;
+        }
+        switch (result.value.type) {
+            case 'start-parens':
+            case 'block-start':
+            case 'attr-start':
+                states.push(result.value);
+                break;
+            case 'attr-end':
+            case 'end-parens':
+            case 'block-end':
+                if (states.length == 0) {
+                    errors.push(SyntaxError(`Unexpected token found: {${result.value.type}} at ${src}:${position.line}:${position.column}`));
+                }
+                else if (states[states.length - 1]?.type != pairs[result.value.type]) {
+                    errors.push(SyntaxError(`Unexpected token: expecting {${states[states.length - 1].type.replace('start', 'end')}} found {${result.value.type}} at ${src}:${position.line}:${position.column}`));
+                }
+                else {
+                    states.pop();
+                }
+                break;
+        }
+        tokens.push(result.value);
+        result = iterator.next();
+    }
+    return { tokens, errors };
+}
+
 class Parser {
     #options;
     #observer;
-    #tokenizer;
+    // @ts-ignore
     #root;
     #errors = [];
     constructor(options = {
-        strict: false
+        strict: false,
+        location: false
     }) {
-        this.#options = { strict: false, ...options };
+        this.#options = { strict: false, location: false, ...options };
         this.#observer = new Observer();
-        this.#root = this.#createRoot();
-        this.#tokenizer = new Tokenizer(this.#root);
     }
     parse(css) {
         this.#errors = [];
+        this.#createRoot();
+        if (css.length == 0) {
+            return this;
+        }
         const stack = [];
-        const hasListeners = this.#observer.hasListeners('traverse');
+        this.#observer.hasListeners('traverse');
+        // @ts-ignore
+        const position = this.#root.location.end;
+        // @ts-ignore
+        const src = this.#root.location.src;
+        const location = this.#options.location;
         let context = this.#root;
-        for (const { node, direction, error } of this.#tokenizer.parse([...css])) {
-            if (error) {
-                if (this.#options.strict) {
-                    throw error;
+        let iterator = css[Symbol.iterator]();
+        const generator = tokenize(iterator, position);
+        let result;
+        let token;
+        while (true) {
+            result = generator.next();
+            if (result.done) {
+                break;
+            }
+            if (result.value.type == 'block-end') {
+                // @ts-ignore
+                context = stack.pop();
+                //@ts-ignore
+                if (this.#options.location && context != null && context != this.#root) {
+                    // @ts-ignore
+                    context.location.end = { ...position };
                 }
-                this.#observer.trigger('error', error, node);
-                this.#errors.push(error);
+                context = stack[stack.length - 1] || this.#root;
                 continue;
             }
-            if (direction == 'enter') {
-                // @ts-ignore
-                if (node.type == 'StyleSheet') {
-                    // @ts-ignore
-                    context.children.push(...node.children);
-                }
-                else {
-                    // @ts-ignore
-                    context.children.push(node);
-                }
-                // @ts-ignore
-                if ('children' in node) {
-                    // @ts-ignore
-                    stack.push(node);
-                    // @ts-ignore
-                    context = node;
-                }
+            switch (context.type) {
+                case 'AtRule':
+                case 'Rule':
+                case "StyleSheet":
+                    if (result.value.type == 'whitespace') {
+                        continue;
+                    }
+                    if (result.value.type == 'bad-comment' || result.value.type == 'bad-cdo-comment') {
+                        this.#errors.push(SyntaxError(`unexpected token ${result.value.type} at ${src}:${position.line}:${position.column}`));
+                        break;
+                    }
+                    if (result.value.type == 'cdo-comment' || result.value.type == 'comment') {
+                        if (result.value.type == 'cdo-comment' && context.type != 'StyleSheet') {
+                            this.#errors.push(SyntaxError(`unexpected CDO token at ${src}:${position.line}:${position.column}`));
+                            break;
+                        }
+                        const token = { type: 'Comment', value: result.value.value };
+                        if (location) {
+                            token.location = {
+                                start: { ...position },
+                                end: update({ ...position }, [...result.value.value]),
+                                src
+                            };
+                            if (token.location.start.column == 0) {
+                                token.location.start.column = 1;
+                            }
+                        }
+                        // @ts-ignore
+                        context.children.push(token);
+                        continue;
+                    }
+                    if (result.value.type == 'at-rule') {
+                        token = { type: 'AtRule' };
+                        if (this.#options.location) {
+                            token.location = {
+                                start: { ...position },
+                                end: update({ ...position }, [...result.value.value]),
+                                src
+                            };
+                        }
+                        const { tokens, errors } = matchComponents(generator, position, src, ['semi-colon', 'block-start'], []);
+                        // @ts-ignore
+                        context.children.push(token);
+                        const end = tokens[tokens.length - 1];
+                        if (end?.type == 'block-start') {
+                            while (['block-start', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
+                                tokens.pop();
+                            }
+                            token.children = [];
+                            stack.push(token);
+                            context = token;
+                        }
+                        else {
+                            while (['semi-colon', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
+                                tokens.pop();
+                            }
+                            if (this.#options.location) {
+                                // @ts-ignore
+                                token.location.end = { ...position };
+                            }
+                        }
+                        token.name = [result.value];
+                        token.value = tokens;
+                        while (token.value[0]?.type == 'whitespace') {
+                            token.value.shift();
+                        }
+                        break;
+                    }
+                    else {
+                        // Rule or declaration
+                        // @ts-ignore
+                        const token = { type: '' };
+                        if (location) {
+                            token.location = {
+                                start: { ...position },
+                                end: { ...position },
+                                src
+                            };
+                        }
+                        const { tokens, errors } = matchComponents(generator, position, src, context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'], [result.value]);
+                        tokens.unshift(result.value);
+                        if (tokens[tokens.length - 1]?.type == 'block-start') {
+                            while (['whitespace', 'block-start'].includes(tokens[tokens.length - 1]?.type)) {
+                                tokens.pop();
+                            }
+                            stack.push(token);
+                            Object.assign(token, { type: 'Rule', selector: tokens, children: [] });
+                            // @ts-ignore
+                            context.children.push(token);
+                            context = token;
+                            break;
+                        }
+                        else {
+                            let index = -1;
+                            const parent = context;
+                            if (tokens[tokens.length - 1]?.type == 'block-end') {
+                                stack.pop();
+                                context = stack[stack.length - 1] || this.#root;
+                            }
+                            while (['semi-colon', 'block-end', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
+                                tokens.pop();
+                            }
+                            tokens.some((t, key) => {
+                                if (t.type == 'colon') {
+                                    index = key;
+                                    return true;
+                                }
+                                return false;
+                            });
+                            if (index == -1) {
+                                this.#errors.push(new SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`));
+                                break;
+                            }
+                            else {
+                                Object.assign(token, {
+                                    type: 'Declaration',
+                                    name: tokens.slice(0, index),
+                                    value: tokens.slice(index + 1)
+                                });
+                                // @ts-ignore
+                                while (token.value[0]?.type == 'whitespace') {
+                                    // @ts-ignore
+                                    token.value.shift();
+                                }
+                                let validDeclaration = true;
+                                for (const val of token.value) {
+                                    if (val.type == 'unclosed-string') {
+                                        // recoverable
+                                        this.#errors.push(SyntaxError(`unclosed string at ${src}:${position.line}:${position.column}`));
+                                        // @ts-ignore
+                                        val.type = 'string';
+                                        val.value += val.value.charAt(0);
+                                    }
+                                    else if (['bad-string'].includes(val.type)) {
+                                        validDeclaration = false;
+                                        this.#errors.push(SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`));
+                                        break;
+                                    }
+                                }
+                                if (validDeclaration) {
+                                    // @ts-ignore
+                                    parent.children.push(token);
+                                }
+                            }
+                        }
+                    }
+                    break;
             }
-            else if (direction == 'exit') {
-                stack.pop();
+            // if (hasListeners) {
+            //
+            //     this.#observer.trigger('traverse', result, 'enter', context);
+            // }
+        }
+        if (this.#options.location) {
+            for (const context of stack) {
                 // @ts-ignore
-                context = stack[stack.length - 1] || this.#root;
-            }
-            if (hasListeners) {
-                this.#observer.trigger('traverse', node, direction, context);
+                context.location.end = { ...position };
             }
         }
         return this;
@@ -1309,10 +1619,8 @@ class Parser {
         let previous = null;
         while (i--) {
             const node = this.#root.children[i];
-            // if
             // @ts-ignore
             if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-                // console.log({previous})
                 if (!('children' in node)) {
                     // @ts-ignore
                     node.children = [];
@@ -1337,13 +1645,16 @@ class Parser {
     #compactRule(node) {
     }
     getAst() {
+        if (this.#root == null) {
+            this.#createRoot();
+        }
         return this.#root;
     }
     getErrors() {
         return this.#errors;
     }
     #createRoot() {
-        return {
+        this.#root = {
             type: "StyleSheet",
             location: {
                 start: {
@@ -1355,56 +1666,21 @@ class Parser {
                     index: -1,
                     line: 1,
                     column: 0
-                }
+                },
+                src: ''
             },
             children: []
         };
+        return this;
+    }
+    toString() {
+        return new Renderer().render(this);
     }
 }
 
+// import {parseBlock} from "../../src/parser/utils/block";
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
-const atRule = `@media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
-    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
-    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
-}}
-`;
-const Rule = `:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
-    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
-    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
-}
-`;
-function toStringProperties(info) {
-    return Object.entries(info).reduce((acc, curr) => {
-        // @ts-ignore
-        acc[curr[0]] = Array.isArray(curr[1]) ? curr[1].join('') : curr[1];
-        return acc;
-    }, {});
-}
 describe('parse block', function () {
-    it('parse at-rules block', function () {
-        const info = toStringProperties(parseBlock([...atRule], 0));
-        const info2 = toStringProperties(parseBlock([...atRule], 0, find([...atRule], 1, ';{}')));
-        f(info).deep.equals({
-            type: "AtRule",
-            selector: "@media all ",
-            body: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}",
-            block: "@media all {:root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}}"
-        });
-        f(info).deep.equals(info2);
-    });
-    it('parse rules block', function () {
-        const info = toStringProperties(parseBlock([...Rule], 0));
-        const info2 = toStringProperties(parseBlock([...Rule], 0, find([...Rule], 1, ';{}')));
-        f(info).deep.equals({
-            type: "Rule",
-            selector: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] ",
-            body: "\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n",
-            block: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}"
-        });
-        f(info2).deep.equals(info);
-    });
     it('parse file', async function () {
         const file = (await readFile(`${dir}/css/smalli.css`)).toString();
         f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));

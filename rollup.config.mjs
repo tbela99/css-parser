@@ -5,7 +5,7 @@ import glob from "glob";
 
 export default [...await new Promise((resolve, reject) => {
 
-    glob('./test/specs/**/*.ts', (err, files) => {
+    glob('./test/specs/**/*.test.ts', (err, files) => {
 
         if (err) {
 
