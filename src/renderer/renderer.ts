@@ -4,7 +4,7 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleStyleSheet,
+    AstRuleStyleSheet, DimensionToken,
     RenderOptions,
     Token
 } from "../@types";
@@ -57,6 +57,10 @@ export class Renderer {
         };
 
         switch (data.type) {
+
+            case 'Comment':
+
+                return this.#options.removeComments ? '' : (<AstComment>data).value;
 
             case 'StyleSheet':
 
@@ -186,13 +190,16 @@ export class Renderer {
                 return ',';
 
             case 'dimension':
+                return token.value + (<DimensionToken>token).unit;
+
             case 'percentage':
-                return token.value + token.type;
+                return token.value + '%';
 
             case 'at-rule':
             case 'number':
 
             case 'hash':
+            case 'pseudo-selector':
             case 'comment':
             case 'literal':
             case 'string':

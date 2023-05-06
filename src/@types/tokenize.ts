@@ -68,7 +68,7 @@ export interface UnclosedStringToken {
     value: string;
 }
 
-export interface DimensonToken {
+export interface DimensionToken {
 
     type: 'dimension',
     value: string;
@@ -162,9 +162,15 @@ export interface GreaterThanToken {
     type: 'greater-than';
 }
 
+export interface PseudoSelectorToken {
+
+    type: 'pseudo-selector';
+    value: string;
+}
+
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
-    NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensonToken | StringToken |
+    NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken;
+    DashMatchToken | LessThanToken | GreaterThanToken | PseudoSelectorToken;

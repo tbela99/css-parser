@@ -6,12 +6,12 @@ import {
     AstRuleList,
     AstRuleStyleSheet,
     AstTraverserHandler,
-    ParserOptions, Token
+    ParserOptions, Position, StringIterableIterator, Token
 } from "../@types";
 import {Observer} from "@tbela99/observer";
 import {Renderer} from "../renderer";
 import {tokenize} from "./tokenize";
-import {update} from "./utils";
+import {stringIterator, update} from "./utils";
 import {matchComponents} from "./utils/components";
 
 export class Parser {
@@ -44,27 +44,19 @@ export class Parser {
         const stack: Array<AstNode | AstComment> = [];
         const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        const position = this.#root.location.end;
+        const position: Position = this.#root.location.end;
         // @ts-ignore
-        const src = this.#root.location.src;
+        const src: string = this.#root.location.src;
         const location: boolean = <boolean>this.#options.location;
         let context: AstNode | AstComment | AstRuleStyleSheet = this.#root;
-        let iterator: IterableIterator<string> = css[Symbol.iterator]();
+        let iterator: StringIterableIterator = stringIterator(css);
 
         const generator: Generator<Token> = tokenize(iterator, position);
         let result: IteratorResult<Token>;
         let token: AstNode;
+        for (let value of generator) {
 
-        while (true) {
-
-            result = generator.next();
-
-            if (result.done) {
-
-                break;
-            }
-
-            if (result.value.type == 'block-end') {
+            if (value.type == 'block-end') {
 
                 // @ts-ignore
                 context = stack.pop();
@@ -86,32 +78,32 @@ export class Parser {
                 case 'Rule':
                 case "StyleSheet":
 
-                    if (result.value.type == 'whitespace') {
+                    if (value.type == 'whitespace') {
 
                         continue;
                     }
 
-                    if (result.value.type == 'bad-comment' || result.value.type == 'bad-cdo-comment') {
+                    if (value.type == 'bad-comment' || value.type == 'bad-cdo-comment') {
 
-                        this.#errors.push(SyntaxError(`unexpected token ${result.value.type} at ${src}:${position.line}:${position.column}`));
+                        this.#errors.push(SyntaxError(`unexpected token ${value.type} at ${src}:${position.line}:${position.column}`));
                         break;
                     }
 
-                    if (result.value.type == 'cdo-comment' || result.value.type == 'comment') {
+                    if (value.type == 'cdo-comment' || value.type == 'comment') {
 
-                        if (result.value.type == 'cdo-comment' && context.type != 'StyleSheet') {
+                        if (value.type == 'cdo-comment' && context.type != 'StyleSheet') {
 
                             this.#errors.push(SyntaxError(`unexpected CDO token at ${src}:${position.line}:${position.column}`))
                             break;
                         }
 
-                        const token: AstComment = <AstComment>{type: 'Comment', value: result.value.value};
+                        const token: AstComment = <AstComment>{type: 'Comment', value: value.value};
 
                         if (location) {
 
                             token.location = {
                                 start: {...position},
-                                end: update({...position}, [...result.value.value]),
+                                end: update({...position}, value.value),
                                 src
                             }
 
@@ -126,7 +118,7 @@ export class Parser {
                         continue;
                     }
 
-                    if (result.value.type == 'at-rule') {
+                    if (value.type == 'at-rule') {
 
                         token = <AstAtRule>{type: 'AtRule'};
 
@@ -134,7 +126,7 @@ export class Parser {
 
                             token.location = {
                                 start: {...position},
-                                end: update({...position}, [...result.value.value]),
+                                end: update({...position}, value.value),
                                 src
                             }
                         }
@@ -173,7 +165,7 @@ export class Parser {
                             }
                         }
 
-                        token.name = [result.value];
+                        token.name = [value];
                         token.value = tokens;
 
                         while (token.value[0]?.type == 'whitespace') {
@@ -200,9 +192,9 @@ export class Parser {
 
                         const {
                             tokens, errors
-                        } = matchComponents(generator, position, src, context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'], [result.value])
+                        } = matchComponents(generator, position, src, context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'], [value])
 
-                        tokens.unshift(result.value);
+                        tokens.unshift(value);
 
                         if (tokens[tokens.length - 1]?.type == 'block-start') {
 

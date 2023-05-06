@@ -1,14 +1,16 @@
 import {Position} from "../../@types";
 import {isNewLine} from "./syntax";
 
-export function update(location: Position, css: Array<string>): Position {
+export function update(location: Position, css: string): Position {
 
-    if (css.length == 0) {
+    if (css === '') {
 
         return location;
     }
 
-    let i: number = -1;
+    let i: number = 0;
+    let codepoint: number;
+    let offset: number;
     const j: number = css.length - 1;
 
     if (location.line == 0) {
@@ -16,24 +18,30 @@ export function update(location: Position, css: Array<string>): Position {
         location.line = 1;
     }
 
-    while (++i <= j) {
+    while (i <= j) {
 
-        if (isNewLine(css[i])) {
+        codepoint = <number>css.codePointAt(i);
+        offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+
+        if (isNewLine(codepoint)) {
 
             location.line++;
             location.column = 0;
 
-            if (css[i] == '\r' && css[i + 1] == '\n') {
+            // \r\n
+            if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
 
-                i++;
+                offset++;
                 location.index++;
             }
+
         } else {
 
             location.column++;
         }
 
         location.index++;
+        i += offset;
     }
 
     return location

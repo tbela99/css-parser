@@ -10,6 +10,8 @@ export function matchComponents(iterator: Generator<Token>, position: Position, 
 
     let result: IteratorResult<Token> = iterator.next();
 
+    // console.debug(result);
+
     while (!result.done) {
 
         if (endBlock.includes(result.value.type)) {
@@ -53,6 +55,8 @@ export function matchComponents(iterator: Generator<Token>, position: Position, 
 
         tokens.push(result.value);
         result = iterator.next();
+        // console.debug(result);
+
     }
 
     return {tokens, errors};

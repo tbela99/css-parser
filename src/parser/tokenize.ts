@@ -1,22 +1,16 @@
 import {
-    ident,
-    isAtKeyword, isDimension,
-    isFunction, isHash,
-    isIdent,
+    isAtKeyword, isDigit, isFunction, isHash,
+    isIdent, isIdentCodepoint, isIdentStart,
     isNewLine,
-    isNumber,
-    isPercentage,
-    isString,
-    num
+    isPseudo
 } from "./utils";
 import {update} from "./utils";
-import {DashMatchToken, IncludesToken, Position, Token} from "../@types";
+import {DashMatchToken, IncludesToken, Position, StringIterableIterator, StringIteratorResult, Token} from "../@types";
 
-export function* tokenize(iterator: Iterator<string>, position: Position): Generator<Token> {
+export function* tokenize(iterator: StringIterableIterator, position: Position): Generator<Token> {
 
-    let result: IteratorResult<string>;
-
-    const buffer: string[] = [];
+    let result;
+    let buffer: string = '';
 
     while (true) {
 
@@ -32,12 +26,11 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
             if (buffer.length > 0) {
 
                 yield getType(buffer);
-                update(position, buffer);
 
-                buffer.length = 0;
+                buffer = '';
             }
 
-            const whitespace: string[] = [result.value];
+            let whitespace: string = result.value;
 
             while (!result.done) {
 
@@ -54,7 +47,7 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                     break;
                 }
 
-                whitespace.push(result.value);
+                whitespace += result.value;
             }
 
             yield {type: 'whitespace'};
@@ -75,88 +68,74 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                     yield getType(buffer);
                     update(position, buffer);
 
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
-                buffer.push(result.value);
+                buffer += result.value;
 
-                result = iterator.next();
+                if (iterator.peek() == '*') {
 
-                if (result.done) {
+                    while (!result.done) {
 
-                    yield getType(buffer);
-                    update(position, buffer);
-
-                    return;
-                }
-
-                buffer.push(result.value);
-
-                if (result.value != '*') {
-
-                    yield getType(buffer);
-                    update(position, buffer);
-
-                    buffer.length = 0;
-                    buffer.push(result.value);
-                    break;
-                }
-
-                while (!result.done) {
-
-                    result = iterator.next();
-
-                    if (result.done) {
-
-                        yield {type: 'bad-comment', value: buffer.join('')
-                            };
-                        update(position, buffer);
-                        return;
-                    }
-
-                    if (result.value == '\\') {
-
-                        buffer.push(result.value);
                         result = iterator.next();
 
                         if (result.done) {
 
-                            yield {type: 'bad-comment', 
-                                value: buffer.join('')};
+                            yield {
+                                type: 'bad-comment', value: buffer
+                            }
+
                             update(position, buffer);
-                            return
+                            return;
                         }
 
-                        buffer.push(result.value);
-                        continue;
-                    }
+                        if (result.value == '\\') {
 
-                    if (result.value == '*') {
+                            buffer += result.value;
+                            result = iterator.next();
 
-                        buffer.push(result.value);
+                            if (result.done) {
 
-                        result = iterator.next();
-
-                        if (result.done) {
-
-                            yield {type: 'bad-comment', value: buffer.join('')
+                                yield {
+                                    type: 'bad-comment',
+                                    value: buffer
                                 };
-                            update(position, buffer);
-                            return
+                                update(position, buffer);
+                                return
+                            }
+
+                            buffer += result.value;
+                            continue;
                         }
 
-                        buffer.push(result.value);
+                        if (result.value == '*') {
 
-                        if (result.value == '/') {
+                            buffer += result.value;
 
-                            yield {type: 'comment', value: buffer.join('')};
-                            update(position, buffer);
-                            buffer.length = 0;
-                            break;
+                            result = iterator.next();
+
+                            if (result.done) {
+
+                                yield {
+                                    type: 'bad-comment', value: buffer
+                                };
+                                update(position, buffer);
+                                return
+                            }
+
+                            buffer += result.value;
+
+                            if (result.value == '/') {
+
+                                yield {type: 'comment', value: buffer};
+                                update(position, buffer);
+                                buffer = '';
+                                break;
+                            }
+                        } else {
+
+                            buffer += result.value;
                         }
-                    } else {
-
-                        buffer.push(result.value);
                     }
                 }
 
@@ -168,10 +147,10 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
 
                     yield getType(buffer);
                     update(position, buffer);
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
-                buffer.push(result.value);
+                buffer += result.value;
 
                 result = iterator.next();
 
@@ -180,105 +159,59 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                     break;
                 }
 
-                if (result.value != '!') {
+                if (iterator.peek(3) == '!--') {
 
-                    yield getType(buffer);
-                    update(position, buffer);
+                    while (!result.done) {
 
-                    buffer.length = 0;
-                    buffer.push(result.value);
-                    break;
-                }
+                        result = iterator.next();
 
-                buffer.push(result.value);
+                        if (result.done) {
 
-                result = iterator.next();
+                            break;
+                        }
 
-                if (result.done) {
+                        buffer += result.value;
 
-                    break;
-                }
+                        if (result.value == '>' && iterator.prev(2) == '--') {
 
-                if (result.value != '-') {
+                            yield {
+                                type: 'cdo-comment',
+                                value: buffer
+                            };
+                            update(position, buffer);
 
-                    yield getType(buffer);
-                    update(position, buffer);
-
-                    buffer.length = 0;
-                    buffer.push(result.value);
-                    break;
-                }
-
-                buffer.push(result.value);
-
-                result = iterator.next();
-
-                if (result.done) {
-
-                    break;
-                }
-
-                if (result.value != '-') {
-
-                    yield getType(buffer);
-                    update(position, buffer);
-
-                    buffer.length = 0;
-                    buffer.push(result.value);
-                    break;
-                }
-
-                buffer.push(result.value);
-
-                while (!result.done) {
-
-                    result = iterator.next();
-
-                    if (result.done) {
-
-                        break;
-                    }
-
-                    buffer.push(result.value);
-
-                    if (result.value == '>' && buffer[buffer.length - 2] == '-' && buffer[buffer.length - 3] == '-') {
-
-                        yield {
-                            type: 'cdo-comment',
-                            value: buffer.join('')
-                        };
-                        update(position, buffer);
-
-                        buffer.length = 0;
-                        break;
+                            buffer = '';
+                            break;
+                        }
                     }
                 }
 
                 if (result.done) {
 
-                    yield {type: 'bad-cdo-comment', value: buffer.join('')};
+                    yield {type: 'bad-cdo-comment', value: buffer};
                     update(position, buffer);
 
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
                 break;
 
             case '\\':
 
-                buffer.push(result.value);
                 result = iterator.next();
 
-                if (result.done) {
+                // EOF
+                if (iterator.peek() === '') {
 
+                    // end of stream ignore \\
                     yield getType(buffer);
                     update(position, buffer);
 
-                    buffer.length = 0;
+                    buffer = '';
+                    break;
                 }
 
-                buffer.push(result.value);
-
+                buffer += result.value;
                 break;
 
             case '"':
@@ -292,10 +225,10 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                     yield getType(buffer);
                     update(position, buffer);
 
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
-                buffer.push(result.value);
+                buffer += result.value;
 
                 while (!result.done) {
 
@@ -303,14 +236,14 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
 
                     if (result.done) {
 
-                        yield {type: hasNewLine ? 'bad-string' : 'unclosed-string', value: buffer.join('')};
+                        yield {type: hasNewLine ? 'bad-string' : 'unclosed-string', value: buffer};
                         update(position, buffer);
                         return;
                     }
 
                     if (result.value == '\\') {
 
-                        buffer.push(result.value);
+                        buffer += result.value;
 
                         result = iterator.next();
 
@@ -318,42 +251,43 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
 
                             yield getType(buffer);
                             update(position, buffer);
+
                             return;
                         }
 
-                        buffer.push(result.value);
+                        buffer += result.value;
                         continue;
                     }
 
                     if (result.value == quote) {
 
-                        buffer.push(result.value);
+                        buffer += result.value;
 
-                        yield {type: hasNewLine ? 'bad-string' : 'string', value: buffer.join('')};
+                        yield {type: hasNewLine ? 'bad-string' : 'string', value: buffer};
                         update(position, buffer);
 
-                        buffer.length = 0;
+                        buffer = '';
                         break;
                     }
 
-                    if (isNewLine(result.value)) {
+                    if (isNewLine(<number>result.value.codePointAt(0))) {
 
                         hasNewLine = true;
                     }
 
                     if (hasNewLine && result.value == ';') {
 
-                        yield {type: 'bad-string', value: buffer.join('')};
+                        yield {type: 'bad-string', value: buffer};
                         update(position, buffer);
 
-                        yield getType([result.value]);
-                        update(position, [result.value]);
+                        yield getType(result.value);
+                        update(position, result.value);
 
-                        buffer.length = 0;
+                        buffer = '';
                         break;
                     }
 
-                    buffer.push(result.value);
+                    buffer += result.value;
                 }
 
                 break;
@@ -364,10 +298,10 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                 if (buffer.length > 0) {
 
                     yield getType(buffer);
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
-                buffer.push(result.value);
+                buffer += result.value;
                 result = iterator.next();
 
                 if (result.done) {
@@ -380,20 +314,23 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
 
                 if (result.value == '=') {
 
-                    buffer.push(result.value);
+                    buffer += result.value;
 
-                    yield <IncludesToken | DashMatchToken>{type: buffer[0] == '~' ? 'includes' : 'dash-matches', value: buffer.join('')};
+                    yield <IncludesToken | DashMatchToken>{
+                        type: buffer[0] == '~' ? 'includes' : 'dash-matches',
+                        value: buffer
+                    };
 
                     update(position, buffer);
-                    buffer.length = 0;
+                    buffer = '';
                     break;
                 }
 
                 yield getType(buffer);
                 update(position, buffer);
-                buffer.length = 0;
+                buffer = '';
 
-                buffer.push(result.value);
+                buffer += result.value;
                 break;
 
             case ':':
@@ -405,11 +342,17 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
 
                     update(position, buffer);
                     yield getType(buffer);
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
-                yield getType([result.value]);
-                update(position, [result.value]);
+                if (result.value == ':' && isIdent(iterator.peek())) {
+
+                    buffer += result.value;
+                    break;
+                }
+
+                yield getType(result.value);
+                update(position, result.value);
                 break;
 
             case ')':
@@ -419,11 +362,11 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                     yield getType(buffer);
                     update(position, buffer);
 
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
                 yield {type: 'end-parens'};
-                update(position, [result.value]);
+                update(position, result.value);
                 break;
 
             case '(':
@@ -431,14 +374,14 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                 if (buffer.length == 0) {
 
                     yield {type: 'start-parens'};
-                    update(position, [result.value]);
+                    update(position, result.value);
                 } else {
 
-                    buffer.push(result.value);
+                    buffer += result.value;
 
                     yield getType(buffer);
                     update(position, buffer);
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
                 break;
@@ -453,16 +396,133 @@ export function* tokenize(iterator: Iterator<string>, position: Position): Gener
                     yield getType(buffer);
                     update(position, buffer);
 
-                    buffer.length = 0;
+                    buffer = '';
                 }
 
                 yield getBlockType(result.value);
-                update(position, [result.value]);
+                update(position, result.value);
                 break;
 
             default:
 
-                buffer.push(result.value);
+                if (buffer === '') {
+
+                    let code: number = <number>result.value.codePointAt(0);
+                    let isNumber: boolean = isDigit(code);
+
+                    // + or -
+                    if (code == 0x2b || code == 0x2d || isNumber) {
+
+                        buffer += result.value;
+
+                        if (!isNumber && !isDigit(<number>iterator.peek().codePointAt(0))) {
+
+                            break;
+                        }
+
+                        while (isDigit(<number>iterator.peek().codePointAt(0))) {
+
+                            result = iterator.next();
+                            buffer += result.value;
+                        }
+
+                        let dec = iterator.peek(2);
+
+                        // .
+                        if (dec.codePointAt(0) == 0x2e && isDigit(<number>dec.codePointAt(1))) {
+
+                            result = iterator.next(2);
+                            buffer += dec;
+
+                            while (isDigit(<number>iterator.peek().codePointAt(0))) {
+
+                                result = iterator.next();
+                                buffer += result.value;
+                            }
+                        }
+
+                        dec = iterator.peek(3);
+
+                        code = <number>dec.codePointAt(0);
+
+                        // E or e
+                        if (code == 0x45 || code == 0x65) {
+
+                            code = <number> dec.codePointAt(1);
+
+                            if ((code == 0x2d || code == 0x2b) && isDigit(<number>dec.codePointAt(2))) {
+
+                                buffer += dec;
+                                result = iterator.next(3);
+                            }
+
+                            else if (isDigit(code)) {
+
+                                result = iterator.next();
+                                buffer += result.value;
+                            }
+                        }
+
+                        while (isDigit(<number>iterator.peek().codePointAt(0))) {
+
+                            result = iterator.next();
+                            buffer += result.value;
+                        }
+
+                        code = <number>iterator.peek().codePointAt(0);
+
+                        if (isIdentStart(code)) {
+
+                            result = iterator.next();
+                            let unit = result.value;
+
+                            while (isIdentCodepoint(<number>iterator.peek().codePointAt(0))) {
+
+                                result = iterator.next();
+                                unit += result.value;
+                            }
+
+                            yield {
+                                type: 'dimension',
+                                value: buffer,
+                                unit
+                            }
+
+                            update(position, buffer);
+                            buffer = '';
+                        }
+
+                        // %
+                        else if (code == 0x25) {
+
+                            result = iterator.next();
+                            // buffer += result.value;
+
+                            yield {
+                                type: 'percentage',
+                                value: buffer
+                            }
+
+                            update(position, buffer);
+                            buffer = '';
+                        }
+
+                        else {
+
+                            yield {
+                                type: 'number',
+                                value: buffer
+                            }
+
+                            update(position, buffer);
+                            buffer = '';
+                        }
+
+                        break;
+                    }
+                }
+
+                buffer += result.value;
                 break;
         }
     }
@@ -499,9 +559,7 @@ function getBlockType(chr: '{' | '}' | '[' | ']'): Token {
     throw new Error(`unhandled token: '${chr}'`);
 }
 
-function getType(buffer: string[]): Token {
-
-    const value = buffer.join('');
+function getType(value: string): Token {
 
     if (value === '') {
 
@@ -533,40 +591,21 @@ function getType(buffer: string[]): Token {
         return {type: 'greater-than'};
     }
 
+    if (isPseudo(value)) {
+
+        return {
+            type: 'pseudo-selector',
+            value
+            // buffer: buffer.slice()
+        }
+    }
+
     if (isAtKeyword(value)) {
 
         return {
             type: 'at-rule',
             value: value.slice(1),
             // buffer: buffer.slice()
-        }
-    }
-
-    if (isNumber(value)) {
-
-        return {
-            type: 'number',
-            value: value,
-            // buffer: buffer.slice()
-        }
-    }
-
-    if (isPercentage(value)) {
-
-        return {
-            type: 'percentage',
-            value: value.slice(0, -1)
-        }
-    }
-
-    if (isDimension(value)) {
-
-        const match: RegExpMatchArray = <RegExpMatchArray>value.match(new RegExp(`^(${num})(${ident})$`))
-
-        return {
-            type: 'dimension',
-            value: match[1],
-            unit: match[2]
         }
     }
 
@@ -590,14 +629,6 @@ function getType(buffer: string[]): Token {
 
         return {
             type: 'hash',
-            value
-        }
-    }
-
-    if (isString(value)) {
-
-        return {
-            type: 'string',
             value
         }
     }

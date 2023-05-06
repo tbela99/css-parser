@@ -3,6 +3,7 @@ import {Token} from "./tokenize";
 
 export * from './validation';
 export * from './tokenize';
+export * from './stringiterator';
 
 export type NodeTraversalDirection = 'enter' | 'exit';
 
