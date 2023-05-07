@@ -168,9 +168,14 @@ export interface PseudoSelectorToken {
     value: string;
 }
 
+export interface EOFToken {
+
+    type: 'EOF';
+}
+
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken | PseudoSelectorToken;
+    DashMatchToken | LessThanToken | GreaterThanToken | PseudoSelectorToken | EOFToken;

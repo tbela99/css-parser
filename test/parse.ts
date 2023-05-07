@@ -27,6 +27,9 @@ import {stringIterator} from "../src/parser/utils";
 // @media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {color: rgb(45% 67% 56%) }}
 // `;
 
+// tokenize([...file], {index: 0, line: 0, column: 0}, (token) => console.debug(token));
+// process.exit();
+
 const baseName = 'bootstrap';
 
 const dir = dirname(new URL(import.meta.url).pathname);
@@ -42,7 +45,7 @@ const mid = Date.now();
 const css = parser.toString();
 const end = Date.now();
 //
-console.debug(css);
+// console.debug(css);
 console.error(`parsed in ${mid - start}ms`);
 console.error(`renderer in ${end - mid}ms`);
 // console.log(parser.getAst());

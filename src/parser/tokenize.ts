@@ -2,139 +2,182 @@ import {
     isAtKeyword, isDigit, isFunction, isHash,
     isIdent, isIdentCodepoint, isIdentStart,
     isNewLine,
-    isPseudo
+    isPseudo, isWhiteSpace
 } from "./utils";
 import {update} from "./utils";
-import {DashMatchToken, IncludesToken, Position, StringIterableIterator, StringIteratorResult, Token} from "../@types";
+import {DashMatchToken, IncludesToken, Position, Token} from "../@types";
 
-export function* tokenize(iterator: StringIterableIterator, position: Position): Generator<Token> {
+export function tokenize(iterator: string[], position: Position, callable: (token: Token) => void): void {
 
-    let result;
+    let value: string;
     let buffer: string = '';
+    let i: number = -1;
+    let total: number = iterator.length;
 
-    while (true) {
+    function peek(count: number = 1): string {
 
-        result = iterator.next();
+        if (count == 1) {
 
-        if (result.done) {
+            return iterator[i + 1];
+        }
+
+        return iterator.slice(i, i + count).join('');
+    }
+
+    function prev(count: number = 1) {
+
+        if (count == 1) {
+
+            return i == 0 ? '' : iterator[i - 1];
+        }
+
+        return iterator.slice(i - 1 - count, i - 1).join('');
+    }
+
+    function next(count: number = 1) {
+
+        if (count == 1) {
+
+            return iterator[++i];
+        }
+
+        const chr: string = iterator.slice(i + 1, i + 1 + count).join('');
+
+        i += count;
+
+        return chr;
+    }
+
+    while(i < total) {
+
+        value = next();
+
+        if (i >= total) {
+
+            if (buffer.length > 0) {
+
+                callable(getType(buffer)) ;
+                buffer = '';
+            }
 
             break;
         }
 
-        if (/\s/.test(result.value)) {
+        if (isWhiteSpace(<number>value.codePointAt(0))) {
 
             if (buffer.length > 0) {
 
-                yield getType(buffer);
+                callable(getType(buffer)) ;
 
                 buffer = '';
             }
 
-            let whitespace: string = result.value;
+            let whitespace: string = value;
 
-            while (!result.done) {
+            while (i < total) {
 
-                result = iterator.next();
+                value = next();
 
-                if (result.done) {
-
-                    update(position, whitespace);
-                    break;
-                }
-
-                if (!/\s/.test(result.value)) {
+                if (i >= total) {
 
                     break;
                 }
 
-                whitespace += result.value;
+                if (!isWhiteSpace(<number>value.codePointAt(0))) {
+
+                    break;
+                }
+
+                whitespace += value;
             }
 
-            yield {type: 'whitespace'};
+            callable({type: 'whitespace'}) ;
             update(position, whitespace);
 
-            if (result.done) {
+            buffer = '';
+
+            if (i >= total) {
 
                 break;
             }
         }
 
-        switch (result.value) {
+        switch (value) {
 
             case '/':
 
                 if (buffer.length > 0) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
 
                     buffer = '';
                 }
 
-                buffer += result.value;
+                buffer += value;
 
-                if (iterator.peek() == '*') {
+                if (peek() == '*') {
 
-                    while (!result.done) {
+                    while (i < total) {
 
-                        result = iterator.next();
+                        value = next();
 
-                        if (result.done) {
+                        if (i >= total) {
 
-                            yield {
+                            callable({
                                 type: 'bad-comment', value: buffer
-                            }
+                            });
 
                             update(position, buffer);
                             return;
                         }
 
-                        if (result.value == '\\') {
+                        if (value == '\\') {
 
-                            buffer += result.value;
-                            result = iterator.next();
+                            buffer += value;
+                            value = next();
 
-                            if (result.done) {
+                            if (i >= total) {
 
-                                yield {
+                                callable({
                                     type: 'bad-comment',
                                     value: buffer
-                                };
+                                });
                                 update(position, buffer);
-                                return
+                                break;
                             }
 
-                            buffer += result.value;
+                            buffer += value;
                             continue;
                         }
 
-                        if (result.value == '*') {
+                        if (value == '*') {
 
-                            buffer += result.value;
+                            buffer += value;
 
-                            result = iterator.next();
+                            value = next();
 
-                            if (result.done) {
+                            if (i >= total) {
 
-                                yield {
+                                callable({
                                     type: 'bad-comment', value: buffer
-                                };
+                                });
                                 update(position, buffer);
-                                return
+                                break;
                             }
 
-                            buffer += result.value;
+                            buffer += value;
 
-                            if (result.value == '/') {
+                            if (value == '/') {
 
-                                yield {type: 'comment', value: buffer};
+                                callable({type: 'comment', value: buffer});
                                 update(position, buffer);
                                 buffer = '';
                                 break;
                             }
                         } else {
 
-                            buffer += result.value;
+                            buffer += value;
                         }
                     }
                 }
@@ -145,39 +188,40 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
 
                 if (buffer.length > 0) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
 
-                buffer += result.value;
+                buffer += value;
 
-                result = iterator.next();
+                value = next();
 
-                if (result.done) {
+                if (i >= total) {
 
                     break;
                 }
 
-                if (iterator.peek(3) == '!--') {
+                if (peek(3) == '!--') {
 
-                    while (!result.done) {
+                    while (i < total) {
 
-                        result = iterator.next();
+                        value = next();
 
-                        if (result.done) {
+                        if (i >= total) {
 
                             break;
                         }
 
-                        buffer += result.value;
+                        buffer += value;
 
-                        if (result.value == '>' && iterator.prev(2) == '--') {
+                        if (value == '>' && prev(2) == '--') {
 
-                            yield {
+                            callable({
                                 type: 'cdo-comment',
                                 value: buffer
-                            };
+                            });
+                            
                             update(position, buffer);
 
                             buffer = '';
@@ -186,9 +230,9 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
                     }
                 }
 
-                if (result.done) {
+                if (i >= total) {
 
-                    yield {type: 'bad-cdo-comment', value: buffer};
+                    callable({type: 'bad-cdo-comment', value: buffer});
                     update(position, buffer);
 
                     buffer = '';
@@ -198,96 +242,96 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
 
             case '\\':
 
-                result = iterator.next();
+                value = next();
 
                 // EOF
-                if (iterator.peek() === '') {
+                if (i + 1 >= total) {
 
                     // end of stream ignore \\
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
 
                     buffer = '';
                     break;
                 }
 
-                buffer += result.value;
+                buffer += value;
                 break;
 
             case '"':
             case "'":
 
-                const quote: string = result.value;
+                const quote: string = value;
                 let hasNewLine: boolean = false;
 
                 if (buffer.length > 0) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
 
                     buffer = '';
                 }
 
-                buffer += result.value;
+                buffer += value;
 
-                while (!result.done) {
+                while (i < total) {
 
-                    result = iterator.next();
+                    value = next();
 
-                    if (result.done) {
+                    if (i >= total) {
 
-                        yield {type: hasNewLine ? 'bad-string' : 'unclosed-string', value: buffer};
+                        callable({type: hasNewLine ? 'bad-string' : 'unclosed-string', value: buffer});
                         update(position, buffer);
                         return;
                     }
 
-                    if (result.value == '\\') {
+                    if (value == '\\') {
 
-                        buffer += result.value;
+                        buffer += value;
 
-                        result = iterator.next();
+                        value = next();
 
-                        if (result.done) {
+                        if (i >= total) {
 
-                            yield getType(buffer);
+                            callable(getType(buffer));
                             update(position, buffer);
 
                             return;
                         }
 
-                        buffer += result.value;
+                        buffer += value;
                         continue;
                     }
 
-                    if (result.value == quote) {
+                    if (value == quote) {
 
-                        buffer += result.value;
+                        buffer += value;
 
-                        yield {type: hasNewLine ? 'bad-string' : 'string', value: buffer};
+                        callable({type: hasNewLine ? 'bad-string' : 'string', value: buffer});
                         update(position, buffer);
 
                         buffer = '';
                         break;
                     }
 
-                    if (isNewLine(<number>result.value.codePointAt(0))) {
+                    if (isNewLine(<number>value.codePointAt(0))) {
 
                         hasNewLine = true;
                     }
 
-                    if (hasNewLine && result.value == ';') {
+                    if (hasNewLine && value == ';') {
 
-                        yield {type: 'bad-string', value: buffer};
+                        callable({type: 'bad-string', value: buffer});
                         update(position, buffer);
 
-                        yield getType(result.value);
-                        update(position, result.value);
+                        callable(getType(value));
+                        update(position, value);
 
                         buffer = '';
                         break;
                     }
 
-                    buffer += result.value;
+                    buffer += value;
                 }
 
                 break;
@@ -297,40 +341,40 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
 
                 if (buffer.length > 0) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     buffer = '';
                 }
 
-                buffer += result.value;
-                result = iterator.next();
+                buffer += value;
+                value = next();
 
-                if (result.done) {
+                if (i >= total) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
 
                     return;
                 }
 
-                if (result.value == '=') {
+                if (value == '=') {
 
-                    buffer += result.value;
+                    buffer += value;
 
-                    yield <IncludesToken | DashMatchToken>{
+                    callable(<IncludesToken | DashMatchToken>{
                         type: buffer[0] == '~' ? 'includes' : 'dash-matches',
                         value: buffer
-                    };
+                    });
 
                     update(position, buffer);
                     buffer = '';
                     break;
                 }
 
-                yield getType(buffer);
+                callable(getType(buffer));
                 update(position, buffer);
                 buffer = '';
 
-                buffer += result.value;
+                buffer += value;
                 break;
 
             case ':':
@@ -341,45 +385,45 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
                 if (buffer.length > 0) {
 
                     update(position, buffer);
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     buffer = '';
                 }
 
-                if (result.value == ':' && isIdent(iterator.peek())) {
+                if (value == ':' && isIdent(peek())) {
 
-                    buffer += result.value;
+                    buffer += value;
                     break;
                 }
 
-                yield getType(result.value);
-                update(position, result.value);
+                callable(getType(value));
+                update(position, value);
                 break;
 
             case ')':
 
                 if (buffer.length > 0) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
 
                     buffer = '';
                 }
 
-                yield {type: 'end-parens'};
-                update(position, result.value);
+                callable({type: 'end-parens'});
+                update(position, value);
                 break;
 
             case '(':
 
                 if (buffer.length == 0) {
 
-                    yield {type: 'start-parens'};
-                    update(position, result.value);
+                    callable({type: 'start-parens'});
+                    update(position, value);
                 } else {
 
-                    buffer += result.value;
+                    buffer += value;
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
@@ -393,55 +437,55 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
 
                 if (buffer.length > 0) {
 
-                    yield getType(buffer);
+                    callable(getType(buffer));
                     update(position, buffer);
 
                     buffer = '';
                 }
 
-                yield getBlockType(result.value);
-                update(position, result.value);
+                callable(getBlockType(value));
+                update(position, value);
                 break;
 
             default:
 
                 if (buffer === '') {
 
-                    let code: number = <number>result.value.codePointAt(0);
+                    let code: number = <number>value.codePointAt(0);
                     let isNumber: boolean = isDigit(code);
 
                     // + or -
                     if (code == 0x2b || code == 0x2d || isNumber) {
 
-                        buffer += result.value;
+                        buffer += value;
 
-                        if (!isNumber && !isDigit(<number>iterator.peek().codePointAt(0))) {
+                        if (!isNumber && !isDigit(<number>peek().codePointAt(0))) {
 
                             break;
                         }
 
-                        while (isDigit(<number>iterator.peek().codePointAt(0))) {
+                        while (isDigit(<number>peek().codePointAt(0))) {
 
-                            result = iterator.next();
-                            buffer += result.value;
+                            value = next();
+                            buffer += value;
                         }
 
-                        let dec = iterator.peek(2);
+                        let dec = peek(2);
 
                         // .
                         if (dec.codePointAt(0) == 0x2e && isDigit(<number>dec.codePointAt(1))) {
 
-                            result = iterator.next(2);
+                            value = next(2);
                             buffer += dec;
 
-                            while (isDigit(<number>iterator.peek().codePointAt(0))) {
+                            while (isDigit(<number>peek().codePointAt(0))) {
 
-                                result = iterator.next();
-                                buffer += result.value;
+                                value = next();
+                                buffer += value;
                             }
                         }
 
-                        dec = iterator.peek(3);
+                        dec = peek(3);
 
                         code = <number>dec.codePointAt(0);
 
@@ -453,40 +497,40 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
                             if ((code == 0x2d || code == 0x2b) && isDigit(<number>dec.codePointAt(2))) {
 
                                 buffer += dec;
-                                result = iterator.next(3);
+                                value = next(3);
                             }
 
                             else if (isDigit(code)) {
 
-                                result = iterator.next();
-                                buffer += result.value;
+                                value = next();
+                                buffer += value;
                             }
                         }
 
-                        while (isDigit(<number>iterator.peek().codePointAt(0))) {
+                        while (isDigit(<number>peek().codePointAt(0))) {
 
-                            result = iterator.next();
-                            buffer += result.value;
+                            value = next();
+                            buffer += value;
                         }
 
-                        code = <number>iterator.peek().codePointAt(0);
+                        code = <number>peek().codePointAt(0);
 
                         if (isIdentStart(code)) {
 
-                            result = iterator.next();
-                            let unit = result.value;
+                            value = next();
+                            let unit = value;
 
-                            while (isIdentCodepoint(<number>iterator.peek().codePointAt(0))) {
+                            while (isIdentCodepoint(<number>peek().codePointAt(0))) {
 
-                                result = iterator.next();
-                                unit += result.value;
+                                value = next();
+                                unit += value;
                             }
 
-                            yield {
+                            callable({
                                 type: 'dimension',
                                 value: buffer,
                                 unit
-                            }
+                            });
 
                             update(position, buffer);
                             buffer = '';
@@ -495,13 +539,13 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
                         // %
                         else if (code == 0x25) {
 
-                            result = iterator.next();
-                            // buffer += result.value;
+                            value = next();
+                            // buffer += value;
 
-                            yield {
+                            callable({
                                 type: 'percentage',
                                 value: buffer
-                            }
+                            });
 
                             update(position, buffer);
                             buffer = '';
@@ -509,10 +553,10 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
 
                         else {
 
-                            yield {
+                            callable({
                                 type: 'number',
                                 value: buffer
-                            }
+                            });
 
                             update(position, buffer);
                             buffer = '';
@@ -522,16 +566,18 @@ export function* tokenize(iterator: StringIterableIterator, position: Position):
                     }
                 }
 
-                buffer += result.value;
+                buffer += value;
                 break;
         }
     }
 
     if (buffer.length > 0) {
 
-        yield getType(buffer);
+        callable(getType(buffer));
         update(position, buffer);
     }
+
+    callable({type: 'EOF'});
 }
 
 function getBlockType(chr: '{' | '}' | '[' | ']'): Token {

@@ -48,13 +48,165 @@ export class Parser {
         // @ts-ignore
         const src: string = this.#root.location.src;
         const location: boolean = <boolean>this.#options.location;
-        let context: AstNode | AstComment | AstRuleStyleSheet = this.#root;
-        let iterator: StringIterableIterator = stringIterator(css);
 
-        const generator: Generator<Token> = tokenize(iterator, position);
-        let result: IteratorResult<Token>;
+
+        const tokens: Token[] = [];
+        let matchPairs: Token[] = [];
+        const pairs = {'end-parens':'start-parens', 'block-end': 'block-start',  'attr-end': 'attr-start'};
+
+        let context: AstNode | AstComment | AstRuleStyleSheet = this.#root;
+        // let iterator: StringIterableIterator = stringIterator(css);
         let token: AstNode;
-        for (let value of generator) {
+
+        let matchEndBlock = false;
+        let matchGroup: string[];
+
+        tokenize([...css], position, (value: Token) => {
+
+            // console.debug({value});
+
+            if (value.type == 'EOF') {
+
+                return;
+            }
+
+            if (matchEndBlock) {
+
+                tokens.push(value);
+
+                if (matchGroup.includes(value.type)) {
+
+                    matchEndBlock = false;
+                    // matchGroup.length = 0;
+
+                    while (['block-start', 'block-end', 'semi-colon', 'whitespace'].includes(tokens[tokens.length - 1]?.type) ) {
+
+                        tokens.pop();
+                    }
+
+                    if (token.type == 'AtRule') {
+
+                        // @ts-ignore
+                        token.value = tokens;
+
+                        if (value.type == 'block-start') {
+
+                            // @ts-ignore
+                            token.children = [];
+
+                            stack.push(token);
+                            context = token;
+                        }
+                    }
+
+                    else {
+
+                        // rule
+                        if (value.type == 'block-start') {
+
+                            // @ts-ignore
+                            context.children.push(token);
+
+                            stack.push(token);
+                            context = token;
+
+                            Object.assign(token, {type: 'Rule', selector: tokens.slice(), children: []});
+                        }
+
+                        else {
+
+                            let index: number = -1;
+
+                            for (let k = 0; k < tokens.length; k++) {
+
+                                if (tokens[k].type == 'colon') {
+
+                                    index = k;
+                                    break;
+                                }
+                            }
+
+                            if (index == -1) {
+
+                                // invalid declaration
+                                this.#errors.push(SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`));
+                                return;
+                            }
+
+                            // @ts-ignore
+                            context.children.push(token);
+
+                            // declaration
+                            Object.assign(token, {type: 'Declaration', name: tokens.slice(0, index), value: tokens.slice(index + 1)});
+
+                            // @ts-ignore
+                            if (token.name[token.name.length]?.type == 'whitespace') {
+
+                                // @ts-ignore
+                                token.name.pop();
+                            }
+
+                            // @ts-ignore
+                            if (token.value[0]?.type == 'whitespace') {
+
+                                // @ts-ignore
+                                token.value.shift();
+                            }
+                        }
+                    }
+
+                    tokens.length = 0;
+                }
+
+                else {
+
+                    switch (value.type) {
+
+                        case 'start-parens':
+                        case 'block-start':
+                        case 'attr-start':
+
+                            matchPairs.push(value);
+                            break;
+
+                        case 'attr-end':
+                        case 'end-parens':
+                        case 'block-end':
+
+                            if (matchPairs.length == 0) {
+
+                                this.#errors.push(SyntaxError(`Unexpected token found: {${value.type}} at ${src}:${position.line}:${position.column}`));
+                            }
+
+                            else if (matchPairs[matchPairs.length - 1]?.type != pairs[value.type]) {
+
+                                this.#errors.push(SyntaxError(`Unexpected token: expecting {${matchPairs[matchPairs.length - 1].type.replace('start', 'end')}} found {${value.type}} at ${src}:${position.line}:${position.column}`));
+                            }
+
+                            else {
+
+                                matchPairs.pop();
+                            }
+
+                            break;
+                    }
+                }
+
+                if (value.type == 'block-end') {
+
+                    context = stack.pop() || this.#root;
+                }
+
+                return;
+
+                // if (matchPairs.length == 0) {
+                //
+                //     console.debug({token, tokens});
+                //
+                //     matchEndBlock = false;
+                //     matchGroup.length = 0;
+                // }
+            }
 
             if (value.type == 'block-end') {
 
@@ -69,7 +221,7 @@ export class Parser {
                 }
 
                 context = stack[stack.length - 1] || this.#root;
-                continue;
+                return;
             }
 
             switch (context.type) {
@@ -80,7 +232,7 @@ export class Parser {
 
                     if (value.type == 'whitespace') {
 
-                        continue;
+                        return;
                     }
 
                     if (value.type == 'bad-comment' || value.type == 'bad-cdo-comment') {
@@ -115,12 +267,12 @@ export class Parser {
 
                         // @ts-ignore
                         context.children.push(token);
-                        continue;
+                        return;
                     }
 
                     if (value.type == 'at-rule') {
 
-                        token = <AstAtRule>{type: 'AtRule'};
+                        token = <AstAtRule>{type: 'AtRule', name: [{type: 'ident', value: value.value}]};
 
                         if (this.#options.location) {
 
@@ -131,55 +283,57 @@ export class Parser {
                             }
                         }
 
-                        const {
-                            tokens, errors
-                        } = matchComponents(generator, position, src, ['semi-colon', 'block-start'], [])
-
                         // @ts-ignore
                         context.children.push(token);
 
-                        const end: Token = tokens[tokens.length - 1];
+                        matchEndBlock = true;
+                        matchGroup = ['semi-colon', 'block-start'];
+                        matchPairs = [];
+                        tokens.length = 0;
+                        return;
 
-                        if (end?.type == 'block-start') {
+                        // const end: Token = tokens[tokens.length - 1];
+                        //
+                        // if (end?.type == 'block-start') {
+                        //
+                        //     while (['block-start', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
+                        //
+                        //         tokens.pop();
+                        //     }
+                        //
+                        //     token.children = [];
+                        //
+                        //     stack.push(token);
+                        //     context = token;
+                        // } else {
+                        //
+                        //     while (['semi-colon', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
+                        //
+                        //         tokens.pop();
+                        //     }
+                        //
+                        //     if (this.#options.location) {
+                        //
+                        //         // @ts-ignore
+                        //         token.location.end = {...position};
+                        //     }
+                        // }
+                        //
+                        // token.name = [value];
+                        // token.value = tokens;
+                        //
+                        // while (token.value[0]?.type == 'whitespace') {
+                        //
+                        //     token.value.shift();
+                        // }
 
-                            while (['block-start', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
-
-                                tokens.pop();
-                            }
-
-                            token.children = [];
-
-                            stack.push(token);
-                            context = token;
-                        } else {
-
-                            while (['semi-colon', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
-
-                                tokens.pop();
-                            }
-
-                            if (this.#options.location) {
-
-                                // @ts-ignore
-                                token.location.end = {...position};
-                            }
-                        }
-
-                        token.name = [value];
-                        token.value = tokens;
-
-                        while (token.value[0]?.type == 'whitespace') {
-
-                            token.value.shift();
-                        }
-
-                        break;
+                        // break;
                     } else {
 
                         // Rule or declaration
 
                         // @ts-ignore
-                        const token: AstNode = {type: ''};
+                        token = {type: ''};
 
                         if (location) {
 
@@ -190,111 +344,111 @@ export class Parser {
                             }
                         }
 
-                        const {
-                            tokens, errors
-                        } = matchComponents(generator, position, src, context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'], [value])
+                        matchEndBlock = true;
+                        matchGroup = context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'];
+                        matchPairs = [value];
+                        tokens.length = 0;
+                        tokens.push(value);
 
-                        tokens.unshift(value);
-
-                        if (tokens[tokens.length - 1]?.type == 'block-start') {
-
-                            while (['whitespace', 'block-start'].includes(tokens[tokens.length - 1]?.type)) {
-
-                                tokens.pop();
-                            }
-
-                            stack.push(token);
-                            Object.assign(token, {type: 'Rule', selector: tokens, children: []});
-
-                            // @ts-ignore
-                            context.children.push(token);
-                            context = token;
-                            break;
-                        } else {
-
-                            let index: number = -1;
-
-                            const parent = context;
-
-                            if (tokens[tokens.length - 1]?.type == 'block-end') {
-
-                                stack.pop();
-                                context = stack[stack.length - 1] || this.#root;
-                            }
-
-                            while (['semi-colon', 'block-end', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
-
-                                tokens.pop();
-                            }
-
-                            tokens.some((t, key) => {
-
-                                if (t.type == 'colon') {
-
-                                    index = key;
-                                    return true
-                                }
-
-                                return false;
-                            });
-
-                            if (index == -1) {
-
-                                this.#errors.push(new SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`))
-                                break;
-                            } else {
-
-                                Object.assign(token, {
-                                    type: 'Declaration',
-                                    name: tokens.slice(0, index),
-                                    value: tokens.slice(index + 1)
-                                });
-
-                                // @ts-ignore
-                                while (token.value[0]?.type == 'whitespace') {
-
-                                    // @ts-ignore
-                                    token.value.shift();
-                                }
-
-                                let validDeclaration: boolean = true;
-
-                                for (const val of (<AstDeclaration>token).value) {
-
-                                    if (val.type == 'unclosed-string') {
-
-                                        // recoverable
-                                        this.#errors.push(SyntaxError(`unclosed string at ${src}:${position.line}:${position.column}`));
-
-                                        // @ts-ignore
-                                        val.type = 'string';
-                                        val.value += val.value.charAt(0);
-                                    } else if (['bad-string'].includes(val.type)) {
-
-                                        validDeclaration = false;
-                                        this.#errors.push(SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`))
-                                        break;
-                                    }
-                                }
-
-                                if (validDeclaration) {
-
-                                    // @ts-ignore
-                                    parent.children.push(token);
-                                }
-                            }
-                        }
+                        // const {
+                        //     tokens, errors
+                        // } = matchComponents(generator, position, src, context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'], [value])
+                        //
+                        // tokens.unshift(value);
+                        //
+                        // if (tokens[tokens.length - 1]?.type == 'block-start') {
+                        //
+                        //     while (['whitespace', 'block-start'].includes(tokens[tokens.length - 1]?.type)) {
+                        //
+                        //         tokens.pop();
+                        //     }
+                        //
+                        //     stack.push(token);
+                        //     Object.assign(token, {type: 'Rule', selector: tokens, children: []});
+                        //
+                        //     // @ts-ignore
+                        //     context.children.push(token);
+                        //     context = token;
+                        //     break;
+                        // } else {
+                        //
+                        //     let index: number = -1;
+                        //
+                        //     const parent = context;
+                        //
+                        //     if (tokens[tokens.length - 1]?.type == 'block-end') {
+                        //
+                        //         stack.pop();
+                        //         context = stack[stack.length - 1] || this.#root;
+                        //     }
+                        //
+                        //     while (['semi-colon', 'block-end', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
+                        //
+                        //         tokens.pop();
+                        //     }
+                        //
+                        //     tokens.some((t, key) => {
+                        //
+                        //         if (t.type == 'colon') {
+                        //
+                        //             index = key;
+                        //             return true
+                        //         }
+                        //
+                        //         return false;
+                        //     });
+                        //
+                        //     if (index == -1) {
+                        //
+                        //         this.#errors.push(new SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`))
+                        //         break;
+                        //     } else {
+                        //
+                        //         Object.assign(token, {
+                        //             type: 'Declaration',
+                        //             name: tokens.slice(0, index),
+                        //             value: tokens.slice(index + 1)
+                        //         });
+                        //
+                        //         // @ts-ignore
+                        //         while (token.value[0]?.type == 'whitespace') {
+                        //
+                        //             // @ts-ignore
+                        //             token.value.shift();
+                        //         }
+                        //
+                        //         let validDeclaration: boolean = true;
+                        //
+                        //         for (const val of (<AstDeclaration>token).value) {
+                        //
+                        //             if (val.type == 'unclosed-string') {
+                        //
+                        //                 // recoverable
+                        //                 this.#errors.push(SyntaxError(`unclosed string at ${src}:${position.line}:${position.column}`));
+                        //
+                        //                 // @ts-ignore
+                        //                 val.type = 'string';
+                        //                 val.value += val.value.charAt(0);
+                        //             } else if (['bad-string'].includes(val.type)) {
+                        //
+                        //                 validDeclaration = false;
+                        //                 this.#errors.push(SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`))
+                        //                 break;
+                        //             }
+                        //         }
+                        //
+                        //         if (validDeclaration) {
+                        //
+                        //             // @ts-ignore
+                        //             parent.children.push(token);
+                        //         }
+                        //     }
+                        // }
                     }
 
                     break;
-
             }
-
-            // if (hasListeners) {
-            //
-            //     this.#observer.trigger('traverse', result, 'enter', context);
-            // }
-        }
+        });
 
         if (this.#options.location) {
 
