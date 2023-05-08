@@ -1,176 +1,176 @@
 
 export interface LiteralToken {
 
-    type: 'literal';
-    value: string;
+    typ: 'Literal';
+    val: string;
 }
 
 export interface IdentToken {
 
-    type: 'ident',
-    value: string;
+    typ: 'Ident',
+    val: string;
 }
 
 export interface CommaToken {
 
-    type: 'comma'
+    typ: 'Comma'
 }
 
 export interface ColonToken {
 
-    type: 'colon'
+    typ: 'Colon'
 }
 
 export interface SemiColonToken {
 
-    type: 'semi-colon'
+    typ: 'Semi-colon'
 }
 
 export interface NumberToken {
 
-    type: 'number',
-    value: string;
+    typ: 'Number',
+    val: string;
 }
 
 export interface AtRuleToken {
 
-    type: 'at-rule',
-    value: string;
+    typ: 'At-rule',
+    val: string;
 }
 
 export interface PercentageToken {
 
-    type: 'percentage',
-    value: string;
+    typ: 'Percentage',
+    val: string;
 }
 
 export interface FunctionToken {
 
-    type: 'function',
-    value: string;
+    typ: 'Function',
+    val: string;
 }
 
 export interface StringToken {
 
-    type: 'string';
-    value: string;
+    typ: 'String';
+    val: string;
 }
 
 export interface BadStringToken {
 
-    type: 'bad-string',
-    value: string;
+    typ: 'Bad-string',
+    val: string;
 }
 
 export interface UnclosedStringToken {
 
-    type: 'unclosed-string',
-    value: string;
+    typ: 'Unclosed-string',
+    val: string;
 }
 
 export interface DimensionToken {
 
-    type: 'dimension',
-    value: string;
+    typ: 'Dimension',
+    val: string;
     unit: string;
 }
 
 export interface HashToken {
 
-    type: 'hash',
-    value: string;
+    typ: 'Hash',
+    val: string;
 }
 
 export interface BlockStartToken {
 
-    type: 'block-start'
+    typ: 'Block-start'
 }
 
 export interface BlockEndToken {
 
-    type: 'block-end'
+    typ: 'Block-end'
 }
 
 export interface AttrStartToken {
 
-    type: 'attr-start'
+    typ: 'Attr-start'
 }
 
 export interface AttrEndToken {
 
-    type: 'attr-end'
+    typ: 'Attr-end'
 }
 
 export interface ParensStartToken {
 
-    type: 'start-parens'
+    typ: 'Start-parens'
 }
 
 export interface ParensEndToken {
 
-    type: 'end-parens'
+    typ: 'End-parens'
 }
 
 export interface WhitespaceToken {
 
-    type: 'whitespace'
+    typ: 'Whitespace'
 }
 
 export interface CommentToken {
 
-    type: 'comment';
-    value: string;
+    typ: 'Comment';
+    val: string;
 }
 
 export interface BadCommentToken {
 
-    type: 'bad-comment';
-    value: string;
+    typ: 'Bad-comment';
+    val: string;
 }
 
 export interface CDOCommentToken {
 
-    type: 'cdo-comment';
-    value: string;
+    typ: 'Cdo-comment';
+    val: string;
 }
 
 export interface BadCDOCommentToken {
 
-    type: 'bad-cdo-comment';
-    value: string;
+    typ: 'Bad-cdo-comment';
+    val: string;
 }
 
 export interface IncludesToken {
 
-    type: 'includes';
-    value: '~=';
+    typ: 'Includes';
+    val: '~=';
 }
 
 export interface DashMatchToken {
 
-    type: 'dash-match';
-    value: '|=';
+    typ: 'Dash-match';
+    val: '|=';
 }
 
 export interface LessThanToken {
 
-    type: 'less-than';
+    typ: 'Less-than';
 }
 
 export interface GreaterThanToken {
 
-    type: 'greater-than';
+    typ: 'Greater-than';
 }
 
 export interface PseudoSelectorToken {
 
-    type: 'pseudo-selector';
-    value: string;
+    typ: 'Pseudo-selector';
+    val: string;
 }
 
 export interface EOFToken {
 
-    type: 'EOF';
+    typ: 'EOF';
 }
 
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |

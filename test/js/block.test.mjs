@@ -793,11 +793,11 @@ class Renderer {
             acc += this.renderToken(curr);
             return acc;
         };
-        switch (data.type) {
+        switch (data.typ) {
             case 'Comment':
-                return this.#options.removeComments ? '' : data.value;
+                return this.#options.removeComments ? '' : data.val;
             case 'StyleSheet':
-                return data.children.reduce((css, node) => {
+                return data.chi.reduce((css, node) => {
                     const str = this.#doRender(node, 0);
                     if (str === '') {
                         return css;
@@ -809,19 +809,19 @@ class Renderer {
                 }, '');
             case 'AtRule':
             case 'Rule':
-                if (data.type == 'AtRule' && !('children' in data)) {
-                    return `${indent}@${data.name.reduce(reducer, '')} ${data.value.reduce(reducer, '')};`;
+                if (data.typ == 'AtRule' && !('chi' in data)) {
+                    return `${indent}@${data.nam.reduce(reducer, '')} ${data.val.reduce(reducer, '')};`;
                 }
-                const children = data.children.reduce((css, node) => {
+                const children = data.chi.reduce((css, node) => {
                     let str;
-                    if (node.type == 'Comment') {
-                        str = this.#options.removeComments ? '' : node.value;
+                    if (node.typ == 'Comment') {
+                        str = this.#options.removeComments ? '' : node.val;
                     }
-                    else if (node.type == 'Declaration') {
-                        str = `${node.name.reduce(reducer, '')}:${this.#options.indent}${node.value.reduce(reducer, '')};`;
+                    else if (node.typ == 'Declaration') {
+                        str = `${node.nam.reduce(reducer, '')}:${this.#options.indent}${node.val.reduce(reducer, '')};`;
                     }
-                    else if (node.type == 'AtRule' && !('children' in node)) {
-                        str = `@${node.name.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${node.value.reduce(reducer, '')};`;
+                    else if (node.typ == 'AtRule' && !('children' in node)) {
+                        str = `@${node.nam.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${node.val.reduce(reducer, '')};`;
                     }
                     else {
                         str = this.#doRender(node, level + 1);
@@ -834,10 +834,10 @@ class Renderer {
                     }
                     return `${css}${this.#options.newLine}${indentSub}${str}`;
                 }, '');
-                if (data.type == 'AtRule') {
-                    return indent + '@' + data.name.reduce(reducer, '') + `${this.#options.indent}${data.value ? data.value.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                if (data.typ == 'AtRule') {
+                    return indent + '@' + data.nam.reduce(reducer, '') + `${this.#options.indent}${data.val ? data.val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
                 }
-                return indent + data.selector.reduce(reducer, '') + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                return indent + data.sel.reduce(reducer, '') + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
         }
         return '';
     }
@@ -849,46 +849,46 @@ class Renderer {
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | GreaterThanToken;
          */
-        switch (token.type) {
-            case 'function':
-                return token.value + '(';
-            case 'includes':
+        switch (token.typ) {
+            case 'Function':
+                return token.val + '(';
+            case 'Includes':
                 return '~=';
-            case 'dash-match':
+            case 'Dash-match':
                 return '|=';
-            case 'less-than':
+            case 'Less-than':
                 return '<';
-            case 'greater-than':
+            case 'Greater-than':
                 return '>';
-            case 'start-parens':
+            case 'Start-parens':
                 return '(';
-            case 'end-parens':
+            case 'End-parens':
                 return ')';
-            case 'attr-start':
+            case 'Attr-start':
                 return '[';
-            case 'attr-end':
+            case 'Attr-end':
                 return ']';
-            case 'whitespace':
+            case 'Whitespace':
                 return ' ';
-            case 'colon':
+            case 'Colon':
                 return ':';
-            case 'semi-colon':
+            case 'Semi-colon':
                 return ';';
-            case 'comma':
+            case 'Comma':
                 return ',';
-            case 'dimension':
-                return token.value + token.unit;
-            case 'percentage':
-                return token.value + '%';
-            case 'at-rule':
-            case 'number':
-            case 'hash':
-            case 'pseudo-selector':
-            case 'comment':
-            case 'literal':
-            case 'string':
-            case 'ident':
-                return token.value;
+            case 'Dimension':
+                return token.val + token.unit;
+            case 'Percentage':
+                return token.val + '%';
+            case 'At-rule':
+            case 'Number':
+            case 'Hash':
+            case 'Pseudo-selector':
+            case 'Comment':
+            case 'Literal':
+            case 'String':
+            case 'Ident':
+                return token.val;
         }
         throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
     }
@@ -987,6 +987,9 @@ function isNewLine(codepoint) {
     // \n \r \f
     return codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
+function isWhiteSpace(codepoint) {
+    return codepoint == 0x9 || codepoint == 0x20 || isNewLine(codepoint);
+}
 
 function update(location, css) {
     if (css === '') {
@@ -996,321 +999,319 @@ function update(location, css) {
     let codepoint;
     let offset;
     const j = css.length - 1;
-    if (location.line == 0) {
-        location.line = 1;
+    if (location.lin == 0) {
+        location.lin = 1;
     }
     while (i <= j) {
         codepoint = css.codePointAt(i);
         offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
         if (isNewLine(codepoint)) {
-            location.line++;
-            location.column = 0;
+            location.lin++;
+            location.col = 0;
             // \r\n
             if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
                 offset++;
-                location.index++;
+                location.ind++;
             }
         }
         else {
-            location.column++;
+            location.col++;
         }
-        location.index++;
+        location.ind++;
         i += offset;
     }
     return location;
 }
 
-function stringIterator(str, bufferSize = 10) {
-    const iterator = str[Symbol.iterator]();
-    let current = 0;
-    const prev = [];
-    const iter = {
-        next(count = 1) {
-            const res = { value: '', done: false };
-            while (count-- > 0) {
-                const result = iterator.next();
-                if (!result.done) {
-                    prev.push(current);
-                    if (bufferSize > 0 && prev.length > bufferSize) {
-                        prev.shift();
-                    }
-                    res.value += result.value;
-                    current += result.value.length;
-                }
-                else {
-                    return res.value === '' ? result : res;
-                }
-            }
-            return res;
-        },
-        peek(count = 1) {
-            let chr = '';
-            let curr = current;
-            while (count-- > 0) {
-                const codepoint = str.codePointAt(curr);
-                if (codepoint == null) {
-                    return chr;
-                }
-                const c = String.fromCodePoint(codepoint);
-                chr += c;
-                curr += c.length;
-            }
-            return chr;
-        },
-        prev(count = 1) {
-            return prev.slice(-Math.min(count, str.length) - 1, -1).reduce((acc, curr) => acc + String.fromCodePoint(str.codePointAt(curr)), '');
-        },
-        [Symbol.iterator]() {
-            return iter;
-        }
-    };
-    return iter;
-}
-
-function* tokenize(iterator, position) {
-    let result;
+function tokenize(iterator, root, position, trackLocation /*, callable: (token: Token) => void */) {
+    let value;
     let buffer = '';
-    while (true) {
-        result = iterator.next();
-        if (result.done) {
-            break;
+    let i = -1;
+    let total = iterator.length;
+    const weakMap = new WeakMap;
+    function peek(count = 1) {
+        if (count == 1) {
+            return iterator.charAt(i + 1);
         }
-        if (/\s/.test(result.value)) {
+        return iterator.slice(i, i + count);
+    }
+    function prev(count = 1) {
+        if (count == 1) {
+            return i == 0 ? '' : iterator.charAt(i - 1);
+        }
+        return iterator.slice(i - 1 - count, i - 1);
+    }
+    function next(count = 1) {
+        let char = '';
+        while (count-- > 0 && i < total) {
+            const codepoint = iterator.codePointAt(++i);
+            if (codepoint < 0x80) {
+                char += iterator.charAt(i);
+            }
+            else {
+                if (codepoint == null) {
+                    return char;
+                }
+                const chr = String.fromCodePoint(codepoint);
+                i += chr.length - 1;
+                char += chr;
+            }
+        }
+        return char;
+    }
+    function pushToken(token) {
+        tokens.push(token);
+        if (trackLocation) {
+            weakMap.set(token, { ...position });
+        }
+    }
+    const tokens = [];
+    const stack = [root];
+    let context = root;
+    while (i < total) {
+        value = next();
+        if (i >= total) {
             if (buffer.length > 0) {
-                yield getType(buffer);
+                pushToken(getType(buffer));
                 buffer = '';
             }
-            let whitespace = result.value;
-            while (!result.done) {
-                result = iterator.next();
-                if (result.done) {
-                    update(position, whitespace);
-                    break;
-                }
-                if (!/\s/.test(result.value)) {
-                    break;
-                }
-                whitespace += result.value;
+            break;
+        }
+        if (isWhiteSpace(value.codePointAt(0))) {
+            if (buffer.length > 0) {
+                pushToken(getType(buffer));
+                buffer = '';
             }
-            yield { type: 'whitespace' };
+            let whitespace = value;
+            while (i < total) {
+                value = next();
+                if (i >= total) {
+                    break;
+                }
+                if (!isWhiteSpace(value.codePointAt(0))) {
+                    break;
+                }
+                whitespace += value;
+            }
+            pushToken({ typ: 'Whitespace' });
             update(position, whitespace);
-            if (result.done) {
+            buffer = '';
+            if (i >= total) {
                 break;
             }
         }
-        switch (result.value) {
+        switch (value) {
             case '/':
                 if (buffer.length > 0) {
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
-                buffer += result.value;
-                if (iterator.peek() == '*') {
-                    while (!result.done) {
-                        result = iterator.next();
-                        if (result.done) {
-                            yield {
-                                type: 'bad-comment', value: buffer
-                            };
+                buffer += value;
+                if (peek() == '*') {
+                    while (i < total) {
+                        value = next();
+                        if (i >= total) {
+                            pushToken({
+                                typ: 'Bad-comment', val: buffer
+                            });
                             update(position, buffer);
-                            return;
+                            break;
                         }
-                        if (result.value == '\\') {
-                            buffer += result.value;
-                            result = iterator.next();
-                            if (result.done) {
-                                yield {
-                                    type: 'bad-comment',
-                                    value: buffer
-                                };
+                        if (value == '\\') {
+                            buffer += value;
+                            value = next();
+                            if (i >= total) {
+                                pushToken({
+                                    typ: 'Bad-comment',
+                                    val: buffer
+                                });
                                 update(position, buffer);
-                                return;
+                                break;
                             }
-                            buffer += result.value;
+                            buffer += value;
                             continue;
                         }
-                        if (result.value == '*') {
-                            buffer += result.value;
-                            result = iterator.next();
-                            if (result.done) {
-                                yield {
-                                    type: 'bad-comment', value: buffer
-                                };
+                        if (value == '*') {
+                            buffer += value;
+                            value = next();
+                            if (i >= total) {
+                                pushToken({
+                                    typ: 'Bad-comment', val: buffer
+                                });
                                 update(position, buffer);
-                                return;
+                                break;
                             }
-                            buffer += result.value;
-                            if (result.value == '/') {
-                                yield { type: 'comment', value: buffer };
+                            buffer += value;
+                            if (value == '/') {
+                                pushToken({ typ: 'Comment', val: buffer });
                                 update(position, buffer);
                                 buffer = '';
                                 break;
                             }
                         }
                         else {
-                            buffer += result.value;
+                            buffer += value;
                         }
                     }
                 }
                 break;
             case '<':
                 if (buffer.length > 0) {
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
-                buffer += result.value;
-                result = iterator.next();
-                if (result.done) {
+                buffer += value;
+                value = next();
+                if (i >= total) {
                     break;
                 }
-                if (iterator.peek(3) == '!--') {
-                    while (!result.done) {
-                        result = iterator.next();
-                        if (result.done) {
+                if (peek(3) == '!--') {
+                    while (i < total) {
+                        value = next();
+                        if (i >= total) {
                             break;
                         }
-                        buffer += result.value;
-                        if (result.value == '>' && iterator.prev(2) == '--') {
-                            yield {
-                                type: 'cdo-comment',
-                                value: buffer
-                            };
+                        buffer += value;
+                        if (value == '>' && prev(2) == '--') {
+                            pushToken({
+                                typ: 'Cdo-comment',
+                                val: buffer
+                            });
                             update(position, buffer);
                             buffer = '';
                             break;
                         }
                     }
                 }
-                if (result.done) {
-                    yield { type: 'bad-cdo-comment', value: buffer };
+                if (i >= total) {
+                    pushToken({ typ: 'Bad-cdo-comment', val: buffer });
                     update(position, buffer);
                     buffer = '';
                 }
                 break;
             case '\\':
-                result = iterator.next();
+                value = next();
                 // EOF
-                if (iterator.peek() === '') {
+                if (i + 1 >= total) {
                     // end of stream ignore \\
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                     break;
                 }
-                buffer += result.value;
+                buffer += value;
                 break;
             case '"':
             case "'":
-                const quote = result.value;
+                const quote = value;
                 let hasNewLine = false;
                 if (buffer.length > 0) {
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
-                buffer += result.value;
-                while (!result.done) {
-                    result = iterator.next();
-                    if (result.done) {
-                        yield { type: hasNewLine ? 'bad-string' : 'unclosed-string', value: buffer };
+                buffer += value;
+                while (i < total) {
+                    value = next();
+                    if (i >= total) {
+                        pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
                         update(position, buffer);
                         return;
                     }
-                    if (result.value == '\\') {
-                        buffer += result.value;
-                        result = iterator.next();
-                        if (result.done) {
-                            yield getType(buffer);
+                    if (value == '\\') {
+                        buffer += value;
+                        value = next();
+                        if (i >= total) {
+                            pushToken(getType(buffer));
                             update(position, buffer);
                             return;
                         }
-                        buffer += result.value;
+                        buffer += value;
                         continue;
                     }
-                    if (result.value == quote) {
-                        buffer += result.value;
-                        yield { type: hasNewLine ? 'bad-string' : 'string', value: buffer };
+                    if (value == quote) {
+                        buffer += value;
+                        pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
                         update(position, buffer);
                         buffer = '';
                         break;
                     }
-                    if (isNewLine(result.value.codePointAt(0))) {
+                    if (isNewLine(value.codePointAt(0))) {
                         hasNewLine = true;
                     }
-                    if (hasNewLine && result.value == ';') {
-                        yield { type: 'bad-string', value: buffer };
+                    if (hasNewLine && value == ';') {
+                        pushToken({ typ: 'Bad-string', val: buffer });
                         update(position, buffer);
-                        yield getType(result.value);
-                        update(position, result.value);
+                        pushToken(getType(value));
+                        update(position, value);
                         buffer = '';
                         break;
                     }
-                    buffer += result.value;
+                    buffer += value;
                 }
                 break;
             case '~':
             case '|':
                 if (buffer.length > 0) {
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     buffer = '';
                 }
-                buffer += result.value;
-                result = iterator.next();
-                if (result.done) {
-                    yield getType(buffer);
+                buffer += value;
+                value = next();
+                if (i >= total) {
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     return;
                 }
-                if (result.value == '=') {
-                    buffer += result.value;
-                    yield {
-                        type: buffer[0] == '~' ? 'includes' : 'dash-matches',
-                        value: buffer
-                    };
+                if (value == '=') {
+                    buffer += value;
+                    pushToken({
+                        typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
+                        val: buffer
+                    });
                     update(position, buffer);
                     buffer = '';
                     break;
                 }
-                yield getType(buffer);
+                pushToken(getType(buffer));
                 update(position, buffer);
                 buffer = '';
-                buffer += result.value;
+                buffer += value;
                 break;
             case ':':
             case ',':
-            case ';':
             case '=':
                 if (buffer.length > 0) {
                     update(position, buffer);
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     buffer = '';
                 }
-                if (result.value == ':' && isIdent(iterator.peek())) {
-                    buffer += result.value;
+                if (value == ':' && isIdent(peek())) {
+                    buffer += value;
                     break;
                 }
-                yield getType(result.value);
-                update(position, result.value);
+                pushToken(getType(value));
+                update(position, value);
                 break;
             case ')':
                 if (buffer.length > 0) {
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
-                yield { type: 'end-parens' };
-                update(position, result.value);
+                pushToken({ typ: 'End-parens' });
+                update(position, value);
                 break;
             case '(':
                 if (buffer.length == 0) {
-                    yield { type: 'start-parens' };
-                    update(position, result.value);
+                    pushToken({ typ: 'Start-parens' });
+                    update(position, value);
                 }
                 else {
-                    buffer += result.value;
-                    yield getType(buffer);
+                    buffer += value;
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
@@ -1319,115 +1320,231 @@ function* tokenize(iterator, position) {
             case ']':
             case '{':
             case '}':
+            case ';':
                 if (buffer.length > 0) {
-                    yield getType(buffer);
+                    pushToken(getType(buffer));
                     update(position, buffer);
                     buffer = '';
                 }
-                yield getBlockType(result.value);
-                update(position, result.value);
+                pushToken(getBlockType(value));
+                if (value == '{' || value == ';') {
+                    const node = parseNode(context, tokens, trackLocation, weakMap);
+                    if (node != null) {
+                        stack.push(node);
+                        context = node;
+                    }
+                    tokens.length = 0;
+                }
+                else if (value == '}') {
+                    parseNode(context, tokens, trackLocation, weakMap);
+                    stack.pop();
+                    context = stack[stack.length - 1] || root;
+                    tokens.length = 0;
+                    buffer = '';
+                }
+                update(position, value);
                 break;
             default:
                 if (buffer === '') {
-                    let code = result.value.codePointAt(0);
+                    // parse number or dimension or percentage
+                    let code = value.codePointAt(0);
                     let isNumber = isDigit(code);
                     // + or -
                     if (code == 0x2b || code == 0x2d || isNumber) {
-                        buffer += result.value;
-                        if (!isNumber && !isDigit(iterator.peek().codePointAt(0))) {
+                        buffer += value;
+                        if (!isNumber && !isDigit(peek().codePointAt(0))) {
                             break;
                         }
-                        while (isDigit(iterator.peek().codePointAt(0))) {
-                            result = iterator.next();
-                            buffer += result.value;
+                        while (isDigit(peek().codePointAt(0))) {
+                            value = next();
+                            buffer += value;
                         }
-                        let dec = iterator.peek(2);
+                        let dec = peek(2);
                         // .
                         if (dec.codePointAt(0) == 0x2e && isDigit(dec.codePointAt(1))) {
-                            result = iterator.next(2);
+                            value = next(2);
                             buffer += dec;
-                            while (isDigit(iterator.peek().codePointAt(0))) {
-                                result = iterator.next();
-                                buffer += result.value;
+                            while (isDigit(peek().codePointAt(0))) {
+                                value = next();
+                                buffer += value;
                             }
                         }
-                        dec = iterator.peek(3);
+                        dec = peek(3);
                         code = dec.codePointAt(0);
                         // E or e
                         if (code == 0x45 || code == 0x65) {
                             code = dec.codePointAt(1);
                             if ((code == 0x2d || code == 0x2b) && isDigit(dec.codePointAt(2))) {
                                 buffer += dec;
-                                result = iterator.next(3);
+                                value = next(3);
                             }
                             else if (isDigit(code)) {
-                                result = iterator.next();
-                                buffer += result.value;
+                                value = next();
+                                buffer += value;
                             }
                         }
-                        while (isDigit(iterator.peek().codePointAt(0))) {
-                            result = iterator.next();
-                            buffer += result.value;
+                        while (isDigit(peek().codePointAt(0))) {
+                            value = next();
+                            buffer += value;
                         }
-                        code = iterator.peek().codePointAt(0);
+                        code = peek().codePointAt(0);
                         if (isIdentStart(code)) {
-                            result = iterator.next();
-                            let unit = result.value;
-                            while (isIdentCodepoint(iterator.peek().codePointAt(0))) {
-                                result = iterator.next();
-                                unit += result.value;
+                            value = next();
+                            let unit = value;
+                            while (isIdentCodepoint(peek().codePointAt(0))) {
+                                value = next();
+                                unit += value;
                             }
-                            yield {
-                                type: 'dimension',
-                                value: buffer,
+                            pushToken({
+                                typ: 'Dimension',
+                                val: buffer,
                                 unit
-                            };
+                            });
                             update(position, buffer);
                             buffer = '';
                         }
                         // %
                         else if (code == 0x25) {
-                            result = iterator.next();
-                            // buffer += result.value;
-                            yield {
-                                type: 'percentage',
-                                value: buffer
-                            };
+                            value = next();
+                            // buffer += value;
+                            pushToken({
+                                typ: 'Percentage',
+                                val: buffer
+                            });
                             update(position, buffer);
                             buffer = '';
                         }
                         else {
-                            yield {
-                                type: 'number',
-                                value: buffer
-                            };
+                            pushToken({
+                                typ: 'Number',
+                                val: buffer
+                            });
                             update(position, buffer);
                             buffer = '';
                         }
                         break;
                     }
                 }
-                buffer += result.value;
+                buffer += value;
                 break;
         }
     }
     if (buffer.length > 0) {
-        yield getType(buffer);
+        // pushToken(getType(buffer));
         update(position, buffer);
+    }
+    // pushToken({typ: 'EOF'});
+}
+function parseNode(root, tokens, trackLocation, weakMap) {
+    let i = 0;
+    for (i = 0; i < tokens.length; i++) {
+        if (tokens[i].typ == 'Comment') {
+            // @ts-ignore
+            root.chi.push(tokens[i]);
+            if (trackLocation) {
+                const position = weakMap.get(tokens[i]);
+                Object.assign(tokens[i], {
+                    loc: {
+                        sta: weakMap.get(tokens[i]),
+                        end: update({ ...position }, tokens[i].val)
+                    }
+                });
+                console.debug(weakMap.get(tokens[i]));
+            }
+        }
+        else if (tokens[i].typ != 'Whitespace') {
+            break;
+        }
+    }
+    tokens = tokens.slice(i);
+    const delim = tokens.pop();
+    while (['whitespace'].includes(tokens[tokens.length - 1]?.typ)) {
+        tokens.pop();
+    }
+    if (tokens.length == 0) {
+        return null;
+    }
+    if (tokens[0]?.typ == 'At-rule') {
+        const atRule = tokens.shift();
+        while (['Whitespace'].includes(tokens[0]?.typ)) {
+            tokens.shift();
+        }
+        const node = {
+            typ: 'AtRule',
+            nam: [{ typ: 'Ident', val: atRule.val }],
+            val: tokens
+        };
+        // @ts-ignore
+        root.chi.push(node);
+        if (delim.typ == 'Block-start') {
+            node.chi = [];
+            return node;
+        }
+    }
+    else {
+        // rule
+        if (delim.typ == 'Block-start') {
+            const node = {
+                typ: 'Rule',
+                sel: tokens,
+                chi: []
+            };
+            // @ts-ignore
+            root.chi.push(node);
+            return node;
+        }
+        else {
+            // declaration
+            let name;
+            let value;
+            for (let i = 0; i < tokens.length; i++) {
+                if (tokens[i].typ == 'Comment') {
+                    continue;
+                }
+                if (tokens[i].typ == 'Colon') {
+                    name = tokens.slice(0, i);
+                    value = tokens.slice(i + 1);
+                }
+                else if (['function', 'pseudo-selector'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
+                    tokens[i].val = tokens[i].val.slice(1);
+                    if (tokens[i].typ == 'Pseudo-selector') {
+                        tokens[i].typ = 'Ident';
+                    }
+                    name = tokens.slice(0, i);
+                    value = tokens.slice(i);
+                }
+            }
+            const node = {
+                typ: 'Declaration',
+                // @ts-ignore
+                nam: name,
+                // @ts-ignore
+                val: value
+            };
+            while (node.val[0]?.typ == 'Whitespace') {
+                node.val.shift();
+            }
+            // @ts-ignore
+            root.chi.push(node);
+            return null;
+        }
     }
 }
 function getBlockType(chr) {
+    if (chr == ';') {
+        return { typ: 'Semi-colon' };
+    }
     if (chr == '{') {
-        return { type: 'block-start' };
+        return { typ: 'Block-start' };
     }
     if (chr == '}') {
-        return { type: 'block-end' };
+        return { typ: 'Block-end' };
     }
     if (chr == '[') {
-        return { type: 'attr-start' };
+        return { typ: 'Attr-start' };
     }
     if (chr == ']') {
-        return { type: 'attr-end' };
+        return { typ: 'Attr-end' };
     }
     throw new Error(`unhandled token: '${chr}'`);
 }
@@ -1436,102 +1553,62 @@ function getType(value) {
         throw new Error('empty string?');
     }
     if (value == ':') {
-        return { type: 'colon' };
+        return { typ: 'Colon' };
     }
     if (value == ';') {
-        return { type: 'semi-colon' };
+        return { typ: 'Semi-colon' };
     }
     if (value == ',') {
-        return { type: 'comma' };
+        return { typ: 'Comma' };
     }
     if (value == '<') {
-        return { type: 'less-than' };
+        return { typ: 'Less-than' };
     }
     if (value == '>') {
-        return { type: 'greater-than' };
+        return { typ: 'Greater-than' };
     }
     if (isPseudo(value)) {
         return {
-            type: 'pseudo-selector',
-            value
+            typ: 'Pseudo-selector',
+            val: value
             // buffer: buffer.slice()
         };
     }
     if (isAtKeyword(value)) {
         return {
-            type: 'at-rule',
-            value: value.slice(1),
+            typ: 'At-rule',
+            val: value.slice(1)
             // buffer: buffer.slice()
         };
     }
     if (isFunction(value)) {
         return {
-            type: 'function',
-            value: value.slice(0, -1)
+            typ: 'Function',
+            val: value.slice(0, -1)
         };
     }
     if (isIdent(value)) {
         return {
-            type: 'ident',
-            value
+            typ: 'Ident',
+            val: value
         };
     }
     if (value.charAt(0) == '#' && isHash(value)) {
         return {
-            type: 'hash',
-            value
+            typ: 'Hash',
+            val: value
         };
     }
     if ('"\''.includes(value.charAt(0))) {
         return {
-            type: 'unclosed-string',
-            value
+            typ: 'Unclosed-string',
+            val: value
         };
     }
     return {
-        type: 'literal',
-        value
+        typ: 'Literal',
+        val: value
     };
-}
-
-function matchComponents(iterator, position, src, endBlock, states) {
-    // const states: string[] = [];
-    const errors = [];
-    const tokens = [];
-    const pairs = { 'end-parens': 'start-parens', 'block-end': 'block-start', 'attr-end': 'attr-start' };
-    let result = iterator.next();
-    // console.debug(result);
-    while (!result.done) {
-        if (endBlock.includes(result.value.type)) {
-            // console.debug({endBlock: result.value});
-            tokens.push(result.value);
-            break;
-        }
-        switch (result.value.type) {
-            case 'start-parens':
-            case 'block-start':
-            case 'attr-start':
-                states.push(result.value);
-                break;
-            case 'attr-end':
-            case 'end-parens':
-            case 'block-end':
-                if (states.length == 0) {
-                    errors.push(SyntaxError(`Unexpected token found: {${result.value.type}} at ${src}:${position.line}:${position.column}`));
-                }
-                else if (states[states.length - 1]?.type != pairs[result.value.type]) {
-                    errors.push(SyntaxError(`Unexpected token: expecting {${states[states.length - 1].type.replace('start', 'end')}} found {${result.value.type}} at ${src}:${position.line}:${position.column}`));
-                }
-                else {
-                    states.pop();
-                }
-                break;
-        }
-        tokens.push(result.value);
-        result = iterator.next();
-        // console.debug(result);
-    }
-    return { tokens, errors };
 }
 
 class Parser {
@@ -1544,6 +1621,7 @@ class Parser {
         strict: false,
         location: false
     }) {
+        // @ts-ignore
         this.#options = { strict: false, location: false, ...options };
         this.#observer = new Observer();
     }
@@ -1554,196 +1632,14 @@ class Parser {
             return this;
         }
         const stack = [];
-        this.#observer.hasListeners('traverse');
+        // const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        const position = this.#root.location.end;
-        // @ts-ignore
-        const src = this.#root.location.src;
-        const location = this.#options.location;
-        let context = this.#root;
-        let iterator = stringIterator(css);
-        const generator = tokenize(iterator, position);
-        let result;
-        let token;
-        ({
-            css,
-            current: 0,
-            total: css.length - 1
-        });
-        while (true) {
-            result = generator.next();
-            // console.debug(result);
-            if (result.done) {
-                break;
-            }
-            if (result.value.type == 'block-end') {
-                // @ts-ignore
-                context = stack.pop();
-                //@ts-ignore
-                if (this.#options.location && context != null && context != this.#root) {
-                    // @ts-ignore
-                    context.location.end = { ...position };
-                }
-                context = stack[stack.length - 1] || this.#root;
-                continue;
-            }
-            switch (context.type) {
-                case 'AtRule':
-                case 'Rule':
-                case "StyleSheet":
-                    if (result.value.type == 'whitespace') {
-                        continue;
-                    }
-                    if (result.value.type == 'bad-comment' || result.value.type == 'bad-cdo-comment') {
-                        this.#errors.push(SyntaxError(`unexpected token ${result.value.type} at ${src}:${position.line}:${position.column}`));
-                        break;
-                    }
-                    if (result.value.type == 'cdo-comment' || result.value.type == 'comment') {
-                        if (result.value.type == 'cdo-comment' && context.type != 'StyleSheet') {
-                            this.#errors.push(SyntaxError(`unexpected CDO token at ${src}:${position.line}:${position.column}`));
-                            break;
-                        }
-                        const token = { type: 'Comment', value: result.value.value };
-                        if (location) {
-                            token.location = {
-                                start: { ...position },
-                                end: update({ ...position }, result.value.value),
-                                src
-                            };
-                            if (token.location.start.column == 0) {
-                                token.location.start.column = 1;
-                            }
-                        }
-                        // @ts-ignore
-                        context.children.push(token);
-                        continue;
-                    }
-                    if (result.value.type == 'at-rule') {
-                        token = { type: 'AtRule' };
-                        if (this.#options.location) {
-                            token.location = {
-                                start: { ...position },
-                                end: update({ ...position }, result.value.value),
-                                src
-                            };
-                        }
-                        const { tokens, errors } = matchComponents(generator, position, src, ['semi-colon', 'block-start'], []);
-                        // @ts-ignore
-                        context.children.push(token);
-                        const end = tokens[tokens.length - 1];
-                        if (end?.type == 'block-start') {
-                            while (['block-start', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
-                                tokens.pop();
-                            }
-                            token.children = [];
-                            stack.push(token);
-                            context = token;
-                        }
-                        else {
-                            while (['semi-colon', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
-                                tokens.pop();
-                            }
-                            if (this.#options.location) {
-                                // @ts-ignore
-                                token.location.end = { ...position };
-                            }
-                        }
-                        token.name = [result.value];
-                        token.value = tokens;
-                        while (token.value[0]?.type == 'whitespace') {
-                            token.value.shift();
-                        }
-                        break;
-                    }
-                    else {
-                        // Rule or declaration
-                        // @ts-ignore
-                        const token = { type: '' };
-                        if (location) {
-                            token.location = {
-                                start: { ...position },
-                                end: { ...position },
-                                src
-                            };
-                        }
-                        const { tokens, errors } = matchComponents(generator, position, src, context.type == 'StyleSheet' ? ['block-start'] : ['block-start', 'semi-colon', 'block-end'], [result.value]);
-                        tokens.unshift(result.value);
-                        if (tokens[tokens.length - 1]?.type == 'block-start') {
-                            while (['whitespace', 'block-start'].includes(tokens[tokens.length - 1]?.type)) {
-                                tokens.pop();
-                            }
-                            stack.push(token);
-                            Object.assign(token, { type: 'Rule', selector: tokens, children: [] });
-                            // @ts-ignore
-                            context.children.push(token);
-                            context = token;
-                            break;
-                        }
-                        else {
-                            let index = -1;
-                            const parent = context;
-                            if (tokens[tokens.length - 1]?.type == 'block-end') {
-                                stack.pop();
-                                context = stack[stack.length - 1] || this.#root;
-                            }
-                            while (['semi-colon', 'block-end', 'whitespace'].includes(tokens[tokens.length - 1]?.type)) {
-                                tokens.pop();
-                            }
-                            tokens.some((t, key) => {
-                                if (t.type == 'colon') {
-                                    index = key;
-                                    return true;
-                                }
-                                return false;
-                            });
-                            if (index == -1) {
-                                this.#errors.push(new SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`));
-                                break;
-                            }
-                            else {
-                                Object.assign(token, {
-                                    type: 'Declaration',
-                                    name: tokens.slice(0, index),
-                                    value: tokens.slice(index + 1)
-                                });
-                                // @ts-ignore
-                                while (token.value[0]?.type == 'whitespace') {
-                                    // @ts-ignore
-                                    token.value.shift();
-                                }
-                                let validDeclaration = true;
-                                for (const val of token.value) {
-                                    if (val.type == 'unclosed-string') {
-                                        // recoverable
-                                        this.#errors.push(SyntaxError(`unclosed string at ${src}:${position.line}:${position.column}`));
-                                        // @ts-ignore
-                                        val.type = 'string';
-                                        val.value += val.value.charAt(0);
-                                    }
-                                    else if (['bad-string'].includes(val.type)) {
-                                        validDeclaration = false;
-                                        this.#errors.push(SyntaxError(`invalid declaration at ${src}:${position.line}:${position.column}`));
-                                        break;
-                                    }
-                                }
-                                if (validDeclaration) {
-                                    // @ts-ignore
-                                    parent.children.push(token);
-                                }
-                            }
-                        }
-                    }
-                    break;
-            }
-            // if (hasListeners) {
-            //
-            //     this.#observer.trigger('traverse', result, 'enter', context);
-            // }
-        }
+        const position = this.#root.loc.end;
+        tokenize(css, this.#root, position, this.#options.location);
         if (this.#options.location) {
             for (const context of stack) {
                 // @ts-ignore
-                context.location.end = { ...position };
+                context.loc.end = { ...position };
             }
         }
         return this;
@@ -1759,27 +1655,28 @@ class Parser {
     #compactRuleList(node) {
     }
     compact() {
-        let i = this.#root.children.length;
+        let i = this.#root.chi.length;
         let previous = null;
         while (i--) {
-            const node = this.#root.children[i];
+            const node = this.#root.chi[i];
             // @ts-ignore
             if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-                if (!('children' in node)) {
+                if (!('chi' in node)) {
                     // @ts-ignore
-                    node.children = [];
+                    node.chi = [];
                 }
-                if ('children' in previous) {
+                if ('chi' in previous) {
                     // @ts-ignore
-                    node.children.push(...previous.children);
+                    node.chi.push(...previous.chi);
                 }
-                this.#root.children.splice(i, 1);
+                this.#root.chi.splice(i, 1);
             }
             // @ts-ignore
             else if (node.type == 'AtRule' && node.name == 'media' && node.value == 'all') {
                 // @ts-ignore
-                this.#root.children.splice(i, 1, ...node.children);
-                i += node.children.length;
+                this.#root.chi.splice(i, 1, ...node.chi);
+                // @ts-ignore
+                i += node.chi.length;
             }
             // @ts-ignore
             previous = node;
@@ -1799,21 +1696,21 @@ class Parser {
     }
     #createRoot() {
         this.#root = {
-            type: "StyleSheet",
-            location: {
-                start: {
-                    index: 0,
-                    line: 1,
-                    column: 1
+            typ: "StyleSheet",
+            loc: {
+                sta: {
+                    ind: 0,
+                    lin: 1,
+                    col: 1
                 },
                 end: {
-                    index: -1,
-                    line: 1,
-                    column: 0
+                    ind: -1,
+                    lin: 1,
+                    col: 0
                 },
                 src: ''
             },
-            children: []
+            chi: []
         };
         return this;
     }

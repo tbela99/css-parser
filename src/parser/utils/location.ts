@@ -13,9 +13,9 @@ export function update(location: Position, css: string): Position {
     let offset: number;
     const j: number = css.length - 1;
 
-    if (location.line == 0) {
+    if (location.lin == 0) {
 
-        location.line = 1;
+        location.lin = 1;
     }
 
     while (i <= j) {
@@ -25,22 +25,22 @@ export function update(location: Position, css: string): Position {
 
         if (isNewLine(codepoint)) {
 
-            location.line++;
-            location.column = 0;
+            location.lin++;
+            location.col = 0;
 
             // \r\n
             if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
 
                 offset++;
-                location.index++;
+                location.ind++;
             }
 
         } else {
 
-            location.column++;
+            location.col++;
         }
 
-        location.index++;
+        location.ind++;
         i += offset;
     }
 

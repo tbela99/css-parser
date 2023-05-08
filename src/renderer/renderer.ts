@@ -56,15 +56,15 @@ export class Renderer {
             return acc;
         };
 
-        switch (data.type) {
+        switch (data.typ) {
 
             case 'Comment':
 
-                return this.#options.removeComments ? '' : (<AstComment>data).value;
+                return this.#options.removeComments ? '' : (<AstComment>data).val;
 
             case 'StyleSheet':
 
-                return (<AstRuleStyleSheet>data).children.reduce((css: string, node) => {
+                return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
                     const str: string = this.#doRender(node, 0);
 
@@ -85,28 +85,28 @@ export class Renderer {
             case 'AtRule':
             case 'Rule':
 
-                if (data.type == 'AtRule' && !('children' in data)) {
+                if (data.typ == 'AtRule' && !('chi' in data)) {
 
-                    return `${indent}@${(<AstAtRule>data).name.reduce(reducer, '')} ${(<AstAtRule>data).value.reduce(reducer, '')};`;
+                    return `${indent}@${(<AstAtRule>data).nam.reduce(reducer, '')} ${(<AstAtRule>data).val.reduce(reducer, '')};`;
                 }
 
-                const children: string = (<AstRule> data).children.reduce((css: string, node) => {
+                const children: string = (<AstRule> data).chi.reduce((css: string, node) => {
 
                     let str;
 
-                    if (node.type == 'Comment') {
+                    if (node.typ == 'Comment') {
 
-                        str = this.#options.removeComments ? '' : (<AstComment>node).value;
+                        str = this.#options.removeComments ? '' : (<AstComment>node).val;
                     }
 
-                    else if (node.type == 'Declaration') {
+                    else if (node.typ == 'Declaration') {
 
-                        str = `${(<AstDeclaration>node).name.reduce(reducer, '')}:${this.#options.indent}${(<AstDeclaration>node).value.reduce(reducer, '')};`;
+                        str = `${(<AstDeclaration>node).nam.reduce(reducer, '')}:${this.#options.indent}${(<AstDeclaration>node).val.reduce(reducer, '')};`;
                     }
 
-                    else if (node.type == 'AtRule' && !('children' in node)) {
+                    else if (node.typ == 'AtRule' && !('children' in node)) {
 
-                        str = `@${(<AstAtRule>node).name.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${(<AstAtRule>node).value.reduce(reducer, '')};`;
+                        str = `@${(<AstAtRule>node).nam.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${(<AstAtRule>node).val.reduce(reducer, '')};`;
                     }
 
                     else {
@@ -127,12 +127,12 @@ export class Renderer {
                     return `${css}${this.#options.newLine}${indentSub}${str}`;
                 }, '');
 
-                if (data.type == 'AtRule') {
+                if (data.typ == 'AtRule') {
 
-                    return indent + '@' + (<AstAtRule>data).name.reduce(reducer, '') +  `${this.#options.indent}${(<AstAtRule>data).value ? (<AstAtRule>data).value.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
+                    return indent + '@' + (<AstAtRule>data).nam.reduce(reducer, '') +  `${this.#options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
                 }
 
-                return indent + (<AstRule>data).selector.reduce(reducer, '') +  `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
+                return indent + (<AstRule>data).sel.reduce(reducer, '') +  `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
         }
 
         return '';
@@ -148,63 +148,63 @@ export class Renderer {
     DashMatchToken | LessThanToken | GreaterThanToken;
          */
 
-        switch (token.type ) {
+        switch (token.typ ) {
 
-            case 'function':
-                return token.value + '(';
+            case 'Function':
+                return token.val + '(';
 
-            case 'includes':
+            case 'Includes':
                 return '~=';
 
-            case 'dash-match':
+            case 'Dash-match':
                 return '|=';
 
-            case 'less-than':
+            case 'Less-than':
                 return '<';
 
-            case 'greater-than':
+            case 'Greater-than':
                 return '>';
 
-            case 'start-parens':
+            case 'Start-parens':
                 return '(';
 
-            case 'end-parens':
+            case 'End-parens':
                 return ')';
 
-            case 'attr-start':
+            case 'Attr-start':
                 return '[';
 
-            case 'attr-end':
+            case 'Attr-end':
                 return ']';
 
-            case 'whitespace':
+            case 'Whitespace':
                 return ' ';
 
-            case 'colon':
+            case 'Colon':
                 return ':';
 
-            case 'semi-colon':
+            case 'Semi-colon':
                 return ';';
 
-            case 'comma':
+            case 'Comma':
                 return ',';
 
-            case 'dimension':
-                return token.value + (<DimensionToken>token).unit;
+            case 'Dimension':
+                return token.val + (<DimensionToken>token).unit;
 
-            case 'percentage':
-                return token.value + '%';
+            case 'Percentage':
+                return token.val + '%';
 
-            case 'at-rule':
-            case 'number':
+            case 'At-rule':
+            case 'Number':
 
-            case 'hash':
-            case 'pseudo-selector':
-            case 'comment':
-            case 'literal':
-            case 'string':
-            case 'ident':
-                return token.value;
+            case 'Hash':
+            case 'Pseudo-selector':
+            case 'Comment':
+            case 'Literal':
+            case 'String':
+            case 'Ident':
+                return token.val;
         }
 
         throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);

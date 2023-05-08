@@ -23,14 +23,14 @@ export interface RenderOptions {
 
 export interface Position {
 
-    index: number;
-    line: number;
-    column: number;
+    ind: number;
+    lin: number;
+    col: number;
 }
 
 export interface Location {
 
-    start: Position;
+    sta: Position;
     end: Position;
     src: string;
 }
@@ -39,92 +39,77 @@ type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'I
 
 interface Node {
 
-    type: NodeType;
-    location?: Location;
+    typ: NodeType;
+    loc?: Location;
 }
 
 export interface AstComment extends Node {
 
-    type: 'Comment',
-    value: string;
+    typ: 'Comment',
+    val: string;
 }
 
 export interface AstInvalidComment extends Node {
 
-    type: 'InvalidComment',
-    value: string;
+    typ: 'InvalidComment',
+    val: string;
 }
 
 export interface AstDeclaration extends Node {
 
-    name: Token[],
-    value: Token[];
-    type: 'Declaration'
+    nam: Token[],
+    val: Token[];
+    typ: 'Declaration'
 }
 
 export interface AstInvalidDeclaration extends Node {
 
-    name: string,
-    value: string;
-    type: 'InvalidDeclaration'
+    nam: string,
+    val: string;
+    typ: 'InvalidDeclaration'
 }
 
 export interface AstInvalidRule extends Node {
 
-    type: 'Rule',
-    selector: string,
-    body: string
+    typ: 'Rule',
+    sel: string,
+    bod: string
 }
 
 
 export interface AstRule extends Node {
 
-    type: 'Rule',
-    selector: Array<Token>,
-    children: Array<AstDeclaration | AstComment | AstRuleList>
+    typ: 'Rule',
+    sel: Array<Token>,
+    chi: Array<AstDeclaration | AstComment | AstRuleList>
 }
 
 export interface AstAtRule extends Node {
 
-    name: Token[];
-    value: Token[];
-    children?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
+    nam: Token[];
+    val: Token[];
+    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
 export interface AstInvalidAtRule extends Node {
 
-    type: 'InvalidAtRule';
-    name?: string,
-    value?: string;
-    body?: string;
-    children?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
+    typ: 'InvalidAtRule';
+    nam?: string,
+    val?: string;
+    bod?: string;
+    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
 export interface AstRuleList extends Node {
 
-    children: Array<Node | AstComment>
+    chi: Array<Node | AstComment>
 }
 
 export interface AstRuleStyleSheet extends AstRuleList {
-    type: 'StyleSheet',
-
-    children: Array<AstRuleList | AstComment>
+    typ: 'StyleSheet',
+    chi: Array<AstRuleList | AstComment>
 }
 
 export type AstNode = AstRuleStyleSheet  | AstRuleList | AstComment | AstInvalidComment | AstInvalidAtRule | AstAtRule | AstRule | AstDeclaration | AstInvalidDeclaration;
 
 export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;
-
-export type ParsedBlock = {
-    type: 'Rule' | 'AtRule',
-    selector: string[],
-    body: string[];
-    block: string[];
-} | {
-
-    type: 'AtRule' | 'Declaration',
-    name: string;
-    value: string;
-    body: string[];
-    block: string[];
-}
