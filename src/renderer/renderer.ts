@@ -204,6 +204,7 @@ export class Renderer {
             case 'Literal':
             case 'String':
             case 'Ident':
+            case 'Delim':
                 return token.val;
         }
 

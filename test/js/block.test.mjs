@@ -888,6 +888,7 @@ class Renderer {
             case 'Literal':
             case 'String':
             case 'Ident':
+            case 'Delim':
                 return token.val;
         }
         throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
@@ -916,7 +917,7 @@ function isLetter(codepoint) {
     // lowercase
     return (codepoint >= 0x61 && codepoint <= 0x7a) ||
         // uppercase
-        (codepoint >= 42 && codepoint <= 0x5a);
+        (codepoint >= 0x41 && codepoint <= 0x5a);
 }
 function isNonAscii(codepoint) {
     return codepoint >= 0x80;
@@ -949,6 +950,7 @@ function isIdent(name) {
         if (nextCodepoint == REVERSE_SOLIDUS) {
             return name.length > 2 && !isNewLine(name.codePointAt(2));
         }
+        return true;
     }
     if (!isIdentStart(codepoint)) {
         return false;
@@ -976,6 +978,99 @@ function isHash(name) {
         return true;
     }
     return true;
+}
+function isNumber(name) {
+    let codepoint = name.codePointAt(0);
+    let i = 0;
+    const j = name.length;
+    // '+' '-'
+    if ([0x2b, 0x2d].includes(codepoint)) {
+        i++;
+    }
+    // consume digits
+    while (i < j) {
+        codepoint = name.codePointAt(i);
+        if (isDigit(codepoint)) {
+            i++;
+            continue;
+        }
+        // '.' 'E' 'e'
+        if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
+            break;
+        }
+        return false;
+    }
+    // '.'
+    if (codepoint == 0x2e) {
+        if (!isDigit(name.codePointAt(++i))) {
+            return false;
+        }
+    }
+    while (++i < j) {
+        codepoint = name.codePointAt(i);
+        if (isDigit(codepoint)) {
+            continue;
+        }
+        // 'E' 'e'
+        if (codepoint == 0x45 || codepoint == 0x65) {
+            break;
+        }
+        return false;
+    }
+    // 'E' 'e'
+    if (codepoint == 0x45 || codepoint == 0x65) {
+        if (i == j) {
+            return false;
+        }
+        codepoint = name.codePointAt(i + 1);
+        // '+' '-'
+        if ([0x2b, 0x2d].includes(codepoint)) {
+            i++;
+        }
+        codepoint = name.codePointAt(i + 1);
+        if (!isDigit(codepoint)) {
+            return false;
+        }
+    }
+    while (++i < j) {
+        codepoint = name.codePointAt(i);
+        if (!isDigit(codepoint)) {
+            return false;
+        }
+    }
+    return true;
+}
+function isDimension(name) {
+    let index = 0;
+    while (index++ < name.length) {
+        if (isDigit(name.codePointAt(name.length - index))) {
+            index--;
+            break;
+        }
+        if (index == 3) {
+            break;
+        }
+    }
+    if (index == 0 || index > 3) {
+        return false;
+    }
+    return isIdentStart(name.codePointAt(name.length - index)) && isNumber(name.slice(0, -index));
+}
+function isPercentage(name) {
+    return name.endsWith('%') && isNumber(name.slice(0, -1));
+}
+function parseDimension(name) {
+    let index = 0;
+    while (index++ < name.length) {
+        if (isDigit(name.codePointAt(name.length - index))) {
+            index--;
+            break;
+        }
+        if (index == 3) {
+            break;
+        }
+    }
+    return { typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index) };
 }
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
@@ -1023,12 +1118,63 @@ function update(location, css) {
     return location;
 }
 
-function tokenize(iterator, root, position, trackLocation /*, callable: (token: Token) => void */) {
+// const badTokens: string[] = ['Whitespace', 'Semi-colon', 'Bad-string', 'Bad-comment', 'Bad-cdo-comment'];
+function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, callable: (token: Token) => void */) {
     let value;
     let buffer = '';
     let i = -1;
+    let ind = -1;
+    let lin = 1;
+    let col = 0;
+    const stack = [];
     let total = iterator.length;
+    const root = {
+        typ: "StyleSheet",
+        chi: []
+    };
+    if (trackLocation) {
+        root.loc = {
+            sta: {
+                ind: 0,
+                lin: 1,
+                col: 1
+            },
+            end: {
+                ind: -1,
+                lin: 1,
+                col: 0
+            },
+            src: ''
+        };
+    }
     const weakMap = new WeakMap;
+    function update(css) {
+        if (css === '') {
+            return;
+        }
+        let codepoint;
+        let offset;
+        let i = 0;
+        const j = css.length - 1;
+        while (i <= j) {
+            codepoint = css.codePointAt(i);
+            offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+            if (isNewLine(codepoint)) {
+                lin++;
+                col = 0;
+                // \r\n
+                if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
+                    offset++;
+                    ind++;
+                }
+            }
+            else {
+                col++;
+            }
+            ind++;
+            i += offset;
+        }
+    }
     function peek(count = 1) {
         if (count == 1) {
             return iterator.charAt(i + 1);
@@ -1062,17 +1208,24 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
     function pushToken(token) {
         tokens.push(token);
         if (trackLocation) {
-            weakMap.set(token, { ...position });
+            const pos = { ind, lin, col };
+            if (pos.ind == -1) {
+                pos.ind = 0;
+            }
+            if (pos.col == 0) {
+                pos.col = 1;
+            }
+            weakMap.set(token, pos);
         }
     }
     const tokens = [];
-    const stack = [root];
     let context = root;
     while (i < total) {
         value = next();
         if (i >= total) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
+                update(buffer);
                 buffer = '';
             }
             break;
@@ -1080,6 +1233,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
         if (isWhiteSpace(value.codePointAt(0))) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
+                update(buffer);
                 buffer = '';
             }
             let whitespace = value;
@@ -1094,7 +1248,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                 whitespace += value;
             }
             pushToken({ typ: 'Whitespace' });
-            update(position, whitespace);
+            update(whitespace);
             buffer = '';
             if (i >= total) {
                 break;
@@ -1104,18 +1258,20 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
             case '/':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 buffer += value;
                 if (peek() == '*') {
+                    buffer += '*';
+                    i++;
                     while (i < total) {
                         value = next();
                         if (i >= total) {
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
-                            update(position, buffer);
+                            update(buffer);
                             break;
                         }
                         if (value == '\\') {
@@ -1126,7 +1282,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                                     typ: 'Bad-comment',
                                     val: buffer
                                 });
-                                update(position, buffer);
+                                update(buffer);
                                 break;
                             }
                             buffer += value;
@@ -1139,13 +1295,13 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                                 pushToken({
                                     typ: 'Bad-comment', val: buffer
                                 });
-                                update(position, buffer);
+                                update(buffer);
                                 break;
                             }
                             buffer += value;
                             if (value == '/') {
                                 pushToken({ typ: 'Comment', val: buffer });
-                                update(position, buffer);
+                                update(buffer);
                                 buffer = '';
                                 break;
                             }
@@ -1159,7 +1315,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
             case '<':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 buffer += value;
@@ -1179,7 +1335,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                                 typ: 'Cdo-comment',
                                 val: buffer
                             });
-                            update(position, buffer);
+                            update(buffer);
                             buffer = '';
                             break;
                         }
@@ -1187,7 +1343,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                 }
                 if (i >= total) {
                     pushToken({ typ: 'Bad-cdo-comment', val: buffer });
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 break;
@@ -1197,7 +1353,7 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                 if (i + 1 >= total) {
                     // end of stream ignore \\
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                     break;
                 }
@@ -1209,32 +1365,33 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                 let hasNewLine = false;
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 buffer += value;
                 while (i < total) {
-                    value = next();
+                    value = peek();
                     if (i >= total) {
                         pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
-                        update(position, buffer);
-                        return;
+                        update(buffer);
+                        break;
                     }
                     if (value == '\\') {
-                        buffer += value;
-                        value = next();
+                        // buffer += value;
                         if (i >= total) {
+                            // drop '\\' at the end
                             pushToken(getType(buffer));
-                            update(position, buffer);
-                            return;
+                            update(buffer);
+                            break;
                         }
-                        buffer += value;
+                        buffer += next(2);
                         continue;
                     }
                     if (value == quote) {
                         buffer += value;
                         pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
-                        update(position, buffer);
+                        update(buffer);
+                        i += value.length;
                         buffer = '';
                         break;
                     }
@@ -1243,27 +1400,28 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                     }
                     if (hasNewLine && value == ';') {
                         pushToken({ typ: 'Bad-string', val: buffer });
-                        update(position, buffer);
-                        pushToken(getType(value));
-                        update(position, value);
+                        update(buffer);
                         buffer = '';
                         break;
                     }
                     buffer += value;
+                    i += value.length;
                 }
                 break;
             case '~':
             case '|':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
+                    update(buffer);
                     buffer = '';
                 }
                 buffer += value;
                 value = next();
                 if (i >= total) {
                     pushToken(getType(buffer));
-                    update(position, buffer);
-                    return;
+                    update(buffer);
+                    buffer = '';
+                    break;
                 }
                 if (value == '=') {
                     buffer += value;
@@ -1271,21 +1429,20 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                         typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
                         val: buffer
                     });
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                     break;
                 }
                 pushToken(getType(buffer));
-                update(position, buffer);
-                buffer = '';
-                buffer += value;
+                update(buffer);
+                buffer = value;
                 break;
             case ':':
             case ',':
             case '=':
                 if (buffer.length > 0) {
-                    update(position, buffer);
                     pushToken(getType(buffer));
+                    update(buffer);
                     buffer = '';
                 }
                 if (value == ':' && isIdent(peek())) {
@@ -1293,26 +1450,27 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
                     break;
                 }
                 pushToken(getType(value));
-                update(position, value);
+                update(value);
+                buffer = '';
                 break;
             case ')':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 pushToken({ typ: 'End-parens' });
-                update(position, value);
+                update(value);
                 break;
             case '(':
                 if (buffer.length == 0) {
                     pushToken({ typ: 'Start-parens' });
-                    update(position, value);
+                    update(value);
                 }
                 else {
                     buffer += value;
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 break;
@@ -1323,119 +1481,59 @@ function tokenize(iterator, root, position, trackLocation /*, callable: (token: 
             case ';':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
                 pushToken(getBlockType(value));
+                update(value);
+                let node = null;
                 if (value == '{' || value == ';') {
-                    const node = parseNode(context, tokens, trackLocation, weakMap);
+                    node = parseNode(context, tokens, /* errors, */ trackLocation, root.loc?.src || '', weakMap);
                     if (node != null) {
                         stack.push(node);
+                        // @ts-ignore
                         context = node;
                     }
                     tokens.length = 0;
                 }
                 else if (value == '}') {
-                    parseNode(context, tokens, trackLocation, weakMap);
+                    node = parseNode(context, tokens, /* errors, */ trackLocation, root.loc?.src || '', weakMap);
                     stack.pop();
+                    // @ts-ignore
                     context = stack[stack.length - 1] || root;
                     tokens.length = 0;
                     buffer = '';
                 }
-                update(position, value);
+                // @ts-ignore
+                if (node != null && trackLocation && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
+                    // @ts-ignore
+                    context.chi[context.chi.length - 1].loc.end = { ind, lin, col };
+                }
                 break;
             default:
-                if (buffer === '') {
-                    // parse number or dimension or percentage
-                    let code = value.codePointAt(0);
-                    let isNumber = isDigit(code);
-                    // + or -
-                    if (code == 0x2b || code == 0x2d || isNumber) {
-                        buffer += value;
-                        if (!isNumber && !isDigit(peek().codePointAt(0))) {
-                            break;
-                        }
-                        while (isDigit(peek().codePointAt(0))) {
-                            value = next();
-                            buffer += value;
-                        }
-                        let dec = peek(2);
-                        // .
-                        if (dec.codePointAt(0) == 0x2e && isDigit(dec.codePointAt(1))) {
-                            value = next(2);
-                            buffer += dec;
-                            while (isDigit(peek().codePointAt(0))) {
-                                value = next();
-                                buffer += value;
-                            }
-                        }
-                        dec = peek(3);
-                        code = dec.codePointAt(0);
-                        // E or e
-                        if (code == 0x45 || code == 0x65) {
-                            code = dec.codePointAt(1);
-                            if ((code == 0x2d || code == 0x2b) && isDigit(dec.codePointAt(2))) {
-                                buffer += dec;
-                                value = next(3);
-                            }
-                            else if (isDigit(code)) {
-                                value = next();
-                                buffer += value;
-                            }
-                        }
-                        while (isDigit(peek().codePointAt(0))) {
-                            value = next();
-                            buffer += value;
-                        }
-                        code = peek().codePointAt(0);
-                        if (isIdentStart(code)) {
-                            value = next();
-                            let unit = value;
-                            while (isIdentCodepoint(peek().codePointAt(0))) {
-                                value = next();
-                                unit += value;
-                            }
-                            pushToken({
-                                typ: 'Dimension',
-                                val: buffer,
-                                unit
-                            });
-                            update(position, buffer);
-                            buffer = '';
-                        }
-                        // %
-                        else if (code == 0x25) {
-                            value = next();
-                            // buffer += value;
-                            pushToken({
-                                typ: 'Percentage',
-                                val: buffer
-                            });
-                            update(position, buffer);
-                            buffer = '';
-                        }
-                        else {
-                            pushToken({
-                                typ: 'Number',
-                                val: buffer
-                            });
-                            update(position, buffer);
-                            buffer = '';
-                        }
-                        break;
-                    }
-                }
                 buffer += value;
                 break;
         }
     }
     if (buffer.length > 0) {
-        // pushToken(getType(buffer));
-        update(position, buffer);
+        pushToken(getType(buffer));
+        update(buffer);
     }
     // pushToken({typ: 'EOF'});
+    if (col == 0) {
+        col = 1;
+    }
+    if (trackLocation) {
+        // @ts-ignore
+        root.loc.end = { ind, lin, col };
+        for (const context of stack) {
+            // @ts-ignore
+            context.loc.end = { ind, lin, col };
+        }
+    }
+    return root;
 }
-function parseNode(root, tokens, trackLocation, weakMap) {
+function parseNode(root, tokens, /* errors: ErrorDescription[], */ trackLocation, src, weakMap) {
     let i = 0;
     for (i = 0; i < tokens.length; i++) {
         if (tokens[i].typ == 'Comment') {
@@ -1443,13 +1541,12 @@ function parseNode(root, tokens, trackLocation, weakMap) {
             root.chi.push(tokens[i]);
             if (trackLocation) {
                 const position = weakMap.get(tokens[i]);
-                Object.assign(tokens[i], {
-                    loc: {
-                        sta: weakMap.get(tokens[i]),
-                        end: update({ ...position }, tokens[i].val)
-                    }
-                });
-                console.debug(weakMap.get(tokens[i]));
+                tokens[i].loc = {
+                    sta: position,
+                    // @ts-ignore
+                    end: update({ ...position }, tokens[i].val),
+                    src
+                };
             }
         }
         else if (tokens[i].typ != 'Whitespace') {
@@ -1458,7 +1555,7 @@ function parseNode(root, tokens, trackLocation, weakMap) {
     }
     tokens = tokens.slice(i);
     const delim = tokens.pop();
-    while (['whitespace'].includes(tokens[tokens.length - 1]?.typ)) {
+    while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
         tokens.pop();
     }
     if (tokens.length == 0) {
@@ -1474,10 +1571,20 @@ function parseNode(root, tokens, trackLocation, weakMap) {
             nam: [{ typ: 'Ident', val: atRule.val }],
             val: tokens
         };
+        if (delim.typ == 'Block-start') {
+            node.chi = [];
+        }
+        if (trackLocation) {
+            const position = weakMap.get(atRule);
+            node.loc = {
+                sta: position,
+                // end: weakMap.get(delim),
+                src
+            };
+        }
         // @ts-ignore
         root.chi.push(node);
         if (delim.typ == 'Block-start') {
-            node.chi = [];
             return node;
         }
     }
@@ -1489,6 +1596,14 @@ function parseNode(root, tokens, trackLocation, weakMap) {
                 sel: tokens,
                 chi: []
             };
+            if (trackLocation) {
+                const position = weakMap.get(tokens[0]);
+                node.loc = {
+                    sta: position,
+                    // end: weakMap.get(delim),
+                    src
+                };
+            }
             // @ts-ignore
             root.chi.push(node);
             return node;
@@ -1505,7 +1620,7 @@ function parseNode(root, tokens, trackLocation, weakMap) {
                     name = tokens.slice(0, i);
                     value = tokens.slice(i + 1);
                 }
-                else if (['function', 'pseudo-selector'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
+                else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
                     tokens[i].val = tokens[i].val.slice(1);
                     if (tokens[i].typ == 'Pseudo-selector') {
                         tokens[i].typ = 'Ident';
@@ -1517,12 +1632,28 @@ function parseNode(root, tokens, trackLocation, weakMap) {
             const node = {
                 typ: 'Declaration',
                 // @ts-ignore
-                nam: name,
+                nam: name == null ? tokens : name,
                 // @ts-ignore
                 val: value
             };
+            const position = weakMap.get(node.nam[0]);
+            if (node.val == null) {
+                // errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                return null;
+            }
             while (node.val[0]?.typ == 'Whitespace') {
                 node.val.shift();
+            }
+            if (node.val.length == 0) {
+                // errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                return null;
+            }
+            if (trackLocation) {
+                node.loc = {
+                    sta: position,
+                    // end: weakMap.get(delim),
+                    src
+                };
             }
             // @ts-ignore
             root.chi.push(node);
@@ -1548,66 +1679,84 @@ function getBlockType(chr) {
     }
     throw new Error(`unhandled token: '${chr}'`);
 }
-function getType(value) {
-    if (value === '') {
+function getType(val) {
+    if (val === '') {
         throw new Error('empty string?');
     }
-    if (value == ':') {
+    if (val == ':') {
         return { typ: 'Colon' };
     }
-    if (value == ';') {
+    if (val == '=') {
+        return { typ: 'Delim', val };
+    }
+    if (val == ';') {
         return { typ: 'Semi-colon' };
     }
-    if (value == ',') {
+    if (val == ',') {
         return { typ: 'Comma' };
     }
-    if (value == '<') {
+    if (val == '<') {
         return { typ: 'Less-than' };
     }
-    if (value == '>') {
+    if (val == '>') {
         return { typ: 'Greater-than' };
     }
-    if (isPseudo(value)) {
+    if (isPseudo(val)) {
         return {
             typ: 'Pseudo-selector',
-            val: value
+            val
             // buffer: buffer.slice()
         };
     }
-    if (isAtKeyword(value)) {
+    if (isAtKeyword(val)) {
         return {
             typ: 'At-rule',
-            val: value.slice(1)
+            val: val.slice(1)
             // buffer: buffer.slice()
         };
     }
-    if (isFunction(value)) {
+    if (isFunction(val)) {
         return {
             typ: 'Function',
-            val: value.slice(0, -1)
+            val: val.slice(0, -1)
         };
     }
-    if (isIdent(value)) {
+    if (isNumber(val)) {
+        return {
+            typ: 'Number',
+            val
+        };
+    }
+    if (isDimension(val)) {
+        return parseDimension(val);
+    }
+    if (isPercentage(val)) {
+        return {
+            typ: 'Percentage',
+            val: val.slice(0, -1)
+        };
+    }
+    if (isIdent(val)) {
         return {
             typ: 'Ident',
-            val: value
+            val
         };
     }
-    if (value.charAt(0) == '#' && isHash(value)) {
+    if (val.charAt(0) == '#' && isHash(val)) {
         return {
             typ: 'Hash',
-            val: value
+            val
         };
     }
-    if ('"\''.includes(value.charAt(0))) {
+    if ('"\''.includes(val.charAt(0))) {
         return {
             typ: 'Unclosed-string',
-            val: value
+            val
         };
     }
     return {
         typ: 'Literal',
-        val: value
+        val
     };
 }
 
@@ -1631,17 +1780,9 @@ class Parser {
         if (css.length == 0) {
             return this;
         }
-        const stack = [];
         // const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        const position = this.#root.loc.end;
-        tokenize(css, this.#root, position, this.#options.location);
-        if (this.#options.location) {
-            for (const context of stack) {
-                // @ts-ignore
-                context.loc.end = { ...position };
-            }
-        }
+        this.#root = tokenize(css, /* this.#errors, */ this.#options.location);
         return this;
     }
     on(name, handler, signal) {
@@ -1697,6 +1838,7 @@ class Parser {
     #createRoot() {
         this.#root = {
             typ: "StyleSheet",
+            chi: [],
             loc: {
                 sta: {
                     ind: 0,
@@ -1709,8 +1851,7 @@ class Parser {
                     col: 0
                 },
                 src: ''
-            },
-            chi: []
+            }
         };
         return this;
     }

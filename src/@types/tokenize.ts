@@ -168,6 +168,12 @@ export interface PseudoSelectorToken {
     val: string;
 }
 
+export interface DelimToken {
+
+    typ: 'Delim';
+    val: '=';
+}
+
 export interface EOFToken {
 
     typ: 'EOF';
@@ -178,4 +184,5 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken | PseudoSelectorToken | EOFToken;
+    DashMatchToken | LessThanToken | GreaterThanToken | PseudoSelectorToken | DelimToken |
+    EOFToken;

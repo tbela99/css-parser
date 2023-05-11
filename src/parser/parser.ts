@@ -3,7 +3,7 @@ import {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
-    AstTraverserHandler,
+    AstTraverserHandler, ErrorDescription,
     ParserOptions, Position, Token
 } from "../@types";
 import {Observer} from "@tbela99/observer";
@@ -16,7 +16,7 @@ export class Parser {
     #observer: Observer;
     // @ts-ignore
     #root: AstRuleStyleSheet;
-    #errors: Error[] = [];
+    #errors: ErrorDescription[] = [];
 
     constructor(options: ParserOptions = {
         strict: false,
@@ -38,21 +38,9 @@ export class Parser {
             return this;
         }
 
-        const stack: Array<AstNode | AstComment> = [];
         // const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        const position: Position = this.#root.loc.end;
-
-        tokenize(css, this.#root, position, <boolean>this.#options.location);
-
-        if (this.#options.location) {
-
-            for (const context of stack) {
-
-                // @ts-ignore
-                context.loc.end = {...position};
-            }
-        }
+        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'),  <boolean>this.#options.location);
 
         return this;
     }
@@ -131,7 +119,7 @@ export class Parser {
         return this.#root;
     }
 
-    getErrors(): Error[] {
+    getErrors(): ErrorDescription[] {
 
         return this.#errors;
     }
@@ -140,6 +128,7 @@ export class Parser {
 
         this.#root = {
             typ: "StyleSheet",
+            chi: [],
             loc: {
 
                 sta: {
@@ -156,8 +145,7 @@ export class Parser {
                     col: 0
                 },
                 src: ''
-            },
-            chi: []
+            }
         }
 
         return this;

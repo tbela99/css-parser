@@ -5,7 +5,26 @@ export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
 
-export type NodeTraversalDirection = 'enter' | 'exit';
+export declare type NodeTraversalDirection = 'enter' | 'exit';
+
+export declare type NodeTraverseCallback = (node: AstNode, parent: AstRuleList, root: AstRuleStyleSheet) => void;
+
+export interface NodeTraverseEventsMap {
+
+    enter?: NodeTraverseCallback[];
+    exit?: NodeTraverseCallback[]
+}
+export interface ErrorDescription {
+
+    // drop rule or declaration | fix rule or declaration
+    action: 'drop' | 'ignore';
+    message: string;
+    location: {
+        src: string,
+        lin: number,
+        col: number;
+    };
+}
 
 export interface ParserOptions {
 
@@ -110,6 +129,15 @@ export interface AstRuleStyleSheet extends AstRuleList {
     chi: Array<AstRuleList | AstComment>
 }
 
-export type AstNode = AstRuleStyleSheet  | AstRuleList | AstComment | AstInvalidComment | AstInvalidAtRule | AstAtRule | AstRule | AstDeclaration | AstInvalidDeclaration;
+export type AstNode =
+    AstRuleStyleSheet
+    | AstRuleList
+    | AstComment
+    | AstInvalidComment
+    | AstInvalidAtRule
+    | AstAtRule
+    | AstRule
+    | AstDeclaration
+    | AstInvalidDeclaration;
 
 export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;

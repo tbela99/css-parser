@@ -1,25 +1,114 @@
 import {
-    isAtKeyword, isDigit, isFunction, isHash,
+    isAtKeyword, isDigit, isDimension, isFunction, isHash,
     isIdent, isIdentCodepoint, isIdentStart,
-    isNewLine,
-    isPseudo, isWhiteSpace
+    isNewLine, isNumber, isPercentage,
+    isPseudo, isWhiteSpace, parseDimension, update as updatePosition
 } from "./utils";
-import {update} from "./utils";
 import {
-    AstAtRule, AstDeclaration,
-    AstNode, AstRule, AtRuleToken, BadCommentToken, BadStringToken,
-    DashMatchToken, FunctionToken, IncludesToken, Location,
-    Position, PseudoSelectorToken, Token
+    AstAtRule,
+    AstComment,
+    AstDeclaration,
+    AstNode,
+    AstRule,
+    AstRuleList,
+    AstRuleStyleSheet,
+    AtRuleToken,
+    BadCommentToken,
+    BadStringToken,
+    DashMatchToken,
+    ErrorDescription,
+    FunctionToken,
+    IncludesToken,
+    Location,
+    NodeTraverseCallback,
+    NodeTraverseEventsMap,
+    Position,
+    PseudoSelectorToken,
+    Token
 } from "../@types";
 
-export function tokenize(iterator: string, root: AstNode, position: Position, trackLocation: boolean /*, callable: (token: Token) => void */): void {
+// const badTokens: string[] = ['Whitespace', 'Semi-colon', 'Bad-string', 'Bad-comment', 'Bad-cdo-comment'];
+
+export function tokenize(iterator: string, errors: ErrorDescription[], events: NodeTraverseEventsMap, trackLocation: boolean /*, callable: (token: Token) => void */): AstRuleStyleSheet {
 
     let value: string;
     let buffer: string = '';
     let i: number = -1;
+    let ind: number = -1;
+    let lin: number = 1;
+    let col: number = 0;
+    const stack: Array<AstNode | AstComment> = [];
     let total: number = iterator.length;
 
+    const enterEvent: boolean = 'enter' in events;
+    const exitEvent: boolean = 'exit' in events;
+
+    const root: AstRuleStyleSheet = {
+        typ: "StyleSheet",
+        chi: []
+    }
+
+    if (trackLocation) {
+
+        root.loc = {
+
+            sta: {
+
+                ind: 0,
+                lin: 1,
+                col: 1
+            },
+
+            end: {
+
+                ind: -1,
+                lin: 1,
+                col: 0
+            },
+            src: ''
+        }
+    }
+
     const weakMap: WeakMap<Token, Position> = new WeakMap<Token, Position>;
+
+    function update(css: string) {
+
+        if (css === '') {
+
+            return;
+        }
+
+        let codepoint: number;
+        let offset: number;
+        let i: number = 0;
+        const j: number = css.length - 1;
+
+        while (i <= j) {
+
+            codepoint = <number>css.codePointAt(i);
+            offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+
+            if (isNewLine(codepoint)) {
+
+                lin++;
+                col = 0;
+
+                // \r\n
+                if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
+
+                    offset++;
+                    ind++;
+                }
+
+            } else {
+
+                col++;
+            }
+
+            ind++;
+            i += offset;
+        }
+    }
 
     function peek(count: number = 1): string {
 
@@ -75,13 +164,24 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
 
         if (trackLocation) {
 
-            weakMap.set(token, {...position});
+            const pos = {ind, lin, col};
+
+            if (pos.ind == -1) {
+
+                pos.ind = 0;
+            }
+
+            if (pos.col == 0) {
+
+                pos.col = 1;
+            }
+
+            weakMap.set(token, pos);
         }
     }
 
     const tokens: Token[] = [];
 
-    const stack = [root];
     let context = root;
 
     while (i < total) {
@@ -93,6 +193,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
             if (buffer.length > 0) {
 
                 pushToken(getType(buffer));
+                update(buffer);
                 buffer = '';
             }
 
@@ -104,6 +205,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
             if (buffer.length > 0) {
 
                 pushToken(getType(buffer));
+                update(buffer);
 
                 buffer = '';
             }
@@ -128,7 +230,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
             }
 
             pushToken({typ: 'Whitespace'});
-            update(position, whitespace);
+            update(whitespace);
 
             buffer = '';
 
@@ -145,7 +247,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
 
                     buffer = '';
                 }
@@ -153,6 +255,9 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 buffer += value;
 
                 if (peek() == '*') {
+
+                    buffer += '*';
+                    i++;
 
                     while (i < total) {
 
@@ -163,8 +268,8 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
+                            update(buffer);
 
-                            update(position, buffer);
                             break;
                         }
 
@@ -180,7 +285,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                                     val: buffer
                                 });
 
-                                update(position, buffer);
+                                update(buffer);
                                 break;
                             }
 
@@ -199,7 +304,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                                     typ: 'Bad-comment', val: buffer
                                 });
 
-                                update(position, buffer);
+                                update(buffer);
                                 break;
                             }
 
@@ -208,9 +313,9 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                             if (value == '/') {
 
                                 pushToken({typ: 'Comment', val: buffer});
-                                update(position, buffer);
-                                buffer = '';
+                                update(buffer);
 
+                                buffer = '';
                                 break;
                             }
                         } else {
@@ -227,12 +332,11 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
 
                 buffer += value;
-
                 value = next();
 
                 if (i >= total) {
@@ -260,7 +364,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                                 val: buffer
                             });
 
-                            update(position, buffer);
+                            update(buffer);
                             buffer = '';
                             break;
                         }
@@ -270,8 +374,8 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (i >= total) {
 
                     pushToken({typ: 'Bad-cdo-comment', val: buffer});
+                    update(buffer);
 
-                    update(position, buffer);
                     buffer = '';
                 }
 
@@ -286,8 +390,8 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
 
                     // end of stream ignore \\
                     pushToken(getType(buffer));
+                    update(buffer);
 
-                    update(position, buffer);
                     buffer = '';
                     break;
                 }
@@ -304,7 +408,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
 
                     buffer = '';
                 }
@@ -313,30 +417,29 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
 
                 while (i < total) {
 
-                    value = next();
+                    value = peek();
 
                     if (i >= total) {
 
                         pushToken({typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
-                        update(position, buffer);
-                        return;
+                        update(buffer);
+                        break;
                     }
 
                     if (value == '\\') {
 
-                        buffer += value;
-
-                        value = next();
+                        // buffer += value;
 
                         if (i >= total) {
 
+                            // drop '\\' at the end
                             pushToken(getType(buffer));
-                            update(position, buffer);
+                            update(buffer);
 
-                            return;
+                            break;
                         }
 
-                        buffer += value;
+                        buffer += next(2);
                         continue;
                     }
 
@@ -345,8 +448,9 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                         buffer += value;
 
                         pushToken({typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
-                        update(position, buffer);
+                        update(buffer);
 
+                        i += value.length;
                         buffer = '';
                         break;
                     }
@@ -359,16 +463,14 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                     if (hasNewLine && value == ';') {
 
                         pushToken({typ: 'Bad-string', val: buffer});
-                        update(position, buffer);
-
-                        pushToken(getType(value));
-                        update(position, value);
+                        update(buffer);
 
                         buffer = '';
                         break;
                     }
 
                     buffer += value;
+                    i += value.length;
                 }
 
                 break;
@@ -379,6 +481,8 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
+                    update(buffer);
+
                     buffer = '';
                 }
 
@@ -388,7 +492,7 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (i >= total) {
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
 
                     buffer = '';
                     break;
@@ -403,14 +507,14 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                         val: buffer
                     });
 
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                     break;
                 }
 
                 pushToken(getType(buffer));
+                update(buffer);
 
-                update(position, buffer);
                 buffer = value;
                 break;
 
@@ -420,8 +524,8 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
 
                 if (buffer.length > 0) {
 
-                    update(position, buffer);
                     pushToken(getType(buffer));
+                    update(buffer);
                     buffer = '';
                 }
 
@@ -432,7 +536,8 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 }
 
                 pushToken(getType(value));
-                update(position, value);
+                update(value);
+
                 buffer = '';
                 break;
 
@@ -441,13 +546,13 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
 
                     buffer = '';
                 }
 
                 pushToken({typ: 'End-parens'});
-                update(position, value);
+                update(value);
                 break;
 
             case '(':
@@ -455,13 +560,13 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length == 0) {
 
                     pushToken({typ: 'Start-parens'});
-                    update(position, value);
+                    update(value);
                 } else {
 
                     buffer += value;
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
                     buffer = '';
                 }
 
@@ -476,160 +581,59 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(position, buffer);
+                    update(buffer);
 
                     buffer = '';
                 }
 
                 pushToken(getBlockType(value));
+                update(value);
+
+                let node = null;
 
                 if (value == '{' || value == ';') {
 
-                    const node = parseNode(context, tokens, trackLocation, root.loc?.src || '', weakMap);
+                    node =  parseNode(root, context, tokens, events, errors, trackLocation, root.loc?.src || '', weakMap);
 
                     if (node != null) {
 
                         stack.push(node);
+
+                        // @ts-ignore
                         context = node;
+
                     }
 
                     tokens.length = 0;
+
                 } else if (value == '}') {
 
-                    parseNode(context, tokens, trackLocation, root.loc?.src || '', weakMap);
-                    stack.pop();
+                    node = parseNode(root, context, tokens, events, errors, trackLocation, root.loc?.src || '', weakMap);
+                    const previousNode = stack.pop();
+
+                    if (previousNode != null && 'exit' in events &&  previousNode != root) {
+
+                        // @ts-ignore
+                        events.exit.forEach(callback => callback(<AstNode>previousNode, context, root))
+
+                    }
+                    // @ts-ignore
                     context = stack[stack.length - 1] || root;
 
                     tokens.length = 0;
                     buffer = '';
                 }
 
-                update(position, value);
-
                 // @ts-ignore
-                if (trackLocation && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
+                if (node != null && trackLocation && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
 
                     // @ts-ignore
-                    context.chi[context.chi.length - 1].loc.end = {...position};
+                    context.chi[context.chi.length - 1].loc.end = {ind, lin, col};
                 }
 
                 break;
 
             default:
-
-                if (buffer === '') {
-
-                    // parse number or dimension or percentage
-                    let code: number = <number>value.codePointAt(0);
-                    let isNumber: boolean = isDigit(code);
-
-                    // + or -
-                    if (code == 0x2b || code == 0x2d || isNumber) {
-
-                        buffer += value;
-
-                        if (!isNumber && !isDigit(<number>peek().codePointAt(0))) {
-
-                            break;
-                        }
-
-                        while (isDigit(<number>peek().codePointAt(0))) {
-
-                            value = next();
-                            buffer += value;
-                        }
-
-                        let dec = peek(2);
-
-                        // .
-                        if (dec.codePointAt(0) == 0x2e && isDigit(<number>dec.codePointAt(1))) {
-
-                            value = next(2);
-                            buffer += dec;
-
-                            while (isDigit(<number>peek().codePointAt(0))) {
-
-                                value = next();
-                                buffer += value;
-                            }
-                        }
-
-                        dec = peek(3);
-
-                        code = <number>dec.codePointAt(0);
-
-                        // E or e
-                        if (code == 0x45 || code == 0x65) {
-
-                            code = <number>dec.codePointAt(1);
-
-                            if ((code == 0x2d || code == 0x2b) && isDigit(<number>dec.codePointAt(2))) {
-
-                                buffer += dec;
-                                value = next(3);
-                            } else if (isDigit(code)) {
-
-                                value = next();
-                                buffer += value;
-                            }
-                        }
-
-                        while (isDigit(<number>peek().codePointAt(0))) {
-
-                            value = next();
-                            buffer += value;
-                        }
-
-                        code = <number>peek().codePointAt(0);
-
-                        if (isIdentStart(code)) {
-
-                            value = next();
-                            let unit = value;
-
-                            while (isIdentCodepoint(<number>peek().codePointAt(0))) {
-
-                                value = next();
-                                unit += value;
-                            }
-
-                            pushToken({
-                                typ: 'Dimension',
-                                val: buffer,
-                                unit
-                            });
-
-                            update(position, buffer);
-                            buffer = '';
-                        }
-
-                        // %
-                        else if (code == 0x25) {
-
-                            value = next();
-                            // buffer += value;
-
-                            pushToken({
-                                typ: 'Percentage',
-                                val: buffer
-                            });
-
-                            update(position, buffer);
-                            buffer = '';
-                        } else {
-
-                            pushToken({
-                                typ: 'Number',
-                                val: buffer
-                            });
-
-                            update(position, buffer);
-                            buffer = '';
-                        }
-
-                        break;
-                    }
-                }
 
                 buffer += value;
                 break;
@@ -638,14 +642,34 @@ export function tokenize(iterator: string, root: AstNode, position: Position, tr
 
     if (buffer.length > 0) {
 
-        // pushToken(getType(buffer));
-        update(position, buffer);
+        pushToken(getType(buffer));
+        update(buffer);
     }
 
     // pushToken({typ: 'EOF'});
+
+    if (col == 0) {
+
+        col = 1;
+    }
+
+    if (trackLocation) {
+
+        // @ts-ignore
+        root.loc.end = {ind, lin, col};
+
+
+        for (const context of stack) {
+
+            // @ts-ignore
+            context.loc.end = {ind, lin, col};
+        }
+    }
+
+    return root;
 }
 
-function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: string, weakMap: WeakMap<Token, Position>) {
+function parseNode(root: AstRuleStyleSheet, context: AstRuleList, tokens: Token[], events: NodeTraverseEventsMap, errors: ErrorDescription[], trackLocation: boolean, src: string, weakMap: WeakMap<Token, Position>) {
 
     let i: number = 0;
     for (i = 0; i < tokens.length; i++) {
@@ -662,10 +686,14 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
                 (<AstNode>tokens[i]).loc = <Location>{
                     sta: position,
                     // @ts-ignore
-                    end: update({...position}, tokens[i].val),
+                    end: updatePosition({...position}, tokens[i].val),
                     src
                 }
             }
+
+            // @ts-ignore
+            'enter' in events && events.enter.forEach(callback => callback(<AstNode>tokens[i], context, root))
+
         } else if (tokens[i].typ != 'Whitespace') {
 
             break;
@@ -676,7 +704,7 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
     const delim: Token = <Token>tokens.pop();
 
-    while (['whitespace'].includes(tokens[tokens.length - 1]?.typ)) {
+    while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
 
         tokens.pop();
     }
@@ -701,7 +729,6 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
             val: tokens
         }
 
-
         if (delim.typ == 'Block-start') {
 
             node.chi = [];
@@ -709,7 +736,7 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
         if (trackLocation) {
 
-            const position: Position = <Position> weakMap.get(atRule);
+            const position: Position = <Position>weakMap.get(atRule);
 
             node.loc = <Location>{
                 sta: position,
@@ -722,6 +749,9 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
         root.chi.push(node);
 
         if (delim.typ == 'Block-start') {
+
+            // @ts-ignore
+            'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
 
             return node;
         }
@@ -739,9 +769,7 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
             if (trackLocation) {
 
-                const position: Position = <Position> weakMap.get(tokens[0]);
-
-                console.debug({'tokens[0]': tokens[0], position})
+                const position: Position = <Position>weakMap.get(tokens[0]);
 
                 node.loc = <Location>{
                     sta: position,
@@ -752,6 +780,10 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
             // @ts-ignore
             root.chi.push(node);
+
+            // @ts-ignore
+            'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+
             return node;
         } else {
 
@@ -770,7 +802,7 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
                     name = tokens.slice(0, i);
                     value = tokens.slice(i + 1);
-                } else if (['function', 'pseudo-selector'].includes(tokens[i].typ) && (<FunctionToken | PseudoSelectorToken>tokens[i]).val.startsWith(':')) {
+                } else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && (<FunctionToken | PseudoSelectorToken>tokens[i]).val.startsWith(':')) {
 
                     (<FunctionToken | PseudoSelectorToken>tokens[i]).val = (<FunctionToken | PseudoSelectorToken>tokens[i]).val.slice(1);
 
@@ -788,9 +820,17 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
                 typ: 'Declaration',
                 // @ts-ignore
-                nam: name,
+                nam: name == null ? tokens : name,
                 // @ts-ignore
                 val: value
+            }
+
+            const position: Position = <Position>weakMap.get(node.nam[0]);
+
+            if (node.val == null) {
+
+                errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                return null;
             }
 
             while (node.val[0]?.typ == 'Whitespace') {
@@ -798,10 +838,13 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
                 node.val.shift();
             }
 
+            if (node.val.length == 0) {
+
+                errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                return null;
+            }
 
             if (trackLocation) {
-
-                const position: Position = <Position> weakMap.get(node.nam[0]);
 
                 node.loc = <Location>{
                     sta: position,
@@ -812,6 +855,9 @@ function parseNode(root: AstNode, tokens: Token[], trackLocation: boolean, src: 
 
             // @ts-ignore
             root.chi.push(node);
+            // @ts-ignore
+            'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+
             return null;
         }
     }
@@ -848,90 +894,115 @@ function getBlockType(chr: '{' | '}' | '[' | ']' | ';'): Token {
     throw new Error(`unhandled token: '${chr}'`);
 }
 
-function getType(value: string): Token {
+function getType(val: string): Token {
 
-    if (value === '') {
+    if (val === '') {
 
         throw new Error('empty string?');
     }
 
-    if (value == ':') {
+    if (val == ':') {
 
         return {typ: 'Colon'};
     }
 
-    if (value == ';') {
+    if (val == '=') {
+
+        return {typ: 'Delim', val};
+    }
+    if (val == ';') {
 
         return {typ: 'Semi-colon'};
     }
 
-    if (value == ',') {
+    if (val == ',') {
 
         return {typ: 'Comma'};
     }
 
-    if (value == '<') {
+    if (val == '<') {
 
         return {typ: 'Less-than'};
     }
 
-    if (value == '>') {
+    if (val == '>') {
 
         return {typ: 'Greater-than'};
     }
 
-    if (isPseudo(value)) {
+    if (isPseudo(val)) {
 
         return {
             typ: 'Pseudo-selector',
-            val: value
+            val
             // buffer: buffer.slice()
         }
     }
 
-    if (isAtKeyword(value)) {
+    if (isAtKeyword(val)) {
 
         return {
             typ: 'At-rule',
-            val: value.slice(1)
+            val: val.slice(1)
             // buffer: buffer.slice()
         }
     }
 
-    if (isFunction(value)) {
+    if (isFunction(val)) {
 
         return {
             typ: 'Function',
-            val: value.slice(0, -1)
+            val: val.slice(0, -1)
         }
     }
 
-    if (isIdent(value)) {
+    if (isNumber(val)) {
+
+        return {
+            typ: 'Number',
+            val
+        }
+    }
+
+    if (isDimension(val)) {
+
+        return parseDimension(val);
+    }
+
+    if (isPercentage(val)) {
+
+        return  {
+            typ: 'Percentage',
+            val: val.slice(0, -1)
+        }
+    }
+
+    if (isIdent(val)) {
 
         return {
             typ: 'Ident',
-            val: value
+            val
         }
     }
 
-    if (value.charAt(0) == '#' && isHash(value)) {
+    if (val.charAt(0) == '#' && isHash(val)) {
 
         return {
             typ: 'Hash',
-            val: value
+            val
         }
     }
 
-    if ('"\''.includes(value.charAt(0))) {
+    if ('"\''.includes(val.charAt(0))) {
 
         return {
             typ: 'Unclosed-string',
-            val: value
+            val
         }
     }
 
     return {
         typ: 'Literal',
-        val: value
+        val
     }
 }

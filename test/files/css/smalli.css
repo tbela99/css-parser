@@ -4,7 +4,7 @@
 */
 @media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
 
-    -webkit-text-size-adjust: 100%;--color-canvas-default-transparent: rgba(255,255,255,0);
+    -webkit-text-size-adjust: 100%;--color-canvas-default-transparent: rgba(255,255,255,.2);
     --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
     --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
 }}
