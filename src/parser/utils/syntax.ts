@@ -283,7 +283,7 @@ export function isHexColor(name: string) {
         return false;
     }
 
-    for (let chr of name) {
+    for (let chr of name.slice(1)) {
 
         let codepoint = <number> chr.codePointAt(0);
 
