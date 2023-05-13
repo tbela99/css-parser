@@ -15,16 +15,19 @@ export class Parser {
     #options: ParserOptions;
     #observer: Observer;
     // @ts-ignore
+    #src: string = '';
+    // @ts-ignore
     #root: AstRuleStyleSheet;
     #errors: ErrorDescription[] = [];
 
     constructor(options: ParserOptions = {
         strict: false,
-        location: false
+        location: false,
+        processImport: false
     }) {
 
         // @ts-ignore
-        this.#options = {strict: false, location: false, ...options};
+        this.#options = {strict: false, location: false, processImport: false, ...options};
         this.#observer = new Observer();
     }
 
@@ -40,7 +43,7 @@ export class Parser {
 
         // const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'),  <boolean>this.#options.location);
+        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'),  <boolean>this.#options.location, this.#src);
 
         return this;
     }
@@ -55,58 +58,6 @@ export class Parser {
 
         this.#observer.off(name, handler);
         return this;
-    }
-
-    #compactRuleList(node: AstRuleList) {
-
-
-    }
-
-    compact() {
-
-        let i = this.#root.chi.length;
-        let previous: AstNode | null = null;
-
-        while (i--) {
-
-            const node = this.#root.chi[i];
-
-            // @ts-ignore
-            if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-
-                if (!('chi' in node)) {
-
-                    // @ts-ignore
-                    node.chi = []
-                }
-
-                if ('chi' in previous) {
-
-                    // @ts-ignore
-                    node.chi.push(...previous.chi);
-                }
-
-                this.#root.chi.splice(i, 1);
-            }
-
-            // @ts-ignore
-            else if (node.type == 'AtRule' && node.name == 'media' && node.value == 'all') {
-
-                // @ts-ignore
-                this.#root.chi.splice(i, 1, ...node.chi);
-                // @ts-ignore
-                i += node.chi.length;
-            }
-
-            // @ts-ignore
-            previous = node;
-        }
-
-        return this;
-    }
-
-    #compactRule(node: AstRule) {
-
     }
 
     getAst() {

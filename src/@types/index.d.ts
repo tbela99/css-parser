@@ -5,8 +5,6 @@ export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
 
-export declare type NodeTraversalDirection = 'enter' | 'exit';
-
 export declare type NodeTraverseCallback = (node: AstNode, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
 export interface NodeTraverseEventsMap {
@@ -17,19 +15,21 @@ export interface NodeTraverseEventsMap {
 export interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
-    action: 'drop' | 'ignore';
+    action: 'drop';
     message: string;
     location: {
         src: string,
         lin: number,
         col: number;
     };
+    error?: Error;
 }
 
 export interface ParserOptions {
 
     strict?: boolean;
     location?: boolean;
+    processImport?: boolean;
 }
 
 export interface RenderOptions {
@@ -81,21 +81,6 @@ export interface AstDeclaration extends Node {
     typ: 'Declaration'
 }
 
-export interface AstInvalidDeclaration extends Node {
-
-    nam: string,
-    val: string;
-    typ: 'InvalidDeclaration'
-}
-
-export interface AstInvalidRule extends Node {
-
-    typ: 'Rule',
-    sel: string,
-    bod: string
-}
-
-
 export interface AstRule extends Node {
 
     typ: 'Rule',
@@ -105,17 +90,8 @@ export interface AstRule extends Node {
 
 export interface AstAtRule extends Node {
 
-    nam: Token[];
+    nam: string;
     val: Token[];
-    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
-}
-
-export interface AstInvalidAtRule extends Node {
-
-    typ: 'InvalidAtRule';
-    nam?: string,
-    val?: string;
-    bod?: string;
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
@@ -133,11 +109,8 @@ export type AstNode =
     AstRuleStyleSheet
     | AstRuleList
     | AstComment
-    | AstInvalidComment
-    | AstInvalidAtRule
     | AstAtRule
     | AstRule
-    | AstDeclaration
-    | AstInvalidDeclaration;
+    | AstDeclaration;
 
 export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;

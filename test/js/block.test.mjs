@@ -790,7 +790,7 @@ class Renderer {
         const indent = this.#indents[level];
         const indentSub = this.#indents[level + 1];
         const reducer = (acc, curr) => {
-            acc += this.renderToken(curr);
+            acc += Renderer.renderToken(curr);
             return acc;
         };
         switch (data.typ) {
@@ -810,7 +810,7 @@ class Renderer {
             case 'AtRule':
             case 'Rule':
                 if (data.typ == 'AtRule' && !('chi' in data)) {
-                    return `${indent}@${data.nam.reduce(reducer, '')} ${data.val.reduce(reducer, '')};`;
+                    return `${indent}@${data.nam} ${data.val.reduce(reducer, '')};`;
                 }
                 const children = data.chi.reduce((css, node) => {
                     let str;
@@ -818,10 +818,10 @@ class Renderer {
                         str = this.#options.removeComments ? '' : node.val;
                     }
                     else if (node.typ == 'Declaration') {
-                        str = `${node.nam.reduce(reducer, '')}:${this.#options.indent}${node.val.reduce(reducer, '')};`;
+                        str = `${node.nam}:${this.#options.indent}${node.val.reduce(reducer, '')};`;
                     }
                     else if (node.typ == 'AtRule' && !('children' in node)) {
-                        str = `@${node.nam.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${node.val.reduce(reducer, '')};`;
+                        str = `@${node.nam}${this.#options.indent}${this.#options.indent}${node.val.reduce(reducer, '')};`;
                     }
                     else {
                         str = this.#doRender(node, level + 1);
@@ -835,13 +835,13 @@ class Renderer {
                     return `${css}${this.#options.newLine}${indentSub}${str}`;
                 }, '');
                 if (data.typ == 'AtRule') {
-                    return indent + '@' + data.nam.reduce(reducer, '') + `${this.#options.indent}${data.val ? data.val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                    return indent + '@' + data.nam + `${this.#options.indent}${data.val ? data.val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
                 }
                 return indent + data.sel.reduce(reducer, '') + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
         }
         return '';
     }
-    renderToken(token) {
+    static renderToken(token) {
         /*
         |
      | FunctionToken |
@@ -1118,20 +1118,22 @@ function update(location, css) {
     return location;
 }
 
-// const badTokens: string[] = ['Whitespace', 'Semi-colon', 'Bad-string', 'Bad-comment', 'Bad-cdo-comment'];
-function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, callable: (token: Token) => void */) {
+function tokenize(iterator, errors, events, trackLocation, src /*, callable: (token: Token) => void */) {
+    const tokens = [];
+    const stack = [];
+    const root = {
+        typ: "StyleSheet",
+        chi: []
+    };
     let value;
     let buffer = '';
     let i = -1;
     let ind = -1;
     let lin = 1;
     let col = 0;
-    const stack = [];
     let total = iterator.length;
-    const root = {
-        typ: "StyleSheet",
-        chi: []
-    };
+    let map = new Map;
+    let context = root;
     if (trackLocation) {
         root.loc = {
             sta: {
@@ -1147,8 +1149,161 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
             src: ''
         };
     }
-    const weakMap = new WeakMap;
-    function update(css) {
+    function parseNode(tokens) {
+        let i = 0;
+        for (i = 0; i < tokens.length; i++) {
+            if (tokens[i].typ == 'Comment') {
+                // @ts-ignore
+                context.chi.push(tokens[i]);
+                if (trackLocation) {
+                    const position = map.get(tokens[i]);
+                    tokens[i].loc = {
+                        sta: position,
+                        // @ts-ignore
+                        end: update({ ...position }, tokens[i].val),
+                        src
+                    };
+                }
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(tokens[i], context, root));
+            }
+            else if (tokens[i].typ != 'Whitespace') {
+                break;
+            }
+        }
+        tokens = tokens.slice(i);
+        const delim = tokens.pop();
+        while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
+            tokens.pop();
+        }
+        if (tokens.length == 0) {
+            return null;
+        }
+        if (tokens[0]?.typ == 'At-rule') {
+            const atRule = tokens.shift();
+            while (['Whitespace'].includes(tokens[0]?.typ)) {
+                tokens.shift();
+            }
+            const node = {
+                typ: 'AtRule',
+                nam: Renderer.renderToken(atRule),
+                val: tokens
+            };
+            if (delim.typ == 'Block-start') {
+                node.chi = [];
+            }
+            if (trackLocation) {
+                const position = map.get(atRule);
+                node.loc = {
+                    sta: position,
+                    // end: weakMap.get(delim),
+                    src
+                };
+            }
+            // @ts-ignore
+            context.chi.push(node);
+            if (delim.typ == 'Block-start') {
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(node, context, root));
+                return node;
+            }
+        }
+        else {
+            // rule
+            if (delim.typ == 'Block-start') {
+                const node = {
+                    typ: 'Rule',
+                    sel: tokens,
+                    chi: []
+                };
+                if (trackLocation) {
+                    const position = map.get(tokens[0]);
+                    node.loc = {
+                        sta: position,
+                        src
+                    };
+                }
+                // @ts-ignore
+                context.chi.push(node);
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(node, context, root));
+                return node;
+            }
+            else {
+                // declaration
+                // @ts-ignore
+                let name = null;
+                // @ts-ignore
+                let value = null;
+                for (let i = 0; i < tokens.length; i++) {
+                    if (tokens[i].typ == 'Comment') {
+                        continue;
+                    }
+                    if (tokens[i].typ == 'Colon') {
+                        name = tokens.slice(0, i);
+                        value = tokens.slice(i + 1);
+                    }
+                    else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
+                        tokens[i].val = tokens[i].val.slice(1);
+                        if (tokens[i].typ == 'Pseudo-selector') {
+                            tokens[i].typ = 'Ident';
+                        }
+                        name = tokens.slice(0, i);
+                        value = tokens.slice(i);
+                    }
+                }
+                if (name == null) {
+                    name = tokens;
+                }
+                const position = map.get(name[0]);
+                // const rawName: string = (<IdentToken>name.shift())?.val;
+                if (name.length > 0) {
+                    for (let i = 1; i < name.length; i++) {
+                        if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
+                            errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                            return null;
+                        }
+                    }
+                }
+                // if (name.length == 0) {
+                //
+                //     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                //     return null;
+                // }
+                // console.error(name[0]);
+                const node = {
+                    typ: 'Declaration',
+                    // @ts-ignore
+                    nam: Renderer.renderToken(name.shift()),
+                    // @ts-ignore
+                    val: value
+                };
+                if (node.val == null) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
+                }
+                while (node.val[0]?.typ == 'Whitespace') {
+                    node.val.shift();
+                }
+                if (node.val.length == 0) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
+                }
+                if (trackLocation) {
+                    node.loc = {
+                        sta: position,
+                        src
+                    };
+                }
+                // @ts-ignore
+                context.chi.push(node);
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(node, context, root));
+                return null;
+            }
+        }
+    }
+    function update$1(css) {
         if (css === '') {
             return;
         }
@@ -1207,25 +1362,23 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
     }
     function pushToken(token) {
         tokens.push(token);
-        if (trackLocation) {
-            const pos = { ind, lin, col };
-            if (pos.ind == -1) {
-                pos.ind = 0;
-            }
-            if (pos.col == 0) {
-                pos.col = 1;
-            }
-            weakMap.set(token, pos);
+        // if (trackLocation) {
+        const pos = { ind, lin, col };
+        if (pos.ind == -1) {
+            pos.ind = 0;
         }
+        if (pos.col == 0) {
+            pos.col = 1;
+        }
+        map.set(token, pos);
+        // }
     }
-    const tokens = [];
-    let context = root;
     while (i < total) {
         value = next();
         if (i >= total) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
-                update(buffer);
+                update$1(buffer);
                 buffer = '';
             }
             break;
@@ -1233,7 +1386,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
         if (isWhiteSpace(value.codePointAt(0))) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
-                update(buffer);
+                update$1(buffer);
                 buffer = '';
             }
             let whitespace = value;
@@ -1248,7 +1401,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                 whitespace += value;
             }
             pushToken({ typ: 'Whitespace' });
-            update(whitespace);
+            update$1(whitespace);
             buffer = '';
             if (i >= total) {
                 break;
@@ -1258,7 +1411,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
             case '/':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
@@ -1271,7 +1424,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
-                            update(buffer);
+                            update$1(buffer);
                             break;
                         }
                         if (value == '\\') {
@@ -1282,7 +1435,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                                     typ: 'Bad-comment',
                                     val: buffer
                                 });
-                                update(buffer);
+                                update$1(buffer);
                                 break;
                             }
                             buffer += value;
@@ -1295,13 +1448,13 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                                 pushToken({
                                     typ: 'Bad-comment', val: buffer
                                 });
-                                update(buffer);
+                                update$1(buffer);
                                 break;
                             }
                             buffer += value;
                             if (value == '/') {
                                 pushToken({ typ: 'Comment', val: buffer });
-                                update(buffer);
+                                update$1(buffer);
                                 buffer = '';
                                 break;
                             }
@@ -1315,7 +1468,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
             case '<':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
@@ -1335,7 +1488,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                                 typ: 'Cdo-comment',
                                 val: buffer
                             });
-                            update(buffer);
+                            update$1(buffer);
                             buffer = '';
                             break;
                         }
@@ -1343,7 +1496,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                 }
                 if (i >= total) {
                     pushToken({ typ: 'Bad-cdo-comment', val: buffer });
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 break;
@@ -1353,7 +1506,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                 if (i + 1 >= total) {
                     // end of stream ignore \\
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                     break;
                 }
@@ -1365,7 +1518,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                 let hasNewLine = false;
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
@@ -1373,7 +1526,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                     value = peek();
                     if (i >= total) {
                         pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
-                        update(buffer);
+                        update$1(buffer);
                         break;
                     }
                     if (value == '\\') {
@@ -1381,7 +1534,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                         if (i >= total) {
                             // drop '\\' at the end
                             pushToken(getType(buffer));
-                            update(buffer);
+                            update$1(buffer);
                             break;
                         }
                         buffer += next(2);
@@ -1390,7 +1543,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                     if (value == quote) {
                         buffer += value;
                         pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
-                        update(buffer);
+                        update$1(buffer);
                         i += value.length;
                         buffer = '';
                         break;
@@ -1400,7 +1553,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                     }
                     if (hasNewLine && value == ';') {
                         pushToken({ typ: 'Bad-string', val: buffer });
-                        update(buffer);
+                        update$1(buffer);
                         buffer = '';
                         break;
                     }
@@ -1412,14 +1565,14 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
             case '|':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
                 value = next();
                 if (i >= total) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                     break;
                 }
@@ -1429,12 +1582,12 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                         typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
                         val: buffer
                     });
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                     break;
                 }
                 pushToken(getType(buffer));
-                update(buffer);
+                update$1(buffer);
                 buffer = value;
                 break;
             case ':':
@@ -1442,7 +1595,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
             case '=':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 if (value == ':' && isIdent(peek())) {
@@ -1450,27 +1603,27 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
                     break;
                 }
                 pushToken(getType(value));
-                update(value);
+                update$1(value);
                 buffer = '';
                 break;
             case ')':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 pushToken({ typ: 'End-parens' });
-                update(value);
+                update$1(value);
                 break;
             case '(':
                 if (buffer.length == 0) {
                     pushToken({ typ: 'Start-parens' });
-                    update(value);
+                    update$1(value);
                 }
                 else {
                     buffer += value;
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 break;
@@ -1481,27 +1634,33 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
             case ';':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update(buffer);
+                    update$1(buffer);
                     buffer = '';
                 }
                 pushToken(getBlockType(value));
-                update(value);
+                update$1(value);
                 let node = null;
                 if (value == '{' || value == ';') {
-                    node = parseNode(context, tokens, /* errors, */ trackLocation, root.loc?.src || '', weakMap);
+                    node = parseNode(tokens);
                     if (node != null) {
                         stack.push(node);
                         // @ts-ignore
                         context = node;
                     }
                     tokens.length = 0;
+                    map.clear();
                 }
                 else if (value == '}') {
-                    node = parseNode(context, tokens, /* errors, */ trackLocation, root.loc?.src || '', weakMap);
-                    stack.pop();
+                    node = parseNode(tokens);
+                    const previousNode = stack.pop();
+                    if (previousNode != null && 'exit' in events && previousNode != root) {
+                        // @ts-ignore
+                        events.exit.forEach(callback => callback(previousNode, context, root));
+                    }
                     // @ts-ignore
                     context = stack[stack.length - 1] || root;
                     tokens.length = 0;
+                    map.clear();
                     buffer = '';
                 }
                 // @ts-ignore
@@ -1517,7 +1676,7 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
     }
     if (buffer.length > 0) {
         pushToken(getType(buffer));
-        update(buffer);
+        update$1(buffer);
     }
     // pushToken({typ: 'EOF'});
     if (col == 0) {
@@ -1532,134 +1691,6 @@ function tokenize(iterator, /* errors: ErrorDescription[], */ trackLocation /*, 
         }
     }
     return root;
-}
-function parseNode(root, tokens, /* errors: ErrorDescription[], */ trackLocation, src, weakMap) {
-    let i = 0;
-    for (i = 0; i < tokens.length; i++) {
-        if (tokens[i].typ == 'Comment') {
-            // @ts-ignore
-            root.chi.push(tokens[i]);
-            if (trackLocation) {
-                const position = weakMap.get(tokens[i]);
-                tokens[i].loc = {
-                    sta: position,
-                    // @ts-ignore
-                    end: update({ ...position }, tokens[i].val),
-                    src
-                };
-            }
-        }
-        else if (tokens[i].typ != 'Whitespace') {
-            break;
-        }
-    }
-    tokens = tokens.slice(i);
-    const delim = tokens.pop();
-    while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
-        tokens.pop();
-    }
-    if (tokens.length == 0) {
-        return null;
-    }
-    if (tokens[0]?.typ == 'At-rule') {
-        const atRule = tokens.shift();
-        while (['Whitespace'].includes(tokens[0]?.typ)) {
-            tokens.shift();
-        }
-        const node = {
-            typ: 'AtRule',
-            nam: [{ typ: 'Ident', val: atRule.val }],
-            val: tokens
-        };
-        if (delim.typ == 'Block-start') {
-            node.chi = [];
-        }
-        if (trackLocation) {
-            const position = weakMap.get(atRule);
-            node.loc = {
-                sta: position,
-                // end: weakMap.get(delim),
-                src
-            };
-        }
-        // @ts-ignore
-        root.chi.push(node);
-        if (delim.typ == 'Block-start') {
-            return node;
-        }
-    }
-    else {
-        // rule
-        if (delim.typ == 'Block-start') {
-            const node = {
-                typ: 'Rule',
-                sel: tokens,
-                chi: []
-            };
-            if (trackLocation) {
-                const position = weakMap.get(tokens[0]);
-                node.loc = {
-                    sta: position,
-                    // end: weakMap.get(delim),
-                    src
-                };
-            }
-            // @ts-ignore
-            root.chi.push(node);
-            return node;
-        }
-        else {
-            // declaration
-            let name;
-            let value;
-            for (let i = 0; i < tokens.length; i++) {
-                if (tokens[i].typ == 'Comment') {
-                    continue;
-                }
-                if (tokens[i].typ == 'Colon') {
-                    name = tokens.slice(0, i);
-                    value = tokens.slice(i + 1);
-                }
-                else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
-                    tokens[i].val = tokens[i].val.slice(1);
-                    if (tokens[i].typ == 'Pseudo-selector') {
-                        tokens[i].typ = 'Ident';
-                    }
-                    name = tokens.slice(0, i);
-                    value = tokens.slice(i);
-                }
-            }
-            const node = {
-                typ: 'Declaration',
-                // @ts-ignore
-                nam: name == null ? tokens : name,
-                // @ts-ignore
-                val: value
-            };
-            const position = weakMap.get(node.nam[0]);
-            if (node.val == null) {
-                // errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                return null;
-            }
-            while (node.val[0]?.typ == 'Whitespace') {
-                node.val.shift();
-            }
-            if (node.val.length == 0) {
-                // errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                return null;
-            }
-            if (trackLocation) {
-                node.loc = {
-                    sta: position,
-                    // end: weakMap.get(delim),
-                    src
-                };
-            }
-            // @ts-ignore
-            root.chi.push(node);
-            return null;
-        }
-    }
 }
 function getBlockType(chr) {
     if (chr == ';') {
@@ -1764,6 +1795,8 @@ class Parser {
     #options;
     #observer;
     // @ts-ignore
+    #src = '';
+    // @ts-ignore
     #root;
     #errors = [];
     constructor(options = {
@@ -1782,7 +1815,7 @@ class Parser {
         }
         // const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        this.#root = tokenize(css, /* this.#errors, */ this.#options.location);
+        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options.location, this.#src);
         return this;
     }
     on(name, handler, signal) {

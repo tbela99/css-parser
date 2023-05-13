@@ -1,7 +1,6 @@
 import {
-    isAtKeyword, isDigit, isDimension, isFunction, isHash,
-    isIdent, isIdentCodepoint, isIdentStart,
-    isNewLine, isNumber, isPercentage,
+    isAtKeyword, isDimension, isFunction, isHash,
+    isIdent, isNewLine, isNumber, isPercentage,
     isPseudo, isWhiteSpace, parseDimension, update as updatePosition
 } from "./utils";
 import {
@@ -13,23 +12,26 @@ import {
     AstRuleList,
     AstRuleStyleSheet,
     AtRuleToken,
-    BadCommentToken,
-    BadStringToken,
     DashMatchToken,
     ErrorDescription,
-    FunctionToken,
+    FunctionToken, IdentToken,
     IncludesToken,
     Location,
-    NodeTraverseCallback,
     NodeTraverseEventsMap,
     Position,
     PseudoSelectorToken,
     Token
 } from "../@types";
+import {Renderer} from "../renderer";
 
-// const badTokens: string[] = ['Whitespace', 'Semi-colon', 'Bad-string', 'Bad-comment', 'Bad-cdo-comment'];
+export function tokenize(iterator: string, errors: ErrorDescription[], events: NodeTraverseEventsMap, trackLocation: boolean, src: string /*, callable: (token: Token) => void */): AstRuleStyleSheet {
 
-export function tokenize(iterator: string, errors: ErrorDescription[], events: NodeTraverseEventsMap, trackLocation: boolean /*, callable: (token: Token) => void */): AstRuleStyleSheet {
+    const tokens: Token[] = [];
+    const stack: Array<AstNode | AstComment> = [];
+    const root: AstRuleStyleSheet = {
+        typ: "StyleSheet",
+        chi: []
+    }
 
     let value: string;
     let buffer: string = '';
@@ -37,16 +39,10 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
     let ind: number = -1;
     let lin: number = 1;
     let col: number = 0;
-    const stack: Array<AstNode | AstComment> = [];
     let total: number = iterator.length;
+    let map: Map<Token, Position> = new Map<Token, Position>;
 
-    const enterEvent: boolean = 'enter' in events;
-    const exitEvent: boolean = 'exit' in events;
-
-    const root: AstRuleStyleSheet = {
-        typ: "StyleSheet",
-        chi: []
-    }
+    let context: AstRuleList = root;
 
     if (trackLocation) {
 
@@ -69,7 +65,225 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         }
     }
 
-    const weakMap: WeakMap<Token, Position> = new WeakMap<Token, Position>;
+    function parseNode(tokens: Token[]) {
+
+        let i: number = 0;
+        for (i = 0; i < tokens.length; i++) {
+
+            if (tokens[i].typ == 'Comment') {
+
+                // @ts-ignore
+                context.chi.push(tokens[i]);
+
+                if (trackLocation) {
+
+                    const position: Position = <Position>map.get(tokens[i]);
+
+                    (<AstNode>tokens[i]).loc = <Location>{
+                        sta: position,
+                        // @ts-ignore
+                        end: updatePosition({...position}, tokens[i].val),
+                        src
+                    }
+                }
+
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(<AstNode>tokens[i], context, root))
+
+            } else if (tokens[i].typ != 'Whitespace') {
+
+                break;
+            }
+        }
+
+        tokens = tokens.slice(i);
+
+        const delim: Token = <Token>tokens.pop();
+
+        while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
+
+            tokens.pop();
+        }
+
+        if (tokens.length == 0) {
+
+            return null;
+        }
+
+        if (tokens[0]?.typ == 'At-rule') {
+
+            const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
+
+            while (['Whitespace'].includes(tokens[0]?.typ)) {
+
+                tokens.shift();
+            }
+
+            const node: AstAtRule = {
+                typ: 'AtRule',
+                nam: Renderer.renderToken(atRule),
+                val: tokens
+            }
+
+            if (delim.typ == 'Block-start') {
+
+                node.chi = [];
+            }
+
+            if (trackLocation) {
+
+                const position: Position = <Position>map.get(atRule);
+
+                node.loc = <Location>{
+                    sta: position,
+                    // end: weakMap.get(delim),
+                    src
+                }
+            }
+
+            // @ts-ignore
+            context.chi.push(node);
+
+            if (delim.typ == 'Block-start') {
+
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+
+                return node;
+            }
+        } else {
+
+            // rule
+            if (delim.typ == 'Block-start') {
+
+                const node: AstRule = {
+
+                    typ: 'Rule',
+                    sel: tokens,
+                    chi: []
+                }
+
+                if (trackLocation) {
+
+                    const position: Position = <Position>map.get(tokens[0]);
+
+                    node.loc = <Location>{
+                        sta: position,
+                        src
+                    }
+                }
+
+                // @ts-ignore
+                context.chi.push(node);
+
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+
+                return node;
+            } else {
+
+                // declaration
+                // @ts-ignore
+                let name: Token[] = null;
+                // @ts-ignore
+                let value: Token[] = null;
+
+                for (let i = 0; i < tokens.length; i++) {
+
+                    if (tokens[i].typ == 'Comment') {
+
+                        continue;
+                    }
+
+                    if (tokens[i].typ == 'Colon') {
+
+                        name = tokens.slice(0, i);
+                        value = tokens.slice(i + 1);
+                    } else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && (<FunctionToken | PseudoSelectorToken>tokens[i]).val.startsWith(':')) {
+
+                        (<FunctionToken | PseudoSelectorToken>tokens[i]).val = (<FunctionToken | PseudoSelectorToken>tokens[i]).val.slice(1);
+
+                        if (tokens[i].typ == 'Pseudo-selector') {
+
+                            tokens[i].typ = 'Iden';
+                        }
+
+                        name = tokens.slice(0, i);
+                        value = tokens.slice(i);
+                    }
+                }
+
+                if (name == null) {
+
+                    name = tokens;
+                }
+
+                const position: Position = <Position>map.get(name[0]);
+                // const rawName: string = (<IdentToken>name.shift())?.val;
+
+                if (name.length > 0) {
+
+                    for (let i = 1; i < name.length; i++) {
+
+                        if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
+
+                            errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                            return null;
+                        }
+                    }
+                }
+
+                // if (name.length == 0) {
+                //
+                //     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                //     return null;
+                // }
+
+                // console.error(name[0]);
+
+                const node: AstDeclaration = {
+
+                    typ: 'Declaration',
+                    // @ts-ignore
+                    nam: Renderer.renderToken(name.shift()),
+                    // @ts-ignore
+                    val: value
+                }
+
+                if (node.val == null) {
+
+                    errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                    return null;
+                }
+
+                while (node.val[0]?.typ == 'Whitespace') {
+
+                    node.val.shift();
+                }
+
+                if (node.val.length == 0) {
+
+                    errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                    return null;
+                }
+
+                if (trackLocation) {
+
+                    node.loc = <Location>{
+                        sta: position,
+                        src
+                    }
+                }
+
+                // @ts-ignore
+                context.chi.push(node);
+                // @ts-ignore
+                'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+
+                return null;
+            }
+        }
+    }
 
     function update(css: string) {
 
@@ -162,27 +376,23 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
         tokens.push(token);
 
-        if (trackLocation) {
+        // if (trackLocation) {
 
-            const pos = {ind, lin, col};
+        const pos = {ind, lin, col};
 
-            if (pos.ind == -1) {
+        if (pos.ind == -1) {
 
-                pos.ind = 0;
-            }
-
-            if (pos.col == 0) {
-
-                pos.col = 1;
-            }
-
-            weakMap.set(token, pos);
+            pos.ind = 0;
         }
+
+        if (pos.col == 0) {
+
+            pos.col = 1;
+        }
+
+        map.set(token, pos);
+        // }
     }
-
-    const tokens: Token[] = [];
-
-    let context = root;
 
     while (i < total) {
 
@@ -194,6 +404,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 pushToken(getType(buffer));
                 update(buffer);
+
                 buffer = '';
             }
 
@@ -593,7 +804,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 if (value == '{' || value == ';') {
 
-                    node =  parseNode(root, context, tokens, events, errors, trackLocation, root.loc?.src || '', weakMap);
+                    node = parseNode(tokens);
 
                     if (node != null) {
 
@@ -601,17 +812,17 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                         // @ts-ignore
                         context = node;
-
                     }
 
                     tokens.length = 0;
+                    map.clear();
 
                 } else if (value == '}') {
 
-                    node = parseNode(root, context, tokens, events, errors, trackLocation, root.loc?.src || '', weakMap);
+                    node = parseNode(tokens);
                     const previousNode = stack.pop();
 
-                    if (previousNode != null && 'exit' in events &&  previousNode != root) {
+                    if (previousNode != null && 'exit' in events && previousNode != root) {
 
                         // @ts-ignore
                         events.exit.forEach(callback => callback(<AstNode>previousNode, context, root))
@@ -621,6 +832,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     context = stack[stack.length - 1] || root;
 
                     tokens.length = 0;
+                    map.clear();
                     buffer = '';
                 }
 
@@ -658,7 +870,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         // @ts-ignore
         root.loc.end = {ind, lin, col};
 
-
         for (const context of stack) {
 
             // @ts-ignore
@@ -667,201 +878,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
     }
 
     return root;
-}
-
-function parseNode(root: AstRuleStyleSheet, context: AstRuleList, tokens: Token[], events: NodeTraverseEventsMap, errors: ErrorDescription[], trackLocation: boolean, src: string, weakMap: WeakMap<Token, Position>) {
-
-    let i: number = 0;
-    for (i = 0; i < tokens.length; i++) {
-
-        if (tokens[i].typ == 'Comment') {
-
-            // @ts-ignore
-            root.chi.push(tokens[i]);
-
-            if (trackLocation) {
-
-                const position: Position = <Position>weakMap.get(tokens[i]);
-
-                (<AstNode>tokens[i]).loc = <Location>{
-                    sta: position,
-                    // @ts-ignore
-                    end: updatePosition({...position}, tokens[i].val),
-                    src
-                }
-            }
-
-            // @ts-ignore
-            'enter' in events && events.enter.forEach(callback => callback(<AstNode>tokens[i], context, root))
-
-        } else if (tokens[i].typ != 'Whitespace') {
-
-            break;
-        }
-    }
-
-    tokens = tokens.slice(i);
-
-    const delim: Token = <Token>tokens.pop();
-
-    while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
-
-        tokens.pop();
-    }
-
-    if (tokens.length == 0) {
-
-        return null;
-    }
-
-    if (tokens[0]?.typ == 'At-rule') {
-
-        const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
-
-        while (['Whitespace'].includes(tokens[0]?.typ)) {
-
-            tokens.shift();
-        }
-
-        const node: AstAtRule = {
-            typ: 'AtRule',
-            nam: [{typ: 'Ident', val: atRule.val}],
-            val: tokens
-        }
-
-        if (delim.typ == 'Block-start') {
-
-            node.chi = [];
-        }
-
-        if (trackLocation) {
-
-            const position: Position = <Position>weakMap.get(atRule);
-
-            node.loc = <Location>{
-                sta: position,
-                // end: weakMap.get(delim),
-                src
-            }
-        }
-
-        // @ts-ignore
-        root.chi.push(node);
-
-        if (delim.typ == 'Block-start') {
-
-            // @ts-ignore
-            'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
-
-            return node;
-        }
-    } else {
-
-        // rule
-        if (delim.typ == 'Block-start') {
-
-            const node: AstRule = {
-
-                typ: 'Rule',
-                sel: tokens,
-                chi: []
-            }
-
-            if (trackLocation) {
-
-                const position: Position = <Position>weakMap.get(tokens[0]);
-
-                node.loc = <Location>{
-                    sta: position,
-                    // end: weakMap.get(delim),
-                    src
-                }
-            }
-
-            // @ts-ignore
-            root.chi.push(node);
-
-            // @ts-ignore
-            'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
-
-            return node;
-        } else {
-
-            // declaration
-            let name: Token[];
-            let value: Token[];
-
-            for (let i = 0; i < tokens.length; i++) {
-
-                if (tokens[i].typ == 'Comment') {
-
-                    continue;
-                }
-
-                if (tokens[i].typ == 'Colon') {
-
-                    name = tokens.slice(0, i);
-                    value = tokens.slice(i + 1);
-                } else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && (<FunctionToken | PseudoSelectorToken>tokens[i]).val.startsWith(':')) {
-
-                    (<FunctionToken | PseudoSelectorToken>tokens[i]).val = (<FunctionToken | PseudoSelectorToken>tokens[i]).val.slice(1);
-
-                    if (tokens[i].typ == 'Pseudo-selector') {
-
-                        tokens[i].typ = 'Ident';
-                    }
-
-                    name = tokens.slice(0, i);
-                    value = tokens.slice(i);
-                }
-            }
-
-            const node: AstDeclaration = {
-
-                typ: 'Declaration',
-                // @ts-ignore
-                nam: name == null ? tokens : name,
-                // @ts-ignore
-                val: value
-            }
-
-            const position: Position = <Position>weakMap.get(node.nam[0]);
-
-            if (node.val == null) {
-
-                errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                return null;
-            }
-
-            while (node.val[0]?.typ == 'Whitespace') {
-
-                node.val.shift();
-            }
-
-            if (node.val.length == 0) {
-
-                errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                return null;
-            }
-
-            if (trackLocation) {
-
-                node.loc = <Location>{
-                    sta: position,
-                    // end: weakMap.get(delim),
-                    src
-                }
-            }
-
-            // @ts-ignore
-            root.chi.push(node);
-            // @ts-ignore
-            'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
-
-            return null;
-        }
-    }
-
 }
 
 function getBlockType(chr: '{' | '}' | '[' | ']' | ';'): Token {
@@ -971,7 +987,7 @@ function getType(val: string): Token {
 
     if (isPercentage(val)) {
 
-        return  {
+        return {
             typ: 'Percentage',
             val: val.slice(0, -1)
         }
@@ -980,7 +996,7 @@ function getType(val: string): Token {
     if (isIdent(val)) {
 
         return {
-            typ: 'Ident',
+            typ: 'Iden',
             val
         }
     }

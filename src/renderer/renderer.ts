@@ -52,7 +52,7 @@ export class Renderer {
         const indentSub: string = this.#indents[level + 1];
         const reducer = (acc: string, curr: Token) => {
 
-            acc += this.renderToken(curr);
+            acc += Renderer.renderToken(curr);
             return acc;
         };
 
@@ -87,7 +87,7 @@ export class Renderer {
 
                 if (data.typ == 'AtRule' && !('chi' in data)) {
 
-                    return `${indent}@${(<AstAtRule>data).nam.reduce(reducer, '')} ${(<AstAtRule>data).val.reduce(reducer, '')};`;
+                    return `${indent}@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val.reduce(reducer, '')};`;
                 }
 
                 const children: string = (<AstRule> data).chi.reduce((css: string, node) => {
@@ -101,12 +101,12 @@ export class Renderer {
 
                     else if (node.typ == 'Declaration') {
 
-                        str = `${(<AstDeclaration>node).nam.reduce(reducer, '')}:${this.#options.indent}${(<AstDeclaration>node).val.reduce(reducer, '')};`;
+                        str = `${(<AstDeclaration>node).nam}:${this.#options.indent}${(<AstDeclaration>node).val.reduce(reducer, '')};`;
                     }
 
                     else if (node.typ == 'AtRule' && !('children' in node)) {
 
-                        str = `@${(<AstAtRule>node).nam.reduce(reducer, '')}${this.#options.indent}${this.#options.indent}${(<AstAtRule>node).val.reduce(reducer, '')};`;
+                        str = `@${(<AstAtRule>node).nam}${this.#options.indent}${this.#options.indent}${(<AstAtRule>node).val.reduce(reducer, '')};`;
                     }
 
                     else {
@@ -129,7 +129,7 @@ export class Renderer {
 
                 if (data.typ == 'AtRule') {
 
-                    return indent + '@' + (<AstAtRule>data).nam.reduce(reducer, '') +  `${this.#options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
+                    return indent + '@' + (<AstAtRule>data).nam +  `${this.#options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
                 }
 
                 return indent + (<AstRule>data).sel.reduce(reducer, '') +  `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
@@ -138,7 +138,7 @@ export class Renderer {
         return '';
     }
 
-    renderToken(token: Token) {
+    static renderToken(token: Token) {
 
         /*
         |
@@ -203,7 +203,7 @@ export class Renderer {
             case 'Comment':
             case 'Literal':
             case 'String':
-            case 'Ident':
+            case 'Iden':
             case 'Delim':
                 return token.val;
         }

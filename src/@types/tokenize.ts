@@ -7,7 +7,7 @@ export interface LiteralToken {
 
 export interface IdentToken {
 
-    typ: 'Ident',
+    typ: 'Iden',
     val: string;
 }
 
