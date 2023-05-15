@@ -837,7 +837,7 @@ class Renderer {
                 if (data.typ == 'AtRule') {
                     return indent + '@' + data.nam + `${this.#options.indent}${data.val ? data.val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
                 }
-                return indent + data.sel.reduce(reducer, '') + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                return indent + data.sel + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
         }
         return '';
     }
@@ -850,15 +850,15 @@ class Renderer {
     DashMatchToken | LessThanToken | GreaterThanToken;
          */
         switch (token.typ) {
-            case 'Function':
+            case 'Func':
                 return token.val + '(';
             case 'Includes':
                 return '~=';
             case 'Dash-match':
                 return '|=';
-            case 'Less-than':
+            case 'Lt':
                 return '<';
-            case 'Greater-than':
+            case 'Gt':
                 return '>';
             case 'Start-parens':
                 return '(';
@@ -878,16 +878,17 @@ class Renderer {
                 return ',';
             case 'Dimension':
                 return token.val + token.unit;
-            case 'Percentage':
+            case 'Perc':
                 return token.val + '%';
             case 'At-rule':
             case 'Number':
             case 'Hash':
-            case 'Pseudo-selector':
+            case 'Pseudo-class':
+            case 'Pseudo-class-func':
             case 'Comment':
             case 'Literal':
             case 'String':
-            case 'Ident':
+            case 'Iden':
             case 'Delim':
                 return token.val;
         }
@@ -968,6 +969,9 @@ function isPseudo(name) {
     if (name.charAt(0) != ':') {
         return false;
     }
+    if (name.endsWith('(')) {
+        return isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1));
+    }
     return isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1));
 }
 function isHash(name) {
@@ -980,6 +984,9 @@ function isHash(name) {
     return true;
 }
 function isNumber(name) {
+    if (name.length == 0) {
+        return false;
+    }
     let codepoint = name.codePointAt(0);
     let i = 0;
     const j = name.length;
@@ -1054,7 +1061,8 @@ function isDimension(name) {
     if (index == 0 || index > 3) {
         return false;
     }
-    return isIdentStart(name.codePointAt(name.length - index)) && isNumber(name.slice(0, -index));
+    const number = name.slice(0, -index);
+    return number.length > 0 && isIdentStart(name.codePointAt(name.length - index)) && isNumber(number);
 }
 function isPercentage(name) {
     return name.endsWith('%') && isNumber(name.slice(0, -1));
@@ -1118,7 +1126,7 @@ function update(location, css) {
     return location;
 }
 
-function tokenize(iterator, errors, events, trackLocation, src /*, callable: (token: Token) => void */) {
+function tokenize(iterator, errors, events, options, src /*, callable: (token: Token) => void */) {
     const tokens = [];
     const stack = [];
     const root = {
@@ -1134,7 +1142,7 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
     let total = iterator.length;
     let map = new Map;
     let context = root;
-    if (trackLocation) {
+    if (options.location) {
         root.loc = {
             sta: {
                 ind: 0,
@@ -1149,13 +1157,49 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
             src: ''
         };
     }
+    // consume and throw away
+    function consume(open, close) {
+        let count = 1;
+        let chr;
+        while (true) {
+            chr = next();
+            if (chr == '\\') {
+                if (next() === '') {
+                    break;
+                }
+                continue;
+            }
+            else if (chr == '/' && peek() == '*') {
+                next();
+                while (true) {
+                    chr = next();
+                    if (chr === '') {
+                        break;
+                    }
+                    if (chr == '*' && peek() == '/') {
+                        next();
+                        break;
+                    }
+                }
+            }
+            else if (chr == close) {
+                count--;
+            }
+            else if (chr == open) {
+                count++;
+            }
+            if (chr === '' || count == 0) {
+                break;
+            }
+        }
+    }
     function parseNode(tokens) {
         let i = 0;
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
                 // @ts-ignore
                 context.chi.push(tokens[i]);
-                if (trackLocation) {
+                if (options.location) {
                     const position = map.get(tokens[i]);
                     tokens[i].loc = {
                         sta: position,
@@ -1184,6 +1228,9 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
             while (['Whitespace'].includes(tokens[0]?.typ)) {
                 tokens.shift();
             }
+            // https://www.w3.org/TR/css-nesting-1/#conditionals
+            // allowed nesting at-rules
+            // there must be a top level rule in the stack
             const node = {
                 typ: 'AtRule',
                 nam: Renderer.renderToken(atRule),
@@ -1192,7 +1239,7 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
-            if (trackLocation) {
+            if (options.location) {
                 const position = map.get(atRule);
                 node.loc = {
                     sta: position,
@@ -1211,13 +1258,37 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
         else {
             // rule
             if (delim.typ == 'Block-start') {
+                let inAttr = 0;
+                const position = map.get(tokens[0]);
+                if (context.typ == 'Rule') {
+                    if (tokens[0]?.typ == 'Iden') {
+                        errors.push({ action: 'drop', message: 'invalid nesting rule', location: { src, ...position } });
+                        return null;
+                    }
+                }
                 const node = {
                     typ: 'Rule',
-                    sel: tokens,
+                    sel: tokens.reduce((acc, curr) => {
+                        if (acc[acc.length - 1].length == 0 && curr.typ == 'Whitespace') {
+                            return acc;
+                        }
+                        if (curr.typ == 'Attr-start') {
+                            inAttr++;
+                        }
+                        else if (curr.typ == 'Attr-end') {
+                            inAttr--;
+                        }
+                        if (inAttr == 0 && curr.typ == "Comma") {
+                            acc.push([]);
+                        }
+                        else {
+                            acc[acc.length - 1].push(curr);
+                        }
+                        return acc;
+                    }, [[]]).map(part => part.map(Renderer.renderToken).join('')).sort().join(),
                     chi: []
                 };
-                if (trackLocation) {
-                    const position = map.get(tokens[0]);
+                if (options.location) {
                     node.loc = {
                         sta: position,
                         src
@@ -1243,10 +1314,10 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
                         name = tokens.slice(0, i);
                         value = tokens.slice(i + 1);
                     }
-                    else if (['Function', 'Pseudo-selector'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
+                    else if (['Func', 'Pseudo-class'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
                         tokens[i].val = tokens[i].val.slice(1);
-                        if (tokens[i].typ == 'Pseudo-selector') {
-                            tokens[i].typ = 'Ident';
+                        if (tokens[i].typ == 'Pseudo-class') {
+                            tokens[i].typ = 'Iden';
                         }
                         name = tokens.slice(0, i);
                         value = tokens.slice(i);
@@ -1271,6 +1342,12 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
                 //     return null;
                 // }
                 // console.error(name[0]);
+                if (value != null) {
+                    if (value.filter(t => t.typ != 'Whitespace' && t.typ != 'Comment').length == 0) {
+                        errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                        return null;
+                    }
+                }
                 const node = {
                     typ: 'Declaration',
                     // @ts-ignore
@@ -1289,7 +1366,7 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-                if (trackLocation) {
+                if (options.location) {
                     node.loc = {
                         sta: position,
                         src
@@ -1485,7 +1562,7 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
                         buffer += value;
                         if (value == '>' && prev(2) == '--') {
                             pushToken({
-                                typ: 'Cdo-comment',
+                                typ: 'CDOCOMM',
                                 val: buffer
                             });
                             update$1(buffer);
@@ -1495,7 +1572,7 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
                     }
                 }
                 if (i >= total) {
-                    pushToken({ typ: 'Bad-cdo-comment', val: buffer });
+                    pushToken({ typ: 'BADCDO', val: buffer });
                     update$1(buffer);
                     buffer = '';
                 }
@@ -1647,24 +1724,33 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
                         // @ts-ignore
                         context = node;
                     }
+                    else if (value == '{') {
+                        // node == null
+                        // consume and throw away until the closing } or EOF
+                        consume('{', '}');
+                    }
                     tokens.length = 0;
                     map.clear();
                 }
                 else if (value == '}') {
                     node = parseNode(tokens);
                     const previousNode = stack.pop();
-                    if (previousNode != null && 'exit' in events && previousNode != root) {
+                    // @ts-ignore
+                    context = stack[stack.length - 1] || root;
+                    // @ts-ignore
+                    if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+                        context.chi.pop();
+                    }
+                    else if (previousNode != null && 'exit' in events && previousNode != root) {
                         // @ts-ignore
                         events.exit.forEach(callback => callback(previousNode, context, root));
                     }
-                    // @ts-ignore
-                    context = stack[stack.length - 1] || root;
                     tokens.length = 0;
                     map.clear();
                     buffer = '';
                 }
                 // @ts-ignore
-                if (node != null && trackLocation && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
+                if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
                     // @ts-ignore
                     context.chi[context.chi.length - 1].loc.end = { ind, lin, col };
                 }
@@ -1682,7 +1768,7 @@ function tokenize(iterator, errors, events, trackLocation, src /*, callable: (to
     if (col == 0) {
         col = 1;
     }
-    if (trackLocation) {
+    if (options.location) {
         // @ts-ignore
         root.loc.end = { ind, lin, col };
         for (const context of stack) {
@@ -1727,14 +1813,14 @@ function getType(val) {
         return { typ: 'Comma' };
     }
     if (val == '<') {
-        return { typ: 'Less-than' };
+        return { typ: 'Lt' };
     }
     if (val == '>') {
-        return { typ: 'Greater-than' };
+        return { typ: 'Gt' };
     }
     if (isPseudo(val)) {
         return {
-            typ: 'Pseudo-selector',
+            typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
             val
             // buffer: buffer.slice()
         };
@@ -1748,7 +1834,7 @@ function getType(val) {
     }
     if (isFunction(val)) {
         return {
-            typ: 'Function',
+            typ: 'Func',
             val: val.slice(0, -1)
         };
     }
@@ -1763,13 +1849,13 @@ function getType(val) {
     }
     if (isPercentage(val)) {
         return {
-            typ: 'Percentage',
+            typ: 'Perc',
             val: val.slice(0, -1)
         };
     }
     if (isIdent(val)) {
         return {
-            typ: 'Ident',
+            typ: 'Iden',
             val
         };
     }
@@ -1795,27 +1881,35 @@ class Parser {
     #options;
     #observer;
     // @ts-ignore
-    #src = '';
-    // @ts-ignore
     #root;
     #errors = [];
     constructor(options = {
-        strict: false,
-        location: false
+    // strict: false,
+    // location: false,
+    // processImport: false,
+    // dedup: false,
+    // removeEmpty: false
     }) {
         // @ts-ignore
-        this.#options = { strict: false, location: false, ...options };
+        this.#options = {
+            strict: false,
+            location: false,
+            processImport: false,
+            dedup: false, removeEmpty: false, ...options
+        };
         this.#observer = new Observer();
     }
-    parse(css) {
+    parse(css, src = '') {
         this.#errors = [];
         this.#createRoot();
         if (css.length == 0) {
             return this;
         }
-        // const hasListeners = this.#observer.hasListeners('traverse');
         // @ts-ignore
-        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options.location, this.#src);
+        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
+        if (this.#options.dedup) {
+            deduplicate(this.#root);
+        }
         return this;
     }
     on(name, handler, signal) {
@@ -1825,39 +1919,6 @@ class Parser {
     off(name, handler) {
         this.#observer.off(name, handler);
         return this;
-    }
-    #compactRuleList(node) {
-    }
-    compact() {
-        let i = this.#root.chi.length;
-        let previous = null;
-        while (i--) {
-            const node = this.#root.chi[i];
-            // @ts-ignore
-            if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-                if (!('chi' in node)) {
-                    // @ts-ignore
-                    node.chi = [];
-                }
-                if ('chi' in previous) {
-                    // @ts-ignore
-                    node.chi.push(...previous.chi);
-                }
-                this.#root.chi.splice(i, 1);
-            }
-            // @ts-ignore
-            else if (node.type == 'AtRule' && node.name == 'media' && node.value == 'all') {
-                // @ts-ignore
-                this.#root.chi.splice(i, 1, ...node.chi);
-                // @ts-ignore
-                i += node.chi.length;
-            }
-            // @ts-ignore
-            previous = node;
-        }
-        return this;
-    }
-    #compactRule(node) {
     }
     getAst() {
         if (this.#root == null) {
@@ -1891,6 +1952,81 @@ class Parser {
     toString() {
         return new Renderer().render(this);
     }
+}
+function deduplicate(ast) {
+    if ('chi' in ast) {
+        // @ts-ignore
+        let i = ast.chi.length;
+        let previous;
+        let node;
+        while (i--) {
+            // @ts-ignore
+            node = ast.chi[i];
+            // @ts-ignore
+            if (node.typ == 'Comment') {
+                continue;
+            }
+            // @ts-ignore
+            if (node.typ == previous?.typ) {
+                if ((node.typ == 'Rule' && node.sel == previous.sel) || ('chi' in node && node.typ == 'AtRule' && node.nam == previous.nam)) {
+                    // @ts-ignore
+                    previous.chi = node.chi.concat(...previous.chi);
+                    // @ts-ignore
+                    ast.chi.splice(i, 1);
+                    // @ts-ignore
+                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                        deduplicateRule(previous);
+                    }
+                    else {
+                        deduplicate(previous);
+                    }
+                    continue;
+                }
+                else if (node.typ == 'Declaration' && node.nam == previous.nam) {
+                    // @ts-ignore
+                    ast.chi.splice(i, 1);
+                    continue;
+                }
+            }
+            if (!('chi' in node)) {
+                continue;
+            }
+            // @ts-ignore
+            if (node.typ == 'Rule' || node.chi.some(n => n.typ == 'Declaration')) {
+                deduplicateRule(node);
+            }
+            else {
+                deduplicate(node);
+            }
+            previous = node;
+        }
+    }
+    return ast;
+}
+function deduplicateRule(ast) {
+    if (!('chi' in ast) || ast.chi?.length == 0) {
+        return ast;
+    }
+    const set = new Set;
+    // @ts-ignore
+    let i = ast.chi.length;
+    let node;
+    while (i--) {
+        // @ts-ignore
+        node = ast.chi[i];
+        if (node.typ != 'Declaration') {
+            continue;
+        }
+        // @ts-ignore
+        if (set.has(node.nam)) {
+            // @ts-ignore
+            ast.chi.splice(i, 1);
+            continue;
+        }
+        // @ts-ignore
+        set.add(node.nam);
+    }
+    return ast;
 }
 
 // import {parseBlock} from "../../src/parser/utils/block";

@@ -30,6 +30,8 @@ export interface ParserOptions {
     strict?: boolean;
     location?: boolean;
     processImport?: boolean;
+    dedup?: boolean;
+    removeEmpty?: boolean;
 }
 
 export interface RenderOptions {
@@ -84,7 +86,7 @@ export interface AstDeclaration extends Node {
 export interface AstRule extends Node {
 
     typ: 'Rule',
-    sel: Array<Token>,
+    sel: string,
     chi: Array<AstDeclaration | AstComment | AstRuleList>
 }
 

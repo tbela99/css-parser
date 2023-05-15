@@ -40,13 +40,13 @@ export interface AtRuleToken {
 
 export interface PercentageToken {
 
-    typ: 'Percentage',
+    typ: 'Perc',
     val: string;
 }
 
 export interface FunctionToken {
 
-    typ: 'Function',
+    typ: 'Func',
     val: string;
 }
 
@@ -130,13 +130,13 @@ export interface BadCommentToken {
 
 export interface CDOCommentToken {
 
-    typ: 'Cdo-comment';
+    typ: 'CDOCOMM';
     val: string;
 }
 
 export interface BadCDOCommentToken {
 
-    typ: 'Bad-cdo-comment';
+    typ: 'BADCDO';
     val: string;
 }
 
@@ -154,17 +154,23 @@ export interface DashMatchToken {
 
 export interface LessThanToken {
 
-    typ: 'Less-than';
+    typ: 'Lt';
 }
 
 export interface GreaterThanToken {
 
-    typ: 'Greater-than';
+    typ: 'Gt';
 }
 
-export interface PseudoSelectorToken {
+export interface PseudoClassToken {
 
-    typ: 'Pseudo-selector';
+    typ: 'Pseudo-class';
+    val: string;
+}
+
+export interface PseudoClassFunctionToken {
+
+    typ: 'Pseudo-class-func';
     val: string;
 }
 
@@ -184,5 +190,5 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken | PseudoSelectorToken | DelimToken |
+    DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
     EOFToken;

@@ -110,6 +110,11 @@ export function isPseudo(name: string): boolean {
         return false;
     }
 
+    if (name.endsWith('(')) {
+
+        return isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1))
+    }
+
     return isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1))
 }
 
@@ -128,7 +133,12 @@ export function isHash(name: string): boolean {
     return true;
 }
 
-export function isNumber (name: string) {
+export function isNumber (name: string): boolean {
+
+    if (name.length == 0) {
+
+        return false;
+    }
 
     let codepoint: number = <number>name.codePointAt(0);
     let i: number = 0;
@@ -247,7 +257,8 @@ export function isDimension(name: string) {
         return false;
     }
 
-    return isIdentStart(<number>name.codePointAt(name.length - index)) && isNumber(name.slice(0, -index));
+    const number: string = name.slice(0, -index);
+    return number.length > 0 && isIdentStart(<number>name.codePointAt(name.length - index)) && isNumber(number);
 }
 
 export function isPercentage(name: string) {

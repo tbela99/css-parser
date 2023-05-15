@@ -132,7 +132,7 @@ export class Renderer {
                     return indent + '@' + (<AstAtRule>data).nam +  `${this.#options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
                 }
 
-                return indent + (<AstRule>data).sel.reduce(reducer, '') +  `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
+                return indent + (<AstRule>data).sel +  `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
         }
 
         return '';
@@ -150,7 +150,7 @@ export class Renderer {
 
         switch (token.typ ) {
 
-            case 'Function':
+            case 'Func':
                 return token.val + '(';
 
             case 'Includes':
@@ -159,10 +159,10 @@ export class Renderer {
             case 'Dash-match':
                 return '|=';
 
-            case 'Less-than':
+            case 'Lt':
                 return '<';
 
-            case 'Greater-than':
+            case 'Gt':
                 return '>';
 
             case 'Start-parens':
@@ -192,14 +192,15 @@ export class Renderer {
             case 'Dimension':
                 return token.val + (<DimensionToken>token).unit;
 
-            case 'Percentage':
+            case 'Perc':
                 return token.val + '%';
 
             case 'At-rule':
             case 'Number':
 
             case 'Hash':
-            case 'Pseudo-selector':
+            case 'Pseudo-class':
+            case 'Pseudo-class-func':
             case 'Comment':
             case 'Literal':
             case 'String':
