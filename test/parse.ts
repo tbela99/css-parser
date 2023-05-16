@@ -23,13 +23,13 @@ import {Parser} from "../src";
 // tokenize([...file], {index: 0, line: 0, column: 0}, (token) => console.debug(token));
 // process.exit();
 
-const baseName: 'small' | 'smalli' | 'bootstrap' | 'invalid-3' | 'nested' = 'small';
+const baseName: 'small' | 'smalli' | 'bootstrap' | 'invalid-3' | 'nested' | 'import' = 'import';
 //
 const dir = dirname(new URL(import.meta.url).pathname);
 const file = (await readFile( `${dir}/files/css/${baseName}.css`)).toString();
 //
 // const str = '@media (min-width: 500px) { height: calc(100vh - 20%);';
-const parser = new Parser({location: false, dedup: false, removeEmpty: true});
+const parser = new Parser({location: false, dedup: true, removeEmpty: true});
 
 // parser.on('enter', (node) => console.debug({event: 'enter', node}))
 // parser.on('exit', (node) => console.debug({event: 'exit', node}))
@@ -43,6 +43,6 @@ const end = Date.now();
 //
 console.debug(css);
 // console.log(parser.getAst());
-// console.error(parser.getErrors());
+console.error(parser.getErrors());
 console.error(`parsed in ${mid - start}ms`);
 console.error(`renderer in ${end - mid}ms`);

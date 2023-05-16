@@ -93,7 +93,7 @@ export interface AstRule extends Node {
 export interface AstAtRule extends Node {
 
     nam: string;
-    val: Token[];
+    val: string;
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 

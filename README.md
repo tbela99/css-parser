@@ -11,5 +11,9 @@ $ npm install @tbela99/css-parser
 
 ```javascript
 
+const parser = new Parser({dedup: true});
 
+parser.parse({
+    
+})
 ```

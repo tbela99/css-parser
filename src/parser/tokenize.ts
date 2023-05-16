@@ -165,6 +165,13 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         if (tokens[0]?.typ == 'At-rule') {
 
             const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
+            const position: Position = <Position>map.get(atRule);
+
+            if (atRule.val == 'charset' && position.ind > 0) {
+
+                errors.push({action: 'drop', message: 'invalid charset', location: {src, ...position}});
+                return null;
+            }
 
             while (['Whitespace'].includes(tokens[0]?.typ)) {
 
@@ -178,7 +185,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             const node: AstAtRule = {
                 typ: 'AtRule',
                 nam: Renderer.renderToken(atRule),
-                val: tokens
+                val: tokens.reduce((acc, curr) => acc + Renderer.renderToken(curr), '')
             }
 
             if (delim.typ == 'Block-start') {
@@ -187,8 +194,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             }
 
             if (options.location) {
-
-                const position: Position = <Position>map.get(atRule);
 
                 node.loc = <Location>{
                     sta: position,

@@ -17,20 +17,15 @@ export class Parser {
     #root: AstRuleStyleSheet;
     #errors: ErrorDescription[] = [];
 
-    constructor(options: ParserOptions = {
-        // strict: false,
-        // location: false,
-        // processImport: false,
-        // dedup: false,
-        // removeEmpty: false
-    }) {
+    constructor(options: ParserOptions = {}) {
 
         // @ts-ignore
         this.#options = {
             strict: false,
             location: false,
             processImport: false,
-            dedup: false, removeEmpty: false, ...options};
+            dedup: false, removeEmpty: false, ...options
+        };
         this.#observer = new Observer();
     }
 
@@ -45,7 +40,7 @@ export class Parser {
         }
 
         // @ts-ignore
-        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'),  this.#options, src);
+        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
 
         if (this.#options.dedup) {
 
@@ -138,7 +133,11 @@ function deduplicate(ast: AstNode) {
             // @ts-ignore
             if (node.typ == previous?.typ) {
 
-                if ((node.typ == 'Rule' && (<AstRule>node).sel == (<AstRule> previous).sel) || ('chi' in node && node.typ == 'AtRule' && (<AstAtRule> node).nam == (<AstAtRule> previous).nam)) {
+                if ((node.typ == 'Rule' && (<AstRule>node).sel == (<AstRule>previous).sel) ||
+                    ('chi' in node && node.typ == 'AtRule' &&
+                        (<AstAtRule>node).nam == (<AstAtRule>previous).nam &&
+                        (<AstAtRule>node).val == (<AstAtRule>previous).val
+                    )) {
 
                     // @ts-ignore
                     previous.chi = node.chi.concat(...previous.chi);
@@ -150,17 +149,13 @@ function deduplicate(ast: AstNode) {
                     if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
 
                         deduplicateRule(previous);
-                    }
-
-                    else {
+                    } else {
 
                         deduplicate(previous);
                     }
 
                     continue;
-                }
-
-                else if (node.typ == 'Declaration' && (<AstDeclaration>node).nam == (<AstDeclaration>previous).nam) {
+                } else if (node.typ == 'Declaration' && (<AstDeclaration>node).nam == (<AstDeclaration>previous).nam) {
 
                     // @ts-ignore
                     ast.chi.splice(i, 1);
@@ -177,9 +172,7 @@ function deduplicate(ast: AstNode) {
             if (node.typ == 'Rule' || node.chi.some(n => n.typ == 'Declaration')) {
 
                 deduplicateRule(node);
-            }
-
-            else {
+            } else {
 
                 deduplicate(node);
             }

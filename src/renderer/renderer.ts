@@ -87,7 +87,7 @@ export class Renderer {
 
                 if (data.typ == 'AtRule' && !('chi' in data)) {
 
-                    return `${indent}@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val.reduce(reducer, '')};`;
+                    return `${indent}@${(<AstAtRule>data).nam}${this.#options.indent}${(<AstAtRule>data).val};`;
                 }
 
                 const children: string = (<AstRule> data).chi.reduce((css: string, node) => {
@@ -106,7 +106,7 @@ export class Renderer {
 
                     else if (node.typ == 'AtRule' && !('children' in node)) {
 
-                        str = `@${(<AstAtRule>node).nam}${this.#options.indent}${this.#options.indent}${(<AstAtRule>node).val.reduce(reducer, '')};`;
+                        str = `@${(<AstAtRule>node).nam}${this.#options.indent}${(<AstAtRule>node).val};`;
                     }
 
                     else {
@@ -129,7 +129,7 @@ export class Renderer {
 
                 if (data.typ == 'AtRule') {
 
-                    return indent + '@' + (<AstAtRule>data).nam +  `${this.#options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
+                    return indent + '@' + (<AstAtRule>data).nam +  `${this.#options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
                 }
 
                 return indent + (<AstRule>data).sel +  `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine)  + indent + `}`
