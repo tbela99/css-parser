@@ -50,6 +50,19 @@ export class Parser {
         return this;
     }
 
+    async parseURL(file: string | URL) {
+
+        return await fetch(file).then(async response => {
+
+            if (!response.ok) {
+
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+
+            return this.parse(await response.text(), response.url.toString().replace(/(?=\/)[^/]*?(\?|#.*)?/, ''));
+        });
+    }
+
     on(name: string, handler: AstTraverserHandler, signal?: AbortSignal): this {
 
         this.#observer.on(name, handler, signal);
@@ -134,25 +147,38 @@ function deduplicate(ast: AstNode) {
             if (node.typ == previous?.typ) {
 
                 if ((node.typ == 'Rule' && (<AstRule>node).sel == (<AstRule>previous).sel) ||
-                    ('chi' in node && node.typ == 'AtRule' &&
+                    (node.typ == 'AtRule' &&
                         (<AstAtRule>node).nam == (<AstAtRule>previous).nam &&
                         (<AstAtRule>node).val == (<AstAtRule>previous).val
                     )) {
 
-                    // @ts-ignore
-                    previous.chi = node.chi.concat(...previous.chi);
+                    if (node.typ == 'AtRule' && previous?.typ == 'AtRule') {
+
+                        // console.debug({node, previous});
+                    }
+
+                    if ('chi' in node) {
+
+                        // @ts-ignore
+                        previous.chi = node.chi.concat(...(previous.chi || []));
+                    }
 
                     // @ts-ignore
                     ast.chi.splice(i, 1);
 
-                    // @ts-ignore
-                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
-
-                        deduplicateRule(previous);
-                    } else {
-
-                        deduplicate(previous);
-                    }
+                    // if (!('chi' in previous)) {
+                    //
+                    //     continue;
+                    // }
+                    //
+                    // // @ts-ignore
+                    // if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                    //
+                    //     deduplicateRule(previous);
+                    // } else {
+                    //
+                    //     deduplicate(previous);
+                    // }
 
                     continue;
                 } else if (node.typ == 'Declaration' && (<AstDeclaration>node).nam == (<AstDeclaration>previous).nam) {
@@ -163,21 +189,21 @@ function deduplicate(ast: AstNode) {
                 }
             }
 
+            previous = node;
+
             if (!('chi' in node)) {
 
                 continue;
             }
 
             // @ts-ignore
-            if (node.typ == 'Rule' || node.chi.some(n => n.typ == 'Declaration')) {
+            if (node.typ == 'AtRule' || node.chi.some(n => n.typ == 'Declaration')) {
 
                 deduplicateRule(node);
             } else {
 
                 deduplicate(node);
             }
-
-            previous = node;
         }
     }
 

@@ -180,6 +180,18 @@ export interface DelimToken {
     val: '=';
 }
 
+export interface BadUrlToken {
+
+    typ: 'Bad-url-token',
+    val: string;
+}
+
+export interface UrlToken {
+
+    typ: 'Url-token',
+    val: string;
+}
+
 export interface EOFToken {
 
     typ: 'EOF';
@@ -191,4 +203,4 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
-    EOFToken;
+    BadUrlToken | UrlToken | EOFToken;

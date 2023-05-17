@@ -14,12 +14,12 @@ import {
     AtRuleToken,
     DashMatchToken,
     ErrorDescription,
-    FunctionToken, IncludesToken,
+    FunctionToken, IdentToken, IncludesToken,
     Location,
     NodeTraverseEventsMap, ParserOptions,
     Position,
-    PseudoClassToken,
-    Token
+    PseudoClassToken, StringToken,
+    Token, UrlToken
 } from "../@types";
 import {Renderer} from "../renderer";
 
@@ -169,13 +169,90 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
             if (atRule.val == 'charset' && position.ind > 0) {
 
-                errors.push({action: 'drop', message: 'invalid charset', location: {src, ...position}});
+                errors.push({action: 'drop', message: 'invalid @charset', location: {src, ...position}});
                 return null;
             }
 
             while (['Whitespace'].includes(tokens[0]?.typ)) {
 
                 tokens.shift();
+            }
+
+            if (atRule.val == 'import') {
+
+                // only @charset and @layer are accepted before @import
+
+                if (context.chi.length > 0) {
+
+                    let i: number = context.chi.length;
+
+                    while (i--) {
+
+                        const type = context.chi[i].typ;
+
+                        if (type == 'Comment') {
+
+                            continue;
+                        }
+
+                        if (type != 'AtRule') {
+
+                            errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                            return null;
+                        }
+
+                        const name: string = (<AstAtRule>context.chi[i]).nam;
+
+                        if (name != 'charset' && name != 'import' && name != 'layer') {
+
+                            errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                            return null;
+                        }
+
+                        break;
+                    }
+                }
+
+                // @ts-ignore
+                if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'Func') {
+
+                    errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                    return null;
+                }
+
+                // @ts-ignore
+                if (tokens[0].typ == 'Func' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
+
+                    errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                    return null;
+                }
+            }
+
+            if (atRule.val == 'import') {
+
+                // @ts-ignore
+                if (tokens[0].typ == 'Func' && tokens[1].typ == 'Url-token') {
+
+                    tokens.shift();
+                    const token: Token = <UrlToken | StringToken>tokens.shift();
+
+                    token.typ = 'String';
+                    token.val = `"${token.val}"`;
+
+                    tokens[0] = token;
+                }
+
+                const token: IdentToken = <IdentToken>tokens[tokens.length - 1];
+
+                if (token.typ == 'Iden' && token.val == 'all') {
+
+                    tokens.pop();
+
+                    if (tokens[tokens.length - 1].typ == 'Whitespace') {
+
+                        tokens.pop();
+                    }
+                }
             }
 
             // https://www.w3.org/TR/css-nesting-1/#conditionals
@@ -186,6 +263,27 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 typ: 'AtRule',
                 nam: Renderer.renderToken(atRule),
                 val: tokens.reduce((acc, curr) => acc + Renderer.renderToken(curr), '')
+            }
+
+            if (node.nam == 'import') {
+
+                if (node.val == 'all') {
+
+                    node.val = '';
+                }
+
+                if(options.processImport) {
+
+                    // @ts-ignore
+                    let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'Func' ? 1 : 0];
+
+                    let file: string = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
+
+                    if (!file.startsWith('data:')) {
+
+
+                    }
+                }
             }
 
             if (delim.typ == 'Block-start') {
@@ -499,6 +597,81 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         // }
     }
 
+    function consumeString(quoteStr: '"' | "'") {
+
+        const quote: string = quoteStr;
+        let value;
+        let hasNewLine: boolean = false;
+
+        if (buffer.length > 0) {
+
+            pushToken(getType(buffer));
+            update(buffer);
+
+            buffer = '';
+        }
+
+        buffer += quoteStr;
+
+        while (i < total) {
+
+            value = peek();
+
+            if (i >= total) {
+
+                pushToken({typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
+                update(buffer);
+                break;
+            }
+
+            if (value == '\\') {
+
+                // buffer += value;
+
+                if (i >= total) {
+
+                    // drop '\\' at the end
+                    pushToken(getType(buffer));
+                    update(buffer);
+
+                    break;
+                }
+
+                buffer += next(2);
+                continue;
+            }
+
+            if (value == quote) {
+
+                buffer += value;
+
+                pushToken({typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
+                update(buffer);
+
+                i += value.length;
+                buffer = '';
+                break;
+            }
+
+            if (isNewLine(<number>value.codePointAt(0))) {
+
+                hasNewLine = true;
+            }
+
+            if (hasNewLine && value == ';') {
+
+                pushToken({typ: 'Bad-string', val: buffer});
+                update(buffer);
+
+                buffer = '';
+                break;
+            }
+
+            buffer += value;
+            i += value.length;
+        }
+    }
+
     while (i < total) {
 
         value = next();
@@ -718,76 +891,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             case '"':
             case "'":
 
-                const quote: string = value;
-                let hasNewLine: boolean = false;
-
-                if (buffer.length > 0) {
-
-                    pushToken(getType(buffer));
-                    update(buffer);
-
-                    buffer = '';
-                }
-
-                buffer += value;
-
-                while (i < total) {
-
-                    value = peek();
-
-                    if (i >= total) {
-
-                        pushToken({typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
-                        update(buffer);
-                        break;
-                    }
-
-                    if (value == '\\') {
-
-                        // buffer += value;
-
-                        if (i >= total) {
-
-                            // drop '\\' at the end
-                            pushToken(getType(buffer));
-                            update(buffer);
-
-                            break;
-                        }
-
-                        buffer += next(2);
-                        continue;
-                    }
-
-                    if (value == quote) {
-
-                        buffer += value;
-
-                        pushToken({typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
-                        update(buffer);
-
-                        i += value.length;
-                        buffer = '';
-                        break;
-                    }
-
-                    if (isNewLine(<number>value.codePointAt(0))) {
-
-                        hasNewLine = true;
-                    }
-
-                    if (hasNewLine && value == ';') {
-
-                        pushToken({typ: 'Bad-string', val: buffer});
-                        update(buffer);
-
-                        buffer = '';
-                        break;
-                    }
-
-                    buffer += value;
-                    i += value.length;
-                }
+                consumeString(value);
 
                 break;
 
@@ -884,6 +988,132 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     pushToken(getType(buffer));
                     update(buffer);
                     buffer = '';
+
+                    const token: Token = tokens[tokens.length - 1];
+
+                    if (token.typ == 'Func' && token.val == 'url') {
+
+                        // consume either string or url token
+                        let whitespace = '';
+
+                        value = peek();
+                        while(isWhiteSpace(<number>value.codePointAt(0))) {
+
+                            whitespace += value;
+                        }
+
+                        if (whitespace.length > 0) {
+
+                            next(whitespace.length);
+                        }
+
+                        value = peek();
+
+                        if (value == '"' || value == "'") {
+
+                            consumeString(<'"' | "'">next());
+
+                            let token: Token = tokens[tokens.length -1];
+
+                            if (token.typ == 'String' && /^("|')[a-zA-Z0-9_/-][a-zA-Z0-9_/:.-]+("|')$/.test(token.val)) {
+
+                                // @ts-ignore
+                                token.typ = 'Url-token';
+                                token.val = token.val.slice(1, -1);
+                            }
+                            break;
+                        }
+
+                        else {
+
+                            buffer = '';
+
+                            do {
+
+                                let cp: number = <number>value.codePointAt(0);
+
+                                // EOF -
+                                if (cp == null) {
+
+                                    pushToken({typ: 'Bad-url-token', val: buffer})
+                                    break;
+                                }
+
+                                // ')'
+                                if (cp == 0x29 || cp == null) {
+
+                                    if (buffer.length == 0) {
+
+                                        pushToken({typ: 'Bad-url-token', val: ''})
+                                    }
+
+                                    else {
+
+                                        pushToken({typ: 'Url-token', val: buffer})
+                                    }
+
+                                    if (cp != null) {
+
+                                        pushToken(getType(next()));
+                                    }
+
+                                    break;
+                                }
+
+                                if (isWhiteSpace(cp)) {
+
+                                    whitespace = next();
+
+                                    while (true) {
+
+                                        value = peek();
+                                        cp = <number>value.codePointAt(0);
+
+                                        if (isWhiteSpace(cp)) {
+
+                                            whitespace += value;
+                                            continue;
+                                        }
+
+                                        break;
+                                    }
+
+                                    if (cp == null || cp == 0x29) {
+
+                                       continue;
+                                    }
+
+                                    // bad url token
+                                    buffer += next(whitespace.length);
+
+                                    do {
+
+                                        value = peek();
+                                        cp = <number>value.codePointAt(0);
+
+                                        if (cp == null || cp == 0x29) {
+
+                                            break;
+                                        }
+
+                                        buffer += next();
+                                    }
+
+                                    while (true);
+
+                                    pushToken({typ: 'Bad-url-token', val: buffer});
+                                    continue;
+                                }
+
+                                buffer += next();
+                                value = peek();
+                            }
+
+                            while(true);
+
+                            buffer = '';
+                        }
+                    }
                 }
 
                 break;
@@ -920,7 +1150,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     } else if (value == '{') {
 
                         // node == null
-                        // consume and throw away until the closing } or EOF
+                        // consume and throw away until the closing '}' or EOF
                         consume('{', '}');
                     }
 

@@ -810,7 +810,7 @@ class Renderer {
             case 'AtRule':
             case 'Rule':
                 if (data.typ == 'AtRule' && !('chi' in data)) {
-                    return `${indent}@${data.nam} ${data.val.reduce(reducer, '')};`;
+                    return `${indent}@${data.nam}${this.#options.indent}${data.val};`;
                 }
                 const children = data.chi.reduce((css, node) => {
                     let str;
@@ -821,7 +821,7 @@ class Renderer {
                         str = `${node.nam}:${this.#options.indent}${node.val.reduce(reducer, '')};`;
                     }
                     else if (node.typ == 'AtRule' && !('children' in node)) {
-                        str = `@${node.nam}${this.#options.indent}${this.#options.indent}${node.val.reduce(reducer, '')};`;
+                        str = `@${node.nam}${this.#options.indent}${node.val};`;
                     }
                     else {
                         str = this.#doRender(node, level + 1);
@@ -835,7 +835,7 @@ class Renderer {
                     return `${css}${this.#options.newLine}${indentSub}${str}`;
                 }, '');
                 if (data.typ == 'AtRule') {
-                    return indent + '@' + data.nam + `${this.#options.indent}${data.val ? data.val.reduce(reducer, '') + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                    return indent + '@' + data.nam + `${this.#options.indent}${data.val ? data.val + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
                 }
                 return indent + data.sel + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
         }
@@ -880,6 +880,7 @@ class Renderer {
                 return token.val + token.unit;
             case 'Perc':
                 return token.val + '%';
+            case 'Url-token':
             case 'At-rule':
             case 'Number':
             case 'Hash':
@@ -1225,8 +1226,35 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
         }
         if (tokens[0]?.typ == 'At-rule') {
             const atRule = tokens.shift();
+            const position = map.get(atRule);
+            if (atRule.val == 'charset' && position.ind > 0) {
+                errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
+                return null;
+            }
             while (['Whitespace'].includes(tokens[0]?.typ)) {
                 tokens.shift();
+            }
+            if (atRule.val == 'import') {
+                // @ts-ignore
+                if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'Func') {
+                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    return null;
+                }
+                // @ts-ignore
+                if (tokens[0].typ == 'Func' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
+                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    return null;
+                }
+            }
+            if (atRule.val == 'import') {
+                // @ts-ignore
+                if (tokens[0].typ == 'Func' && tokens[1].typ == 'Url-token') {
+                    tokens.shift();
+                    const token = tokens.shift();
+                    token.typ = 'String';
+                    token.val = `"${token.val}"`;
+                    tokens[0] = token;
+                }
             }
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
@@ -1234,13 +1262,20 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             const node = {
                 typ: 'AtRule',
                 nam: Renderer.renderToken(atRule),
-                val: tokens
+                val: tokens.reduce((acc, curr) => acc + Renderer.renderToken(curr), '')
             };
+            if (node.nam == 'import') {
+                if (options.processImport) {
+                    // @ts-ignore
+                    let fileToken = tokens[tokens[0].typ == 'Func' ? 1 : 0];
+                    let file = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
+                    if (!file.startsWith('data:')) ;
+                }
+            }
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
             if (options.location) {
-                const position = map.get(atRule);
                 node.loc = {
                     sta: position,
                     // end: weakMap.get(delim),
@@ -1450,6 +1485,55 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
         map.set(token, pos);
         // }
     }
+    function consumeString(quoteStr) {
+        const quote = quoteStr;
+        let value;
+        let hasNewLine = false;
+        if (buffer.length > 0) {
+            pushToken(getType(buffer));
+            update$1(buffer);
+            buffer = '';
+        }
+        buffer += quoteStr;
+        while (i < total) {
+            value = peek();
+            if (i >= total) {
+                pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
+                update$1(buffer);
+                break;
+            }
+            if (value == '\\') {
+                // buffer += value;
+                if (i >= total) {
+                    // drop '\\' at the end
+                    pushToken(getType(buffer));
+                    update$1(buffer);
+                    break;
+                }
+                buffer += next(2);
+                continue;
+            }
+            if (value == quote) {
+                buffer += value;
+                pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
+                update$1(buffer);
+                i += value.length;
+                buffer = '';
+                break;
+            }
+            if (isNewLine(value.codePointAt(0))) {
+                hasNewLine = true;
+            }
+            if (hasNewLine && value == ';') {
+                pushToken({ typ: 'Bad-string', val: buffer });
+                update$1(buffer);
+                buffer = '';
+                break;
+            }
+            buffer += value;
+            i += value.length;
+        }
+    }
     while (i < total) {
         value = next();
         if (i >= total) {
@@ -1591,52 +1675,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 break;
             case '"':
             case "'":
-                const quote = value;
-                let hasNewLine = false;
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    update$1(buffer);
-                    buffer = '';
-                }
-                buffer += value;
-                while (i < total) {
-                    value = peek();
-                    if (i >= total) {
-                        pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
-                        update$1(buffer);
-                        break;
-                    }
-                    if (value == '\\') {
-                        // buffer += value;
-                        if (i >= total) {
-                            // drop '\\' at the end
-                            pushToken(getType(buffer));
-                            update$1(buffer);
-                            break;
-                        }
-                        buffer += next(2);
-                        continue;
-                    }
-                    if (value == quote) {
-                        buffer += value;
-                        pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
-                        update$1(buffer);
-                        i += value.length;
-                        buffer = '';
-                        break;
-                    }
-                    if (isNewLine(value.codePointAt(0))) {
-                        hasNewLine = true;
-                    }
-                    if (hasNewLine && value == ';') {
-                        pushToken({ typ: 'Bad-string', val: buffer });
-                        update$1(buffer);
-                        buffer = '';
-                        break;
-                    }
-                    buffer += value;
-                    i += value.length;
-                }
+                consumeString(value);
                 break;
             case '~':
             case '|':
@@ -1702,6 +1741,83 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     pushToken(getType(buffer));
                     update$1(buffer);
                     buffer = '';
+                    const token = tokens[tokens.length - 1];
+                    if (token.typ == 'Func' && token.val == 'url') {
+                        // consume either string or url token
+                        let whitespace = '';
+                        value = peek();
+                        while (isWhiteSpace(value.codePointAt(0))) {
+                            whitespace += value;
+                        }
+                        if (whitespace.length > 0) {
+                            next(whitespace.length);
+                        }
+                        value = peek();
+                        if (value == '"' || value == "'") {
+                            consumeString(next());
+                            let token = tokens[tokens.length - 1];
+                            if (token.typ == 'String' && /^("|')[a-zA-Z0-9_/-][a-zA-Z0-9_/:.-]+("|')$/.test(token.val)) {
+                                // @ts-ignore
+                                token.typ = 'Url-token';
+                                token.val = token.val.slice(1, -1);
+                            }
+                            break;
+                        }
+                        else {
+                            buffer = '';
+                            do {
+                                let cp = value.codePointAt(0);
+                                // EOF -
+                                if (cp == null) {
+                                    pushToken({ typ: 'Bad-url-token', val: buffer });
+                                    break;
+                                }
+                                // ')'
+                                if (cp == 0x29 || cp == null) {
+                                    if (buffer.length == 0) {
+                                        pushToken({ typ: 'Bad-url-token', val: '' });
+                                    }
+                                    else {
+                                        pushToken({ typ: 'Url-token', val: buffer });
+                                    }
+                                    if (cp != null) {
+                                        pushToken(getType(next()));
+                                    }
+                                    break;
+                                }
+                                if (isWhiteSpace(cp)) {
+                                    whitespace = next();
+                                    while (true) {
+                                        value = peek();
+                                        cp = value.codePointAt(0);
+                                        if (isWhiteSpace(cp)) {
+                                            whitespace += value;
+                                            continue;
+                                        }
+                                        break;
+                                    }
+                                    if (cp == null || cp == 0x29) {
+                                        continue;
+                                    }
+                                    // bad url token
+                                    buffer += next(whitespace.length);
+                                    do {
+                                        value = peek();
+                                        cp = value.codePointAt(0);
+                                        if (cp == null || cp == 0x29) {
+                                            break;
+                                        }
+                                        buffer += next();
+                                    } while (true);
+                                    pushToken({ typ: 'Bad-url-token', val: buffer });
+                                    continue;
+                                }
+                                buffer += next();
+                                value = peek();
+                            } while (true);
+                            buffer = '';
+                        }
+                    }
                 }
                 break;
             case '[':
@@ -1726,7 +1842,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     }
                     else if (value == '{') {
                         // node == null
-                        // consume and throw away until the closing } or EOF
+                        // consume and throw away until the closing '}' or EOF
                         consume('{', '}');
                     }
                     tokens.length = 0;
@@ -1883,13 +1999,7 @@ class Parser {
     // @ts-ignore
     #root;
     #errors = [];
-    constructor(options = {
-    // strict: false,
-    // location: false,
-    // processImport: false,
-    // dedup: false,
-    // removeEmpty: false
-    }) {
+    constructor(options = {}) {
         // @ts-ignore
         this.#options = {
             strict: false,
@@ -1911,6 +2021,14 @@ class Parser {
             deduplicate(this.#root);
         }
         return this;
+    }
+    async parseURL(file) {
+        return await fetch(file).then(async (response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+            return this.parse(await response.text(), response.url.toString().replace(/(?=\/)[^/]*?(\?|#.*)?/, ''));
+        });
     }
     on(name, handler, signal) {
         this.#observer.on(name, handler, signal);
@@ -1968,7 +2086,10 @@ function deduplicate(ast) {
             }
             // @ts-ignore
             if (node.typ == previous?.typ) {
-                if ((node.typ == 'Rule' && node.sel == previous.sel) || ('chi' in node && node.typ == 'AtRule' && node.nam == previous.nam)) {
+                if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                    ('chi' in node && node.typ == 'AtRule' &&
+                        node.nam == previous.nam &&
+                        node.val == previous.val)) {
                     // @ts-ignore
                     previous.chi = node.chi.concat(...previous.chi);
                     // @ts-ignore

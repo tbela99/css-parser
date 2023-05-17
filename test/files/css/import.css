@@ -1,6 +1,8 @@
 @charset "UTF-8";
 @import "small.css" all;
-@import "smalli.css" all;
+@import url(smalli.css) all;
+@import url("smalli.css") ;
+@import url(bad file css) all;
 
 .button {
     background-color: #4CAF50; /* Green */
