@@ -21,7 +21,7 @@ import {
     PseudoClassToken, StringToken,
     Token, UrlToken
 } from "../@types";
-import {Renderer} from "../renderer";
+import {renderToken} from "../renderer";
 
 export function tokenize(iterator: string, errors: ErrorDescription[], events: NodeTraverseEventsMap, options: ParserOptions, src: string /*, callable: (token: Token) => void */): AstRuleStyleSheet {
 
@@ -261,8 +261,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
             const node: AstAtRule = {
                 typ: 'AtRule',
-                nam: Renderer.renderToken(atRule),
-                val: tokens.reduce((acc, curr) => acc + Renderer.renderToken(curr), '')
+                nam: renderToken(atRule),
+                val: tokens.reduce((acc, curr) => acc + renderToken(curr), '')
             }
 
             if (node.nam == 'import') {
@@ -355,7 +355,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                         }
 
                         return acc;
-                    }, <Array<Array<Token>>>[[]]).map(part => part.map(Renderer.renderToken).join('')).sort().join(),
+                    }, <Array<Array<Token>>>[[]]).map(part => part.map(renderToken).join('')).sort().join(),
                     chi: []
                 }
 
@@ -448,7 +448,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                     typ: 'Declaration',
                     // @ts-ignore
-                    nam: Renderer.renderToken(name.shift()),
+                    nam: renderToken(name.shift()),
                     // @ts-ignore
                     val: value
                 }
@@ -488,45 +488,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         }
     }
 
-    function update(css: string) {
-
-        if (css === '') {
-
-            return;
-        }
-
-        let codepoint: number;
-        let offset: number;
-        let i: number = 0;
-        const j: number = css.length - 1;
-
-        while (i <= j) {
-
-            codepoint = <number>css.codePointAt(i);
-            offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
-
-            if (isNewLine(codepoint)) {
-
-                lin++;
-                col = 0;
-
-                // \r\n
-                if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
-
-                    offset++;
-                    ind++;
-                }
-
-            } else {
-
-                col++;
-            }
-
-            ind++;
-            i += offset;
-        }
-    }
-
     function peek(count: number = 1): string {
 
         if (count == 1) {
@@ -534,7 +495,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             return iterator.charAt(i + 1);
         }
 
-        return iterator.slice(i, i + count);
+        return iterator.slice(i + 1, i + count + 1);
     }
 
     function prev(count: number = 1) {
@@ -550,6 +511,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
     function next(count: number = 1) {
 
         let char: string = '';
+        let offset: number;
 
         while (count-- > 0 && i < total) {
 
@@ -558,6 +520,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (codepoint < 0x80) {
 
                 char += iterator.charAt(i);
+                ind++;
             } else {
 
                 if (codepoint == null) {
@@ -568,8 +531,31 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 const chr: string = String.fromCodePoint(codepoint);
 
                 i += chr.length - 1;
+                ind += chr.length;
                 char += chr;
             }
+
+            // ind += codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+
+            if (isNewLine(codepoint)) {
+
+                lin++;
+                col = 0;
+
+                // \r\n
+                // if (codepoint == 0xd && iterator.codePointAt(i + 1) == 0xa) {
+
+                    // offset++;
+                    // ind++;
+                // }
+
+            } else {
+
+                col++;
+            }
+
+            // ind++;
+            // i += offset;
         }
 
         return char;
@@ -606,7 +592,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         if (buffer.length > 0) {
 
             pushToken(getType(buffer));
-            update(buffer);
+            
 
             buffer = '';
         }
@@ -620,7 +606,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (i >= total) {
 
                 pushToken({typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
-                update(buffer);
+                
                 break;
             }
 
@@ -632,7 +618,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                     // drop '\\' at the end
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     break;
                 }
@@ -646,7 +632,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 buffer += value;
 
                 pushToken({typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
-                update(buffer);
+                
 
                 i += value.length;
                 buffer = '';
@@ -661,7 +647,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (hasNewLine && value == ';') {
 
                 pushToken({typ: 'Bad-string', val: buffer});
-                update(buffer);
+                
 
                 buffer = '';
                 break;
@@ -681,7 +667,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (buffer.length > 0) {
 
                 pushToken(getType(buffer));
-                update(buffer);
+                
 
                 buffer = '';
             }
@@ -694,7 +680,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (buffer.length > 0) {
 
                 pushToken(getType(buffer));
-                update(buffer);
+                
 
                 buffer = '';
             }
@@ -719,7 +705,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             }
 
             pushToken({typ: 'Whitespace'});
-            update(whitespace);
 
             buffer = '';
 
@@ -736,7 +721,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     buffer = '';
                 }
@@ -757,7 +742,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
-                            update(buffer);
+                            
 
                             break;
                         }
@@ -774,7 +759,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                     val: buffer
                                 });
 
-                                update(buffer);
+                                
                                 break;
                             }
 
@@ -793,7 +778,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                     typ: 'Bad-comment', val: buffer
                                 });
 
-                                update(buffer);
+                                
                                 break;
                             }
 
@@ -802,7 +787,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                             if (value == '/') {
 
                                 pushToken({typ: 'Comment', val: buffer});
-                                update(buffer);
+                                
 
                                 buffer = '';
                                 break;
@@ -821,7 +806,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
                     buffer = '';
                 }
 
@@ -853,7 +838,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                 val: buffer
                             });
 
-                            update(buffer);
+                            
                             buffer = '';
                             break;
                         }
@@ -863,7 +848,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (i >= total) {
 
                     pushToken({typ: 'BADCDO', val: buffer});
-                    update(buffer);
+                    
 
                     buffer = '';
                 }
@@ -879,7 +864,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                     // end of stream ignore \\
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     buffer = '';
                     break;
@@ -901,7 +886,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     buffer = '';
                 }
@@ -912,7 +897,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (i >= total) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     buffer = '';
                     break;
@@ -927,13 +912,13 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                         val: buffer
                     });
 
-                    update(buffer);
+                    
                     buffer = '';
                     break;
                 }
 
                 pushToken(getType(buffer));
-                update(buffer);
+                
 
                 buffer = value;
                 break;
@@ -945,7 +930,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
                     buffer = '';
                 }
 
@@ -956,7 +941,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 }
 
                 pushToken(getType(value));
-                update(value);
 
                 buffer = '';
                 break;
@@ -966,13 +950,12 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     buffer = '';
                 }
 
                 pushToken({typ: 'End-parens'});
-                update(value);
                 break;
 
             case '(':
@@ -980,13 +963,10 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length == 0) {
 
                     pushToken({typ: 'Start-parens'});
-                    update(value);
                 } else {
 
                     buffer += value;
-
                     pushToken(getType(buffer));
-                    update(buffer);
                     buffer = '';
 
                     const token: Token = tokens[tokens.length - 1];
@@ -1127,13 +1107,12 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    update(buffer);
+                    
 
                     buffer = '';
                 }
 
                 pushToken(getBlockType(value));
-                update(value);
 
                 let node = null;
 
@@ -1192,6 +1171,37 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 break;
 
+            case '!':
+
+                if (buffer.length > 0) {
+
+                    pushToken(getType(buffer));
+                    
+
+                    buffer = '';
+                }
+
+                const important = peek(9);
+
+                if (important == 'important') {
+
+                    if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+
+                        tokens.pop();
+                    }
+
+                    pushToken({typ: 'Important'});
+                    next(9);
+
+                    buffer = '';
+
+                    break;
+                }
+
+                buffer = '!';
+
+                break;
+
             default:
 
                 buffer += value;
@@ -1202,7 +1212,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
     if (buffer.length > 0) {
 
         pushToken(getType(buffer));
-        update(buffer);
+        
     }
 
     // pushToken({typ: 'EOF'});

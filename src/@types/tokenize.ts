@@ -197,10 +197,15 @@ export interface EOFToken {
     typ: 'EOF';
 }
 
+export interface ImportantToken {
+
+    typ: 'Important';
+}
+
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
-    BadUrlToken | UrlToken | EOFToken;
+    BadUrlToken | UrlToken | ImportantToken | EOFToken;

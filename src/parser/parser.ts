@@ -6,7 +6,7 @@ import {
     ParserOptions
 } from "../@types";
 import {Observer} from "@tbela99/observer";
-import {Renderer} from "../renderer";
+import {render} from "../renderer";
 import {tokenize} from "./tokenize";
 
 export class Parser {
@@ -24,7 +24,10 @@ export class Parser {
             strict: false,
             location: false,
             processImport: false,
-            dedup: false, removeEmpty: false, ...options
+            dedup: false,
+            removeEmpty: false,
+            nodeEventFilter: [],
+            ...options
         };
         this.#observer = new Observer();
     }
@@ -119,7 +122,7 @@ export class Parser {
 
     toString(): string {
 
-        return new Renderer().render(this);
+        return render(this);
     }
 }
 

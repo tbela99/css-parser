@@ -32,6 +32,7 @@ export interface ParserOptions {
     processImport?: boolean;
     dedup?: boolean;
     removeEmpty?: boolean;
+    nodeEventFilter?: NodeType[]
 }
 
 export interface RenderOptions {

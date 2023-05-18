@@ -1,6 +1,7 @@
 import {readFile, writeFile} from 'fs/promises'
 import {dirname} from 'path';
 import {Parser} from "../src";
+import {render} from "../src/renderer";
 
 
 // https://github.com/mdn/data/tree/main/css
@@ -25,14 +26,14 @@ import {Parser} from "../src";
 
 (async () => {
 
-    const baseName: 'small' | 'smalli' | 'bootstrap' | 'invalid-3' | 'nested' | 'import' = 'import';
+    const baseName: 'small' | 'smalli' | 'bootstrap' | 'invalid-3' | 'nested' | 'import' = 'bootstrap';
 //
-    const dir = dirname(new URL(import.meta.url).pathname);
-    const filePath = `${dir}/files/css/${baseName}.css`;
-    const file = (await readFile( filePath)).toString();
+    const dir: string = dirname(new URL(import.meta.url).pathname);
+    const filePath: string = `${dir}/files/css/${baseName}.css`;
+    const file: string = (await readFile( filePath)).toString();
 //
 // const str = '@media (min-width: 500px) { height: calc(100vh - 20%);';
-    const parser = new Parser({location: false, dedup: true, removeEmpty: true, processImport: true});
+    const parser: Parser = new Parser({location: false, dedup: true, removeEmpty: true, processImport: true});
 
 // parser.on('enter', (node) => console.debug({event: 'enter', node}))
 // parser.on('exit', (node) => console.debug({event: 'exit', node}))
@@ -41,7 +42,7 @@ import {Parser} from "../src";
     const ast = parser.parse(file).getAst();
     const mid = Date.now();
 
-    const css = parser.toString();
+    const css = render(parser, {compress: true});
     const end = Date.now();
 //
     console.debug(css);

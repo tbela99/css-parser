@@ -763,138 +763,131 @@ class Observer {
     }
 }
 
-class Renderer {
-    #options;
-    #indents = [];
-    constructor(options = {}) {
-        this.#options = Object.assign({
-            indent: ' ',
-            newLine: '\n',
-            compress: false,
-            removeComments: false
-        }, options);
+const indents = [];
+function reducer(acc, curr) {
+    acc += renderToken(curr);
+    return acc;
+}
+function render(data, options = { compress: true }) {
+    if (data instanceof Parser) {
+        data = data.getAst();
     }
-    render(data) {
-        if (data instanceof Parser) {
-            data = data.getAst();
-        }
-        return this.#doRender(data);
+    return doRender(data, Object.assign(options.compress ? {
+        indent: '',
+        newLine: '',
+        removeComments: true
+    } : {
+        indent: ' ',
+        newLine: '\n',
+        compress: false,
+        removeComments: false
+    }, options));
+}
+function doRender(data, options, level = 0) {
+    if (indents.length < level + 1) {
+        indents.push(options.indent.repeat(level));
     }
-    #doRender(data, level = 0) {
-        if (this.#indents.length < level + 1) {
-            this.#indents.push(this.#options.indent.repeat(level));
-        }
-        if (this.#indents.length < level + 2) {
-            this.#indents.push(this.#options.indent.repeat(level + 1));
-        }
-        const indent = this.#indents[level];
-        const indentSub = this.#indents[level + 1];
-        const reducer = (acc, curr) => {
-            acc += Renderer.renderToken(curr);
-            return acc;
-        };
-        switch (data.typ) {
-            case 'Comment':
-                return this.#options.removeComments ? '' : data.val;
-            case 'StyleSheet':
-                return data.chi.reduce((css, node) => {
-                    const str = this.#doRender(node, 0);
-                    if (str === '') {
-                        return css;
-                    }
-                    if (css === '') {
-                        return str;
-                    }
-                    return `${css}${this.#options.newLine}${str}`;
-                }, '');
-            case 'AtRule':
-            case 'Rule':
-                if (data.typ == 'AtRule' && !('chi' in data)) {
-                    return `${indent}@${data.nam}${this.#options.indent}${data.val};`;
+    if (indents.length < level + 2) {
+        indents.push(options.indent.repeat(level + 1));
+    }
+    const indent = indents[level];
+    const indentSub = indents[level + 1];
+    switch (data.typ) {
+        case 'Comment':
+            return options.removeComments ? '' : data.val;
+        case 'StyleSheet':
+            return data.chi.reduce((css, node) => {
+                const str = doRender(node, options);
+                if (str === '') {
+                    return css;
                 }
-                const children = data.chi.reduce((css, node) => {
-                    let str;
-                    if (node.typ == 'Comment') {
-                        str = this.#options.removeComments ? '' : node.val;
-                    }
-                    else if (node.typ == 'Declaration') {
-                        str = `${node.nam}:${this.#options.indent}${node.val.reduce(reducer, '')};`;
-                    }
-                    else if (node.typ == 'AtRule' && !('children' in node)) {
-                        str = `@${node.nam}${this.#options.indent}${node.val};`;
-                    }
-                    else {
-                        str = this.#doRender(node, level + 1);
-                    }
-                    if (css === '') {
-                        return str;
-                    }
-                    if (str === '') {
-                        return css;
-                    }
-                    return `${css}${this.#options.newLine}${indentSub}${str}`;
-                }, '');
-                if (data.typ == 'AtRule') {
-                    return indent + '@' + data.nam + `${this.#options.indent}${data.val ? data.val + this.#options.indent : ''}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
+                if (css === '') {
+                    return str;
                 }
-                return indent + data.sel + `${this.#options.indent}{${this.#options.newLine}` + (children === '' ? '' : indentSub + children + this.#options.newLine) + indent + `}`;
-        }
-        return '';
+                return `${css}${options.newLine}${str}`;
+            }, '');
+        case 'AtRule':
+        case 'Rule':
+            if (data.typ == 'AtRule' && !('chi' in data)) {
+                return `${indent}@${data.nam} ${data.val};`;
+            }
+            const children = data.chi.reduce((css, node) => {
+                let str;
+                if (node.typ == 'Comment') {
+                    str = options.removeComments ? '' : node.val;
+                }
+                else if (node.typ == 'Declaration') {
+                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '')};`;
+                }
+                else if (node.typ == 'AtRule' && !('children' in node)) {
+                    str = `@${node.nam}${options.indent}${node.val};`;
+                }
+                else {
+                    str = doRender(node, options, level + 1);
+                }
+                if (css === '') {
+                    return str;
+                }
+                if (str === '') {
+                    return css;
+                }
+                return `${css}${options.newLine}${indentSub}${str}`;
+            }, '');
+            if (data.typ == 'AtRule') {
+                return '@' + data.nam + `${options.indent}${data.val ? data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+            }
+            return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
     }
-    static renderToken(token) {
-        /*
-        |
-     | FunctionToken |
-    | CDOCommentToken |
-    BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken;
-         */
-        switch (token.typ) {
-            case 'Func':
-                return token.val + '(';
-            case 'Includes':
-                return '~=';
-            case 'Dash-match':
-                return '|=';
-            case 'Lt':
-                return '<';
-            case 'Gt':
-                return '>';
-            case 'Start-parens':
-                return '(';
-            case 'End-parens':
-                return ')';
-            case 'Attr-start':
-                return '[';
-            case 'Attr-end':
-                return ']';
-            case 'Whitespace':
-                return ' ';
-            case 'Colon':
-                return ':';
-            case 'Semi-colon':
-                return ';';
-            case 'Comma':
-                return ',';
-            case 'Dimension':
-                return token.val + token.unit;
-            case 'Perc':
-                return token.val + '%';
-            case 'Url-token':
-            case 'At-rule':
-            case 'Number':
-            case 'Hash':
-            case 'Pseudo-class':
-            case 'Pseudo-class-func':
-            case 'Comment':
-            case 'Literal':
-            case 'String':
-            case 'Iden':
-            case 'Delim':
-                return token.val;
-        }
-        throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    return '';
+}
+function renderToken(token) {
+    switch (token.typ) {
+        case 'Func':
+            return token.val + '(';
+        case 'Includes':
+            return '~=';
+        case 'Dash-match':
+            return '|=';
+        case 'Lt':
+            return '<';
+        case 'Gt':
+            return '>';
+        case 'Start-parens':
+            return '(';
+        case 'End-parens':
+            return ')';
+        case 'Attr-start':
+            return '[';
+        case 'Attr-end':
+            return ']';
+        case 'Whitespace':
+            return ' ';
+        case 'Colon':
+            return ':';
+        case 'Semi-colon':
+            return ';';
+        case 'Comma':
+            return ',';
+        case 'Important':
+            return '!important';
+        case 'Dimension':
+            return token.val + token.unit;
+        case 'Perc':
+            return token.val + '%';
+        case 'Url-token':
+        case 'At-rule':
+        case 'Number':
+        case 'Hash':
+        case 'Pseudo-class':
+        case 'Pseudo-class-func':
+        case 'Comment':
+        case 'Literal':
+        case 'String':
+        case 'Iden':
+        case 'Delim':
+            return token.val;
     }
+    throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
 }
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -1235,6 +1228,26 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 tokens.shift();
             }
             if (atRule.val == 'import') {
+                // only @charset and @layer are accepted before @import
+                if (context.chi.length > 0) {
+                    let i = context.chi.length;
+                    while (i--) {
+                        const type = context.chi[i].typ;
+                        if (type == 'Comment') {
+                            continue;
+                        }
+                        if (type != 'AtRule') {
+                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            return null;
+                        }
+                        const name = context.chi[i].nam;
+                        if (name != 'charset' && name != 'import' && name != 'layer') {
+                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            return null;
+                        }
+                        break;
+                    }
+                }
                 // @ts-ignore
                 if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'Func') {
                     errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
@@ -1255,16 +1268,26 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     token.val = `"${token.val}"`;
                     tokens[0] = token;
                 }
+                const token = tokens[tokens.length - 1];
+                if (token.typ == 'Iden' && token.val == 'all') {
+                    tokens.pop();
+                    if (tokens[tokens.length - 1].typ == 'Whitespace') {
+                        tokens.pop();
+                    }
+                }
             }
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
             // there must be a top level rule in the stack
             const node = {
                 typ: 'AtRule',
-                nam: Renderer.renderToken(atRule),
-                val: tokens.reduce((acc, curr) => acc + Renderer.renderToken(curr), '')
+                nam: renderToken(atRule),
+                val: tokens.reduce((acc, curr) => acc + renderToken(curr), '')
             };
             if (node.nam == 'import') {
+                if (node.val == 'all') {
+                    node.val = '';
+                }
                 if (options.processImport) {
                     // @ts-ignore
                     let fileToken = tokens[tokens[0].typ == 'Func' ? 1 : 0];
@@ -1320,7 +1343,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                             acc[acc.length - 1].push(curr);
                         }
                         return acc;
-                    }, [[]]).map(part => part.map(Renderer.renderToken).join('')).sort().join(),
+                    }, [[]]).map(part => part.map(renderToken).join('')).sort().join(),
                     chi: []
                 };
                 if (options.location) {
@@ -1386,7 +1409,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 const node = {
                     typ: 'Declaration',
                     // @ts-ignore
-                    nam: Renderer.renderToken(name.shift()),
+                    nam: renderToken(name.shift()),
                     // @ts-ignore
                     val: value
                 };
@@ -1415,38 +1438,11 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             }
         }
     }
-    function update$1(css) {
-        if (css === '') {
-            return;
-        }
-        let codepoint;
-        let offset;
-        let i = 0;
-        const j = css.length - 1;
-        while (i <= j) {
-            codepoint = css.codePointAt(i);
-            offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
-            if (isNewLine(codepoint)) {
-                lin++;
-                col = 0;
-                // \r\n
-                if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
-                    offset++;
-                    ind++;
-                }
-            }
-            else {
-                col++;
-            }
-            ind++;
-            i += offset;
-        }
-    }
     function peek(count = 1) {
         if (count == 1) {
             return iterator.charAt(i + 1);
         }
-        return iterator.slice(i, i + count);
+        return iterator.slice(i + 1, i + count + 1);
     }
     function prev(count = 1) {
         if (count == 1) {
@@ -1460,6 +1456,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             const codepoint = iterator.codePointAt(++i);
             if (codepoint < 0x80) {
                 char += iterator.charAt(i);
+                ind++;
             }
             else {
                 if (codepoint == null) {
@@ -1467,8 +1464,24 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 }
                 const chr = String.fromCodePoint(codepoint);
                 i += chr.length - 1;
+                ind += chr.length;
                 char += chr;
             }
+            // ind += codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+            if (isNewLine(codepoint)) {
+                lin++;
+                col = 0;
+                // \r\n
+                // if (codepoint == 0xd && iterator.codePointAt(i + 1) == 0xa) {
+                // offset++;
+                // ind++;
+                // }
+            }
+            else {
+                col++;
+            }
+            // ind++;
+            // i += offset;
         }
         return char;
     }
@@ -1491,7 +1504,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
         let hasNewLine = false;
         if (buffer.length > 0) {
             pushToken(getType(buffer));
-            update$1(buffer);
             buffer = '';
         }
         buffer += quoteStr;
@@ -1499,7 +1511,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             value = peek();
             if (i >= total) {
                 pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
-                update$1(buffer);
                 break;
             }
             if (value == '\\') {
@@ -1507,7 +1518,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 if (i >= total) {
                     // drop '\\' at the end
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     break;
                 }
                 buffer += next(2);
@@ -1516,7 +1526,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             if (value == quote) {
                 buffer += value;
                 pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
-                update$1(buffer);
                 i += value.length;
                 buffer = '';
                 break;
@@ -1526,7 +1535,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             }
             if (hasNewLine && value == ';') {
                 pushToken({ typ: 'Bad-string', val: buffer });
-                update$1(buffer);
                 buffer = '';
                 break;
             }
@@ -1539,7 +1547,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
         if (i >= total) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
-                update$1(buffer);
                 buffer = '';
             }
             break;
@@ -1547,10 +1554,8 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
         if (isWhiteSpace(value.codePointAt(0))) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
-                update$1(buffer);
                 buffer = '';
             }
-            let whitespace = value;
             while (i < total) {
                 value = next();
                 if (i >= total) {
@@ -1559,10 +1564,8 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 if (!isWhiteSpace(value.codePointAt(0))) {
                     break;
                 }
-                whitespace += value;
             }
             pushToken({ typ: 'Whitespace' });
-            update$1(whitespace);
             buffer = '';
             if (i >= total) {
                 break;
@@ -1572,7 +1575,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             case '/':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
@@ -1585,7 +1587,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
-                            update$1(buffer);
                             break;
                         }
                         if (value == '\\') {
@@ -1596,7 +1597,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                                     typ: 'Bad-comment',
                                     val: buffer
                                 });
-                                update$1(buffer);
                                 break;
                             }
                             buffer += value;
@@ -1609,13 +1609,11 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                                 pushToken({
                                     typ: 'Bad-comment', val: buffer
                                 });
-                                update$1(buffer);
                                 break;
                             }
                             buffer += value;
                             if (value == '/') {
                                 pushToken({ typ: 'Comment', val: buffer });
-                                update$1(buffer);
                                 buffer = '';
                                 break;
                             }
@@ -1629,7 +1627,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             case '<':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
@@ -1649,7 +1646,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                                 typ: 'CDOCOMM',
                                 val: buffer
                             });
-                            update$1(buffer);
                             buffer = '';
                             break;
                         }
@@ -1657,7 +1653,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 }
                 if (i >= total) {
                     pushToken({ typ: 'BADCDO', val: buffer });
-                    update$1(buffer);
                     buffer = '';
                 }
                 break;
@@ -1667,7 +1662,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 if (i + 1 >= total) {
                     // end of stream ignore \\
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                     break;
                 }
@@ -1681,14 +1675,12 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             case '|':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                 }
                 buffer += value;
                 value = next();
                 if (i >= total) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                     break;
                 }
@@ -1698,12 +1690,10 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                         typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
                         val: buffer
                     });
-                    update$1(buffer);
                     buffer = '';
                     break;
                 }
                 pushToken(getType(buffer));
-                update$1(buffer);
                 buffer = value;
                 break;
             case ':':
@@ -1711,7 +1701,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             case '=':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                 }
                 if (value == ':' && isIdent(peek())) {
@@ -1719,27 +1708,22 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     break;
                 }
                 pushToken(getType(value));
-                update$1(value);
                 buffer = '';
                 break;
             case ')':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                 }
                 pushToken({ typ: 'End-parens' });
-                update$1(value);
                 break;
             case '(':
                 if (buffer.length == 0) {
                     pushToken({ typ: 'Start-parens' });
-                    update$1(value);
                 }
                 else {
                     buffer += value;
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                     const token = tokens[tokens.length - 1];
                     if (token.typ == 'Func' && token.val == 'url') {
@@ -1827,11 +1811,9 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             case ';':
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
-                    update$1(buffer);
                     buffer = '';
                 }
                 pushToken(getBlockType(value));
-                update$1(value);
                 let node = null;
                 if (value == '{' || value == ';') {
                     node = parseNode(tokens);
@@ -1871,6 +1853,23 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     context.chi[context.chi.length - 1].loc.end = { ind, lin, col };
                 }
                 break;
+            case '!':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                const important = peek(9);
+                if (important == 'important') {
+                    if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+                        tokens.pop();
+                    }
+                    pushToken({ typ: 'Important' });
+                    next(9);
+                    buffer = '';
+                    break;
+                }
+                buffer = '!';
+                break;
             default:
                 buffer += value;
                 break;
@@ -1878,7 +1877,6 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
     }
     if (buffer.length > 0) {
         pushToken(getType(buffer));
-        update$1(buffer);
     }
     // pushToken({typ: 'EOF'});
     if (col == 0) {
@@ -2005,7 +2003,10 @@ class Parser {
             strict: false,
             location: false,
             processImport: false,
-            dedup: false, removeEmpty: false, ...options
+            dedup: false,
+            removeEmpty: false,
+            nodeEventFilter: [],
+            ...options
         };
         this.#observer = new Observer();
     }
@@ -2068,7 +2069,7 @@ class Parser {
         return this;
     }
     toString() {
-        return new Renderer().render(this);
+        return render(this);
     }
 }
 function deduplicate(ast) {
@@ -2087,20 +2088,29 @@ function deduplicate(ast) {
             // @ts-ignore
             if (node.typ == previous?.typ) {
                 if ((node.typ == 'Rule' && node.sel == previous.sel) ||
-                    ('chi' in node && node.typ == 'AtRule' &&
+                    (node.typ == 'AtRule' &&
                         node.nam == previous.nam &&
                         node.val == previous.val)) {
-                    // @ts-ignore
-                    previous.chi = node.chi.concat(...previous.chi);
+                    if (node.typ == 'AtRule' && previous?.typ == 'AtRule') ;
+                    if ('chi' in node) {
+                        // @ts-ignore
+                        previous.chi = node.chi.concat(...(previous.chi || []));
+                    }
                     // @ts-ignore
                     ast.chi.splice(i, 1);
-                    // @ts-ignore
-                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
-                        deduplicateRule(previous);
-                    }
-                    else {
-                        deduplicate(previous);
-                    }
+                    // if (!('chi' in previous)) {
+                    //
+                    //     continue;
+                    // }
+                    //
+                    // // @ts-ignore
+                    // if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                    //
+                    //     deduplicateRule(previous);
+                    // } else {
+                    //
+                    //     deduplicate(previous);
+                    // }
                     continue;
                 }
                 else if (node.typ == 'Declaration' && node.nam == previous.nam) {
@@ -2109,17 +2119,17 @@ function deduplicate(ast) {
                     continue;
                 }
             }
+            previous = node;
             if (!('chi' in node)) {
                 continue;
             }
             // @ts-ignore
-            if (node.typ == 'Rule' || node.chi.some(n => n.typ == 'Declaration')) {
+            if (node.typ == 'AtRule' || node.chi.some(n => n.typ == 'Declaration')) {
                 deduplicateRule(node);
             }
             else {
                 deduplicate(node);
             }
-            previous = node;
         }
     }
     return ast;
