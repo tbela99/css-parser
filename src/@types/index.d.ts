@@ -5,9 +5,9 @@ export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
 
-export declare type NodeTraverseCallback = (node: AstNode, parent: AstRuleList, root: AstRuleStyleSheet) => void;
+export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
-export interface NodeTraverseEventsMap {
+export interface NodeParseEventsMap {
 
     enter?: NodeTraverseCallback[];
     exit?: NodeTraverseCallback[]
@@ -116,4 +116,4 @@ export type AstNode =
     | AstRule
     | AstDeclaration;
 
-export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;
+export type AstTraverserHandler = (node: AstNode, location?: Location) => void;

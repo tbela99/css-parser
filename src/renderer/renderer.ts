@@ -12,12 +12,6 @@ import {Parser} from "../parser";
 
 const indents: string[] = [];
 
-function reducer (acc: string, curr: Token) {
-
-    acc += renderToken(curr);
-    return acc;
-}
-
 export function render(data: Parser | AstNode, options: RenderOptions = {compress: true}) {
 
     if (data instanceof Parser) {
@@ -38,6 +32,12 @@ export function render(data: Parser | AstNode, options: RenderOptions = {compres
 }
 
 function doRender(data: AstNode, options: RenderOptions, level: number = 0): string {
+
+    function reducer (acc: string, curr: Token) {
+
+        acc += renderToken(curr, options);
+        return acc;
+    }
 
     if (indents.length < level + 1) {
 
@@ -86,9 +86,10 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
                 return `${indent}@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val};`;
             }
 
-            const children: string = (<AstRule> data).chi.reduce((css: string, node) => {
+            // @ts-ignore
+            let children: string = (<AstRule> data).chi.reduce((css: string, node: AstNode) => {
 
-                let str;
+                let str: string;
 
                 if (node.typ == 'Comment') {
 
@@ -97,12 +98,12 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
 
                 else if (node.typ == 'Declaration') {
 
-                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '')};`;
+                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '').trimEnd()};`;
                 }
 
-                else if (node.typ == 'AtRule' && !('children' in node)) {
+                else if (node.typ == 'AtRule' && !('chi' in node)) {
 
-                    str = `@${(<AstAtRule>node).nam}${options.indent}${(<AstAtRule>node).val};`;
+                    str = `@${(<AstAtRule>node).nam} ${(<AstAtRule>node).val};`;
                 }
 
                 else {
@@ -120,12 +121,19 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
                     return css;
                 }
 
+                if (str !== '')
+
                 return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
 
+            if (children.endsWith(';')) {
+
+                children = children.slice(0, -1);
+            }
+
             if (data.typ == 'AtRule') {
 
-                return '@' + (<AstAtRule>data).nam +  `${options.indent}${(<AstAtRule>data).val ? (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine)  + indent + `}`
+                return `@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val ? (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine)  + indent + `}`
             }
 
             return (<AstRule>data).sel +  `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine)  + indent + `}`
@@ -134,7 +142,7 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
     return '';
 }
 
-export function renderToken(token: Token) {
+export function renderToken(token: Token, options: RenderOptions = {}) {
 
     switch (token.typ ) {
 
@@ -186,6 +194,13 @@ export function renderToken(token: Token) {
         case 'Perc':
             return token.val + '%';
 
+        case 'Comment':
+
+            if (options.removeComments) {
+
+                return '';
+            }
+
         case 'Url-token':
         case 'At-rule':
         case 'Number':
@@ -193,7 +208,6 @@ export function renderToken(token: Token) {
         case 'Hash':
         case 'Pseudo-class':
         case 'Pseudo-class-func':
-        case 'Comment':
         case 'Literal':
         case 'String':
         case 'Iden':

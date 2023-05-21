@@ -32,7 +32,7 @@ export class Parser {
         this.#observer = new Observer();
     }
 
-    parse(css: string, src: string = ''): this {
+    async parse(css: string, src: string = ''): Promise<this> {
 
         this.#errors = [];
         this.#createRoot();
@@ -43,7 +43,7 @@ export class Parser {
         }
 
         // @ts-ignore
-        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
+        this.#root = await tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
 
         if (this.#options.dedup) {
 
@@ -51,19 +51,6 @@ export class Parser {
         }
 
         return this;
-    }
-
-    async parseURL(file: string | URL) {
-
-        return await fetch(file).then(async response => {
-
-            if (!response.ok) {
-
-                throw new Error(`HTTP ${response.status} ${response.statusText}`);
-            }
-
-            return this.parse(await response.text(), response.url.toString().replace(/(?=\/)[^/]*?(\?|#.*)?/, ''));
-        });
     }
 
     on(name: string, handler: AstTraverserHandler, signal?: AbortSignal): this {
@@ -155,11 +142,6 @@ function deduplicate(ast: AstNode) {
                         (<AstAtRule>node).val == (<AstAtRule>previous).val
                     )) {
 
-                    if (node.typ == 'AtRule' && previous?.typ == 'AtRule') {
-
-                        // console.debug({node, previous});
-                    }
-
                     if ('chi' in node) {
 
                         // @ts-ignore
@@ -169,19 +151,19 @@ function deduplicate(ast: AstNode) {
                     // @ts-ignore
                     ast.chi.splice(i, 1);
 
-                    // if (!('chi' in previous)) {
-                    //
-                    //     continue;
-                    // }
-                    //
-                    // // @ts-ignore
-                    // if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
-                    //
-                    //     deduplicateRule(previous);
-                    // } else {
-                    //
-                    //     deduplicate(previous);
-                    // }
+                    if (!('chi' in previous)) {
+
+                        continue;
+                    }
+
+                    // @ts-ignore
+                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+
+                        deduplicateRule(previous);
+                    } else {
+
+                        deduplicate(previous);
+                    }
 
                     continue;
                 } else if (node.typ == 'Declaration' && (<AstDeclaration>node).nam == (<AstDeclaration>previous).nam) {

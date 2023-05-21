@@ -764,10 +764,6 @@ class Observer {
 }
 
 const indents = [];
-function reducer(acc, curr) {
-    acc += renderToken(curr);
-    return acc;
-}
 function render(data, options = { compress: true }) {
     if (data instanceof Parser) {
         data = data.getAst();
@@ -784,6 +780,10 @@ function render(data, options = { compress: true }) {
     }, options));
 }
 function doRender(data, options, level = 0) {
+    function reducer(acc, curr) {
+        acc += renderToken(curr, options);
+        return acc;
+    }
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
@@ -811,16 +811,17 @@ function doRender(data, options, level = 0) {
             if (data.typ == 'AtRule' && !('chi' in data)) {
                 return `${indent}@${data.nam} ${data.val};`;
             }
-            const children = data.chi.reduce((css, node) => {
+            // @ts-ignore
+            let children = data.chi.reduce((css, node) => {
                 let str;
                 if (node.typ == 'Comment') {
                     str = options.removeComments ? '' : node.val;
                 }
                 else if (node.typ == 'Declaration') {
-                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '')};`;
+                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == 'AtRule' && !('children' in node)) {
-                    str = `@${node.nam}${options.indent}${node.val};`;
+                    str = `@${node.nam} ${node.val};`;
                 }
                 else {
                     str = doRender(node, options, level + 1);
@@ -831,16 +832,20 @@ function doRender(data, options, level = 0) {
                 if (str === '') {
                     return css;
                 }
-                return `${css}${options.newLine}${indentSub}${str}`;
+                if (str !== '')
+                    return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
+            if (children.endsWith(';')) {
+                children = children.slice(0, -1);
+            }
             if (data.typ == 'AtRule') {
-                return '@' + data.nam + `${options.indent}${data.val ? data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+                return `@${data.nam} ${data.val ? data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
     }
     return '';
 }
-function renderToken(token) {
+function renderToken(token, options = {}) {
     switch (token.typ) {
         case 'Func':
             return token.val + '(';
@@ -874,13 +879,16 @@ function renderToken(token) {
             return token.val + token.unit;
         case 'Perc':
             return token.val + '%';
+        case 'Comment':
+            if (options.removeComments) {
+                return '';
+            }
         case 'Url-token':
         case 'At-rule':
         case 'Number':
         case 'Hash':
         case 'Pseudo-class':
         case 'Pseudo-class-func':
-        case 'Comment':
         case 'Literal':
         case 'String':
         case 'Iden':
@@ -1120,16 +1128,28 @@ function update(location, css) {
     return location;
 }
 
-function tokenize(iterator, errors, events, options, src /*, callable: (token: Token) => void */) {
+async function tokenize(iterator, errors, events, options, src /*, callable: (token: Token) => void */) {
     const tokens = [];
     const stack = [];
     const root = {
         typ: "StyleSheet",
         chi: []
     };
+    const position = {
+        ind: 0,
+        lin: 1,
+        col: 1
+    };
+    const trigger = Object.keys(events).length == 0 ? null : async function (event, node, location, context, root) {
+        // @ts-ignore
+        if (!(event in events) || (options.nodeEventFilter.length > 0 && !options.nodeEventFilter.includes(node.typ))) {
+            return;
+        }
+        // @ts-ignore
+        await Promise.all(events[event].map(callback => new Promise(resolve => resolve(callback(node, location, context, root)))));
+    };
     let value;
     let buffer = '';
-    let i = -1;
     let ind = -1;
     let lin = 1;
     let col = 0;
@@ -1149,6 +1169,86 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 col: 0
             },
             src: ''
+        };
+    }
+    function getType(val) {
+        if (val === '') {
+            throw new Error('empty string?');
+        }
+        if (val == ':') {
+            return { typ: 'Colon' };
+        }
+        if (val == '=') {
+            return { typ: 'Delim', val };
+        }
+        if (val == ';') {
+            return { typ: 'Semi-colon' };
+        }
+        if (val == ',') {
+            return { typ: 'Comma' };
+        }
+        if (val == '<') {
+            return { typ: 'Lt' };
+        }
+        if (val == '>') {
+            return { typ: 'Gt' };
+        }
+        if (isPseudo(val)) {
+            return {
+                typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
+                val
+                // buffer: buffer.slice()
+            };
+        }
+        if (isAtKeyword(val)) {
+            return {
+                typ: 'At-rule',
+                val: val.slice(1)
+                // buffer: buffer.slice()
+            };
+        }
+        if (isFunction(val)) {
+            return {
+                typ: 'Func',
+                val: val.slice(0, -1)
+            };
+        }
+        if (isNumber(val)) {
+            return {
+                typ: 'Number',
+                val
+            };
+        }
+        if (isDimension(val)) {
+            return parseDimension(val);
+        }
+        if (isPercentage(val)) {
+            return {
+                typ: 'Perc',
+                val: val.slice(0, -1)
+            };
+        }
+        if (isIdent(val)) {
+            return {
+                typ: 'Iden',
+                val
+            };
+        }
+        if (val.charAt(0) == '#' && isHash(val)) {
+            return {
+                typ: 'Hash',
+                val
+            };
+        }
+        if ('"\''.includes(val.charAt(0))) {
+            return {
+                typ: 'Unclosed-string',
+                val
+            };
+        }
+        return {
+            typ: 'Literal',
+            val
         };
     }
     // consume and throw away
@@ -1187,23 +1287,26 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             }
         }
     }
-    function parseNode(tokens) {
+    async function parseNode(tokens) {
         let i = 0;
+        let loc;
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
                 // @ts-ignore
                 context.chi.push(tokens[i]);
+                const position = map.get(tokens[i]);
+                loc = {
+                    sta: position,
+                    // @ts-ignore
+                    end: update({ ...position }, tokens[i].val),
+                    src
+                };
                 if (options.location) {
-                    const position = map.get(tokens[i]);
-                    tokens[i].loc = {
-                        sta: position,
-                        // @ts-ignore
-                        end: update({ ...position }, tokens[i].val),
-                        src
-                    };
+                    tokens[i].loc = loc;
                 }
+                trigger && await trigger('enter', tokens[i], loc, context, root);
                 // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(tokens[i], context, root));
+                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(tokens[i].typ)) && events.enter.forEach(callback => callback(<AstNode>tokens[i], loc, context, root))
             }
             else if (tokens[i].typ != 'Whitespace') {
                 break;
@@ -1221,6 +1324,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             const atRule = tokens.shift();
             const position = map.get(atRule);
             if (atRule.val == 'charset' && position.ind > 0) {
+                // console.debug({position, atRule});
                 errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
                 return null;
             }
@@ -1268,21 +1372,24 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     token.val = `"${token.val}"`;
                     tokens[0] = token;
                 }
-                const token = tokens[tokens.length - 1];
-                if (token.typ == 'Iden' && token.val == 'all') {
-                    tokens.pop();
-                    if (tokens[tokens.length - 1].typ == 'Whitespace') {
-                        tokens.pop();
-                    }
-                }
+                // const token: IdentToken = <IdentToken>tokens[tokens.length - 1];
+                // if (token.typ == 'Iden' && token.val == 'all') {
+                //
+                //     tokens.pop();
+                //
+                //     if (tokens[tokens.length - 1].typ == 'Whitespace') {
+                //
+                //         tokens.pop();
+                //     }
+                // }
             }
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
             // there must be a top level rule in the stack
             const node = {
                 typ: 'AtRule',
-                nam: renderToken(atRule),
-                val: tokens.reduce((acc, curr) => acc + renderToken(curr), '')
+                nam: renderToken(atRule, { removeComments: true }),
+                val: tokens.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '')
             };
             if (node.nam == 'import') {
                 if (node.val == 'all') {
@@ -1298,20 +1405,21 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
+            loc = {
+                sta: position,
+                src
+            };
             if (options.location) {
-                node.loc = {
-                    sta: position,
-                    // end: weakMap.get(delim),
-                    src
-                };
+                node.loc = loc;
             }
             // @ts-ignore
             context.chi.push(node);
-            if (delim.typ == 'Block-start') {
-                // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(node, context, root));
-                return node;
-            }
+            // console.debug({before: node});
+            trigger && await trigger('enter', node, loc, context, root);
+            // @ts-ignore
+            // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
+            // console.debug({after: node});
+            return delim.typ == 'Block-start' ? node : null;
         }
         else {
             // rule
@@ -1343,19 +1451,21 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                             acc[acc.length - 1].push(curr);
                         }
                         return acc;
-                    }, [[]]).map(part => part.map(renderToken).join('')).sort().join(),
+                    }, [[]]).map(part => part.map(p => renderToken(p, { removeComments: true })).join('')).sort().join(),
                     chi: []
                 };
+                loc = {
+                    sta: position,
+                    src
+                };
                 if (options.location) {
-                    node.loc = {
-                        sta: position,
-                        src
-                    };
+                    node.loc = loc;
                 }
                 // @ts-ignore
                 context.chi.push(node);
+                trigger && await trigger('enter', node, loc, context, root);
                 // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(node, context, root));
+                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
                 return node;
             }
             else {
@@ -1389,7 +1499,11 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 if (name.length > 0) {
                     for (let i = 1; i < name.length; i++) {
                         if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
-                            errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid declaration',
+                                location: { src, ...position }
+                            });
                             return null;
                         }
                     }
@@ -1409,7 +1523,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 const node = {
                     typ: 'Declaration',
                     // @ts-ignore
-                    nam: renderToken(name.shift()),
+                    nam: renderToken(name.shift(), { removeComments: true }),
                     // @ts-ignore
                     val: value
                 };
@@ -1424,49 +1538,51 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
+                loc = {
+                    sta: position,
+                    src
+                };
                 if (options.location) {
-                    node.loc = {
-                        sta: position,
-                        src
-                    };
+                    node.loc = loc;
                 }
                 // @ts-ignore
                 context.chi.push(node);
+                trigger && await trigger('enter', node, loc, context, root);
                 // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(node, context, root));
+                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
                 return null;
             }
         }
     }
     function peek(count = 1) {
         if (count == 1) {
-            return iterator.charAt(i + 1);
+            return iterator.charAt(ind + 1);
         }
-        return iterator.slice(i + 1, i + count + 1);
+        return iterator.slice(ind + 1, ind + count + 1);
     }
     function prev(count = 1) {
         if (count == 1) {
-            return i == 0 ? '' : iterator.charAt(i - 1);
+            return ind == 0 ? '' : iterator.charAt(ind - 1);
         }
-        return iterator.slice(i - 1 - count, i - 1);
+        return iterator.slice(ind - 1 - count, ind - 1);
     }
     function next(count = 1) {
         let char = '';
-        while (count-- > 0 && i < total) {
-            const codepoint = iterator.codePointAt(++i);
-            if (codepoint < 0x80) {
-                char += iterator.charAt(i);
-                ind++;
+        while (count-- > 0 && ind < total) {
+            const codepoint = iterator.codePointAt(++ind);
+            if (codepoint == null) {
+                return char;
             }
-            else {
-                if (codepoint == null) {
-                    return char;
-                }
-                const chr = String.fromCodePoint(codepoint);
-                i += chr.length - 1;
-                ind += chr.length;
-                char += chr;
-            }
+            // if (codepoint < 0x80) {
+            char += iterator.charAt(ind);
+            // }
+            // else {
+            //
+            //     const chr: string = String.fromCodePoint(codepoint);
+            //
+            //     ind += chr.length - 1;
+            //     char += chr;
+            // }
             // ind += codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
             if (isNewLine(codepoint)) {
                 lin++;
@@ -1487,15 +1603,10 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
     }
     function pushToken(token) {
         tokens.push(token);
-        // if (trackLocation) {
-        const pos = { ind, lin, col };
-        if (pos.ind == -1) {
-            pos.ind = 0;
-        }
-        if (pos.col == 0) {
-            pos.col = 1;
-        }
-        map.set(token, pos);
+        map.set(token, { ...position });
+        position.ind = ind;
+        position.lin = lin;
+        position.col = col == 0 ? 1 : col;
         // }
     }
     function consumeString(quoteStr) {
@@ -1507,15 +1618,15 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             buffer = '';
         }
         buffer += quoteStr;
-        while (i < total) {
+        while (ind < total) {
             value = peek();
-            if (i >= total) {
+            if (ind >= total) {
                 pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
                 break;
             }
             if (value == '\\') {
                 // buffer += value;
-                if (i >= total) {
+                if (ind >= total) {
                     // drop '\\' at the end
                     pushToken(getType(buffer));
                     break;
@@ -1526,7 +1637,8 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             if (value == quote) {
                 buffer += value;
                 pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
-                i += value.length;
+                next();
+                // i += value.length;
                 buffer = '';
                 break;
             }
@@ -1539,12 +1651,13 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 break;
             }
             buffer += value;
-            i += value.length;
+            // i += value.length;
+            next();
         }
     }
-    while (i < total) {
+    while (ind < total) {
         value = next();
-        if (i >= total) {
+        if (ind >= total) {
             if (buffer.length > 0) {
                 pushToken(getType(buffer));
                 buffer = '';
@@ -1556,9 +1669,9 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 pushToken(getType(buffer));
                 buffer = '';
             }
-            while (i < total) {
+            while (ind < total) {
                 value = next();
-                if (i >= total) {
+                if (ind >= total) {
                     break;
                 }
                 if (!isWhiteSpace(value.codePointAt(0))) {
@@ -1567,7 +1680,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             }
             pushToken({ typ: 'Whitespace' });
             buffer = '';
-            if (i >= total) {
+            if (ind >= total) {
                 break;
             }
         }
@@ -1580,10 +1693,11 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 buffer += value;
                 if (peek() == '*') {
                     buffer += '*';
-                    i++;
-                    while (i < total) {
+                    // i++;
+                    next();
+                    while (ind < total) {
                         value = next();
-                        if (i >= total) {
+                        if (ind >= total) {
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
@@ -1592,7 +1706,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                         if (value == '\\') {
                             buffer += value;
                             value = next();
-                            if (i >= total) {
+                            if (ind >= total) {
                                 pushToken({
                                     typ: 'Bad-comment',
                                     val: buffer
@@ -1605,7 +1719,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                         if (value == '*') {
                             buffer += value;
                             value = next();
-                            if (i >= total) {
+                            if (ind >= total) {
                                 pushToken({
                                     typ: 'Bad-comment', val: buffer
                                 });
@@ -1631,13 +1745,13 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 }
                 buffer += value;
                 value = next();
-                if (i >= total) {
+                if (ind >= total) {
                     break;
                 }
                 if (peek(3) == '!--') {
-                    while (i < total) {
+                    while (ind < total) {
                         value = next();
-                        if (i >= total) {
+                        if (ind >= total) {
                             break;
                         }
                         buffer += value;
@@ -1651,7 +1765,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                         }
                     }
                 }
-                if (i >= total) {
+                if (ind >= total) {
                     pushToken({ typ: 'BADCDO', val: buffer });
                     buffer = '';
                 }
@@ -1659,7 +1773,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
             case '\\':
                 value = next();
                 // EOF
-                if (i + 1 >= total) {
+                if (ind + 1 >= total) {
                     // end of stream ignore \\
                     pushToken(getType(buffer));
                     buffer = '';
@@ -1679,7 +1793,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 }
                 buffer += value;
                 value = next();
-                if (i >= total) {
+                if (ind >= total) {
                     pushToken(getType(buffer));
                     buffer = '';
                     break;
@@ -1695,6 +1809,12 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 }
                 pushToken(getType(buffer));
                 buffer = value;
+                break;
+            case '>':
+                if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+                    tokens.pop();
+                }
+                pushToken({ typ: 'Gt' });
                 break;
             case ':':
             case ',':
@@ -1816,7 +1936,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                 pushToken(getBlockType(value));
                 let node = null;
                 if (value == '{' || value == ';') {
-                    node = parseNode(tokens);
+                    node = await parseNode(tokens);
                     if (node != null) {
                         stack.push(node);
                         // @ts-ignore
@@ -1831,17 +1951,25 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
                     map.clear();
                 }
                 else if (value == '}') {
-                    node = parseNode(tokens);
+                    node = await parseNode(tokens);
                     const previousNode = stack.pop();
                     // @ts-ignore
                     context = stack[stack.length - 1] || root;
+                    if (options.location && context != root) {
+                        // @ts-ignore
+                        context.loc.end = { ind, lin, col: col == 0 ? 1 : col };
+                    }
                     // @ts-ignore
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                         context.chi.pop();
                     }
-                    else if (previousNode != null && 'exit' in events && previousNode != root) {
+                    else if (trigger && previousNode != null && 'exit' in events && previousNode != root && (options.nodeEventFilter?.length == 0 || options.nodeEventFilter?.includes(previousNode.typ))) {
+                        trigger('exit', previousNode, {
+                            src,
+                            end: { ind, lin, col: col == 0 ? 1 : col }
+                        }, context, root);
                         // @ts-ignore
-                        events.exit.forEach(callback => callback(previousNode, context, root));
+                        // events.exit.forEach(callback => callback(<AstNode>previousNode, <Location>{src, end: {ind, lin, col: col == 0 ? 1 : col}}, context, root))
                     }
                     tokens.length = 0;
                     map.clear();
@@ -1879,6 +2007,7 @@ function tokenize(iterator, errors, events, options, src /*, callable: (token: T
         pushToken(getType(buffer));
     }
     // pushToken({typ: 'EOF'});
+    //
     if (col == 0) {
         col = 1;
     }
@@ -1910,86 +2039,6 @@ function getBlockType(chr) {
     }
     throw new Error(`unhandled token: '${chr}'`);
 }
-function getType(val) {
-    if (val === '') {
-        throw new Error('empty string?');
-    }
-    if (val == ':') {
-        return { typ: 'Colon' };
-    }
-    if (val == '=') {
-        return { typ: 'Delim', val };
-    }
-    if (val == ';') {
-        return { typ: 'Semi-colon' };
-    }
-    if (val == ',') {
-        return { typ: 'Comma' };
-    }
-    if (val == '<') {
-        return { typ: 'Lt' };
-    }
-    if (val == '>') {
-        return { typ: 'Gt' };
-    }
-    if (isPseudo(val)) {
-        return {
-            typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
-            val
-            // buffer: buffer.slice()
-        };
-    }
-    if (isAtKeyword(val)) {
-        return {
-            typ: 'At-rule',
-            val: val.slice(1)
-            // buffer: buffer.slice()
-        };
-    }
-    if (isFunction(val)) {
-        return {
-            typ: 'Func',
-            val: val.slice(0, -1)
-        };
-    }
-    if (isNumber(val)) {
-        return {
-            typ: 'Number',
-            val
-        };
-    }
-    if (isDimension(val)) {
-        return parseDimension(val);
-    }
-    if (isPercentage(val)) {
-        return {
-            typ: 'Perc',
-            val: val.slice(0, -1)
-        };
-    }
-    if (isIdent(val)) {
-        return {
-            typ: 'Iden',
-            val
-        };
-    }
-    if (val.charAt(0) == '#' && isHash(val)) {
-        return {
-            typ: 'Hash',
-            val
-        };
-    }
-    if ('"\''.includes(val.charAt(0))) {
-        return {
-            typ: 'Unclosed-string',
-            val
-        };
-    }
-    return {
-        typ: 'Literal',
-        val
-    };
-}
 
 class Parser {
     #options;
@@ -2010,26 +2059,18 @@ class Parser {
         };
         this.#observer = new Observer();
     }
-    parse(css, src = '') {
+    async parse(css, src = '') {
         this.#errors = [];
         this.#createRoot();
         if (css.length == 0) {
             return this;
         }
         // @ts-ignore
-        this.#root = tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
+        this.#root = await tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
         if (this.#options.dedup) {
             deduplicate(this.#root);
         }
         return this;
-    }
-    async parseURL(file) {
-        return await fetch(file).then(async (response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status} ${response.statusText}`);
-            }
-            return this.parse(await response.text(), response.url.toString().replace(/(?=\/)[^/]*?(\?|#.*)?/, ''));
-        });
     }
     on(name, handler, signal) {
         this.#observer.on(name, handler, signal);
@@ -2091,26 +2132,22 @@ function deduplicate(ast) {
                     (node.typ == 'AtRule' &&
                         node.nam == previous.nam &&
                         node.val == previous.val)) {
-                    if (node.typ == 'AtRule' && previous?.typ == 'AtRule') ;
                     if ('chi' in node) {
                         // @ts-ignore
                         previous.chi = node.chi.concat(...(previous.chi || []));
                     }
                     // @ts-ignore
                     ast.chi.splice(i, 1);
-                    // if (!('chi' in previous)) {
-                    //
-                    //     continue;
-                    // }
-                    //
-                    // // @ts-ignore
-                    // if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
-                    //
-                    //     deduplicateRule(previous);
-                    // } else {
-                    //
-                    //     deduplicate(previous);
-                    // }
+                    if (!('chi' in previous)) {
+                        continue;
+                    }
+                    // @ts-ignore
+                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                        deduplicateRule(previous);
+                    }
+                    else {
+                        deduplicate(previous);
+                    }
                     continue;
                 }
                 else if (node.typ == 'Declaration' && node.nam == previous.nam) {

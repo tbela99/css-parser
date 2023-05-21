@@ -1,7 +1,7 @@
 @charset "UTF-8";
 @import "small.css" all;
-@import url(smalli.css) all;
-@import url("smalli.css") ;
+@import url(smalli.css) all and (min-width: 480px) ;
+@import url("smalli.css")  and (min-width: 480px) ;
 @import url(bad file css) all;
 
 .button {

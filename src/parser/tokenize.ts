@@ -16,14 +16,15 @@ import {
     ErrorDescription,
     FunctionToken, IdentToken, IncludesToken,
     Location,
-    NodeTraverseEventsMap, ParserOptions,
+    NodeParseEventsMap, ParserOptions,
     Position,
     PseudoClassToken, StringToken,
     Token, UrlToken
 } from "../@types";
 import {renderToken} from "../renderer";
+import path from "path";
 
-export function tokenize(iterator: string, errors: ErrorDescription[], events: NodeTraverseEventsMap, options: ParserOptions, src: string /*, callable: (token: Token) => void */): AstRuleStyleSheet {
+export async function tokenize(iterator: string, errors: ErrorDescription[], events: NodeParseEventsMap, options: ParserOptions, src: string /*, callable: (token: Token) => void */): Promise<AstRuleStyleSheet> {
 
     const tokens: Token[] = [];
     const stack: Array<AstNode | AstComment> = [];
@@ -32,9 +33,28 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         chi: []
     }
 
+    const position = {
+        ind: 0,
+        lin: 1,
+        col: 1
+    };
+
+    const trigger = Object.keys(events).length == 0 ? null : function (event: 'enter' | 'exit', node: AstNode, location: Location, context: AstRuleList, root: AstRuleStyleSheet) {
+
+        // @ts-ignore
+        if (!(event in events) || (options.nodeEventFilter.length > 0 && !options.nodeEventFilter.includes(node.typ))) {
+
+            return;
+        }
+
+        // @ts-ignore
+        return Promise.all(events[event]?.map(callback =>
+            callback(<AstNode>node, location, context, root)
+        ));
+    }
+
     let value: string;
     let buffer: string = '';
-    let i: number = -1;
     let ind: number = -1;
     let lin: number = 1;
     let col: number = 0;
@@ -64,6 +84,119 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         }
     }
 
+    function getType(val: string): Token {
+
+        if (val === '') {
+
+            throw new Error('empty string?');
+        }
+
+        if (val == ':') {
+
+            return {typ: 'Colon'};
+        }
+
+        if (val == '=') {
+
+            return {typ: 'Delim', val};
+        }
+        if (val == ';') {
+
+            return {typ: 'Semi-colon'};
+        }
+
+        if (val == ',') {
+
+            return {typ: 'Comma'};
+        }
+
+        if (val == '<') {
+
+            return {typ: 'Lt'};
+        }
+
+        if (val == '>') {
+
+            return {typ: 'Gt'};
+        }
+
+        if (isPseudo(val)) {
+
+            return {
+                typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
+                val
+                // buffer: buffer.slice()
+            }
+        }
+
+        if (isAtKeyword(val)) {
+
+            return {
+                typ: 'At-rule',
+                val: val.slice(1)
+                // buffer: buffer.slice()
+            }
+        }
+
+        if (isFunction(val)) {
+
+            return {
+                typ: 'Func',
+                val: val.slice(0, -1)
+            }
+        }
+
+        if (isNumber(val)) {
+
+            return {
+                typ: 'Number',
+                val
+            }
+        }
+
+        if (isDimension(val)) {
+
+            return parseDimension(val);
+        }
+
+        if (isPercentage(val)) {
+
+            return {
+                typ: 'Perc',
+                val: val.slice(0, -1)
+            }
+        }
+
+        if (isIdent(val)) {
+
+            return {
+                typ: 'Iden',
+                val
+            }
+        }
+
+        if (val.charAt(0) == '#' && isHash(val)) {
+
+            return {
+                typ: 'Hash',
+                val
+            }
+        }
+
+        if ('"\''.includes(val.charAt(0))) {
+
+            return {
+                typ: 'Unclosed-string',
+                val
+            }
+        }
+
+        return {
+            typ: 'Literal',
+            val
+        }
+    }
+
     // consume and throw away
     function consume(open: string, close: string) {
 
@@ -86,7 +219,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 next();
 
-                while(true) {
+                while (true) {
 
                     chr = next();
 
@@ -117,9 +250,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         }
     }
 
-    function parseNode(tokens: Token[]) {
+    async function parseNode(tokens: Token[]) {
 
         let i: number = 0;
+        let loc: Location;
+
         for (i = 0; i < tokens.length; i++) {
 
             if (tokens[i].typ == 'Comment') {
@@ -127,20 +262,24 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 // @ts-ignore
                 context.chi.push(tokens[i]);
 
+                const position: Position = <Position>map.get(tokens[i]);
+
+                loc = <Location>{
+                    sta: position,
+                    // @ts-ignore
+                    end: updatePosition({...position}, tokens[i].val),
+                    src
+                };
+
                 if (options.location) {
 
-                    const position: Position = <Position>map.get(tokens[i]);
-
-                    (<AstNode>tokens[i]).loc = <Location>{
-                        sta: position,
-                        // @ts-ignore
-                        end: updatePosition({...position}, tokens[i].val),
-                        src
-                    }
+                    (<AstNode>tokens[i]).loc = loc
                 }
 
+                trigger && await trigger('enter', <AstNode>tokens[i], loc, context, root);
+
                 // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(<AstNode>tokens[i], context, root))
+                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(tokens[i].typ)) && events.enter.forEach(callback => callback(<AstNode>tokens[i], loc, context, root))
 
             } else if (tokens[i].typ != 'Whitespace') {
 
@@ -169,6 +308,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
             if (atRule.val == 'charset' && position.ind > 0) {
 
+                // console.debug({position, atRule});
                 errors.push({action: 'drop', message: 'invalid @charset', location: {src, ...position}});
                 return null;
             }
@@ -242,17 +382,17 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     tokens[0] = token;
                 }
 
-                const token: IdentToken = <IdentToken>tokens[tokens.length - 1];
+                // const token: IdentToken = <IdentToken>tokens[tokens.length - 1];
 
-                if (token.typ == 'Iden' && token.val == 'all') {
-
-                    tokens.pop();
-
-                    if (tokens[tokens.length - 1].typ == 'Whitespace') {
-
-                        tokens.pop();
-                    }
-                }
+                // if (token.typ == 'Iden' && token.val == 'all') {
+                //
+                //     tokens.pop();
+                //
+                //     if (tokens[tokens.length - 1].typ == 'Whitespace') {
+                //
+                //         tokens.pop();
+                //     }
+                // }
             }
 
             // https://www.w3.org/TR/css-nesting-1/#conditionals
@@ -261,8 +401,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
             const node: AstAtRule = {
                 typ: 'AtRule',
-                nam: renderToken(atRule),
-                val: tokens.reduce((acc, curr) => acc + renderToken(curr), '')
+                nam: renderToken(atRule, {removeComments: true}),
+                val: tokens.reduce((acc, curr) => acc + renderToken(curr, {removeComments: true}), '')
             }
 
             if (node.nam == 'import') {
@@ -272,7 +412,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     node.val = '';
                 }
 
-                if(options.processImport) {
+                if (options.processImport) {
 
                     // @ts-ignore
                     let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'Func' ? 1 : 0];
@@ -291,25 +431,27 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 node.chi = [];
             }
 
+            loc = <Location>{
+                sta: position,
+                src
+            };
+
             if (options.location) {
 
-                node.loc = <Location>{
-                    sta: position,
-                    // end: weakMap.get(delim),
-                    src
-                }
+                node.loc = loc
             }
 
             // @ts-ignore
             context.chi.push(node);
 
-            if (delim.typ == 'Block-start') {
+            // console.debug({before: node});
+            trigger && await trigger('enter', <AstNode>node, loc, context, root);
+            // @ts-ignore
+            // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
 
-                // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+            // console.debug({after: node});
+            return delim.typ == 'Block-start' ? node : null;
 
-                return node;
-            }
         } else {
 
             // rule
@@ -355,23 +497,26 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                         }
 
                         return acc;
-                    }, <Array<Array<Token>>>[[]]).map(part => part.map(renderToken).join('')).sort().join(),
+                    }, <Array<Array<Token>>>[[]]).map(part => part.map(p => renderToken(p, {removeComments: true})).join('')).join(),
                     chi: []
                 }
 
+                loc = <Location>{
+                    sta: position,
+                    src
+                };
+
                 if (options.location) {
 
-                    node.loc = <Location>{
-                        sta: position,
-                        src
-                    }
+                    node.loc = loc
                 }
 
                 // @ts-ignore
                 context.chi.push(node);
 
+                trigger && await trigger('enter', <AstNode>node, loc, context, root);
                 // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
+                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
 
                 return node;
             } else {
@@ -421,7 +566,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                         if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
 
-                            errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid declaration',
+                                location: {src, ...position}
+                            });
                             return null;
                         }
                     }
@@ -448,7 +597,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                     typ: 'Declaration',
                     // @ts-ignore
-                    nam: renderToken(name.shift()),
+                    nam: renderToken(name.shift(), {removeComments: true}),
                     // @ts-ignore
                     val: value
                 }
@@ -470,19 +619,22 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     return null;
                 }
 
+                loc = <Location>{
+                    sta: position,
+                    src
+                };
+
                 if (options.location) {
 
-                    node.loc = <Location>{
-                        sta: position,
-                        src
-                    }
+                    node.loc = loc
                 }
 
                 // @ts-ignore
                 context.chi.push(node);
-                // @ts-ignore
-                'enter' in events && events.enter.forEach(callback => callback(<AstNode>node, context, root))
 
+                trigger && await trigger('enter', <AstNode>node, loc, context, root);
+                // @ts-ignore
+                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
                 return null;
             }
         }
@@ -492,20 +644,20 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
         if (count == 1) {
 
-            return iterator.charAt(i + 1);
+            return iterator.charAt(ind + 1);
         }
 
-        return iterator.slice(i + 1, i + count + 1);
+        return iterator.slice(ind + 1, ind + count + 1);
     }
 
     function prev(count: number = 1) {
 
         if (count == 1) {
 
-            return i == 0 ? '' : iterator.charAt(i - 1);
+            return ind == 0 ? '' : iterator.charAt(ind - 1);
         }
 
-        return iterator.slice(i - 1 - count, i - 1);
+        return iterator.slice(ind - 1 - count, ind - 1);
     }
 
     function next(count: number = 1) {
@@ -513,27 +665,26 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         let char: string = '';
         let offset: number;
 
-        while (count-- > 0 && i < total) {
+        while (count-- > 0 && ind < total) {
 
-            const codepoint: number = <number>iterator.codePointAt(++i);
+            const codepoint: number = <number>iterator.codePointAt(++ind);
 
-            if (codepoint < 0x80) {
+            if (codepoint == null) {
 
-                char += iterator.charAt(i);
-                ind++;
-            } else {
-
-                if (codepoint == null) {
-
-                    return char;
-                }
-
-                const chr: string = String.fromCodePoint(codepoint);
-
-                i += chr.length - 1;
-                ind += chr.length;
-                char += chr;
+                return char;
             }
+
+            // if (codepoint < 0x80) {
+
+            char += iterator.charAt(ind);
+            // }
+            // else {
+            //
+            //     const chr: string = String.fromCodePoint(codepoint);
+            //
+            //     ind += chr.length - 1;
+            //     char += chr;
+            // }
 
             // ind += codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
 
@@ -545,8 +696,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 // \r\n
                 // if (codepoint == 0xd && iterator.codePointAt(i + 1) == 0xa) {
 
-                    // offset++;
-                    // ind++;
+                // offset++;
+                // ind++;
                 // }
 
             } else {
@@ -565,21 +716,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
         tokens.push(token);
 
-        // if (trackLocation) {
+        map.set(token, {...position});
 
-        const pos = {ind, lin, col};
-
-        if (pos.ind == -1) {
-
-            pos.ind = 0;
-        }
-
-        if (pos.col == 0) {
-
-            pos.col = 1;
-        }
-
-        map.set(token, pos);
+        position.ind = ind;
+        position.lin = lin;
+        position.col = col == 0 ? 1 : col;
         // }
     }
 
@@ -592,21 +733,18 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
         if (buffer.length > 0) {
 
             pushToken(getType(buffer));
-            
-
             buffer = '';
         }
 
         buffer += quoteStr;
 
-        while (i < total) {
+        while (ind < total) {
 
             value = peek();
 
-            if (i >= total) {
+            if (ind >= total) {
 
                 pushToken({typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
-                
                 break;
             }
 
@@ -614,11 +752,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 // buffer += value;
 
-                if (i >= total) {
+                if (ind >= total) {
 
                     // drop '\\' at the end
                     pushToken(getType(buffer));
-                    
+
 
                     break;
                 }
@@ -630,11 +768,9 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (value == quote) {
 
                 buffer += value;
-
                 pushToken({typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
-                
-
-                i += value.length;
+                next();
+                // i += value.length;
                 buffer = '';
                 break;
             }
@@ -647,28 +783,25 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (hasNewLine && value == ';') {
 
                 pushToken({typ: 'Bad-string', val: buffer});
-                
-
                 buffer = '';
                 break;
             }
 
             buffer += value;
-            i += value.length;
+            // i += value.length;
+            next();
         }
     }
 
-    while (i < total) {
+    while (ind < total) {
 
         value = next();
 
-        if (i >= total) {
+        if (ind >= total) {
 
             if (buffer.length > 0) {
 
                 pushToken(getType(buffer));
-                
-
                 buffer = '';
             }
 
@@ -680,18 +813,16 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             if (buffer.length > 0) {
 
                 pushToken(getType(buffer));
-                
-
                 buffer = '';
             }
 
             let whitespace: string = value;
 
-            while (i < total) {
+            while (ind < total) {
 
                 value = next();
 
-                if (i >= total) {
+                if (ind >= total) {
 
                     break;
                 }
@@ -708,7 +839,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
             buffer = '';
 
-            if (i >= total) {
+            if (ind >= total) {
 
                 break;
             }
@@ -721,8 +852,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                 }
 
@@ -731,18 +860,18 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (peek() == '*') {
 
                     buffer += '*';
-                    i++;
+                    // i++;
+                    next();
 
-                    while (i < total) {
+                    while (ind < total) {
 
                         value = next();
 
-                        if (i >= total) {
+                        if (ind >= total) {
 
                             pushToken({
                                 typ: 'Bad-comment', val: buffer
                             });
-                            
 
                             break;
                         }
@@ -752,14 +881,13 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                             buffer += value;
                             value = next();
 
-                            if (i >= total) {
+                            if (ind >= total) {
 
                                 pushToken({
                                     typ: 'Bad-comment',
                                     val: buffer
                                 });
 
-                                
                                 break;
                             }
 
@@ -772,13 +900,13 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                             buffer += value;
                             value = next();
 
-                            if (i >= total) {
+                            if (ind >= total) {
 
                                 pushToken({
                                     typ: 'Bad-comment', val: buffer
                                 });
 
-                                
+
                                 break;
                             }
 
@@ -787,8 +915,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                             if (value == '/') {
 
                                 pushToken({typ: 'Comment', val: buffer});
-                                
-
                                 buffer = '';
                                 break;
                             }
@@ -806,25 +932,24 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
                     buffer = '';
                 }
 
                 buffer += value;
                 value = next();
 
-                if (i >= total) {
+                if (ind >= total) {
 
                     break;
                 }
 
                 if (peek(3) == '!--') {
 
-                    while (i < total) {
+                    while (ind < total) {
 
                         value = next();
 
-                        if (i >= total) {
+                        if (ind >= total) {
 
                             break;
                         }
@@ -838,18 +963,16 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                 val: buffer
                             });
 
-                            
+
                             buffer = '';
                             break;
                         }
                     }
                 }
 
-                if (i >= total) {
+                if (ind >= total) {
 
                     pushToken({typ: 'BADCDO', val: buffer});
-                    
-
                     buffer = '';
                 }
 
@@ -860,12 +983,10 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 value = next();
 
                 // EOF
-                if (i + 1 >= total) {
+                if (ind + 1 >= total) {
 
                     // end of stream ignore \\
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                     break;
                 }
@@ -877,7 +998,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
             case "'":
 
                 consumeString(value);
-
                 break;
 
             case '~':
@@ -886,19 +1006,15 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                 }
 
                 buffer += value;
                 value = next();
 
-                if (i >= total) {
+                if (ind >= total) {
 
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                     break;
                 }
@@ -912,15 +1028,22 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                         val: buffer
                     });
 
-                    
                     buffer = '';
                     break;
                 }
 
                 pushToken(getType(buffer));
-                
-
                 buffer = value;
+                break;
+
+            case '>':
+
+                if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+
+                    tokens.pop();
+                }
+
+                pushToken({typ: 'Gt'});
                 break;
 
             case ':':
@@ -930,7 +1053,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
                     buffer = '';
                 }
 
@@ -941,7 +1063,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 }
 
                 pushToken(getType(value));
-
                 buffer = '';
                 break;
 
@@ -950,8 +1071,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                 }
 
@@ -977,7 +1096,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                         let whitespace = '';
 
                         value = peek();
-                        while(isWhiteSpace(<number>value.codePointAt(0))) {
+                        while (isWhiteSpace(<number>value.codePointAt(0))) {
 
                             whitespace += value;
                         }
@@ -993,7 +1112,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                             consumeString(<'"' | "'">next());
 
-                            let token: Token = tokens[tokens.length -1];
+                            let token: Token = tokens[tokens.length - 1];
 
                             if (token.typ == 'String' && /^("|')[a-zA-Z0-9_/-][a-zA-Z0-9_/:.-]+("|')$/.test(token.val)) {
 
@@ -1002,9 +1121,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                 token.val = token.val.slice(1, -1);
                             }
                             break;
-                        }
-
-                        else {
+                        } else {
 
                             buffer = '';
 
@@ -1025,9 +1142,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                     if (buffer.length == 0) {
 
                                         pushToken({typ: 'Bad-url-token', val: ''})
-                                    }
-
-                                    else {
+                                    } else {
 
                                         pushToken({typ: 'Url-token', val: buffer})
                                     }
@@ -1060,7 +1175,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                                     if (cp == null || cp == 0x29) {
 
-                                       continue;
+                                        continue;
                                     }
 
                                     // bad url token
@@ -1089,7 +1204,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                                 value = peek();
                             }
 
-                            while(true);
+                            while (true);
 
                             buffer = '';
                         }
@@ -1107,8 +1222,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                 }
 
@@ -1118,7 +1231,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 if (value == '{' || value == ';') {
 
-                    node = parseNode(tokens);
+                    node = await parseNode(tokens);
 
                     if (node != null) {
 
@@ -1138,23 +1251,31 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
 
                 } else if (value == '}') {
 
-                    node = parseNode(tokens);
+                    node = await parseNode(tokens);
                     const previousNode = stack.pop();
 
                     // @ts-ignore
                     context = stack[stack.length - 1] || root;
 
+                    if (options.location && context != root) {
+
+                        // @ts-ignore
+                        context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
+                    }
+
                     // @ts-ignore
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
 
                         context.chi.pop();
-                    }
+                    } else if (trigger && previousNode != null && 'exit' in events && previousNode != root && (options.nodeEventFilter?.length == 0 || options.nodeEventFilter?.includes(previousNode.typ))) {
 
-                    else if (previousNode != null && 'exit' in events && previousNode != root) {
+                        await trigger('exit', <AstNode>previousNode, <Location>{
+                            src,
+                            end: {ind, lin, col: col == 0 ? 1 : col}
+                        }, context, root);
 
                         // @ts-ignore
-                        events.exit.forEach(callback => callback(<AstNode>previousNode, context, root))
-
+                        // events.exit.forEach(callback => callback(<AstNode>previousNode, <Location>{src, end: {ind, lin, col: col == 0 ? 1 : col}}, context, root))
                     }
 
                     tokens.length = 0;
@@ -1176,8 +1297,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                 if (buffer.length > 0) {
 
                     pushToken(getType(buffer));
-                    
-
                     buffer = '';
                 }
 
@@ -1194,12 +1313,10 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
                     next(9);
 
                     buffer = '';
-
                     break;
                 }
 
                 buffer = '!';
-
                 break;
 
             default:
@@ -1212,11 +1329,10 @@ export function tokenize(iterator: string, errors: ErrorDescription[], events: N
     if (buffer.length > 0) {
 
         pushToken(getType(buffer));
-        
     }
 
     // pushToken({typ: 'EOF'});
-
+    //
     if (col == 0) {
 
         col = 1;
@@ -1265,117 +1381,4 @@ function getBlockType(chr: '{' | '}' | '[' | ']' | ';'): Token {
     }
 
     throw new Error(`unhandled token: '${chr}'`);
-}
-
-function getType(val: string): Token {
-
-    if (val === '') {
-
-        throw new Error('empty string?');
-    }
-
-    if (val == ':') {
-
-        return {typ: 'Colon'};
-    }
-
-    if (val == '=') {
-
-        return {typ: 'Delim', val};
-    }
-    if (val == ';') {
-
-        return {typ: 'Semi-colon'};
-    }
-
-    if (val == ',') {
-
-        return {typ: 'Comma'};
-    }
-
-    if (val == '<') {
-
-        return {typ: 'Lt'};
-    }
-
-    if (val == '>') {
-
-        return {typ: 'Gt'};
-    }
-
-    if (isPseudo(val)) {
-
-        return {
-            typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
-            val
-            // buffer: buffer.slice()
-        }
-    }
-
-    if (isAtKeyword(val)) {
-
-        return {
-            typ: 'At-rule',
-            val: val.slice(1)
-            // buffer: buffer.slice()
-        }
-    }
-
-    if (isFunction(val)) {
-
-        return {
-            typ: 'Func',
-            val: val.slice(0, -1)
-        }
-    }
-
-    if (isNumber(val)) {
-
-        return {
-            typ: 'Number',
-            val
-        }
-    }
-
-    if (isDimension(val)) {
-
-        return parseDimension(val);
-    }
-
-    if (isPercentage(val)) {
-
-        return {
-            typ: 'Perc',
-            val: val.slice(0, -1)
-        }
-    }
-
-    if (isIdent(val)) {
-
-        return {
-            typ: 'Iden',
-            val
-        }
-    }
-
-    if (val.charAt(0) == '#' && isHash(val)) {
-
-        return {
-            typ: 'Hash',
-            val
-        }
-    }
-
-    if ('"\''.includes(val.charAt(0))) {
-
-        return {
-            typ: 'Unclosed-string',
-            val
-        }
-    }
-
-    return {
-        typ: 'Literal',
-        val
-    }
 }
