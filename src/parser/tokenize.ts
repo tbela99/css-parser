@@ -22,11 +22,11 @@ import {
     Token, UrlToken
 } from "../@types";
 import {renderToken} from "../renderer";
-import path from "path";
 
-export async function tokenize(iterator: string, errors: ErrorDescription[], events: NodeParseEventsMap, options: ParserOptions, src: string /*, callable: (token: Token) => void */): Promise<AstRuleStyleSheet> {
+export function tokenize(iterator: string, errors: ErrorDescription[], options: ParserOptions): AstRuleStyleSheet {
 
     const tokens: Token[] = [];
+    const src: string = <string>options.src;
     const stack: Array<AstNode | AstComment> = [];
     const root: AstRuleStyleSheet = {
         typ: "StyleSheet",
@@ -38,20 +38,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
         lin: 1,
         col: 1
     };
-
-    const trigger = Object.keys(events).length == 0 ? null : function (event: 'enter' | 'exit', node: AstNode, location: Location, context: AstRuleList, root: AstRuleStyleSheet) {
-
-        // @ts-ignore
-        if (!(event in events) || (options.nodeEventFilter.length > 0 && !options.nodeEventFilter.includes(node.typ))) {
-
-            return;
-        }
-
-        // @ts-ignore
-        return Promise.all(events[event]?.map(callback =>
-            callback(<AstNode>node, location, context, root)
-        ));
-    }
 
     let value: string;
     let buffer: string = '';
@@ -250,7 +236,7 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
         }
     }
 
-    async function parseNode(tokens: Token[]) {
+    function parseNode(tokens: Token[]) {
 
         let i: number = 0;
         let loc: Location;
@@ -275,11 +261,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
                     (<AstNode>tokens[i]).loc = loc
                 }
-
-                trigger && await trigger('enter', <AstNode>tokens[i], loc, context, root);
-
-                // @ts-ignore
-                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(tokens[i].typ)) && events.enter.forEach(callback => callback(<AstNode>tokens[i], loc, context, root))
 
             } else if (tokens[i].typ != 'Whitespace') {
 
@@ -381,18 +362,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
                     tokens[0] = token;
                 }
-
-                // const token: IdentToken = <IdentToken>tokens[tokens.length - 1];
-
-                // if (token.typ == 'Iden' && token.val == 'all') {
-                //
-                //     tokens.pop();
-                //
-                //     if (tokens[tokens.length - 1].typ == 'Whitespace') {
-                //
-                //         tokens.pop();
-                //     }
-                // }
             }
 
             // https://www.w3.org/TR/css-nesting-1/#conditionals
@@ -406,11 +375,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
             }
 
             if (node.nam == 'import') {
-
-                if (node.val == 'all') {
-
-                    node.val = '';
-                }
 
                 if (options.processImport) {
 
@@ -443,12 +407,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
             // @ts-ignore
             context.chi.push(node);
-
-            // console.debug({before: node});
-            trigger && await trigger('enter', <AstNode>node, loc, context, root);
-            // @ts-ignore
-            // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
-
             // console.debug({after: node});
             return delim.typ == 'Block-start' ? node : null;
 
@@ -513,12 +471,8 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
                 // @ts-ignore
                 context.chi.push(node);
-
-                trigger && await trigger('enter', <AstNode>node, loc, context, root);
-                // @ts-ignore
-                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
-
                 return node;
+
             } else {
 
                 // declaration
@@ -631,10 +585,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
                 // @ts-ignore
                 context.chi.push(node);
-
-                trigger && await trigger('enter', <AstNode>node, loc, context, root);
-                // @ts-ignore
-                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
                 return null;
             }
         }
@@ -722,6 +672,19 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
         // }
+    }
+
+    function consumeWhiteSpace() {
+
+        let count = 0;
+
+        while (isWhiteSpace(<number>iterator.charAt(count + ind + 1).codePointAt(0))) {
+
+            count++;
+        }
+
+        next(count);
+        return count;
     }
 
     function consumeString(quoteStr: '"' | "'") {
@@ -836,7 +799,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
             }
 
             pushToken({typ: 'Whitespace'});
-
             buffer = '';
 
             if (ind >= total) {
@@ -1044,6 +1006,7 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
                 }
 
                 pushToken({typ: 'Gt'});
+                consumeWhiteSpace();
                 break;
 
             case ':':
@@ -1231,7 +1194,7 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
                 if (value == '{' || value == ';') {
 
-                    node = await parseNode(tokens);
+                    node = parseNode(tokens);
 
                     if (node != null) {
 
@@ -1251,7 +1214,7 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
 
                 } else if (value == '}') {
 
-                    node = await parseNode(tokens);
+                    node = parseNode(tokens);
                     const previousNode = stack.pop();
 
                     // @ts-ignore
@@ -1267,15 +1230,6 @@ export async function tokenize(iterator: string, errors: ErrorDescription[], eve
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
 
                         context.chi.pop();
-                    } else if (trigger && previousNode != null && 'exit' in events && previousNode != root && (options.nodeEventFilter?.length == 0 || options.nodeEventFilter?.includes(previousNode.typ))) {
-
-                        await trigger('exit', <AstNode>previousNode, <Location>{
-                            src,
-                            end: {ind, lin, col: col == 0 ? 1 : col}
-                        }, context, root);
-
-                        // @ts-ignore
-                        // events.exit.forEach(callback => callback(<AstNode>previousNode, <Location>{src, end: {ind, lin, col: col == 0 ? 1 : col}}, context, root))
                     }
 
                     tokens.length = 0;

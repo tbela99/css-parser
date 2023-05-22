@@ -1,5 +1,6 @@
+import {AstNode, AstRuleList, AstRuleStyleSheet} from "../@types";
 
-export function createSyntaxError(message: string, file: string, line: number, column: number) {
+export function validate(node: AstNode, parent: AstRuleList, root: AstRuleStyleSheet) {
 
-        return new SyntaxError(`${message} at ${file}:${line}:${Math.max(column, 1)}`);
+
 }

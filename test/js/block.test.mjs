@@ -572,332 +572,6 @@ var o=e("type-detect");function r(){this._key="chai/deep-eql__"+Math.random()+Da
  * @return {Boolean} result
  */function O(e){return null===e||"object"!=typeof e}t.exports=c,t.exports.MemoizeMap=i;},{"type-detect":39}],37:[function(e,t,n){var o=Function.prototype.toString,r=/\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\s\(\/]+)/;function i(e){if("function"!=typeof e)return null;var t="";if(void 0===Function.prototype.name&&void 0===e.name){var n=o.call(e).match(r);n&&(t=n[1]);}else t=e.name;return t}t.exports=i;},{}],38:[function(e,t,n){function o(e,t){return null!=e&&t in Object(e)}function r(e){return e.replace(/([^\\])\[/g,"$1.[").match(/(\\\.|[^.]+?)+/g).map((function(e){if("constructor"===e||"__proto__"===e||"prototype"===e)return {};var t=/^\[(\d+)\]$/.exec(e);return t?{i:parseFloat(t[1])}:{p:e.replace(/\\([.[\]])/g,"$1")}}))}function i(e,t,n){var o=e,r=null;n=void 0===n?t.length:n;for(var i=0;i<n;i++){var s=t[i];o&&(o=void 0===s.p?o[s.i]:o[s.p],i===n-1&&(r=o));}return r}function s(e,t,n){for(var o=e,r=n.length,i=null,s=0;s<r;s++){var a=null,c=null;if(i=n[s],s===r-1)o[a=void 0===i.p?i.i:i.p]=t;else if(void 0!==i.p&&o[i.p])o=o[i.p];else if(void 0!==i.i&&o[i.i])o=o[i.i];else {var u=n[s+1];a=void 0===i.p?i.i:i.p,c=void 0===u.p?[]:{},o[a]=c,o=o[a];}}}function a(e,t){var n=r(t),s=n[n.length-1],a={parent:n.length>1?i(e,n,n.length-1):e,name:s.p||s.i,value:i(e,n)};return a.exists=o(a.parent,a.name),a}function c(e,t){return a(e,t).value}function u(e,t,n){return s(e,n,r(t)),e}t.exports={hasProperty:o,getPathInfo:a,getPathValue:c,setPathValue:u};},{}],39:[function(t,n,o){!function(e,t){"object"==typeof o&&void 0!==n?n.exports=t():e.typeDetect=t();}(this,(function(){var t="function"==typeof Promise,n="object"==typeof self?self:e,o="undefined"!=typeof Symbol,r="undefined"!=typeof Map,i="undefined"!=typeof Set,s="undefined"!=typeof WeakMap,a="undefined"!=typeof WeakSet,c="undefined"!=typeof DataView,u=o&&void 0!==Symbol.iterator,f=o&&void 0!==Symbol.toStringTag,p=i&&"function"==typeof Set.prototype.entries,l=r&&"function"==typeof Map.prototype.entries,h=p&&Object.getPrototypeOf((new Set).entries()),d=l&&Object.getPrototypeOf((new Map).entries()),y=u&&"function"==typeof Array.prototype[Symbol.iterator],b=y&&Object.getPrototypeOf([][Symbol.iterator]()),g=u&&"function"==typeof String.prototype[Symbol.iterator],w=g&&Object.getPrototypeOf(""[Symbol.iterator]()),m=8,v=-1;function x(e){var o=typeof e;if("object"!==o)return o;if(null===e)return "null";if(e===n)return "global";if(Array.isArray(e)&&(!1===f||!(Symbol.toStringTag in e)))return "Array";if("object"==typeof window&&null!==window){if("object"==typeof window.location&&e===window.location)return "Location";if("object"==typeof window.document&&e===window.document)return "Document";if("object"==typeof window.navigator){if("object"==typeof window.navigator.mimeTypes&&e===window.navigator.mimeTypes)return "MimeTypeArray";if("object"==typeof window.navigator.plugins&&e===window.navigator.plugins)return "PluginArray"}if(("function"==typeof window.HTMLElement||"object"==typeof window.HTMLElement)&&e instanceof window.HTMLElement){if("BLOCKQUOTE"===e.tagName)return "HTMLQuoteElement";if("TD"===e.tagName)return "HTMLTableDataCellElement";if("TH"===e.tagName)return "HTMLTableHeaderCellElement"}}var u=f&&e[Symbol.toStringTag];if("string"==typeof u)return u;var p=Object.getPrototypeOf(e);return p===RegExp.prototype?"RegExp":p===Date.prototype?"Date":t&&p===Promise.prototype?"Promise":i&&p===Set.prototype?"Set":r&&p===Map.prototype?"Map":a&&p===WeakSet.prototype?"WeakSet":s&&p===WeakMap.prototype?"WeakMap":c&&p===DataView.prototype?"DataView":r&&p===d?"Map Iterator":i&&p===h?"Set Iterator":y&&p===b?"Array Iterator":g&&p===w?"String Iterator":null===p?"Object":Object.prototype.toString.call(e).slice(m,v)}return x}));},{}]},{},[1])(1);o.version;o.AssertionError;o.use;o.util;o.config;o.Assertion;var f=o.expect;o.should;o.Should;o.assert;
 
-/**
- * a handler that is executed only once
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:once', () => console.log('click'));
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // nothing ...
- *
- */
-function once(name, handler, params, observer) {
-    return function (...args) {
-        handler(...args);
-        observer.off(name, handler);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:times(3)', () => console.log('click'));
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // nothing ...
- *
- */
-function times(name, handler, params, observer) {
-    let counter = +params - 1;
-    if (!Number.isInteger(counter)) {
-        throw new Error(`Invalid argument :times(int). expecting number, found ${params}`);
-    }
-    if (counter < 0) {
-        throw new Error(`Invalid argument :times(arg). counter must be greater than 0, found ${params}`);
-    }
-    return (...args) => {
-        if (counter-- === 0) {
-            observer.off(name, handler);
-        }
-        handler(...args);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:debounce(250)', () => console.log('click'));
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); // 'click' after at least 250ms since the last call
- *
- */
-function debounce(name, handler, params) {
-    let duration = +params;
-    if (!Number.isInteger(duration)) {
-        throw new Error(`Invalid argument :debounce(int). expecting number, found ${params}`);
-    }
-    if (duration < 0) {
-        throw new Error(`Invalid argument :debounce(arg). counter must be greater or equal to 0, found ${params}`);
-    }
-    // @ts-ignore
-    let timer = null;
-    return (...args) => {
-        if (timer != null) {
-            clearTimeout(timer);
-        }
-        timer = setTimeout(() => handler(...args), duration);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:debounce(250)', () => console.log('click'));
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); // 'click' after at least 250ms since the last call
- *
- */
-function throttle(name, handler, params) {
-    let duration = +params;
-    if (!Number.isInteger(duration)) {
-        throw new Error(`Invalid argument :throttle(int). expecting number, found ${params}`);
-    }
-    if (duration < 0) {
-        throw new Error(`Invalid argument :throttle(arg). counter must be greater or equal to 0, found ${params}`);
-    }
-    // @ts-ignore
-    let timer = null;
-    return (...args) => {
-        if (timer != null) {
-            return;
-        }
-        timer = setTimeout(() => {
-            timer = null;
-            handler(...args);
-        }, duration);
-    };
-}
-
-var pseudos = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    debounce: debounce,
-    once: once,
-    throttle: throttle,
-    times: times
-});
-
-class Observer {
-    #handlers = new Map;
-    #pseudo = new Map;
-    constructor() {
-        for (const entry of Object.entries(pseudos)) {
-            // @ts-ignore
-            this.definePseudo(entry[0], entry[1]);
-        }
-    }
-    on(name, handler, signal) {
-        const match = name.match(/(.*):([^:()]+)(\((.*?)\))?$/);
-        let callback = handler;
-        if (match != null && this.#pseudo.has(match[2])) {
-            name = match[1];
-            // @ts-ignore
-            callback = this.#pseudo.get(match[2])(name, handler, match[4], this);
-        }
-        if (!this.#handlers.has(name)) {
-            this.#handlers.set(name, new Map);
-        }
-        signal?.addEventListener('abort', () => this.off(name, handler));
-        // @ts-ignore
-        this.#handlers.get(name).set(handler, callback);
-        return this;
-    }
-    off(name, handler) {
-        if (handler == null) {
-            this.#handlers.delete(name);
-        }
-        else if (this.#handlers.has(name)) {
-            // @ts-ignore
-            this.#handlers.get(name).delete(handler);
-            // @ts-ignore
-            if (this.#handlers.get(name).size === 0) {
-                this.#handlers.delete(name);
-            }
-        }
-        return this;
-    }
-    trigger(name, ...args) {
-        if (this.#handlers.has(name)) {
-            // @ts-ignore
-            for (const handler of this.#handlers.get(name).values()) {
-                handler(...args);
-            }
-        }
-    }
-    definePseudo(pseudo, parser) {
-        this.#pseudo.set(pseudo, parser);
-    }
-    hasListeners(name) {
-        if (arguments.length > 0) {
-            // @ts-ignore
-            return this.#handlers.has(name);
-        }
-        return this.#handlers.size > 0;
-    }
-    getListeners(...args) {
-        if (args.length == 0 || args.length > 1) {
-            return [...(args.length > 1 ? args : this.#handlers.keys())].reduce((acc, curr) => {
-                if (this.#handlers.has(curr)) {
-                    // @ts-ignore
-                    acc[curr] = [...this.#handlers.get(curr).keys()];
-                }
-                return acc;
-            }, Object.create(null));
-        }
-        if (this.#handlers.has(args[0])) {
-            // @ts-ignore
-            return [...this.#handlers.get(args[0]).keys()];
-        }
-        return [];
-    }
-}
-
-const indents = [];
-function render(data, options = { compress: true }) {
-    if (data instanceof Parser) {
-        data = data.getAst();
-    }
-    return doRender(data, Object.assign(options.compress ? {
-        indent: '',
-        newLine: '',
-        removeComments: true
-    } : {
-        indent: ' ',
-        newLine: '\n',
-        compress: false,
-        removeComments: false
-    }, options));
-}
-function doRender(data, options, level = 0) {
-    function reducer(acc, curr) {
-        acc += renderToken(curr, options);
-        return acc;
-    }
-    if (indents.length < level + 1) {
-        indents.push(options.indent.repeat(level));
-    }
-    if (indents.length < level + 2) {
-        indents.push(options.indent.repeat(level + 1));
-    }
-    const indent = indents[level];
-    const indentSub = indents[level + 1];
-    switch (data.typ) {
-        case 'Comment':
-            return options.removeComments ? '' : data.val;
-        case 'StyleSheet':
-            return data.chi.reduce((css, node) => {
-                const str = doRender(node, options);
-                if (str === '') {
-                    return css;
-                }
-                if (css === '') {
-                    return str;
-                }
-                return `${css}${options.newLine}${str}`;
-            }, '');
-        case 'AtRule':
-        case 'Rule':
-            if (data.typ == 'AtRule' && !('chi' in data)) {
-                return `${indent}@${data.nam} ${data.val};`;
-            }
-            // @ts-ignore
-            let children = data.chi.reduce((css, node) => {
-                let str;
-                if (node.typ == 'Comment') {
-                    str = options.removeComments ? '' : node.val;
-                }
-                else if (node.typ == 'Declaration') {
-                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
-                }
-                else if (node.typ == 'AtRule' && !('children' in node)) {
-                    str = `@${node.nam} ${node.val};`;
-                }
-                else {
-                    str = doRender(node, options, level + 1);
-                }
-                if (css === '') {
-                    return str;
-                }
-                if (str === '') {
-                    return css;
-                }
-                if (str !== '')
-                    return `${css}${options.newLine}${indentSub}${str}`;
-            }, '');
-            if (children.endsWith(';')) {
-                children = children.slice(0, -1);
-            }
-            if (data.typ == 'AtRule') {
-                return `@${data.nam} ${data.val ? data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
-            }
-            return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
-    }
-    return '';
-}
-function renderToken(token, options = {}) {
-    switch (token.typ) {
-        case 'Func':
-            return token.val + '(';
-        case 'Includes':
-            return '~=';
-        case 'Dash-match':
-            return '|=';
-        case 'Lt':
-            return '<';
-        case 'Gt':
-            return '>';
-        case 'Start-parens':
-            return '(';
-        case 'End-parens':
-            return ')';
-        case 'Attr-start':
-            return '[';
-        case 'Attr-end':
-            return ']';
-        case 'Whitespace':
-            return ' ';
-        case 'Colon':
-            return ':';
-        case 'Semi-colon':
-            return ';';
-        case 'Comma':
-            return ',';
-        case 'Important':
-            return '!important';
-        case 'Dimension':
-            return token.val + token.unit;
-        case 'Perc':
-            return token.val + '%';
-        case 'Comment':
-            if (options.removeComments) {
-                return '';
-            }
-        case 'Url-token':
-        case 'At-rule':
-        case 'Number':
-        case 'Hash':
-        case 'Pseudo-class':
-        case 'Pseudo-class-func':
-        case 'Literal':
-        case 'String':
-        case 'Iden':
-        case 'Delim':
-            return token.val;
-    }
-    throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
-}
-
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 // export const num = `(((\\+|-)?(?=\\d*[.eE])([0-9]+\\.?[0-9]*|\\.[0-9]+)([eE](\\+|-)?[0-9]+)?)|(\\d+|(\\d*\\.\\d+)))`;
@@ -1128,8 +802,62 @@ function update(location, css) {
     return location;
 }
 
-async function tokenize(iterator, errors, events, options, src /*, callable: (token: Token) => void */) {
+function renderToken(token, options = {}) {
+    switch (token.typ) {
+        case 'Func':
+            return token.val + '(';
+        case 'Includes':
+            return '~=';
+        case 'Dash-match':
+            return '|=';
+        case 'Lt':
+            return '<';
+        case 'Gt':
+            return '>';
+        case 'Start-parens':
+            return '(';
+        case 'End-parens':
+            return ')';
+        case 'Attr-start':
+            return '[';
+        case 'Attr-end':
+            return ']';
+        case 'Whitespace':
+            return ' ';
+        case 'Colon':
+            return ':';
+        case 'Semi-colon':
+            return ';';
+        case 'Comma':
+            return ',';
+        case 'Important':
+            return '!important';
+        case 'Dimension':
+            return token.val + token.unit;
+        case 'Perc':
+            return token.val + '%';
+        case 'Comment':
+            if (options.removeComments) {
+                return '';
+            }
+        case 'Url-token':
+        case 'At-rule':
+        case 'Number':
+        case 'Hash':
+        case 'Pseudo-class':
+        case 'Pseudo-class-func':
+        case 'Literal':
+        case 'String':
+        case 'Iden':
+        case 'Delim':
+            return token.val;
+    }
+    throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+}
+
+function tokenize(iterator, errors, options) {
     const tokens = [];
+    const src = options.src;
     const stack = [];
     const root = {
         typ: "StyleSheet",
@@ -1139,14 +867,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
         ind: 0,
         lin: 1,
         col: 1
-    };
-    const trigger = Object.keys(events).length == 0 ? null : async function (event, node, location, context, root) {
-        // @ts-ignore
-        if (!(event in events) || (options.nodeEventFilter.length > 0 && !options.nodeEventFilter.includes(node.typ))) {
-            return;
-        }
-        // @ts-ignore
-        await Promise.all(events[event].map(callback => new Promise(resolve => resolve(callback(node, location, context, root)))));
     };
     let value;
     let buffer = '';
@@ -1287,7 +1007,7 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
             }
         }
     }
-    async function parseNode(tokens) {
+    function parseNode(tokens) {
         let i = 0;
         let loc;
         for (i = 0; i < tokens.length; i++) {
@@ -1304,9 +1024,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                 if (options.location) {
                     tokens[i].loc = loc;
                 }
-                trigger && await trigger('enter', tokens[i], loc, context, root);
-                // @ts-ignore
-                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(tokens[i].typ)) && events.enter.forEach(callback => callback(<AstNode>tokens[i], loc, context, root))
             }
             else if (tokens[i].typ != 'Whitespace') {
                 break;
@@ -1372,16 +1089,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                     token.val = `"${token.val}"`;
                     tokens[0] = token;
                 }
-                // const token: IdentToken = <IdentToken>tokens[tokens.length - 1];
-                // if (token.typ == 'Iden' && token.val == 'all') {
-                //
-                //     tokens.pop();
-                //
-                //     if (tokens[tokens.length - 1].typ == 'Whitespace') {
-                //
-                //         tokens.pop();
-                //     }
-                // }
             }
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
@@ -1392,9 +1099,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                 val: tokens.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '')
             };
             if (node.nam == 'import') {
-                if (node.val == 'all') {
-                    node.val = '';
-                }
                 if (options.processImport) {
                     // @ts-ignore
                     let fileToken = tokens[tokens[0].typ == 'Func' ? 1 : 0];
@@ -1414,10 +1118,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
             }
             // @ts-ignore
             context.chi.push(node);
-            // console.debug({before: node});
-            trigger && await trigger('enter', node, loc, context, root);
-            // @ts-ignore
-            // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
             // console.debug({after: node});
             return delim.typ == 'Block-start' ? node : null;
         }
@@ -1451,7 +1151,7 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                             acc[acc.length - 1].push(curr);
                         }
                         return acc;
-                    }, [[]]).map(part => part.map(p => renderToken(p, { removeComments: true })).join('')).sort().join(),
+                    }, [[]]).map(part => part.map(p => renderToken(p, { removeComments: true })).join('')).join(),
                     chi: []
                 };
                 loc = {
@@ -1463,9 +1163,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                 }
                 // @ts-ignore
                 context.chi.push(node);
-                trigger && await trigger('enter', node, loc, context, root);
-                // @ts-ignore
-                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
                 return node;
             }
             else {
@@ -1547,9 +1244,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                 }
                 // @ts-ignore
                 context.chi.push(node);
-                trigger && await trigger('enter', node, loc, context, root);
-                // @ts-ignore
-                // 'enter' in events && (options.nodeEventFilter.length == 0 || options.nodeEventFilter.includes(node.typ)) && events.enter.forEach(callback => callback(<AstNode>node, loc, context, root))
                 return null;
             }
         }
@@ -1608,6 +1302,14 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
         // }
+    }
+    function consumeWhiteSpace() {
+        let count = 0;
+        while (isWhiteSpace(iterator.charAt(count + ind + 1).codePointAt(0))) {
+            count++;
+        }
+        next(count);
+        return count;
     }
     function consumeString(quoteStr) {
         const quote = quoteStr;
@@ -1815,6 +1517,7 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                     tokens.pop();
                 }
                 pushToken({ typ: 'Gt' });
+                consumeWhiteSpace();
                 break;
             case ':':
             case ',':
@@ -1936,7 +1639,7 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                 pushToken(getBlockType(value));
                 let node = null;
                 if (value == '{' || value == ';') {
-                    node = await parseNode(tokens);
+                    node = parseNode(tokens);
                     if (node != null) {
                         stack.push(node);
                         // @ts-ignore
@@ -1951,7 +1654,7 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                     map.clear();
                 }
                 else if (value == '}') {
-                    node = await parseNode(tokens);
+                    node = parseNode(tokens);
                     const previousNode = stack.pop();
                     // @ts-ignore
                     context = stack[stack.length - 1] || root;
@@ -1962,14 +1665,6 @@ async function tokenize(iterator, errors, events, options, src /*, callable: (to
                     // @ts-ignore
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                         context.chi.pop();
-                    }
-                    else if (trigger && previousNode != null && 'exit' in events && previousNode != root && (options.nodeEventFilter?.length == 0 || options.nodeEventFilter?.includes(previousNode.typ))) {
-                        trigger('exit', previousNode, {
-                            src,
-                            end: { ind, lin, col: col == 0 ? 1 : col }
-                        }, context, root);
-                        // @ts-ignore
-                        // events.exit.forEach(callback => callback(<AstNode>previousNode, <Location>{src, end: {ind, lin, col: col == 0 ? 1 : col}}, context, root))
                     }
                     tokens.length = 0;
                     map.clear();
@@ -2040,78 +1735,28 @@ function getBlockType(chr) {
     throw new Error(`unhandled token: '${chr}'`);
 }
 
-class Parser {
-    #options;
-    #observer;
+function parse(css, opt = {}) {
+    const errors = [];
+    const options = {
+        src: '',
+        strict: false,
+        location: false,
+        processImport: false,
+        deduplicate: false,
+        removeEmpty: false,
+        nodeEventFilter: [],
+        ...opt
+    };
+    if (css.length == 0) {
+        // @ts-ignore
+        return null;
+    }
     // @ts-ignore
-    #root;
-    #errors = [];
-    constructor(options = {}) {
-        // @ts-ignore
-        this.#options = {
-            strict: false,
-            location: false,
-            processImport: false,
-            dedup: false,
-            removeEmpty: false,
-            nodeEventFilter: [],
-            ...options
-        };
-        this.#observer = new Observer();
+    const ast = tokenize(css, errors, options);
+    if (options.deduplicate) {
+        deduplicate(ast);
     }
-    async parse(css, src = '') {
-        this.#errors = [];
-        this.#createRoot();
-        if (css.length == 0) {
-            return this;
-        }
-        // @ts-ignore
-        this.#root = await tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
-        if (this.#options.dedup) {
-            deduplicate(this.#root);
-        }
-        return this;
-    }
-    on(name, handler, signal) {
-        this.#observer.on(name, handler, signal);
-        return this;
-    }
-    off(name, handler) {
-        this.#observer.off(name, handler);
-        return this;
-    }
-    getAst() {
-        if (this.#root == null) {
-            this.#createRoot();
-        }
-        return this.#root;
-    }
-    getErrors() {
-        return this.#errors;
-    }
-    #createRoot() {
-        this.#root = {
-            typ: "StyleSheet",
-            chi: [],
-            loc: {
-                sta: {
-                    ind: 0,
-                    lin: 1,
-                    col: 1
-                },
-                end: {
-                    ind: -1,
-                    lin: 1,
-                    col: 0
-                },
-                src: ''
-            }
-        };
-        return this;
-    }
-    toString() {
-        return render(this);
-    }
+    return { ast, errors };
 }
 function deduplicate(ast) {
     if ('chi' in ast) {
@@ -2124,6 +1769,13 @@ function deduplicate(ast) {
             node = ast.chi[i];
             // @ts-ignore
             if (node.typ == 'Comment') {
+                continue;
+            }
+            if (node.typ == 'AtRule' && node.nam == 'media' && node.val == 'all') {
+                // @ts-ignore
+                ast.chi.splice(i, 1, ...node.chi);
+                // @ts-ignore
+                i += node.chi.length;
                 continue;
             }
             // @ts-ignore
@@ -2202,18 +1854,18 @@ const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 describe('parse block', function () {
     it('parse file', async function () {
         const file = (await readFile(`${dir}/css/smalli.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
+        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
     });
     it('parse file #2', async function () {
         const file = (await readFile(`${dir}/css/small.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
+        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
     });
     it('parse file #3', async function () {
         const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
+        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
     });
     it('parse file #4', async function () {
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
+        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
     });
 });

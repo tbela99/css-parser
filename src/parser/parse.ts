@@ -2,118 +2,42 @@ import {
     AstAtRule, AstDeclaration,
     AstNode, AstRule,
     AstRuleStyleSheet,
-    AstTraverserHandler, ErrorDescription,
+    ErrorDescription,
     ParserOptions
 } from "../@types";
-import {Observer} from "@tbela99/observer";
-import {render} from "../renderer";
 import {tokenize} from "./tokenize";
 
-export class Parser {
+export function parse(css: string, opt: ParserOptions = {}): { ast: AstRuleStyleSheet; errors: ErrorDescription[] } {
 
-    #options: ParserOptions;
-    #observer: Observer;
+    const errors: ErrorDescription[] = [];
+    const options: ParserOptions = {
+        src: '',
+        strict: false,
+        location: false,
+        processImport: false,
+        deduplicate: false,
+        removeEmpty: false,
+        ...opt
+    };
+
+    if (css.length == 0) {
+
+        // @ts-ignore
+        return null;
+    }
+
     // @ts-ignore
-    #root: AstRuleStyleSheet;
-    #errors: ErrorDescription[] = [];
+    const ast: AstRuleStyleSheet = tokenize(css, errors, options);
 
-    constructor(options: ParserOptions = {}) {
+    if (options.deduplicate) {
 
-        // @ts-ignore
-        this.#options = {
-            strict: false,
-            location: false,
-            processImport: false,
-            dedup: false,
-            removeEmpty: false,
-            nodeEventFilter: [],
-            ...options
-        };
-        this.#observer = new Observer();
+        deduplicate(ast);
     }
 
-    async parse(css: string, src: string = ''): Promise<this> {
-
-        this.#errors = [];
-        this.#createRoot();
-
-        if (css.length == 0) {
-
-            return this;
-        }
-
-        // @ts-ignore
-        this.#root = await tokenize(css, this.#errors, this.#observer.getListeners('enter', 'exit'), this.#options, src);
-
-        if (this.#options.dedup) {
-
-            deduplicate(this.#root);
-        }
-
-        return this;
-    }
-
-    on(name: string, handler: AstTraverserHandler, signal?: AbortSignal): this {
-
-        this.#observer.on(name, handler, signal);
-        return this;
-    }
-
-    off(name: string, handler?: AstTraverserHandler): this {
-
-        this.#observer.off(name, handler);
-        return this;
-    }
-
-    getAst(): AstRuleStyleSheet {
-
-        if (this.#root == null) {
-
-            this.#createRoot();
-        }
-
-        return this.#root;
-    }
-
-    getErrors(): ErrorDescription[] {
-
-        return this.#errors;
-    }
-
-    #createRoot(): this {
-
-        this.#root = {
-            typ: "StyleSheet",
-            chi: [],
-            loc: {
-
-                sta: {
-
-                    ind: 0,
-                    lin: 1,
-                    col: 1
-                },
-
-                end: {
-
-                    ind: -1,
-                    lin: 1,
-                    col: 0
-                },
-                src: ''
-            }
-        }
-
-        return this;
-    }
-
-    toString(): string {
-
-        return render(this);
-    }
+    return {ast, errors};
 }
 
-function deduplicate(ast: AstNode) {
+export function deduplicate(ast: AstNode) {
 
     if ('chi' in ast) {
 
@@ -130,6 +54,15 @@ function deduplicate(ast: AstNode) {
             // @ts-ignore
             if (node.typ == 'Comment') {
 
+                continue;
+            }
+
+            if (node.typ == 'AtRule' && (<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
+
+                // @ts-ignore
+                ast.chi.splice(i, 1, ...node.chi);
+                // @ts-ignore
+                i += node.chi.length;
                 continue;
             }
 
@@ -195,7 +128,7 @@ function deduplicate(ast: AstNode) {
     return ast;
 }
 
-function deduplicateRule(ast: AstNode): AstNode {
+export function deduplicateRule(ast: AstNode): AstNode {
 
     if (!('chi' in ast) || ast.chi?.length == 0) {
 

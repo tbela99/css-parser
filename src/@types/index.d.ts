@@ -27,10 +27,10 @@ export interface ErrorDescription {
 
 export interface ParserOptions {
 
-    strict?: boolean;
+    src?: string;
     location?: boolean;
     processImport?: boolean;
-    dedup?: boolean;
+    deduplicate?: boolean;
     removeEmpty?: boolean;
     nodeEventFilter?: NodeType[]
 }

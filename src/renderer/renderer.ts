@@ -8,16 +8,10 @@ import {
     RenderOptions,
     Token
 } from "../@types";
-import {Parser} from "../parser";
 
 const indents: string[] = [];
 
-export function render(data: Parser | AstNode, options: RenderOptions = {compress: true}) {
-
-    if (data instanceof Parser) {
-
-        data = data.getAst();
-    }
+export function render(data: AstNode, options: RenderOptions = {}) {
 
     return doRender(data, Object.assign(options.compress ? {
         indent: '',
