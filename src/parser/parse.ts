@@ -12,7 +12,6 @@ export function parse(css: string, opt: ParserOptions = {}): { ast: AstRuleStyle
     const errors: ErrorDescription[] = [];
     const options: ParserOptions = {
         src: '',
-        strict: false,
         location: false,
         processImport: false,
         deduplicate: false,

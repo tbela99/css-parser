@@ -6,7 +6,8 @@ export function* walk(node: AstNode): Generator<{
     root?: AstRuleList
 }> {
 
-    yield* doWalk(node);
+    // @ts-ignore
+    yield* doWalk(node, null, null);
 }
 
 function* doWalk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<{

@@ -4,7 +4,6 @@ import {dirname} from "path";
 import {readFileSync} from "fs";
 import {AstAtRule, AstDeclaration, AstRule} from "../src/@types";
 
-
 const dir: string = dirname(new URL(import.meta.url).pathname);
 const filePath: string = `${dir}/files/css/import.css`;
 

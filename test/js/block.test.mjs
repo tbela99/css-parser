@@ -756,6 +756,22 @@ function parseDimension(name) {
     }
     return { typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index) };
 }
+function isHexColor(name) {
+    if (name.charAt(0) != '#' || ![4, 5, 7, 9].includes(name.length)) {
+        return false;
+    }
+    for (let chr of name.slice(1)) {
+        let codepoint = chr.codePointAt(0);
+        if (!isDigit(codepoint) &&
+            // A-F
+            !(codepoint >= 0x41 && codepoint <= 0x46) &&
+            // a-f
+            !(codepoint >= 0x61 && codepoint <= 0x66)) {
+            return false;
+        }
+    }
+    return true;
+}
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }
@@ -1211,11 +1227,20 @@ function tokenize(iterator, errors, options) {
                 //     return null;
                 // }
                 // console.error(name[0]);
-                if (value != null) {
-                    if (value.filter(t => t.typ != 'Whitespace' && t.typ != 'Comment').length == 0) {
-                        errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
-                        return null;
+                if (value == null) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
+                }
+                if (value.filter(t => {
+                    if (t.typ == 'Hash' && isHexColor(t.val)) {
+                        // @ts-ignore
+                        t.typ = 'Color';
+                        return true;
                     }
+                    return t.typ != 'Whitespace' && t.typ != 'Comment';
+                }).length == 0) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
                 }
                 const node = {
                     typ: 'Declaration',
@@ -1224,10 +1249,6 @@ function tokenize(iterator, errors, options) {
                     // @ts-ignore
                     val: value
                 };
-                if (node.val == null) {
-                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
-                    return null;
-                }
                 while (node.val[0]?.typ == 'Whitespace') {
                     node.val.shift();
                 }
@@ -1739,12 +1760,10 @@ function parse(css, opt = {}) {
     const errors = [];
     const options = {
         src: '',
-        strict: false,
         location: false,
         processImport: false,
         deduplicate: false,
         removeEmpty: false,
-        nodeEventFilter: [],
         ...opt
     };
     if (css.length == 0) {
@@ -1849,23 +1868,22 @@ function deduplicateRule(ast) {
     return ast;
 }
 
-// import {parseBlock} from "../../src/parser/utils/block";
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 describe('parse block', function () {
     it('parse file', async function () {
         const file = (await readFile(`${dir}/css/smalli.css`)).toString();
-        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
     });
     it('parse file #2', async function () {
         const file = (await readFile(`${dir}/css/small.css`)).toString();
-        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
     });
     it('parse file #3', async function () {
         const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
-        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
     });
     it('parse file #4', async function () {
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
-        f(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
     });
 });

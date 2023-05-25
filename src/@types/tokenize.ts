@@ -202,10 +202,16 @@ export interface ImportantToken {
     typ: 'Important';
 }
 
+export interface ColorToken {
+
+    typ: 'Color';
+    value: string;
+}
+
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
-    BadUrlToken | UrlToken | ImportantToken | EOFToken;
+    BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;

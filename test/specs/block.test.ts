@@ -1,8 +1,6 @@
-// import {parseBlock} from "../../src/parser/utils/block";
 import {expect} from "@esm-bundle/chai";
 import {readFile} from "fs/promises";
 import {parse} from "../../src";
-// import {find} from "../../src/parser/utils";
 import {dirname} from "path";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
@@ -37,27 +35,27 @@ describe('parse block', function () {
 
         const file = (await readFile(`${dir}/css/smalli.css`)).toString();
 
-        expect(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()))
+        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()))
     });
 
     it('parse file #2', async function () {
 
         const file = (await readFile(`${dir}/css/small.css`)).toString();
 
-        expect(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()))
+        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()))
     });
 
     it('parse file #3', async function () {
 
         const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
 
-        expect(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()))
+        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()))
     });
 
     it('parse file #4', async function () {
 
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
 
-        expect(parse(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()))
+        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()))
     });
 });

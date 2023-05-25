@@ -1,5 +1,5 @@
 import {
-    isAtKeyword, isDimension, isFunction, isHash,
+    isAtKeyword, isDimension, isFunction, isHash, isHexColor,
     isIdent, isNewLine, isNumber, isPercentage,
     isPseudo, isWhiteSpace, parseDimension, update as updatePosition
 } from "./utils";
@@ -538,13 +538,27 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                 // console.error(name[0]);
 
-                if (value != null) {
 
-                    if (value.filter(t => t.typ != 'Whitespace' && t.typ != 'Comment').length == 0) {
+                if (value == null) {
 
-                        errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                        return null;
+                    errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                    return null;
+                }
+
+                if (value.filter(t => {
+
+                    if (t.typ == 'Hash' && isHexColor(t.val)) {
+
+                        // @ts-ignore
+                        t.typ = 'Color';
+                        return true;
                     }
+
+                    return t.typ != 'Whitespace' && t.typ != 'Comment'
+                }).length == 0) {
+
+                    errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                    return null;
                 }
 
                 const node: AstDeclaration = {
@@ -554,12 +568,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     nam: renderToken(name.shift(), {removeComments: true}),
                     // @ts-ignore
                     val: value
-                }
-
-                if (node.val == null) {
-
-                    errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                    return null;
                 }
 
                 while (node.val[0]?.typ == 'Whitespace') {
