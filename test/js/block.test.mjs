@@ -2,149 +2,6 @@
 import { readFile } from 'fs/promises';
 import { dirname } from 'path';
 
-/**
- * find the position of chr
- * @param css
- * @param start
- * @param chr
- */
-function find(css, start, chr) {
-    let char;
-    let position = start - 1;
-    let k;
-    const j = css.length - 1;
-    while (position++ < j) {
-        char = css.charAt(position);
-        if (char === '') {
-            return null;
-        }
-        if (char == '\\') {
-            position++;
-        }
-        else if (char == '"' || char == "'") {
-            // match quoted string
-            const match = char;
-            k = position;
-            while (k++ < j) {
-                char = css.charAt(k);
-                if (char === '') {
-                    return null;
-                }
-                if (char == '\\') {
-                    k++;
-                }
-                else if (char == match) {
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (css.charAt(position) == '/' && css.charAt(position + 1) == '*') {
-            k = position + 1;
-            while (k++ < j) {
-                char = css.charAt(k);
-                if (char === '') {
-                    return null;
-                }
-                if (char == '\\') {
-                    k++;
-                }
-                else if (char == '*' && css.charAt(k + 1) == '/') {
-                    k++;
-                    break;
-                }
-            }
-            position = k;
-        }
-        else if (chr.includes(char)) {
-            return position;
-        }
-    }
-    return null;
-}
-
-function match_pair(css, index, open, close) {
-    const str = Array.isArray(css) ? css : [...css];
-    let count = 1;
-    let currentIndex = index;
-    let j = str.length;
-    while (currentIndex++ < j) {
-        if (str[currentIndex] == '\\') {
-            currentIndex++;
-            continue;
-        }
-        if (open != str[currentIndex] && close != str[currentIndex] && '"\''.includes(str[currentIndex])) {
-            let end = currentIndex;
-            while (end++ < j) {
-                if (str[end] == '\\') ;
-                else if (str[end] == str[currentIndex]) {
-                    break;
-                }
-            }
-            currentIndex = end;
-            continue;
-        }
-        if (str[currentIndex] == close) {
-            count--;
-            if (count == 0) {
-                return currentIndex;
-            }
-        }
-        else if (str[currentIndex] == open) {
-            count++;
-        }
-    }
-    return null;
-}
-
-function parseBlock(str, startIndex, matchIndex = null) {
-    let endPos = Number.isInteger(matchIndex) ? matchIndex : find(str, startIndex, ';}{');
-    let endBody = null;
-    if (endPos != null) {
-        if (str.charAt(endPos) == '{') {
-            endBody = match_pair(str, endPos, '{', '}');
-        }
-        else {
-            const match = str.slice(startIndex, endPos);
-            const type = match[0] == '@' ? 'AtRule' : 'Declaration';
-            // @ts-ignore
-            const [name, value] = type == 'AtRule' ? parseAtRule(match) : parseDeclaration(match);
-            return {
-                type,
-                name,
-                value,
-                body: match,
-                block: match + str.charAt(endPos)
-            };
-        }
-    }
-    // @ts-ignore
-    const selector = str.slice(startIndex, matchIndex == null ? endPos : matchIndex);
-    return {
-        type: selector[0] == '@' ? 'AtRule' : 'Rule',
-        selector,
-        body: endBody == null ? str.slice(startIndex + selector.length + 1) : str.slice(startIndex + selector.length + 1, endBody),
-        block: endPos == null || endBody == null ? str.slice(startIndex) : str.slice(startIndex, endBody + 1)
-    };
-}
-function parseAtRule(block) {
-    const match = block.trimStart().match(/^@(\S+)(\s*(.*?))?\s*([;{}]|$)/sm);
-    if (match) {
-        return [match[1].trim(), match[3].trim()];
-    }
-    return [];
-}
-function parseDeclaration(str) {
-    const index = find(str, 0, ':');
-    if (index == null) {
-        return [];
-    }
-    return [
-        str.slice(0, index).trim(),
-        str.slice(index + 1).trim()
-    ];
-}
-
 var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{};function t(e){throw new Error('Could not dynamically require "'+e+'". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.')}var o=function(){function e(n,o,r){function i(a,c){if(!o[a]){if(!n[a]){if(!c&&t)return t(a);if(s)return s(a,!0);var u=new Error("Cannot find module '"+a+"'");throw u.code="MODULE_NOT_FOUND",u}var f=o[a]={exports:{}};n[a][0].call(f.exports,(function(e){return i(n[a][1][e]||e)}),f,f.exports,e,n,o,r);}return o[a].exports}for(var s=t,a=0;a<r.length;a++)i(r[a]);return i}return e}()({1:[function(e,t,n){t.exports=e("./lib/chai");},{"./lib/chai":2}],2:[function(e,t,n){
 /*!
  * chai
@@ -715,704 +572,1318 @@ var o=e("type-detect");function r(){this._key="chai/deep-eql__"+Math.random()+Da
  * @return {Boolean} result
  */function O(e){return null===e||"object"!=typeof e}t.exports=c,t.exports.MemoizeMap=i;},{"type-detect":39}],37:[function(e,t,n){var o=Function.prototype.toString,r=/\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\s\(\/]+)/;function i(e){if("function"!=typeof e)return null;var t="";if(void 0===Function.prototype.name&&void 0===e.name){var n=o.call(e).match(r);n&&(t=n[1]);}else t=e.name;return t}t.exports=i;},{}],38:[function(e,t,n){function o(e,t){return null!=e&&t in Object(e)}function r(e){return e.replace(/([^\\])\[/g,"$1.[").match(/(\\\.|[^.]+?)+/g).map((function(e){if("constructor"===e||"__proto__"===e||"prototype"===e)return {};var t=/^\[(\d+)\]$/.exec(e);return t?{i:parseFloat(t[1])}:{p:e.replace(/\\([.[\]])/g,"$1")}}))}function i(e,t,n){var o=e,r=null;n=void 0===n?t.length:n;for(var i=0;i<n;i++){var s=t[i];o&&(o=void 0===s.p?o[s.i]:o[s.p],i===n-1&&(r=o));}return r}function s(e,t,n){for(var o=e,r=n.length,i=null,s=0;s<r;s++){var a=null,c=null;if(i=n[s],s===r-1)o[a=void 0===i.p?i.i:i.p]=t;else if(void 0!==i.p&&o[i.p])o=o[i.p];else if(void 0!==i.i&&o[i.i])o=o[i.i];else {var u=n[s+1];a=void 0===i.p?i.i:i.p,c=void 0===u.p?[]:{},o[a]=c,o=o[a];}}}function a(e,t){var n=r(t),s=n[n.length-1],a={parent:n.length>1?i(e,n,n.length-1):e,name:s.p||s.i,value:i(e,n)};return a.exists=o(a.parent,a.name),a}function c(e,t){return a(e,t).value}function u(e,t,n){return s(e,n,r(t)),e}t.exports={hasProperty:o,getPathInfo:a,getPathValue:c,setPathValue:u};},{}],39:[function(t,n,o){!function(e,t){"object"==typeof o&&void 0!==n?n.exports=t():e.typeDetect=t();}(this,(function(){var t="function"==typeof Promise,n="object"==typeof self?self:e,o="undefined"!=typeof Symbol,r="undefined"!=typeof Map,i="undefined"!=typeof Set,s="undefined"!=typeof WeakMap,a="undefined"!=typeof WeakSet,c="undefined"!=typeof DataView,u=o&&void 0!==Symbol.iterator,f=o&&void 0!==Symbol.toStringTag,p=i&&"function"==typeof Set.prototype.entries,l=r&&"function"==typeof Map.prototype.entries,h=p&&Object.getPrototypeOf((new Set).entries()),d=l&&Object.getPrototypeOf((new Map).entries()),y=u&&"function"==typeof Array.prototype[Symbol.iterator],b=y&&Object.getPrototypeOf([][Symbol.iterator]()),g=u&&"function"==typeof String.prototype[Symbol.iterator],w=g&&Object.getPrototypeOf(""[Symbol.iterator]()),m=8,v=-1;function x(e){var o=typeof e;if("object"!==o)return o;if(null===e)return "null";if(e===n)return "global";if(Array.isArray(e)&&(!1===f||!(Symbol.toStringTag in e)))return "Array";if("object"==typeof window&&null!==window){if("object"==typeof window.location&&e===window.location)return "Location";if("object"==typeof window.document&&e===window.document)return "Document";if("object"==typeof window.navigator){if("object"==typeof window.navigator.mimeTypes&&e===window.navigator.mimeTypes)return "MimeTypeArray";if("object"==typeof window.navigator.plugins&&e===window.navigator.plugins)return "PluginArray"}if(("function"==typeof window.HTMLElement||"object"==typeof window.HTMLElement)&&e instanceof window.HTMLElement){if("BLOCKQUOTE"===e.tagName)return "HTMLQuoteElement";if("TD"===e.tagName)return "HTMLTableDataCellElement";if("TH"===e.tagName)return "HTMLTableHeaderCellElement"}}var u=f&&e[Symbol.toStringTag];if("string"==typeof u)return u;var p=Object.getPrototypeOf(e);return p===RegExp.prototype?"RegExp":p===Date.prototype?"Date":t&&p===Promise.prototype?"Promise":i&&p===Set.prototype?"Set":r&&p===Map.prototype?"Map":a&&p===WeakSet.prototype?"WeakSet":s&&p===WeakMap.prototype?"WeakMap":c&&p===DataView.prototype?"DataView":r&&p===d?"Map Iterator":i&&p===h?"Set Iterator":y&&p===b?"Array Iterator":g&&p===w?"String Iterator":null===p?"Object":Object.prototype.toString.call(e).slice(m,v)}return x}));},{}]},{},[1])(1);o.version;o.AssertionError;o.use;o.util;o.config;o.Assertion;var f=o.expect;o.should;o.Should;o.assert;
 
-function parse_comment(str, index) {
-    let currentIndex = index;
-    if (str[currentIndex] != '/' || str[++currentIndex] != '*') {
-        return null;
-    }
-    while (currentIndex++ < str.length) {
-        if (str.charAt(currentIndex) == '*' && str.charAt(currentIndex + 1) == '/') {
-            return currentIndex + 1;
-        }
-    }
-    return null;
-}
-
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
-const nonascii = `[^\u{0}-\u{0ed}]`;
-const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
-const escape = `${unicode}|\\[^\n\r\f0-9a-f]`;
-const nmstart = `[_a-z]|${nonascii}|${escape}`;
-const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`;
-const ident = `[-]{0,2}${nmstart}${nmchar}*`;
+// export const num = `(((\\+|-)?(?=\\d*[.eE])([0-9]+\\.?[0-9]*|\\.[0-9]+)([eE](\\+|-)?[0-9]+)?)|(\\d+|(\\d*\\.\\d+)))`;
+// export const nl = `\n|\r\n|\r|\f`;
+// export const nonascii = `[^\u{0}-\u{0ed}]`;
+// export const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
+// export const escape = `(${unicode})|(\\[^\n\r\f0-9a-f])`;
+// export const nmstart = `[_a-z]|${nonascii}|${escape}`;
+// export const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`
+// export const ident = `[-]{0,2}(${nmstart})(${nmchar})*`;
+// export const string1 	= `\"([^\n\r\f\\"]|\\${nl}|${escape})*\"`;
+// export const string2 =	`\'([^\n\r\f\\']|\\${nl}|${escape})*\'`;
+// export const string =	`(${string1})|(${string2})`;
+//
+// const name = `${nmchar}+`;
+// const hash = `#${name}`;
+// '\\'
+const REVERSE_SOLIDUS = 0x5c;
+function isLetter(codepoint) {
+    // lowercase
+    return (codepoint >= 0x61 && codepoint <= 0x7a) ||
+        // uppercase
+        (codepoint >= 0x41 && codepoint <= 0x5a);
+}
+function isNonAscii(codepoint) {
+    return codepoint >= 0x80;
+}
+function isIdentStart(codepoint) {
+    // _
+    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint);
+}
+function isDigit(codepoint) {
+    return codepoint >= 0x30 && codepoint <= 0x39;
+}
+function isIdentCodepoint(codepoint) {
+    // -
+    return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
+}
 function isIdent(name) {
-    if (Array.isArray(name)) {
-        name = name.join('');
+    const j = name.length - 1;
+    let i = 0;
+    let codepoint = name.codePointAt(0);
+    // -
+    if (codepoint == 0x2d) {
+        const nextCodepoint = name.codePointAt(1);
+        if (nextCodepoint == null) {
+            return false;
+        }
+        // -
+        if (nextCodepoint == 0x2d) {
+            return true;
+        }
+        if (nextCodepoint == REVERSE_SOLIDUS) {
+            return name.length > 2 && !isNewLine(name.codePointAt(2));
+        }
+        return true;
     }
-    return name != null && new RegExp(`^${ident}$`).test(name);
+    if (!isIdentStart(codepoint)) {
+        return false;
+    }
+    while (i < j) {
+        i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+        codepoint = name.codePointAt(i);
+        if (!isIdentCodepoint(codepoint)) {
+            return false;
+        }
+    }
+    return true;
 }
-function isNewLine(str) {
-    return str == '\n' || str == '\r\n' || str == '\r' || str == '\f';
+function isPseudo(name) {
+    if (name.charAt(0) != ':') {
+        return false;
+    }
+    if (name.endsWith('(')) {
+        return isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1));
+    }
+    return isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1));
 }
-function isWhiteSpace(str) {
-    return /^\s$/sm.test(str);
+function isHash(name) {
+    if (name.charAt(0) != '#') {
+        return false;
+    }
+    if (isIdent(name.charAt(1))) {
+        return true;
+    }
+    return true;
+}
+function isNumber(name) {
+    if (name.length == 0) {
+        return false;
+    }
+    let codepoint = name.codePointAt(0);
+    let i = 0;
+    const j = name.length;
+    // '+' '-'
+    if ([0x2b, 0x2d].includes(codepoint)) {
+        i++;
+    }
+    // consume digits
+    while (i < j) {
+        codepoint = name.codePointAt(i);
+        if (isDigit(codepoint)) {
+            i++;
+            continue;
+        }
+        // '.' 'E' 'e'
+        if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
+            break;
+        }
+        return false;
+    }
+    // '.'
+    if (codepoint == 0x2e) {
+        if (!isDigit(name.codePointAt(++i))) {
+            return false;
+        }
+    }
+    while (++i < j) {
+        codepoint = name.codePointAt(i);
+        if (isDigit(codepoint)) {
+            continue;
+        }
+        // 'E' 'e'
+        if (codepoint == 0x45 || codepoint == 0x65) {
+            break;
+        }
+        return false;
+    }
+    // 'E' 'e'
+    if (codepoint == 0x45 || codepoint == 0x65) {
+        if (i == j) {
+            return false;
+        }
+        codepoint = name.codePointAt(i + 1);
+        // '+' '-'
+        if ([0x2b, 0x2d].includes(codepoint)) {
+            i++;
+        }
+        codepoint = name.codePointAt(i + 1);
+        if (!isDigit(codepoint)) {
+            return false;
+        }
+    }
+    while (++i < j) {
+        codepoint = name.codePointAt(i);
+        if (!isDigit(codepoint)) {
+            return false;
+        }
+    }
+    return true;
+}
+function isDimension(name) {
+    let index = 0;
+    while (index++ < name.length) {
+        if (isDigit(name.codePointAt(name.length - index))) {
+            index--;
+            break;
+        }
+        if (index == 3) {
+            break;
+        }
+    }
+    if (index == 0 || index > 3) {
+        return false;
+    }
+    const number = name.slice(0, -index);
+    return number.length > 0 && isIdentStart(name.codePointAt(name.length - index)) && isNumber(number);
+}
+function isPercentage(name) {
+    return name.endsWith('%') && isNumber(name.slice(0, -1));
+}
+function parseDimension(name) {
+    let index = 0;
+    while (index++ < name.length) {
+        if (isDigit(name.codePointAt(name.length - index))) {
+            index--;
+            break;
+        }
+        if (index == 3) {
+            break;
+        }
+    }
+    return { typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index) };
+}
+function isHexColor(name) {
+    if (name.charAt(0) != '#' || ![4, 5, 7, 9].includes(name.length)) {
+        return false;
+    }
+    for (let chr of name.slice(1)) {
+        let codepoint = chr.codePointAt(0);
+        if (!isDigit(codepoint) &&
+            // A-F
+            !(codepoint >= 0x41 && codepoint <= 0x46) &&
+            // a-f
+            !(codepoint >= 0x61 && codepoint <= 0x66)) {
+            return false;
+        }
+    }
+    return true;
+}
+function isFunction(name) {
+    return name.endsWith('(') && isIdent(name.slice(0, -1));
+}
+function isAtKeyword(name) {
+    return name.codePointAt(0) == 0x40 && isIdent(name.slice(1));
+}
+function isNewLine(codepoint) {
+    // \n \r \f
+    return codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
+}
+function isWhiteSpace(codepoint) {
+    return codepoint == 0x9 || codepoint == 0x20 || isNewLine(codepoint);
 }
 
 function update(location, css) {
-    if (css.length == 0) {
+    if (css === '') {
         return location;
     }
-    let chr;
-    let i = -1;
+    let i = 0;
+    let codepoint;
+    let offset;
     const j = css.length - 1;
-    while (++i <= j) {
-        chr = css.charAt(i);
-        if (chr === '') {
-            break;
-        }
-        if (isNewLine(chr)) {
-            location.line++;
-            location.column = 0;
-            if (chr == '\r' && css.charAt(i + 1) == '\n') {
-                i++;
-                location.index++;
+    if (location.lin == 0) {
+        location.lin = 1;
+    }
+    while (i <= j) {
+        codepoint = css.codePointAt(i);
+        offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+        if (isNewLine(codepoint)) {
+            location.lin++;
+            location.col = 0;
+            // \r\n
+            if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
+                offset++;
+                location.ind++;
             }
         }
         else {
-            location.column++;
+            location.col++;
         }
-        location.index++;
+        location.ind++;
+        i += offset;
     }
     return location;
 }
 
-class Tokenizer {
-    #root;
-    constructor(root) {
-        this.#root = root;
+function renderToken(token, options = {}) {
+    switch (token.typ) {
+        case 'Func':
+            return token.val + '(';
+        case 'Includes':
+            return '~=';
+        case 'Dash-match':
+            return '|=';
+        case 'Lt':
+            return '<';
+        case 'Gt':
+            return '>';
+        case 'Start-parens':
+            return '(';
+        case 'End-parens':
+            return ')';
+        case 'Attr-start':
+            return '[';
+        case 'Attr-end':
+            return ']';
+        case 'Whitespace':
+            return ' ';
+        case 'Colon':
+            return ':';
+        case 'Semi-colon':
+            return ';';
+        case 'Comma':
+            return ',';
+        case 'Important':
+            return '!important';
+        case 'Dimension':
+            return token.val + token.unit;
+        case 'Perc':
+            return token.val + '%';
+        case 'Comment':
+            if (options.removeComments) {
+                return '';
+            }
+        case 'Url-token':
+        case 'At-rule':
+        case 'Number':
+        case 'Hash':
+        case 'Pseudo-class':
+        case 'Pseudo-class-func':
+        case 'Literal':
+        case 'String':
+        case 'Iden':
+        case 'Delim':
+            return token.val;
     }
-    *parse(str) {
-        if (str === '') {
-            return;
+    throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+}
+
+function tokenize(iterator, errors, options) {
+    const tokens = [];
+    const src = options.src;
+    const stack = [];
+    const root = {
+        typ: "StyleSheet",
+        chi: []
+    };
+    const position = {
+        ind: 0,
+        lin: 1,
+        col: 1
+    };
+    let value;
+    let buffer = '';
+    let ind = -1;
+    let lin = 1;
+    let col = 0;
+    let total = iterator.length;
+    let map = new Map;
+    let context = root;
+    if (options.location) {
+        root.loc = {
+            sta: {
+                ind: 0,
+                lin: 1,
+                col: 1
+            },
+            end: {
+                ind: -1,
+                lin: 1,
+                col: 0
+            },
+            src: ''
+        };
+    }
+    function getType(val) {
+        if (val === '') {
+            throw new Error('empty string?');
         }
-        let value;
-        let node;
-        let index;
-        let info;
-        this.#root.location.src || '';
-        let i = 0;
+        if (val == ':') {
+            return { typ: 'Colon' };
+        }
+        if (val == '=') {
+            return { typ: 'Delim', val };
+        }
+        if (val == ';') {
+            return { typ: 'Semi-colon' };
+        }
+        if (val == ',') {
+            return { typ: 'Comma' };
+        }
+        if (val == '<') {
+            return { typ: 'Lt' };
+        }
+        if (val == '>') {
+            return { typ: 'Gt' };
+        }
+        if (isPseudo(val)) {
+            return {
+                typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
+                val
+                // buffer: buffer.slice()
+            };
+        }
+        if (isAtKeyword(val)) {
+            return {
+                typ: 'At-rule',
+                val: val.slice(1)
+                // buffer: buffer.slice()
+            };
+        }
+        if (isFunction(val)) {
+            return {
+                typ: 'Func',
+                val: val.slice(0, -1)
+            };
+        }
+        if (isNumber(val)) {
+            return {
+                typ: 'Number',
+                val
+            };
+        }
+        if (isDimension(val)) {
+            return parseDimension(val);
+        }
+        if (isPercentage(val)) {
+            return {
+                typ: 'Perc',
+                val: val.slice(0, -1)
+            };
+        }
+        if (isIdent(val)) {
+            return {
+                typ: 'Iden',
+                val
+            };
+        }
+        if (val.charAt(0) == '#' && isHash(val)) {
+            return {
+                typ: 'Hash',
+                val
+            };
+        }
+        if ('"\''.includes(val.charAt(0))) {
+            return {
+                typ: 'Unclosed-string',
+                val
+            };
+        }
+        return {
+            typ: 'Literal',
+            val
+        };
+    }
+    // consume and throw away
+    function consume(open, close) {
+        let count = 1;
         let chr;
-        // const css: string[] = Array.isArray(str) ? <string[]>str : [...str];
-        const j = str.length - 1;
-        const position = this.#root.location.end;
-        while (i <= j) {
-            chr = str.charAt(i);
-            if (chr === '') {
-                break;
-            }
-            if (isWhiteSpace(chr)) {
-                let whitespace = '';
-                do {
-                    whitespace += chr;
-                    chr = str.charAt(++i);
-                } while (i <= j && isWhiteSpace(chr));
-                update(position, whitespace);
-            }
-            if (i > j) {
-                break;
-            }
-            // parse comment
-            if (chr == '/' && str.charAt(i + 1) == '*') {
-                index = parse_comment(str, i);
-                if (index == null) {
-                    value = str.slice(i);
-                    node = {
-                        location: {
-                            start: update({ ...position }, value.charAt(0)),
-                            end: { ...update(position, value) }
-                        },
-                        type: 'InvalidComment',
-                        value: value
-                    };
-                    Object.assign(position, node.location.end);
-                    yield { node, direction: 'enter' };
+        while (true) {
+            chr = next();
+            if (chr == '\\') {
+                if (next() === '') {
                     break;
                 }
-                value = str.slice(i, index + 1);
-                node = {
-                    location: {
-                        start: update({ ...position }, value.charAt(0)),
-                        end: { ...update({ ...position }, value) }
-                    },
-                    type: 'Comment',
-                    value: value
-                };
-                Object.assign(position, node.location.end);
-                yield { node, direction: 'enter' };
-                i += value.length;
                 continue;
             }
-            else {
-                index = find(str, i + 1, ';{}');
-                // console.log({index})
-                if (index == null) {
-                    console.debug({ 'i+1': i + 1, index, str: str.slice(i, i + 15) });
-                    value = str.slice(i);
-                    console.log(`Declaration or AtRule block? - "${value}`);
-                    update(position, value);
-                    break;
-                }
-                else if (str.charAt(index) == '{') {
-                    // parse block
-                    info = parseBlock(str, i, index);
-                    // console.log({info: Object.entries(info).reduce((acc, entry) => {
-                    //
-                    //         acc[entry[0]] = Array.isArray(entry[1]) ? entry[1].join('') : entry[1];
-                    //
-                    //         return acc;
-                    //     }, {})});
-                    if (info.type == 'AtRule') {
-                        yield* this.#parseAtRule(position, info);
+            else if (chr == '/' && peek() == '*') {
+                next();
+                while (true) {
+                    chr = next();
+                    if (chr === '') {
+                        break;
                     }
-                    else {
-                        yield* this.#parseRule(position, info);
+                    if (chr == '*' && peek() == '/') {
+                        next();
+                        break;
                     }
-                }
-                else {
-                    const match = str.slice(i, index + 1);
-                    info = parseBlock(str, i, index);
-                    if (match[0] == '@') {
-                        yield* this.#parseAtRule(position, info);
-                    }
-                    else {
-                        yield* this.#parseDeclaration(position, info);
-                    }
-                }
-                i += info.block.length;
-                if (j <= info.block.length) {
-                    break;
                 }
             }
-        }
-        //
-        if (this.#root.type == 'StyleSheet' && position.column == 0) {
-            position.column = 1;
+            else if (chr == close) {
+                count--;
+            }
+            else if (chr == open) {
+                count++;
+            }
+            if (chr === '' || count == 0) {
+                break;
+            }
         }
     }
-    *#parseAtRule(position, info) {
-        let node;
-        // @ts-ignore
-        const { body, selector, block, type } = info;
-        if (!('selector' in info)) {
-            const { name, value } = info;
-            node = {
-                location: {
-                    start: update({ ...position }, name[0]),
-                    end: update({ ...position }, block)
-                },
-                type,
-                value,
-                name
-            };
-            if (node.location.end.column == 0) {
-                node.location.end.column = 1;
+    function parseNode(tokens) {
+        let i = 0;
+        let loc;
+        for (i = 0; i < tokens.length; i++) {
+            if (tokens[i].typ == 'Comment') {
+                // @ts-ignore
+                context.chi.push(tokens[i]);
+                const position = map.get(tokens[i]);
+                loc = {
+                    sta: position,
+                    // @ts-ignore
+                    end: update({ ...position }, tokens[i].val),
+                    src
+                };
+                if (options.location) {
+                    tokens[i].loc = loc;
+                }
             }
-            yield { node, direction: 'enter' };
-            return;
+            else if (tokens[i].typ != 'Whitespace') {
+                break;
+            }
+        }
+        tokens = tokens.slice(i);
+        const delim = tokens.pop();
+        while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
+            tokens.pop();
+        }
+        if (tokens.length == 0) {
+            return null;
+        }
+        if (tokens[0]?.typ == 'At-rule') {
+            const atRule = tokens.shift();
+            const position = map.get(atRule);
+            if (atRule.val == 'charset' && position.ind > 0) {
+                // console.debug({position, atRule});
+                errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
+                return null;
+            }
+            while (['Whitespace'].includes(tokens[0]?.typ)) {
+                tokens.shift();
+            }
+            if (atRule.val == 'import') {
+                // only @charset and @layer are accepted before @import
+                if (context.chi.length > 0) {
+                    let i = context.chi.length;
+                    while (i--) {
+                        const type = context.chi[i].typ;
+                        if (type == 'Comment') {
+                            continue;
+                        }
+                        if (type != 'AtRule') {
+                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            return null;
+                        }
+                        const name = context.chi[i].nam;
+                        if (name != 'charset' && name != 'import' && name != 'layer') {
+                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            return null;
+                        }
+                        break;
+                    }
+                }
+                // @ts-ignore
+                if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'Func') {
+                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    return null;
+                }
+                // @ts-ignore
+                if (tokens[0].typ == 'Func' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
+                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    return null;
+                }
+            }
+            if (atRule.val == 'import') {
+                // @ts-ignore
+                if (tokens[0].typ == 'Func' && tokens[1].typ == 'Url-token') {
+                    tokens.shift();
+                    const token = tokens.shift();
+                    token.typ = 'String';
+                    token.val = `"${token.val}"`;
+                    tokens[0] = token;
+                }
+            }
+            // https://www.w3.org/TR/css-nesting-1/#conditionals
+            // allowed nesting at-rules
+            // there must be a top level rule in the stack
+            const node = {
+                typ: 'AtRule',
+                nam: renderToken(atRule, { removeComments: true }),
+                val: tokens.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '')
+            };
+            if (node.nam == 'import') {
+                if (options.processImport) {
+                    // @ts-ignore
+                    let fileToken = tokens[tokens[0].typ == 'Func' ? 1 : 0];
+                    let file = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
+                    if (!file.startsWith('data:')) ;
+                }
+            }
+            if (delim.typ == 'Block-start') {
+                node.chi = [];
+            }
+            loc = {
+                sta: position,
+                src
+            };
+            if (options.location) {
+                node.loc = loc;
+            }
+            // @ts-ignore
+            context.chi.push(node);
+            // console.debug({after: node});
+            return delim.typ == 'Block-start' ? node : null;
         }
         else {
-            const [name, value] = parseAtRule(selector);
-            if (!isIdent(name)) {
-                node = (body == null ? {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'InvalidAtRule',
-                    value,
-                    name
-                } : {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, block)
-                    },
-                    type: 'InvalidAtRule',
-                    value: value,
-                    name,
-                    body
-                });
-                Object.assign(position, node.location.end);
-                if (node.location.end.column == 0) {
-                    node.location.end.column = 1;
+            // rule
+            if (delim.typ == 'Block-start') {
+                let inAttr = 0;
+                const position = map.get(tokens[0]);
+                if (context.typ == 'Rule') {
+                    if (tokens[0]?.typ == 'Iden') {
+                        errors.push({ action: 'drop', message: 'invalid nesting rule', location: { src, ...position } });
+                        return null;
+                    }
                 }
-                yield { node, direction: 'enter' };
-                return;
+                const node = {
+                    typ: 'Rule',
+                    sel: tokens.reduce((acc, curr) => {
+                        if (acc[acc.length - 1].length == 0 && curr.typ == 'Whitespace') {
+                            return acc;
+                        }
+                        if (curr.typ == 'Attr-start') {
+                            inAttr++;
+                        }
+                        else if (curr.typ == 'Attr-end') {
+                            inAttr--;
+                        }
+                        if (inAttr == 0 && curr.typ == "Comma") {
+                            acc.push([]);
+                        }
+                        else {
+                            acc[acc.length - 1].push(curr);
+                        }
+                        return acc;
+                    }, [[]]).map(part => part.map(p => renderToken(p, { removeComments: true })).join('')).join(),
+                    chi: []
+                };
+                loc = {
+                    sta: position,
+                    src
+                };
+                if (options.location) {
+                    node.loc = loc;
+                }
+                // @ts-ignore
+                context.chi.push(node);
+                return node;
             }
             else {
+                // declaration
                 // @ts-ignore
-                const { type } = info;
-                node = body == null ? {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, block)
-                    },
-                    type,
-                    value: value,
-                    name
-                } : {
-                    location: {
-                        start: update({ ...position }, name[0]),
-                        end: update({ ...position }, selector.concat('{'))
-                    },
-                    type,
-                    value,
-                    name,
-                    children: []
+                let name = null;
+                // @ts-ignore
+                let value = null;
+                for (let i = 0; i < tokens.length; i++) {
+                    if (tokens[i].typ == 'Comment') {
+                        continue;
+                    }
+                    if (tokens[i].typ == 'Colon') {
+                        name = tokens.slice(0, i);
+                        value = tokens.slice(i + 1);
+                    }
+                    else if (['Func', 'Pseudo-class'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
+                        tokens[i].val = tokens[i].val.slice(1);
+                        if (tokens[i].typ == 'Pseudo-class') {
+                            tokens[i].typ = 'Iden';
+                        }
+                        name = tokens.slice(0, i);
+                        value = tokens.slice(i);
+                    }
+                }
+                if (name == null) {
+                    name = tokens;
+                }
+                const position = map.get(name[0]);
+                // const rawName: string = (<IdentToken>name.shift())?.val;
+                if (name.length > 0) {
+                    for (let i = 1; i < name.length; i++) {
+                        if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid declaration',
+                                location: { src, ...position }
+                            });
+                            return null;
+                        }
+                    }
+                }
+                // if (name.length == 0) {
+                //
+                //     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
+                //     return null;
+                // }
+                // console.error(name[0]);
+                if (value == null) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
+                }
+                if (value.filter(t => {
+                    if (t.typ == 'Hash' && isHexColor(t.val)) {
+                        // @ts-ignore
+                        t.typ = 'Color';
+                        return true;
+                    }
+                    return t.typ != 'Whitespace' && t.typ != 'Comment';
+                }).length == 0) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
+                }
+                const node = {
+                    typ: 'Declaration',
+                    // @ts-ignore
+                    nam: renderToken(name.shift(), { removeComments: true }),
+                    // @ts-ignore
+                    val: value
                 };
-                yield { node, direction: 'enter' };
-                // node.location.end = pos;
-                if (body.length > 0) {
-                    // @ts-ignore
-                    const tokenizer = new Tokenizer(node);
-                    // @ts-ignore
-                    yield* tokenizer.parse(body);
+                while (node.val[0]?.typ == 'Whitespace') {
+                    node.val.shift();
                 }
-            }
-        }
-        const str = block.slice(selector.length + 1 + (body != null ? body.length : 0));
-        if (str.length > 0) {
-            update(node.location.end, str);
-        }
-        Object.assign(position, node.location.end);
-        if (node.location.end.column == 0) {
-            node.location.end.column = 1;
-        }
-        if ('children' in node) {
-            yield { node, direction: 'exit' };
-        }
-    }
-    *#parseRule(position, info) {
-        let node;
-        // @ts-ignore
-        const { body, selector, block } = info;
-        // @ts-ignore
-        node = {
-            location: {
-                start: update({ ...position }, selector[0]),
-                end: update({ ...position }, selector.concat('{'))
-            },
-            type: 'Rule',
-            selector: selector.trimEnd(),
-            children: []
-        };
-        // @ts-ignore
-        yield { node, direction: 'enter' };
-        if (body != null) {
-            // @ts-ignore
-            const tokenizer = new Tokenizer(node);
-            // @ts-ignore
-            yield* tokenizer.parse(body);
-        }
-        const str = block.slice(selector.length + 1 + (body != null ? body.length : 0));
-        if (str.length > 0) {
-            update(node.location.end, str);
-        }
-        Object.assign(position, node.location.end);
-        if (node.location.end.column == 0) {
-            node.location.end.column = 1;
-        }
-        if ('children' in node) {
-            yield { node, direction: 'exit' };
-        }
-    }
-    *#parseDeclaration(position, info) {
-        // @ts-ignore
-        // const [name, value] = parseDeclaration(info.body);
-        // console.debug({info, name, value});
-        const { name, value } = info;
-        const node = {
-            type: 'Declaration',
-            location: {
-                start: update({ ...position }, name.charAt(0)),
-                end: update({ ...position }, info.body),
-                // src
-            },
-            name,
-            value
-        };
-        Object.assign(position, node.location.end);
-        const str = info.block.slice(info.body.length);
-        if (str.length > 0) {
-            update(position, str);
-        }
-        yield { node, direction: 'enter' };
-    }
-}
-
-/**
- * a handler that is executed only once
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:once', () => console.log('click'));
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // nothing ...
- *
- */
-function once(name, handler, params, observer) {
-    return function (...args) {
-        handler(...args);
-        observer.off(name, handler);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:times(3)', () => console.log('click'));
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // 'click'
- *    observer.trigger('click'); // nothing ...
- *
- */
-function times(name, handler, params, observer) {
-    let counter = +params - 1;
-    if (!Number.isInteger(counter)) {
-        throw new Error(`Invalid argument :times(int). expecting number, found ${params}`);
-    }
-    if (counter < 0) {
-        throw new Error(`Invalid argument :times(arg). counter must be greater than 0, found ${params}`);
-    }
-    return (...args) => {
-        if (counter-- === 0) {
-            observer.off(name, handler);
-        }
-        handler(...args);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:debounce(250)', () => console.log('click'));
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); // 'click' after at least 250ms since the last call
- *
- */
-function debounce(name, handler, params) {
-    let duration = +params;
-    if (!Number.isInteger(duration)) {
-        throw new Error(`Invalid argument :debounce(int). expecting number, found ${params}`);
-    }
-    if (duration < 0) {
-        throw new Error(`Invalid argument :debounce(arg). counter must be greater or equal to 0, found ${params}`);
-    }
-    // @ts-ignore
-    let timer = null;
-    return (...args) => {
-        if (timer != null) {
-            clearTimeout(timer);
-        }
-        timer = setTimeout(() => handler(...args), duration);
-    };
-}
-
-/**
- * a handler that is executed a given number of times
- * <code>
- *     const observer = new Observer;
- *
- *    observer.on('click:debounce(250)', () => console.log('click'));
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); //  nothing ...
- *    observer.trigger('click'); // 'click' after at least 250ms since the last call
- *
- */
-function throttle(name, handler, params) {
-    let duration = +params;
-    if (!Number.isInteger(duration)) {
-        throw new Error(`Invalid argument :throttle(int). expecting number, found ${params}`);
-    }
-    if (duration < 0) {
-        throw new Error(`Invalid argument :throttle(arg). counter must be greater or equal to 0, found ${params}`);
-    }
-    // @ts-ignore
-    let timer = null;
-    return (...args) => {
-        if (timer != null) {
-            return;
-        }
-        timer = setTimeout(() => {
-            timer = null;
-            handler(...args);
-        }, duration);
-    };
-}
-
-var pseudos = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    debounce: debounce,
-    once: once,
-    throttle: throttle,
-    times: times
-});
-
-class Observer {
-    #handlers = new Map;
-    #pseudo = new Map;
-    constructor() {
-        for (const entry of Object.entries(pseudos)) {
-            // @ts-ignore
-            this.definePseudo(entry[0], entry[1]);
-        }
-    }
-    on(name, handler, signal) {
-        const match = name.match(/(.*):([^:()]+)(\((.*?)\))?$/);
-        let callback = handler;
-        if (match != null && this.#pseudo.has(match[2])) {
-            name = match[1];
-            // @ts-ignore
-            callback = this.#pseudo.get(match[2])(name, handler, match[4], this);
-        }
-        if (!this.#handlers.has(name)) {
-            this.#handlers.set(name, new Map);
-        }
-        signal?.addEventListener('abort', () => this.off(name, handler));
-        // @ts-ignore
-        this.#handlers.get(name).set(handler, callback);
-        return this;
-    }
-    off(name, handler) {
-        if (handler == null) {
-            this.#handlers.delete(name);
-        }
-        else if (this.#handlers.has(name)) {
-            // @ts-ignore
-            this.#handlers.get(name).delete(handler);
-            // @ts-ignore
-            if (this.#handlers.get(name).size === 0) {
-                this.#handlers.delete(name);
-            }
-        }
-        return this;
-    }
-    trigger(name, ...args) {
-        if (this.#handlers.has(name)) {
-            // @ts-ignore
-            for (const handler of this.#handlers.get(name).values()) {
-                handler(...args);
+                if (node.val.length == 0) {
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    return null;
+                }
+                loc = {
+                    sta: position,
+                    src
+                };
+                if (options.location) {
+                    node.loc = loc;
+                }
+                // @ts-ignore
+                context.chi.push(node);
+                return null;
             }
         }
     }
-    definePseudo(pseudo, parser) {
-        this.#pseudo.set(pseudo, parser);
-    }
-    hasListeners(name) {
-        if (arguments.length > 0) {
-            // @ts-ignore
-            return this.#handlers.has(name);
+    function peek(count = 1) {
+        if (count == 1) {
+            return iterator.charAt(ind + 1);
         }
-        return this.#handlers.size > 0;
+        return iterator.slice(ind + 1, ind + count + 1);
     }
-    getListeners(...args) {
-        if (args.length == 0 || args.length > 1) {
-            return [...(args.length > 1 ? args : this.#handlers.keys())].reduce((acc, curr) => {
-                if (this.#handlers.has(curr)) {
-                    // @ts-ignore
-                    acc[curr] = [...this.#handlers.get(curr).keys()];
+    function prev(count = 1) {
+        if (count == 1) {
+            return ind == 0 ? '' : iterator.charAt(ind - 1);
+        }
+        return iterator.slice(ind - 1 - count, ind - 1);
+    }
+    function next(count = 1) {
+        let char = '';
+        while (count-- > 0 && ind < total) {
+            const codepoint = iterator.codePointAt(++ind);
+            if (codepoint == null) {
+                return char;
+            }
+            // if (codepoint < 0x80) {
+            char += iterator.charAt(ind);
+            // }
+            // else {
+            //
+            //     const chr: string = String.fromCodePoint(codepoint);
+            //
+            //     ind += chr.length - 1;
+            //     char += chr;
+            // }
+            // ind += codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
+            if (isNewLine(codepoint)) {
+                lin++;
+                col = 0;
+                // \r\n
+                // if (codepoint == 0xd && iterator.codePointAt(i + 1) == 0xa) {
+                // offset++;
+                // ind++;
+                // }
+            }
+            else {
+                col++;
+            }
+            // ind++;
+            // i += offset;
+        }
+        return char;
+    }
+    function pushToken(token) {
+        tokens.push(token);
+        map.set(token, { ...position });
+        position.ind = ind;
+        position.lin = lin;
+        position.col = col == 0 ? 1 : col;
+        // }
+    }
+    function consumeWhiteSpace() {
+        let count = 0;
+        while (isWhiteSpace(iterator.charAt(count + ind + 1).codePointAt(0))) {
+            count++;
+        }
+        next(count);
+        return count;
+    }
+    function consumeString(quoteStr) {
+        const quote = quoteStr;
+        let value;
+        let hasNewLine = false;
+        if (buffer.length > 0) {
+            pushToken(getType(buffer));
+            buffer = '';
+        }
+        buffer += quoteStr;
+        while (ind < total) {
+            value = peek();
+            if (ind >= total) {
+                pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
+                break;
+            }
+            if (value == '\\') {
+                // buffer += value;
+                if (ind >= total) {
+                    // drop '\\' at the end
+                    pushToken(getType(buffer));
+                    break;
                 }
-                return acc;
-            }, Object.create(null));
-        }
-        if (this.#handlers.has(args[0])) {
-            // @ts-ignore
-            return [...this.#handlers.get(args[0]).keys()];
-        }
-        return [];
-    }
-}
-
-class Parser {
-    #options;
-    #observer;
-    #tokenizer;
-    #root;
-    #errors = [];
-    constructor(options = {
-        strict: false
-    }) {
-        this.#options = { strict: false, ...options };
-        this.#observer = new Observer();
-        this.#root = this.#createRoot();
-        this.#tokenizer = new Tokenizer(this.#root);
-    }
-    parse(css) {
-        this.#errors = [];
-        const stack = [];
-        const hasListeners = this.#observer.hasListeners('traverse');
-        let context = this.#root;
-        for (const { node, direction, error } of this.#tokenizer.parse(css)) {
-            if (error) {
-                if (this.#options.strict) {
-                    throw error;
-                }
-                this.#observer.trigger('error', error, node);
-                this.#errors.push(error);
+                buffer += next(2);
                 continue;
             }
-            if (direction == 'enter') {
-                // @ts-ignore
-                if (node.type == 'StyleSheet') {
-                    // @ts-ignore
-                    context.children.push(...node.children);
+            if (value == quote) {
+                buffer += value;
+                pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
+                next();
+                // i += value.length;
+                buffer = '';
+                break;
+            }
+            if (isNewLine(value.codePointAt(0))) {
+                hasNewLine = true;
+            }
+            if (hasNewLine && value == ';') {
+                pushToken({ typ: 'Bad-string', val: buffer });
+                buffer = '';
+                break;
+            }
+            buffer += value;
+            // i += value.length;
+            next();
+        }
+    }
+    while (ind < total) {
+        value = next();
+        if (ind >= total) {
+            if (buffer.length > 0) {
+                pushToken(getType(buffer));
+                buffer = '';
+            }
+            break;
+        }
+        if (isWhiteSpace(value.codePointAt(0))) {
+            if (buffer.length > 0) {
+                pushToken(getType(buffer));
+                buffer = '';
+            }
+            while (ind < total) {
+                value = next();
+                if (ind >= total) {
+                    break;
+                }
+                if (!isWhiteSpace(value.codePointAt(0))) {
+                    break;
+                }
+            }
+            pushToken({ typ: 'Whitespace' });
+            buffer = '';
+            if (ind >= total) {
+                break;
+            }
+        }
+        switch (value) {
+            case '/':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                buffer += value;
+                if (peek() == '*') {
+                    buffer += '*';
+                    // i++;
+                    next();
+                    while (ind < total) {
+                        value = next();
+                        if (ind >= total) {
+                            pushToken({
+                                typ: 'Bad-comment', val: buffer
+                            });
+                            break;
+                        }
+                        if (value == '\\') {
+                            buffer += value;
+                            value = next();
+                            if (ind >= total) {
+                                pushToken({
+                                    typ: 'Bad-comment',
+                                    val: buffer
+                                });
+                                break;
+                            }
+                            buffer += value;
+                            continue;
+                        }
+                        if (value == '*') {
+                            buffer += value;
+                            value = next();
+                            if (ind >= total) {
+                                pushToken({
+                                    typ: 'Bad-comment', val: buffer
+                                });
+                                break;
+                            }
+                            buffer += value;
+                            if (value == '/') {
+                                pushToken({ typ: 'Comment', val: buffer });
+                                buffer = '';
+                                break;
+                            }
+                        }
+                        else {
+                            buffer += value;
+                        }
+                    }
+                }
+                break;
+            case '<':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                buffer += value;
+                value = next();
+                if (ind >= total) {
+                    break;
+                }
+                if (peek(3) == '!--') {
+                    while (ind < total) {
+                        value = next();
+                        if (ind >= total) {
+                            break;
+                        }
+                        buffer += value;
+                        if (value == '>' && prev(2) == '--') {
+                            pushToken({
+                                typ: 'CDOCOMM',
+                                val: buffer
+                            });
+                            buffer = '';
+                            break;
+                        }
+                    }
+                }
+                if (ind >= total) {
+                    pushToken({ typ: 'BADCDO', val: buffer });
+                    buffer = '';
+                }
+                break;
+            case '\\':
+                value = next();
+                // EOF
+                if (ind + 1 >= total) {
+                    // end of stream ignore \\
+                    pushToken(getType(buffer));
+                    buffer = '';
+                    break;
+                }
+                buffer += value;
+                break;
+            case '"':
+            case "'":
+                consumeString(value);
+                break;
+            case '~':
+            case '|':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                buffer += value;
+                value = next();
+                if (ind >= total) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                    break;
+                }
+                if (value == '=') {
+                    buffer += value;
+                    pushToken({
+                        typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
+                        val: buffer
+                    });
+                    buffer = '';
+                    break;
+                }
+                pushToken(getType(buffer));
+                buffer = value;
+                break;
+            case '>':
+                if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+                    tokens.pop();
+                }
+                pushToken({ typ: 'Gt' });
+                consumeWhiteSpace();
+                break;
+            case ':':
+            case ',':
+            case '=':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                if (value == ':' && isIdent(peek())) {
+                    buffer += value;
+                    break;
+                }
+                pushToken(getType(value));
+                buffer = '';
+                break;
+            case ')':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                pushToken({ typ: 'End-parens' });
+                break;
+            case '(':
+                if (buffer.length == 0) {
+                    pushToken({ typ: 'Start-parens' });
                 }
                 else {
+                    buffer += value;
+                    pushToken(getType(buffer));
+                    buffer = '';
+                    const token = tokens[tokens.length - 1];
+                    if (token.typ == 'Func' && token.val == 'url') {
+                        // consume either string or url token
+                        let whitespace = '';
+                        value = peek();
+                        while (isWhiteSpace(value.codePointAt(0))) {
+                            whitespace += value;
+                        }
+                        if (whitespace.length > 0) {
+                            next(whitespace.length);
+                        }
+                        value = peek();
+                        if (value == '"' || value == "'") {
+                            consumeString(next());
+                            let token = tokens[tokens.length - 1];
+                            if (token.typ == 'String' && /^("|')[a-zA-Z0-9_/-][a-zA-Z0-9_/:.-]+("|')$/.test(token.val)) {
+                                // @ts-ignore
+                                token.typ = 'Url-token';
+                                token.val = token.val.slice(1, -1);
+                            }
+                            break;
+                        }
+                        else {
+                            buffer = '';
+                            do {
+                                let cp = value.codePointAt(0);
+                                // EOF -
+                                if (cp == null) {
+                                    pushToken({ typ: 'Bad-url-token', val: buffer });
+                                    break;
+                                }
+                                // ')'
+                                if (cp == 0x29 || cp == null) {
+                                    if (buffer.length == 0) {
+                                        pushToken({ typ: 'Bad-url-token', val: '' });
+                                    }
+                                    else {
+                                        pushToken({ typ: 'Url-token', val: buffer });
+                                    }
+                                    if (cp != null) {
+                                        pushToken(getType(next()));
+                                    }
+                                    break;
+                                }
+                                if (isWhiteSpace(cp)) {
+                                    whitespace = next();
+                                    while (true) {
+                                        value = peek();
+                                        cp = value.codePointAt(0);
+                                        if (isWhiteSpace(cp)) {
+                                            whitespace += value;
+                                            continue;
+                                        }
+                                        break;
+                                    }
+                                    if (cp == null || cp == 0x29) {
+                                        continue;
+                                    }
+                                    // bad url token
+                                    buffer += next(whitespace.length);
+                                    do {
+                                        value = peek();
+                                        cp = value.codePointAt(0);
+                                        if (cp == null || cp == 0x29) {
+                                            break;
+                                        }
+                                        buffer += next();
+                                    } while (true);
+                                    pushToken({ typ: 'Bad-url-token', val: buffer });
+                                    continue;
+                                }
+                                buffer += next();
+                                value = peek();
+                            } while (true);
+                            buffer = '';
+                        }
+                    }
+                }
+                break;
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case ';':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                pushToken(getBlockType(value));
+                let node = null;
+                if (value == '{' || value == ';') {
+                    node = parseNode(tokens);
+                    if (node != null) {
+                        stack.push(node);
+                        // @ts-ignore
+                        context = node;
+                    }
+                    else if (value == '{') {
+                        // node == null
+                        // consume and throw away until the closing '}' or EOF
+                        consume('{', '}');
+                    }
+                    tokens.length = 0;
+                    map.clear();
+                }
+                else if (value == '}') {
+                    node = parseNode(tokens);
+                    const previousNode = stack.pop();
                     // @ts-ignore
-                    context.children.push(node);
+                    context = stack[stack.length - 1] || root;
+                    if (options.location && context != root) {
+                        // @ts-ignore
+                        context.loc.end = { ind, lin, col: col == 0 ? 1 : col };
+                    }
+                    // @ts-ignore
+                    if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+                        context.chi.pop();
+                    }
+                    tokens.length = 0;
+                    map.clear();
+                    buffer = '';
                 }
                 // @ts-ignore
-                if ('children' in node) {
+                if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
                     // @ts-ignore
-                    stack.push(node);
-                    // @ts-ignore
-                    context = node;
+                    context.chi[context.chi.length - 1].loc.end = { ind, lin, col };
                 }
-            }
-            else if (direction == 'exit') {
-                stack.pop();
-                // @ts-ignore
-                context = stack[stack.length - 1] || this.#root;
-            }
-            if (hasListeners) {
-                this.#observer.trigger('traverse', node, direction, context);
-            }
+                break;
+            case '!':
+                if (buffer.length > 0) {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+                const important = peek(9);
+                if (important == 'important') {
+                    if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+                        tokens.pop();
+                    }
+                    pushToken({ typ: 'Important' });
+                    next(9);
+                    buffer = '';
+                    break;
+                }
+                buffer = '!';
+                break;
+            default:
+                buffer += value;
+                break;
         }
-        return this;
     }
-    on(name, handler, signal) {
-        this.#observer.on(name, handler, signal);
-        return this;
+    if (buffer.length > 0) {
+        pushToken(getType(buffer));
     }
-    off(name, handler) {
-        this.#observer.off(name, handler);
-        return this;
+    // pushToken({typ: 'EOF'});
+    //
+    if (col == 0) {
+        col = 1;
     }
-    #compactRuleList(node) {
+    if (options.location) {
+        // @ts-ignore
+        root.loc.end = { ind, lin, col };
+        for (const context of stack) {
+            // @ts-ignore
+            context.loc.end = { ind, lin, col };
+        }
     }
-    compact() {
-        let i = this.#root.children.length;
-        let previous = null;
+    return root;
+}
+function getBlockType(chr) {
+    if (chr == ';') {
+        return { typ: 'Semi-colon' };
+    }
+    if (chr == '{') {
+        return { typ: 'Block-start' };
+    }
+    if (chr == '}') {
+        return { typ: 'Block-end' };
+    }
+    if (chr == '[') {
+        return { typ: 'Attr-start' };
+    }
+    if (chr == ']') {
+        return { typ: 'Attr-end' };
+    }
+    throw new Error(`unhandled token: '${chr}'`);
+}
+
+function parse(css, opt = {}) {
+    const errors = [];
+    const options = {
+        src: '',
+        location: false,
+        processImport: false,
+        deduplicate: false,
+        removeEmpty: false,
+        ...opt
+    };
+    if (css.length == 0) {
+        // @ts-ignore
+        return null;
+    }
+    // @ts-ignore
+    const ast = tokenize(css, errors, options);
+    if (options.deduplicate) {
+        deduplicate(ast);
+    }
+    return { ast, errors };
+}
+function deduplicate(ast) {
+    if ('chi' in ast) {
+        // @ts-ignore
+        let i = ast.chi.length;
+        let previous;
+        let node;
         while (i--) {
-            const node = this.#root.children[i];
-            // if
             // @ts-ignore
-            if (previous?.type == node.type && node.type == 'Rule' && "selector" in previous && previous.selector == node.selector) {
-                console.log({ previous });
-                if (!('children' in node)) {
-                    // @ts-ignore
-                    node.children = [];
-                }
-                if ('children' in previous) {
-                    // @ts-ignore
-                    node.children.push(...previous.children);
-                }
-                this.#root.children.splice(i, 1);
+            node = ast.chi[i];
+            // @ts-ignore
+            if (node.typ == 'Comment') {
+                continue;
             }
-            // @ts-ignore
-            else if (node.type == 'AtRule' && node.name == 'media' && node.value == 'all') {
+            if (node.typ == 'AtRule' && node.nam == 'media' && node.val == 'all') {
                 // @ts-ignore
-                this.#root.children.splice(i, 1, ...node.children);
-                i += node.children.length;
+                ast.chi.splice(i, 1, ...node.chi);
+                // @ts-ignore
+                i += node.chi.length;
+                continue;
             }
             // @ts-ignore
-            previous = node;
-        }
-        return this;
-    }
-    #compactRule(node) {
-    }
-    getAst() {
-        return this.#root;
-    }
-    getErrors() {
-        return this.#errors;
-    }
-    #createRoot() {
-        return {
-            type: "StyleSheet",
-            location: {
-                start: {
-                    index: 0,
-                    line: 1,
-                    column: 1
-                },
-                end: {
-                    index: -1,
-                    line: 1,
-                    column: 0
+            if (node.typ == previous?.typ) {
+                if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                    (node.typ == 'AtRule' &&
+                        node.nam == previous.nam &&
+                        node.val == previous.val)) {
+                    if ('chi' in node) {
+                        // @ts-ignore
+                        previous.chi = node.chi.concat(...(previous.chi || []));
+                    }
+                    // @ts-ignore
+                    ast.chi.splice(i, 1);
+                    if (!('chi' in previous)) {
+                        continue;
+                    }
+                    // @ts-ignore
+                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                        deduplicateRule(previous);
+                    }
+                    else {
+                        deduplicate(previous);
+                    }
+                    continue;
                 }
-            },
-            children: []
-        };
+                else if (node.typ == 'Declaration' && node.nam == previous.nam) {
+                    // @ts-ignore
+                    ast.chi.splice(i, 1);
+                    continue;
+                }
+            }
+            previous = node;
+            if (!('chi' in node)) {
+                continue;
+            }
+            // @ts-ignore
+            if (node.typ == 'AtRule' || node.chi.some(n => n.typ == 'Declaration')) {
+                deduplicateRule(node);
+            }
+            else {
+                deduplicate(node);
+            }
+        }
     }
+    return ast;
+}
+function deduplicateRule(ast) {
+    if (!('chi' in ast) || ast.chi?.length == 0) {
+        return ast;
+    }
+    const set = new Set;
+    // @ts-ignore
+    let i = ast.chi.length;
+    let node;
+    while (i--) {
+        // @ts-ignore
+        node = ast.chi[i];
+        if (node.typ != 'Declaration') {
+            continue;
+        }
+        // @ts-ignore
+        if (set.has(node.nam)) {
+            // @ts-ignore
+            ast.chi.splice(i, 1);
+            continue;
+        }
+        // @ts-ignore
+        set.add(node.nam);
+    }
+    return ast;
 }
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
-const atRule = `@media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
-    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
-    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
-}}
-`;
-const Rule = `:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
-    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
-    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
-}
-`;
-function toStringProperties(info) {
-    return Object.entries(info).reduce((acc, curr) => {
-        // @ts-ignore
-        acc[curr[0]] = Array.isArray(curr[1]) ? curr[1].join('') : curr[1];
-        return acc;
-    }, {});
-}
 describe('parse block', function () {
-    it('parse at-rules block', function () {
-        const info = toStringProperties(parseBlock(atRule, 0));
-        const info2 = toStringProperties(parseBlock(atRule, 0, find(atRule, 1, ';{}')));
-        f(info).deep.equals({
-            type: "AtRule",
-            selector: "@media all ",
-            body: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}",
-            block: "@media all {:root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}}"
-        });
-        f(info).deep.equals(info2);
-    });
-    it('parse rules block', function () {
-        const info = toStringProperties(parseBlock(Rule, 0));
-        const info2 = toStringProperties(parseBlock(Rule, 0, find(Rule, 1, ';{}')));
-        f(info).deep.equals({
-            type: "Rule",
-            selector: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] ",
-            body: "\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n",
-            block: ":root, [data-color-mode=\"light\"][data-light-theme=\"light\"], [data-color-mode=\"dark\"][data-dark-theme=\"light\"] {\n    --color-canvas-default-transparent: rgba(255,255,255,0);\n    --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;\n    --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;\n}"
-        });
-        f(info2).deep.equals(info);
-    });
     it('parse file', async function () {
         const file = (await readFile(`${dir}/css/smalli.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
     });
     it('parse file #2', async function () {
         const file = (await readFile(`${dir}/css/small.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
     });
     it('parse file #3', async function () {
         const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
     });
     it('parse file #4', async function () {
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
-        f(new Parser().parse(file).getAst()).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
+        f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
     });
 });

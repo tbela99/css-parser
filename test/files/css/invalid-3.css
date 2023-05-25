@@ -1,0 +1,15 @@
+p { color:green /* 1 */ }
+p { color:green; color  /* 2 */}  /* malformed declaration missing ':', value */
+p { color:red;   color; color:green  /* 3 */}  /* same with expected recovery */
+p { color:green; color:  /* 4 */} /* malformed declaration missing value */
+p { color:red;   color:; color:green  /* 5 */} /* same with expected recovery */
+p { color:green; color{;color:maroon}  /* 6 */} /* unexpected tokens { } */
+p { color:red;   color{;color:maroon}; color:green  /* 7 */} /* same with recovery */
+p {
+    color: green;
+    /* drop invalid declaration font-family */
+    font-family: 'Courier New Times
+    color: red;
+    color: green;
+    /* 8 */
+}

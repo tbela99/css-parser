@@ -3,40 +3,45 @@ import {isNewLine} from "./syntax";
 
 export function update(location: Position, css: string): Position {
 
-    if (css.length == 0) {
+    if (css === '') {
 
         return location;
     }
 
-    let chr: string;
-    let i: number = -1;
+    let i: number = 0;
+    let codepoint: number;
+    let offset: number;
     const j: number = css.length - 1;
 
-    while (++i <= j) {
+    if (location.lin == 0) {
 
-        chr = css.charAt(i);
+        location.lin = 1;
+    }
 
-        if (chr === '') {
+    while (i <= j) {
 
-            break;
-        }
+        codepoint = <number>css.codePointAt(i);
+        offset = codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
 
-        if (isNewLine(chr)) {
+        if (isNewLine(codepoint)) {
 
-            location.line++;
-            location.column = 0;
+            location.lin++;
+            location.col = 0;
 
-            if (chr == '\r' && css.charAt(i + 1) == '\n') {
+            // \r\n
+            if (codepoint == 0xd && css.codePointAt(i + 1) == 0xa) {
 
-                i++;
-                location.index++;
+                offset++;
+                location.ind++;
             }
+
         } else {
 
-            location.column++;
+            location.col++;
         }
 
-        location.index++;
+        location.ind++;
+        i += offset;
     }
 
     return location

@@ -1,5 +1,10 @@
- @media all {:root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
-    --color-canvas-default-transparent: rgba(255,255,255,0);
+@charset "UTF-8";
+/* file: https://github.githubassets.com/assets/light-fe3f886b577a.css 🚀🚀🚀🚀🚀✋ 123 */
+/* @media all {
+*/
+@media all {div > :is(.inert), :root, [data-color-mode="light"][data-light-theme="light"], [data-color-mode="dark"][data-dark-theme="light"] {
+
+    -webkit-text-size-adjust: 100%;--color-canvas-default-transparent: rgba(255,255,255,.2);
     --color-page-header-bg: #f6f8fa; --color-marketing-icon-primary: #218bff; --color-marketing-icon-secondary: #54aeff;
     --color-diff-blob-addition-num-text: #24292f; --color-diff-blob-addition-fg: #24292f; --color-diff-blob-addition-num-bg: #ccffd8;
 }}

@@ -1,117 +1,119 @@
-export * from './validation';
+import exp from "constants";
+import {Token} from "./tokenize";
 
-export type NodeTraversalDirection = 'enter' | 'exit';
+export * from './validation';
+export * from './tokenize';
+export * from './stringiterator';
+
+export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
+
+export interface NodeParseEventsMap {
+
+    enter?: NodeTraverseCallback[];
+    exit?: NodeTraverseCallback[]
+}
+export interface ErrorDescription {
+
+    // drop rule or declaration | fix rule or declaration
+    action: 'drop';
+    message: string;
+    location: {
+        src: string,
+        lin: number,
+        col: number;
+    };
+    error?: Error;
+}
 
 export interface ParserOptions {
 
-    strict?: boolean
+    src?: string;
+    location?: boolean;
+    processImport?: boolean;
+    deduplicate?: boolean;
+    removeEmpty?: boolean;
+    nodeEventFilter?: NodeType[]
+}
+
+export interface RenderOptions {
+
+    compress?: boolean;
+    indent?: string;
+    newLine?: string;
+    removeComments?: boolean;
 }
 
 export interface Position {
 
-    index: number;
-    line: number;
-    column: number;
+    ind: number;
+    lin: number;
+    col: number;
 }
 
 export interface Location {
 
-    start: Position;
+    sta: Position;
     end: Position;
-
-    src?: string;
+    src: string;
 }
 
 type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
 
 interface Node {
 
-    location: Location,
-    type: NodeType
+    typ: NodeType;
+    loc?: Location;
 }
 
 export interface AstComment extends Node {
 
-    type: 'Comment',
-    value: string;
+    typ: 'Comment',
+    val: string;
 }
 
 export interface AstInvalidComment extends Node {
 
-    type: 'InvalidComment',
-    value: string;
+    typ: 'InvalidComment',
+    val: string;
 }
 
 export interface AstDeclaration extends Node {
 
-    name: string,
-    value: string;
-    type: 'Declaration'
+    nam: Token[],
+    val: Token[];
+    typ: 'Declaration'
 }
-
-export interface AstInvalidDeclaration extends Node {
-
-    name: string,
-    value: string;
-    type: 'InvalidDeclaration'
-}
-
-export interface AstInvalidRule extends Node {
-
-    type: 'Rule',
-    selector: string,
-    body: string
-}
-
 
 export interface AstRule extends Node {
 
-    type: 'Rule',
-    selector: string,
-    children?: Array<AstDeclaration | AstComment>
+    typ: 'Rule',
+    sel: string,
+    chi: Array<AstDeclaration | AstComment | AstRuleList>
 }
 
 export interface AstAtRule extends Node {
 
-    name: string;
-    value: string;
-    children?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
-}
-
-export interface AstInvalidAtRule extends Node {
-
-    type: 'InvalidAtRule';
-    name?: string,
-    value?: string;
-    body?: string;
-    children?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
+    nam: string;
+    val: string;
+    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
 export interface AstRuleList extends Node {
 
-    children: Array<Node | AstComment>
+    chi: Array<Node | AstComment>
 }
 
 export interface AstRuleStyleSheet extends AstRuleList {
-    type: 'StyleSheet',
-
-    children: Array<AstRuleList | AstComment>
+    typ: 'StyleSheet',
+    chi: Array<AstRuleList | AstComment>
 }
 
-export type AstNode = AstComment | AstInvalidComment | AstInvalidAtRule | AstAtRule | AstRule | AstDeclaration | AstInvalidDeclaration;
+export type AstNode =
+    AstRuleStyleSheet
+    | AstRuleList
+    | AstComment
+    | AstAtRule
+    | AstRule
+    | AstDeclaration;
 
-export type AstTraverserHandler = (node: AstNode, direction: 'enter' | 'exit') => void;
-
-export type ParsedBlock = {
-    type: 'Rule' | 'AtRule',
-    selector: string,
-    body: string;
-    block: string;
-} | {
-
-    type: 'AtRule' | 'Declaration',
-    name: string;
-    value: string;
-    body: string;
-    block: string;
-}
+export type AstTraverserHandler = (node: AstNode, location?: Location) => void;
