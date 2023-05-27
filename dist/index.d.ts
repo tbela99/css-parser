@@ -30,6 +30,7 @@ interface PercentageToken {
 interface FunctionToken {
     typ: 'Func';
     val: string;
+    chi: Token[];
 }
 interface StringToken {
     typ: 'String';
@@ -131,7 +132,9 @@ interface ImportantToken {
 }
 interface ColorToken {
     typ: 'Color';
-    value: string;
+    val: string;
+    kin: 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+    chi?: Token[];
 }
 declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;
 
@@ -164,6 +167,7 @@ interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
+    colorConvert?: boolean;
 }
 
 interface Position {
@@ -240,7 +244,7 @@ declare function parse(css: string, opt?: ParserOptions): {
 declare function deduplicate(ast: AstNode): AstNode;
 declare function deduplicateRule(ast: AstNode): AstNode;
 
-declare function render(data: AstNode, options?: RenderOptions): string;
+declare function render(data: AstNode, opt?: RenderOptions): string;
 declare function renderToken(token: Token, options?: RenderOptions): string;
 
 export { deduplicate, deduplicateRule, parse, render, renderToken };

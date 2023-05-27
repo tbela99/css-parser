@@ -11,7 +11,7 @@ import {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
-    AtRuleToken,
+    AtRuleToken, ColorToken,
     DashMatchToken,
     ErrorDescription,
     FunctionToken, IdentToken, IncludesToken,
@@ -22,6 +22,7 @@ import {
     Token, UrlToken
 } from "../@types";
 import {renderToken} from "../renderer";
+import {COLORS_NAMES} from "../renderer/utils";
 
 export function tokenize(iterator: string, errors: ErrorDescription[], options: ParserOptions): AstRuleStyleSheet {
 
@@ -128,7 +129,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
             return {
                 typ: 'Func',
-                val: val.slice(0, -1)
+                val: val.slice(0, -1),
+                chi: []
             }
         }
 
@@ -545,17 +547,118 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     return null;
                 }
 
-                if (value.filter(t => {
+                let j = value.length
+                let i = j;
+                let t: Token;
+
+                while (i--) {
+
+                    t = value[i];
+
+                    if (t.typ == 'Iden') {
+                        // named color
+
+                        const value = t.val.toLowerCase();
+
+                        if (COLORS_NAMES[value] != null) {
+
+                            Object.assign(t, {
+                                typ: 'Color',
+                                val: COLORS_NAMES[value],
+                                kin: 'hex'
+                            });
+                        }
+
+                        continue;
+                    }
 
                     if (t.typ == 'Hash' && isHexColor(t.val)) {
 
+                        // hex color
+
                         // @ts-ignore
                         t.typ = 'Color';
-                        return true;
+                        // @ts-ignore
+                        (<ColorToken>t).kin = 'hex'
+                        continue;
                     }
 
-                    return t.typ != 'Whitespace' && t.typ != 'Comment'
-                }).length == 0) {
+                    if (t.typ == 'Func') {
+
+                        // func color
+                        let parens = 1;
+                        let k = i;
+                        let p: Token;
+                        let j = value.length;
+                        let isScalar = true;
+
+                        while (++k < j) {
+
+                            switch (value[k].typ) {
+
+                                case 'Start-parens':
+                                case 'Func':
+                                    parens++;
+                                    isScalar = false;
+                                    break;
+
+                                case 'End-parens':
+
+                                    parens--;
+                                    break;
+                            }
+
+                            if (parens == 0) {
+
+                                break;
+                            }
+                        }
+
+                        t.chi = value.splice(i + 1, k);
+
+                        if (t.chi[t.chi.length - 1].typ == 'End-parens') {
+
+                            t.chi.pop();
+                        }
+
+                        if (isScalar && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
+
+                            // @ts-ignore
+                            t.typ = 'Color';
+                            // @ts-ignore
+                            t.kin = t.val;
+
+                            let i = t.chi.length;
+                            let tok: Token;
+
+                            while (i-- > 0) {
+
+                                if(t.chi[i].typ == 'Literal') {
+
+                                    if (t.chi[i + 1]?.typ == 'Whitespace') {
+
+                                        t.chi.splice(i + 1, 1);
+                                    }
+
+                                    if (t.chi[i - 1]?.typ == 'Whitespace') {
+
+                                        t.chi.splice(i - 1, 1);
+                                        i--;
+                                    }
+                                }
+                            }
+                        }
+
+                        continue;
+                    }
+
+                    if (t.typ == 'Whitespace' || t.typ == 'Comment') {
+
+                        value.slice(i, 1);
+                    }
+                }
+
+                if (value.length == 0) {
 
                     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
                     return null;
@@ -1035,6 +1138,12 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                 pushToken(getType(value));
                 buffer = '';
+
+                while (isWhiteSpace(<number>peek().codePointAt(0))) {
+
+                    next();
+                }
+
                 break;
 
             case ')':

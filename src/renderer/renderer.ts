@@ -4,34 +4,44 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleStyleSheet, DimensionToken,
+    AstRuleStyleSheet, ColorToken, DimensionToken,
     RenderOptions,
     Token
 } from "../@types";
+import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
 
 const indents: string[] = [];
 
-export function render(data: AstNode, options: RenderOptions = {}) {
+export function render(data: AstNode, opt: RenderOptions = {}) {
 
-    return doRender(data, Object.assign(options.compress ? {
+    const options = Object.assign(opt.compress ? {
         indent: '',
         newLine: '',
-        removeComments: true
+        removeComments: true,
+        colorConvert: true
     } : {
         indent: ' ',
         newLine: '\n',
         compress: false,
-        removeComments: false
-    }, options));
-}
+        removeComments: false,
+        colorConvert: true
+    }, opt);
 
-function doRender(data: AstNode, options: RenderOptions, level: number = 0): string {
+    function reducer (acc: string, curr: Token): string {
 
-    function reducer (acc: string, curr: Token) {
+        if (curr.typ == 'Comment' && options.removeComments) {
+
+            return acc;
+        }
 
         acc += renderToken(curr, options);
         return acc;
     }
+
+    return doRender(data, options, reducer);
+}
+
+function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0): string {
 
     if (indents.length < level + 1) {
 
@@ -56,7 +66,7 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = doRender(node, options);
+                const str: string = doRender(node, options, reducer);
 
                 if (str === '') {
 
@@ -92,7 +102,7 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
 
                 else if (node.typ == 'Declaration') {
 
-                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '').trimEnd()};`;
+                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(<() => string>reducer, '').trimEnd()};`;
                 }
 
                 else if (node.typ == 'AtRule' && !('chi' in node)) {
@@ -102,7 +112,7 @@ function doRender(data: AstNode, options: RenderOptions, level: number = 0): str
 
                 else {
 
-                    str = doRender(node, options, level + 1);
+                    str = doRender(node, options, reducer, level + 1);
                 }
 
                 if (css === '') {
@@ -140,8 +150,80 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
 
     switch (token.typ ) {
 
+
+        case 'Color':
+
+            if (options.compress || options.colorConvert) {
+
+                let value: string = token.kin == 'hex' ? token.val.toLowerCase() : '';
+
+                if (token.val == 'rgb' || token.val == 'rgba') {
+
+                    value = rgb2Hex(token);
+                }
+
+                else if (token.val == 'hsl' || token.val == 'hsla') {
+
+                    value = hsl2Hex(token);
+                }
+
+                else if (token.val == 'hwb') {
+
+                    value = hwb2hex(token);
+                }
+
+                else if (token.val == 'device-cmyk') {
+
+                    value = cmyk2hex(token);
+                }
+
+                const named_color = NAMES_COLORS[value];
+
+                if (value !== '') {
+
+                    if (value.length == 7) {
+
+                        if (value[1] == value[2] &&
+                        value[3] == value[4] &&
+                        value[5] == value[6]) {
+
+                            return `#${value[1]}${value[3]}${value[5]}`;
+                        }
+                    }
+
+                    if (value.length == 9) {
+
+                        if (value[1] == value[2] &&
+                            value[3] == value[4] &&
+                            value[5] == value[6] &&
+                            value[7] == value[8]) {
+
+                            return `#${value[1]}${value[3]}${value[5]}${value[7]}`;
+                        }
+                    }
+
+                    return named_color != null && named_color.length <= value.length ? named_color : value;
+                }
+            }
+
+            if ((<ColorToken>token).kin == 'hex') {
+
+                return token.val;
+            }
+
         case 'Func':
-            return token.val + '(';
+            // @ts-ignore
+            return token.val + '(' + token.chi.reduce((acc: string, curr: Token) => {
+
+                if (options.removeComments && curr.typ == 'Comment') {
+
+                    return acc;
+                }
+
+                acc += renderToken(curr, options);
+                return acc;
+
+            }, '') + ')';
 
         case 'Includes':
             return '~=';
@@ -195,9 +277,18 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
                 return '';
             }
 
+        case 'Number':
+
+            if (options.compress) {
+
+                if (token.val.charAt(0) === '0' && token.val.length > 1) {
+
+                    return token.val.slice(1);
+                }
+            }
+
         case 'Url-token':
         case 'At-rule':
-        case 'Number':
 
         case 'Hash':
         case 'Pseudo-class':

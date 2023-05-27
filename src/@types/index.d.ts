@@ -41,6 +41,7 @@ export interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
+    colorConvert?: boolean;
 }
 
 export interface Position {

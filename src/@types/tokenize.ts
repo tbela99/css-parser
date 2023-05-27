@@ -48,6 +48,7 @@ export interface FunctionToken {
 
     typ: 'Func',
     val: string;
+    chi: Token[];
 }
 
 export interface StringToken {
@@ -205,7 +206,9 @@ export interface ImportantToken {
 export interface ColorToken {
 
     typ: 'Color';
-    value: string;
+    val: string;
+    kin: 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+    chi?: Token[];
 }
 
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
