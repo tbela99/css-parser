@@ -564,7 +564,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                             Object.assign(t, {
                                 typ: 'Color',
-                                val: COLORS_NAMES[value],
+                                val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
                                 kin: 'hex'
                             });
                         }
@@ -1371,7 +1371,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     buffer = '';
                 }
 
-                const important = peek(9);
+                const important: string = peek(9);
 
                 if (important == 'important') {
 

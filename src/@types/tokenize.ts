@@ -211,6 +211,8 @@ export interface ColorToken {
     chi?: Token[];
 }
 
+export declare type TokenType = 'Dimension' | 'Number' | 'Perc';
+
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |

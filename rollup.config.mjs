@@ -2,6 +2,7 @@ import dts from 'rollup-plugin-dts';
 import typescript from "@rollup/plugin-typescript";
 import nodeResolve from "@rollup/plugin-node-resolve";
 import glob from "glob";
+import terser from "@rollup/plugin-terser";
 
 export default [...await new Promise((resolve, reject) => {
 
@@ -39,6 +40,21 @@ export default [...await new Promise((resolve, reject) => {
             },
             {
                 file: './dist/index.js',
+                format: 'umd',
+                name: 'CSSParser'
+            }
+        ]
+    },
+    {
+        input: 'src/index.ts',
+        plugins: [nodeResolve(), typescript(), terser()],
+        output: [
+            {
+                file: './dist/index.min.mjs',
+                format: 'es',
+            },
+            {
+                file: './dist/index.min.js',
                 format: 'umd',
                 name: 'CSSParser'
             }

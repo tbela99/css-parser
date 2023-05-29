@@ -1,0 +1,19 @@
+/test/ export-ignore
+/docs/ export-ignore
+/tools/ export-ignore
+/package-lock.json export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/rollup.config.mjs export-ignore
+/tsconfig.json export-ignore
+# exclude all files in test/ from stats
+/test/** linguist-vendored
+/docs/** linguist-vendored
+/tools/** linguist-vendored
+/dist/** linguist-vendored
+#
+# do not replace lf by crlf
+*.css text
+*.json text
+text eol=lf
+

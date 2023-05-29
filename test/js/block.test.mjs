@@ -1337,15 +1337,15 @@ function renderToken(token, options = {}) {
                         if (value[1] == value[2] &&
                             value[3] == value[4] &&
                             value[5] == value[6]) {
-                            return `#${value[1]}${value[3]}${value[5]}`;
+                            value = `#${value[1]}${value[3]}${value[5]}`;
                         }
                     }
-                    if (value.length == 9) {
+                    else if (value.length == 9) {
                         if (value[1] == value[2] &&
                             value[3] == value[4] &&
                             value[5] == value[6] &&
                             value[7] == value[8]) {
-                            return `#${value[1]}${value[3]}${value[5]}${value[7]}`;
+                            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
                         }
                     }
                     return named_color != null && named_color.length <= value.length ? named_color : value;

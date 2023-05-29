@@ -1,0 +1,38 @@
+{
+  "properties": {
+    "margin": {
+      "shorthand": "margin",
+      "properties": [ "margin-top", "margin-left", "margin-bottom", "margin-right" ],
+      "types": [ "Dimension", "Number", "Perc" ]
+    },
+    "margin-top": {
+      "shorthand": "margin"
+    },
+    "margin-left": {
+      "shorthand": "margin"
+    },
+    "margin-bottom": {
+      "shorthand": "margin"
+    },
+    "margin-right": {
+      "shorthand": "margin"
+    },
+    "padding": {
+      "shorthand": "padding",
+      "properties": [ "padding-top", "padding-left", "padding-bottom", "padding-right" ],
+      "types": [ "Dimension", "Number", "Perc" ]
+    },
+    "padding-top": {
+      "shorthand": "padding"
+    },
+    "padding-left": {
+      "shorthand": "padding"
+    },
+    "padding-bottom": {
+      "shorthand": "padding"
+    },
+    "padding-right": {
+      "shorthand": "padding"
+    }
+  }
+}

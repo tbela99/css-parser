@@ -3,7 +3,7 @@ import {
     AstNode, AstRule,
     AstRuleStyleSheet,
     ErrorDescription,
-    ParserOptions
+    ParserOptions, Token
 } from "../@types";
 import {tokenize} from "./tokenize";
 
@@ -58,6 +58,27 @@ export function deduplicate(ast: AstNode) {
 
             if (node.typ == 'AtRule' && (<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
 
+                // merge only if the previous rule contains only declarations
+                let shouldMerge = true;
+                // @ts-ignore
+                let i = node.chi.length;
+
+                while (i--) {
+
+                    if (node.chi[i].typ == 'Comment') {
+
+                        continue;
+                    }
+
+                    shouldMerge = node.chi[i].typ == 'Declaration';
+                    break;
+                }
+
+                if (!shouldMerge) {
+
+                    continue;
+                }
+
                 // @ts-ignore
                 ast.chi.splice(i, 1, ...node.chi);
                 // @ts-ignore
@@ -75,6 +96,26 @@ export function deduplicate(ast: AstNode) {
                     )) {
 
                     if ('chi' in node) {
+
+                        let shouldMerge = true;
+                        // @ts-ignore
+                        let i = node.chi.length;
+
+                        while (i--) {
+
+                            if (node.chi[i].typ == 'Comment') {
+
+                                continue;
+                            }
+
+                            shouldMerge = node.chi[i].typ == 'Declaration';
+                            break;
+                        }
+
+                        if (!shouldMerge) {
+
+                            continue;
+                        }
 
                         // @ts-ignore
                         previous.chi = node.chi.concat(...(previous.chi || []));
@@ -134,7 +175,7 @@ export function deduplicateRule(ast: AstNode): AstNode {
         return ast;
     }
 
-    const set: Set<string> = new Set;
+    const map: Map<string, Token> = new Map;
 
     // @ts-ignore
     let i: number = <number>ast.chi.length;
@@ -151,7 +192,7 @@ export function deduplicateRule(ast: AstNode): AstNode {
         }
 
         // @ts-ignore
-        if (set.has(node.nam)) {
+        if (map.has(node.nam)) {
 
             // @ts-ignore
             ast.chi.splice(i, 1);
@@ -159,7 +200,7 @@ export function deduplicateRule(ast: AstNode): AstNode {
         }
 
         // @ts-ignore
-        set.add(node.nam);
+        map.set(node.nam, node);
     }
 
     return ast;

@@ -1,9 +1,9 @@
-import exp from "constants";
 import {Token} from "./tokenize";
 
 export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
+export * from './properties';
 
 export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
@@ -71,16 +71,9 @@ export interface AstComment extends Node {
     typ: 'Comment',
     val: string;
 }
-
-export interface AstInvalidComment extends Node {
-
-    typ: 'InvalidComment',
-    val: string;
-}
-
 export interface AstDeclaration extends Node {
 
-    nam: Token[],
+    nam: string,
     val: Token[];
     typ: 'Declaration'
 }
