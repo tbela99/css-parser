@@ -3,7 +3,7 @@ export interface PropertyType {
     shorthand: string;
 }
 
-export class ShorthandPropertyType {
+export interface ShorthandPropertyType {
 
     shorthand: string;
     properties: string[];

@@ -197,10 +197,9 @@ interface AstComment extends Node {
     typ: 'Comment',
     val: string;
 }
-
 interface AstDeclaration extends Node {
 
-    nam: Token[],
+    nam: string,
     val: Token[];
     typ: 'Declaration'
 }

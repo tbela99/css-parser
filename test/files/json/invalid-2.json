@@ -2,110 +2,117 @@
  "typ": "StyleSheet",
  "chi": [
   {
-   "typ": "Rule",
-   "sel": ":root,[data-color-mode=\"light\"][data-light-theme=\"light\"],[data-color-mode=\"dark\"][data-dark-theme=\"light\"]",
+   "typ": "AtRule",
+   "nam": "media",
+   "val": "all",
    "chi": [
     {
-     "typ": "Declaration",
-     "nam": "--color-canvas-default-transparent",
-     "val": [
+     "typ": "Rule",
+     "sel": ":root,[data-color-mode=\"light\"][data-light-theme=\"light\"],[data-color-mode=\"dark\"][data-dark-theme=\"light\"]",
+     "chi": [
       {
-       "typ": "Color",
-       "val": "rgba",
-       "chi": [
+       "typ": "Declaration",
+       "nam": "--color-canvas-default-transparent",
+       "val": [
         {
-         "typ": "Number",
-         "val": "255"
-        },
-        {
-         "typ": "Comma"
-        },
-        {
-         "typ": "Number",
-         "val": "255"
-        },
-        {
-         "typ": "Comma"
-        },
-        {
-         "typ": "Number",
-         "val": "255"
-        },
-        {
-         "typ": "Comma"
-        },
-        {
-         "typ": "Number",
-         "val": "0"
+         "typ": "Color",
+         "val": "rgba",
+         "chi": [
+          {
+           "typ": "Number",
+           "val": "255"
+          },
+          {
+           "typ": "Comma"
+          },
+          {
+           "typ": "Number",
+           "val": "255"
+          },
+          {
+           "typ": "Comma"
+          },
+          {
+           "typ": "Number",
+           "val": "255"
+          },
+          {
+           "typ": "Comma"
+          },
+          {
+           "typ": "Number",
+           "val": "0"
+          }
+         ],
+         "kin": "rgba"
         }
-       ],
-       "kin": "rgba"
-      }
-     ]
-    },
-    {
-     "typ": "Declaration",
-     "nam": "--color-page-header-bg",
-     "val": [
+       ]
+      },
       {
-       "typ": "Color",
-       "val": "#f6f8fa",
-       "kin": "hex"
-      }
-     ]
-    },
-    {
-     "typ": "Declaration",
-     "nam": "--color-marketing-icon-primary",
-     "val": [
+       "typ": "Declaration",
+       "nam": "--color-page-header-bg",
+       "val": [
+        {
+         "typ": "Color",
+         "val": "#f6f8fa",
+         "kin": "hex"
+        }
+       ]
+      },
       {
-       "typ": "Color",
-       "val": "#218bff",
-       "kin": "hex"
-      }
-     ]
-    },
-    {
-     "typ": "Declaration",
-     "nam": "--color-marketing-icon-secondary",
-     "val": [
+       "typ": "Declaration",
+       "nam": "--color-marketing-icon-primary",
+       "val": [
+        {
+         "typ": "Color",
+         "val": "#218bff",
+         "kin": "hex"
+        }
+       ]
+      },
       {
-       "typ": "Color",
-       "val": "#54aeff",
-       "kin": "hex"
-      }
-     ]
-    },
-    {
-     "typ": "Declaration",
-     "nam": "--color-diff-blob-addition-num-text",
-     "val": [
+       "typ": "Declaration",
+       "nam": "--color-marketing-icon-secondary",
+       "val": [
+        {
+         "typ": "Color",
+         "val": "#54aeff",
+         "kin": "hex"
+        }
+       ]
+      },
       {
-       "typ": "Color",
-       "val": "#24292f",
-       "kin": "hex"
-      }
-     ]
-    },
-    {
-     "typ": "Declaration",
-     "nam": "--color-diff-blob-addition-fg",
-     "val": [
+       "typ": "Declaration",
+       "nam": "--color-diff-blob-addition-num-text",
+       "val": [
+        {
+         "typ": "Color",
+         "val": "#24292f",
+         "kin": "hex"
+        }
+       ]
+      },
       {
-       "typ": "Color",
-       "val": "#24292f",
-       "kin": "hex"
-      }
-     ]
-    },
-    {
-     "typ": "Declaration",
-     "nam": "--color-diff-blob-addition-num-bg",
-     "val": [
+       "typ": "Declaration",
+       "nam": "--color-diff-blob-addition-fg",
+       "val": [
+        {
+         "typ": "Color",
+         "val": "#24292f",
+         "kin": "hex"
+        }
+       ]
+      },
       {
-       "typ": "Color",
-       "val": "#ccffd8",
-       "kin": "hex"
+       "typ": "Declaration",
+       "nam": "--color-diff-blob-addition-num-bg",
+       "val": [
+        {
+         "typ": "Color",
+         "val": "#ccffd8",
+         "kin": "hex"
+        }
+       ]
       }
      ]
     }

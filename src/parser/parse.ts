@@ -65,11 +65,13 @@ export function deduplicate(ast: AstNode) {
 
                 while (i--) {
 
+                    // @ts-ignore
                     if (node.chi[i].typ == 'Comment') {
 
                         continue;
                     }
 
+                    // @ts-ignore
                     shouldMerge = node.chi[i].typ == 'Declaration';
                     break;
                 }
@@ -99,15 +101,17 @@ export function deduplicate(ast: AstNode) {
 
                         let shouldMerge = true;
                         // @ts-ignore
-                        let i = node.chi.length;
+                        let i: number = node.chi.length;
 
                         while (i--) {
 
+                            // @ts-ignore
                             if (node.chi[i].typ == 'Comment') {
 
                                 continue;
                             }
 
+                            // @ts-ignore
                             shouldMerge = node.chi[i].typ == 'Declaration';
                             break;
                         }

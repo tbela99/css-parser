@@ -1789,7 +1789,7 @@ function tokenize(iterator, errors, options) {
                         if (COLORS_NAMES[value] != null) {
                             Object.assign(t, {
                                 typ: 'Color',
-                                val: COLORS_NAMES[value],
+                                val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
                                 kin: 'hex'
                             });
                         }
@@ -2408,6 +2408,22 @@ function deduplicate(ast) {
                 continue;
             }
             if (node.typ == 'AtRule' && node.nam == 'media' && node.val == 'all') {
+                // merge only if the previous rule contains only declarations
+                let shouldMerge = true;
+                // @ts-ignore
+                let i = node.chi.length;
+                while (i--) {
+                    // @ts-ignore
+                    if (node.chi[i].typ == 'Comment') {
+                        continue;
+                    }
+                    // @ts-ignore
+                    shouldMerge = node.chi[i].typ == 'Declaration';
+                    break;
+                }
+                if (!shouldMerge) {
+                    continue;
+                }
                 // @ts-ignore
                 ast.chi.splice(i, 1, ...node.chi);
                 // @ts-ignore
@@ -2421,6 +2437,21 @@ function deduplicate(ast) {
                         node.nam == previous.nam &&
                         node.val == previous.val)) {
                     if ('chi' in node) {
+                        let shouldMerge = true;
+                        // @ts-ignore
+                        let i = node.chi.length;
+                        while (i--) {
+                            // @ts-ignore
+                            if (node.chi[i].typ == 'Comment') {
+                                continue;
+                            }
+                            // @ts-ignore
+                            shouldMerge = node.chi[i].typ == 'Declaration';
+                            break;
+                        }
+                        if (!shouldMerge) {
+                            continue;
+                        }
                         // @ts-ignore
                         previous.chi = node.chi.concat(...(previous.chi || []));
                     }
@@ -2463,7 +2494,7 @@ function deduplicateRule(ast) {
     if (!('chi' in ast) || ast.chi?.length == 0) {
         return ast;
     }
-    const set = new Set;
+    const map = new Map;
     // @ts-ignore
     let i = ast.chi.length;
     let node;
@@ -2474,13 +2505,13 @@ function deduplicateRule(ast) {
             continue;
         }
         // @ts-ignore
-        if (set.has(node.nam)) {
+        if (map.has(node.nam)) {
             // @ts-ignore
             ast.chi.splice(i, 1);
             continue;
         }
         // @ts-ignore
-        set.add(node.nam);
+        map.set(node.nam, node);
     }
     return ast;
 }
