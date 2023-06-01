@@ -1,12 +1,14 @@
 import {PropertySetType, TokenType} from "../src/@types";
 
-function createProperties(shorthand: string, properties: string[], types: TokenType[]) {
+function createProperties(shorthand: string, properties: string[], types: TokenType[], multiple: boolean, separator) {
 
     return Object.assign({
         [shorthand]: {
             shorthand,
             properties,
-            types
+            types,
+            multiple,
+            separator: separator == undefined ? null : separator
         }
     }, properties.reduce((acc, property: string) => {
 
@@ -23,17 +25,25 @@ export const properties: PropertySetType =
     [
         [
             'margin',
-            ['margin-top', 'margin-left', 'margin-bottom', 'margin-right'],
-            ['Dimension', 'Number', 'Perc']
+            ['margin-top', 'margin-right', 'margin-bottom', 'margin-left'],
+            ['Dimension', 'Number', 'Perc'],
+            false
         ],
         [
             'padding',
-            ['padding-top', 'padding-left', 'padding-bottom', 'padding-right'],
-            ['Dimension', 'Number', 'Perc']
+            ['padding-top', 'padding-right', 'padding-bottom', 'padding-left'],
+            ['Dimension', 'Number', 'Perc'],
+            false
+        ],
+        [
+            'border-radius',
+            ['border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius'],
+            ['Dimension', 'Number', 'Perc'],
+            false
         ]
-    ].reduce((acc, data) => {
+    ].reduce((acc, data: Array<string | string[]>) => {
 
         return Object.assign(acc, createProperties(...data));
     }, <PropertySetType>{});
 
-console.debug({properties})
+console.debug(JSON.stringify({properties}, null, 1));

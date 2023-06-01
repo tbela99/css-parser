@@ -3,6 +3,7 @@ import typescript from "@rollup/plugin-typescript";
 import nodeResolve from "@rollup/plugin-node-resolve";
 import glob from "glob";
 import terser from "@rollup/plugin-terser";
+import json from "@rollup/plugin-json";
 
 export default [...await new Promise((resolve, reject) => {
 
@@ -16,7 +17,7 @@ export default [...await new Promise((resolve, reject) => {
         resolve(files.map(input => {
             return {
                 input,
-                plugins: [nodeResolve(), typescript()],
+                plugins: [nodeResolve(), json(), typescript()],
                 output:
                 {
                     banner: `/* generate from ${input} */`,
@@ -32,7 +33,7 @@ export default [...await new Promise((resolve, reject) => {
 })].concat([
     {
         input: 'src/index.ts',
-        plugins: [nodeResolve(), typescript()],
+        plugins: [nodeResolve(), json(), typescript()],
         output: [
             {
                 file: './dist/index.mjs',
@@ -47,7 +48,7 @@ export default [...await new Promise((resolve, reject) => {
     },
     {
         input: 'src/index.ts',
-        plugins: [nodeResolve(), typescript(), terser()],
+        plugins: [nodeResolve(), typescript(), terser(), json()],
         output: [
             {
                 file: './dist/index.min.mjs',

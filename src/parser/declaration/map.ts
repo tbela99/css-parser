@@ -1,9 +1,8 @@
-import {AstDeclaration, DimensionToken, NumberToken, ShorthandPropertyType, Token} from "../../@types";
+import {AstDeclaration, ShorthandPropertyType, Token} from "../../@types";
 import {eq} from "../utils/eq";
-import {isLengthUnit} from "../utils";
 
 
-export class PropertySet {
+export class PropertyMap {
 
     protected config: ShorthandPropertyType;
     protected declarations: Map<string, AstDeclaration>;
@@ -98,23 +97,9 @@ export class PropertySet {
 
             let i = this.config.properties.length;
 
-            while (--i) {
+            while (--i > 0) {
 
-                const t = <DimensionToken | NumberToken> value.val[i];
-                const k = <DimensionToken | NumberToken> value.val[Math.floor((i - 1) / 2)];
-
-                if (t.val == k.val && t.val == '0') {
-
-                    if ((t.typ == 'Number' && isLengthUnit(<DimensionToken> k)) ||
-                        (k.typ == 'Number' && isLengthUnit(<DimensionToken> t)) ||
-                        (isLengthUnit(<DimensionToken>k) || isLengthUnit(<DimensionToken>t))) {
-
-                        value.val.splice(i, 1);
-                        continue;
-                    }
-                }
-
-                if (eq(t, k)) {
+                if (eq(value.val[i], value.val[Math.floor((i - 1) / 2)])) {
 
                     value.val.splice(i, 1);
                     continue;
@@ -123,16 +108,14 @@ export class PropertySet {
                 break;
             }
 
-            if (value.val.length > 1) {
+            const k: number = value.val.length * 2;
 
-                const k: number = value.val.length * 2;
-                i = 0;
+            i = 0;
 
-                while (i < k) {
+            while (i < k) {
 
-                    value.val.splice(i + 1, 0, {typ: 'Whitespace'});
-                    i += 2;
-                }
+                value.val.splice(i + 1, 0, {typ: 'Whitespace'});
+                i += 2;
             }
 
             iterator = [value][Symbol.iterator]();

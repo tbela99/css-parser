@@ -1,29 +1,22 @@
-
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import exp from "constants";
-import {DimensionToken} from "../../@types";
-
-// export const num = `(((\\+|-)?(?=\\d*[.eE])([0-9]+\\.?[0-9]*|\\.[0-9]+)([eE](\\+|-)?[0-9]+)?)|(\\d+|(\\d*\\.\\d+)))`;
-// export const nl = `\n|\r\n|\r|\f`;
-// export const nonascii = `[^\u{0}-\u{0ed}]`;
-// export const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
-// export const escape = `(${unicode})|(\\[^\n\r\f0-9a-f])`;
-// export const nmstart = `[_a-z]|${nonascii}|${escape}`;
-// export const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`
-// export const ident = `[-]{0,2}(${nmstart})(${nmchar})*`;
-// export const string1 	= `\"([^\n\r\f\\"]|\\${nl}|${escape})*\"`;
-// export const string2 =	`\'([^\n\r\f\\']|\\${nl}|${escape})*\'`;
-// export const string =	`(${string1})|(${string2})`;
-//
-// const name = `${nmchar}+`;
-// const hash = `#${name}`;
+import {DimensionToken} from '../../@types';
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
 
-function isLetter(codepoint:number) {
+export function isLengthUnit(dimension: DimensionToken): boolean {
+
+    return [
+        'Q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
+        'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
+        'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
+        'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
+    ].includes(dimension.unit);
+}
+
+function isLetter(codepoint: number) {
 
     // lowercase
     return (codepoint >= 0x61 && codepoint <= 0x7a) ||
@@ -133,7 +126,7 @@ export function isHash(name: string): boolean {
     return true;
 }
 
-export function isNumber (name: string): boolean {
+export function isNumber(name: string): boolean {
 
     if (name.length == 0) {
 
@@ -145,7 +138,7 @@ export function isNumber (name: string): boolean {
     const j = name.length;
 
     // '+' '-'
-    if ([0x2b, 0x2d].includes(codepoint)){
+    if ([0x2b, 0x2d].includes(codepoint)) {
 
         i++;
     }
@@ -155,7 +148,7 @@ export function isNumber (name: string): boolean {
 
         codepoint = <number>name.codePointAt(i);
 
-        if(isDigit(codepoint)) {
+        if (isDigit(codepoint)) {
 
             i++;
             continue;
@@ -183,7 +176,7 @@ export function isNumber (name: string): boolean {
 
         codepoint = <number>name.codePointAt(i);
 
-        if(isDigit(codepoint)) {
+        if (isDigit(codepoint)) {
 
             continue;
         }
@@ -225,7 +218,7 @@ export function isNumber (name: string): boolean {
 
         codepoint = <number>name.codePointAt(i);
 
-        if(!isDigit(codepoint)) {
+        if (!isDigit(codepoint)) {
 
             return false;
         }
@@ -238,7 +231,7 @@ export function isDimension(name: string) {
 
     let index: number = 0;
 
-    while (index ++ < name.length) {
+    while (index++ < name.length) {
 
         if (isDigit(<number>name.codePointAt(name.length - index))) {
 
@@ -270,7 +263,7 @@ export function parseDimension(name: string): DimensionToken {
 
     let index: number = 0;
 
-    while (index ++ < name.length) {
+    while (index++ < name.length) {
 
         if (isDigit(<number>name.codePointAt(name.length - index))) {
 
@@ -296,7 +289,7 @@ export function isHexColor(name: string) {
 
     for (let chr of name.slice(1)) {
 
-        let codepoint = <number> chr.codePointAt(0);
+        let codepoint = <number>chr.codePointAt(0);
 
         if (!isDigit(codepoint) &&
             // A-F
@@ -313,14 +306,14 @@ export function isHexColor(name: string) {
 
 export function isHexDigit(name: string) {
 
-    if (name.length  || name.length > 6) {
+    if (name.length || name.length > 6) {
 
         return false;
     }
 
     for (let chr of name) {
 
-        let codepoint = <number> chr.codePointAt(0);
+        let codepoint = <number>chr.codePointAt(0);
 
         if (!isDigit(codepoint) &&
             // A F

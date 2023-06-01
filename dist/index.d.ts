@@ -180,7 +180,7 @@ interface Position {
 interface Location {
 
     sta: Position;
-    end: Position;
+    // end: Position;
     src: string;
 }
 

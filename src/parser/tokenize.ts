@@ -61,12 +61,12 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 col: 1
             },
 
-            end: {
-
-                ind: -1,
-                lin: 1,
-                col: 0
-            },
+            // end: {
+            //
+            //     ind: -1,
+            //     lin: 1,
+            //     col: 0
+            // },
             src: ''
         }
     }
@@ -1337,11 +1337,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     // @ts-ignore
                     context = stack[stack.length - 1] || root;
 
-                    if (options.location && context != root) {
+                    // if (options.location && context != root) {
 
                         // @ts-ignore
-                        context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
-                    }
+                        // context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
+                    // }
 
                     // @ts-ignore
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
@@ -1355,11 +1355,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 }
 
                 // @ts-ignore
-                if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
+                // if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
 
                     // @ts-ignore
-                    context.chi[context.chi.length - 1].loc.end = {ind, lin, col};
-                }
+                    // context.chi[context.chi.length - 1].loc.end = {ind, lin, col};
+                // }
 
                 break;
 
@@ -1402,24 +1402,31 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
         pushToken(getType(buffer));
     }
 
+    if (tokens.length > 0) {
+
+        parseNode(tokens);
+    }
+
+    // console.debug({tokens});
+
     // pushToken({typ: 'EOF'});
     //
-    if (col == 0) {
+    // if (col == 0) {
+    //
+    //     col = 1;
+    // }
 
-        col = 1;
-    }
-
-    if (options.location) {
-
-        // @ts-ignore
-        root.loc.end = {ind, lin, col};
-
-        for (const context of stack) {
-
-            // @ts-ignore
-            context.loc.end = {ind, lin, col};
-        }
-    }
+    // if (options.location) {
+    //
+    //     // @ts-ignore
+    //     root.loc.end = {ind, lin, col};
+    //
+    //     for (const context of stack) {
+    //
+    //         // @ts-ignore
+    //         context.loc.end = {ind, lin, col};
+    //     }
+    // }
 
     return root;
 }

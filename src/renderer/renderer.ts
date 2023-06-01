@@ -9,6 +9,7 @@ import {
     Token
 } from "../@types";
 import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
+import {isLengthUnit} from "../parser/utils";
 
 const indents: string[] = [];
 
@@ -27,7 +28,7 @@ export function render(data: AstNode, opt: RenderOptions = {}) {
         colorConvert: true
     }, opt);
 
-    function reducer (acc: string, curr: Token): string {
+    function reducer(acc: string, curr: Token): string {
 
         if (curr.typ == 'Comment' && options.removeComments) {
 
@@ -91,26 +92,20 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
             }
 
             // @ts-ignore
-            let children: string = (<AstRule> data).chi.reduce((css: string, node: AstNode) => {
+            let children: string = (<AstRule>data).chi.reduce((css: string, node: AstNode) => {
 
                 let str: string;
 
                 if (node.typ == 'Comment') {
 
                     str = options.removeComments ? '' : (<AstComment>node).val;
-                }
-
-                else if (node.typ == 'Declaration') {
+                } else if (node.typ == 'Declaration') {
 
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(<() => string>reducer, '').trimEnd()};`;
-                }
-
-                else if (node.typ == 'AtRule' && !('chi' in node)) {
+                } else if (node.typ == 'AtRule' && !('chi' in node)) {
 
                     str = `@${(<AstAtRule>node).nam} ${(<AstAtRule>node).val};`;
-                }
-
-                else {
+                } else {
 
                     str = doRender(node, options, reducer, level + 1);
                 }
@@ -127,7 +122,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
                 if (str !== '')
 
-                return `${css}${options.newLine}${indentSub}${str}`;
+                    return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
 
             if (children.endsWith(';')) {
@@ -137,10 +132,10 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
             if (data.typ == 'AtRule') {
 
-                return `@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val ? (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine)  + indent + `}`
+                return `@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val ? (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
 
-            return (<AstRule>data).sel +  `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine)  + indent + `}`
+            return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
     }
 
     return '';
@@ -148,7 +143,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
 export function renderToken(token: Token, options: RenderOptions = {}) {
 
-    switch (token.typ ) {
+    switch (token.typ) {
 
 
         case 'Color':
@@ -160,19 +155,13 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
                 if (token.val == 'rgb' || token.val == 'rgba') {
 
                     value = rgb2Hex(token);
-                }
-
-                else if (token.val == 'hsl' || token.val == 'hsla') {
+                } else if (token.val == 'hsl' || token.val == 'hsla') {
 
                     value = hsl2Hex(token);
-                }
-
-                else if (token.val == 'hwb') {
+                } else if (token.val == 'hwb') {
 
                     value = hwb2hex(token);
-                }
-
-                else if (token.val == 'device-cmyk') {
+                } else if (token.val == 'device-cmyk') {
 
                     value = cmyk2hex(token);
                 }
@@ -184,14 +173,12 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
                     if (value.length == 7) {
 
                         if (value[1] == value[2] &&
-                        value[3] == value[4] &&
-                        value[5] == value[6]) {
+                            value[3] == value[4] &&
+                            value[5] == value[6]) {
 
                             value = `#${value[1]}${value[3]}${value[5]}`;
                         }
-                    }
-
-                    else if (value.length == 9) {
+                    } else if (value.length == 9) {
 
                         if (value[1] == value[2] &&
                             value[3] == value[4] &&
@@ -212,6 +199,7 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
             }
 
         case 'Func':
+
             // @ts-ignore
             return token.val + '(' + token.chi.reduce((acc: string, curr: Token) => {
 
@@ -265,9 +253,16 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
             return '!important';
 
         case 'Dimension':
+
+            if (token.val === '0' && isLengthUnit(token)) {
+
+                return '0';
+            }
+
             return token.val + (<DimensionToken>token).unit;
 
         case 'Perc':
+
             return token.val + '%';
 
         case 'Comment':

@@ -6,22 +6,16 @@
 
     // https://www.w3.org/TR/CSS21/syndata.html#syntax
     // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
-    // export const num = `(((\\+|-)?(?=\\d*[.eE])([0-9]+\\.?[0-9]*|\\.[0-9]+)([eE](\\+|-)?[0-9]+)?)|(\\d+|(\\d*\\.\\d+)))`;
-    // export const nl = `\n|\r\n|\r|\f`;
-    // export const nonascii = `[^\u{0}-\u{0ed}]`;
-    // export const unicode = `\\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?`;
-    // export const escape = `(${unicode})|(\\[^\n\r\f0-9a-f])`;
-    // export const nmstart = `[_a-z]|${nonascii}|${escape}`;
-    // export const nmchar = `[_a-z0-9-]|${nonascii}|${escape}`
-    // export const ident = `[-]{0,2}(${nmstart})(${nmchar})*`;
-    // export const string1 	= `\"([^\n\r\f\\"]|\\${nl}|${escape})*\"`;
-    // export const string2 =	`\'([^\n\r\f\\']|\\${nl}|${escape})*\'`;
-    // export const string =	`(${string1})|(${string2})`;
-    //
-    // const name = `${nmchar}+`;
-    // const hash = `#${name}`;
     // '\\'
     const REVERSE_SOLIDUS = 0x5c;
+    function isLengthUnit(dimension) {
+        return [
+            'Q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
+            'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
+            'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
+            'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
+        ].includes(dimension.unit);
+    }
     function isLetter(codepoint) {
         // lowercase
         return (codepoint >= 0x61 && codepoint <= 0x7a) ||
@@ -561,9 +555,6 @@
         for (let i = 0; i < 6; i += 2) {
             // @ts-ignore
             t = token.chi[i];
-            if (t == null) {
-                console.debug({ token });
-            }
             // @ts-ignore
             value += Math.round(t.typ == 'Perc' ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0');
         }
@@ -907,6 +898,9 @@
             case 'Important':
                 return '!important';
             case 'Dimension':
+                if (token.val === '0' && isLengthUnit(token)) {
+                    return '0';
+                }
                 return token.val + token.unit;
             case 'Perc':
                 return token.val + '%';
@@ -962,11 +956,12 @@
                     lin: 1,
                     col: 1
                 },
-                end: {
-                    ind: -1,
-                    lin: 1,
-                    col: 0
-                },
+                // end: {
+                //
+                //     ind: -1,
+                //     lin: 1,
+                //     col: 0
+                // },
                 src: ''
             };
         }
@@ -1813,10 +1808,10 @@
                         const previousNode = stack.pop();
                         // @ts-ignore
                         context = stack[stack.length - 1] || root;
-                        if (options.location && context != root) {
-                            // @ts-ignore
-                            context.loc.end = { ind, lin, col: col == 0 ? 1 : col };
-                        }
+                        // if (options.location && context != root) {
+                        // @ts-ignore
+                        // context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
+                        // }
                         // @ts-ignore
                         if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                             context.chi.pop();
@@ -1826,10 +1821,10 @@
                         buffer = '';
                     }
                     // @ts-ignore
-                    if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
-                        // @ts-ignore
-                        context.chi[context.chi.length - 1].loc.end = { ind, lin, col };
-                    }
+                    // if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
+                    // @ts-ignore
+                    // context.chi[context.chi.length - 1].loc.end = {ind, lin, col};
+                    // }
                     break;
                 case '!':
                     if (buffer.length > 0) {
@@ -1856,19 +1851,27 @@
         if (buffer.length > 0) {
             pushToken(getType(buffer));
         }
+        if (tokens.length > 0) {
+            parseNode(tokens);
+        }
+        // console.debug({tokens});
         // pushToken({typ: 'EOF'});
         //
-        if (col == 0) {
-            col = 1;
-        }
-        if (options.location) {
-            // @ts-ignore
-            root.loc.end = { ind, lin, col };
-            for (const context of stack) {
-                // @ts-ignore
-                context.loc.end = { ind, lin, col };
-            }
-        }
+        // if (col == 0) {
+        //
+        //     col = 1;
+        // }
+        // if (options.location) {
+        //
+        //     // @ts-ignore
+        //     root.loc.end = {ind, lin, col};
+        //
+        //     for (const context of stack) {
+        //
+        //         // @ts-ignore
+        //         context.loc.end = {ind, lin, col};
+        //     }
+        // }
         return root;
     }
     function getBlockType(chr) {
@@ -1890,6 +1893,232 @@
         throw new Error(`unhandled token: '${chr}'`);
     }
 
+    function eq(a, b) {
+        if ((typeof a != 'object') || typeof b != 'object') {
+            return a === b;
+        }
+        const k1 = Object.keys(a);
+        const k2 = Object.keys(b);
+        return k1.length == k2.length &&
+            k1.every((key) => {
+                return eq(a[key], b[key]);
+            });
+    }
+
+    class PropertySet {
+        config;
+        declarations;
+        constructor(config) {
+            this.config = config;
+            this.declarations = new Map;
+        }
+        add(declaration) {
+            if (declaration.nam == this.config.shorthand) {
+                this.declarations.clear();
+                this.declarations.set(declaration.nam, declaration);
+            }
+            else {
+                // expand shorthand
+                if (this.declarations.has(this.config.shorthand)) {
+                    let isValid = true;
+                    const tokens = [];
+                    for (let token of this.declarations.get(this.config.shorthand).val) {
+                        if (this.config.types.includes(token.typ)) {
+                            tokens.push(token);
+                            continue;
+                        }
+                        if (token.typ != 'Whitespace' && token.typ != 'Comment') {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                    if (!isValid || tokens.length == 0) {
+                        this.declarations.set(declaration.nam, declaration);
+                    }
+                    else {
+                        this.declarations.delete(this.config.shorthand);
+                        this.config.properties.forEach((property, index) => {
+                            while (index >= tokens.length) {
+                                index = Math.floor(index / 2);
+                            }
+                            this.declarations.set(property, {
+                                typ: 'Declaration',
+                                nam: property,
+                                val: [tokens[index]].map((o) => {
+                                    return { ...o };
+                                })
+                            });
+                        });
+                    }
+                }
+                this.declarations.set(declaration.nam, declaration);
+            }
+            return this;
+        }
+        [Symbol.iterator]() {
+            let iterator;
+            const declarations = this.declarations;
+            if (declarations.size < this.config.properties.length) {
+                iterator = declarations.values();
+            }
+            else {
+                const value = this.config.properties.reduce((acc, curr) => {
+                    acc.val.push(...this.declarations.get(curr).val);
+                    return acc;
+                }, {
+                    typ: 'Declaration',
+                    nam: this.config.shorthand,
+                    val: []
+                });
+                let i = this.config.properties.length;
+                while (--i) {
+                    const t = value.val[i];
+                    const k = value.val[Math.floor((i - 1) / 2)];
+                    if (t.val == k.val && t.val == '0') {
+                        if ((t.typ == 'Number' && isLengthUnit(k)) ||
+                            (k.typ == 'Number' && isLengthUnit(t)) ||
+                            (isLengthUnit(k) || isLengthUnit(t))) {
+                            value.val.splice(i, 1);
+                            continue;
+                        }
+                    }
+                    if (eq(t, k)) {
+                        value.val.splice(i, 1);
+                        continue;
+                    }
+                    break;
+                }
+                if (value.val.length > 1) {
+                    const k = value.val.length * 2;
+                    i = 0;
+                    while (i < k) {
+                        value.val.splice(i + 1, 0, { typ: 'Whitespace' });
+                        i += 2;
+                    }
+                }
+                iterator = [value][Symbol.iterator]();
+                return {
+                    next() {
+                        return iterator.next();
+                    }
+                };
+            }
+            return {
+                next() {
+                    return iterator.next();
+                }
+            };
+        }
+    }
+
+    var properties = {
+    	margin: {
+    		shorthand: "margin",
+    		properties: [
+    			"margin-top",
+    			"margin-right",
+    			"margin-bottom",
+    			"margin-left"
+    		],
+    		types: [
+    			"Dimension",
+    			"Number",
+    			"Perc"
+    		]
+    	},
+    	"margin-top": {
+    		shorthand: "margin"
+    	},
+    	"margin-right": {
+    		shorthand: "margin"
+    	},
+    	"margin-bottom": {
+    		shorthand: "margin"
+    	},
+    	"margin-left": {
+    		shorthand: "margin"
+    	},
+    	padding: {
+    		shorthand: "padding",
+    		properties: [
+    			"padding-top",
+    			"padding-right",
+    			"padding-bottom",
+    			"padding-left"
+    		],
+    		types: [
+    			"Dimension",
+    			"Number",
+    			"Perc"
+    		]
+    	},
+    	"padding-top": {
+    		shorthand: "padding"
+    	},
+    	"padding-right": {
+    		shorthand: "padding"
+    	},
+    	"padding-bottom": {
+    		shorthand: "padding"
+    	},
+    	"padding-left": {
+    		shorthand: "padding"
+    	}
+    };
+    var config$1 = {
+    	properties: properties
+    };
+
+    const getConfig = () => config$1;
+
+    const config = getConfig();
+    class PropertyList {
+        declarations;
+        constructor() {
+            this.declarations = new Map;
+        }
+        add(declaration) {
+            if (declaration.typ != 'Declaration') {
+                this.declarations.set(this.declarations.size.toString(), declaration);
+                return this;
+            }
+            const propertyName = declaration.nam;
+            if (propertyName in config.properties) {
+                const shorthand = config.properties[propertyName].shorthand;
+                if (!this.declarations.has(shorthand)) {
+                    this.declarations.set(shorthand, new PropertySet(config.properties[shorthand]));
+                }
+                this.declarations.get(shorthand).add(declaration);
+                return this;
+            }
+            this.declarations.set(propertyName, declaration);
+            return this;
+        }
+        [Symbol.iterator]() {
+            let iterator = this.declarations.values();
+            const iterators = [];
+            return {
+                next() {
+                    let value = iterator.next();
+                    while ((value.done && iterators.length > 0) ||
+                        value.value instanceof PropertySet) {
+                        if (value.value instanceof PropertySet) {
+                            iterators.unshift(iterator);
+                            // @ts-ignore
+                            iterator = value.value[Symbol.iterator]();
+                            value = iterator.next();
+                        }
+                        if (value.done && iterators.length > 0) {
+                            iterator = iterators.shift();
+                            value = iterator.next();
+                        }
+                    }
+                    return value;
+                }
+            };
+        }
+    }
+
     function parse(css, opt = {}) {
         const errors = [];
         const options = {
@@ -1897,7 +2126,7 @@
             location: false,
             processImport: false,
             deduplicate: false,
-            removeEmpty: false,
+            removeEmpty: true,
             ...opt
         };
         if (css.length == 0) {
@@ -1912,92 +2141,75 @@
         return { ast, errors };
     }
     function deduplicate(ast) {
-        if ('chi' in ast) {
+        // @ts-ignore
+        if (('chi' in ast) && ast.chi?.length > 0) {
             // @ts-ignore
-            let i = ast.chi.length;
+            let i = 0;
             let previous;
             let node;
-            while (i--) {
+            let nodeIndex;
+            // @ts-ignore
+            for (; i < ast.chi.length; i++) {
                 // @ts-ignore
                 node = ast.chi[i];
-                // @ts-ignore
                 if (node.typ == 'Comment') {
                     continue;
                 }
-                if (node.typ == 'AtRule' && node.nam == 'media' && node.val == 'all') {
-                    // merge only if the previous rule contains only declarations
-                    let shouldMerge = true;
+                if (node.typ == 'AtRule' && node.val == 'all') {
                     // @ts-ignore
-                    let i = node.chi.length;
-                    while (i--) {
-                        // @ts-ignore
-                        if (node.chi[i].typ == 'Comment') {
-                            continue;
-                        }
-                        // @ts-ignore
-                        shouldMerge = node.chi[i].typ == 'Declaration';
-                        break;
-                    }
-                    if (!shouldMerge) {
-                        continue;
-                    }
-                    // @ts-ignore
-                    ast.chi.splice(i, 1, ...node.chi);
-                    // @ts-ignore
-                    i += node.chi.length;
+                    ast.chi?.splice(i, 1, ...node.chi);
+                    i--;
                     continue;
                 }
-                // @ts-ignore
-                if (node.typ == previous?.typ) {
-                    if ((node.typ == 'Rule' && node.sel == previous.sel) ||
-                        (node.typ == 'AtRule' &&
-                            node.nam == previous.nam &&
-                            node.val == previous.val)) {
-                        if ('chi' in node) {
+                if (('chi' in node)) {
+                    // @ts-ignore
+                    if (previous != null && previous.typ == node.typ) {
+                        // @ts-ignore
+                        if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                            // @ts-ignore
+                            (node.typ == 'AtRule') && node.val == previous.val) {
                             let shouldMerge = true;
                             // @ts-ignore
-                            let i = node.chi.length;
-                            while (i--) {
+                            let k = previous.chi.length;
+                            while (k--) {
                                 // @ts-ignore
-                                if (node.chi[i].typ == 'Comment') {
+                                if (previous.chi[k].typ == 'Comment') {
                                     continue;
                                 }
                                 // @ts-ignore
-                                shouldMerge = node.chi[i].typ == 'Declaration';
+                                shouldMerge = previous.chi[k].typ == 'Declaration';
                                 break;
                             }
-                            if (!shouldMerge) {
+                            if (shouldMerge) {
+                                // @ts-ignore
+                                node.chi.unshift(...previous.chi);
+                                // @ts-ignore
+                                ast.chi.splice(nodeIndex, 1);
+                                i--;
+                                previous = node;
+                                nodeIndex = i;
                                 continue;
                             }
-                            // @ts-ignore
-                            previous.chi = node.chi.concat(...(previous.chi || []));
                         }
+                    }
+                    // @ts-ignore
+                    if (previous != null && previous != node && 'chi' in previous) {
                         // @ts-ignore
-                        ast.chi.splice(i, 1);
-                        if (!('chi' in previous)) {
-                            continue;
-                        }
-                        // @ts-ignore
-                        if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                        if (previous.chi.some(n => n.typ == 'Declaration')) {
                             deduplicateRule(previous);
                         }
                         else {
                             deduplicate(previous);
                         }
-                        continue;
-                    }
-                    else if (node.typ == 'Declaration' && node.nam == previous.nam) {
-                        // @ts-ignore
-                        ast.chi.splice(i, 1);
-                        continue;
                     }
                 }
                 previous = node;
-                if (!('chi' in node)) {
-                    continue;
-                }
+                nodeIndex = i;
+            }
+            // @ts-ignore
+            if (node != null && ('chi' in node)) {
                 // @ts-ignore
-                if (node.typ == 'AtRule' || node.chi.some(n => n.typ == 'Declaration')) {
+                if (node.chi.some(n => n.typ == 'Declaration')) {
                     deduplicateRule(node);
                 }
                 else {
@@ -2011,25 +2223,24 @@
         if (!('chi' in ast) || ast.chi?.length == 0) {
             return ast;
         }
-        const map = new Map;
         // @ts-ignore
-        let i = ast.chi.length;
-        let node;
-        while (i--) {
+        const j = ast.chi.length;
+        let k = 0;
+        const properties = new PropertyList();
+        for (; k < j; k++) {
             // @ts-ignore
-            node = ast.chi[i];
-            if (node.typ != 'Declaration') {
-                continue;
-            }
-            // @ts-ignore
-            if (map.has(node.nam)) {
+            if ('Comment' == ast.chi[k].typ || 'Declaration' == ast.chi[k].typ) {
                 // @ts-ignore
-                ast.chi.splice(i, 1);
+                properties.add(ast.chi[k]);
                 continue;
             }
-            // @ts-ignore
-            map.set(node.nam, node);
+            break;
         }
+        // @ts-ignore
+        ast.chi = [...properties].concat(ast.chi.slice(k));
+        // @ts-ignore
+        // ast.chi.splice(0, k - 1, ...properties);
+        // console.debug({k, removed});
         return ast;
     }
 

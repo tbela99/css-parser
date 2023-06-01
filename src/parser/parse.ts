@@ -1,11 +1,11 @@
 import {
-    AstAtRule, AstDeclaration,
-    AstNode, AstRule,
+    AstAtRule, AstNode, AstRule,
     AstRuleStyleSheet,
     ErrorDescription,
-    ParserOptions, Token
+    ParserOptions
 } from "../@types";
 import {tokenize} from "./tokenize";
+import {PropertyList} from "./declaration";
 
 export function parse(css: string, opt: ParserOptions = {}): { ast: AstRuleStyleSheet; errors: ErrorDescription[] } {
 
@@ -15,7 +15,7 @@ export function parse(css: string, opt: ParserOptions = {}): { ast: AstRuleStyle
         location: false,
         processImport: false,
         deduplicate: false,
-        removeEmpty: false,
+        removeEmpty: true,
         ...opt
     };
 
@@ -38,128 +38,98 @@ export function parse(css: string, opt: ParserOptions = {}): { ast: AstRuleStyle
 
 export function deduplicate(ast: AstNode) {
 
-    if ('chi' in ast) {
+    // @ts-ignore
+    if (('chi' in ast) && ast.chi?.length > 0) {
 
         // @ts-ignore
-        let i: number = <number>ast.chi.length;
+        let i: number = 0;
         let previous: AstNode;
         let node: AstNode;
+        let nodeIndex: number;
 
-        while (i--) {
+        // @ts-ignore
+        for (; i < <number>ast.chi.length; i++) {
 
             // @ts-ignore
-            node = <AstNode>ast.chi[i];
+            node = ast.chi[i];
 
-            // @ts-ignore
             if (node.typ == 'Comment') {
 
                 continue;
             }
 
-            if (node.typ == 'AtRule' && (<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
-
-                // merge only if the previous rule contains only declarations
-                let shouldMerge = true;
-                // @ts-ignore
-                let i = node.chi.length;
-
-                while (i--) {
-
-                    // @ts-ignore
-                    if (node.chi[i].typ == 'Comment') {
-
-                        continue;
-                    }
-
-                    // @ts-ignore
-                    shouldMerge = node.chi[i].typ == 'Declaration';
-                    break;
-                }
-
-                if (!shouldMerge) {
-
-                    continue;
-                }
+            if (node.typ == 'AtRule' && (<AstAtRule>node).val == 'all') {
 
                 // @ts-ignore
-                ast.chi.splice(i, 1, ...node.chi);
-                // @ts-ignore
-                i += node.chi.length;
+                ast.chi?.splice(i, 1, ...(<AstAtRule>node).chi);
+                i--;
                 continue;
             }
 
-            // @ts-ignore
-            if (node.typ == previous?.typ) {
+            if (('chi' in node)) {
 
-                if ((node.typ == 'Rule' && (<AstRule>node).sel == (<AstRule>previous).sel) ||
-                    (node.typ == 'AtRule' &&
-                        (<AstAtRule>node).nam == (<AstAtRule>previous).nam &&
-                        (<AstAtRule>node).val == (<AstAtRule>previous).val
-                    )) {
+                // @ts-ignore
+                if (previous != null && previous.typ == node.typ) {
 
-                    if ('chi' in node) {
+                    // @ts-ignore
+                    if ((node.typ == 'Rule' && (<AstRule>node).sel == (<AstAtRule>previous).sel) ||
+                        // @ts-ignore
+                        (node.typ == 'AtRule') && (<AstRule>node).val == (<AstRule>previous).val) {
 
                         let shouldMerge = true;
                         // @ts-ignore
-                        let i: number = node.chi.length;
+                        let k = previous.chi.length;
 
-                        while (i--) {
+                        while (k--) {
 
                             // @ts-ignore
-                            if (node.chi[i].typ == 'Comment') {
+                            if (previous.chi[k].typ == 'Comment') {
 
                                 continue;
                             }
 
                             // @ts-ignore
-                            shouldMerge = node.chi[i].typ == 'Declaration';
+                            shouldMerge = previous.chi[k].typ == 'Declaration';
                             break;
                         }
 
-                        if (!shouldMerge) {
+                        if (shouldMerge) {
 
+                            // @ts-ignore
+                            node.chi.unshift(...previous.chi);
+                            // @ts-ignore
+                            ast.chi.splice(nodeIndex, 1);
+                            i--;
+                            previous = node;
+                            nodeIndex = i;
                             continue;
                         }
-
-                        // @ts-ignore
-                        previous.chi = node.chi.concat(...(previous.chi || []));
                     }
+                }
+
+                // @ts-ignore
+                if (previous != null && previous != node && 'chi' in previous) {
 
                     // @ts-ignore
-                    ast.chi.splice(i, 1);
-
-                    if (!('chi' in previous)) {
-
-                        continue;
-                    }
-
-                    // @ts-ignore
-                    if (previous.typ == 'Rule' || previous.chi.some(n => n.typ == 'Declaration')) {
+                    if (previous.chi.some(n => n.typ == 'Declaration')) {
 
                         deduplicateRule(previous);
                     } else {
 
                         deduplicate(previous);
                     }
-
-                    continue;
-                } else if (node.typ == 'Declaration' && (<AstDeclaration>node).nam == (<AstDeclaration>previous).nam) {
-
-                    // @ts-ignore
-                    ast.chi.splice(i, 1);
-                    continue;
                 }
             }
 
             previous = node;
+            nodeIndex = i;
+        }
 
-            if (!('chi' in node)) {
-
-                continue;
-            }
+        // @ts-ignore
+        if (node != null && ('chi' in node)) {
 
             // @ts-ignore
-            if (node.typ == 'AtRule' || node.chi.some(n => n.typ == 'Declaration')) {
+            if (node.chi.some(n => n.typ == 'Declaration')) {
 
                 deduplicateRule(node);
             } else {
@@ -179,33 +149,31 @@ export function deduplicateRule(ast: AstNode): AstNode {
         return ast;
     }
 
-    const map: Map<string, Token> = new Map;
-
     // @ts-ignore
-    let i: number = <number>ast.chi.length;
-    let node: AstNode;
+    const j: number = <number>ast.chi.length;
+    let k: number = 0;
 
-    while (i--) {
+    const properties: PropertyList = new PropertyList();
 
-        // @ts-ignore
-        node = <AstDeclaration>ast.chi[i];
-
-        if (node.typ != 'Declaration') {
-
-            continue;
-        }
+    for (; k < j; k++) {
 
         // @ts-ignore
-        if (map.has(node.nam)) {
+        if ('Comment' == ast.chi[k].typ || 'Declaration' == ast.chi[k].typ) {
 
             // @ts-ignore
-            ast.chi.splice(i, 1);
+            properties.add(ast.chi[k]);
             continue;
         }
 
-        // @ts-ignore
-        map.set(node.nam, node);
+        break;
     }
 
+    // @ts-ignore
+    ast.chi = [...properties].concat(ast.chi.slice(k));
+
+    // @ts-ignore
+    // ast.chi.splice(0, k - 1, ...properties);
+
+    // console.debug({k, removed});
     return ast;
 }
