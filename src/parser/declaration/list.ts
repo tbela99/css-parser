@@ -51,7 +51,7 @@ export class PropertyList {
                 let value: IteratorResult<AstNode | PropertySet> = iterator.next();
 
                 while ((value.done && iterators.length > 0) ||
-                value.value instanceof PropertySet) {
+                    value.value instanceof PropertySet) {
 
                     if (value.value instanceof PropertySet) {
 

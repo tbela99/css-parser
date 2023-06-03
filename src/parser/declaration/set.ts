@@ -2,7 +2,6 @@ import {AstDeclaration, DimensionToken, NumberToken, ShorthandPropertyType, Toke
 import {eq} from "../utils/eq";
 import {isLengthUnit} from "../utils";
 
-
 export class PropertySet {
 
     protected config: ShorthandPropertyType;
@@ -26,17 +25,36 @@ export class PropertySet {
             if (this.declarations.has(this.config.shorthand)) {
 
                 let isValid: boolean = true;
-                const tokens: Token[] = [];
+                let current = -1;
+                const tokens: Token[][] = [];
 
                 for (let token of this.declarations.get(this.config.shorthand).val) {
 
                     if (this.config.types.includes(token.typ)) {
 
-                        tokens.push(token);
+                        if (tokens.length == 0) {
+
+                            tokens.push([]);
+                            current++;
+                        }
+
+                        tokens[current].push(token);
                         continue;
                     }
 
                     if (token.typ != 'Whitespace' && token.typ != 'Comment') {
+
+                        if (token.typ == 'Iden' && this.config.keywords.includes(token.val)) {
+
+                            tokens[current].push(token);
+                        }
+
+                        if (token.typ == 'Literal' && token.val == this.config.separator) {
+
+                            tokens.push([]);
+                            current++;
+                            continue;
+                        }
 
                         isValid = false;
                         break;
@@ -49,24 +67,40 @@ export class PropertySet {
                 } else {
 
                     this.declarations.delete(this.config.shorthand);
-                    this.config.properties.forEach((property: string, index: number) => {
 
-                        while (index >= tokens.length) {
+                    for (const values of tokens) {
 
-                            index = Math.floor(index / 2);
-                        }
+                        this.config.properties.forEach((property: string, index: number) => {
 
-                        this.declarations.set(property, <AstDeclaration>{
-                            typ: 'Declaration',
-                            nam: property,
-                            val: [tokens[index]].map((o: Token) => {
+                            if (!this.declarations.has(property)) {
 
-                                return {...o}
-                            })
+                                this.declarations.set(property, <AstDeclaration>{
+                                    typ: 'Declaration',
+                                    nam: property,
+                                    val: []
+                                });
+                            }
+
+                            while (index >= values.length) {
+
+                                index %= 2;
+                            }
+
+                            this.declarations.get(property).val.push(<Token>{...values[index]});
                         })
-                    })
+                    }
                 }
             }
+
+            declaration.val = declaration.val.reduce((acc, token) => {
+
+                if (this.config.types.includes(token.typ) || (token.typ == 'Iden' && this.config.keywords.includes(token.val))) {
+
+                    acc.push(token);
+                }
+
+                return acc;
+            }, <Token[]>[]);
 
             this.declarations.set(<string>declaration.nam, declaration);
         }
@@ -79,63 +113,85 @@ export class PropertySet {
         let iterator;
         const declarations = this.declarations;
 
-        if (declarations.size < this.config.properties.length) {
+        if (declarations.size < this.config.properties.length || this.config.properties.some((property: string, index: number) => {
+
+            return index > 0 && declarations.get(property).val.length != declarations.get(this.config.properties[Math.floor(index / 2)]).val.length;
+        })) {
 
             iterator = declarations.values();
         } else {
 
-            const value = this.config.properties.reduce((acc, curr) => {
+            const values: Token[][] = [];
+            declarations.get(this.config.properties[0]).val.length;
 
-                acc.val.push(...this.declarations.get(curr).val)
+            this.config.properties.forEach((property: string) => {
 
-                return acc
-            }, <AstDeclaration>{
+                this.declarations.get(property).val.forEach((token: Token, index: number) => {
 
-                typ: 'Declaration',
-                nam: this.config.shorthand,
-                val: []
+                    if (values.length == index) {
+
+                        values.push([]);
+                    }
+
+                    values[index].push(token);
+                });
             });
 
-            let i = this.config.properties.length;
+            for (const value of values) {
 
-            while (--i) {
+                let i: number = value.length;
 
-                const t = <DimensionToken | NumberToken> value.val[i];
-                const k = <DimensionToken | NumberToken> value.val[Math.floor((i - 1) / 2)];
+                while (--i) {
 
-                if (t.val == k.val && t.val == '0') {
+                    const t = <DimensionToken | NumberToken>value[i];
+                    const k = <DimensionToken | NumberToken>value[Math.floor((i - 1) / 2)];
 
-                    if ((t.typ == 'Number' && isLengthUnit(<DimensionToken> k)) ||
-                        (k.typ == 'Number' && isLengthUnit(<DimensionToken> t)) ||
-                        (isLengthUnit(<DimensionToken>k) || isLengthUnit(<DimensionToken>t))) {
+                    if (t.val == k.val && t.val == '0') {
 
-                        value.val.splice(i, 1);
+                        if ((t.typ == 'Number' && isLengthUnit(<DimensionToken>k)) ||
+                            (k.typ == 'Number' && isLengthUnit(<DimensionToken>t)) ||
+                            (isLengthUnit(<DimensionToken>k) || isLengthUnit(<DimensionToken>t))) {
+
+                            value.splice(i, 1);
+                            continue;
+                        }
+                    }
+
+                    if (eq(t, k)) {
+
+                        value.splice(i, 1);
                         continue;
                     }
-                }
 
-                if (eq(t, k)) {
-
-                    value.val.splice(i, 1);
-                    continue;
-                }
-
-                break;
-            }
-
-            if (value.val.length > 1) {
-
-                const k: number = value.val.length * 2;
-                i = 0;
-
-                while (i < k) {
-
-                    value.val.splice(i + 1, 0, {typ: 'Whitespace'});
-                    i += 2;
+                    break;
                 }
             }
+            iterator = [{
+                typ: 'Declaration',
+                nam: this.config.shorthand,
+                val: values.reduce((acc, curr) => {
 
-            iterator = [value][Symbol.iterator]();
+                    if (curr.length > 1) {
+
+                        const k: number = curr.length * 2 - 1;
+                        let i = 1;
+
+                        while (i < k) {
+
+                            curr.splice(i, 0, {typ: 'Whitespace'});
+                            i += 2;
+                        }
+                    }
+
+                    if (acc.length > 0) {
+
+                        acc.push({typ: 'Literal', val: this.config.separator});
+                    }
+
+                    acc.push(...curr);
+                    return acc;
+                }, <Token[]>[])
+            }][Symbol.iterator]();
 
             return {
 

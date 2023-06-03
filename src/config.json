@@ -12,7 +12,9 @@
     "Dimension",
     "Number",
     "Perc"
-   ]
+   ],
+   "multiple": false,
+   "separator": null
   },
   "margin-top": {
    "shorthand": "margin"
@@ -38,7 +40,9 @@
     "Dimension",
     "Number",
     "Perc"
-   ]
+   ],
+   "multiple": false,
+   "separator": null
   },
   "padding-top": {
    "shorthand": "padding"
@@ -51,6 +55,34 @@
   },
   "padding-left": {
    "shorthand": "padding"
+  },
+  "border-radius": {
+   "shorthand": "border-radius",
+   "properties": [
+    "border-top-left-radius",
+    "border-top-right-radius",
+    "border-bottom-right-radius",
+    "border-bottom-left-radius"
+   ],
+   "types": [
+    "Dimension",
+    "Number",
+    "Perc"
+   ],
+   "multiple": true,
+   "separator": "/"
+  },
+  "border-top-left-radius": {
+   "shorthand": "border-radius"
+  },
+  "border-top-right-radius": {
+   "shorthand": "border-radius"
+  },
+  "border-bottom-right-radius": {
+   "shorthand": "border-radius"
+  },
+  "border-bottom-left-radius": {
+   "shorthand": "border-radius"
   }
  }
 }

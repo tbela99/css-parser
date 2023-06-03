@@ -34,6 +34,21 @@ padding-left: 0px;
 margin-top: 0px;
 `;
 
+const borderRadius1 = `
+
+.test {
+border-radius: 4px 3px 6px / 2px 4px;
+border-top-left-radius: 4px 5px;
+`;
+
+const borderRadius2 = `
+
+.test {border-top-left-radius: 4px 2px;
+border-top-right-radius: 3px 4px;
+border-bottom-right-radius: 6px 2px;
+border-bottom-left-radius: 3px 4px;
+`;
+
 describe('shorthand', function () {
 
     it('margin padding', async function () {
@@ -44,4 +59,19 @@ describe('shorthand', function () {
         }).ast, {compress: true})).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}')
     });
 
+    it('border-radius #1', async function () {
+
+        expect(render(parse(borderRadius1, {
+            deduplicate: true,
+            removeEmpty: true
+        }).ast, {compress: true})).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}')
+    });
+
+    it('border-radius #2', async function () {
+
+        expect(render(parse(borderRadius2, {
+            deduplicate: true,
+            removeEmpty: true
+        }).ast, {compress: true})).equals('.test{border-radius:4px 3px 6px/2px 4px}')
+    });
 });

@@ -8,6 +8,8 @@ export interface ShorthandPropertyType {
     shorthand: string;
     properties: string[];
     types: string[];
+    separator: string;
+    keywords: string[];
 }
 
 export interface PropertySetType {
