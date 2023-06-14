@@ -1124,6 +1124,8 @@ var map = {
 					"Number"
 				],
 				"default": [
+					"normal",
+					"400"
 				],
 				keywords: [
 					"normal",
@@ -1162,17 +1164,12 @@ var map = {
 					"Angle"
 				],
 				"default": [
+					"normal"
 				],
 				keywords: [
 					"normal",
 					"italic",
 					"oblique"
-				],
-				mapping: [
-					"oblique",
-					{
-						type: "angle"
-					}
 				]
 			},
 			"font-size": {
@@ -1203,18 +1200,10 @@ var map = {
 					"Number"
 				],
 				"default": [
+					"normal"
 				],
 				keywords: [
-					"xx-small",
-					"x-small",
-					"small",
-					"medium",
-					"large",
-					"x-large",
-					"xx-large",
-					"xxx-large",
-					"larger",
-					"smaller"
+					"normal"
 				],
 				prefix: {
 					typ: "Literal",
@@ -1226,18 +1215,18 @@ var map = {
 					"Perc"
 				],
 				"default": [
+					"normal"
 				],
 				keywords: [
-					"xx-small",
-					"x-small",
-					"small",
-					"medium",
-					"large",
-					"x-large",
-					"xx-large",
-					"xxx-large",
-					"larger",
-					"smaller"
+					"ultra-condensed",
+					"extra-condensed",
+					"condensed",
+					"semi-condensed",
+					"normal",
+					"semi-expanded",
+					"expanded",
+					"extra-expanded",
+					"ultra-expanded"
 				],
 				mapping: {
 					"ultra-condensed": "50%",
@@ -1255,6 +1244,7 @@ var map = {
 				types: [
 				],
 				"default": [
+					"normal"
 				],
 				keywords: [
 					"normal",
@@ -1309,6 +1299,19 @@ var map = {
 				"default": [
 				],
 				keywords: [
+					"serif",
+					"sans-serif",
+					"monospace",
+					"cursive",
+					"fantasy",
+					"system-ui",
+					"ui-serif",
+					"ui-sans-serif",
+					"ui-monospace",
+					"ui-rounded",
+					"math",
+					"emoji",
+					"fangsong"
 				],
 				required: true,
 				multiple: true,
@@ -1352,6 +1355,7 @@ var map = {
 				types: [
 				],
 				"default": [
+					"none"
 				],
 				multiple: true,
 				keywords: [
@@ -1386,6 +1390,7 @@ var map = {
 					"UrlFunc"
 				],
 				"default": [
+					"none"
 				],
 				keywords: [
 					"none"
@@ -1395,6 +1400,7 @@ var map = {
 				types: [
 				],
 				"default": [
+					"scroll"
 				],
 				keywords: [
 					"scroll",
@@ -1406,6 +1412,7 @@ var map = {
 				types: [
 				],
 				"default": [
+					"border-box"
 				],
 				keywords: [
 					"border-box",
@@ -1418,6 +1425,7 @@ var map = {
 				types: [
 				],
 				"default": [
+					"padding-box"
 				],
 				keywords: [
 					"border-box",
@@ -1432,10 +1440,9 @@ var map = {
 					"Length"
 				],
 				"default": [
-					{
-						typ: "Perc",
-						val: 50
-					}
+					"0 0",
+					"top left",
+					"left top"
 				],
 				keywords: [
 					"top",
@@ -1453,24 +1460,22 @@ var map = {
 				}
 			},
 			"background-size": {
+				multiple: true,
 				types: [
 					"Perc",
 					"Length"
 				],
 				"default": [
-					"50%",
-					"middle"
+					"auto",
+					"auto auto"
 				],
 				keywords: [
-					"auto"
+					"auto",
+					"cover",
+					"contain"
 				],
 				mapping: {
-					"auto auto": "auto",
-					top: "0",
-					left: "0",
-					bottom: "100%",
-					right: "100%",
-					middle: "50%"
+					"auto auto": "auto"
 				}
 			}
 		}
@@ -3324,6 +3329,25 @@ class PropertySet {
     }
 }
 
+function getTokenType(val) {
+    if (val == 'transparent' || val == 'currentcolor') {
+        return {
+            typ: 'Color',
+            val,
+            kin: 'lit'
+        };
+    }
+    if (val.endsWith('%')) {
+        return {
+            typ: 'Perc',
+            val: val.slice(0, -1)
+        };
+    }
+    return {
+        typ: isNumber(val) ? 'Number' : 'Iden',
+        val
+    };
+}
 class PropertyMap {
     config;
     declarations;
@@ -3331,11 +3355,10 @@ class PropertyMap {
     pattern;
     constructor(config) {
         const values = Object.values(config.properties);
-        this.requiredCount = values.reduce((acc, curr) => curr.required ? ++acc : acc, 0);
+        this.requiredCount = values.reduce((acc, curr) => curr.required ? ++acc : acc, 0) || values.length;
         this.config = config;
         this.declarations = new Map;
         this.pattern = config.pattern.split(/\s/);
-        this.requiredCount = values.length;
     }
     add(declaration) {
         if (declaration.nam == this.config.shorthand) {
@@ -3347,15 +3370,15 @@ class PropertyMap {
             if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
                 const properties = new Map;
                 const values = this.pattern.reduce((acc, property) => {
+                    const props = this.config.properties[property];
                     for (let i = 0; i < acc.length; i++) {
                         if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
                             acc.splice(i, 1);
                             i--;
                             continue;
                         }
-                        const props = this.config.properties[property];
                         if ((acc[i].typ == 'Iden' && props.keywords.includes(acc[i].val)) ||
-                            props.types.includes(acc[i].typ)) {
+                            (acc[i].typ != 'Iden' && props.types.includes(acc[i].typ))) {
                             if (!properties.has(property)) {
                                 properties.set(property, {
                                     typ: 'Declaration',
@@ -3365,7 +3388,7 @@ class PropertyMap {
                             }
                             else {
                                 // @ts-ignore
-                                properties.get(property).val.push(acc[i]);
+                                properties.get(property).val.push({ typ: 'Whitespace' }, acc[i]);
                             }
                             acc.splice(i, 1);
                             i--;
@@ -3382,6 +3405,33 @@ class PropertyMap {
                             }
                         }
                     }
+                    // default
+                    if (!properties.has(property) && props.default.length > 0) {
+                        const val = props.default[0];
+                        if (!properties.has(property)) {
+                            properties.set(property, {
+                                typ: 'Declaration',
+                                nam: property,
+                                val: [...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                                        if (acc.length > 0) {
+                                            acc.push({ typ: 'Whitespace' });
+                                        }
+                                        acc.push(curr);
+                                        return acc;
+                                    }, [])]
+                            });
+                        }
+                        else {
+                            // @ts-ignore
+                            properties.get(property).val.push({ typ: 'Whitespace' }, ...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                                if (acc.length > 0) {
+                                    acc.push({ typ: 'Whitespace' });
+                                }
+                                acc.push(curr);
+                                return acc;
+                            }, []));
+                        }
+                    }
                     return acc;
                     // @ts-ignore
                 }, this.declarations.get(this.config.shorthand).val.slice());
@@ -3394,8 +3444,11 @@ class PropertyMap {
         return this;
     }
     [Symbol.iterator]() {
-        if (this.declarations.has(this.config.shorthand) ||
-            (this.declarations.size > 0 && this.requiredCount <= Object.keys(this.config.properties).reduce((acc, curr) => this.declarations.has(curr) && this.config.properties[curr].required ? ++acc : acc, 0))) {
+        let requiredCount = Object.keys(this.config.properties).reduce((acc, curr) => this.declarations.has(curr) && this.config.properties[curr].required ? ++acc : acc, 0);
+        if (requiredCount == 0) {
+            requiredCount = this.declarations.size;
+        }
+        if (requiredCount < this.requiredCount) {
             return this.declarations.values();
         }
         // @ts-ignore
@@ -3433,7 +3486,7 @@ class PropertyMap {
                 // remove default values
                 // @ts-ignore
                 const values = this.declarations.get(curr).val.filter(val => !('val' in val) || !this.config.properties[curr].default.includes(val.val));
-                if (values.length == 0) {
+                if (values.length == 0 || this.config.properties[curr].default.includes(values.reduce((acc, curr) => acc + renderToken(curr), ''))) {
                     return acc;
                 }
                 for (const val of values) {
@@ -3505,18 +3558,13 @@ class PropertyMap {
                                 // @ts-ignore
                                 const val = this.config.properties[property].mapping[values[property][i].val.toLowerCase()];
                                 if (val != null && val.length < values[property][i].val.length) {
-                                    if (val.endsWith('%')) {
-                                        acc[current][acc[current].length - 1] = {
-                                            typ: 'Perc',
-                                            val: val.slice(0, -1)
-                                        };
-                                    }
-                                    else {
-                                        acc[current][acc[current].length - 1] = {
-                                            typ: isNumber(val) ? 'Number' : 'Iden',
-                                            val
-                                        };
-                                    }
+                                    acc[current].splice(acc[current].length - 1, 1, ...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                                        if (acc.length > 0) {
+                                            acc.push({ typ: 'Whitespace' });
+                                        }
+                                        acc.push(curr);
+                                        return acc;
+                                    }, []));
                                 }
                             }
                         }
@@ -3530,46 +3578,6 @@ class PropertyMap {
                     return acc;
                 }, [])
             }][Symbol.iterator]();
-        // return this.declarations.values();
-        // .reduce((acc, curr) => {
-        //
-        //     const k: number = curr.length * 2 - 1;
-        //
-        //     for (let i = 1; i < k; i += 2) {
-        //
-        //         curr.splice(i, 0, {typ: 'Whitespace'});
-        //     }
-        //
-        //     acc.push(...curr);
-        //
-        //     return acc;
-        // }, []);
-        // if (values.length == 0 && this.config.default.length > 0) {
-        //
-        //     const val = this.config.default.reduce((acc, curr) => {
-        //
-        //         return acc.length == 0 || acc.length > curr.length ? curr : acc;
-        //
-        //     }, '');
-        //
-        //     values.push(<Token>{
-        //         typ: Number.isInteger(val) ? 'Number' : 'Iden',
-        //         val
-        //     });
-        // }
-        //
-        // if (values.length == 0) {
-        //
-        //     return this.declarations.values();
-        // }
-        //
-        // return [<AstDeclaration>{
-        //     typ: 'Declaration',
-        //     nam: this.config.shorthand,
-        //     val: values
-        //
-        //
-        // }][Symbol.iterator]()
     }
 }
 

@@ -1,8 +1,41 @@
-import {AstDeclaration, IdentToken, NumberToken, PercentageToken, PropertyMapType, Token} from "../../@types";
+import {
+    AstDeclaration,
+    ColonToken, ColorToken,
+    IdentToken,
+    NumberToken,
+    PercentageToken,
+    PropertyMapType,
+    Token
+} from "../../@types";
 import {ShorthandMapType} from "../../@types";
 import {eq} from "../utils/eq";
-import {properties} from "../../../tools/shorthand";
 import {isNumber} from "../utils";
+import {renderToken} from "../../renderer";
+
+function getTokenType(val: string): Token {
+
+    if (val == 'transparent' || val == 'currentcolor') {
+
+        return <ColorToken>{
+
+            typ: 'Color',
+            val,
+            kin: 'lit'
+        }
+    }
+
+    if (val.endsWith('%')) {
+        return <PercentageToken>{
+            typ: 'Perc',
+            val: val.slice(0, -1)
+        }
+    }
+
+    return <NumberToken | IdentToken>{
+        typ: isNumber(val) ? 'Number' : 'Iden',
+        val
+    };
+}
 
 export class PropertyMap {
 
@@ -14,12 +47,10 @@ export class PropertyMap {
     constructor(config: ShorthandMapType) {
 
         const values: PropertyMapType[] = Object.values(config.properties);
-        this.requiredCount = values.reduce((acc: number, curr: PropertyMapType) => curr.required ? ++acc : acc, 0)
+        this.requiredCount = values.reduce((acc: number, curr: PropertyMapType) => curr.required ? ++acc : acc, 0) || values.length;
         this.config = config;
         this.declarations = new Map<string, AstDeclaration>;
         this.pattern = config.pattern.split(/\s/);
-
-        this.requiredCount = values.length;
     }
 
     add(declaration: AstDeclaration) {
@@ -36,6 +67,8 @@ export class PropertyMap {
                 const properties: Map<string, AstDeclaration> = new Map;
                 const values: Token[] = this.pattern.reduce((acc: Token[], property: string) => {
 
+                    const props: PropertyMapType = this.config.properties[property];
+
                     for (let i = 0; i < acc.length; i++) {
 
                         if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
@@ -46,10 +79,8 @@ export class PropertyMap {
                             continue;
                         }
 
-                        const props: PropertyMapType = this.config.properties[property];
-
                         if ((acc[i].typ == 'Iden' && props.keywords.includes((<IdentToken>acc[i]).val)) ||
-                            props.types.includes(acc[i].typ)) {
+                            (acc[i].typ != 'Iden' && props.types.includes(acc[i].typ))) {
 
                             if (!properties.has(property)) {
 
@@ -62,7 +93,7 @@ export class PropertyMap {
                             } else {
 
                                 // @ts-ignore
-                                properties.get(property).val.push(acc[i]);
+                                properties.get(property).val.push({typ: 'Whitespace'}, acc[i]);
                             }
 
                             acc.splice(i, 1);
@@ -86,6 +117,46 @@ export class PropertyMap {
                         }
                     }
 
+                    // default
+                    if (!properties.has(property) && props.default.length > 0) {
+
+                        const val = props.default[0];
+
+                        if (!properties.has(property)) {
+
+                            properties.set(property, <AstDeclaration>{
+                                typ: 'Declaration',
+                                nam: property,
+                                val: [...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+
+                                    if (acc.length > 0) {
+
+                                        acc.push({typ: 'Whitespace'});
+                                    }
+
+                                    acc.push(curr);
+                                    return acc;
+
+                                }, <Token[]>[])]
+                            });
+
+                        } else {
+
+                            // @ts-ignore
+                            properties.get(property).val.push({typ: 'Whitespace'}, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+
+                                if (acc.length > 0) {
+
+                                    acc.push({typ: 'Whitespace'});
+                                }
+
+                                acc.push(curr);
+                                return acc;
+
+                            }, <Token[]>[]));
+                        }
+                    }
+
                     return acc;
 
                     // @ts-ignore
@@ -105,8 +176,14 @@ export class PropertyMap {
 
     [Symbol.iterator](): IterableIterator<AstDeclaration> {
 
-        if (this.declarations.has(this.config.shorthand) ||
-            (this.declarations.size > 0 && this.requiredCount <= Object.keys(this.config.properties).reduce((acc: number, curr: string) => this.declarations.has(curr) && this.config.properties[curr].required ? ++acc : acc, 0))) {
+        let requiredCount = Object.keys(this.config.properties).reduce((acc: number, curr: string) => this.declarations.has(curr) && this.config.properties[curr].required ? ++acc : acc, 0);
+
+        if (requiredCount == 0) {
+
+            requiredCount = this.declarations.size;
+        }
+
+        if (requiredCount < this.requiredCount) {
 
             return this.declarations.values();
         }
@@ -166,7 +243,7 @@ export class PropertyMap {
                 // @ts-ignore
                 const values: Token[] = this.declarations.get(curr).val.filter(val => !('val' in val) || !this.config.properties[curr].default.includes((<IdentToken>val).val));
 
-                if (values.length == 0) {
+                if (values.length == 0 || this.config.properties[curr].default.includes(values.reduce((acc, curr) => acc + renderToken(curr), ''))) {
 
                     return acc;
                 }
@@ -274,20 +351,17 @@ export class PropertyMap {
 
                             if (val != null && val.length < (<IdentToken>values[property][i]).val.length) {
 
-                                if (val.endsWith('%')) {
-                                    acc[current][acc[current].length - 1] = <PercentageToken>{
-                                        typ: 'Perc',
-                                        val: val.slice(0, -1)
-                                    }
-                                }
+                                acc[current].splice(acc[current].length - 1, 1, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
 
-                                else {
+                                    if (acc.length > 0) {
 
-                                    acc[current][acc[current].length - 1] = <NumberToken | IdentToken>{
-                                        typ: isNumber(val) ? 'Number' : 'Iden',
-                                        val
+                                        acc.push({typ: 'Whitespace'});
                                     }
-                                }
+
+                                    acc.push(curr);
+                                    return acc;
+
+                                }, <Token[]>[]));
                             }
                         }
                     }
@@ -306,48 +380,5 @@ export class PropertyMap {
                 return acc;
             }, [])
         }][Symbol.iterator]();
-
-        // return this.declarations.values();
-        // .reduce((acc, curr) => {
-        //
-        //     const k: number = curr.length * 2 - 1;
-        //
-        //     for (let i = 1; i < k; i += 2) {
-        //
-        //         curr.splice(i, 0, {typ: 'Whitespace'});
-        //     }
-        //
-        //     acc.push(...curr);
-        //
-        //     return acc;
-        // }, []);
-
-
-        // if (values.length == 0 && this.config.default.length > 0) {
-        //
-        //     const val = this.config.default.reduce((acc, curr) => {
-        //
-        //         return acc.length == 0 || acc.length > curr.length ? curr : acc;
-        //
-        //     }, '');
-        //
-        //     values.push(<Token>{
-        //         typ: Number.isInteger(val) ? 'Number' : 'Iden',
-        //         val
-        //     });
-        // }
-        //
-        // if (values.length == 0) {
-        //
-        //     return this.declarations.values();
-        // }
-        //
-        // return [<AstDeclaration>{
-        //     typ: 'Declaration',
-        //     nam: this.config.shorthand,
-        //     val: values
-        //
-        //
-        // }][Symbol.iterator]()
     }
 }

@@ -41,7 +41,9 @@ import {render} from '@tbela99/css-parser';
 // pretty print
 const prettyPrint = render(ast);
 // minified
-const minified = render(ast, {compress: true}).code
+const {code} = render(ast, {compress: true});
+
+console.log(code);
 ```
 
 ### Rendering options
@@ -50,14 +52,14 @@ const minified = render(ast, {compress: true}).code
 - indent: string, optional. indention string. uses space character by default.
 - newLine: string, new line character
 - removeComments: boolean, remove comments
-- preserveLicense: boolean, force preserving comments starting with '/*!'
+- preserveLicense: boolean, force preserving comments starting with '/\*!'
 
 ## Node Walker
 
 ```javascript
 import {walk} from '@tbela99/css-parser';
 
-for (const node of walk(ast)) {
+for (const {node, parent, root} of walk(ast)) {
     
     // do somehting
 }

@@ -298,7 +298,10 @@
      "types": [
       "Number"
      ],
-     "default": [],
+     "default": [
+      "normal",
+      "400"
+     ],
      "keywords": [
       "normal",
       "bold",
@@ -335,17 +338,13 @@
      "types": [
       "Angle"
      ],
-     "default": [],
+     "default": [
+      "normal"
+     ],
      "keywords": [
       "normal",
       "italic",
       "oblique"
-     ],
-     "mapping": [
-      "oblique",
-      {
-       "type": "angle"
-      }
      ]
     },
     "font-size": {
@@ -374,18 +373,11 @@
       "Perc",
       "Number"
      ],
-     "default": [],
+     "default": [
+      "normal"
+     ],
      "keywords": [
-      "xx-small",
-      "x-small",
-      "small",
-      "medium",
-      "large",
-      "x-large",
-      "xx-large",
-      "xxx-large",
-      "larger",
-      "smaller"
+      "normal"
      ],
      "prefix": {
       "typ": "Literal",
@@ -396,18 +388,19 @@
      "types": [
       "Perc"
      ],
-     "default": [],
+     "default": [
+      "normal"
+     ],
      "keywords": [
-      "xx-small",
-      "x-small",
-      "small",
-      "medium",
-      "large",
-      "x-large",
-      "xx-large",
-      "xxx-large",
-      "larger",
-      "smaller"
+      "ultra-condensed",
+      "extra-condensed",
+      "condensed",
+      "semi-condensed",
+      "normal",
+      "semi-expanded",
+      "expanded",
+      "extra-expanded",
+      "ultra-expanded"
      ],
      "mapping": {
       "ultra-condensed": "50%",
@@ -423,7 +416,9 @@
     },
     "font-variant": {
      "types": [],
-     "default": [],
+     "default": [
+      "normal"
+     ],
      "keywords": [
       "normal",
       "none",
@@ -475,7 +470,21 @@
       "Iden"
      ],
      "default": [],
-     "keywords": [],
+     "keywords": [
+      "serif",
+      "sans-serif",
+      "monospace",
+      "cursive",
+      "fantasy",
+      "system-ui",
+      "ui-serif",
+      "ui-sans-serif",
+      "ui-monospace",
+      "ui-rounded",
+      "math",
+      "emoji",
+      "fangsong"
+     ],
      "required": true,
      "multiple": true,
      "separator": {
@@ -515,7 +524,9 @@
    "properties": {
     "background-repeat": {
      "types": [],
-     "default": [],
+     "default": [
+      "none"
+     ],
      "multiple": true,
      "keywords": [
       "repeat-x",
@@ -547,14 +558,18 @@
      "types": [
       "UrlFunc"
      ],
-     "default": [],
+     "default": [
+      "none"
+     ],
      "keywords": [
       "none"
      ]
     },
     "background-attachment": {
      "types": [],
-     "default": [],
+     "default": [
+      "scroll"
+     ],
      "keywords": [
       "scroll",
       "fixed",
@@ -563,7 +578,9 @@
     },
     "background-clip": {
      "types": [],
-     "default": [],
+     "default": [
+      "border-box"
+     ],
      "keywords": [
       "border-box",
       "padding-box",
@@ -573,7 +590,9 @@
     },
     "background-origin": {
      "types": [],
-     "default": [],
+     "default": [
+      "padding-box"
+     ],
      "keywords": [
       "border-box",
       "padding-box",
@@ -587,10 +606,9 @@
       "Length"
      ],
      "default": [
-      {
-       "typ": "Perc",
-       "val": 50
-      }
+      "0 0",
+      "top left",
+      "left top"
      ],
      "keywords": [
       "top",
@@ -608,24 +626,22 @@
      }
     },
     "background-size": {
+     "multiple": true,
      "types": [
       "Perc",
       "Length"
      ],
      "default": [
-      "50%",
-      "middle"
+      "auto",
+      "auto auto"
      ],
      "keywords": [
-      "auto"
+      "auto",
+      "cover",
+      "contain"
      ],
      "mapping": {
-      "auto auto": "auto",
-      "top": "0",
-      "left": "0",
-      "bottom": "100%",
-      "right": "100%",
-      "middle": "50%"
+      "auto auto": "auto"
      }
     }
    }

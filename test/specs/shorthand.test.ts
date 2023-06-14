@@ -212,6 +212,6 @@ describe('shorthand', function () {
         expect(render(parse(background1, {
             deduplicate: true,
             removeEmpty: true
-        }).ast, {compress: true}).code).equals('p{background:no-repeat red url(images/bg.gif) 0 0}')
+        }).ast, {compress: true}).code).equals('p{background:no-repeat red url(images/bg.gif)}')
     });
 });

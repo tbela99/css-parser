@@ -80,7 +80,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'font-weight',
                 properties: {
                     types: ['Number'],
-                    default: [],
+                    default: ['normal', '400'],
                     keywords: ['normal', 'bold', 'lighter', 'bolder'],
                     constraints: {
                         number: {
@@ -112,9 +112,8 @@ export const map: ShorthandMapType = [
                 shorthand: 'font-style',
                 properties: {
                     types: ['Angle'],
-                    default: [],
-                    keywords: ['normal', 'italic', 'oblique'],
-                    mapping: ['oblique', {type: 'angle'}]
+                    default: ['normal'],
+                    keywords: ['normal', 'italic', 'oblique']
                 }
             },
             {
@@ -130,8 +129,8 @@ export const map: ShorthandMapType = [
                 shorthand: 'line-height',
                 properties: {
                     types: ['Length', 'Perc', 'Number'],
-                    default: [],
-                    keywords: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'larger', 'smaller'],
+                    default: ['normal'],
+                    keywords: ['normal'],
                     prefix: {
                         typ: 'Literal',
                         val: '/'
@@ -142,8 +141,8 @@ export const map: ShorthandMapType = [
                 shorthand: 'font-stretch',
                 properties: {
                     types: ['Perc'],
-                    default: [],
-                    keywords: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'xxx-large', 'larger', 'smaller'],
+                    default: ['normal'],
+                    keywords: ['ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed', 'normal', 'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'],
                     mapping: {
                         'ultra-condensed': '50%',
                         'extra-condensed': '62.5%',
@@ -161,7 +160,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'font-variant',
                 properties: {
                     types: [],
-                    default: [],
+                    default: ['normal'],
                     keywords: ['normal', 'none', 'common-ligatures', 'no-common-ligatures', 'discretionary-ligatures', 'no-discretionary-ligatures', 'historical-ligatures', 'no-historical-ligatures', 'contextual', 'no-contextual', 'historical-forms', 'small-caps', 'all-small-caps', 'petite-caps', 'all-petite-caps', 'unicase', 'titling-caps', 'ordinal', 'slashed-zero', 'lining-nums', 'oldstyle-nums', 'proportional-nums', 'tabular-nums', 'diagonal-fractions', 'stacked-fractions', 'ordinal', 'slashed-zero', 'ruby', 'jis78', 'jis83', 'jis90', 'jis04', 'simplified', 'traditional', 'full-width', 'proportional-width', 'ruby', 'sub', 'super', 'text', 'emoji', 'unicode']
                 }
             },
@@ -170,7 +169,7 @@ export const map: ShorthandMapType = [
                 properties: {
                     types: ['String', 'Iden'],
                     default: [],
-                    keywords: [],
+                    keywords: ['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif', 'ui-monospace', 'ui-rounded', 'math', 'emoji', 'fangsong'],
                     required: true,
                     multiple: true,
                     separator: {
@@ -186,7 +185,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-repeat',
                 properties: {
                     types: [],
-                    default: [],
+                    default: ['none'],
                     multiple: true,
                     keywords: ['repeat-x', 'repeat-y', 'repeat', 'space', 'round', 'no-repeat'],
                     mapping: {
@@ -211,7 +210,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-image',
                 properties: {
                     types: ['UrlFunc'],
-                    default: [],
+                    default: ['none'],
                     keywords: ['none']
                 }
             },
@@ -219,7 +218,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-attachment',
                 properties: {
                     types: [],
-                    default: [],
+                    default: ['scroll'],
                     keywords: ['scroll', 'fixed', 'local']
                 }
             },
@@ -227,7 +226,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-clip',
                 properties: {
                     types: [],
-                    default: [],
+                    default: ['border-box'],
                     keywords: ['border-box', 'padding-box', 'content-box', 'text']
                 }
             },
@@ -235,7 +234,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-origin',
                 properties: {
                     types: [],
-                    default: [],
+                    default: ['padding-box'],
                     keywords: ['border-box', 'padding-box', 'content-box']
                 }
             },
@@ -244,7 +243,7 @@ export const map: ShorthandMapType = [
                 properties: {
                     multiple: true,
                     types: ['Perc', 'Length'],
-                    default: [{typ: 'Perc', val: 50}],
+                    default: ['0 0', 'top left', 'left top'],
                     keywords: ['top', 'left', 'center', 'bottom', 'right'],
                     mapping: {
                         left: '0',
@@ -258,16 +257,12 @@ export const map: ShorthandMapType = [
             {
                 shorthand: 'background-size',
                 properties: {
+                    multiple: true,
                     types: ['Perc', 'Length'],
-                    default: ['50%', 'middle'],
-                    keywords: ['auto'],
+                    default: ['auto', 'auto auto'],
+                    keywords: ['auto', 'cover', 'contain'],
                     mapping: {
-                        'auto auto': 'auto',
-                        'top': '0',
-                        'left': '0',
-                        'bottom': '100%',
-                        'right': '100%',
-                        'middle': '50%'
+                        'auto auto': 'auto'
                     }
                 }
             }
