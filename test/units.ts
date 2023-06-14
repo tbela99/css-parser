@@ -1,4 +1,4 @@
-import {isLengthUnit} from "../src/parser/utils";
+import {isLength} from "../src/parser/utils";
 import {DimensionToken} from "../src/@types";
 
 
@@ -13,6 +13,6 @@ const t = {
         val: "0"
     };
 
-    console.debug(isLengthUnit(t));
-    console.debug(t.typ == 'Number' && isLengthUnit(<DimensionToken> k));
-    console.debug(k.typ == 'Number' && isLengthUnit(<DimensionToken> t));
+    console.debug(isLength(t));
+    console.debug(t.typ == 'Number' && isLength(<DimensionToken> k));
+    console.debug(k.typ == 'Number' && isLength(<DimensionToken> t));

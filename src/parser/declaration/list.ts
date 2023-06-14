@@ -1,12 +1,13 @@
-import {AstDeclaration, AstNode} from "../../@types";
+import {AstDeclaration, AstNode, ShorthandMapType} from "../../@types";
 import {PropertySet} from "./set";
-import {getConfig} from "../utils/config";
+import {getConfig} from "../utils";
+import {PropertyMap} from "./map";
 
 const config = getConfig();
 
 export class PropertyList {
 
-    protected declarations: Map<string, AstNode | PropertySet>;
+    protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
 
     constructor() {
 
@@ -17,15 +18,15 @@ export class PropertyList {
 
         if (declaration.typ != 'Declaration') {
 
-            this.declarations.set(this.declarations.size.toString(), declaration);
+            this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
             return this;
         }
 
-        const propertyName: string = <string> (<AstDeclaration>declaration).nam;
+        const propertyName: string = <string>(<AstDeclaration>declaration).nam;
 
         if (propertyName in config.properties) {
 
-            const shorthand = <string>config.properties[propertyName].shorthand;
+            const shorthand: string = <string>config.properties[propertyName].shorthand;
 
             if (!this.declarations.has(shorthand)) {
 
@@ -36,30 +37,43 @@ export class PropertyList {
             return this;
         }
 
+        if (propertyName in config.map) {
+
+            const shorthand: string = <string>config.map[propertyName].shorthand;
+
+            if (!this.declarations.has(shorthand)) {
+
+                this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
+            }
+
+            (<PropertyMap>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
+            return this;
+        }
+
         this.declarations.set(propertyName, declaration);
         return this;
     }
 
     [Symbol.iterator]() {
 
-        let iterator: IterableIterator<AstNode | PropertySet> = this.declarations.values();
-        const iterators: Array<IterableIterator<AstNode | PropertySet>> = [];
+        let iterator: IterableIterator<AstNode | PropertySet | PropertyMap> = this.declarations.values();
+        const iterators: Array<IterableIterator<AstNode | PropertySet | PropertyMap>> = [];
 
         return {
             next() {
 
-                let value: IteratorResult<AstNode | PropertySet> = iterator.next();
+                let value: IteratorResult<AstNode | PropertySet | PropertyMap> = iterator.next();
 
                 while ((value.done && iterators.length > 0) ||
-                    value.value instanceof PropertySet) {
+                value.value instanceof PropertySet ||
+                value.value instanceof PropertyMap) {
 
-                    if (value.value instanceof PropertySet) {
+                    if (value.value instanceof PropertySet || value.value instanceof PropertyMap) {
 
                         iterators.unshift(iterator);
 
                         // @ts-ignore
                         iterator = value.value[Symbol.iterator]();
-
                         value = iterator.next();
                     }
 

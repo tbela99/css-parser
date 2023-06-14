@@ -1,22 +1,42 @@
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {DimensionToken} from '../../@types';
+import {AngleToken, DimensionToken, LengthToken} from '../../@types';
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
 
-export function isLengthUnit(dimension: DimensionToken): boolean {
+export function isLength(dimension: DimensionToken): boolean {
 
-    return [
-        'Q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
+    return 'unit' in dimension && [
+        'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
         'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
         'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
         'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
-    ].includes(dimension.unit);
+    ].includes(dimension.unit.toLowerCase());
 }
 
-function isLetter(codepoint: number) {
+export function isResolution(dimension: DimensionToken): boolean {
+
+    return 'unit' in dimension && ['dpi', 'dpcm', 'dppx', 'x'].includes(dimension.unit.toLowerCase());
+}
+
+export function isAngle(dimension: DimensionToken): boolean {
+
+    return 'unit' in dimension && ['rad', 'turn', 'deg', 'grad'].includes(dimension.unit.toLowerCase());
+}
+
+export function isTime(dimension: DimensionToken): boolean {
+
+    return 'unit' in dimension && ['ms', 's'].includes(dimension.unit.toLowerCase());
+}
+
+export function isFrequency(dimension: DimensionToken): boolean {
+
+    return 'unit' in dimension && ['hz', 'khz'].includes(dimension.unit.toLowerCase());
+}
+
+function isLetter(codepoint: number): boolean {
 
     // lowercase
     return (codepoint >= 0x61 && codepoint <= 0x7a) ||
@@ -24,23 +44,23 @@ function isLetter(codepoint: number) {
         (codepoint >= 0x41 && codepoint <= 0x5a)
 }
 
-function isNonAscii(codepoint: number) {
+function isNonAscii(codepoint: number): boolean {
 
     return codepoint >= 0x80;
 }
 
-export function isIdentStart(codepoint: number) {
+export function isIdentStart(codepoint: number): boolean {
 
     // _
     return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint);
 }
 
-export function isDigit(codepoint: number) {
+export function isDigit(codepoint: number): boolean {
 
     return codepoint >= 0x30 && codepoint <= 0x39;
 }
 
-export function isIdentCodepoint(codepoint: number) {
+export function isIdentCodepoint(codepoint: number): boolean {
 
     // -
     return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
@@ -50,12 +70,12 @@ export function isIdent(name: string): boolean {
 
     const j: number = name.length - 1;
     let i: number = 0;
-    let codepoint: number = <number>name.codePointAt(0);
+    let codepoint: number = <number>name.charCodeAt(0);
 
     // -
     if (codepoint == 0x2d) {
 
-        const nextCodepoint: number = <number>name.codePointAt(1);
+        const nextCodepoint: number = <number>name.charCodeAt(1);
 
         if (nextCodepoint == null) {
 
@@ -70,7 +90,7 @@ export function isIdent(name: string): boolean {
 
         if (nextCodepoint == REVERSE_SOLIDUS) {
 
-            return name.length > 2 && !isNewLine(<number>name.codePointAt(2))
+            return name.length > 2 && !isNewLine(<number>name.charCodeAt(2))
         }
 
         return true;
@@ -84,7 +104,7 @@ export function isIdent(name: string): boolean {
     while (i < j) {
 
         i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
-        codepoint = <number>name.codePointAt(i);
+        codepoint = <number>name.charCodeAt(i);
 
         if (!isIdentCodepoint(codepoint)) {
 
@@ -133,9 +153,9 @@ export function isNumber(name: string): boolean {
         return false;
     }
 
-    let codepoint: number = <number>name.codePointAt(0);
+    let codepoint: number = <number>name.charCodeAt(0);
     let i: number = 0;
-    const j = name.length;
+    const j: number = name.length;
 
     // '+' '-'
     if ([0x2b, 0x2d].includes(codepoint)) {
@@ -146,7 +166,7 @@ export function isNumber(name: string): boolean {
     // consume digits
     while (i < j) {
 
-        codepoint = <number>name.codePointAt(i);
+        codepoint = <number>name.charCodeAt(i);
 
         if (isDigit(codepoint)) {
 
@@ -166,24 +186,26 @@ export function isNumber(name: string): boolean {
     // '.'
     if (codepoint == 0x2e) {
 
-        if (!isDigit(<number>name.codePointAt(++i))) {
+        if (!isDigit(<number>name.charCodeAt(++i))) {
 
             return false;
         }
     }
 
-    while (++i < j) {
+    while (i < j) {
 
-        codepoint = <number>name.codePointAt(i);
+        codepoint = <number>name.charCodeAt(i);
 
         if (isDigit(codepoint)) {
 
+            i++;
             continue;
         }
 
         // 'E' 'e'
         if (codepoint == 0x45 || codepoint == 0x65) {
 
+            i++;
             break;
         }
 
@@ -198,7 +220,7 @@ export function isNumber(name: string): boolean {
             return false;
         }
 
-        codepoint = <number>name.codePointAt(i + 1);
+        codepoint = <number>name.charCodeAt(i + 1);
 
         // '+' '-'
         if ([0x2b, 0x2d].includes(codepoint)) {
@@ -206,7 +228,7 @@ export function isNumber(name: string): boolean {
             i++;
         }
 
-        codepoint = <number>name.codePointAt(i + 1);
+        codepoint = <number>name.charCodeAt(i + 1);
 
         if (!isDigit(codepoint)) {
 
@@ -216,7 +238,7 @@ export function isNumber(name: string): boolean {
 
     while (++i < j) {
 
-        codepoint = <number>name.codePointAt(i);
+        codepoint = <number>name.charCodeAt(i);
 
         if (!isDigit(codepoint)) {
 
@@ -233,7 +255,7 @@ export function isDimension(name: string) {
 
     while (index++ < name.length) {
 
-        if (isDigit(<number>name.codePointAt(name.length - index))) {
+        if (isDigit(<number>name.charCodeAt(name.length - index))) {
 
             index--;
             break;
@@ -251,7 +273,7 @@ export function isDimension(name: string) {
     }
 
     const number: string = name.slice(0, -index);
-    return number.length > 0 && isIdentStart(<number>name.codePointAt(name.length - index)) && isNumber(number);
+    return number.length > 0 && isIdentStart(<number>name.charCodeAt(name.length - index)) && isNumber(number);
 }
 
 export function isPercentage(name: string) {
@@ -259,13 +281,13 @@ export function isPercentage(name: string) {
     return name.endsWith('%') && isNumber(name.slice(0, -1));
 }
 
-export function parseDimension(name: string): DimensionToken {
+export function parseDimension(name: string): DimensionToken | LengthToken | AngleToken {
 
     let index: number = 0;
 
     while (index++ < name.length) {
 
-        if (isDigit(<number>name.codePointAt(name.length - index))) {
+        if (isDigit(<number>name.charCodeAt(name.length - index))) {
 
             index--;
             break;
@@ -277,10 +299,39 @@ export function parseDimension(name: string): DimensionToken {
         }
     }
 
-    return {typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index)};
+    const dimension = <DimensionToken>{typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index)};
+
+    if (isAngle(dimension)) {
+
+        // @ts-ignore
+        dimension.typ = 'Angle';
+    } else if (isLength(dimension)) {
+
+        // @ts-ignore
+        dimension.typ = 'Length';
+    } else if (isTime(dimension)) {
+
+        // @ts-ignore
+        dimension.typ = 'Time';
+    } else if (isResolution(dimension)) {
+
+        // @ts-ignore
+        dimension.typ = 'Resolution';
+
+        if (dimension.unit == 'dppx') {
+
+            dimension.unit = 'x';
+        }
+    } else if (isFrequency(dimension)) {
+
+        // @ts-ignore
+        dimension.typ = 'Frequency';
+    }
+
+    return dimension;
 }
 
-export function isHexColor(name: string) {
+export function isHexColor(name: string): boolean {
 
     if (name.charAt(0) != '#' || ![4, 5, 7, 9].includes(name.length)) {
 
@@ -289,7 +340,7 @@ export function isHexColor(name: string) {
 
     for (let chr of name.slice(1)) {
 
-        let codepoint = <number>chr.codePointAt(0);
+        let codepoint = <number>chr.charCodeAt(0);
 
         if (!isDigit(codepoint) &&
             // A-F
@@ -304,7 +355,7 @@ export function isHexColor(name: string) {
     return true;
 }
 
-export function isHexDigit(name: string) {
+export function isHexDigit(name: string): boolean {
 
     if (name.length || name.length > 6) {
 
@@ -313,7 +364,7 @@ export function isHexDigit(name: string) {
 
     for (let chr of name) {
 
-        let codepoint = <number>chr.codePointAt(0);
+        let codepoint = <number>chr.charCodeAt(0);
 
         if (!isDigit(codepoint) &&
             // A F
@@ -328,9 +379,9 @@ export function isHexDigit(name: string) {
     return true;
 }
 
-function isEscape(name: string) {
+function isEscape(name: string): boolean {
 
-    return name.codePointAt(0) == REVERSE_SOLIDUS && !isNewLine(<number>name.codePointAt(1));
+    return name.charCodeAt(0) == REVERSE_SOLIDUS && !isNewLine(<number>name.charCodeAt(1));
 }
 
 export function isFunction(name: string): boolean {
@@ -340,7 +391,7 @@ export function isFunction(name: string): boolean {
 
 export function isAtKeyword(name: string): boolean {
 
-    return name.codePointAt(0) == 0x40 && isIdent(name.slice(1));
+    return name.charCodeAt(0) == 0x40 && isIdent(name.slice(1));
 }
 
 export function isNewLine(codepoint: number): boolean {

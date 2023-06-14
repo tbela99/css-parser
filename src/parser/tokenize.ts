@@ -1,7 +1,7 @@
 import {
     isAtKeyword, isDimension, isFunction, isHash, isHexColor,
     isIdent, isNewLine, isNumber, isPercentage,
-    isPseudo, isWhiteSpace, parseDimension, update as updatePosition
+    isPseudo, isWhiteSpace, parseDimension
 } from "./utils";
 import {
     AstAtRule,
@@ -60,13 +60,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 lin: 1,
                 col: 1
             },
-
-            // end: {
-            //
-            //     ind: -1,
-            //     lin: 1,
-            //     col: 0
-            // },
             src: ''
         }
     }
@@ -81,6 +74,16 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
         if (val == ':') {
 
             return {typ: 'Colon'};
+        }
+
+        if (val == ')') {
+
+            return {typ: 'End-parens'};
+        }
+
+        if (val == '(') {
+
+            return {typ: 'Start-parens'};
         }
 
         if (val == '=') {
@@ -112,7 +115,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
             return {
                 typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
                 val
-                // buffer: buffer.slice()
             }
         }
 
@@ -127,9 +129,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
         if (isFunction(val)) {
 
+            val = val.slice(0, -1)
+
             return {
-                typ: 'Func',
-                val: val.slice(0, -1),
+                typ: val == 'url' ? 'UrlFunc' : 'Func',
+                val,
                 chi: []
             }
         }
@@ -152,6 +156,15 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
             return {
                 typ: 'Perc',
                 val: val.slice(0, -1)
+            }
+        }
+
+        if (val == 'currentColor') {
+
+            return {
+                typ: 'Color',
+                val,
+                kin: 'lit'
             }
         }
 
@@ -254,8 +267,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                 loc = <Location>{
                     sta: position,
-                    // @ts-ignore
-                    end: updatePosition({...position}, tokens[i].val),
                     src
                 };
 
@@ -291,7 +302,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
             if (atRule.val == 'charset' && position.ind > 0) {
 
-                // console.debug({position, atRule});
                 errors.push({action: 'drop', message: 'invalid @charset', location: {src, ...position}});
                 return null;
             }
@@ -304,7 +314,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
             if (atRule.val == 'import') {
 
                 // only @charset and @layer are accepted before @import
-
                 if (context.chi.length > 0) {
 
                     let i: number = context.chi.length;
@@ -337,14 +346,14 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 }
 
                 // @ts-ignore
-                if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'Func') {
+                if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'UrlFunc') {
 
                     errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                     return null;
                 }
 
                 // @ts-ignore
-                if (tokens[0].typ == 'Func' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
+                if (tokens[0].typ == 'UrlFunc' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
 
                     errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                     return null;
@@ -354,15 +363,17 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
             if (atRule.val == 'import') {
 
                 // @ts-ignore
-                if (tokens[0].typ == 'Func' && tokens[1].typ == 'Url-token') {
+                if (tokens[0].typ == 'UrlFunc' && tokens[1].typ == 'Url-token') {
 
                     tokens.shift();
-                    const token: Token = <UrlToken | StringToken>tokens.shift();
+                    // const token: Token = <UrlToken | StringToken>tokens.shift();
 
-                    token.typ = 'String';
-                    token.val = `"${token.val}"`;
+                    // @ts-ignore
+                    tokens[0].typ = 'String';
+                    // @ts-ignore
+                    tokens[0].val = `"${tokens[0].val}"`;
 
-                    tokens[0] = token;
+                    // tokens[0] = token;
                 }
             }
 
@@ -381,7 +392,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 if (options.processImport) {
 
                     // @ts-ignore
-                    let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'Func' ? 1 : 0];
+                    let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
 
                     let file: string = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
 
@@ -409,7 +420,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
             // @ts-ignore
             context.chi.push(node);
-            // console.debug({after: node});
+
             return delim.typ == 'Block-start' ? node : null;
 
         } else {
@@ -433,11 +444,24 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 const node: AstRule = {
 
                     typ: 'Rule',
-                    sel: tokens.reduce((acc, curr) => {
+                    // @ts-ignore
+                    sel: tokens.reduce((acc: Token[][], curr: Token) => {
 
                         if (acc[acc.length - 1].length == 0 && curr.typ == 'Whitespace') {
 
                             return acc;
+                        }
+
+                        if (inAttr > 0 && curr.typ == 'String') {
+
+                            const ident: string = curr.val.slice(1, -1);
+
+                            if (isIdent(ident)) {
+
+                                // @ts-ignore
+                                curr.typ = 'Iden';
+                                curr.val = ident;
+                            }
                         }
 
                         if (curr.typ == 'Attr-start') {
@@ -547,8 +571,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     return null;
                 }
 
-                let j = value.length
-                let i = j;
+                let j: number = value.length
+                let i: number = j;
                 let t: Token;
 
                 while (i--) {
@@ -583,14 +607,14 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                         continue;
                     }
 
-                    if (t.typ == 'Func') {
+                    if (t.typ == 'Func' || t.typ == 'UrlFunc') {
 
                         // func color
-                        let parens = 1;
-                        let k = i;
+                        let parens: number = 1;
+                        let k: number = i;
                         let p: Token;
-                        let j = value.length;
-                        let isScalar = true;
+                        let j: number = value.length;
+                        let isScalar: boolean = true;
 
                         while (++k < j) {
 
@@ -628,12 +652,12 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                             // @ts-ignore
                             t.kin = t.val;
 
-                            let i = t.chi.length;
+                            let i: number = t.chi.length;
                             let tok: Token;
 
                             while (i-- > 0) {
 
-                                if(t.chi[i].typ == 'Literal') {
+                                if (t.chi[i].typ == 'Literal') {
 
                                     if (t.chi[i + 1]?.typ == 'Whitespace') {
 
@@ -648,6 +672,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                                 }
                             }
                         }
+
+                        // else if (t.typ = 'UrlFunc') {
+                        //
+                        //     console.debug(t.chi.length);
+                        // }
 
                         continue;
                     }
@@ -728,7 +757,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
         while (count-- > 0 && ind < total) {
 
-            const codepoint: number = <number>iterator.codePointAt(++ind);
+            const codepoint: number = <number>iterator.charCodeAt(++ind);
 
             if (codepoint == null) {
 
@@ -755,7 +784,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 col = 0;
 
                 // \r\n
-                // if (codepoint == 0xd && iterator.codePointAt(i + 1) == 0xa) {
+                // if (codepoint == 0xd && iterator.charCodeAt(i + 1) == 0xa) {
 
                 // offset++;
                 // ind++;
@@ -789,7 +818,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
         let count = 0;
 
-        while (isWhiteSpace(<number>iterator.charAt(count + ind + 1).codePointAt(0))) {
+        while (isWhiteSpace(<number>iterator.charAt(count + ind + 1).charCodeAt(0))) {
 
             count++;
         }
@@ -849,7 +878,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 break;
             }
 
-            if (isNewLine(<number>value.codePointAt(0))) {
+            if (isNewLine(<number>value.charCodeAt(0))) {
 
                 hasNewLine = true;
             }
@@ -882,7 +911,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
             break;
         }
 
-        if (isWhiteSpace(<number>value.codePointAt(0))) {
+        if (isWhiteSpace(<number>value.charCodeAt(0))) {
 
             if (buffer.length > 0) {
 
@@ -901,7 +930,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     break;
                 }
 
-                if (!isWhiteSpace(<number>value.codePointAt(0))) {
+                if (!isWhiteSpace(<number>value.charCodeAt(0))) {
 
                     break;
                 }
@@ -922,10 +951,16 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
             case '/':
 
-                if (buffer.length > 0) {
+                if (buffer.length > 0 && tokens.at(-1)?.typ == 'Whitespace') {
 
                     pushToken(getType(buffer));
                     buffer = '';
+
+                    if (peek() != '*') {
+
+                        pushToken(getType(value));
+                        break;
+                    }
                 }
 
                 buffer += value;
@@ -997,6 +1032,11 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                         }
                     }
                 }
+                // else {
+                //
+                //     pushToken(getType(buffer));
+                //     buffer = '';
+                // }
 
                 break;
 
@@ -1136,10 +1176,15 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                     break;
                 }
 
+                // if (value == ',' && tokens[tokens.length - 1]?.typ == 'Whitespace') {
+                //
+                //     tokens.pop();
+                // }
+
                 pushToken(getType(value));
                 buffer = '';
 
-                while (isWhiteSpace(<number>peek().codePointAt(0))) {
+                while (isWhiteSpace(<number>peek().charCodeAt(0))) {
 
                     next();
                 }
@@ -1170,13 +1215,13 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                     const token: Token = tokens[tokens.length - 1];
 
-                    if (token.typ == 'Func' && token.val == 'url') {
+                    if (token.typ == 'UrlFunc' && token.val == 'url') {
 
                         // consume either string or url token
                         let whitespace = '';
 
                         value = peek();
-                        while (isWhiteSpace(<number>value.codePointAt(0))) {
+                        while (isWhiteSpace(<number>value.charCodeAt(0))) {
 
                             whitespace += value;
                         }
@@ -1192,13 +1237,17 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                             consumeString(<'"' | "'">next());
 
-                            let token: Token = tokens[tokens.length - 1];
+                            let token  = <StringToken>tokens[tokens.length - 1];
 
-                            if (token.typ == 'String' && /^("|')[a-zA-Z0-9_/-][a-zA-Z0-9_/:.-]+("|')$/.test(token.val)) {
+                            if (['String', 'Literal'].includes(token.typ) && /^(["']?)[a-zA-Z0-9_/-][a-zA-Z0-9_/:.-]+(\1)$/.test(token.val)) {
+
+                                if (token.typ == 'String') {
+
+                                    token.val = token.val.slice(1, -1);
+                                }
 
                                 // @ts-ignore
                                 token.typ = 'Url-token';
-                                token.val = token.val.slice(1, -1);
                             }
                             break;
                         } else {
@@ -1207,7 +1256,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                             do {
 
-                                let cp: number = <number>value.codePointAt(0);
+                                let cp: number = <number>value.charCodeAt(0);
 
                                 // EOF -
                                 if (cp == null) {
@@ -1242,7 +1291,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                                     while (true) {
 
                                         value = peek();
-                                        cp = <number>value.codePointAt(0);
+                                        cp = <number>value.charCodeAt(0);
 
                                         if (isWhiteSpace(cp)) {
 
@@ -1264,7 +1313,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                                     do {
 
                                         value = peek();
-                                        cp = <number>value.codePointAt(0);
+                                        cp = <number>value.charCodeAt(0);
 
                                         if (cp == null || cp == 0x29) {
 
@@ -1339,8 +1388,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                     // if (options.location && context != root) {
 
-                        // @ts-ignore
-                        // context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
+                    // @ts-ignore
+                    // context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
                     // }
 
                     // @ts-ignore
@@ -1357,8 +1406,8 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 // @ts-ignore
                 // if (node != null && options.location && ['}', ';'].includes(value) && context.chi[context.chi.length - 1].loc.end == null) {
 
-                    // @ts-ignore
-                    // context.chi[context.chi.length - 1].loc.end = {ind, lin, col};
+                // @ts-ignore
+                // context.chi[context.chi.length - 1].loc.end = {ind, lin, col};
                 // }
 
                 break;
@@ -1406,8 +1455,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
         parseNode(tokens);
     }
-
-    // console.debug({tokens});
 
     // pushToken({typ: 'EOF'});
     //

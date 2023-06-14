@@ -41,7 +41,6 @@ export function deduplicate(ast: AstNode) {
     // @ts-ignore
     if (('chi' in ast) && ast.chi?.length > 0) {
 
-        // @ts-ignore
         let i: number = 0;
         let previous: AstNode;
         let node: AstNode;
@@ -51,12 +50,13 @@ export function deduplicate(ast: AstNode) {
         for (; i < <number>ast.chi.length; i++) {
 
             // @ts-ignore
-            node = ast.chi[i];
-
-            if (node.typ == 'Comment') {
+            if (ast.chi[i].typ == 'Comment') {
 
                 continue;
             }
+
+            // @ts-ignore
+            node = ast.chi[i];
 
             if (node.typ == 'AtRule' && (<AstAtRule>node).val == 'all') {
 
@@ -80,7 +80,7 @@ export function deduplicate(ast: AstNode) {
                         // @ts-ignore
                         let k = previous.chi.length;
 
-                        while (k--) {
+                        while (k-- > 0) {
 
                             // @ts-ignore
                             if (previous.chi[k].typ == 'Comment') {
@@ -174,6 +174,5 @@ export function deduplicateRule(ast: AstNode): AstNode {
     // @ts-ignore
     // ast.chi.splice(0, k - 1, ...properties);
 
-    // console.debug({k, removed});
     return ast;
 }

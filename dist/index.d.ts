@@ -32,6 +32,11 @@ interface FunctionToken {
     val: string;
     chi: Token[];
 }
+interface FunctionURLToken {
+    typ: 'UrlFunc';
+    val: string;
+    chi: Array<UrlToken | CommentToken>;
+}
 interface StringToken {
     typ: 'String';
     val: string;
@@ -48,6 +53,31 @@ interface DimensionToken {
     typ: 'Dimension';
     val: string;
     unit: string;
+}
+interface LengthToken {
+    typ: 'Length';
+    val: string;
+    unit: string;
+}
+interface AngleToken {
+    typ: 'Angle';
+    val: string;
+    unit: string;
+}
+interface TimeToken {
+    typ: 'Time';
+    val: string;
+    unit: 'ms' | 's';
+}
+interface FrequencyToken {
+    typ: 'Frequency';
+    val: string;
+    unit: 'Hz' | 'Khz';
+}
+interface ResolutionToken {
+    typ: 'Resolution';
+    val: string;
+    unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 interface HashToken {
     typ: 'Hash';
@@ -133,10 +163,10 @@ interface ImportantToken {
 interface ColorToken {
     typ: 'Color';
     val: string;
-    kin: 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+    kin: 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
     chi?: Token[];
 }
-declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;
+declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;
 
 interface ErrorDescription {
 
@@ -164,6 +194,7 @@ interface ParserOptions {
 interface RenderOptions {
 
     compress?: boolean;
+    preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
@@ -184,7 +215,7 @@ interface Location {
     src: string;
 }
 
-type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
+declare type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
 
 interface Node {
 
@@ -243,7 +274,9 @@ declare function parse(css: string, opt?: ParserOptions): {
 declare function deduplicate(ast: AstNode): AstNode;
 declare function deduplicateRule(ast: AstNode): AstNode;
 
-declare function render(data: AstNode, opt?: RenderOptions): string;
+declare function render(data: AstNode, opt?: RenderOptions): {
+    code: string;
+};
 declare function renderToken(token: Token, options?: RenderOptions): string;
 
 export { deduplicate, deduplicateRule, parse, render, renderToken };

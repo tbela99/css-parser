@@ -3,7 +3,7 @@ import {Token} from "./tokenize";
 export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
-export * from './properties';
+export * from './shorthand';
 
 export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
@@ -38,6 +38,7 @@ export interface ParserOptions {
 export interface RenderOptions {
 
     compress?: boolean;
+    preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
@@ -58,7 +59,7 @@ export interface Location {
     src: string;
 }
 
-type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
+export declare type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
 
 interface Node {
 
@@ -109,5 +110,3 @@ export type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration;
-
-export type AstTraverserHandler = (node: AstNode, location?: Location) => void;

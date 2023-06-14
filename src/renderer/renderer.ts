@@ -9,7 +9,7 @@ import {
     Token
 } from "../@types";
 import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
-import {isLengthUnit} from "../parser/utils";
+import {isLength} from "../parser/utils";
 
 const indents: string[] = [];
 
@@ -18,12 +18,14 @@ export function render(data: AstNode, opt: RenderOptions = {}) {
     const options = Object.assign(opt.compress ? {
         indent: '',
         newLine: '',
+        preserveLicense: false,
         removeComments: true,
         colorConvert: true
     } : {
         indent: ' ',
         newLine: '\n',
         compress: false,
+        preserveLicense: false,
         removeComments: false,
         colorConvert: true
     }, opt);
@@ -32,14 +34,16 @@ export function render(data: AstNode, opt: RenderOptions = {}) {
 
         if (curr.typ == 'Comment' && options.removeComments) {
 
-            return acc;
+            if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+
+                return acc;
+            }
         }
 
-        acc += renderToken(curr, options);
-        return acc;
+        return acc + renderToken(curr, options);
     }
 
-    return doRender(data, options, reducer);
+    return {code: doRender(data, options, reducer)};
 }
 
 function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0): string {
@@ -145,7 +149,6 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
 
     switch (token.typ) {
 
-
         case 'Color':
 
             if (options.compress || options.colorConvert) {
@@ -166,7 +169,7 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
                     value = cmyk2hex(token);
                 }
 
-                const named_color = NAMES_COLORS[value];
+                const named_color: string = NAMES_COLORS[value];
 
                 if (value !== '') {
 
@@ -193,23 +196,26 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
                 }
             }
 
-            if ((<ColorToken>token).kin == 'hex') {
+            if ((<ColorToken>token).kin == 'hex' || (<ColorToken>token).kin == 'lit') {
 
                 return token.val;
             }
 
         case 'Func':
+        case 'UrlFunc':
 
             // @ts-ignore
             return token.val + '(' + token.chi.reduce((acc: string, curr: Token) => {
 
                 if (options.removeComments && curr.typ == 'Comment') {
 
-                    return acc;
+                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+
+                        return acc;
+                    }
                 }
 
-                acc += renderToken(curr, options);
-                return acc;
+                return acc + renderToken(curr, options);
 
             }, '') + ')';
 
@@ -252,34 +258,85 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
         case 'Important':
             return '!important';
 
+        case 'Time':
+        case 'Frequency':
+        case 'Angle':
+        case 'Length':
         case 'Dimension':
 
-            if (token.val === '0' && isLengthUnit(token)) {
+            const val: string = (+token.val).toString();
+
+            if (val === '0') {
+
+                if (token.typ == 'Time') {
+
+                    return '0s';
+                }
+
+                if (token.typ == 'Frequency') {
+
+                    return '0Hz';
+                }
+
+                // @ts-ignore
+                if (token.typ == 'Resolution') {
+
+                    return '0x';
+                }
 
                 return '0';
             }
 
-            return token.val + (<DimensionToken>token).unit;
+            const chr: string = val.charAt(0);
+
+            if (chr == '-') {
+
+                const slice: string = val.slice(0, 2);
+
+                if (slice == '-0') {
+
+                    return (val.length == 2 ? '0' : '-' + val.slice(2)) + token.unit;
+                }
+
+            } else if (chr == '0') {
+
+                return val.slice(1) + token.unit;
+            }
+
+            return val + (<DimensionToken>token).unit;
 
         case 'Perc':
 
             return token.val + '%';
+
+        case 'Number':
+
+            const num: string = (+token.val).toString();
+
+            if (token.val.length < num.length) {
+
+                return token.val;
+            }
+
+            if (num.charAt(0) === '0' && num.length > 1) {
+
+                return num.slice(1);
+            }
+
+            const slice: string = num.slice(0, 2);
+
+            if (slice == '-0') {
+
+                return '-' + num.slice(2);
+            }
+
+            return num;
 
         case 'Comment':
 
             if (options.removeComments) {
 
                 return '';
-            }
-
-        case 'Number':
-
-            if (options.compress) {
-
-                if (token.val.charAt(0) === '0' && token.val.length > 1) {
-
-                    return token.val.slice(1);
-                }
             }
 
         case 'Url-token':

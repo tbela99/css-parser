@@ -41,7 +41,7 @@ import {render} from '@tbela99/css-parser';
 // pretty print
 const prettyPrint = render(ast);
 // minified
-const minified = render(ast, {compress: true})
+const minified = render(ast, {compress: true}).code
 ```
 
 ### Rendering options
@@ -50,6 +50,7 @@ const minified = render(ast, {compress: true})
 - indent: string, optional. indention string. uses space character by default.
 - newLine: string, new line character
 - removeComments: boolean, remove comments
+- preserveLicense: boolean, force preserving comments starting with '/*!'
 
 ## Node Walker
 
@@ -68,6 +69,12 @@ for (const node of walk(ast)) {
 
 - typ: string 'Comment'
 - val: string, the comment
+
+### Declaration
+
+- typ: string 'Declaration'
+- nam: string, declaration name
+- val: array of tokens
 
 ### Rule
 

@@ -1,6 +1,6 @@
 import {AstDeclaration, DimensionToken, NumberToken, ShorthandPropertyType, Token} from "../../@types";
 import {eq} from "../utils/eq";
-import {isLengthUnit} from "../utils";
+import {isLength} from "../utils";
 
 export class PropertySet {
 
@@ -22,15 +22,20 @@ export class PropertySet {
         } else {
 
             // expand shorthand
-            if (this.declarations.has(this.config.shorthand)) {
+            if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
 
                 let isValid: boolean = true;
-                let current = -1;
+                let current: number = -1;
                 const tokens: Token[][] = [];
 
+                // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
 
-                    if (this.config.types.includes(token.typ)) {
+                    if (this.config.types.includes(token.typ) || (token.typ == 'Number' && token.val == '0' &&
+                        (this.config.types.includes('Length') ||
+                            this.config.types.includes('Angle') ||
+                            this.config.types.includes('Dimension')
+                        ))) {
 
                         if (tokens.length == 0) {
 
@@ -61,16 +66,18 @@ export class PropertySet {
                     }
                 }
 
-                if (!isValid || tokens.length == 0) {
-
-                    this.declarations.set(<string>declaration.nam, declaration);
-                } else {
+                if (isValid  && tokens.length > 0) {
 
                     this.declarations.delete(this.config.shorthand);
 
                     for (const values of tokens) {
 
                         this.config.properties.forEach((property: string, index: number) => {
+
+                            // if (property == declaration.nam) {
+                            //
+                            //     return;
+                            // }
 
                             if (!this.declarations.has(property)) {
 
@@ -81,26 +88,47 @@ export class PropertySet {
                                 });
                             }
 
-                            while (index >= values.length) {
+                            while (index > 0 && index >= values.length) {
 
-                                index %= 2;
+                                if (index > 1) {
+
+                                    index %= 2;
+                                } else {
+
+                                    index = 0;
+                                    break;
+                                }
                             }
 
-                            this.declarations.get(property).val.push(<Token>{...values[index]});
-                        })
+                            // @ts-ignore
+                            const val = this.declarations.get(property).val;
+
+                            if (val.length > 0) {
+
+                                val.push({typ: 'Whitespace'});
+                            }
+
+                            val.push(<Token>{...values[index]});
+                        });
                     }
                 }
+
+                this.declarations.set(<string>declaration.nam, declaration);
+                return this;
             }
 
-            declaration.val = declaration.val.reduce((acc, token) => {
-
-                if (this.config.types.includes(token.typ) || (token.typ == 'Iden' && this.config.keywords.includes(token.val))) {
-
-                    acc.push(token);
-                }
-
-                return acc;
-            }, <Token[]>[]);
+            // declaration.val = declaration.val.reduce((acc: Token[], token: Token) => {
+            //
+            //     if (this.config.types.includes(token.typ) || ('0' == (<DimensionToken>token).val && (
+            //         this.config.types.includes('Length') ||
+            //         this.config.types.includes('Angle') ||
+            //     this.config.types.includes('Dimension'))) || (token.typ == 'Iden' && this.config.keywords.includes(token.val))) {
+            //
+            //         acc.push(token);
+            //     }
+            //
+            //     return acc;
+            // }, <Token[]>[]);
 
             this.declarations.set(<string>declaration.nam, declaration);
         }
@@ -110,23 +138,31 @@ export class PropertySet {
 
     [Symbol.iterator]() {
 
-        let iterator;
-        const declarations = this.declarations;
+        let iterator: IterableIterator<AstDeclaration>;
+        const declarations: Map<string, AstDeclaration> = this.declarations;
 
         if (declarations.size < this.config.properties.length || this.config.properties.some((property: string, index: number) => {
 
-            return index > 0 && declarations.get(property).val.length != declarations.get(this.config.properties[Math.floor(index / 2)]).val.length;
+            return !declarations.has(property) || (index > 0 &&
+                // @ts-ignore
+                declarations.get(property).val.length != declarations.get(this.config.properties[Math.floor(index / 2)]).val.length);
         })) {
 
             iterator = declarations.values();
         } else {
 
             const values: Token[][] = [];
-            declarations.get(this.config.properties[0]).val.length;
-
             this.config.properties.forEach((property: string) => {
 
-                this.declarations.get(property).val.forEach((token: Token, index: number) => {
+                let index: number = 0;
+
+                // @ts-ignore
+                for(const token of this.declarations.get(property).val) {
+
+                    if (token.typ == 'Whitespace') {
+
+                        continue;
+                    }
 
                     if (values.length == index) {
 
@@ -134,23 +170,25 @@ export class PropertySet {
                     }
 
                     values[index].push(token);
-                });
+                    index++;
+
+                }
             });
 
             for (const value of values) {
 
                 let i: number = value.length;
 
-                while (--i) {
+                while (i-- > 1) {
 
                     const t = <DimensionToken | NumberToken>value[i];
-                    const k = <DimensionToken | NumberToken>value[Math.floor((i - 1) / 2)];
+                    const k = <DimensionToken | NumberToken>value[i == 1 ? 0 : i % 2];
 
                     if (t.val == k.val && t.val == '0') {
 
-                        if ((t.typ == 'Number' && isLengthUnit(<DimensionToken>k)) ||
-                            (k.typ == 'Number' && isLengthUnit(<DimensionToken>t)) ||
-                            (isLengthUnit(<DimensionToken>k) || isLengthUnit(<DimensionToken>t))) {
+                        if ((t.typ == 'Number' && isLength(<DimensionToken>k)) ||
+                            (k.typ == 'Number' && isLength(<DimensionToken>t)) ||
+                            (isLength(<DimensionToken>k) || isLength(<DimensionToken>t))) {
 
                             value.splice(i, 1);
                             continue;
@@ -166,15 +204,16 @@ export class PropertySet {
                     break;
                 }
             }
-            iterator = [{
+
+            iterator = [<AstDeclaration>{
                 typ: 'Declaration',
                 nam: this.config.shorthand,
-                val: values.reduce((acc, curr) => {
+                val: values.reduce((acc: Token[], curr: Token[]) => {
 
                     if (curr.length > 1) {
 
                         const k: number = curr.length * 2 - 1;
-                        let i = 1;
+                        let i: number = 1;
 
                         while (i < k) {
 
@@ -194,7 +233,6 @@ export class PropertySet {
             }][Symbol.iterator]();
 
             return {
-
                 next() {
 
                     return iterator.next();
