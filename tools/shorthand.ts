@@ -1,4 +1,10 @@
-import {PropertySetType, ShorthandMapType, TokenType, ShorthandType, ShorthandPropertyType} from "../src/@types";
+import {
+    PropertySetType,
+    ShorthandMapType,
+    ShorthandType,
+    ShorthandPropertyType,
+    ShorthandDef
+} from "../src/@types";
 
 function createProperties(data: ShorthandPropertyType) {
 
@@ -15,13 +21,13 @@ function createProperties(data: ShorthandPropertyType) {
     }
 }
 
-function createMap(shorthand: string, pattern: string, keywords: string, defaults: string[], fields: Array<ShorthandType>) {
+function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
 
     return fields.reduce((acc, curr: ShorthandType) => {
 
         // if (Object.keys(curr.properties).length > 0) {
 
-        Object.assign(acc[shorthand].properties, {
+        Object.assign(acc[data.shorthand].properties, {
             [curr.shorthand]: {...(<ShorthandType>curr).properties}
         });
         // }
@@ -29,16 +35,11 @@ function createMap(shorthand: string, pattern: string, keywords: string, default
         return Object.assign(acc, {
 
             [curr.shorthand]: {
-                shorthand
+                shorthand: data.shorthand
             }
         });
     }, {
-        [shorthand]: {
-
-            shorthand,
-            pattern,
-            keywords,
-            default: defaults,
+        [data.shorthand]: {...data,
             properties: {}
         }
     })
@@ -46,7 +47,14 @@ function createMap(shorthand: string, pattern: string, keywords: string, default
 
 // @ts-ignore
 export const map: ShorthandMapType = [
-    ['outline', 'outline-color outline-style outline-width', ['none'], ['0', 'none'],
+
+    [
+        {
+            shorthand: 'outline',
+            pattern: 'outline-color outline-style outline-width',
+            keywords: ['none'],
+            default: ['0', 'none']
+        },
         [
             {
                 shorthand: 'outline-color',
@@ -74,7 +82,13 @@ export const map: ShorthandMapType = [
             }
         ]
     ],
-    ['font', 'font-weight font-style font-size line-height font-stretch font-variant font-family', ['caption', 'icon', 'menu', 'message-box', 'small-caption', 'status-bar', '-moz-window, ', '-moz-document, ', '-moz-desktop, ', '-moz-info, ', '-moz-dialog', '-moz-button', '-moz-pull-down-menu', '-moz-list', '-moz-field'], [],
+    [
+        {
+            shorthand: 'font',
+            pattern: 'font-weight font-style font-size line-height font-stretch font-variant font-family',
+            keywords: ['caption', 'icon', 'menu', 'message-box', 'small-caption', 'status-bar', '-moz-window, ', '-moz-document, ', '-moz-desktop, ', '-moz-info, ', '-moz-dialog', '-moz-button', '-moz-pull-down-menu', '-moz-list', '-moz-field'],
+            default: []
+        },
         [
             {
                 shorthand: 'font-weight',
@@ -131,6 +145,7 @@ export const map: ShorthandMapType = [
                     types: ['Length', 'Perc', 'Number'],
                     default: ['normal'],
                     keywords: ['normal'],
+                    previous: 'font-size',
                     prefix: {
                         typ: 'Literal',
                         val: '/'
@@ -179,7 +194,14 @@ export const map: ShorthandMapType = [
             }
         ]
     ],
-    ['background', 'background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size', ['none'], [],
+    [{
+        shorthand: 'background',
+        pattern: 'background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size',
+        keywords: ['none'],
+        default: [],
+        multiple: true,
+        separator: {typ: 'Comma'}
+    },
         [
             {
                 shorthand: 'background-repeat',
@@ -258,6 +280,8 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-size',
                 properties: {
                     multiple: true,
+                    previous: 'background-position',
+                    prefix: {typ: 'Literal', val: '/'},
                     types: ['Perc', 'Length'],
                     default: ['auto', 'auto auto'],
                     keywords: ['auto', 'cover', 'contain'],

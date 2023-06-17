@@ -379,6 +379,7 @@
      "keywords": [
       "normal"
      ],
+     "previous": "font-size",
      "prefix": {
       "typ": "Literal",
       "val": "/"
@@ -521,6 +522,10 @@
     "none"
    ],
    "default": [],
+   "multiple": true,
+   "separator": {
+    "typ": "Comma"
+   },
    "properties": {
     "background-repeat": {
      "types": [],
@@ -627,6 +632,11 @@
     },
     "background-size": {
      "multiple": true,
+     "previous": "background-position",
+     "prefix": {
+      "typ": "Literal",
+      "val": "/"
+     },
      "types": [
       "Perc",
       "Length"

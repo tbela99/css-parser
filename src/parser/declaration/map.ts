@@ -61,12 +61,16 @@ export class PropertyMap {
             this.declarations.set(<string>declaration.nam, declaration);
         } else {
 
+            const separator = this.config.separator || {typ: 'Whitespace'};
+
             // expand shorthand
             if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
 
-                const properties: Map<string, AstDeclaration> = new Map;
+                // const properties: Map<string, AstDeclaration> = new Map;
+                const tokens: { [key: string]: Token[][] } = {};
                 const values: Token[] = this.pattern.reduce((acc: Token[], property: string) => {
 
+                    let current: number = 0;
                     const props: PropertyMapType = this.config.properties[property];
 
                     for (let i = 0; i < acc.length; i++) {
@@ -79,21 +83,43 @@ export class PropertyMap {
                             continue;
                         }
 
+                        if (acc[i].typ == separator.typ && eq(separator, acc[i])) {
+
+                            current++;
+                            continue;
+                        }
+
+
                         if ((acc[i].typ == 'Iden' && props.keywords.includes((<IdentToken>acc[i]).val)) ||
                             (acc[i].typ != 'Iden' && props.types.includes(acc[i].typ))) {
 
-                            if (!properties.has(property)) {
+                            if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
 
-                                properties.set(property, <AstDeclaration>{
-                                    typ: 'Declaration',
-                                    nam: property,
-                                    val: [acc[i]]
-                                });
+                                break;
+                            }
+
+                            if (!(property in tokens)) {
+
+                                tokens[property] = [[acc[i]]];
+                                // properties.set(property, <AstDeclaration>{
+                                //     typ: 'Declaration',
+                                //     nam: property,
+                                //     val: [acc[i]]
+                                // });
 
                             } else {
 
+                                if (current == tokens[property].length) {
+
+                                    tokens[property].push([]);
+                                    tokens[property][current].push(acc[i]);
+                                } else {
+
+                                    tokens[property][current].push({typ: 'Whitespace'}, acc[i]);
+                                }
+
                                 // @ts-ignore
-                                properties.get(property).val.push({typ: 'Whitespace'}, acc[i]);
+                                // properties.get(property).val.push({typ: 'Whitespace'}, acc[i]);
                             }
 
                             acc.splice(i, 1);
@@ -110,24 +136,29 @@ export class PropertyMap {
                                 }
                             }
 
-                            if (!(<PropertyMapType>props).multiple) {
+                            if ((<PropertyMapType>props).multiple) {
 
+                                continue;
+                            }
+
+                            break;
+                        } else {
+
+                            if (tokens[property]?.length > current) {
                                 break;
                             }
                         }
                     }
 
                     // default
-                    if (!properties.has(property) && props.default.length > 0) {
+                    if (!(property in tokens) && props.default.length > 0) {
 
                         const val = props.default[0];
 
-                        if (!properties.has(property)) {
+                        if (!(property in tokens)) {
 
-                            properties.set(property, <AstDeclaration>{
-                                typ: 'Declaration',
-                                nam: property,
-                                val: [...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+                            tokens[property] = [
+                                [...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
 
                                     if (acc.length > 0) {
 
@@ -137,23 +168,71 @@ export class PropertyMap {
                                     acc.push(curr);
                                     return acc;
 
-                                }, <Token[]>[])]
-                            });
+                                }, <Token[]>[])
+                                ]
+                            ];
+
+                            // properties.set(property, <AstDeclaration>{
+                            //     typ: 'Declaration',
+                            //     nam: property,
+                            //     val: [...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+                            //
+                            //         if (acc.length > 0) {
+                            //
+                            //             acc.push({typ: 'Whitespace'});
+                            //         }
+                            //
+                            //         acc.push(curr);
+                            //         return acc;
+                            //
+                            //     }, <Token[]>[])
+                            //     ]
+                            // });
 
                         } else {
 
+
+                            if (current == tokens[property].length) {
+
+                                tokens[property].push([]);
+                                tokens[property][current].push(...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+
+                                    if (acc.length > 0) {
+
+                                        acc.push({typ: 'Whitespace'});
+                                    }
+
+                                    acc.push(curr);
+                                    return acc;
+
+                                }, <Token[]>[]));
+                            } else {
+
+                                tokens[property][current].push({typ: 'Whitespace'}, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+
+                                    if (acc.length > 0) {
+
+                                        acc.push({typ: 'Whitespace'});
+                                    }
+
+                                    acc.push(curr);
+                                    return acc;
+
+                                }, <Token[]>[]));
+                            }
+
                             // @ts-ignore
-                            properties.get(property).val.push({typ: 'Whitespace'}, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
-
-                                if (acc.length > 0) {
-
-                                    acc.push({typ: 'Whitespace'});
-                                }
-
-                                acc.push(curr);
-                                return acc;
-
-                            }, <Token[]>[]));
+                            // properties.get(property).val.push({typ: 'Whitespace'}, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+                            //
+                            //     if (acc.length > 0) {
+                            //
+                            //         acc.push({typ: 'Whitespace'});
+                            //     }
+                            //
+                            //     acc.push(curr);
+                            //     return acc;
+                            //
+                            // }, <Token[]>[]));
                         }
                     }
 
@@ -162,10 +241,32 @@ export class PropertyMap {
                     // @ts-ignore
                 }, this.declarations.get(this.config.shorthand).val.slice());
 
+                // console.debug({values})
                 if (values.length == 0) {
 
-                    this.declarations = properties;
+                    this.declarations = Object.entries(tokens).reduce((acc, curr) => {
+
+                        acc.set(curr[0], <AstDeclaration>{
+
+                            typ: 'Declaration',
+                            nam: curr[0],
+                            val: curr[1].reduce((acc, curr) => {
+
+                                if (acc.length > 0) {
+
+                                    acc.push({...separator});
+                                }
+
+                                acc.push(...curr);
+                                return acc;
+                            }, [])
+                        })
+
+                        return acc;
+                    }, new Map<string, AstDeclaration>);
                 }
+
+                // console.debug({tokens});
             }
 
             this.declarations.set(<string>declaration.nam, declaration);

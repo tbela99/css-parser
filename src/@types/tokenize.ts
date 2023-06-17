@@ -53,7 +53,7 @@ export interface FunctionToken {
 export interface FunctionURLToken {
 
     typ: 'UrlFunc',
-    val: string;
+    val: 'url';
     chi: Array<UrlToken | CommentToken>;
 }
 

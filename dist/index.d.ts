@@ -34,7 +34,7 @@ interface FunctionToken {
 }
 interface FunctionURLToken {
     typ: 'UrlFunc';
-    val: string;
+    val: 'url';
     chi: Array<UrlToken | CommentToken>;
 }
 interface StringToken {

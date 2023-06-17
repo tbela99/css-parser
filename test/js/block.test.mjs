@@ -1205,6 +1205,7 @@ var map = {
 				keywords: [
 					"normal"
 				],
+				previous: "font-size",
 				prefix: {
 					typ: "Literal",
 					val: "/"
@@ -1350,6 +1351,10 @@ var map = {
 		],
 		"default": [
 		],
+		multiple: true,
+		separator: {
+			typ: "Comma"
+		},
 		properties: {
 			"background-repeat": {
 				types: [
@@ -1461,6 +1466,11 @@ var map = {
 			},
 			"background-size": {
 				multiple: true,
+				previous: "background-position",
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
 				types: [
 					"Perc",
 					"Length"
@@ -2516,7 +2526,6 @@ function tokenize(iterator, errors, options) {
                 //     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
                 //     return null;
                 // }
-                // console.error(name[0]);
                 if (value == null) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
@@ -2589,10 +2598,15 @@ function tokenize(iterator, errors, options) {
                                 }
                             }
                         }
-                        // else if (t.typ = 'UrlFunc') {
-                        //
-                        //     console.debug(t.chi.length);
-                        // }
+                        else if (t.typ = 'UrlFunc') {
+                            if (t.chi[0]?.typ == 'String') {
+                                const value = t.chi[0].val.slice(1, -1);
+                                if (/^[/%.a-zA-Z0-9_-]+$/.test(value)) {
+                                    t.chi[0].typ = 'Url-token';
+                                    t.chi[0].val = value;
+                                }
+                            }
+                        }
                         continue;
                     }
                     if (t.typ == 'Whitespace' || t.typ == 'Comment') {
@@ -2947,7 +2961,7 @@ function tokenize(iterator, errors, options) {
                     pushToken(getType(buffer));
                     buffer = '';
                     const token = tokens[tokens.length - 1];
-                    if (token.typ == 'UrlFunc' && token.val == 'url') {
+                    if (token.typ == 'UrlFunc' /* && token.val == 'url' */) {
                         // consume either string or url token
                         let whitespace = '';
                         value = peek();
@@ -2966,7 +2980,7 @@ function tokenize(iterator, errors, options) {
                                     token.val = token.val.slice(1, -1);
                                 }
                                 // @ts-ignore
-                                token.typ = 'Url-token';
+                                // token.typ = 'Url-token';
                             }
                             break;
                         }
@@ -3366,10 +3380,13 @@ class PropertyMap {
             this.declarations.set(declaration.nam, declaration);
         }
         else {
+            const separator = this.config.separator || { typ: 'Whitespace' };
             // expand shorthand
             if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
-                const properties = new Map;
+                // const properties: Map<string, AstDeclaration> = new Map;
+                const tokens = {};
                 const values = this.pattern.reduce((acc, property) => {
+                    let current = 0;
                     const props = this.config.properties[property];
                     for (let i = 0; i < acc.length; i++) {
                         if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
@@ -3377,18 +3394,33 @@ class PropertyMap {
                             i--;
                             continue;
                         }
+                        if (acc[i].typ == separator.typ && eq(separator, acc[i])) {
+                            current++;
+                            continue;
+                        }
                         if ((acc[i].typ == 'Iden' && props.keywords.includes(acc[i].val)) ||
                             (acc[i].typ != 'Iden' && props.types.includes(acc[i].typ))) {
-                            if (!properties.has(property)) {
-                                properties.set(property, {
-                                    typ: 'Declaration',
-                                    nam: property,
-                                    val: [acc[i]]
-                                });
+                            if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
+                                break;
+                            }
+                            if (!(property in tokens)) {
+                                tokens[property] = [[acc[i]]];
+                                // properties.set(property, <AstDeclaration>{
+                                //     typ: 'Declaration',
+                                //     nam: property,
+                                //     val: [acc[i]]
+                                // });
                             }
                             else {
+                                if (current == tokens[property].length) {
+                                    tokens[property].push([]);
+                                    tokens[property][current].push(acc[i]);
+                                }
+                                else {
+                                    tokens[property][current].push({ typ: 'Whitespace' }, acc[i]);
+                                }
                                 // @ts-ignore
-                                properties.get(property).val.push({ typ: 'Whitespace' }, acc[i]);
+                                // properties.get(property).val.push({typ: 'Whitespace'}, acc[i]);
                             }
                             acc.splice(i, 1);
                             i--;
@@ -3400,44 +3432,103 @@ class PropertyMap {
                                     i--;
                                 }
                             }
-                            if (!props.multiple) {
+                            if (props.multiple) {
+                                continue;
+                            }
+                            break;
+                        }
+                        else {
+                            if (tokens[property]?.length > current) {
                                 break;
                             }
                         }
                     }
                     // default
-                    if (!properties.has(property) && props.default.length > 0) {
+                    if (!(property in tokens) && props.default.length > 0) {
                         const val = props.default[0];
-                        if (!properties.has(property)) {
-                            properties.set(property, {
-                                typ: 'Declaration',
-                                nam: property,
-                                val: [...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                        if (!(property in tokens)) {
+                            tokens[property] = [
+                                [...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
                                         if (acc.length > 0) {
                                             acc.push({ typ: 'Whitespace' });
                                         }
                                         acc.push(curr);
                                         return acc;
-                                    }, [])]
-                            });
+                                    }, [])
+                                ]
+                            ];
+                            // properties.set(property, <AstDeclaration>{
+                            //     typ: 'Declaration',
+                            //     nam: property,
+                            //     val: [...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+                            //
+                            //         if (acc.length > 0) {
+                            //
+                            //             acc.push({typ: 'Whitespace'});
+                            //         }
+                            //
+                            //         acc.push(curr);
+                            //         return acc;
+                            //
+                            //     }, <Token[]>[])
+                            //     ]
+                            // });
                         }
                         else {
+                            if (current == tokens[property].length) {
+                                tokens[property].push([]);
+                                tokens[property][current].push(...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                                    if (acc.length > 0) {
+                                        acc.push({ typ: 'Whitespace' });
+                                    }
+                                    acc.push(curr);
+                                    return acc;
+                                }, []));
+                            }
+                            else {
+                                tokens[property][current].push({ typ: 'Whitespace' }, ...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                                    if (acc.length > 0) {
+                                        acc.push({ typ: 'Whitespace' });
+                                    }
+                                    acc.push(curr);
+                                    return acc;
+                                }, []));
+                            }
                             // @ts-ignore
-                            properties.get(property).val.push({ typ: 'Whitespace' }, ...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
-                                if (acc.length > 0) {
-                                    acc.push({ typ: 'Whitespace' });
-                                }
-                                acc.push(curr);
-                                return acc;
-                            }, []));
+                            // properties.get(property).val.push({typ: 'Whitespace'}, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+                            //
+                            //     if (acc.length > 0) {
+                            //
+                            //         acc.push({typ: 'Whitespace'});
+                            //     }
+                            //
+                            //     acc.push(curr);
+                            //     return acc;
+                            //
+                            // }, <Token[]>[]));
                         }
                     }
                     return acc;
                     // @ts-ignore
                 }, this.declarations.get(this.config.shorthand).val.slice());
+                // console.debug({values})
                 if (values.length == 0) {
-                    this.declarations = properties;
+                    this.declarations = Object.entries(tokens).reduce((acc, curr) => {
+                        acc.set(curr[0], {
+                            typ: 'Declaration',
+                            nam: curr[0],
+                            val: curr[1].reduce((acc, curr) => {
+                                if (acc.length > 0) {
+                                    acc.push({ ...separator });
+                                }
+                                acc.push(...curr);
+                                return acc;
+                            }, [])
+                        });
+                        return acc;
+                    }, new Map);
                 }
+                // console.debug({tokens});
             }
             this.declarations.set(declaration.nam, declaration);
         }

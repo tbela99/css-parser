@@ -125,6 +125,15 @@ p {
 
 `;
 
+const background2 = `
+a:focus {
+
+background: left 5% / 15% 60% repeat-x url("../../media/examples/star.png"); 
+background-size: cover auto;
+}
+
+`;
+
 describe('shorthand', function () {
 
     it('margin padding', async function () {
@@ -213,5 +222,13 @@ describe('shorthand', function () {
             deduplicate: true,
             removeEmpty: true
         }).ast, {compress: true}).code).equals('p{background:no-repeat red url(images/bg.gif)}')
+    });
+
+    it('background #10', async function () {
+
+        expect(render(parse(background2, {
+            deduplicate: true,
+            removeEmpty: true
+        }).ast, {compress: true}).code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}')
     });
 });

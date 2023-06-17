@@ -36,11 +36,13 @@ export default [...await new Promise((resolve, reject) => {
         plugins: [nodeResolve(), json(), typescript()],
         output: [
             {
-                file: './dist/index.mjs',
+                // file: './dist/index.mjs',
+                dir: './dist',
                 format: 'es',
+                preserveModules: true
             },
             {
-                file: './dist/index.js',
+                file: './dist/index-umd.js',
                 format: 'umd',
                 name: 'CSSParser'
             }
@@ -50,12 +52,9 @@ export default [...await new Promise((resolve, reject) => {
         input: 'src/index.ts',
         plugins: [nodeResolve(), typescript(), terser(), json()],
         output: [
+
             {
-                file: './dist/index.min.mjs',
-                format: 'es',
-            },
-            {
-                file: './dist/index.min.js',
+                file: './dist/index-umd.min.js',
                 format: 'umd',
                 name: 'CSSParser'
             }

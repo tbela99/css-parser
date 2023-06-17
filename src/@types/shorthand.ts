@@ -31,6 +31,7 @@ export interface PropertyMapType {
         typ: 'Literal',
         val: string
     };
+    previous?: string;
     separator?: {
 
         typ: 'Comma'
@@ -72,6 +73,15 @@ export interface ShorthandProperties {
         [key: string]: any;
     };
     prefix?: string;
+}
+
+export interface ShorthandDef {
+    shorthand: string;
+    pattern: string;
+    keywords: string;
+    defaults: string[];
+    multiple?: boolean;
+    separator?: string;
 }
 
 export interface ShorthandType {

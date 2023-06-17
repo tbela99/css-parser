@@ -562,9 +562,6 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                 //     return null;
                 // }
 
-                // console.error(name[0]);
-
-
                 if (value == null) {
 
                     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
@@ -673,10 +670,19 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                             }
                         }
 
-                        // else if (t.typ = 'UrlFunc') {
-                        //
-                        //     console.debug(t.chi.length);
-                        // }
+                        else if (t.typ = 'UrlFunc') {
+
+                            if(t.chi[0]?.typ == 'String') {
+
+                                const value = t.chi[0].val.slice(1, -1);
+
+                                if (/^[/%.a-zA-Z0-9_-]+$/.test(value)) {
+
+                                    t.chi[0].typ = 'Url-token';
+                                    t.chi[0].val = value;
+                                }
+                            }
+                        }
 
                         continue;
                     }
@@ -1215,7 +1221,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
 
                     const token: Token = tokens[tokens.length - 1];
 
-                    if (token.typ == 'UrlFunc' && token.val == 'url') {
+                    if (token.typ == 'UrlFunc' /* && token.val == 'url' */) {
 
                         // consume either string or url token
                         let whitespace = '';
@@ -1247,7 +1253,7 @@ export function tokenize(iterator: string, errors: ErrorDescription[], options: 
                                 }
 
                                 // @ts-ignore
-                                token.typ = 'Url-token';
+                                // token.typ = 'Url-token';
                             }
                             break;
                         } else {
