@@ -97,7 +97,7 @@ export const map: ShorthandMapType = [
                     default: ['normal', '400'],
                     keywords: ['normal', 'bold', 'lighter', 'bolder'],
                     constraints: {
-                        number: {
+                        value: {
                             min: '1', max: '1000'
                         }
                     },
@@ -207,7 +207,7 @@ export const map: ShorthandMapType = [
                 shorthand: 'background-repeat',
                 properties: {
                     types: [],
-                    default: ['none'],
+                    default: ['repeat'],
                     multiple: true,
                     keywords: ['repeat-x', 'repeat-y', 'repeat', 'space', 'round', 'no-repeat'],
                     mapping: {
@@ -273,6 +273,11 @@ export const map: ShorthandMapType = [
                         center: '50%',
                         bottom: '100%',
                         'right': '100%'
+                    },
+                    constraints: {
+                        mapping: {
+                            max: 2
+                        }
                     }
                 }
             },

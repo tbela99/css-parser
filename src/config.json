@@ -309,7 +309,7 @@
       "bolder"
      ],
      "constraints": {
-      "number": {
+      "value": {
        "min": "1",
        "max": "1000"
       }
@@ -530,7 +530,7 @@
     "background-repeat": {
      "types": [],
      "default": [
-      "none"
+      "repeat"
      ],
      "multiple": true,
      "keywords": [
@@ -628,6 +628,11 @@
       "center": "50%",
       "bottom": "100%",
       "right": "100%"
+     },
+     "constraints": {
+      "mapping": {
+       "max": 2
+      }
      }
     },
     "background-size": {

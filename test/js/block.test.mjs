@@ -1134,7 +1134,7 @@ var map = {
 					"bolder"
 				],
 				constraints: {
-					number: {
+					value: {
 						min: "1",
 						max: "1000"
 					}
@@ -1360,7 +1360,7 @@ var map = {
 				types: [
 				],
 				"default": [
-					"none"
+					"repeat"
 				],
 				multiple: true,
 				keywords: [
@@ -1462,6 +1462,11 @@ var map = {
 					center: "50%",
 					bottom: "100%",
 					right: "100%"
+				},
+				constraints: {
+					mapping: {
+						max: 2
+					}
 				}
 			},
 			"background-size": {
@@ -2015,6 +2020,106 @@ function hsl2rgb(h, s, l, a = null) {
     return values;
 }
 
+const indents = [];
+function render(data, opt = {}) {
+    const options = Object.assign(opt.compress ? {
+        indent: '',
+        newLine: '',
+        preserveLicense: false,
+        removeComments: true,
+        colorConvert: true
+    } : {
+        indent: ' ',
+        newLine: '\n',
+        compress: false,
+        preserveLicense: false,
+        removeComments: false,
+        colorConvert: true
+    }, opt);
+    function reducer(acc, curr, index, original) {
+        if (curr.typ == 'Comment' && options.removeComments) {
+            if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                return acc;
+            }
+        }
+        if (options.compress && curr.typ == 'Whitespace') {
+            if (original[index + 1]?.typ == 'Start-parens' ||
+                (index > 0 && (original[index - 1].typ == 'Pseudo-class-func' ||
+                    original[index - 1].typ == 'End-parens' ||
+                    original[index - 1].typ == 'UrlFunc' ||
+                    original[index - 1].typ == 'Func' ||
+                    (original[index - 1].typ == 'Color' &&
+                        original[index - 1].kin != 'hex' &&
+                        original[index - 1].kin != 'lit')))) {
+                return acc;
+            }
+        }
+        return acc + renderToken(curr, options);
+    }
+    return { code: doRender(data, options, reducer) };
+}
+function doRender(data, options, reducer, level = 0) {
+    if (indents.length < level + 1) {
+        indents.push(options.indent.repeat(level));
+    }
+    if (indents.length < level + 2) {
+        indents.push(options.indent.repeat(level + 1));
+    }
+    const indent = indents[level];
+    const indentSub = indents[level + 1];
+    switch (data.typ) {
+        case 'Comment':
+            return options.removeComments ? '' : data.val;
+        case 'StyleSheet':
+            return data.chi.reduce((css, node) => {
+                const str = doRender(node, options, reducer);
+                if (str === '') {
+                    return css;
+                }
+                if (css === '') {
+                    return str;
+                }
+                return `${css}${options.newLine}${str}`;
+            }, '');
+        case 'AtRule':
+        case 'Rule':
+            if (data.typ == 'AtRule' && !('chi' in data)) {
+                return `${indent}@${data.nam} ${data.val};`;
+            }
+            // @ts-ignore
+            let children = data.chi.reduce((css, node) => {
+                let str;
+                if (node.typ == 'Comment') {
+                    str = options.removeComments ? '' : node.val;
+                }
+                else if (node.typ == 'Declaration') {
+                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
+                }
+                else if (node.typ == 'AtRule' && !('chi' in node)) {
+                    str = `@${node.nam} ${node.val};`;
+                }
+                else {
+                    str = doRender(node, options, reducer, level + 1);
+                }
+                if (css === '') {
+                    return str;
+                }
+                if (str === '') {
+                    return css;
+                }
+                if (str !== '')
+                    return `${css}${options.newLine}${indentSub}${str}`;
+            }, '');
+            if (children.endsWith(';')) {
+                children = children.slice(0, -1);
+            }
+            if (data.typ == 'AtRule') {
+                return `@${data.nam} ${data.val ? data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+            }
+            return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+    }
+    return '';
+}
 function renderToken(token, options = {}) {
     switch (token.typ) {
         case 'Color':
@@ -2404,7 +2509,16 @@ function tokenize(iterator, errors, options) {
             const node = {
                 typ: 'AtRule',
                 nam: renderToken(atRule, { removeComments: true }),
-                val: tokens.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '')
+                val: tokens.reduce((acc, curr, index, array) => {
+                    if (curr.typ == 'Whitespace') {
+                        if (array[index + 1]?.typ == 'Start-parens' ||
+                            array[index - 1]?.typ == 'End-parens' ||
+                            array[index - 1]?.typ == 'Func') {
+                            return acc;
+                        }
+                    }
+                    return acc + renderToken(curr, { removeComments: true });
+                }, '')
             };
             if (node.nam == 'import') {
                 if (options.processImport) {
@@ -2467,7 +2581,15 @@ function tokenize(iterator, errors, options) {
                             acc[acc.length - 1].push(curr);
                         }
                         return acc;
-                    }, [[]]).map(part => part.map(p => renderToken(p, { removeComments: true })).join('')).join(),
+                    }, [[]]).map(part => part.reduce((acc, p, index, array) => {
+                        if (p.typ == 'Whitespace') {
+                            if (array[index + 1]?.typ == 'Start-parens' ||
+                                array[index - 1]?.typ == 'End-parens') {
+                                return acc;
+                            }
+                        }
+                        return acc + renderToken(p, { removeComments: true });
+                    }, '')).join(),
                     chi: []
                 };
                 loc = {
@@ -2530,10 +2652,10 @@ function tokenize(iterator, errors, options) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-                let j = value.length;
-                let i = j;
+                // let j: number = value.length
+                let i = 0;
                 let t;
-                while (i--) {
+                for (; i < value.length; i++) {
                     t = value[i];
                     if (t.typ == 'Iden') {
                         // named color
@@ -2565,6 +2687,7 @@ function tokenize(iterator, errors, options) {
                             switch (value[k].typ) {
                                 case 'Start-parens':
                                 case 'Func':
+                                case 'UrlFunc':
                                     parens++;
                                     isScalar = false;
                                     break;
@@ -2576,34 +2699,36 @@ function tokenize(iterator, errors, options) {
                                 break;
                             }
                         }
-                        t.chi = value.splice(i + 1, k);
-                        if (t.chi[t.chi.length - 1].typ == 'End-parens') {
+                        t.chi = value.splice(i + 1, k - i);
+                        if (t.chi.at(-1).typ == 'End-parens') {
                             t.chi.pop();
                         }
-                        if (isScalar && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
-                            // @ts-ignore
-                            t.typ = 'Color';
-                            // @ts-ignore
-                            t.kin = t.val;
-                            let i = t.chi.length;
-                            while (i-- > 0) {
-                                if (t.chi[i].typ == 'Literal') {
-                                    if (t.chi[i + 1]?.typ == 'Whitespace') {
-                                        t.chi.splice(i + 1, 1);
-                                    }
-                                    if (t.chi[i - 1]?.typ == 'Whitespace') {
-                                        t.chi.splice(i - 1, 1);
-                                        i--;
+                        if (isScalar) {
+                            if (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
+                                // @ts-ignore
+                                t.typ = 'Color';
+                                // @ts-ignore
+                                t.kin = t.val;
+                                let i = t.chi.length;
+                                while (i-- > 0) {
+                                    if (t.chi[i].typ == 'Literal') {
+                                        if (t.chi[i + 1]?.typ == 'Whitespace') {
+                                            t.chi.splice(i + 1, 1);
+                                        }
+                                        if (t.chi[i - 1]?.typ == 'Whitespace') {
+                                            t.chi.splice(i - 1, 1);
+                                            i--;
+                                        }
                                     }
                                 }
                             }
-                        }
-                        else if (t.typ = 'UrlFunc') {
-                            if (t.chi[0]?.typ == 'String') {
-                                const value = t.chi[0].val.slice(1, -1);
-                                if (/^[/%.a-zA-Z0-9_-]+$/.test(value)) {
-                                    t.chi[0].typ = 'Url-token';
-                                    t.chi[0].val = value;
+                            else if (t.typ = 'UrlFunc') {
+                                if (t.chi[0]?.typ == 'String') {
+                                    const value = t.chi[0].val.slice(1, -1);
+                                    if (/^[/%.a-zA-Z0-9_-]+$/.test(value)) {
+                                        t.chi[0].typ = 'Url-token';
+                                        t.chi[0].val = value;
+                                    }
                                 }
                             }
                         }
@@ -3343,6 +3468,17 @@ class PropertySet {
     }
 }
 
+function matchType(val, properties) {
+    if (val.typ == 'Iden' && properties.keywords.includes(val.val) ||
+        (properties.types.includes(val.typ))) {
+        return true;
+    }
+    if (val.typ == 'Number' && val.val == '0') {
+        return properties.types.some(type => type == 'Length' || type == 'Angle');
+    }
+    return false;
+}
+
 function getTokenType(val) {
     if (val == 'transparent' || val == 'currentcolor') {
         return {
@@ -3362,6 +3498,15 @@ function getTokenType(val) {
         val
     };
 }
+function parseString(val) {
+    return val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
+        if (acc.length > 0) {
+            acc.push({ typ: 'Whitespace' });
+        }
+        acc.push(curr);
+        return acc;
+    }, []);
+}
 class PropertyMap {
     config;
     declarations;
@@ -3380,138 +3525,93 @@ class PropertyMap {
             this.declarations.set(declaration.nam, declaration);
         }
         else {
-            const separator = this.config.separator || { typ: 'Whitespace' };
+            const separator = this.config.separator;
             // expand shorthand
             if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
-                // const properties: Map<string, AstDeclaration> = new Map;
                 const tokens = {};
-                const values = this.pattern.reduce((acc, property) => {
-                    let current = 0;
-                    const props = this.config.properties[property];
-                    for (let i = 0; i < acc.length; i++) {
-                        if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
-                            acc.splice(i, 1);
-                            i--;
-                            continue;
-                        }
-                        if (acc[i].typ == separator.typ && eq(separator, acc[i])) {
-                            current++;
-                            continue;
-                        }
-                        if ((acc[i].typ == 'Iden' && props.keywords.includes(acc[i].val)) ||
-                            (acc[i].typ != 'Iden' && props.types.includes(acc[i].typ))) {
-                            if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
-                                break;
+                const values = [];
+                this.declarations.get(this.config.shorthand).val.slice().reduce((acc, curr) => {
+                    if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
+                        acc.push([]);
+                        return acc;
+                    }
+                    // else {
+                    acc.at(-1).push(curr);
+                    // }
+                    return acc;
+                }, [[]]).reduce((acc, list, current) => {
+                    values.push(...this.pattern.reduce((acc, property) => {
+                        // let current: number = 0;
+                        const props = this.config.properties[property];
+                        for (let i = 0; i < acc.length; i++) {
+                            if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
+                                acc.splice(i, 1);
+                                i--;
+                                continue;
                             }
+                            if (matchType(acc[i], props)) {
+                                if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
+                                    return acc;
+                                }
+                                if (!(property in tokens)) {
+                                    tokens[property] = [[acc[i]]];
+                                }
+                                else {
+                                    if (current == tokens[property].length) {
+                                        tokens[property].push([acc[i]]);
+                                        // tokens[property][current].push();
+                                    }
+                                    else {
+                                        tokens[property][current].push({ typ: 'Whitespace' }, acc[i]);
+                                    }
+                                }
+                                acc.splice(i, 1);
+                                i--;
+                                // @ts-ignore
+                                if ('prefix' in props && acc[i]?.typ == props.prefix.typ) {
+                                    // @ts-ignore
+                                    if (eq(acc[i], this.config.properties[property].prefix)) {
+                                        acc.splice(i, 1);
+                                        i--;
+                                    }
+                                }
+                                if (props.multiple) {
+                                    continue;
+                                }
+                                return acc;
+                            }
+                            else {
+                                if (property in tokens && tokens[property].length > current) {
+                                    return acc;
+                                }
+                            }
+                        }
+                        if (property in tokens && tokens[property].length > current) {
+                            return acc;
+                        }
+                        // default
+                        if (props.default.length > 0) {
+                            const defaults = parseString(props.default[0]);
                             if (!(property in tokens)) {
-                                tokens[property] = [[acc[i]]];
-                                // properties.set(property, <AstDeclaration>{
-                                //     typ: 'Declaration',
-                                //     nam: property,
-                                //     val: [acc[i]]
-                                // });
+                                tokens[property] = [
+                                    [...defaults
+                                    ]
+                                ];
                             }
                             else {
                                 if (current == tokens[property].length) {
                                     tokens[property].push([]);
-                                    tokens[property][current].push(acc[i]);
+                                    tokens[property][current].push(...defaults);
                                 }
                                 else {
-                                    tokens[property][current].push({ typ: 'Whitespace' }, acc[i]);
-                                }
-                                // @ts-ignore
-                                // properties.get(property).val.push({typ: 'Whitespace'}, acc[i]);
-                            }
-                            acc.splice(i, 1);
-                            i--;
-                            // @ts-ignore
-                            if ('prefix' in props && acc[i]?.typ == props.prefix.typ) {
-                                // @ts-ignore
-                                if (eq(acc[i], this.config.properties[property].prefix)) {
-                                    acc.splice(i, 1);
-                                    i--;
+                                    tokens[property][current].push({ typ: 'Whitespace' }, ...defaults);
                                 }
                             }
-                            if (props.multiple) {
-                                continue;
-                            }
-                            break;
                         }
-                        else {
-                            if (tokens[property]?.length > current) {
-                                break;
-                            }
-                        }
-                    }
-                    // default
-                    if (!(property in tokens) && props.default.length > 0) {
-                        const val = props.default[0];
-                        if (!(property in tokens)) {
-                            tokens[property] = [
-                                [...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
-                                        if (acc.length > 0) {
-                                            acc.push({ typ: 'Whitespace' });
-                                        }
-                                        acc.push(curr);
-                                        return acc;
-                                    }, [])
-                                ]
-                            ];
-                            // properties.set(property, <AstDeclaration>{
-                            //     typ: 'Declaration',
-                            //     nam: property,
-                            //     val: [...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
-                            //
-                            //         if (acc.length > 0) {
-                            //
-                            //             acc.push({typ: 'Whitespace'});
-                            //         }
-                            //
-                            //         acc.push(curr);
-                            //         return acc;
-                            //
-                            //     }, <Token[]>[])
-                            //     ]
-                            // });
-                        }
-                        else {
-                            if (current == tokens[property].length) {
-                                tokens[property].push([]);
-                                tokens[property][current].push(...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
-                                    if (acc.length > 0) {
-                                        acc.push({ typ: 'Whitespace' });
-                                    }
-                                    acc.push(curr);
-                                    return acc;
-                                }, []));
-                            }
-                            else {
-                                tokens[property][current].push({ typ: 'Whitespace' }, ...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
-                                    if (acc.length > 0) {
-                                        acc.push({ typ: 'Whitespace' });
-                                    }
-                                    acc.push(curr);
-                                    return acc;
-                                }, []));
-                            }
-                            // @ts-ignore
-                            // properties.get(property).val.push({typ: 'Whitespace'}, ...val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
-                            //
-                            //     if (acc.length > 0) {
-                            //
-                            //         acc.push({typ: 'Whitespace'});
-                            //     }
-                            //
-                            //     acc.push(curr);
-                            //     return acc;
-                            //
-                            // }, <Token[]>[]));
-                        }
-                    }
-                    return acc;
-                    // @ts-ignore
-                }, this.declarations.get(this.config.shorthand).val.slice());
-                // console.debug({values})
+                        return acc;
+                    }, list));
+                    return values;
+                }, []);
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                         acc.set(curr[0], {
@@ -3528,7 +3628,6 @@ class PropertyMap {
                         return acc;
                     }, new Map);
                 }
-                // console.debug({tokens});
             }
             this.declarations.set(declaration.nam, declaration);
         }
@@ -3542,6 +3641,9 @@ class PropertyMap {
         if (requiredCount < this.requiredCount) {
             return this.declarations.values();
         }
+        let count = 0;
+        const separator = this.config.separator;
+        const tokens = {};
         // @ts-ignore
         const valid = Object.entries(this.config.properties).reduce((acc, curr) => {
             if (!this.declarations.has(curr[0])) {
@@ -3550,124 +3652,111 @@ class PropertyMap {
                 }
                 return acc;
             }
+            let current = 0;
+            const props = this.config.properties[curr[0]];
             // @ts-ignore
             for (const val of this.declarations.get(curr[0]).val) {
+                if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+                    current++;
+                    if (tokens[curr[0]].length == current) {
+                        tokens[curr[0]].push([]);
+                    }
+                    continue;
+                }
                 if (val.typ == 'Whitespace' || val.typ == 'Comment') {
                     continue;
                 }
-                if (val.typ == 'Iden' && curr[1].keywords.includes(val.val) ||
-                    curr[1].types.includes(val.typ)) {
+                if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(val, props.separator)) {
                     continue;
                 }
-                if (curr[1].required && val.typ == 'Comma') {
+                if (matchType(val, curr[1])) {
+                    if (!(curr[0] in tokens)) {
+                        tokens[curr[0]] = [[]];
+                    }
+                    // is default value
+                    tokens[curr[0]][current].push(val);
                     continue;
                 }
                 acc.push(curr[0]);
                 break;
             }
+            if (count == 0) {
+                count = current;
+            }
             return acc;
         }, []);
-        if (valid.length > 0) {
+        if (valid.length > 0 || Object.values(tokens).every(v => v.every(v => v.length == count))) {
             return this.declarations.values();
         }
-        const pattern = this.config.pattern.split(/\s+/);
-        const values = pattern.reduce((acc, curr) => {
-            if (this.declarations.has(curr)) {
-                // let current: number = 0;
-                // remove default values
-                // @ts-ignore
-                const values = this.declarations.get(curr).val.filter(val => !('val' in val) || !this.config.properties[curr].default.includes(val.val));
-                if (values.length == 0 || this.config.properties[curr].default.includes(values.reduce((acc, curr) => acc + renderToken(curr), ''))) {
-                    return acc;
+        const values = Object.entries(tokens).reduce((acc, curr) => {
+            const props = this.config.properties[curr[0]];
+            for (let i = 0; i < curr[1].length; i++) {
+                if (acc.length == i) {
+                    acc.push([]);
                 }
-                for (const val of values) {
-                    if (val.typ == 'Whitespace' || val.typ == 'Comment') {
-                        continue;
+                let values = curr[1][i].reduce((acc, curr) => {
+                    if (acc.length > 0) {
+                        acc.push({ typ: 'Whitespace' });
                     }
-                    if (curr in this.config.properties) {
-                        if (this.config.properties[curr].types.includes(val.typ) || (val.typ == 'Iden' && this.config.properties[curr].keywords.includes(val.val))) {
-                            if (!(curr in acc)) {
-                                acc[curr] = [];
+                    acc.push(curr);
+                    return acc;
+                }, []);
+                if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
+                    continue;
+                }
+                values = values.filter((val) => {
+                    if (val.typ == 'Whitespace' || val.typ == 'Comment') {
+                        return false;
+                    }
+                    return !(val.typ == 'Iden' && props.default.includes(val.val));
+                });
+                if (values.length > 0) {
+                    if ('mapping' in props) {
+                        if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
+                            let i = values.length;
+                            while (i--) {
+                                if (values[i].typ == 'Iden' && values[i].val in props.mapping) {
+                                    values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
+                                }
                             }
-                            acc[curr].push(val);
                         }
                     }
+                    if ('prefix' in props) {
+                        acc[i].push({ ...props.prefix });
+                    }
+                    else if (acc[i].length > 0) {
+                        acc[i].push({ typ: 'Whitespace' });
+                    }
+                    acc[i].push(...values.reduce((acc, curr) => {
+                        if (acc.length > 0) {
+                            acc.push({ ...(props.separator ?? { typ: 'Whitespace' }) });
+                        }
+                        acc.push(curr);
+                        return acc;
+                    }, []));
                 }
             }
             return acc;
-        }, {});
-        const separator = this.config.separator;
-        if (Object.keys(values).length == 0) {
-            const val = this.config.default[0];
-            if (val == null) {
-                return this.declarations.values();
+        }, []).reduce((acc, curr) => {
+            if (acc.length > 0) {
+                acc.push({ ...separator });
             }
-            return [{
-                    typ: 'Declaration',
-                    nam: this.config.shorthand,
-                    val: [{ typ: isNumber(val) ? 'Number' : 'Iden', val }]
-                }][Symbol.iterator]();
-        }
+            if (curr.length == 0) {
+                curr.push(...this.config.default[0].split(/\s/).map(getTokenType).reduce((acc, curr) => {
+                    if (acc.length > 0) {
+                        acc.push({ typ: 'Whitespace' });
+                    }
+                    acc.push(curr);
+                    return acc;
+                }, []));
+            }
+            acc.push(...curr);
+            return acc;
+        }, []);
         return [{
                 typ: 'Declaration',
                 nam: this.config.shorthand,
-                val: pattern.reduce((acc, property) => {
-                    let current = 0;
-                    if (property in values) {
-                        if (acc.length == 0) {
-                            acc.push([]);
-                        }
-                        for (let i = 0; i < values[property].length; i++) {
-                            if (separator != null && separator.typ == values[property][i].typ && eq(separator, values[property][i])) {
-                                if (acc.length < ++current) {
-                                    acc.push([]);
-                                }
-                                continue;
-                            }
-                            if (i == 0 && acc.length == 0) {
-                                acc[current].push(values[property][i]);
-                            }
-                            else if ('prefix' in this.config.properties[property]) {
-                                acc[current].push(Object.assign({}, this.config.properties[property].prefix));
-                                acc[current].push(values[property][i]);
-                            }
-                            else if (this.config.properties[property].multiple) {
-                                if (i > 0 && 'separator' in this.config.properties[property]) {
-                                    acc[current].push(Object.assign({}, this.config.properties[property].separator));
-                                }
-                                else {
-                                    acc[current].push({ typ: 'Whitespace' });
-                                }
-                                acc[current].push(values[property][i]);
-                            }
-                            else {
-                                acc[current].push({ typ: 'Whitespace' });
-                                acc[current].push(values[property][i]);
-                            }
-                            if (values[property][i].typ == 'Iden' &&
-                                'mapping' in this.config.properties[property]) {
-                                // @ts-ignore
-                                const val = this.config.properties[property].mapping[values[property][i].val.toLowerCase()];
-                                if (val != null && val.length < values[property][i].val.length) {
-                                    acc[current].splice(acc[current].length - 1, 1, ...val.split(/\s/).map(getTokenType).reduce((acc, curr) => {
-                                        if (acc.length > 0) {
-                                            acc.push({ typ: 'Whitespace' });
-                                        }
-                                        acc.push(curr);
-                                        return acc;
-                                    }, []));
-                                }
-                            }
-                        }
-                    }
-                    return acc;
-                }, []).reduce((acc, curr) => {
-                    if (acc.length > 0) {
-                        acc.push((separator ? { ...separator } : { typ: 'Whitespace' }));
-                    }
-                    acc.push(...(curr[0].typ == 'Whitespace' ? curr.slice(1) : curr));
-                    return acc;
-                }, [])
+                val: values
             }][Symbol.iterator]();
     }
 }
@@ -3750,6 +3839,18 @@ function parse(css, opt = {}) {
     }
     return { ast, errors };
 }
+function diff(node1, node2) {
+    // @ts-ignore
+    return node1.chi.every((val) => {
+        if (val.typ == 'Comment') {
+            return true;
+        }
+        if (val.typ != 'Declaration') {
+            return false;
+        }
+        return node2.chi.some(v => eq(v, val));
+    });
+}
 function deduplicate(ast) {
     // @ts-ignore
     if (('chi' in ast) && ast.chi?.length > 0) {
@@ -3771,26 +3872,27 @@ function deduplicate(ast) {
                 i--;
                 continue;
             }
-            if (('chi' in node)) {
+            // @ts-ignore
+            if (previous != null && 'chi' in previous && ('chi' in node)) {
                 // @ts-ignore
-                if (previous != null && previous.typ == node.typ) {
+                if (previous.typ == node.typ) {
+                    let shouldMerge = true;
                     // @ts-ignore
-                    if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                    let k = previous.chi.length;
+                    while (k-- > 0) {
                         // @ts-ignore
-                        (node.typ == 'AtRule') && node.val == previous.val) {
-                        let shouldMerge = true;
-                        // @ts-ignore
-                        let k = previous.chi.length;
-                        while (k-- > 0) {
-                            // @ts-ignore
-                            if (previous.chi[k].typ == 'Comment') {
-                                continue;
-                            }
-                            // @ts-ignore
-                            shouldMerge = previous.chi[k].typ == 'Declaration';
-                            break;
+                        if (previous.chi[k].typ == 'Comment') {
+                            continue;
                         }
-                        if (shouldMerge) {
+                        // @ts-ignore
+                        shouldMerge = previous.chi[k].typ == 'Declaration';
+                        break;
+                    }
+                    if (shouldMerge) {
+                        // @ts-ignore
+                        if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                            // @ts-ignore
+                            (node.typ == 'AtRule') && node.val == previous.val) {
                             // @ts-ignore
                             node.chi.unshift(...previous.chi);
                             // @ts-ignore
@@ -3800,10 +3902,22 @@ function deduplicate(ast) {
                             nodeIndex = i;
                             continue;
                         }
+                        else if (node.typ == 'Rule') {
+                            if (diff(node, previous) && diff(previous, node)) {
+                                if (node.typ == 'Rule') {
+                                    previous.sel += ',' + node.sel;
+                                }
+                                // @ts-ignore
+                                ast.chi.splice(i, 1);
+                                i--;
+                                // previous = node;
+                                // nodeIndex = i;
+                            }
+                        }
                     }
                 }
                 // @ts-ignore
-                if (previous != null && previous != node && 'chi' in previous) {
+                if (previous != node) {
                     // @ts-ignore
                     if (previous.chi.some(n => n.typ == 'Declaration')) {
                         deduplicateRule(previous);
@@ -3870,5 +3984,19 @@ describe('parse block', function () {
     it('parse file #4', async function () {
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
         f(parse(file, { deduplicate: true }).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
+    });
+    it('similar rules #5', async function () {
+        const file = `
+.clear {
+  width: 0;
+  height: 0;
+}
+
+.clearfix:before {
+
+  height: 0;
+  width: 0;
+}`;
+        f(render(parse(file, { deduplicate: true }).ast, { compress: true }).code).equals(`.clear,.clearfix:before{width:0;height:0}`);
     });
 });

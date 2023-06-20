@@ -1,6 +1,6 @@
 import {expect} from "@esm-bundle/chai";
 import {readFile} from "fs/promises";
-import {parse} from "../../src";
+import {parse, render} from "../../src";
 import {dirname} from "path";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
@@ -57,5 +57,39 @@ describe('parse block', function () {
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
 
         expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()))
+    });
+
+    it('similar rules #5', async function () {
+
+        const file = `
+.clear {
+  width: 0;
+  height: 0;
+}
+
+.clearfix:before {
+
+  height: 0;
+  width: 0;
+}`;
+
+        expect(render(parse(file, {deduplicate: true}).ast, {compress: true}).code).equals(`.clear,.clearfix:before{width:0;height:0}`)
+    });
+
+    it('similar rules #5', async function () {
+
+        const file = `
+.clear {
+  width: 0;
+  height: 0;
+}
+
+.clearfix:before {
+
+  height: 0;
+  width: 0;
+}`;
+
+        expect(render(parse(file, {deduplicate: true}).ast, {compress: true}).code).equals(`.clear,.clearfix:before{width:0;height:0}`)
     });
 });

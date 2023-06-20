@@ -134,6 +134,15 @@ background-size: cover auto;
 
 `;
 
+const background3 = `
+
+a{
+background: center / contain no-repeat url("../../media/examples/firefox-logo.svg"),            
+#eee 35% url("../../media/examples/lizard.png");
+background-size: cover auto, contain;
+
+}
+`;
 describe('shorthand', function () {
 
     it('margin padding', async function () {
@@ -229,6 +238,14 @@ describe('shorthand', function () {
         expect(render(parse(background2, {
             deduplicate: true,
             removeEmpty: true
-        }).ast, {compress: true}).code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}')
+        }).ast, {compress: true}).code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}')
+    });
+
+    it('background #11', async function () {
+
+        expect(render(parse(background3, {
+            deduplicate: true,
+            removeEmpty: true
+        }).ast, {compress: true}).code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}')
     });
 });
