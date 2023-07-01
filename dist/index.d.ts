@@ -141,6 +141,7 @@ interface PseudoClassToken {
 interface PseudoClassFunctionToken {
     typ: 'Pseudo-class-func';
     val: string;
+    chi: Token[];
 }
 interface DelimToken {
     typ: 'Delim';
@@ -166,7 +167,11 @@ interface ColorToken {
     kin: 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
     chi?: Token[];
 }
-declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;
+interface AttrToken {
+    typ: 'Attr';
+    chi: Token[];
+}
+declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
 
 interface ErrorDescription {
 
@@ -185,8 +190,8 @@ interface ParserOptions {
 
     src?: string;
     location?: boolean;
+    compress?: boolean;
     processImport?: boolean;
-    deduplicate?: boolean;
     removeEmpty?: boolean;
     nodeEventFilter?: NodeType[]
 }
@@ -201,6 +206,30 @@ interface RenderOptions {
     colorConvert?: boolean;
 }
 
+interface TransformOptions extends ParserOptions, RenderOptions {
+
+}
+
+interface ParseResult {
+    ast: AstRuleStyleSheet;
+    errors: ErrorDescription[]
+}
+
+interface RenderResult {
+    code: string ;
+}
+
+interface TransformResult extends ParseResult, RenderResult {
+
+    performance: {
+        bytesIn: number;
+        bytesOut: number;
+        parse: string;
+        // deduplicate: string;
+        render: string;
+        total: string;
+    }
+}
 interface Position {
 
     ind: number;
@@ -267,16 +296,15 @@ type AstNode =
     | AstRule
     | AstDeclaration;
 
-declare function parse(css: string, opt?: ParserOptions): {
-    ast: AstRuleStyleSheet;
-    errors: ErrorDescription[];
-};
-declare function deduplicate(ast: AstNode): AstNode;
-declare function deduplicateRule(ast: AstNode): AstNode;
+declare function parse(iterator: string, opt?: ParserOptions): ParseResult;
 
-declare function render(data: AstNode, opt?: RenderOptions): {
-    code: string;
-};
+declare function deduplicate(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
+declare function hasDeclaration(node: AstAtRule | AstRule | AstRuleList): boolean;
+declare function deduplicateRule(ast: AstNode, options?: ParserOptions): AstNode;
+
+declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions): string;
 
-export { deduplicate, deduplicateRule, parse, render, renderToken };
+declare function transform(css: string, options?: TransformOptions): TransformResult;
+
+export { deduplicate, deduplicateRule, hasDeclaration, parse, render, renderToken, transform };

@@ -1,34 +1,35 @@
-import { isWhiteSpace, isIdent, isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isHash, isHexColor, isNewLine } from './utils/syntax.js';
+import { isWhiteSpace, isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHash, isNewLine, isIdentStart, isHexColor } from './utils/syntax.js';
 import { renderToken } from '../renderer/renderer.js';
 import { COLORS_NAMES } from '../renderer/utils/color.js';
 
-function tokenize(iterator, errors, options) {
+const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
+function tokenize(iterator, errors, options, offsetInd = 0, offsetLin = 1, offsetCol = 0) {
+    let ind = -1;
+    let lin = offsetLin;
+    let col = offsetCol;
     const tokens = [];
     const src = options.src;
     const stack = [];
-    const root = {
+    const ast = {
         typ: "StyleSheet",
         chi: []
     };
     const position = {
-        ind: 0,
-        lin: 1,
-        col: 1
+        ind: Math.max(ind, 0),
+        lin: lin,
+        col: Math.max(col, 1)
     };
     let value;
     let buffer = '';
-    let ind = -1;
-    let lin = 1;
-    let col = 0;
     let total = iterator.length;
     let map = new Map;
-    let context = root;
+    let context = ast;
     if (options.location) {
-        root.loc = {
+        ast.loc = {
             sta: {
-                ind: 0,
-                lin: 1,
-                col: 1
+                ind: ind + offsetInd,
+                lin: lin,
+                col: col
             },
             src: ''
         };
@@ -62,16 +63,20 @@ function tokenize(iterator, errors, options) {
             return { typ: 'Gt' };
         }
         if (isPseudo(val)) {
-            return {
-                typ: val.endsWith('(') ? 'Pseudo-class-func' : 'Pseudo-class',
-                val
-            };
+            return val.endsWith('(') ? {
+                typ: 'Pseudo-class-func',
+                val: val.slice(0, -1),
+                chi: []
+            }
+                : {
+                    typ: 'Pseudo-class',
+                    val
+                };
         }
         if (isAtKeyword(val)) {
             return {
                 typ: 'At-rule',
                 val: val.slice(1)
-                // buffer: buffer.slice()
             };
         }
         if (isFunction(val)) {
@@ -287,7 +292,6 @@ function tokenize(iterator, errors, options) {
         else {
             // rule
             if (delim.typ == 'Block-start') {
-                let inAttr = 0;
                 const position = map.get(tokens[0]);
                 if (context.typ == 'Rule') {
                     if (tokens[0]?.typ == 'Iden') {
@@ -295,43 +299,11 @@ function tokenize(iterator, errors, options) {
                         return null;
                     }
                 }
+                const sel = parseTokens(tokens).map(curr => renderToken(curr, { compress: true }));
                 const node = {
                     typ: 'Rule',
                     // @ts-ignore
-                    sel: tokens.reduce((acc, curr) => {
-                        if (acc[acc.length - 1].length == 0 && curr.typ == 'Whitespace') {
-                            return acc;
-                        }
-                        if (inAttr > 0 && curr.typ == 'String') {
-                            const ident = curr.val.slice(1, -1);
-                            if (isIdent(ident)) {
-                                // @ts-ignore
-                                curr.typ = 'Iden';
-                                curr.val = ident;
-                            }
-                        }
-                        if (curr.typ == 'Attr-start') {
-                            inAttr++;
-                        }
-                        else if (curr.typ == 'Attr-end') {
-                            inAttr--;
-                        }
-                        if (inAttr == 0 && curr.typ == "Comma") {
-                            acc.push([]);
-                        }
-                        else {
-                            acc[acc.length - 1].push(curr);
-                        }
-                        return acc;
-                    }, [[]]).map(part => part.reduce((acc, p, index, array) => {
-                        if (p.typ == 'Whitespace') {
-                            if (array[index + 1]?.typ == 'Start-parens' ||
-                                array[index - 1]?.typ == 'End-parens') {
-                                return acc;
-                            }
-                        }
-                        return acc + renderToken(p, { removeComments: true });
-                    }, '')).join(),
+                    sel: sel.join(''),
                     chi: []
                 };
                 loc = {
@@ -357,22 +329,13 @@ function tokenize(iterator, errors, options) {
                     }
                     if (tokens[i].typ == 'Colon') {
                         name = tokens.slice(0, i);
-                        value = tokens.slice(i + 1);
-                    }
-                    else if (['Func', 'Pseudo-class'].includes(tokens[i].typ) && tokens[i].val.startsWith(':')) {
-                        tokens[i].val = tokens[i].val.slice(1);
-                        if (tokens[i].typ == 'Pseudo-class') {
-                            tokens[i].typ = 'Iden';
-                        }
-                        name = tokens.slice(0, i);
-                        value = tokens.slice(i);
+                        value = parseTokens(tokens.slice(i + 1), { parseColor: true });
                     }
                 }
                 if (name == null) {
                     name = tokens;
                 }
                 const position = map.get(name[0]);
-                // const rawName: string = (<IdentToken>name.shift())?.val;
                 if (name.length > 0) {
                     for (let i = 1; i < name.length; i++) {
                         if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
@@ -393,92 +356,6 @@ function tokenize(iterator, errors, options) {
                 if (value == null) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
-                }
-                // let j: number = value.length
-                let i = 0;
-                let t;
-                for (; i < value.length; i++) {
-                    t = value[i];
-                    if (t.typ == 'Iden') {
-                        // named color
-                        const value = t.val.toLowerCase();
-                        if (COLORS_NAMES[value] != null) {
-                            Object.assign(t, {
-                                typ: 'Color',
-                                val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
-                                kin: 'hex'
-                            });
-                        }
-                        continue;
-                    }
-                    if (t.typ == 'Hash' && isHexColor(t.val)) {
-                        // hex color
-                        // @ts-ignore
-                        t.typ = 'Color';
-                        // @ts-ignore
-                        t.kin = 'hex';
-                        continue;
-                    }
-                    if (t.typ == 'Func' || t.typ == 'UrlFunc') {
-                        // func color
-                        let parens = 1;
-                        let k = i;
-                        let j = value.length;
-                        let isScalar = true;
-                        while (++k < j) {
-                            switch (value[k].typ) {
-                                case 'Start-parens':
-                                case 'Func':
-                                case 'UrlFunc':
-                                    parens++;
-                                    isScalar = false;
-                                    break;
-                                case 'End-parens':
-                                    parens--;
-                                    break;
-                            }
-                            if (parens == 0) {
-                                break;
-                            }
-                        }
-                        t.chi = value.splice(i + 1, k - i);
-                        if (t.chi.at(-1).typ == 'End-parens') {
-                            t.chi.pop();
-                        }
-                        if (isScalar) {
-                            if (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
-                                // @ts-ignore
-                                t.typ = 'Color';
-                                // @ts-ignore
-                                t.kin = t.val;
-                                let i = t.chi.length;
-                                while (i-- > 0) {
-                                    if (t.chi[i].typ == 'Literal') {
-                                        if (t.chi[i + 1]?.typ == 'Whitespace') {
-                                            t.chi.splice(i + 1, 1);
-                                        }
-                                        if (t.chi[i - 1]?.typ == 'Whitespace') {
-                                            t.chi.splice(i - 1, 1);
-                                            i--;
-                                        }
-                                    }
-                                }
-                            }
-                            else if (t.typ = 'UrlFunc') {
-                                if (t.chi[0]?.typ == 'String') {
-                                    const value = t.chi[0].val.slice(1, -1);
-                                    if (/^[/%.a-zA-Z0-9_-]+$/.test(value)) {
-                                        t.chi[0].typ = 'Url-token';
-                                        t.chi[0].val = value;
-                                    }
-                                }
-                            }
-                        }
-                        continue;
-                    }
-                    if (t.typ == 'Whitespace' || t.typ == 'Comment') {
-                        value.slice(i, 1);
-                    }
                 }
                 if (value.length == 0) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
@@ -527,40 +404,23 @@ function tokenize(iterator, errors, options) {
         let char = '';
         while (count-- > 0 && ind < total) {
             const codepoint = iterator.charCodeAt(++ind);
-            if (codepoint == null) {
+            if (isNaN(codepoint)) {
                 return char;
             }
-            // if (codepoint < 0x80) {
             char += iterator.charAt(ind);
-            // }
-            // else {
-            //
-            //     const chr: string = String.fromCodePoint(codepoint);
-            //
-            //     ind += chr.length - 1;
-            //     char += chr;
-            // }
-            // ind += codepoint < 256 ? 1 : String.fromCodePoint(codepoint).length;
             if (isNewLine(codepoint)) {
                 lin++;
                 col = 0;
-                // \r\n
-                // if (codepoint == 0xd && iterator.charCodeAt(i + 1) == 0xa) {
-                // offset++;
-                // ind++;
-                // }
             }
             else {
                 col++;
             }
-            // ind++;
-            // i += offset;
         }
         return char;
     }
     function pushToken(token) {
         tokens.push(token);
-        map.set(token, { ...position });
+        map.set(token, { ...position, ind: position.ind + offsetInd });
         position.ind = ind;
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
@@ -798,8 +658,8 @@ function tokenize(iterator, errors, options) {
                     pushToken(getType(buffer));
                     buffer = '';
                 }
-                if (value == ':' && isIdent(peek())) {
-                    buffer += value;
+                if (value == ':' && ':' == peek()) {
+                    buffer += value + next();
                     break;
                 }
                 // if (value == ',' && tokens[tokens.length - 1]?.typ == 'Whitespace') {
@@ -828,7 +688,7 @@ function tokenize(iterator, errors, options) {
                     pushToken(getType(buffer));
                     buffer = '';
                     const token = tokens[tokens.length - 1];
-                    if (token.typ == 'UrlFunc' /* && token.val == 'url' */) {
+                    if (token.typ == 'UrlFunc' /* && token.chi == 'url' */) {
                         // consume either string or url token
                         let whitespace = '';
                         value = peek();
@@ -938,7 +798,7 @@ function tokenize(iterator, errors, options) {
                     node = parseNode(tokens);
                     const previousNode = stack.pop();
                     // @ts-ignore
-                    context = stack[stack.length - 1] || root;
+                    context = stack[stack.length - 1] || ast;
                     // if (options.location && context != root) {
                     // @ts-ignore
                     // context.loc.end = {ind, lin, col: col == 0 ? 1 : col}
@@ -986,23 +846,185 @@ function tokenize(iterator, errors, options) {
         parseNode(tokens);
     }
     // pushToken({typ: 'EOF'});
-    //
-    // if (col == 0) {
-    //
-    //     col = 1;
-    // }
-    // if (options.location) {
-    //
-    //     // @ts-ignore
-    //     root.loc.end = {ind, lin, col};
-    //
-    //     for (const context of stack) {
-    //
-    //         // @ts-ignore
-    //         context.loc.end = {ind, lin, col};
-    //     }
-    // }
-    return root;
+    return ast;
+}
+function parseTokens(tokens, options = {}) {
+    for (let i = 0; i < tokens.length; i++) {
+        const t = tokens[i];
+        if (tokens[i].typ == 'Colon' && i) {
+            const typ = tokens[i + 1]?.typ;
+            if (typ != null) {
+                if (typ == 'Func') {
+                    tokens[i + 1].val = ':' + tokens[i + 1].val;
+                    tokens[i + 1].typ = 'Pseudo-class-func';
+                }
+                else if (typ == 'Iden') {
+                    tokens[i + 1].val = ':' + tokens[i + 1].val;
+                    tokens[i + 1].typ = 'Pseudo-class';
+                }
+                if (typ == 'Func' || typ == 'Iden') {
+                    tokens.splice(i, 1);
+                    i--;
+                    continue;
+                }
+            }
+        }
+        if (t.typ == 'Attr-start') {
+            let k = i;
+            let inAttr = 1;
+            while (++k < tokens.length) {
+                if (tokens[k].typ == 'Attr-end') {
+                    inAttr--;
+                }
+                else if (tokens[k].typ == 'Attr-start') {
+                    inAttr++;
+                }
+                if (inAttr == 0) {
+                    break;
+                }
+            }
+            Object.assign(t, { typ: 'Attr', chi: tokens.splice(i + 1, k - i) });
+            // @ts-ignore
+            if (t.chi.at(-1).typ == 'Attr-end') {
+                // @ts-ignore
+                t.chi.pop();
+                // @ts-ignore
+                if (t.chi.length > 1) {
+                    /*(<AttrToken>t).chi =*/
+                    // @ts-ignore
+                    parseTokens(t.chi, options);
+                }
+                // @ts-ignore
+                t.chi.forEach(val => {
+                    if (val.typ == 'String') {
+                        const slice = val.val.slice(1, -1);
+                        if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+                            Object.assign(val, { typ: 'Iden', val: slice });
+                        }
+                    }
+                });
+            }
+            continue;
+        }
+        if (funcLike.includes(t.typ)) {
+            let parens = 1;
+            let k = i;
+            while (++k < tokens.length) {
+                if (tokens[k].typ == 'Colon') {
+                    const typ = tokens[k + 1]?.typ;
+                    if (typ != null) {
+                        if (typ == 'Iden') {
+                            tokens[k + 1].typ = 'Pseudo-class';
+                            tokens[k + 1].val = ':' + tokens[k + 1].val;
+                        }
+                        else if (typ == 'Func') {
+                            tokens[k + 1].typ = 'Pseudo-class-func';
+                            tokens[k + 1].val = ':' + tokens[k + 1].val;
+                        }
+                        if (typ == 'Func' || typ == 'Iden') {
+                            tokens.splice(k, 1);
+                            k--;
+                            continue;
+                        }
+                    }
+                }
+                if (funcLike.includes(tokens[k].typ)) {
+                    parens++;
+                }
+                else if (tokens[k].typ == 'End-parens') {
+                    parens--;
+                }
+                if (parens == 0) {
+                    break;
+                }
+            }
+            // @ts-ignore
+            t.chi = tokens.splice(i + 1, k - i);
+            // @ts-ignore
+            if (t.chi.at(-1)?.typ == 'End-parens') {
+                // @ts-ignore
+                t.chi.pop();
+            }
+            // @ts-ignore
+            if (options.parseColor && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
+                let isColor = true;
+                // @ts-ignore
+                for (const v of t.chi) {
+                    if (v.typ == 'Func' && v.val == 'var') {
+                        isColor = false;
+                        break;
+                    }
+                }
+                if (!isColor) {
+                    continue;
+                }
+                // @ts-ignore
+                t.typ = 'Color';
+                // @ts-ignore
+                t.kin = t.val;
+                // @ts-ignore
+                let m = t.chi.length;
+                while (m-- > 0) {
+                    // @ts-ignore
+                    if (t.chi[m].typ == 'Literal') {
+                        // @ts-ignore
+                        if (t.chi[m + 1]?.typ == 'Whitespace') {
+                            // @ts-ignore
+                            t.chi.splice(m + 1, 1);
+                        }
+                        // @ts-ignore
+                        if (t.chi[m - 1]?.typ == 'Whitespace') {
+                            // @ts-ignore
+                            t.chi.splice(m - 1, 1);
+                            m--;
+                        }
+                    }
+                }
+            }
+            else if (t.typ == 'UrlFunc') {
+                // @ts-ignore
+                if (t.chi[0]?.typ == 'String') {
+                    // @ts-ignore
+                    const value = t.chi[0].val.slice(1, -1);
+                    if (/^[/%.a-zA-Z0-9_-]+$/.test(value)) {
+                        // @ts-ignore
+                        t.chi[0].typ = 'Url-token';
+                        // @ts-ignore
+                        t.chi[0].val = value;
+                    }
+                }
+            }
+            // @ts-ignore
+            if (t.chi.length > 0) {
+                // @ts-ignore
+                parseTokens(t.chi, options);
+            }
+            continue;
+        }
+        if (options.parseColor) {
+            if (t.typ == 'Iden') {
+                // named color
+                const value = t.val.toLowerCase();
+                if (COLORS_NAMES[value] != null) {
+                    Object.assign(t, {
+                        typ: 'Color',
+                        val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
+                        kin: 'hex'
+                    });
+                }
+                continue;
+            }
+            if (t.typ == 'Hash' && isHexColor(t.val)) {
+                // hex color
+                // @ts-ignore
+                t.typ = 'Color';
+                // @ts-ignore
+                t.kin = 'hex';
+                continue;
+            }
+        }
+    }
+    return tokens;
 }
 function getBlockType(chr) {
     if (chr == ';') {

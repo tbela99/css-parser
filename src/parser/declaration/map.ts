@@ -84,7 +84,8 @@ export class PropertyMap {
                 const tokens: { [key: string]: Token[][] } = {};
                 const values: Token[] = [];
 
-                this.declarations.get(this.config.shorthand).val.slice().reduce((acc, curr) => {
+                // @ts-ignore
+                this.declarations.get(this.config.shorthand).val.slice().reduce((acc: Token[][], curr: Token) => {
 
                     if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
 
@@ -93,11 +94,14 @@ export class PropertyMap {
                     }
                     // else {
 
+                    // @ts-ignore
                     acc.at(-1).push(curr);
                     // }
 
                     return acc;
-                }, [[]]).reduce((acc, list, current) => {
+                }, [[]]).
+                    // @ts-ignore
+                reduce((acc: Token[][], list: Token[], current: number) => {
 
                     values.push(...this.pattern.reduce((acc: Token[], property: string) => {
 
@@ -244,6 +248,11 @@ export class PropertyMap {
 
         if (requiredCount < this.requiredCount) {
 
+            // if (this.declarations.size == 1 && this.declarations.has(this.config.shorthand)) {
+            //
+            //     this.declarations
+            // }
+
             return this.declarations.values();
         }
 
@@ -366,13 +375,16 @@ export class PropertyMap {
 
                     if ('mapping' in props) {
 
+                        // @ts-ignore
                         if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
 
                             let i = values.length;
                             while (i--) {
 
+                                // @ts-ignore
                                 if (values[i].typ == 'Iden' && values[i].val in props.mapping) {
 
+                                    // @ts-ignore
                                     values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
                                 }
                             }
@@ -382,6 +394,7 @@ export class PropertyMap {
 
                     if ('prefix' in props) {
 
+                        // @ts-ignore
                         acc[i].push({...props.prefix});
                     }
 
@@ -394,9 +407,11 @@ export class PropertyMap {
 
                         if (acc.length > 0) {
 
+                            // @ts-ignore
                             acc.push(<Token>{...(props.separator ?? {typ: 'Whitespace'})});
                         }
 
+                        // @ts-ignore
                         acc.push(curr);
                         return acc;
                     }, []))

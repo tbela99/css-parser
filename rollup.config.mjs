@@ -1,36 +1,25 @@
 import dts from 'rollup-plugin-dts';
 import typescript from "@rollup/plugin-typescript";
 import nodeResolve from "@rollup/plugin-node-resolve";
-import glob from "glob";
+import {glob} from "glob";
 import terser from "@rollup/plugin-terser";
 import json from "@rollup/plugin-json";
 
-export default [...await new Promise((resolve, reject) => {
-
-    glob('./test/specs/**/*.test.ts', (err, files) => {
-
-        if (err) {
-
-            reject(err);
-        }
-
-        resolve(files.map(input => {
-            return {
-                input,
-                plugins: [nodeResolve(), json(), typescript()],
-                output:
-                {
-                    banner: `/* generate from ${input} */`,
-                    file: `./test/js/${input.replace(/^\.\/test\/specs/, '').replace(/\.ts$/, '.mjs')}`,
-                        // entryFileNames: '[name].mjs',
-                        // chunkFileNames: '[name].[hash].mjs',
-                        format: 'es'
-                }
+export default [...await glob('./test/specs/**/*.test.ts').then(files => files.map(input => {
+    return {
+        input,
+        plugins: [nodeResolve(), json(), typescript()],
+        output:
+            {
+                banner: `/* generate from ${input} */`,
+                file: `${input.replace(/\/test\/specs/, '/test/js/').replace(/\.ts$/, '.mjs')}`,
+                // entryFileNames: '[name].mjs',
+                // chunkFileNames: '[name].[hash].mjs',
+                format: 'es'
             }
-        }));
-    })
-
-})].concat([
+    }
+}))
+].concat([
     {
         input: 'src/index.ts',
         plugins: [nodeResolve(), json(), typescript()],

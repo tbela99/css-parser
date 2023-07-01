@@ -29,8 +29,8 @@ export interface ParserOptions {
 
     src?: string;
     location?: boolean;
+    compress?: boolean;
     processImport?: boolean;
-    deduplicate?: boolean;
     removeEmpty?: boolean;
     nodeEventFilter?: NodeType[]
 }
@@ -45,6 +45,30 @@ export interface RenderOptions {
     colorConvert?: boolean;
 }
 
+export interface TransformOptions extends ParserOptions, RenderOptions {
+
+}
+
+export interface ParseResult {
+    ast: AstRuleStyleSheet;
+    errors: ErrorDescription[]
+}
+
+export interface RenderResult {
+    code: string ;
+}
+
+export interface TransformResult extends ParseResult, RenderResult {
+
+    performance: {
+        bytesIn: number;
+        bytesOut: number;
+        parse: string;
+        // deduplicate: string;
+        render: string;
+        total: string;
+    }
+}
 export interface Position {
 
     ind: number;

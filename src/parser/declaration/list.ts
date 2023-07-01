@@ -1,4 +1,4 @@
-import {AstDeclaration, AstNode, ShorthandMapType} from "../../@types";
+import {AstDeclaration, AstNode, ShorthandMapType, ShorthandPropertyType} from "../../@types";
 import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";
@@ -11,7 +11,7 @@ export class PropertyList {
 
     constructor() {
 
-        this.declarations = new Map<string, AstNode | PropertySet>;
+        this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>;
     }
 
     add(declaration: AstNode) {
@@ -26,11 +26,13 @@ export class PropertyList {
 
         if (propertyName in config.properties) {
 
+            // @ts-ignore
             const shorthand: string = <string>config.properties[propertyName].shorthand;
 
             if (!this.declarations.has(shorthand)) {
 
-                this.declarations.set(shorthand, new PropertySet(config.properties[shorthand]));
+                // @ts-ignore
+                this.declarations.set(shorthand, new PropertySet(<ShorthandPropertyType>config.properties[shorthand]));
             }
 
             (<PropertySet>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
@@ -39,10 +41,12 @@ export class PropertyList {
 
         if (propertyName in config.map) {
 
+            // @ts-ignore
             const shorthand: string = <string>config.map[propertyName].shorthand;
 
             if (!this.declarations.has(shorthand)) {
 
+                // @ts-ignore
                 this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
             }
 
@@ -79,7 +83,7 @@ export class PropertyList {
 
                     if (value.done && iterators.length > 0) {
 
-                        iterator = iterators.shift();
+                        iterator = <IterableIterator<AstNode | PropertySet | PropertyMap>>iterators.shift();
                         value = iterator.next();
                     }
                 }

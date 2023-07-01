@@ -1,6 +1,6 @@
 import {expect} from "@esm-bundle/chai";
 import {readFile} from "fs/promises";
-import {parse, render} from "../../src";
+import {deduplicate, parse, render, transform} from "../../src";
 import {dirname} from "path";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
@@ -35,28 +35,28 @@ describe('parse block', function () {
 
         const file = (await readFile(`${dir}/css/smalli.css`)).toString();
 
-        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()))
+        expect(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()))
     });
 
     it('parse file #2', async function () {
 
         const file = (await readFile(`${dir}/css/small.css`)).toString();
 
-        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()))
+        expect(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()))
     });
 
     it('parse file #3', async function () {
 
         const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
 
-        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()))
+        expect(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()))
     });
 
     it('parse file #4', async function () {
 
         const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
 
-        expect(parse(file, {deduplicate: true}).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()))
+        expect(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()))
     });
 
     it('similar rules #5', async function () {
@@ -73,7 +73,9 @@ describe('parse block', function () {
   width: 0;
 }`;
 
-        expect(render(parse(file, {deduplicate: true}).ast, {compress: true}).code).equals(`.clear,.clearfix:before{width:0;height:0}`)
+        expect(transform(file, {
+            compress: true
+        }).code).equals(`.clear,.clearfix:before{width:0;height:0}`)
     });
 
     it('similar rules #5', async function () {
@@ -90,6 +92,24 @@ describe('parse block', function () {
   width: 0;
 }`;
 
-        expect(render(parse(file, {deduplicate: true}).ast, {compress: true}).code).equals(`.clear,.clearfix:before{width:0;height:0}`)
+        expect(transform(file, {
+            compress: true
+        }).code).equals(`.clear,.clearfix:before{width:0;height:0}`)
+    });
+
+    it('duplicated selector components #6', async function () {
+
+        const file = `
+
+:is(.test input[type="text"]), .test input[type="text"], :is(.test input[type="text"], a) {
+border-top-color: gold;
+border-right-color: red;
+border-bottom-color: gold;
+border-left-color: red;
+`;
+
+        expect(transform(file, {
+            compress: true
+        }).code).equals(`.test input[type=text],a{border-color:gold red}`)
     });
 });

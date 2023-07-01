@@ -94,7 +94,7 @@ function doRender(data, options, reducer, level = 0) {
                 children = children.slice(0, -1);
             }
             if (data.typ == 'AtRule') {
-                return `@${data.nam} ${data.val ? data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+                return `@${data.nam}${data.val ? ' ' + data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
     }
@@ -142,8 +142,9 @@ function renderToken(token, options = {}) {
             }
         case 'Func':
         case 'UrlFunc':
+        case 'Pseudo-class-func':
             // @ts-ignore
-            return token.val + '(' + token.chi.reduce((acc, curr) => {
+            return (options.compress && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) : token.val) + '(' + token.chi.reduce((acc, curr) => {
                 if (options.removeComments && curr.typ == 'Comment') {
                     if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                         return acc;
@@ -177,6 +178,8 @@ function renderToken(token, options = {}) {
             return ',';
         case 'Important':
             return '!important';
+        case 'Attr':
+            return '[' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options), '') + ']';
         case 'Time':
         case 'Frequency':
         case 'Angle':
@@ -230,12 +233,11 @@ function renderToken(token, options = {}) {
         case 'At-rule':
         case 'Hash':
         case 'Pseudo-class':
-        case 'Pseudo-class-func':
         case 'Literal':
         case 'String':
         case 'Iden':
         case 'Delim':
-            return token.val;
+            return options.compress && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) : token.val;
     }
     throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
 }

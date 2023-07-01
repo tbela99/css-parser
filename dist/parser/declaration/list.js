@@ -15,16 +15,20 @@ class PropertyList {
         }
         const propertyName = declaration.nam;
         if (propertyName in config.properties) {
+            // @ts-ignore
             const shorthand = config.properties[propertyName].shorthand;
             if (!this.declarations.has(shorthand)) {
+                // @ts-ignore
                 this.declarations.set(shorthand, new PropertySet(config.properties[shorthand]));
             }
             this.declarations.get(shorthand).add(declaration);
             return this;
         }
         if (propertyName in config.map) {
+            // @ts-ignore
             const shorthand = config.map[propertyName].shorthand;
             if (!this.declarations.has(shorthand)) {
+                // @ts-ignore
                 this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
             }
             this.declarations.get(shorthand).add(declaration);

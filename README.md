@@ -8,6 +8,37 @@ CSS parser for node and the browser
 $ npm install @tbela99/css-parser
 ```
 
+## Transform
+
+Parse and render css in a single pass.
+
+```javascript
+import {transform} from '@tbela99/css-parser';
+
+const {ast, code, errors} = transform(css);
+```
+
+### Usage
+
+```javascript
+
+transform(css, transformOptions = {})
+```
+### TransformOptions
+
+Include both ParseOptions and RenderOptions
+
+- src: string, optional. css file location to be used with sourcemap.
+- location: boolean, optional. includes node location in the ast, required for sourcemap generation.
+- processImport: boolean, process @import node - not yet implemented
+- compress: boolean, default to _true_. optimize ast and minify css.
+- removeEmpty: boolean, remove empty nodes from the ast.
+- indent: string, optional. css indention string. uses space character by default.
+- newLine: string, new line character.
+- removeComments: boolean, remove comments in generated css.
+- preserveLicense: boolean, force preserving comments starting with '/\*!' when compress is enabling.
+
+
 ## Parsing
 
 ```javascript
@@ -22,7 +53,7 @@ const {ast, errors} = parse(css);
 
 parse(css, parseOptions = {})
 ```
-### parseOptions
+### ParseOptions
 
 - src: string, optional. css file location
 - location: boolean, optional. includes node location in the ast
@@ -46,7 +77,7 @@ const {code} = render(ast, {compress: true});
 console.log(code);
 ```
 
-### Rendering options
+### RenderOptions
 
 - compress: boolean, optional. minify output. Also remove comments
 - indent: string, optional. indention string. uses space character by default.

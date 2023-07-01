@@ -16,7 +16,7 @@
   },
   {
    "typ": "Rule",
-   "sel": "div>:is(.inert),:root,[data-color-mode=light][data-light-theme=light],[data-color-mode=dark][data-dark-theme=light]",
+   "sel": "div>.inert,:root,[data-color-mode=light][data-light-theme=light],[data-color-mode=dark][data-dark-theme=light]",
    "chi": [
     {
      "typ": "Declaration",

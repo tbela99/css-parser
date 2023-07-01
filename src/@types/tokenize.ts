@@ -214,6 +214,7 @@ export interface PseudoClassFunctionToken {
 
     typ: 'Pseudo-class-func';
     val: string;
+    chi: Token[];
 }
 
 export interface DelimToken {
@@ -252,7 +253,21 @@ export interface ColorToken {
     chi?: Token[];
 }
 
-export declare type TokenType = 'Dimension' | 'Number' | 'Perc' | 'Angle' | 'Length' | 'Time' | 'Frequency' | 'Resolution';
+export interface AttrToken {
+
+    typ: 'Attr',
+    chi: Token[]
+}
+
+export interface TokenStream {
+    buffer: string;
+    ind: number;
+    lin: number;
+    col: number;
+}
+
+export declare type TokenType = 'Dimension' | 'Number' | 'Perc' | 'Angle' | 'Length' | 'Time' | 'Frequency' |
+    'Resolution' | 'Attr';
 
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |
@@ -261,4 +276,4 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
-    BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;
+    BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;

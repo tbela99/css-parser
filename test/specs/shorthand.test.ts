@@ -1,8 +1,13 @@
 import {expect} from "@esm-bundle/chai";
-import {parse, render} from "../../src";
+import {parse, render, transform} from "../../src";
 import {dirname} from "path";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
+
+const options = {
+    compress: true,
+    removeEmpty: true
+};
 
 const marginPadding = `
 
@@ -147,105 +152,66 @@ describe('shorthand', function () {
 
     it('margin padding', async function () {
 
-        expect(render(parse(marginPadding, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}')
+        expect(transform(marginPadding, options).code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}')
     });
 
     it('border-radius #1', async function () {
 
-        expect(render(parse(borderRadius1, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}')
+        expect(transform(borderRadius1, options).code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}')
     });
 
     it('border-radius #2', async function () {
 
-        expect(render(parse(borderRadius2, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('.test{border-radius:4px 3px 6px/2px 4px}')
+        expect(transform(borderRadius2, options).code).equals('.test{border-radius:4px 3px 6px/2px 4px}')
     });
 
     it('border-width #3', async function () {
 
-        expect(render(parse(borderRadius3, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('.test input[type=text]{border-width:2px thin}')
+        expect(transform(borderRadius3, options).code).equals('.test input[type=text]{border-width:2px thin}')
     });
 
     it('border-color #4', async function () {
 
-        expect(render(parse(borderColor, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('.test input[type=text]{border-color:gold red}')
+        expect(transform(borderColor, options).code).equals('.test input[type=text]{border-color:gold red}')
     });
 
     it('outline #5', async function () {
 
-        expect(render(parse(outline1, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('a:focus{outline:0}')
+        expect(transform(outline1, options).code).equals('a:focus{outline:0}')
     });
 
     it('outline #6', async function () {
 
-        expect(render(parse(outline2, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('a:focus{outline:#dedede dotted thin}')
+        expect(transform(outline2, options).code).equals('a:focus{outline:#dedede dotted thin}')
     });
 
     it('inset #6', async function () {
 
-        expect(render(parse(inset1, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('a:focus{inset:auto}')
+        expect(transform(inset1, options).code).equals('a:focus{inset:auto}')
     });
 
     it('font #7', async function () {
 
-        expect(render(parse(font1, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}')
+        expect(transform(font1, options).code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}')
     });
 
     it('font #8', async function () {
 
-        expect(render(parse(font2, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}')
+        expect(transform(font2, options).code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}')
     });
 
     it('background #9', async function () {
 
-        expect(render(parse(background1, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('p{background:no-repeat red url(images/bg.gif)}')
+        expect(transform(background1, options).code).equals('p{background:no-repeat red url(images/bg.gif)}')
     });
 
     it('background #10', async function () {
 
-        expect(render(parse(background2, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}')
+        expect(transform(background2, options).code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}')
     });
 
     it('background #11', async function () {
 
-        expect(render(parse(background3, {
-            deduplicate: true,
-            removeEmpty: true
-        }).ast, {compress: true}).code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}')
+        expect(transform(background3, options).code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}')
     });
 });

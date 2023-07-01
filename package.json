@@ -1,8 +1,9 @@
 {
-  "version": "0.0.1-alpha1",
-  "main": "dist/index-umd.js",
-  "browser": "dist/index-umd.js",
-  "module": "dist/index.js",
+  "version": "0.0.1-alpha2",
+  "exports": {
+    ".": "./dist/index.js",
+  "./umd": "./dist/index-umd.js"
+},
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
@@ -19,9 +20,14 @@
     "@rollup/plugin-typescript": "^11.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.15.10",
+    "@webref/css": "^6.5.9",
+    "glob": "^10.3.0",
     "mocha": "^10.2.0",
     "rollup": "^3.20.1",
     "rollup-plugin-dts": "^5.3.0",
     "tslib": "^2.5.0"
+  },
+  "dependencies": {
+    "@tbela99/workerize": "github:tbela99/workerize"
   }
 }

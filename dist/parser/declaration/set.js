@@ -81,12 +81,12 @@ class PropertySet {
                 this.declarations.set(declaration.nam, declaration);
                 return this;
             }
-            // declaration.val = declaration.val.reduce((acc: Token[], token: Token) => {
+            // declaration.chi = declaration.chi.reduce((acc: Token[], token: Token) => {
             //
-            //     if (this.config.types.includes(token.typ) || ('0' == (<DimensionToken>token).val && (
+            //     if (this.config.types.includes(token.typ) || ('0' == (<DimensionToken>token).chi && (
             //         this.config.types.includes('Length') ||
             //         this.config.types.includes('Angle') ||
-            //     this.config.types.includes('Dimension'))) || (token.typ == 'Iden' && this.config.keywords.includes(token.val))) {
+            //     this.config.types.includes('Dimension'))) || (token.typ == 'Iden' && this.config.keywords.includes(token.chi))) {
             //
             //         acc.push(token);
             //     }

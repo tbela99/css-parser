@@ -4,8 +4,8 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleStyleSheet, ColorToken, DimensionToken,
-    RenderOptions,
+    AstRuleStyleSheet, AttrToken, ColorToken, DimensionToken,
+    RenderOptions, RenderResult,
     Token
 } from "../@types";
 import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
@@ -13,7 +13,7 @@ import {isLength} from "../parser/utils";
 
 const indents: string[] = [];
 
-export function render(data: AstNode, opt: RenderOptions = {}) {
+export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
     const options = Object.assign(opt.compress ? {
         indent: '',
@@ -152,7 +152,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
             if (data.typ == 'AtRule') {
 
-                return `@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val ? (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
+                return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val ? ' ' + (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
 
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
@@ -161,7 +161,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
     return '';
 }
 
-export function renderToken(token: Token, options: RenderOptions = {}) {
+export function renderToken(token: Token, options: RenderOptions = {}): string {
 
     switch (token.typ) {
 
@@ -219,9 +219,10 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
 
         case 'Func':
         case 'UrlFunc':
+        case 'Pseudo-class-func':
 
             // @ts-ignore
-            return token.val + '(' + token.chi.reduce((acc: string, curr: Token) => {
+            return (options.compress && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) : token.val) + '(' + token.chi.reduce((acc: string, curr: Token) => {
 
                 if (options.removeComments && curr.typ == 'Comment') {
 
@@ -273,6 +274,10 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
 
         case 'Important':
             return '!important';
+
+        case 'Attr':
+
+            return '[' + (<AttrToken>token).chi.reduce((acc, curr) => acc + renderToken(curr, options), '') + ']';
 
         case 'Time':
         case 'Frequency':
@@ -360,12 +365,11 @@ export function renderToken(token: Token, options: RenderOptions = {}) {
 
         case 'Hash':
         case 'Pseudo-class':
-        case 'Pseudo-class-func':
         case 'Literal':
         case 'String':
         case 'Iden':
         case 'Delim':
-            return token.val;
+            return options.compress && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) : token.val;
     }
 
     throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);

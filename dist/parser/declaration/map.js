@@ -54,16 +54,20 @@ class PropertyMap {
             if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
                 const tokens = {};
                 const values = [];
+                // @ts-ignore
                 this.declarations.get(this.config.shorthand).val.slice().reduce((acc, curr) => {
                     if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
                         acc.push([]);
                         return acc;
                     }
                     // else {
+                    // @ts-ignore
                     acc.at(-1).push(curr);
                     // }
                     return acc;
-                }, [[]]).reduce((acc, list, current) => {
+                }, [[]]).
+                    // @ts-ignore
+                    reduce((acc, list, current) => {
                     values.push(...this.pattern.reduce((acc, property) => {
                         // let current: number = 0;
                         const props = this.config.properties[property];
@@ -163,6 +167,10 @@ class PropertyMap {
             requiredCount = this.declarations.size;
         }
         if (requiredCount < this.requiredCount) {
+            // if (this.declarations.size == 1 && this.declarations.has(this.config.shorthand)) {
+            //
+            //     this.declarations
+            // }
             return this.declarations.values();
         }
         let count = 0;
@@ -236,16 +244,20 @@ class PropertyMap {
                 });
                 if (values.length > 0) {
                     if ('mapping' in props) {
+                        // @ts-ignore
                         if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
                             let i = values.length;
                             while (i--) {
+                                // @ts-ignore
                                 if (values[i].typ == 'Iden' && values[i].val in props.mapping) {
+                                    // @ts-ignore
                                     values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
                                 }
                             }
                         }
                     }
                     if ('prefix' in props) {
+                        // @ts-ignore
                         acc[i].push({ ...props.prefix });
                     }
                     else if (acc[i].length > 0) {
@@ -253,8 +265,10 @@ class PropertyMap {
                     }
                     acc[i].push(...values.reduce((acc, curr) => {
                         if (acc.length > 0) {
+                            // @ts-ignore
                             acc.push({ ...(props.separator ?? { typ: 'Whitespace' }) });
                         }
+                        // @ts-ignore
                         acc.push(curr);
                         return acc;
                     }, []));

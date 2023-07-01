@@ -322,6 +322,7 @@ export function rgb2Hex(token: ColorToken) {
 
             // console.debug({token})
         }
+
         // @ts-ignore
         value += Math.round(t.typ == 'Perc' ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0')
     }
