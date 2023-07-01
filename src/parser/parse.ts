@@ -26,7 +26,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
     const errors: ErrorDescription[] = [];
     const options: ParserOptions = {
         src: '',
-        location: false,
+        sourcemap: false,
         compress: false,
         processImport: false,
         removeEmpty: true,
@@ -63,7 +63,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
 
     let context: AstRuleList = ast;
 
-    if (options.location) {
+    if (options.sourcemap) {
 
         ast.loc = {
             sta: {
@@ -286,7 +286,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
                     src
                 };
 
-                if (options.location) {
+                if (options.sourcemap) {
 
                     (<AstNode>tokens[i]).loc = loc
                 }
@@ -301,6 +301,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
 
         const delim: Token = <Token>tokens.pop();
 
+        // @ts-ignore
         while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
 
             tokens.pop();
@@ -322,6 +323,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
                 return null;
             }
 
+            // @ts-ignore
             while (['Whitespace'].includes(tokens[0]?.typ)) {
 
                 tokens.shift();
@@ -442,7 +444,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
                 src
             };
 
-            if (options.location) {
+            if (options.sourcemap) {
 
                 node.loc = loc
             }
@@ -498,7 +500,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
                     src
                 };
 
-                if (options.location) {
+                if (options.sourcemap) {
 
                     node.loc = loc
                 }
@@ -594,15 +596,16 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
                     return null;
                 }
 
-                loc = <Location>{
-                    sta: position,
-                    src
-                };
-
-                if (options.location) {
-
-                    node.loc = loc
-                }
+                // // location not needed for declaration
+                // loc = <Location>{
+                //     sta: position,
+                //     src
+                // };
+                //
+                // if (options.sourcemap) {
+                //
+                //     node.loc = loc
+                // }
 
                 // @ts-ignore
                 context.chi.push(node);
@@ -705,7 +708,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
 
             if (ind >= total) {
 
-                pushToken({typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
+                pushToken(<Token>{typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer});
                 break;
             }
 
@@ -727,7 +730,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): ParseResult {
             if (value == quote) {
 
                 buffer += value;
-                pushToken({typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
+                pushToken(<Token>{typ: hasNewLine ? 'Bad-string' : 'String', val: buffer});
                 next();
                 // i += value.length;
                 buffer = '';

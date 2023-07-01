@@ -28,7 +28,7 @@ export interface ErrorDescription {
 export interface ParserOptions {
 
     src?: string;
-    location?: boolean;
+    sourcemap?: boolean;
     compress?: boolean;
     processImport?: boolean;
     removeEmpty?: boolean;
@@ -38,6 +38,7 @@ export interface ParserOptions {
 export interface RenderOptions {
 
     compress?: boolean;
+    sourcemap?: boolean;
     preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
@@ -60,7 +61,7 @@ export interface RenderResult {
 
 export interface TransformResult extends ParseResult, RenderResult {
 
-    performance: {
+    stats: {
         bytesIn: number;
         bytesOut: number;
         parse: string;

@@ -2,15 +2,12 @@
   "version": "0.0.1-alpha2",
   "exports": {
     ".": "./dist/index.js",
-  "./umd": "./dist/index-umd.js"
-},
+    "./umd": "./dist/index-umd.js"
+  },
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
-    "test": "mocha \"test/**/*.test.mjs\"",
-    "test2": "bun run test/parse.ts",
-    "watch": "rollup -c --watch --watch.onBundleEnd 'npm run test' &",
-    "syntax-update": "./update.sh"
+    "test": "mocha \"test/**/*.test.mjs\""
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
@@ -28,6 +25,6 @@
     "tslib": "^2.5.0"
   },
   "dependencies": {
-    "@tbela99/workerize": "github:tbela99/workerize"
+    "source-map": "^0.7.4"
   }
 }
