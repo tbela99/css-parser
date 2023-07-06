@@ -11,7 +11,7 @@
   },
   {
    "typ": "Rule",
-   "sel": ":root,[data-color-mode=\"light\"][data-light-theme=\"light\"],[data-color-mode=\"dark\"][data-dark-theme=\"light\"]",
+   "sel": ":root,[data-color-mode=light][data-light-theme=light],[data-color-mode=dark][data-dark-theme=light]",
    "chi": [
     {
      "typ": "Declaration",
@@ -28,36 +28,36 @@
      "nam": "--color-canvas-default-transparent",
      "val": [
       {
-       "typ": "Func",
-       "val": "rgba"
-      },
-      {
-       "typ": "Number",
-       "val": "255"
-      },
-      {
-       "typ": "Comma"
-      },
-      {
-       "typ": "Number",
-       "val": "255"
-      },
-      {
-       "typ": "Comma"
-      },
-      {
-       "typ": "Number",
-       "val": "255"
-      },
-      {
-       "typ": "Comma"
-      },
-      {
-       "typ": "Number",
-       "val": "0"
-      },
-      {
-       "typ": "End-parens"
+       "typ": "Color",
+       "val": "rgba",
+       "chi": [
+        {
+         "typ": "Number",
+         "val": "255"
+        },
+        {
+         "typ": "Comma"
+        },
+        {
+         "typ": "Number",
+         "val": "255"
+        },
+        {
+         "typ": "Comma"
+        },
+        {
+         "typ": "Number",
+         "val": "255"
+        },
+        {
+         "typ": "Comma"
+        },
+        {
+         "typ": "Number",
+         "val": "0"
+        }
+       ],
+       "kin": "rgba"
       }
      ]
     },
@@ -67,7 +67,8 @@
      "val": [
       {
        "typ": "Color",
-       "val": "#f6f8fa"
+       "val": "#f6f8fa",
+       "kin": "hex"
       }
      ]
     },
@@ -77,7 +78,8 @@
      "val": [
       {
        "typ": "Color",
-       "val": "#218bff"
+       "val": "#218bff",
+       "kin": "hex"
       }
      ]
     },
@@ -87,7 +89,8 @@
      "val": [
       {
        "typ": "Color",
-       "val": "#54aeff"
+       "val": "#54aeff",
+       "kin": "hex"
       }
      ]
     },
@@ -97,7 +100,8 @@
      "val": [
       {
        "typ": "Color",
-       "val": "#24292f"
+       "val": "#24292f",
+       "kin": "hex"
       }
      ]
     },
@@ -107,7 +111,8 @@
      "val": [
       {
        "typ": "Color",
-       "val": "#24292f"
+       "val": "#24292f",
+       "kin": "hex"
       }
      ]
     },
@@ -117,7 +122,8 @@
      "val": [
       {
        "typ": "Color",
-       "val": "#ccffd8"
+       "val": "#ccffd8",
+       "kin": "hex"
       }
      ]
     }

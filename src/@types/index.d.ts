@@ -1,9 +1,9 @@
-import exp from "constants";
 import {Token} from "./tokenize";
 
 export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
+export * from './shorthand';
 
 export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
@@ -28,21 +28,49 @@ export interface ErrorDescription {
 export interface ParserOptions {
 
     src?: string;
-    location?: boolean;
+    sourcemap?: boolean;
+    compress?: boolean;
     processImport?: boolean;
-    deduplicate?: boolean;
     removeEmpty?: boolean;
+    load?: (url: string, currentUrl: string) => Promise<string>;
+    resolve?: (url: string, currentUrl: string) => string;
     nodeEventFilter?: NodeType[]
 }
 
 export interface RenderOptions {
 
     compress?: boolean;
+    preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
+    colorConvert?: boolean;
 }
 
+export interface TransformOptions extends ParserOptions, RenderOptions {
+
+}
+
+export interface ParseResult {
+    ast: AstRuleStyleSheet;
+    errors: ErrorDescription[]
+}
+
+export interface RenderResult {
+    code: string ;
+}
+
+export interface TransformResult extends ParseResult, RenderResult {
+
+    stats: {
+        bytesIn: number;
+        bytesOut: number;
+        parse: string;
+        // deduplicate: string;
+        render: string;
+        total: string;
+    }
+}
 export interface Position {
 
     ind: number;
@@ -53,11 +81,11 @@ export interface Position {
 export interface Location {
 
     sta: Position;
-    end: Position;
+    // end: Position;
     src: string;
 }
 
-type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
+export declare type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
 
 interface Node {
 
@@ -70,16 +98,9 @@ export interface AstComment extends Node {
     typ: 'Comment',
     val: string;
 }
-
-export interface AstInvalidComment extends Node {
-
-    typ: 'InvalidComment',
-    val: string;
-}
-
 export interface AstDeclaration extends Node {
 
-    nam: Token[],
+    nam: string,
     val: Token[];
     typ: 'Declaration'
 }
@@ -115,5 +136,3 @@ export type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration;
-
-export type AstTraverserHandler = (node: AstNode, location?: Location) => void;
