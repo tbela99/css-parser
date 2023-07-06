@@ -7,9 +7,8 @@ import {
     AstRuleStyleSheet, AttrToken, ColorToken, DimensionToken,
     RenderOptions, RenderResult,
     Token
-} from "../@types";
+} from "../../@types";
 import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
-import {SourceMapGenerator} from "source-map";
 
 const indents: string[] = [];
 
@@ -25,11 +24,7 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
         compress: false,
         removeComments: false,
 
-    }, {src: '', sourcemap: false, colorConvert: true, preserveLicense: false}, opt);
-
-    let sourcemap = options.sourcemap ? new SourceMapGenerator() : null;
-    let line = 1;
-    let column = 0;
+    }, {colorConvert: true, preserveLicense: false}, opt);
 
     function reducer(acc: string, curr: Token, index: number, original: Token[]): string {
 
@@ -60,10 +55,11 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
         return acc + renderToken(curr, options);
     }
 
-    return {code: doRender(data, options, reducer, 0, <SourceMapGenerator>sourcemap, line, column)};
+    return {code: doRender(data, options, reducer)};
 }
 
-function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0, sourcemap: SourceMapGenerator = <SourceMapGenerator>null, line: number = 1, column: number = 0): string {
+// @ts-ignore
+function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0): string {
 
     if (indents.length < level + 1) {
 
@@ -88,7 +84,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = doRender(node, options, reducer, level, sourcemap, line, column);
+                const str: string = doRender(node, options, reducer, level);
 
                 if (str === '') {
 
@@ -128,7 +124,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
                     str = `@${(<AstAtRule>node).nam} ${(<AstAtRule>node).val};`;
                 } else {
 
-                    str = doRender(node, options, reducer, level + 1, sourcemap, line, column);
+                    str = doRender(node, options, reducer, level + 1);
                 }
 
                 if (css === '') {

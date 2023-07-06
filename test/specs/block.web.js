@@ -1,6 +1,4 @@
-/* generate from test/specs/shorthand.test.ts */
-import { dirname } from 'path';
-
+/* generate from test/specs/block.web.ts */
 var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{};function t(e){throw new Error('Could not dynamically require "'+e+'". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.')}var o=function(){function e(n,o,r){function i(a,c){if(!o[a]){if(!n[a]){if(!c&&t)return t(a);if(s)return s(a,!0);var u=new Error("Cannot find module '"+a+"'");throw u.code="MODULE_NOT_FOUND",u}var f=o[a]={exports:{}};n[a][0].call(f.exports,(function(e){return i(n[a][1][e]||e)}),f,f.exports,e,n,o,r);}return o[a].exports}for(var s=t,a=0;a<r.length;a++)i(r[a]);return i}return e}()({1:[function(e,t,n){t.exports=e("./lib/chai");},{"./lib/chai":2}],2:[function(e,t,n){
 /*!
  * chai
@@ -2024,17 +2022,13 @@ function render(data, opt = {}) {
     const options = Object.assign(opt.compress ? {
         indent: '',
         newLine: '',
-        preserveLicense: false,
-        removeComments: true,
-        colorConvert: true
+        removeComments: true
     } : {
         indent: ' ',
         newLine: '\n',
         compress: false,
-        preserveLicense: false,
         removeComments: false,
-        colorConvert: true
-    }, opt);
+    }, { colorConvert: true, preserveLicense: false }, opt);
     function reducer(acc, curr, index, original) {
         if (curr.typ == 'Comment' && options.removeComments) {
             if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
@@ -2057,6 +2051,7 @@ function render(data, opt = {}) {
     }
     return { code: doRender(data, options, reducer) };
 }
+// @ts-ignore
 function doRender(data, options, reducer, level = 0) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
@@ -2071,7 +2066,7 @@ function doRender(data, options, reducer, level = 0) {
             return options.removeComments ? '' : data.val;
         case 'StyleSheet':
             return data.chi.reduce((css, node) => {
-                const str = doRender(node, options, reducer);
+                const str = doRender(node, options, reducer, level);
                 if (str === '') {
                     return css;
                 }
@@ -3133,11 +3128,11 @@ function diff(n1, n2, options = {}) {
 }
 
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
-function parse(iterator, opt = {}) {
+async function parse(iterator, opt = {}) {
     const errors = [];
     const options = {
         src: '',
-        location: false,
+        sourcemap: false,
         compress: false,
         processImport: false,
         removeEmpty: true,
@@ -3167,7 +3162,7 @@ function parse(iterator, opt = {}) {
     let total = iterator.length;
     let map = new Map;
     let context = ast;
-    if (options.location) {
+    if (options.sourcemap) {
         ast.loc = {
             sta: {
                 ind: ind,
@@ -3311,8 +3306,8 @@ function parse(iterator, opt = {}) {
             }
         }
     }
-    function parseNode(tokens) {
-        let i = 0;
+    async function parseNode(tokens) {
+        let i;
         let loc;
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
@@ -3323,7 +3318,7 @@ function parse(iterator, opt = {}) {
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     tokens[i].loc = loc;
                 }
             }
@@ -3333,6 +3328,7 @@ function parse(iterator, opt = {}) {
         }
         tokens = tokens.slice(i);
         const delim = tokens.pop();
+        // @ts-ignore
         while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
             tokens.pop();
         }
@@ -3346,6 +3342,7 @@ function parse(iterator, opt = {}) {
                 errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
                 return null;
             }
+            // @ts-ignore
             while (['Whitespace'].includes(tokens[0]?.typ)) {
                 tokens.shift();
             }
@@ -3390,7 +3387,20 @@ function parse(iterator, opt = {}) {
                     tokens[0].typ = 'String';
                     // @ts-ignore
                     tokens[0].val = `"${tokens[0].val}"`;
-                    // tokens[0] = token;
+                }
+                if (options.processImport) {
+                    try {
+                        // @ts-ignore
+                        const root = await options.load(tokens[0].val.slice(1, -1), options.src).
+                            then(src => parse(src, Object.assign({}, options, { src: tokens[0].val.slice(1, -1) })));
+                        context.chi.push(...root.ast.chi);
+                        if (root.errors.length > 0) {
+                            errors.push(...root.errors);
+                        }
+                        return null;
+                    }
+                    catch (error) {
+                    }
                 }
             }
             // https://www.w3.org/TR/css-nesting-1/#conditionals
@@ -3410,14 +3420,17 @@ function parse(iterator, opt = {}) {
                     return acc + renderToken(curr, { removeComments: true });
                 }, '')
             };
-            if (node.nam == 'import') {
-                if (options.processImport) {
-                    // @ts-ignore
-                    let fileToken = tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
-                    let file = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
-                    if (!file.startsWith('data:')) ;
-                }
-            }
+            // if (node.nam == 'import') {
+            // if (options.processImport) {
+            // @ts-ignore
+            // let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
+            // let file: string = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
+            // if (!file.startsWith('data:')) {
+            //
+            //
+            // }
+            // }
+            // }
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
@@ -3425,7 +3438,7 @@ function parse(iterator, opt = {}) {
                 sta: position,
                 src
             };
-            if (options.location) {
+            if (options.sourcemap) {
                 node.loc = loc;
             }
             // @ts-ignore
@@ -3463,7 +3476,7 @@ function parse(iterator, opt = {}) {
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     node.loc = loc;
                 }
                 // @ts-ignore
@@ -3528,13 +3541,16 @@ function parse(iterator, opt = {}) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-                loc = {
-                    sta: position,
-                    src
-                };
-                if (options.location) {
-                    node.loc = loc;
-                }
+                // // location not needed for declaration
+                // loc = <Location>{
+                //     sta: position,
+                //     src
+                // };
+                //
+                // if (options.sourcemap) {
+                //
+                //     node.loc = loc
+                // }
                 // @ts-ignore
                 context.chi.push(node);
                 return null;
@@ -3933,7 +3949,7 @@ function parse(iterator, opt = {}) {
                 pushToken(getBlockType(value));
                 let node = null;
                 if (value == '{' || value == ';') {
-                    node = parseNode(tokens);
+                    node = await parseNode(tokens);
                     if (node != null) {
                         stack.push(node);
                         // @ts-ignore
@@ -3948,7 +3964,7 @@ function parse(iterator, opt = {}) {
                     map.clear();
                 }
                 else if (value == '}') {
-                    parseNode(tokens);
+                    await parseNode(tokens);
                     const previousNode = stack.pop();
                     // @ts-ignore
                     context = stack[stack.length - 1] || ast;
@@ -4204,7 +4220,6 @@ function parseTokens(tokens, options = {}) {
                 t.typ = 'Color';
                 // @ts-ignore
                 t.kin = 'hex';
-                continue;
             }
         }
     }
@@ -4229,10 +4244,10 @@ function getBlockType(chr) {
     throw new Error(`unhandled token: '${chr}'`);
 }
 
-function transform(css, options = {}) {
+async function transform$1(css, options = {}) {
     options = { compress: true, removeEmpty: true, ...options };
     const startTime = performance.now();
-    const parseResult = parse(css, options);
+    const parseResult = await parse(css, options);
     if (parseResult == null) {
         // @ts-ignore
         return null;
@@ -4241,7 +4256,7 @@ function transform(css, options = {}) {
     const rendered = render(parseResult.ast, options);
     const endTime = performance.now();
     return {
-        ...parseResult, ...rendered, performance: {
+        ...parseResult, ...rendered, stats: {
             bytesIn: css.length,
             bytesOut: rendered.code.length,
             parse: `${(renderTime - startTime).toFixed(2)}ms`,
@@ -4251,176 +4266,118 @@ function transform(css, options = {}) {
     };
 }
 
-dirname(new URL(import.meta.url).pathname) + '/../files';
-const options = {
-    compress: true,
-    removeEmpty: true
-};
-const marginPadding = `
-
-.test {
-margin: 10px 0 10px 5px;
-top: 4px;
-padding: 2px 0 0 0;
-padding-left: 25px;
-padding-right: 25px;
-padding-top: 25px;
+const matchUrl$1 = /^(https?:)?\/\//;
+function parseResponse(response) {
+    if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+    }
+    return response.text();
+}
+async function load(url, currentFile) {
+    if (matchUrl$1.test(url)) {
+        return fetch(url).then(parseResponse);
+    }
+    if (matchUrl$1.test(currentFile)) {
+        return fetch(new URL(url, currentFile)).then(parseResponse);
+    }
+    return fetch(new URL(url, new URL(currentFile, self.location.href).href)).then(parseResponse);
 }
 
-.test {
-margin-right: 0px;
-padding-right: 0;
-padding-top: 0
+function resolve(url, currentFile) {
+    if (matchUrl.test(url)) {
+        return url;
+    }
+    if (matchUrl.test(currentFile)) {
+        return new URL(url, currentFile).href;
+    }
+    return new URL(url, new URL(currentFile, self.location.href).href).href;
 }
 
-.test {
-
-margin-bottom: 0px;
-text-align: justify;
+const matchUrl = /^(https?:)?\/\//;
+function transform(css, options = {}) {
+    if (options.processImport) {
+        Object.assign(options, { load, resolve });
+    }
+    return transform$1(css, options);
 }
 
-.test {
+function readFile(path) {
+    return fetch(path).then(response => {
+        if (response.ok) {
+            return response.text();
+        }
+        throw new Error(`${response.status} ${response.statusText}`);
+    });
+}
+function dirname(path) {
+    path = path.replace(/[?#].*$/, '').replace(/[/]*$/, '');
+    const index = path.lastIndexOf('/');
+    if (index == 0) {
+        return '/';
+    }
+    return index < 0 ? '' : path.slice(0, index);
+}
+const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
+describe('parse block', function () {
+    it('parse file', async function () {
+        const file = (await readFile(`${dir}/css/smalli.css`)).toString();
+        transform(file).then(async (result) => f(result.ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString())));
+    });
+    it('parse file #2', async function () {
+        const file = (await readFile(`${dir}/css/small.css`)).toString();
+        transform(file).then(async (result) => f(result.ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString())));
+    });
+    it('parse file #3', async function () {
+        const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
+        transform(file).then(async (result) => f(result.ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString())));
+    });
+    it('parse file #4', async function () {
+        const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
+        transform(file).then(async (result) => f(result.ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString())));
+    });
+    it('similar rules #5', async function () {
+        const file = `
+.clear {
+  width: 0;
+  height: 0;
+}
 
-padding-left: 0px;
-margin-top: 0px;
-`;
-const borderRadius1 = `
+.clearfix:before {
 
-.test {
-border-radius: 4px 3px 6px / 2px 4px;
-border-top-left-radius: 4px 5px;
-`;
-const borderRadius2 = `
+  height: 0;
+  width: 0;
+}`;
+        transform(file, {
+            compress: true
+        }).then(result => f(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
+    });
+    it('similar rules #5', async function () {
+        const file = `
+.clear {
+  width: 0;
+  height: 0;
+}
 
-.test {border-top-left-radius: 4px 2px;
-border-top-right-radius: 3px 4px;
-border-bottom-right-radius: 6px 2px;
-border-bottom-left-radius: 3px 4px;
-`;
-const borderRadius3 = `
+.clearfix:before {
 
-.test input[type="text"] {
+  height: 0;
+  width: 0;
+}`;
+        transform(file, {
+            compress: true
+        }).then(result => f(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
+    });
+    it('duplicated selector components #6', async function () {
+        const file = `
 
-    border-bottom-width: 2px;
-    border-left-width: thin;;
-    border-right-width: thin;
-    border-top-width:2px;;;
-
-`;
-const borderColor = `
-
-.test input[type="text"] {
+:is(.test input[type="text"]), .test input[type="text"], :is(.test input[type="text"], a) {
 border-top-color: gold;
 border-right-color: red;
 border-bottom-color: gold;
 border-left-color: red;
 `;
-const outline1 = `
-
-a:focus {
-  outline: medium none; }
-
-a:focus {
-  outline-color: currentColor; }
-
-`;
-const outline2 = `
-
-a:focus {
-  outline: thin #dedede; }
-
-a:focus {
-  outline-style: dotted; }
-
-`;
-const inset1 = `
-
-a:focus {    
-top: auto;
-    bottom: auto;
-    left: auto;
-    right: auto; }
-
-`;
-const font1 = `
-html, body {
-    font-family: Verdana, sans-serif;
-    font-size: 15px;
-    line-height: 1.5;
-    font-weight: bold;
-}
-`;
-const font2 = `
-samp {
-font: small-caps bold 24px/1 sans-serif;
-  font-family: monospace, serif;
-  font-size: 1em; 
-  line-height: 1.19em;
-  }
-`;
-const background1 = `
-p {
-
-  background: url(images/bg.gif) no-repeat left top;
-  background-color: red;
-}
-
-`;
-const background2 = `
-a:focus {
-
-background: left 5% / 15% 60% repeat-x url("../../media/examples/star.png"); 
-background-size: cover auto;
-}
-
-`;
-const background3 = `
-
-a{
-background: center / contain no-repeat url("../../media/examples/firefox-logo.svg"),            
-#eee 35% url("../../media/examples/lizard.png");
-background-size: cover auto, contain;
-
-}
-`;
-describe('shorthand', function () {
-    it('margin padding', async function () {
-        f(transform(marginPadding, options).code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}');
-    });
-    it('border-radius #1', async function () {
-        f(transform(borderRadius1, options).code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}');
-    });
-    it('border-radius #2', async function () {
-        f(transform(borderRadius2, options).code).equals('.test{border-radius:4px 3px 6px/2px 4px}');
-    });
-    it('border-width #3', async function () {
-        f(transform(borderRadius3, options).code).equals('.test input[type=text]{border-width:2px thin}');
-    });
-    it('border-color #4', async function () {
-        f(transform(borderColor, options).code).equals('.test input[type=text]{border-color:gold red}');
-    });
-    it('outline #5', async function () {
-        f(transform(outline1, options).code).equals('a:focus{outline:0}');
-    });
-    it('outline #6', async function () {
-        f(transform(outline2, options).code).equals('a:focus{outline:#dedede dotted thin}');
-    });
-    it('inset #6', async function () {
-        f(transform(inset1, options).code).equals('a:focus{inset:auto}');
-    });
-    it('font #7', async function () {
-        f(transform(font1, options).code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}');
-    });
-    it('font #8', async function () {
-        f(transform(font2, options).code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}');
-    });
-    it('background #9', async function () {
-        f(transform(background1, options).code).equals('p{background:no-repeat red url(images/bg.gif)}');
-    });
-    it('background #10', async function () {
-        f(transform(background2, options).code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}');
-    });
-    it('background #11', async function () {
-        f(transform(background3, options).code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}');
+        transform(file, {
+            compress: true
+        }).then(result => f(result.code).equals(`.test input[type=text],a{border-color:gold red}`));
     });
 });

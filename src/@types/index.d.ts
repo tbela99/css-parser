@@ -32,13 +32,14 @@ export interface ParserOptions {
     compress?: boolean;
     processImport?: boolean;
     removeEmpty?: boolean;
+    load?: (url: string, currentUrl: string) => Promise<string>;
+    resolve?: (url: string, currentUrl: string) => string;
     nodeEventFilter?: NodeType[]
 }
 
 export interface RenderOptions {
 
     compress?: boolean;
-    sourcemap?: boolean;
     preserveLicense?: boolean;
     indent?: string;
     newLine?: string;

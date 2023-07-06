@@ -4,27 +4,29 @@
     ".": "./dist/index.js",
     "./umd": "./dist/index-umd.js"
   },
+  "type": "module",
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
-    "test": "mocha \"test/**/*.test.mjs\""
+    "debug": "web-test-runner \"test/**/*.web.js\" --manual --open --node-resolve --root-dir=./test/",
+    "test": "web-test-runner \"test/**/*.web.js\" --node-resolve --root-dir=./test/; mocha \"test/**/*.test.js\""
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@rollup/plugin-commonjs": "^25.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.0.0",
+    "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.15.10",
+    "@web/test-runner": "^0.16.1",
     "@webref/css": "^6.5.9",
     "glob": "^10.3.0",
     "mocha": "^10.2.0",
     "rollup": "^3.20.1",
     "rollup-plugin-dts": "^5.3.0",
     "tslib": "^2.5.0"
-  },
-  "dependencies": {
-    "source-map": "^0.7.4"
   }
 }

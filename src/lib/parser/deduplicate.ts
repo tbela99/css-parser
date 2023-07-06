@@ -1,4 +1,4 @@
-import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleList, ParserOptions, TransformOptions} from "../@types";
+import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleList, ParserOptions, TransformOptions} from "../../@types";
 import {PropertyList} from "./declaration";
 import {eq} from "./utils/eq";
 import {render} from "../renderer";

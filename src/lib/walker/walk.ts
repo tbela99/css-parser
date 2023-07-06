@@ -1,4 +1,4 @@
-import {AstNode, AstRuleList} from "../@types";
+import {AstNode, AstRuleList} from "../../@types";
 
 export function* walk(node: AstNode): Generator<{
     node: AstNode,

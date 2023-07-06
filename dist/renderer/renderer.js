@@ -5,17 +5,13 @@ function render(data, opt = {}) {
     const options = Object.assign(opt.compress ? {
         indent: '',
         newLine: '',
-        preserveLicense: false,
-        removeComments: true,
-        colorConvert: true
+        removeComments: true
     } : {
         indent: ' ',
         newLine: '\n',
         compress: false,
-        preserveLicense: false,
         removeComments: false,
-        colorConvert: true
-    }, opt);
+    }, { src: '', colorConvert: true, preserveLicense: false }, opt);
     function reducer(acc, curr, index, original) {
         if (curr.typ == 'Comment' && options.removeComments) {
             if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
@@ -38,6 +34,7 @@ function render(data, opt = {}) {
     }
     return { code: doRender(data, options, reducer) };
 }
+// @ts-ignore
 function doRender(data, options, reducer, level = 0) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
@@ -52,7 +49,7 @@ function doRender(data, options, reducer, level = 0) {
             return options.removeComments ? '' : data.val;
         case 'StyleSheet':
             return data.chi.reduce((css, node) => {
-                const str = doRender(node, options, reducer);
+                const str = doRender(node, options, reducer, level);
                 if (str === '') {
                     return css;
                 }

@@ -1,7 +1,7 @@
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {AngleToken, DimensionToken, LengthToken} from '../../@types';
+import {AngleToken, DimensionToken, LengthToken} from '../../../@types';
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;

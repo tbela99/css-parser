@@ -1,4 +1,6 @@
-export { parse } from './parser/parse.js';
-export { deduplicate, deduplicateRule, hasDeclaration } from './parser/deduplicate.js';
-export { render, renderToken } from './renderer/renderer.js';
-export { transform } from './transform.js';
+export { matchUrl, parse, transform } from './node/index.js';
+export { deduplicate, deduplicateRule, hasDeclaration } from './lib/parser/deduplicate.js';
+export { render, renderToken } from './lib/renderer/renderer.js';
+export { walk } from './lib/walker/walk.js';
+export { load } from './node/load.js';
+export { resolve } from './node/resolve.js';

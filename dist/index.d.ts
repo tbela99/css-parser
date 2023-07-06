@@ -189,10 +189,12 @@ interface ErrorDescription {
 interface ParserOptions {
 
     src?: string;
-    location?: boolean;
+    sourcemap?: boolean;
     compress?: boolean;
     processImport?: boolean;
     removeEmpty?: boolean;
+    load?: (url: string, currentUrl: string) => Promise<string>;
+    resolve?: (url: string, currentUrl: string) => string;
     nodeEventFilter?: NodeType[]
 }
 
@@ -221,7 +223,7 @@ interface RenderResult {
 
 interface TransformResult extends ParseResult, RenderResult {
 
-    performance: {
+    stats: {
         bytesIn: number;
         bytesOut: number;
         parse: string;
@@ -296,8 +298,6 @@ type AstNode =
     | AstRule
     | AstDeclaration;
 
-declare function parse(iterator: string, opt?: ParserOptions): ParseResult;
-
 declare function deduplicate(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
 declare function hasDeclaration(node: AstAtRule | AstRule | AstRuleList): boolean;
 declare function deduplicateRule(ast: AstNode, options?: ParserOptions): AstNode;
@@ -305,6 +305,18 @@ declare function deduplicateRule(ast: AstNode, options?: ParserOptions): AstNode
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions): string;
 
-declare function transform(css: string, options?: TransformOptions): TransformResult;
+declare function walk(node: AstNode): Generator<{
+    node: AstNode;
+    parent?: AstRuleList;
+    root?: AstRuleList;
+}>;
 
-export { deduplicate, deduplicateRule, hasDeclaration, parse, render, renderToken, transform };
+declare function load(url: string, currentFile: string): Promise<string>;
+
+declare function resolve(url: string, currentFile: string): string;
+
+declare const matchUrl: RegExp;
+declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
+declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
+
+export { deduplicate, deduplicateRule, hasDeclaration, load, matchUrl, parse, render, renderToken, resolve, transform, walk };

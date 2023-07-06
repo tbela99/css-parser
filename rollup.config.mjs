@@ -4,15 +4,16 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 import {glob} from "glob";
 import terser from "@rollup/plugin-terser";
 import json from "@rollup/plugin-json";
+import commonjs from "@rollup/plugin-commonjs";
 
-export default [...await glob('./test/specs/**/*.test.ts').then(files => files.map(input => {
+export default [...await glob(['./test/specs/**/*.test.ts', './test/specs/**/*.web.ts']).then(files => files.map(input => {
     return {
         input,
-        plugins: [nodeResolve(), json(), typescript()],
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules:true}), json(), typescript()],
         output:
             {
                 banner: `/* generate from ${input} */`,
-                file: `${input.replace(/\/test\/specs/, '/test/js/').replace(/\.ts$/, '.mjs')}`,
+                file: `${input.replace(/\.ts$/, '.js')}`,
                 // entryFileNames: '[name].mjs',
                 // chunkFileNames: '[name].[hash].mjs',
                 format: 'es'
@@ -22,7 +23,7 @@ export default [...await glob('./test/specs/**/*.test.ts').then(files => files.m
 ].concat([
     {
         input: 'src/index.ts',
-        plugins: [nodeResolve(), json(), typescript()],
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules:true}), json(), typescript()],
         output: [
             {
                 // file: './dist/index.mjs',
@@ -39,7 +40,7 @@ export default [...await glob('./test/specs/**/*.test.ts').then(files => files.m
     },
     {
         input: 'src/index.ts',
-        plugins: [nodeResolve(), typescript(), terser(), json()],
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules:true}), typescript(), terser(), json()],
         output: [
 
             {

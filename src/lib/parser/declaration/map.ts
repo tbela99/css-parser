@@ -6,8 +6,8 @@ import {
     PercentageToken,
     PropertyMapType,
     Token
-} from "../../@types";
-import {ShorthandMapType} from "../../@types";
+} from "../../../@types";
+import {ShorthandMapType} from "../../../@types";
 import {eq} from "../utils/eq";
 import {isNumber} from "../utils";
 import {renderToken} from "../../renderer";

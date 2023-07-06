@@ -1,4 +1,4 @@
-import {ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../@types";
+import {ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../../@types";
 
 // name to color
 export const COLORS_NAMES: {[key: string]: string} = Object.seal({

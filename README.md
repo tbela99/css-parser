@@ -15,7 +15,7 @@ Parse and render css in a single pass.
 ```javascript
 import {transform} from '@tbela99/css-parser';
 
-const {ast, code, errors} = transform(css);
+const {ast, code, errors, stats} = transform(css);
 ```
 
 ### Usage

@@ -13,7 +13,7 @@ function transform(css, options = {}) {
     const rendered = render(parseResult.ast, options);
     const endTime = performance.now();
     return {
-        ...parseResult, ...rendered, performance: {
+        ...parseResult, ...rendered, stats: {
             bytesIn: css.length,
             bytesOut: rendered.code.length,
             parse: `${(renderTime - startTime).toFixed(2)}ms`,

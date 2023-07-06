@@ -1,4 +1,4 @@
-import {AstDeclaration, DimensionToken, NumberToken, ShorthandPropertyType, Token} from "../../@types";
+import {AstDeclaration, DimensionToken, NumberToken, ShorthandPropertyType, Token} from "../../../@types";
 import {eq} from "../utils/eq";
 import {isLength} from "../utils";
 

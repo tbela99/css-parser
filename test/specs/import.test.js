@@ -1,4 +1,4 @@
-/* generate from test/specs/block.test.ts */
+/* generate from test/specs/import.test.ts */
 import { readFile } from 'fs/promises';
 import { dirname } from 'path';
 
@@ -2025,17 +2025,13 @@ function render(data, opt = {}) {
     const options = Object.assign(opt.compress ? {
         indent: '',
         newLine: '',
-        preserveLicense: false,
-        removeComments: true,
-        colorConvert: true
+        removeComments: true
     } : {
         indent: ' ',
         newLine: '\n',
         compress: false,
-        preserveLicense: false,
         removeComments: false,
-        colorConvert: true
-    }, opt);
+    }, { colorConvert: true, preserveLicense: false }, opt);
     function reducer(acc, curr, index, original) {
         if (curr.typ == 'Comment' && options.removeComments) {
             if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
@@ -2058,6 +2054,7 @@ function render(data, opt = {}) {
     }
     return { code: doRender(data, options, reducer) };
 }
+// @ts-ignore
 function doRender(data, options, reducer, level = 0) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
@@ -2072,7 +2069,7 @@ function doRender(data, options, reducer, level = 0) {
             return options.removeComments ? '' : data.val;
         case 'StyleSheet':
             return data.chi.reduce((css, node) => {
-                const str = doRender(node, options, reducer);
+                const str = doRender(node, options, reducer, level);
                 if (str === '') {
                     return css;
                 }
@@ -3134,11 +3131,11 @@ function diff(n1, n2, options = {}) {
 }
 
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
-function parse(iterator, opt = {}) {
+async function parse(iterator, opt = {}) {
     const errors = [];
     const options = {
         src: '',
-        location: false,
+        sourcemap: false,
         compress: false,
         processImport: false,
         removeEmpty: true,
@@ -3168,7 +3165,7 @@ function parse(iterator, opt = {}) {
     let total = iterator.length;
     let map = new Map;
     let context = ast;
-    if (options.location) {
+    if (options.sourcemap) {
         ast.loc = {
             sta: {
                 ind: ind,
@@ -3312,8 +3309,8 @@ function parse(iterator, opt = {}) {
             }
         }
     }
-    function parseNode(tokens) {
-        let i = 0;
+    async function parseNode(tokens) {
+        let i;
         let loc;
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
@@ -3324,7 +3321,7 @@ function parse(iterator, opt = {}) {
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     tokens[i].loc = loc;
                 }
             }
@@ -3334,6 +3331,7 @@ function parse(iterator, opt = {}) {
         }
         tokens = tokens.slice(i);
         const delim = tokens.pop();
+        // @ts-ignore
         while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
             tokens.pop();
         }
@@ -3347,6 +3345,7 @@ function parse(iterator, opt = {}) {
                 errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
                 return null;
             }
+            // @ts-ignore
             while (['Whitespace'].includes(tokens[0]?.typ)) {
                 tokens.shift();
             }
@@ -3391,7 +3390,20 @@ function parse(iterator, opt = {}) {
                     tokens[0].typ = 'String';
                     // @ts-ignore
                     tokens[0].val = `"${tokens[0].val}"`;
-                    // tokens[0] = token;
+                }
+                if (options.processImport) {
+                    try {
+                        // @ts-ignore
+                        const root = await options.load(tokens[0].val.slice(1, -1), options.src).
+                            then(src => parse(src, Object.assign({}, options, { src: tokens[0].val.slice(1, -1) })));
+                        context.chi.push(...root.ast.chi);
+                        if (root.errors.length > 0) {
+                            errors.push(...root.errors);
+                        }
+                        return null;
+                    }
+                    catch (error) {
+                    }
                 }
             }
             // https://www.w3.org/TR/css-nesting-1/#conditionals
@@ -3411,14 +3423,17 @@ function parse(iterator, opt = {}) {
                     return acc + renderToken(curr, { removeComments: true });
                 }, '')
             };
-            if (node.nam == 'import') {
-                if (options.processImport) {
-                    // @ts-ignore
-                    let fileToken = tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
-                    let file = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
-                    if (!file.startsWith('data:')) ;
-                }
-            }
+            // if (node.nam == 'import') {
+            // if (options.processImport) {
+            // @ts-ignore
+            // let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
+            // let file: string = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
+            // if (!file.startsWith('data:')) {
+            //
+            //
+            // }
+            // }
+            // }
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
@@ -3426,7 +3441,7 @@ function parse(iterator, opt = {}) {
                 sta: position,
                 src
             };
-            if (options.location) {
+            if (options.sourcemap) {
                 node.loc = loc;
             }
             // @ts-ignore
@@ -3464,7 +3479,7 @@ function parse(iterator, opt = {}) {
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     node.loc = loc;
                 }
                 // @ts-ignore
@@ -3529,13 +3544,16 @@ function parse(iterator, opt = {}) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-                loc = {
-                    sta: position,
-                    src
-                };
-                if (options.location) {
-                    node.loc = loc;
-                }
+                // // location not needed for declaration
+                // loc = <Location>{
+                //     sta: position,
+                //     src
+                // };
+                //
+                // if (options.sourcemap) {
+                //
+                //     node.loc = loc
+                // }
                 // @ts-ignore
                 context.chi.push(node);
                 return null;
@@ -3934,7 +3952,7 @@ function parse(iterator, opt = {}) {
                 pushToken(getBlockType(value));
                 let node = null;
                 if (value == '{' || value == ';') {
-                    node = parseNode(tokens);
+                    node = await parseNode(tokens);
                     if (node != null) {
                         stack.push(node);
                         // @ts-ignore
@@ -3949,7 +3967,7 @@ function parse(iterator, opt = {}) {
                     map.clear();
                 }
                 else if (value == '}') {
-                    parseNode(tokens);
+                    await parseNode(tokens);
                     const previousNode = stack.pop();
                     // @ts-ignore
                     context = stack[stack.length - 1] || ast;
@@ -4205,7 +4223,6 @@ function parseTokens(tokens, options = {}) {
                 t.typ = 'Color';
                 // @ts-ignore
                 t.kin = 'hex';
-                continue;
             }
         }
     }
@@ -4230,10 +4247,10 @@ function getBlockType(chr) {
     throw new Error(`unhandled token: '${chr}'`);
 }
 
-function transform(css, options = {}) {
+async function transform$1(css, options = {}) {
     options = { compress: true, removeEmpty: true, ...options };
     const startTime = performance.now();
-    const parseResult = parse(css, options);
+    const parseResult = await parse(css, options);
     if (parseResult == null) {
         // @ts-ignore
         return null;
@@ -4242,7 +4259,7 @@ function transform(css, options = {}) {
     const rendered = render(parseResult.ast, options);
     const endTime = performance.now();
     return {
-        ...parseResult, ...rendered, performance: {
+        ...parseResult, ...rendered, stats: {
             bytesIn: css.length,
             bytesOut: rendered.code.length,
             parse: `${(renderTime - startTime).toFixed(2)}ms`,
@@ -4252,67 +4269,61 @@ function transform(css, options = {}) {
     };
 }
 
-const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
-describe('parse block', function () {
-    it('parse file', async function () {
-        const file = (await readFile(`${dir}/css/smalli.css`)).toString();
-        f(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/smalli.json')).toString()));
-    });
-    it('parse file #2', async function () {
-        const file = (await readFile(`${dir}/css/small.css`)).toString();
-        f(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/small.json')).toString()));
-    });
-    it('parse file #3', async function () {
-        const file = (await readFile(`${dir}/css/invalid-1.css`)).toString();
-        f(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-1.json')).toString()));
-    });
-    it('parse file #4', async function () {
-        const file = (await readFile(`${dir}/css/invalid-2.css`)).toString();
-        f(transform(file).ast).deep.equals(JSON.parse((await readFile(dir + '/json/invalid-2.json')).toString()));
-    });
-    it('similar rules #5', async function () {
-        const file = `
-.clear {
-  width: 0;
-  height: 0;
+function resolve(url, currentFile) {
+    if (matchUrl.test(url)) {
+        return url;
+    }
+    if (matchUrl.test(currentFile)) {
+        return new URL(url, currentFile).href;
+    }
+    if (url.charAt(0) == '/') {
+        return url;
+    }
+    if (currentFile.charAt(0) == '/') {
+        return dirname(currentFile) + '/' + url;
+    }
+    if (currentFile === '' || dirname(currentFile) === '') {
+        return url;
+    }
+    return dirname(currentFile) + '/' + url;
 }
 
-.clearfix:before {
-
-  height: 0;
-  width: 0;
-}`;
-        f(transform(file, {
-            compress: true
-        }).code).equals(`.clear,.clearfix:before{width:0;height:0}`);
-    });
-    it('similar rules #5', async function () {
-        const file = `
-.clear {
-  width: 0;
-  height: 0;
+function parseResponse(response) {
+    if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+    }
+    return response.text();
+}
+async function load(url, currentFile) {
+    const resolved = resolve(url, currentFile);
+    return matchUrl.test(resolved) ? fetch(resolved).then(parseResponse) : readFile(resolved, { encoding: 'utf-8' });
 }
 
-.clearfix:before {
+const matchUrl = /^(https?:)?\/\//;
+function transform(css, options = {}) {
+    if (options.processImport) {
+        Object.assign(options, { load, resolve });
+    }
+    return transform$1(css, options);
+}
 
-  height: 0;
-  width: 0;
-}`;
-        f(transform(file, {
-            compress: true
-        }).code).equals(`.clear,.clearfix:before{width:0;height:0}`);
-    });
-    it('duplicated selector components #6', async function () {
-        const file = `
+const atRule = `
+@import '${dirname(new URL(import.meta.url).pathname) + '/../files/css/color.css'}';
+abbr[title], abbr[data-original-title] {
+    text-decoration: underline dotted;
+    -webkit-text-decoration: underline dotted;
+    cursor: help;
+    border-bottom: 0;
+    -webkit-text-decoration-skip-ink: none;
+    text-decoration-skip-ink: none
+}
 
-:is(.test input[type="text"]), .test input[type="text"], :is(.test input[type="text"], a) {
-border-top-color: gold;
-border-right-color: red;
-border-bottom-color: gold;
-border-left-color: red;
 `;
-        f(transform(file, {
-            compress: true
-        }).code).equals(`.test input[type=text],a{border-color:gold red}`);
+describe('process import', function () {
+    it('process import #1', async function () {
+        transform(atRule, {
+            compress: true,
+            processImport: true
+        }).then(result => f(result.code).equals(`p{color:#8133cc26}abbr[title],abbr[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
     });
 });

@@ -1,13 +1,13 @@
-import {ParseResult, RenderResult, TransformOptions, TransformResult} from "./@types";
+import {ParseResult, RenderResult, TransformOptions, TransformResult} from "../@types";
 import {parse} from "./parser";
 import {render} from "./renderer";
 
-export function transform(css: string, options: TransformOptions = {}): TransformResult {
+export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
     options = {compress: true, removeEmpty: true, ...options};
 
     const startTime: number = performance.now();
-    const parseResult: ParseResult = parse(css, options);
+    const parseResult: ParseResult = await parse(css, options);
 
     if (parseResult == null) {
 

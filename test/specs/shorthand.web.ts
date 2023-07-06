@@ -1,6 +1,32 @@
 import {expect} from "@esm-bundle/chai";
-import {parse, render, transform} from "../../src";
-import {dirname} from "path";
+import {transform} from "../../src/web";
+
+function readFile(path: string) {
+
+    return fetch(path).then(response => {
+
+        if (response.ok) {
+
+            return response.text();
+        }
+
+        throw new Error(`${response.status} ${response.statusText}`);
+    })
+}
+
+function dirname(path: string) {
+
+    path = path.replace(/[?#].*$/, '').replace(/[/]*$/, '');
+
+    const index: number = path.lastIndexOf('/');
+
+    if (index == 0) {
+
+        return '/';
+    }
+
+    return index < 0 ? '' : path.slice(0, index);
+}
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 

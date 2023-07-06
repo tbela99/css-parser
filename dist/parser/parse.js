@@ -8,7 +8,7 @@ function parse(iterator, opt = {}) {
     const errors = [];
     const options = {
         src: '',
-        location: false,
+        sourcemap: false,
         compress: false,
         processImport: false,
         removeEmpty: true,
@@ -38,7 +38,7 @@ function parse(iterator, opt = {}) {
     let total = iterator.length;
     let map = new Map;
     let context = ast;
-    if (options.location) {
+    if (options.sourcemap) {
         ast.loc = {
             sta: {
                 ind: ind,
@@ -194,7 +194,7 @@ function parse(iterator, opt = {}) {
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     tokens[i].loc = loc;
                 }
             }
@@ -204,6 +204,7 @@ function parse(iterator, opt = {}) {
         }
         tokens = tokens.slice(i);
         const delim = tokens.pop();
+        // @ts-ignore
         while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
             tokens.pop();
         }
@@ -217,6 +218,7 @@ function parse(iterator, opt = {}) {
                 errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
                 return null;
             }
+            // @ts-ignore
             while (['Whitespace'].includes(tokens[0]?.typ)) {
                 tokens.shift();
             }
@@ -296,7 +298,7 @@ function parse(iterator, opt = {}) {
                 sta: position,
                 src
             };
-            if (options.location) {
+            if (options.sourcemap) {
                 node.loc = loc;
             }
             // @ts-ignore
@@ -334,7 +336,7 @@ function parse(iterator, opt = {}) {
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     node.loc = loc;
                 }
                 // @ts-ignore
@@ -399,13 +401,16 @@ function parse(iterator, opt = {}) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-                loc = {
-                    sta: position,
-                    src
-                };
-                if (options.location) {
-                    node.loc = loc;
-                }
+                // // location not needed for declaration
+                // loc = <Location>{
+                //     sta: position,
+                //     src
+                // };
+                //
+                // if (options.sourcemap) {
+                //
+                //     node.loc = loc
+                // }
                 // @ts-ignore
                 context.chi.push(node);
                 return null;

@@ -1,4 +1,4 @@
-import {AstDeclaration, AstNode, ShorthandMapType, ShorthandPropertyType} from "../../@types";
+import {AstDeclaration, AstNode, ShorthandMapType, ShorthandPropertyType} from "../../../@types";
 import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";

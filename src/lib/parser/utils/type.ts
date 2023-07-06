@@ -1,4 +1,4 @@
-import {IdentToken, PropertyMapType, Token} from "../../@types";
+import {IdentToken, PropertyMapType, Token} from "../../../@types";
 
 export function matchType(val: Token, properties: PropertyMapType) {
 

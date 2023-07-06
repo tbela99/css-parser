@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.CSSParser = {}));
-})(this, (function (exports) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('fs/promises'), require('path')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'fs/promises', 'path'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.CSSParser = {}, global.promises, global.path));
+})(this, (function (exports, promises, path) { 'use strict';
 
     // https://www.w3.org/TR/CSS21/syndata.html#syntax
     // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -1457,17 +1457,13 @@
         const options = Object.assign(opt.compress ? {
             indent: '',
             newLine: '',
-            preserveLicense: false,
-            removeComments: true,
-            colorConvert: true
+            removeComments: true
         } : {
             indent: ' ',
             newLine: '\n',
             compress: false,
-            preserveLicense: false,
             removeComments: false,
-            colorConvert: true
-        }, opt);
+        }, { colorConvert: true, preserveLicense: false }, opt);
         function reducer(acc, curr, index, original) {
             if (curr.typ == 'Comment' && options.removeComments) {
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
@@ -1490,6 +1486,7 @@
         }
         return { code: doRender(data, options, reducer) };
     }
+    // @ts-ignore
     function doRender(data, options, reducer, level = 0) {
         if (indents.length < level + 1) {
             indents.push(options.indent.repeat(level));
@@ -1504,7 +1501,7 @@
                 return options.removeComments ? '' : data.val;
             case 'StyleSheet':
                 return data.chi.reduce((css, node) => {
-                    const str = doRender(node, options, reducer);
+                    const str = doRender(node, options, reducer, level);
                     if (str === '') {
                         return css;
                     }
@@ -2566,11 +2563,11 @@
     }
 
     const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
-    function parse(iterator, opt = {}) {
+    async function parse$1(iterator, opt = {}) {
         const errors = [];
         const options = {
             src: '',
-            location: false,
+            sourcemap: false,
             compress: false,
             processImport: false,
             removeEmpty: true,
@@ -2600,7 +2597,7 @@
         let total = iterator.length;
         let map = new Map;
         let context = ast;
-        if (options.location) {
+        if (options.sourcemap) {
             ast.loc = {
                 sta: {
                     ind: ind,
@@ -2744,8 +2741,8 @@
                 }
             }
         }
-        function parseNode(tokens) {
-            let i = 0;
+        async function parseNode(tokens) {
+            let i;
             let loc;
             for (i = 0; i < tokens.length; i++) {
                 if (tokens[i].typ == 'Comment') {
@@ -2756,7 +2753,7 @@
                         sta: position,
                         src
                     };
-                    if (options.location) {
+                    if (options.sourcemap) {
                         tokens[i].loc = loc;
                     }
                 }
@@ -2766,6 +2763,7 @@
             }
             tokens = tokens.slice(i);
             const delim = tokens.pop();
+            // @ts-ignore
             while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens[tokens.length - 1]?.typ)) {
                 tokens.pop();
             }
@@ -2779,6 +2777,7 @@
                     errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
                     return null;
                 }
+                // @ts-ignore
                 while (['Whitespace'].includes(tokens[0]?.typ)) {
                     tokens.shift();
                 }
@@ -2823,7 +2822,20 @@
                         tokens[0].typ = 'String';
                         // @ts-ignore
                         tokens[0].val = `"${tokens[0].val}"`;
-                        // tokens[0] = token;
+                    }
+                    if (options.processImport) {
+                        try {
+                            // @ts-ignore
+                            const root = await options.load(tokens[0].val.slice(1, -1), options.src).
+                                then(src => parse$1(src, Object.assign({}, options, { src: tokens[0].val.slice(1, -1) })));
+                            context.chi.push(...root.ast.chi);
+                            if (root.errors.length > 0) {
+                                errors.push(...root.errors);
+                            }
+                            return null;
+                        }
+                        catch (error) {
+                        }
                     }
                 }
                 // https://www.w3.org/TR/css-nesting-1/#conditionals
@@ -2843,14 +2855,17 @@
                         return acc + renderToken(curr, { removeComments: true });
                     }, '')
                 };
-                if (node.nam == 'import') {
-                    if (options.processImport) {
-                        // @ts-ignore
-                        let fileToken = tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
-                        let file = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
-                        if (!file.startsWith('data:')) ;
-                    }
-                }
+                // if (node.nam == 'import') {
+                // if (options.processImport) {
+                // @ts-ignore
+                // let fileToken: Token = <StringToken | UrlToken>tokens[tokens[0].typ == 'UrlFunc' ? 1 : 0];
+                // let file: string = fileToken.typ == 'String' ? fileToken.val.slice(1, -1) : fileToken.val;
+                // if (!file.startsWith('data:')) {
+                //
+                //
+                // }
+                // }
+                // }
                 if (delim.typ == 'Block-start') {
                     node.chi = [];
                 }
@@ -2858,7 +2873,7 @@
                     sta: position,
                     src
                 };
-                if (options.location) {
+                if (options.sourcemap) {
                     node.loc = loc;
                 }
                 // @ts-ignore
@@ -2896,7 +2911,7 @@
                         sta: position,
                         src
                     };
-                    if (options.location) {
+                    if (options.sourcemap) {
                         node.loc = loc;
                     }
                     // @ts-ignore
@@ -2961,13 +2976,16 @@
                         errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                         return null;
                     }
-                    loc = {
-                        sta: position,
-                        src
-                    };
-                    if (options.location) {
-                        node.loc = loc;
-                    }
+                    // // location not needed for declaration
+                    // loc = <Location>{
+                    //     sta: position,
+                    //     src
+                    // };
+                    //
+                    // if (options.sourcemap) {
+                    //
+                    //     node.loc = loc
+                    // }
                     // @ts-ignore
                     context.chi.push(node);
                     return null;
@@ -3366,7 +3384,7 @@
                     pushToken(getBlockType(value));
                     let node = null;
                     if (value == '{' || value == ';') {
-                        node = parseNode(tokens);
+                        node = await parseNode(tokens);
                         if (node != null) {
                             stack.push(node);
                             // @ts-ignore
@@ -3381,7 +3399,7 @@
                         map.clear();
                     }
                     else if (value == '}') {
-                        parseNode(tokens);
+                        await parseNode(tokens);
                         const previousNode = stack.pop();
                         // @ts-ignore
                         context = stack[stack.length - 1] || ast;
@@ -3637,7 +3655,6 @@
                     t.typ = 'Color';
                     // @ts-ignore
                     t.kin = 'hex';
-                    continue;
                 }
             }
         }
@@ -3662,10 +3679,23 @@
         throw new Error(`unhandled token: '${chr}'`);
     }
 
-    function transform(css, options = {}) {
+    function* walk(node) {
+        // @ts-ignore
+        yield* doWalk(node, null, null);
+    }
+    function* doWalk(node, parent, root) {
+        yield { node, parent, root };
+        if ('chi' in node) {
+            for (const child of node.chi) {
+                yield* doWalk(child, node, (root == null ? node : root));
+            }
+        }
+    }
+
+    async function transform$1(css, options = {}) {
         options = { compress: true, removeEmpty: true, ...options };
         const startTime = performance.now();
-        const parseResult = parse(css, options);
+        const parseResult = await parse$1(css, options);
         if (parseResult == null) {
             // @ts-ignore
             return null;
@@ -3674,7 +3704,7 @@
         const rendered = render(parseResult.ast, options);
         const endTime = performance.now();
         return {
-            ...parseResult, ...rendered, performance: {
+            ...parseResult, ...rendered, stats: {
                 bytesIn: css.length,
                 bytesOut: rendered.code.length,
                 parse: `${(renderTime - startTime).toFixed(2)}ms`,
@@ -3684,12 +3714,60 @@
         };
     }
 
+    function resolve(url, currentFile) {
+        if (matchUrl.test(url)) {
+            return url;
+        }
+        if (matchUrl.test(currentFile)) {
+            return new URL(url, currentFile).href;
+        }
+        if (url.charAt(0) == '/') {
+            return url;
+        }
+        if (currentFile.charAt(0) == '/') {
+            return path.dirname(currentFile) + '/' + url;
+        }
+        if (currentFile === '' || path.dirname(currentFile) === '') {
+            return url;
+        }
+        return path.dirname(currentFile) + '/' + url;
+    }
+
+    function parseResponse(response) {
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+        }
+        return response.text();
+    }
+    async function load(url, currentFile) {
+        const resolved = resolve(url, currentFile);
+        return matchUrl.test(resolved) ? fetch(resolved).then(parseResponse) : promises.readFile(resolved, { encoding: 'utf-8' });
+    }
+
+    const matchUrl = /^(https?:)?\/\//;
+    function parse(iterator, opt = {}) {
+        if (opt.processImport) {
+            Object.assign(opt, { load, resolve });
+        }
+        return parse$1(iterator, opt);
+    }
+    function transform(css, options = {}) {
+        if (options.processImport) {
+            Object.assign(options, { load, resolve });
+        }
+        return transform$1(css, options);
+    }
+
     exports.deduplicate = deduplicate;
     exports.deduplicateRule = deduplicateRule;
     exports.hasDeclaration = hasDeclaration;
+    exports.load = load;
+    exports.matchUrl = matchUrl;
     exports.parse = parse;
     exports.render = render;
     exports.renderToken = renderToken;
+    exports.resolve = resolve;
     exports.transform = transform;
+    exports.walk = walk;
 
 }));
