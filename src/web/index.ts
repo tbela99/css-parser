@@ -2,29 +2,29 @@ import {ParseResult, ParserOptions, TransformOptions, TransformResult} from "../
 
 export * from '../lib';
 export * from './load';
-export * from './resolve';
-
-export const matchUrl = /^(https?:)?\/\//;
+export * from '../lib/fs';
 
 import {parse as doParse, transform as doTransform} from "../lib";
-import {load, resolve} from "./index";
+import {dirname, load, resolve} from "./index";
 
 export function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
 
-    if (opt.processImport) {
-
-        Object.assign(opt, {load, resolve});
-    }
+    Object.assign(opt, {
+        load,
+        resolve,
+        cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+    });
 
     return doParse(iterator, opt);
 }
 
 export function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    if (options.processImport) {
-
-        Object.assign(options, {load, resolve});
-    }
+    Object.assign(options, {
+        load,
+        resolve,
+        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+    });
 
     return doTransform(css, options);
 }

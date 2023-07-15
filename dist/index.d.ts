@@ -191,10 +191,12 @@ interface ParserOptions {
     src?: string;
     sourcemap?: boolean;
     compress?: boolean;
-    processImport?: boolean;
     removeEmpty?: boolean;
+    resolveUrls?: boolean;
+    resolveImport?: boolean;
+    cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
-    resolve?: (url: string, currentUrl: string) => string;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
 }
 
@@ -214,7 +216,8 @@ interface TransformOptions extends ParserOptions, RenderOptions {
 
 interface ParseResult {
     ast: AstRuleStyleSheet;
-    errors: ErrorDescription[]
+    errors: ErrorDescription[];
+    bytesIn: number;
 }
 
 interface RenderResult {
@@ -227,11 +230,11 @@ interface TransformResult extends ParseResult, RenderResult {
         bytesIn: number;
         bytesOut: number;
         parse: string;
-        // deduplicate: string;
         render: string;
         total: string;
     }
 }
+
 interface Position {
 
     ind: number;
@@ -313,10 +316,14 @@ declare function walk(node: AstNode): Generator<{
 
 declare function load(url: string, currentFile: string): Promise<string>;
 
-declare function resolve(url: string, currentFile: string): string;
-
 declare const matchUrl: RegExp;
+declare function dirname(path: string): string;
+declare function resolve(url: string, currentDirectory: string, cwd?: string): {
+    absolute: string;
+    relative: string;
+};
+
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { deduplicate, deduplicateRule, hasDeclaration, load, matchUrl, parse, render, renderToken, resolve, transform, walk };
+export { deduplicate, deduplicateRule, dirname, hasDeclaration, load, matchUrl, parse, render, renderToken, resolve, transform, walk };

@@ -1,16 +1,36 @@
 {
-  "version": "0.0.1-alpha2",
+  "name": "@tbela99/css-parser",
+  "description": "CSS parser for node and the browser",
+  "version": "0.0.1-alpha3",
   "exports": {
     ".": "./dist/index.js",
-    "./umd": "./dist/index-umd.js"
+    "./web": "./dist/web/index.js",
+    "./cjs": "./dist/index.cjs"
   },
   "type": "module",
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
     "debug": "web-test-runner \"test/**/*.web.js\" --manual --open --node-resolve --root-dir=./test/",
-    "test": "web-test-runner \"test/**/*.web.js\" --node-resolve --root-dir=./test/; mocha \"test/**/*.test.js\""
+    "test": "web-test-runner \"test/**/*.web.js\" --node-resolve --root-dir=./test/; mocha --reporter-options='maxDiffSize=181920' \"test/**/*.test.js\""
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tbela99/css-parser.git"
+  },
+  "keywords": [
+    "parser",
+    "css",
+    "css-parser",
+    "node",
+    "browser"
+  ],
+  "author": "Thierry Bela",
+  "license": "MIT OR LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/tbela99/css-parser/issues"
+  },
+  "homepage": "https://github.com/tbela99/css-parser#readme",
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@rollup/plugin-commonjs": "^25.0.2",

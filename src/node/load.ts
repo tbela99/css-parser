@@ -1,6 +1,5 @@
 import {readFile} from "fs/promises";
-import {resolve} from "./resolve";
-import {matchUrl} from "../index";
+import {resolve, matchUrl} from "../lib/fs";
 
 function parseResponse(response: Response) {
 
@@ -14,7 +13,7 @@ function parseResponse(response: Response) {
 
 export async function load(url: string, currentFile: string) {
 
-    const resolved: string = resolve(url, currentFile);
+    const resolved = resolve(url, currentFile);
 
-    return matchUrl.test(resolved) ? fetch(resolved).then(parseResponse) : readFile(resolved, {encoding: 'utf-8'});
+    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : readFile(resolved.absolute, {encoding: 'utf-8'});
 }

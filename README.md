@@ -6,17 +6,12 @@ CSS parser for node and the browser
 
 ```shell
 $ npm install @tbela99/css-parser
+
 ```
 
 ## Transform
 
 Parse and render css in a single pass.
-
-```javascript
-import {transform} from '@tbela99/css-parser';
-
-const {ast, code, errors, stats} = transform(css);
-```
 
 ### Usage
 
@@ -24,19 +19,37 @@ const {ast, code, errors, stats} = transform(css);
 
 transform(css, transformOptions = {})
 ```
+
+### Example
+
+```javascript
+
+import {transform} from '@tbela99/css-parser';
+
+const {ast, code, errors, stats} = await transform(css, {compress: true, resolveImport: true, cwd: 'files/css'});
+```
+
 ### TransformOptions
 
-Include both ParseOptions and RenderOptions
+Include ParseOptions and RenderOptions
+
+#### ParseOptions
 
 - src: string, optional. css file location to be used with sourcemap.
-- location: boolean, optional. includes node location in the ast, required for sourcemap generation.
-- processImport: boolean, process @import node - not yet implemented
-- compress: boolean, default to _true_. optimize ast and minify css.
+- compress: boolean, optional. default to _true_. optimize ast and minify css.
 - removeEmpty: boolean, remove empty nodes from the ast.
+- location: boolean, optional. includes node location in the ast, required for sourcemap generation.
+- cwd: string, optional. the current working directory. when specified url() are resolved using this value
+- resolveImport: boolean, optional. replace @import node by the content of the referenced stylesheet.
+- resolveUrls: boolean, optional. resolve css url() according to the parameters 'src' and 'cwd'
+
+#### RenderOptions
+- compress: boolean, optional. default to _true_. optimize ast and minify css.
 - indent: string, optional. css indention string. uses space character by default.
 - newLine: string, new line character.
 - removeComments: boolean, remove comments in generated css.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when compress is enabling.
+- colorConvert: boolean, convert colors to hex.
 
 
 ## Parsing
@@ -53,37 +66,32 @@ const {ast, errors} = parse(css);
 
 parse(css, parseOptions = {})
 ```
-### ParseOptions
 
-- src: string, optional. css file location
-- location: boolean, optional. includes node location in the ast
-- processImport: boolean, process @import node - not yet implemented
-- deduplicate: boolean, remove duplicate node and merge rules
-- removeEmpty: boolean, remove empty nodes
+### Example
 
+````javascript
+
+const {ast, errors} = await parse(css);
+````
 
 ## Rendering
 
 ### Usage
 
 ```javascript
+render(ast, RenderOptions = {});
+```
+
+### Example
+
+```javascript
 import {render} from '@tbela99/css-parser';
 
-// pretty print
-const prettyPrint = render(ast);
 // minified
 const {code} = render(ast, {compress: true});
 
 console.log(code);
 ```
-
-### RenderOptions
-
-- compress: boolean, optional. minify output. Also remove comments
-- indent: string, optional. indention string. uses space character by default.
-- newLine: string, new line character
-- removeComments: boolean, remove comments
-- preserveLicense: boolean, force preserving comments starting with '/\*!'
 
 ## Node Walker
 
@@ -94,6 +102,54 @@ for (const {node, parent, root} of walk(ast)) {
     
     // do somehting
 }
+```
+
+## Exports
+
+There are several ways to import the library into your application.
+
+### Node exports
+
+import as a module
+
+```javascript
+
+import {transform} from '@tbela99/css-parser';
+
+// ...
+```
+import as a CommonJS module
+
+```javascript
+
+import {transform} from '@tbela99/css-parser/cjs';
+
+// ...
+```
+
+### Web export
+
+Programmatic import
+
+```javascript
+
+import {transform} from '@tbela99/css-parser/web';
+
+// ...
+```
+
+Javascript module
+
+```javascript
+
+<script src="dist/web/index.js" type="module"></script>
+```
+
+Single JavaScript file
+
+```javascript
+
+<script src="dist/index-umd-web.js"></script>
 ```
 
 ## AST

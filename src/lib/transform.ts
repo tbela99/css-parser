@@ -7,13 +7,7 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
     options = {compress: true, removeEmpty: true, ...options};
 
     const startTime: number = performance.now();
-    const parseResult: ParseResult = await parse(css, options);
-
-    if (parseResult == null) {
-
-        // @ts-ignore
-        return null;
-    }
+    const parseResult: ParseResult = <ParseResult>await parse(css, options);
 
     const renderTime: number = performance.now();
     const rendered: RenderResult = render(parseResult.ast, options);
@@ -21,11 +15,11 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
 
     return {
         ...parseResult, ...rendered, stats: {
-            bytesIn: css.length,
+            bytesIn: parseResult.bytesIn,
             bytesOut: rendered.code.length,
             parse: `${(renderTime - startTime).toFixed(2)}ms`,
             render: `${(endTime - renderTime).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`
         }
-    };
+    }
 }

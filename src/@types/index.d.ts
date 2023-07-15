@@ -30,10 +30,12 @@ export interface ParserOptions {
     src?: string;
     sourcemap?: boolean;
     compress?: boolean;
-    processImport?: boolean;
     removeEmpty?: boolean;
+    resolveUrls?: boolean;
+    resolveImport?: boolean;
+    cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
-    resolve?: (url: string, currentUrl: string) => string;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
 }
 
@@ -53,7 +55,8 @@ export interface TransformOptions extends ParserOptions, RenderOptions {
 
 export interface ParseResult {
     ast: AstRuleStyleSheet;
-    errors: ErrorDescription[]
+    errors: ErrorDescription[];
+    bytesIn: number;
 }
 
 export interface RenderResult {
@@ -66,11 +69,15 @@ export interface TransformResult extends ParseResult, RenderResult {
         bytesIn: number;
         bytesOut: number;
         parse: string;
-        // deduplicate: string;
         render: string;
         total: string;
     }
 }
+
+export interface ParseTokenOptions extends ParserOptions {
+    parseColor?: boolean;
+}
+
 export interface Position {
 
     ind: number;
