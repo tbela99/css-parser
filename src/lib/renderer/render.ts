@@ -36,21 +36,21 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
             }
         }
 
-        if (options.compress && curr.typ == 'Whitespace') {
-
-            if (original[index + 1]?.typ == 'Start-parens' ||
-                (index > 0 && (original[index - 1].typ == 'Pseudo-class-func' ||
-                original[index - 1].typ == 'End-parens' ||
-                original[index - 1].typ == 'UrlFunc' ||
-                original[index - 1].typ == 'Func' ||
-                (
-                    original[index - 1].typ == 'Color' &&
-                    (<ColorToken>original[index - 1]).kin != 'hex' &&
-                    (<ColorToken>original[index - 1]).kin != 'lit')))) {
-
-                return acc;
-            }
-        }
+        // if (options.compress && curr.typ == 'Whitespace') {
+        //
+        //     if (original[index + 1]?.typ == 'Start-parens' ||
+        //         (index > 0 && (original[index - 1].typ == 'Pseudo-class-func' ||
+        //         original[index - 1].typ == 'End-parens' ||
+        //         original[index - 1].typ == 'UrlFunc' ||
+        //         original[index - 1].typ == 'Func' ||
+        //         (
+        //             original[index - 1].typ == 'Color' &&
+        //             (<ColorToken>original[index - 1]).kin != 'hex' &&
+        //             (<ColorToken>original[index - 1]).kin != 'lit')))) {
+        //
+        //         return acc;
+        //     }
+        // }
 
         return acc + renderToken(curr, options);
     }
@@ -214,12 +214,19 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
                 return token.val;
             }
 
+        case 'Start-parens':
+
+            if (!('chi' in token)) {
+
+                return '(';
+            }
+
         case 'Func':
         case 'UrlFunc':
         case 'Pseudo-class-func':
 
             // @ts-ignore
-            return (options.compress && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) : token.val) + '(' + token.chi.reduce((acc: string, curr: Token) => {
+            return (/* options.compress && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce((acc: string, curr: Token) => {
 
                 if (options.removeComments && curr.typ == 'Comment') {
 
@@ -244,9 +251,6 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
 
         case 'Gt':
             return '>';
-
-        case 'Start-parens':
-            return '(';
 
         case 'End-parens':
             return ')';
@@ -366,7 +370,7 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
         case 'String':
         case 'Iden':
         case 'Delim':
-            return options.compress && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) : token.val;
+            return /* options.compress && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 
     throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);

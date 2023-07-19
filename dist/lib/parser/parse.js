@@ -1,7 +1,7 @@
 import { isWhiteSpace, isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHash, isNewLine, isIdentStart, isHexColor } from './utils/syntax.js';
 import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/utils/color.js';
-import { hasDeclaration, deduplicateRule, deduplicate } from './deduplicate.js';
+import { deduplicate } from './deduplicate.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
@@ -11,6 +11,7 @@ async function parse(iterator, opt = {}) {
         src: '',
         sourcemap: false,
         compress: false,
+        nestingRules: false,
         resolveImport: false,
         resolveUrls: false,
         removeEmpty: true,
@@ -281,11 +282,16 @@ async function parse(iterator, opt = {}) {
                         try {
                             // @ts-ignore
                             const root = await options.load(url, options.src).then((src) => {
-                                bytesIn += src.length;
-                                // @ts-ignore
-                                return parse(src, Object.assign({}, options, { src: options.resolve(url, options.src).absolute }));
+                                return parse(src, Object.assign({}, options, {
+                                    compress: false,
+                                    // @ts-ignore
+                                    src: options.resolve(url, options.src).absolute
+                                }));
                             });
-                            context.chi.push(...root.ast.chi);
+                            bytesIn += root.bytesIn;
+                            if (root.ast.chi.length > 0) {
+                                context.chi.push(...root.ast.chi);
+                            }
                             if (root.errors.length > 0) {
                                 errors.push(...root.errors);
                             }
@@ -300,20 +306,16 @@ async function parse(iterator, opt = {}) {
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
             // there must be a top level rule in the stack
+            const raw = tokens.reduce((acc, curr, index, array) => {
+                acc.push(renderToken(curr, { removeComments: true }));
+                return acc;
+            }, []);
             const node = {
                 typ: 'AtRule',
                 nam: renderToken(atRule, { removeComments: true }),
-                val: tokens.reduce((acc, curr, index, array) => {
-                    if (curr.typ == 'Whitespace') {
-                        if (array[index + 1]?.typ == 'Start-parens' ||
-                            array[index - 1]?.typ == 'End-parens' ||
-                            array[index - 1]?.typ == 'Func') {
-                            return acc;
-                        }
-                    }
-                    return acc + renderToken(curr, { removeComments: true });
-                }, '')
+                val: raw.join('')
             };
+            Object.defineProperty(node, 'raw', { enumerable: false, writable: false, value: raw });
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
@@ -338,23 +340,28 @@ async function parse(iterator, opt = {}) {
                         return null;
                     }
                 }
-                const sel = parseTokens(tokens, { compress: options.compress }).map(curr => renderToken(curr, { compress: true }));
-                const raw = [...new Set(sel.reduce((acc, curr) => {
-                        if (curr == ',') {
-                            acc.push('');
-                        }
-                        else {
-                            acc[acc.length - 1] += curr;
-                        }
-                        return acc;
-                    }, ['']))];
+                const uniq = new Map;
+                parseTokens(tokens, { compress: options.compress }).reduce((acc, curr) => {
+                    let t = renderToken(curr, { compress: true });
+                    if (t == ',') {
+                        acc.push([]);
+                    }
+                    else {
+                        acc[acc.length - 1].push(t);
+                    }
+                    return acc;
+                }, [[]]).reduce((acc, curr) => {
+                    acc.set(curr.join(''), curr);
+                    return acc;
+                }, uniq);
                 const node = {
                     typ: 'Rule',
                     // @ts-ignore
-                    sel: raw.join(','),
+                    sel: [...uniq.keys()].join(','),
                     chi: []
                 };
-                Object.defineProperty(node, 'raw', { enumerable: false, get: () => raw });
+                let raw = [...uniq.values()];
+                Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: raw });
                 loc = {
                     sta: position,
                     src
@@ -378,7 +385,13 @@ async function parse(iterator, opt = {}) {
                     }
                     if (tokens[i].typ == 'Colon') {
                         name = tokens.slice(0, i);
-                        value = parseTokens(tokens.slice(i + 1), { parseColor: true, src: options.src, resolveUrls: options.resolveUrls, resolve: options.resolve, cwd: options.cwd });
+                        value = parseTokens(tokens.slice(i + 1), {
+                            parseColor: true,
+                            src: options.src,
+                            resolveUrls: options.resolveUrls,
+                            resolve: options.resolve,
+                            cwd: options.cwd
+                        });
                     }
                 }
                 if (name == null) {
@@ -397,11 +410,6 @@ async function parse(iterator, opt = {}) {
                         }
                     }
                 }
-                // if (name.length == 0) {
-                //
-                //     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                //     return null;
-                // }
                 if (value == null) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
@@ -424,16 +432,6 @@ async function parse(iterator, opt = {}) {
                     errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-                // // location not needed for declaration
-                // loc = <Location>{
-                //     sta: position,
-                //     src
-                // };
-                //
-                // if (options.sourcemap) {
-                //
-                //     node.loc = loc
-                // }
                 // @ts-ignore
                 context.chi.push(node);
                 return null;
@@ -658,11 +656,6 @@ async function parse(iterator, opt = {}) {
                         }
                     }
                 }
-                // else {
-                //
-                //     pushToken(getType(buffer));
-                //     buffer = '';
-                // }
                 break;
             case '<':
                 if (buffer.length > 0) {
@@ -740,6 +733,10 @@ async function parse(iterator, opt = {}) {
                 if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
                     tokens.pop();
                 }
+                if (buffer !== '') {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
                 pushToken({ typ: 'Gt' });
                 consumeWhiteSpace();
                 break;
@@ -754,10 +751,6 @@ async function parse(iterator, opt = {}) {
                     buffer += value + next();
                     break;
                 }
-                // if (value == ',' && tokens[tokens.length - 1]?.typ == 'Whitespace') {
-                //
-                //     tokens.pop();
-                // }
                 pushToken(getType(value));
                 buffer = '';
                 while (isWhiteSpace(peek().charCodeAt(0))) {
@@ -780,7 +773,7 @@ async function parse(iterator, opt = {}) {
                     pushToken(getType(buffer));
                     buffer = '';
                     const token = tokens[tokens.length - 1];
-                    if (token.typ == 'UrlFunc' /* && token.chi == 'url' */) {
+                    if (token.typ == 'UrlFunc') {
                         // consume either string or url token
                         let whitespace = '';
                         value = peek();
@@ -897,15 +890,6 @@ async function parse(iterator, opt = {}) {
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                         context.chi.pop();
                     }
-                    else if (previousNode != null && previousNode != ast && options.compress) {
-                        // @ts-ignore
-                        if (hasDeclaration(previousNode)) {
-                            deduplicateRule(previousNode);
-                        }
-                        else {
-                            deduplicate(previousNode, options);
-                        }
-                    }
                     tokens.length = 0;
                     map.clear();
                     buffer = '';
@@ -940,17 +924,8 @@ async function parse(iterator, opt = {}) {
         await parseNode(tokens);
     }
     if (options.compress) {
-        while (stack.length > 0) {
-            const node = stack.pop();
-            if (hasDeclaration(node)) {
-                deduplicateRule(node, options);
-            }
-            else {
-                deduplicate(node, options);
-            }
-        }
         if (ast.chi.length > 0) {
-            deduplicate(ast, options);
+            deduplicate(ast, options, true);
         }
     }
     return { ast, errors, bytesIn };
@@ -960,8 +935,10 @@ function parseTokens(tokens, options = {}) {
         const t = tokens[i];
         if (t.typ == 'Whitespace' && ((i == 0 ||
             i + 1 == tokens.length ||
-            ['Comma', 'Start-parens'].includes(tokens[i + 1].typ) ||
-            (i > 0 && funcLike.includes(tokens[i - 1].typ))))) {
+            ['Comma'].includes(tokens[i + 1].typ) ||
+            (i > 0 &&
+                funcLike.includes(tokens[i - 1].typ) &&
+                !['var', 'calc'].includes(tokens[i - 1].val))))) {
             tokens.splice(i--, 1);
             continue;
         }
@@ -1059,9 +1036,9 @@ function parseTokens(tokens, options = {}) {
                 // @ts-ignore
                 t.chi.pop();
             }
+            let isColor = true;
             // @ts-ignore
             if (options.parseColor && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
-                let isColor = true;
                 // @ts-ignore
                 for (const v of t.chi) {
                     if (v.typ == 'Func' && v.val == 'var') {
@@ -1069,37 +1046,38 @@ function parseTokens(tokens, options = {}) {
                         break;
                     }
                 }
-                if (!isColor) {
-                    continue;
-                }
-                // @ts-ignore
-                t.typ = 'Color';
-                // @ts-ignore
-                t.kin = t.val;
-                // @ts-ignore
-                let m = t.chi.length;
-                while (m-- > 0) {
+                if (isColor) {
                     // @ts-ignore
-                    if (t.chi[m].typ == 'Literal') {
+                    t.typ = 'Color';
+                    // @ts-ignore
+                    t.kin = t.val;
+                    // @ts-ignore
+                    let m = t.chi.length;
+                    while (m-- > 0) {
                         // @ts-ignore
-                        if (t.chi[m + 1]?.typ == 'Whitespace') {
+                        if (t.chi[m].typ == 'Literal') {
                             // @ts-ignore
-                            t.chi.splice(m + 1, 1);
-                        }
-                        // @ts-ignore
-                        if (t.chi[m - 1]?.typ == 'Whitespace') {
+                            if (t.chi[m + 1]?.typ == 'Whitespace') {
+                                // @ts-ignore
+                                t.chi.splice(m + 1, 1);
+                            }
                             // @ts-ignore
-                            t.chi.splice(m - 1, 1);
-                            m--;
+                            if (t.chi[m - 1]?.typ == 'Whitespace') {
+                                // @ts-ignore
+                                t.chi.splice(m - 1, 1);
+                                m--;
+                            }
                         }
                     }
+                    continue;
                 }
             }
-            else if (t.typ == 'UrlFunc') {
+            if (t.typ == 'UrlFunc') {
                 // @ts-ignore
                 if (t.chi[0]?.typ == 'String') {
                     // @ts-ignore
                     const value = t.chi[0].val.slice(1, -1);
+                    // @ts-ignore
                     if (t.chi[0].val.slice(1, 5) != 'data:' && urlTokenMatcher.test(value)) {
                         // @ts-ignore
                         t.chi[0].typ = 'Url-token';

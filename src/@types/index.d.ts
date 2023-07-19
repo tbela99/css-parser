@@ -30,6 +30,7 @@ export interface ParserOptions {
     src?: string;
     sourcemap?: boolean;
     compress?: boolean;
+    nestingRules?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;

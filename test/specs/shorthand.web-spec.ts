@@ -1,19 +1,6 @@
 import {expect} from "@esm-bundle/chai";
 import {transform} from "../../src/web";
 
-function readFile(path: string) {
-
-    return fetch(path).then(response => {
-
-        if (response.ok) {
-
-            return response.text();
-        }
-
-        throw new Error(`${response.status} ${response.statusText}`);
-    })
-}
-
 function dirname(path: string) {
 
     path = path.replace(/[?#].*$/, '').replace(/[/]*$/, '');
@@ -176,68 +163,68 @@ background-size: cover auto, contain;
 `;
 describe('shorthand', function () {
 
-    it('margin padding', async function () {
+    it('margin padding', function () {
 
-        transform(marginPadding, options).then(result => expect(result.code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}'))
+        return transform(marginPadding, options).then(result => expect(result.code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}'))
     });
 
-    it('border-radius #1', async function () {
+    it('border-radius #1', function () {
 
-        transform(borderRadius1, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}'))
+        return transform(borderRadius1, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}'))
     });
 
-    it('border-radius #2', async function () {
+    it('border-radius #2', function () {
 
-        transform(borderRadius2, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/2px 4px}'))
+        return transform(borderRadius2, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/2px 4px}'))
     });
 
-    it('border-width #3', async function () {
+    it('border-width #3', function () {
 
-        transform(borderRadius3, options).then(result => expect(result.code).equals('.test input[type=text]{border-width:2px thin}'))
+        return transform(borderRadius3, options).then(result => expect(result.code).equals('.test input[type=text]{border-width:2px thin}'))
     });
 
-    it('border-color #4', async function () {
+    it('border-color #4', function () {
 
-        transform(borderColor, options).then(result => expect(result.code).equals('.test input[type=text]{border-color:gold red}'))
+        return transform(borderColor, options).then(result => expect(result.code).equals('.test input[type=text]{border-color:gold red}'))
     });
 
-    it('outline #5', async function () {
+    it('outline #5', function () {
 
-        transform(outline1, options).then(result => expect(result.code).equals('a:focus{outline:0}'))
+        return transform(outline1, options).then(result => expect(result.code).equals('a:focus{outline:0}'))
     });
 
-    it('outline #6', async function () {
+    it('outline #6',  function () {
 
-        transform(outline2, options).then(result => expect(result.code).equals('a:focus{outline:#dedede dotted thin}'))
+       return transform(outline2, options).then(result => expect(result.code).equals('a:focus{outline:#dedede dotted thin}'))
     });
 
-    it('inset #6', async function () {
+    it('inset #6',  function () {
 
-        transform(inset1, options).then(result => expect(result.code).equals('a:focus{inset:auto}'))
+       return transform(inset1, options).then(result => expect(result.code).equals('a:focus{inset:auto}'))
     });
 
-    it('font #7', async function () {
+    it('font #7',  function () {
 
-        transform(font1, options).then(result => expect(result.code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}'))
+       return transform(font1, options).then(result => expect(result.code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}'))
     });
 
-    it('font #8', async function () {
+    it('font #8',  function () {
 
-        transform(font2, options).then(result => expect(result.code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}'))
+       return transform(font2, options).then(result => expect(result.code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}'))
     });
 
-    it('background #9', async function () {
+    it('background #9',  function () {
 
-        transform(background1, options).then(result => expect(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'))
+       return transform(background1, options).then(result => expect(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'))
     });
 
-    it('background #10', async function () {
+    it('background #10',  function () {
 
-        transform(background2, options).then(result => expect(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}'))
+       return transform(background2, options).then(result => expect(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}'))
     });
 
-    it('background #11', async function () {
+    it('background #11', function () {
 
-        transform(background3, options).then(result => expect(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}'))
+        return transform(background3, options).then(result => expect(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg) 50%/cover,#eee url(../../media/examples/lizard.png) 35%/contain}'))
     });
 });

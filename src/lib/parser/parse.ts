@@ -1,7 +1,7 @@
 import {
     AstAtRule, AstComment, AstDeclaration, AstNode, AstRule, AstRuleList,
     AstRuleStyleSheet, AtRuleToken, AttrToken, ColorToken, DashMatchToken,
-    ErrorDescription, IncludesToken, Location, ParseResult,
+    ErrorDescription, FunctionToken, IncludesToken, Location, ParseResult,
     ParserOptions, ParseTokenOptions, Position, PseudoClassFunctionToken, PseudoClassToken, StringToken, Token, UrlToken
 } from "../../@types";
 import {
@@ -17,7 +17,7 @@ import {
 } from "./utils";
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/utils";
-import {deduplicate, deduplicateRule, hasDeclaration} from "./deduplicate";
+import {deduplicate} from "./deduplicate";
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
@@ -29,6 +29,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         src: '',
         sourcemap: false,
         compress: false,
+        nestingRules: false,
         resolveImport: false,
         resolveUrls: false,
         removeEmpty: true,
@@ -311,9 +312,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         if (delim.typ == 'Semi-colon' || delim.typ == 'Block-start' || delim.typ == 'Block-end') {
 
             tokens.pop();
-        }
-
-        else {
+        } else {
 
             delim = {typ: 'Semi-colon'};
         }
@@ -420,12 +419,19 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                             // @ts-ignore
                             const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
 
-                                bytesIn += src.length;
-                                // @ts-ignore
-                                return parse(src, Object.assign({}, options, {src: options.resolve(url, options.src).absolute}))
+                                return parse(src, Object.assign({}, options, {
+                                    compress: false,
+                                    // @ts-ignore
+                                    src: options.resolve(url, options.src).absolute
+                                }))
                             });
 
-                            context.chi.push(...root.ast.chi);
+                            bytesIn += root.bytesIn;
+
+                            if (root.ast.chi.length > 0) {
+
+                                context.chi.push(...root.ast.chi);
+                            }
 
                             if (root.errors.length > 0) {
 
@@ -445,24 +451,20 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             // allowed nesting at-rules
             // there must be a top level rule in the stack
 
+            const raw = tokens.reduce((acc: string[], curr: Token, index: number, array: Token[]) => {
+
+                acc.push(renderToken(curr, {removeComments: true}));
+
+                return acc
+            }, []);
+
             const node: AstAtRule = {
                 typ: 'AtRule',
                 nam: renderToken(atRule, {removeComments: true}),
-                val: tokens.reduce((acc: string, curr: Token, index: number, array: Token[]) => {
-
-                    if (curr.typ == 'Whitespace') {
-
-                        if (array[index + 1]?.typ == 'Start-parens' ||
-                            array[index - 1]?.typ == 'End-parens' ||
-                            array[index - 1]?.typ == 'Func') {
-
-                            return acc;
-                        }
-                    }
-
-                    return acc + renderToken(curr, {removeComments: true})
-                }, '')
+                val: raw.join('')
             }
+
+            Object.defineProperty(node, 'raw', {enumerable: false, writable: false, value: raw})
 
             if (delim.typ == 'Block-start') {
 
@@ -499,31 +501,38 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     }
                 }
 
-                const sel: string[] = parseTokens(tokens, {compress: options.compress}).map(curr => renderToken(curr, {compress: true}));
+                const uniq = new Map<string, string[]>;
+                parseTokens(tokens, {compress: options.compress}).reduce((acc: string[][], curr: Token) => {
 
-                const raw: string[] = [...new Set(sel.reduce((acc, curr) => {
+                    let t = renderToken(curr, {compress: true});
 
-                    if (curr == ',') {
+                    if (t == ',') {
 
-                        acc.push('');
+                        acc.push([]);
                     } else {
 
-                        acc[acc.length - 1] += curr;
+                        acc[acc.length - 1].push(t);
                     }
 
                     return acc;
 
-                }, <string[]>['']))];
+                }, <string[][]>[[]]).reduce((acc, curr) => {
+
+                    acc.set(curr.join(''), curr);
+
+                    return acc;
+                }, uniq);
 
                 const node: AstRule = {
 
                     typ: 'Rule',
                     // @ts-ignore
-                    sel: raw.join(','),
+                    sel: [...uniq.keys()].join(','),
                     chi: []
                 }
 
-                Object.defineProperty(node, 'raw', {enumerable: false, get: () => raw});
+                let raw = [...uniq.values()];
+                Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: raw});
 
                 loc = <Location>{
                     sta: position,
@@ -557,7 +566,13 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     if (tokens[i].typ == 'Colon') {
 
                         name = tokens.slice(0, i);
-                        value = parseTokens(tokens.slice(i + 1), {parseColor: true, src: options.src, resolveUrls: options.resolveUrls, resolve: options.resolve, cwd: options.cwd});
+                        value = parseTokens(tokens.slice(i + 1), {
+                            parseColor: true,
+                            src: options.src,
+                            resolveUrls: options.resolveUrls,
+                            resolve: options.resolve,
+                            cwd: options.cwd
+                        });
                     }
                 }
 
@@ -583,12 +598,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         }
                     }
                 }
-
-                // if (name.length == 0) {
-                //
-                //     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
-                //     return null;
-                // }
 
                 if (value == null) {
 
@@ -621,17 +630,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     errors.push({action: 'drop', message: 'invalid declaration', location: {src, ...position}});
                     return null;
                 }
-
-                // // location not needed for declaration
-                // loc = <Location>{
-                //     sta: position,
-                //     src
-                // };
-                //
-                // if (options.sourcemap) {
-                //
-                //     node.loc = loc
-                // }
 
                 // @ts-ignore
                 context.chi.push(node);
@@ -788,9 +786,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         (0xDC00 <= codepoint && codepoint <= 0xDFFF)) {
 
                         buffer += String.fromCodePoint(0xFFFD);
-                    }
-
-                    else {
+                    } else {
 
                         buffer += String.fromCodePoint(codepoint);
                     }
@@ -976,11 +972,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         }
                     }
                 }
-                // else {
-                //
-                //     pushToken(getType(buffer));
-                //     buffer = '';
-                // }
 
                 break;
 
@@ -1100,6 +1091,12 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     tokens.pop();
                 }
 
+                if (buffer !== '') {
+
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+
                 pushToken({typ: 'Gt'});
                 consumeWhiteSpace();
                 break;
@@ -1119,11 +1116,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     buffer += value + next();
                     break;
                 }
-
-                // if (value == ',' && tokens[tokens.length - 1]?.typ == 'Whitespace') {
-                //
-                //     tokens.pop();
-                // }
 
                 pushToken(getType(value));
                 buffer = '';
@@ -1159,7 +1151,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                     const token: Token = tokens[tokens.length - 1];
 
-                    if (token.typ == 'UrlFunc' /* && token.chi == 'url' */) {
+                    if (token.typ == 'UrlFunc') {
 
                         // consume either string or url token
                         let whitespace = '';
@@ -1338,16 +1330,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
 
                         context.chi.pop();
-                    } else if (previousNode != null && previousNode != ast && options.compress) {
-
-                        // @ts-ignore
-                        if (hasDeclaration(previousNode)) {
-
-                            deduplicateRule(previousNode);
-                        } else {
-
-                            deduplicate(previousNode, options);
-                        }
                     }
 
                     tokens.length = 0;
@@ -1403,22 +1385,9 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
     if (options.compress) {
 
-        while (stack.length > 0) {
-
-            const node: AstRuleList = <AstRuleList>stack.pop();
-
-            if (hasDeclaration(node)) {
-
-                deduplicateRule(node, options);
-            } else {
-
-                deduplicate(node, options);
-            }
-        }
-
         if (ast.chi.length > 0) {
 
-            deduplicate(ast, options);
+            deduplicate(ast, options, true);
         }
     }
 
@@ -1435,8 +1404,12 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] 
             (
                 i == 0 ||
                 i + 1 == tokens.length ||
-                ['Comma', 'Start-parens'].includes(tokens[i + 1].typ) ||
-                (i > 0 && funcLike.includes(tokens[i - 1].typ))
+                ['Comma'].includes(tokens[i + 1].typ) ||
+                (
+                    i > 0 &&
+                    funcLike.includes(tokens[i - 1].typ) &&
+                    !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)
+                )
             )
         )) {
 
@@ -1581,10 +1554,11 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] 
                 t.chi.pop();
             }
 
+            let isColor = true;
+
             // @ts-ignore
             if (options.parseColor && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
 
-                let isColor = true;
                 // @ts-ignore
                 for (const v of t.chi) {
 
@@ -1595,41 +1569,42 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] 
                     }
                 }
 
-                if (!isColor) {
-
-                    continue;
-                }
-
-                // @ts-ignore
-                t.typ = 'Color';
-                // @ts-ignore
-                t.kin = t.val;
-
-                // @ts-ignore
-                let m: number = t.chi.length;
-
-                while (m-- > 0) {
+                if (isColor) {
 
                     // @ts-ignore
-                    if (t.chi[m].typ == 'Literal') {
+                    t.typ = 'Color';
+                    // @ts-ignore
+                    t.kin = t.val;
+
+                    // @ts-ignore
+                    let m: number = t.chi.length;
+
+                    while (m-- > 0) {
 
                         // @ts-ignore
-                        if (t.chi[m + 1]?.typ == 'Whitespace') {
+                        if (t.chi[m].typ == 'Literal') {
 
                             // @ts-ignore
-                            t.chi.splice(m + 1, 1);
-                        }
+                            if (t.chi[m + 1]?.typ == 'Whitespace') {
 
-                        // @ts-ignore
-                        if (t.chi[m - 1]?.typ == 'Whitespace') {
+                                // @ts-ignore
+                                t.chi.splice(m + 1, 1);
+                            }
 
                             // @ts-ignore
-                            t.chi.splice(m - 1, 1);
-                            m--;
+                            if (t.chi[m - 1]?.typ == 'Whitespace') {
+
+                                // @ts-ignore
+                                t.chi.splice(m - 1, 1);
+                                m--;
+                            }
                         }
                     }
+                    continue;
                 }
-            } else if (t.typ == 'UrlFunc') {
+            }
+
+            if (t.typ == 'UrlFunc') {
 
                 // @ts-ignore
                 if (t.chi[0]?.typ == 'String') {
@@ -1637,6 +1612,7 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] 
                     // @ts-ignore
                     const value: string = t.chi[0].val.slice(1, -1);
 
+                    // @ts-ignore
                     if ((<UrlToken>t.chi[0]).val.slice(1, 5) != 'data:' && urlTokenMatcher.test(value)) {
 
                         // @ts-ignore
@@ -1661,7 +1637,6 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] 
 
                 // @ts-ignore
                 parseTokens(t.chi, options);
-
 
                 if (t.typ == 'Pseudo-class-func' && (<PseudoClassFunctionToken>t).val == ':is' && options.compress) {
 

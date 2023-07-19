@@ -49,7 +49,7 @@ function isIdent(name) {
     // -
     if (codepoint == 0x2d) {
         const nextCodepoint = name.charCodeAt(1);
-        if (nextCodepoint == null) {
+        if (Number.isNaN(nextCodepoint)) {
             return false;
         }
         // -
@@ -98,6 +98,9 @@ function isNumber(name) {
     let codepoint = name.charCodeAt(0);
     let i = 0;
     const j = name.length;
+    if (j == 1 && !isDigit(codepoint)) {
+        return false;
+    }
     // '+' '-'
     if ([0x2b, 0x2d].includes(codepoint)) {
         i++;
@@ -241,7 +244,9 @@ function isNewLine(codepoint) {
     return codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 function isWhiteSpace(codepoint) {
-    return codepoint == 0x9 || codepoint == 0x20 || isNewLine(codepoint);
+    return codepoint == 0x9 || codepoint == 0x20 ||
+        // isNewLine
+        codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
 export { isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };

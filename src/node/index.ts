@@ -9,14 +9,10 @@ import {load, resolve} from "../node";
 
 export function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
 
-    Object.assign(opt, {load, resolve, cwd: opt.cwd ?? process.cwd()});
-
-    return doParse(iterator, opt);
+    return doParse(iterator, Object.assign(opt, {load, resolve, cwd: opt.cwd ?? process.cwd()}));
 }
 
 export function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    Object.assign(options, {load, resolve, cwd: options.cwd ?? process.cwd()});
-
-    return doTransform(css, options);
+    return doTransform(css, Object.assign(options, {load, resolve, cwd: options.cwd ?? process.cwd()}));
 }

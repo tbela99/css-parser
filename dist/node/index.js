@@ -6,12 +6,10 @@ import { resolve } from '../lib/fs/resolve.js';
 export { dirname, matchUrl } from '../lib/fs/resolve.js';
 
 function parse(iterator, opt = {}) {
-    Object.assign(opt, { load, resolve, cwd: opt.cwd ?? process.cwd() });
-    return parse$1(iterator, opt);
+    return parse$1(iterator, Object.assign(opt, { load, resolve, cwd: opt.cwd ?? process.cwd() }));
 }
 function transform(css, options = {}) {
-    Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() });
-    return transform$1(css, options);
+    return transform$1(css, Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() }));
 }
 
 export { load, parse, resolve, transform };

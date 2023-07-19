@@ -191,6 +191,7 @@ interface ParserOptions {
     src?: string;
     sourcemap?: boolean;
     compress?: boolean;
+    nestingRules?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
@@ -304,6 +305,12 @@ type AstNode =
 declare function deduplicate(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
 declare function hasDeclaration(node: AstAtRule | AstRule | AstRuleList): boolean;
 declare function deduplicateRule(ast: AstNode, options?: ParserOptions): AstNode;
+declare function reduceSelector(selector: string[][]): null | {
+    match: boolean;
+    optimized: string[];
+    selector: string[][];
+    reducible: boolean;
+};
 
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions): string;
@@ -326,4 +333,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { deduplicate, deduplicateRule, dirname, hasDeclaration, load, matchUrl, parse, render, renderToken, resolve, transform, walk };
+export { deduplicate, deduplicateRule, dirname, hasDeclaration, load, matchUrl, parse, reduceSelector, render, renderToken, resolve, transform, walk };

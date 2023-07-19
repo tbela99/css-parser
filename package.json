@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser for node and the browser",
-  "version": "0.0.1-alpha3",
+  "version": "0.0.1-alpha4",
   "exports": {
     ".": "./dist/index.js",
     "./web": "./dist/web/index.js",

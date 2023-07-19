@@ -77,7 +77,7 @@ export function isIdent(name: string): boolean {
 
         const nextCodepoint: number = <number>name.charCodeAt(1);
 
-        if (nextCodepoint == null) {
+        if (Number.isNaN(nextCodepoint)) {
 
             return false;
         }
@@ -156,6 +156,11 @@ export function isNumber(name: string): boolean {
     let codepoint: number = <number>name.charCodeAt(0);
     let i: number = 0;
     const j: number = name.length;
+
+    if (j == 1 && !isDigit(codepoint)) {
+
+        return false;
+    }
 
     // '+' '-'
     if ([0x2b, 0x2d].includes(codepoint)) {
@@ -402,5 +407,7 @@ export function isNewLine(codepoint: number): boolean {
 
 export function isWhiteSpace(codepoint: number): boolean {
 
-    return codepoint == 0x9 || codepoint == 0x20 || isNewLine(codepoint);
+    return codepoint == 0x9 || codepoint == 0x20 ||
+        // isNewLine
+        codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }

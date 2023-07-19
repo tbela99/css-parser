@@ -54,12 +54,6 @@ Include ParseOptions and RenderOptions
 
 ## Parsing
 
-```javascript
-import {parse} from '@tbela99/css-parser';
-
-const {ast, errors} = parse(css);
-```
-
 ### Usage
 
 ```javascript

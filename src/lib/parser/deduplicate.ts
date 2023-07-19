@@ -2,7 +2,7 @@ import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleList, ParserOptions,
 import {PropertyList} from "./declaration";
 import {eq} from "./utils/eq";
 import {render} from "../renderer";
-import {getConfig} from "./utils";
+import {getConfig, isIdentStart} from "./utils";
 
 const configuration = getConfig();
 
@@ -42,6 +42,166 @@ export function deduplicate(ast: AstNode, options: ParserOptions = {}, recursive
             }
 
             // @ts-ignore
+            if (node.typ == 'Rule') {
+
+                reduceRuleSelector(<AstRule>node);
+
+                // @ts-ignore
+                if (options.nestingRules && node.raw != null && previous?.raw != null && node.raw.length == 1 && previous.raw.length == 1) {
+
+                    const match: string[] = [];
+
+                    // @ts-ignore
+                    while (node.raw[0].length > 0 && previous.raw[0].length > 0) {
+
+                        // @ts-ignore
+                        if (node.raw[0][0] != previous.raw[0][0]) {
+
+                            break;
+                        }
+
+                        // @ts-ignore
+                        match.push(node.raw[0].shift());
+                        // @ts-ignore
+                        previous.raw[0].shift();
+                    }
+
+                    if (match.length > 0) {
+
+                        // @ts-ignore
+                        const wrapper = <AstRule>{...previous, chi: []};
+
+                        // @ts-ignore
+                        if (previous.raw[0].length == 0) {
+
+                            // @ts-ignore
+                            wrapper.chi.push(...previous.chi);
+                        } else {
+
+                            // @ts-ignore
+                            previous.sel = previous.raw.reduce((acc, curr) => {
+
+                                acc.push(curr.join(''))
+                                return acc;
+                            }, []).join(',');
+
+                            // @ts-ignore
+                            wrapper.chi.push(previous);
+                        }
+
+                        // @ts-ignore
+                        if (node.raw[0].length == 0) {
+
+                            // @ts-ignore
+                            if (previous.raw.length == 0) {
+
+                                // @ts-ignore
+                                wrapper.chi.push(...node.chi);
+                            } else {
+
+                                if (hasOnlyDeclarations(wrapper)) {
+
+                                    wrapper.chi.push(...node.chi);
+                                } else {
+
+                                    // @ts-ignore
+                                    node.raw[0].push('&');
+                                    // @ts-ignore
+                                    node.sel = node.raw.reduce((acc, curr) => {
+
+                                        acc.push(curr.join(''))
+                                        return acc;
+                                    }, []).join(',');
+
+                                    // @ts-ignore
+                                    wrapper.chi.push(node);
+                                }
+                            }
+                        } else {
+
+                            // @ts-ignore
+                            node.sel = node.raw.reduce((acc, curr) => {
+
+                                acc.push(curr.join(''))
+                                return acc;
+                            }, []).join(',');
+
+                            // @ts-ignore
+                            wrapper.chi.push(node);
+                        }
+
+                        Object.defineProperty(wrapper, 'raw', {enumerable: false, writable: true, value: [match]});
+
+                        // @ts-ignore
+                        ast.chi.splice(i, 1, wrapper);
+                        // @ts-ignore
+                        ast.chi.splice(nodeIndex, 1);
+
+                        // @ts-ignore
+                        while (i < ast.chi.length) {
+
+                            // @ts-ignore
+                            const nextNode = <AstRule>ast.chi[i];
+
+                            // @ts-ignore
+                            if (nextNode.typ != 'Rule' || nextNode.raw == null) {
+
+                                break;
+                            }
+
+                            reduceRuleSelector(<AstRule>nextNode);
+
+                            // @ts-ignore
+                            if (nextNode.raw.length != 1 || !eq(wrapper.raw[0], nextNode.raw[0].slice(0, wrapper.raw[0].length))) {
+
+                                break;
+                            }
+
+                            // @ts-ignore
+                            nextNode.raw[0].splice(0, wrapper.raw[0].length);
+
+                            // @ts-ignore
+                            if (nextNode.raw[0].length == 0 ||
+                                // @ts-ignore
+                                (nextNode.raw.length == 1 && nextNode.raw[0] == '&')) {
+
+                                if (hasOnlyDeclarations(wrapper)) {
+
+                                    wrapper.chi.push(...nextNode.chi);
+                                    // @ts-ignore
+                                    ast.chi.splice(i, 1);
+                                    continue;
+
+                                } else {
+
+                                    // @ts-ignore
+                                    nextNode.raw[0].push('&');
+                                }
+                            }
+
+                            // @ts-ignore
+                            nextNode.sel = nextNode.raw.reduce((acc, curr) => {
+
+                                acc.push(curr.join(''))
+                                return acc;
+                            }, []).join(',');
+
+                            wrapper.chi.push(nextNode);
+                            // @ts-ignore
+                            ast.chi.splice(i, 1);
+                        }
+
+                        deduplicateRule(wrapper);
+
+                        nodeIndex = --i;
+                        // @ts-ignore
+                        previous = ast.chi[i];
+                        continue;
+                    }
+                }
+            }
+
+            // @ts-ignore
             if (previous != null && 'chi' in previous && ('chi' in node)) {
 
                 // @ts-ignore
@@ -70,7 +230,7 @@ export function deduplicate(ast: AstNode, options: ParserOptions = {}, recursive
                         // @ts-ignore
                         if ((node.typ == 'Rule' && (<AstRule>node).sel == (<AstAtRule>previous).sel) ||
                             // @ts-ignore
-                            (node.typ == 'AtRule') && (<AstRule>node).val == (<AstRule>previous).val) {
+                            (node.typ == 'AtRule') && (<AstRule>node).val != 'font-face' && (<AstRule>node).val == (<AstRule>previous).val) {
 
                             // @ts-ignore
                             node.chi.unshift(...previous.chi);
@@ -97,19 +257,26 @@ export function deduplicate(ast: AstNode, options: ParserOptions = {}, recursive
 
                                 if (intersect.node1.chi.length == 0) {
                                     // @ts-ignore
-                                    ast.chi.splice(i, 1)
+                                    ast.chi.splice(i--, 1);
+                                    // @ts-ignore
+                                    node = ast.chi[i];
                                 } else {
                                     // @ts-ignore
                                     ast.chi.splice(i, 1, intersect.node1);
+                                    node = intersect.node1;
                                 }
 
                                 if (intersect.node2.chi.length == 0) {
                                     // @ts-ignore
                                     ast.chi.splice(nodeIndex, 1, intersect.result);
+                                    previous = intersect.result;
                                 } else {
 
                                     // @ts-ignore
                                     ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                    previous = intersect.result;
+                                    // @ts-ignore
+                                    i = nodeIndex;
                                 }
                             }
                         }
@@ -143,12 +310,32 @@ export function deduplicate(ast: AstNode, options: ParserOptions = {}, recursive
                 deduplicateRule(node);
             } else {
 
-                deduplicate(node, options, recursive);
+                if (!(node.typ == 'AtRule' && (<AstAtRule>node).nam != 'font-face')) {
+
+                    deduplicate(node, options, recursive);
+                }
             }
         }
     }
 
     return ast;
+}
+
+function hasOnlyDeclarations(node: AstRule) {
+
+    let k = node.chi.length;
+
+    while (k--) {
+
+        if (node.chi[k].typ == 'Comment') {
+
+            continue;
+        }
+
+        return node.chi[k].typ == 'Declaration';
+    }
+
+    return true;
 }
 
 export function hasDeclaration(node: AstAtRule | AstRule | AstRuleList): boolean {
@@ -166,7 +353,6 @@ export function hasDeclaration(node: AstAtRule | AstRule | AstRuleList): boolean
         return node.chi[i].typ == 'Declaration';
     }
 
-
     return true;
 }
 
@@ -180,8 +366,8 @@ export function deduplicateRule(ast: AstNode, options: ParserOptions = {}): AstN
 
     // @ts-ignore
     const j: number = <number>ast.chi.length;
-    let k: number = 0;
 
+    let k: number = 0;
     let map: Map<AstNode | string, AstNode | PropertyList> = new Map;
 
     // @ts-ignore
@@ -212,59 +398,29 @@ export function deduplicateRule(ast: AstNode, options: ParserOptions = {}): AstN
             }
 
             (<PropertyList>map.get(shorthand)).add(<AstDeclaration>node);
-        }
-
-        else {
+        } else {
 
             map.set((<AstDeclaration>node).nam, node);
         }
     }
 
-        const children: AstNode[] = [];
+    const children: AstNode[] = [];
 
-        for (let child of map.values()) {
+    for (let child of map.values()) {
 
-            if (child instanceof PropertyList) {
-
-                // @ts-ignore
-                children.push(...child);
-            } else {
-
-                // @ts-ignore
-                children.push(child);
-            }
-        }
-
-        // @ts-ignore
-    ast.chi = children.concat(ast.chi?.slice(k))
-
-
-    /*
-    // @ts-ignore
-
-    const properties: PropertyList = new PropertyList();
-
-    for (; k < j; k++) {
-
-        // @ts-ignore
-        if ('Comment' == ast.chi[k].typ || 'Declaration' == ast.chi[k].typ) {
+        if (child instanceof PropertyList) {
 
             // @ts-ignore
-            properties.add(ast.chi[k]);
-            continue;
-        }
+            children.push(...child);
+        } else {
 
-        break;
+            // @ts-ignore
+            children.push(child);
+        }
     }
 
     // @ts-ignore
-    ast.chi = [...properties].concat(ast.chi.slice(k));
-    */
-
-    //
-    // @ts-ignore
-    // ast.chi.splice(0, k - 1, ...properties);
-
+    ast.chi = children.concat(ast.chi?.slice(k))
 
     return ast;
 }
@@ -274,7 +430,7 @@ function splitRule(buffer: string): string[] {
 
     const result: string[] = [];
 
-    let str = '';
+    let str: string = '';
 
     for (let i = 0; i < buffer.length; i++) {
 
@@ -331,7 +487,6 @@ function splitRule(buffer: string): string[] {
             const close = chr == '(' ? ')' : ']';
 
             let inParens = 1;
-
             let k = i;
 
             while (++k < buffer.length) {
@@ -362,7 +517,6 @@ function splitRule(buffer: string): string[] {
             }
 
             i = k;
-            continue;
         }
     }
 
@@ -372,6 +526,48 @@ function splitRule(buffer: string): string[] {
     }
 
     return result;
+}
+
+function reduceRuleSelector(node: AstRule) {
+
+    // @ts-ignore
+    if (node.raw != null) {
+
+        // @ts-ignore
+        let optimized = reduceSelector(node.raw);
+
+        if (optimized != null) {
+
+            Object.defineProperty(node, 'optimized', {enumerable: false, writable: true, value: optimized});
+        }
+
+        if (optimized != null && optimized.match && optimized.reducible) {
+
+            const raw = [
+                [
+                    optimized.optimized[0], ':is('].concat(optimized.selector.reduce((acc, curr) => {
+
+                    if (acc.length > 0) {
+
+                        acc.push(',');
+                    }
+
+                    acc.push(...curr);
+
+                    return acc
+                }, [])).concat(')')
+            ];
+
+            const sel = raw[0].join('');
+
+            if (sel.length < node.sel.length) {
+
+                node.sel = sel;
+                // node.raw = raw;
+                Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: raw});
+            }
+        }
+    }
 }
 
 function diff(n1: AstRule, n2: AstRule, options: TransformOptions = {}): null | {
@@ -396,15 +592,43 @@ function diff(n1: AstRule, n2: AstRule, options: TransformOptions = {}): null | 
     let i: number = node1.chi.length;
     let j: number = node2.chi.length;
 
-
     if (i == 0 || j == 0) {
 
         // @ts-ignore
         return null;
     }
 
+    // @ts-ignore
+    const raw1 = node1.raw;
+    // @ts-ignore
+    const optimized1 = node1.optimized;
+    // @ts-ignore
+    const raw2 = node2.raw;
+    // @ts-ignore
+    const optimized2 = node2.optimized;
+
     node1 = {...node1, chi: node1.chi.slice()};
     node2 = {...node2, chi: node2.chi.slice()};
+
+    if (raw1 != null) {
+
+        Object.defineProperty(node1, 'raw', {enumerable: false, writable: true, value: raw1});
+    }
+
+    if (optimized1 != null) {
+
+        Object.defineProperty(node1, 'optimized', {enumerable: false, writable: true, value: optimized1});
+    }
+
+    if (raw2 != null) {
+
+        Object.defineProperty(node2, 'raw', {enumerable: false, writable: true, value: raw2});
+    }
+
+    if (optimized2 != null) {
+
+        Object.defineProperty(node2, 'optimized', {enumerable: false, writable: true, value: optimized2});
+    }
 
     const intersect = <AstDeclaration[]>[];
 
@@ -447,7 +671,7 @@ function diff(n1: AstRule, n2: AstRule, options: TransformOptions = {}): null | 
     const result = <AstRule>(intersect.length == 0 ? null : {
         ...node1,
         // @ts-ignore
-        sel: [...new Set([...(n1.raw || splitRule(n1.sel)).concat(n2.raw || splitRule(n2.sel))])].join(),
+        sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(),
         chi: intersect.reverse()
     });
 
@@ -458,4 +682,98 @@ function diff(n1: AstRule, n2: AstRule, options: TransformOptions = {}): null | 
     }
 
     return {result, node1: exchanged ? node2 : node1, node2: exchanged ? node2 : node2};
+}
+
+export function reduceSelector(selector: string[][]): null | {
+    match: boolean;
+    optimized: string[];
+    selector: string[][],
+    reducible: boolean;
+} {
+
+    if (selector.length < 2) {
+
+        return null;
+    }
+
+    const optimized: string[] = [];
+    const k: number = selector.reduce((acc, curr) => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
+
+    let i: number = 0;
+    let j: number;
+    let match: boolean;
+
+    for (; i < k; i++) {
+
+        const item = selector[0][i];
+        match = true;
+
+        for (j = 1; j < selector.length; j++) {
+
+            if (item != selector[j][i]) {
+
+                match = false;
+                break;
+            }
+        }
+
+        if (!match) {
+
+            break;
+        }
+
+        optimized.push(item);
+    }
+
+    if (optimized.at(-1) == ' ') {
+
+        optimized.pop();
+    }
+
+    let reducible = optimized.length == 1;
+
+    if (optimized.length == 0) {
+
+        return {match: false, optimized, selector, reducible};
+    }
+
+    return {
+        match: true,
+        optimized,
+        selector: selector.reduce((acc, curr) => {
+
+            const slice = curr.slice(optimized.length);
+
+            // @ts-ignore
+            if (slice.length > 0 && slice[0] == ' ') {
+
+                slice.shift();
+            }
+
+            if (slice.length == 0) {
+
+                slice.push('&');
+            }
+
+            if (reducible) {
+
+                const chr = slice[0].charAt(0);
+
+                // @ts-ignore
+                reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0))
+            }
+
+            acc.push(slice);
+
+            return acc
+        }, <string[][]>[]),
+        reducible
+    };
+}
+
+
+function reducer(acc: string[], curr: string[]): string[] {
+
+    acc.push(curr.join(''));
+    return acc;
 }
