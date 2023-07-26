@@ -1457,7 +1457,6 @@
         return values;
     }
 
-    const indents = [];
     function render(data, opt = {}) {
         const options = Object.assign(opt.compress ? {
             indent: '',
@@ -1475,27 +1474,12 @@
                     return acc;
                 }
             }
-            // if (options.compress && curr.typ == 'Whitespace') {
-            //
-            //     if (original[index + 1]?.typ == 'Start-parens' ||
-            //         (index > 0 && (original[index - 1].typ == 'Pseudo-class-func' ||
-            //         original[index - 1].typ == 'End-parens' ||
-            //         original[index - 1].typ == 'UrlFunc' ||
-            //         original[index - 1].typ == 'Func' ||
-            //         (
-            //             original[index - 1].typ == 'Color' &&
-            //             (<ColorToken>original[index - 1]).kin != 'hex' &&
-            //             (<ColorToken>original[index - 1]).kin != 'lit')))) {
-            //
-            //         return acc;
-            //     }
-            // }
             return acc + renderToken(curr, options);
         }
-        return { code: doRender(data, options, reducer) };
+        return { code: doRender(data, options, reducer, 0) };
     }
     // @ts-ignore
-    function doRender(data, options, reducer, level = 0) {
+    function doRender(data, options, reducer, level = 0, indents = []) {
         if (indents.length < level + 1) {
             indents.push(options.indent.repeat(level));
         }
@@ -1509,7 +1493,7 @@
                 return options.removeComments ? '' : data.val;
             case 'StyleSheet':
                 return data.chi.reduce((css, node) => {
-                    const str = doRender(node, options, reducer, level);
+                    const str = doRender(node, options, reducer, level, indents);
                     if (str === '') {
                         return css;
                     }
@@ -1536,7 +1520,7 @@
                         str = `@${node.nam} ${node.val};`;
                     }
                     else {
-                        str = doRender(node, options, reducer, level + 1);
+                        str = doRender(node, options, reducer, level + 1, indents);
                     }
                     if (css === '') {
                         return str;
@@ -1544,8 +1528,7 @@
                     if (str === '') {
                         return css;
                     }
-                    if (str !== '')
-                        return `${css}${options.newLine}${indentSub}${str}`;
+                    return `${css}${options.newLine}${indentSub}${str}`;
                 }, '');
                 if (children.endsWith(';')) {
                     children = children.slice(0, -1);
@@ -2257,6 +2240,7 @@
     }
 
     const configuration = getConfig();
+    const combinators = ['+', '>', '~'];
     function deduplicate(ast, options = {}, recursive = false) {
         // @ts-ignore
         if (('chi' in ast) && ast.chi?.length > 0) {
@@ -2272,6 +2256,14 @@
                 }
                 // @ts-ignore
                 node = ast.chi[i];
+                // @ts-ignore
+                if (previous == node) {
+                    // console.error('idem!');
+                    // @ts-ignore
+                    ast.chi.splice(i, 1);
+                    i--;
+                    continue;
+                }
                 if (node.typ == 'AtRule' && node.nam == 'font-face') {
                     continue;
                 }
@@ -2284,75 +2276,67 @@
                 // @ts-ignore
                 if (node.typ == 'Rule') {
                     reduceRuleSelector(node);
+                    let wrapper;
                     // @ts-ignore
-                    if (options.nestingRules && node.raw != null && previous?.raw != null && node.raw.length == 1 && previous.raw.length == 1) {
-                        const match = [];
+                    if (options.nestingRules) {
+                        // if (node.sel == '.card>hr') {
+                        //
+                        //     console.error({idem: previous == node, previous, node});
+                        // }
                         // @ts-ignore
-                        while (node.raw[0].length > 0 && previous.raw[0].length > 0) {
+                        if (previous != null) {
                             // @ts-ignore
-                            if (node.raw[0][0] != previous.raw[0][0]) {
-                                break;
-                            }
-                            // @ts-ignore
-                            match.push(node.raw[0].shift());
-                            // @ts-ignore
-                            previous.raw[0].shift();
-                        }
-                        if (match.length > 0) {
-                            // @ts-ignore
-                            const wrapper = { ...previous, chi: [] };
-                            // @ts-ignore
-                            if (previous.raw[0].length == 0) {
+                            if (node.optimized != null &&
                                 // @ts-ignore
-                                wrapper.chi.push(...previous.chi);
-                            }
-                            else {
+                                previous.optimized != null &&
                                 // @ts-ignore
-                                previous.sel = previous.raw.reduce((acc, curr) => {
-                                    acc.push(curr.join(''));
-                                    return acc;
-                                }, []).join(',');
+                                node.optimized.optimized.length > 0 &&
                                 // @ts-ignore
-                                wrapper.chi.push(previous);
-                            }
-                            // @ts-ignore
-                            if (node.raw[0].length == 0) {
+                                previous.optimized.optimized.length > 0 &&
                                 // @ts-ignore
-                                if (previous.raw.length == 0) {
+                                node.optimized.optimized[0] == previous.optimized.optimized[0]) {
+                                // @ts-ignore
+                                if (hasOnlyDeclarations(previous)) {
                                     // @ts-ignore
-                                    wrapper.chi.push(...node.chi);
-                                }
-                                else {
-                                    if (hasOnlyDeclarations(wrapper)) {
-                                        wrapper.chi.push(...node.chi);
+                                    let pSel = reduceRawTokens(previous.optimized.selector);
+                                    if (pSel === '') {
+                                        // @ts-ignore
+                                        pSel = previous.optimized.optimized.slice(1).join('').trim();
                                     }
-                                    else {
+                                    // @ts-ignore
+                                    let nSel = reduceRawTokens(node.optimized.selector);
+                                    if (nSel === '') {
                                         // @ts-ignore
-                                        node.raw[0].push('&');
-                                        // @ts-ignore
-                                        node.sel = node.raw.reduce((acc, curr) => {
-                                            acc.push(curr.join(''));
-                                            return acc;
-                                        }, []).join(',');
-                                        // @ts-ignore
-                                        wrapper.chi.push(node);
+                                        nSel = node.optimized.optimized.slice(1).join('').trim();
                                     }
+                                    // @ts-ignore
+                                    wrapper = { ...node, chi: [], sel: node.optimized.optimized[0] };
+                                    // @ts-ignore
+                                    Object.defineProperty(wrapper, 'raw', {
+                                        enumerable: false,
+                                        writable: true,
+                                        // @ts-ignore
+                                        value: [[node.optimized.optimized[0].slice()]]
+                                    });
+                                    // @ts-ignore
+                                    previous.sel = pSel === '' ? '&' : pSel; // reduceRawTokens(previous.optimized.selector);
+                                    // @ts-ignore
+                                    previous.raw = pSel === '' ? [['&']] : previous.optimized.selector.slice();
+                                    // @ts-ignore
+                                    node.sel = nSel === '' ? '&' : nSel; // reduceRawTokens(node.optimized.selector);
+                                    // @ts-ignore
+                                    node.raw = nSel === '' ? [['&']] : node.optimized.selector.slice();
+                                    // @ts-ignore
+                                    wrapper.chi.push(previous, node);
+                                    // @ts-ignore
+                                    ast.chi.splice(i, 1, wrapper);
+                                    // @ts-ignore
+                                    ast.chi.splice(nodeIndex, 1);
                                 }
                             }
-                            else {
-                                // @ts-ignore
-                                node.sel = node.raw.reduce((acc, curr) => {
-                                    acc.push(curr.join(''));
-                                    return acc;
-                                }, []).join(',');
-                                // @ts-ignore
-                                wrapper.chi.push(node);
-                            }
-                            Object.defineProperty(wrapper, 'raw', { enumerable: false, writable: true, value: [match] });
-                            // @ts-ignore
-                            ast.chi.splice(i, 1, wrapper);
-                            // @ts-ignore
-                            ast.chi.splice(nodeIndex, 1);
+                        }
+                        // @ts-ignore
+                        if (wrapper != null) {
                             // @ts-ignore
                             while (i < ast.chi.length) {
                                 // @ts-ignore
@@ -2369,10 +2353,13 @@
                                 // @ts-ignore
                                 nextNode.raw[0].splice(0, wrapper.raw[0].length);
                                 // @ts-ignore
+                                trimRawToken(nextNode.raw[0]);
+                                // @ts-ignore
                                 if (nextNode.raw[0].length == 0 ||
                                     // @ts-ignore
                                     (nextNode.raw.length == 1 && nextNode.raw[0] == '&')) {
                                     if (hasOnlyDeclarations(wrapper)) {
+                                        // @ts-ignore
                                         wrapper.chi.push(...nextNode.chi);
                                         // @ts-ignore
                                         ast.chi.splice(i, 1);
@@ -2388,15 +2375,42 @@
                                     acc.push(curr.join(''));
                                     return acc;
                                 }, []).join(',');
+                                // @ts-ignore
                                 wrapper.chi.push(nextNode);
                                 // @ts-ignore
                                 ast.chi.splice(i, 1);
+                                node = wrapper;
                             }
-                            deduplicateRule(wrapper);
-                            nodeIndex = --i;
+                            deduplicate(wrapper, options, recursive);
+                            nodeIndex = i;
                             // @ts-ignore
                             previous = ast.chi[i];
                             continue;
+                        }
+                        // @ts-ignore
+                        else if (node.optimized != null &&
+                            // @ts-ignore
+                            node.optimized.match &&
+                            // @ts-ignore
+                            node.optimized.selector.length > 1) {
+                            // @ts-ignore
+                            wrapper = { ...node, chi: [], sel: node.optimized.optimized[0] };
+                            // @ts-ignore
+                            Object.defineProperty(wrapper, 'raw', {
+                                enumerable: false,
+                                writable: true,
+                                // @ts-ignore
+                                value: [[node.optimized.optimized[0]]]
+                            });
+                            // @ts-ignore
+                            node.sel = reduceRawTokens(node.optimized.selector);
+                            // @ts-ignore
+                            node.raw = node.optimized.selector.slice();
+                            // @ts-ignore
+                            wrapper.chi.push(node);
+                            // @ts-ignore
+                            ast.chi.splice(i, 1, wrapper);
+                            node = wrapper;
                         }
                     }
                 }
@@ -2488,6 +2502,7 @@
                     deduplicateRule(node);
                 }
                 else {
+                    // @ts-ignore
                     if (!(node.typ == 'AtRule' && node.nam != 'font-face')) {
                         deduplicate(node, options, recursive);
                     }
@@ -2518,7 +2533,7 @@
         }
         return true;
     }
-    function deduplicateRule(ast, options = {}) {
+    function deduplicateRule(ast) {
         // @ts-ignore
         if (!('chi' in ast) || ast.chi?.length <= 1) {
             return ast;
@@ -2566,6 +2581,21 @@
         // @ts-ignore
         ast.chi = children.concat(ast.chi?.slice(k));
         return ast;
+    }
+    function reduceRawTokens(raw) {
+        return raw.reduce((acc, curr) => {
+            acc.push(curr.join(''));
+            return acc;
+        }, []).join(',');
+    }
+    function trimRawToken(raw) {
+        while (raw.length > 0) {
+            if (raw[0] == ' ') {
+                raw.shift();
+                continue;
+            }
+            break;
+        }
     }
     function splitRule(buffer) {
         const result = [];
@@ -2634,11 +2664,14 @@
         // @ts-ignore
         if (node.raw != null) {
             // @ts-ignore
-            let optimized = reduceSelector(node.raw);
+            let optimized = reduceSelector(node.raw.reduce((acc, curr) => {
+                acc.push(curr.slice());
+                return acc;
+            }, []));
             if (optimized != null) {
                 Object.defineProperty(node, 'optimized', { enumerable: false, writable: true, value: optimized });
             }
-            if (optimized != null && optimized.match && optimized.reducible) {
+            if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
                 const raw = [
                     [
                         optimized.optimized[0], ':is('
@@ -2734,7 +2767,7 @@
         return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node2 : node2 };
     }
     function reduceSelector(selector) {
-        if (selector.length < 2) {
+        if (selector.length == 0) {
             return null;
         }
         const optimized = [];
@@ -2756,34 +2789,46 @@
             }
             optimized.push(item);
         }
+        selector.forEach((selector) => selector.splice(0, optimized.length));
+        // combinator
+        if (combinators.includes(optimized.at(-1))) {
+            const combinator = optimized.pop();
+            selector.forEach(selector => selector.unshift(combinator));
+        }
         if (optimized.at(-1) == ' ') {
             optimized.pop();
         }
         let reducible = optimized.length == 1;
-        if (optimized.length == 0) {
-            return { match: false, optimized, selector, reducible };
+        if (optimized.length == 0 ||
+            optimized[0].charAt(0) == '&' ||
+            selector.length == 1) {
+            return {
+                match: false,
+                optimized,
+                selector,
+                reducible: selector.length > 1 && selector.every((selector) => !['>', '+', '~'].includes(selector[0]))
+            };
         }
         return {
             match: true,
             optimized,
             selector: selector.reduce((acc, curr) => {
-                const slice = curr.slice(optimized.length);
                 // @ts-ignore
-                if (slice.length > 0 && slice[0] == ' ') {
-                    slice.shift();
+                if (curr.length > 0 && curr[0] == ' ') {
+                    curr.shift();
                 }
-                if (slice.length == 0) {
-                    slice.push('&');
+                if (curr.length == 0) {
+                    curr.push('&');
                 }
                 if (reducible) {
-                    const chr = slice[0].charAt(0);
+                    const chr = curr[0].charAt(0);
                     // @ts-ignore
                     reducible = chr == '.' || chr == ':' || isIdentStart(chr.codePointAt(0));
                 }
-                acc.push(slice);
+                acc.push(curr);
                 return acc;
             }, []),
-            reducible
+            reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
         };
     }
     function reducer(acc, curr) {
@@ -3094,7 +3139,7 @@
                 // https://www.w3.org/TR/css-nesting-1/#conditionals
                 // allowed nesting at-rules
                 // there must be a top level rule in the stack
-                const raw = tokens.reduce((acc, curr, index, array) => {
+                const raw = tokens.reduce((acc, curr) => {
                     acc.push(renderToken(curr, { removeComments: true }));
                     return acc;
                 }, []);
@@ -3129,7 +3174,12 @@
                         }
                     }
                     const uniq = new Map;
-                    parseTokens(tokens, { compress: options.compress }).reduce((acc, curr) => {
+                    parseTokens(tokens, 'Rule', { compress: options.compress }).reduce((acc, curr, index, array) => {
+                        if (curr.typ == 'Whitespace') {
+                            if (array[index - 1]?.val == '+' || array[index + 1]?.val == '+') {
+                                return acc;
+                            }
+                        }
                         let t = renderToken(curr, { compress: true });
                         if (t == ',') {
                             acc.push([]);
@@ -3173,7 +3223,7 @@
                         }
                         if (tokens[i].typ == 'Colon') {
                             name = tokens.slice(0, i);
-                            value = parseTokens(tokens.slice(i + 1), {
+                            value = parseTokens(tokens.slice(i + 1), 'Declaration', {
                                 parseColor: true,
                                 src: options.src,
                                 resolveUrls: options.resolveUrls,
@@ -3262,7 +3312,6 @@
             position.ind = ind;
             position.lin = lin;
             position.col = col == 0 ? 1 : col;
-            // }
         }
         function consumeWhiteSpace() {
             let count = 0;
@@ -3494,6 +3543,9 @@
                     break;
                 case '~':
                 case '|':
+                    if (tokens.at(-1)?.typ == 'Whitespace') {
+                        tokens.pop();
+                    }
                     if (buffer.length > 0) {
                         pushToken(getType(buffer));
                         buffer = '';
@@ -3515,6 +3567,9 @@
                         break;
                     }
                     pushToken(getType(buffer));
+                    while (isWhiteSpace(value.charCodeAt(0))) {
+                        value = next();
+                    }
                     buffer = value;
                     break;
                 case '>':
@@ -3528,6 +3583,16 @@
                     pushToken({ typ: 'Gt' });
                     consumeWhiteSpace();
                     break;
+                case '.':
+                    const codepoint = peek().charCodeAt(0);
+                    if (!isDigit(codepoint) && buffer !== '') {
+                        pushToken(getType(buffer));
+                        buffer = value;
+                        break;
+                    }
+                    buffer += value;
+                    break;
+                case '+':
                 case ':':
                 case ',':
                 case '=':
@@ -3541,6 +3606,9 @@
                     }
                     pushToken(getType(value));
                     buffer = '';
+                    if (value == '+' && isWhiteSpace(peek().charCodeAt(0))) {
+                        pushToken(getType(next()));
+                    }
                     while (isWhiteSpace(peek().charCodeAt(0))) {
                         next();
                     }
@@ -3718,13 +3786,14 @@
         }
         return { ast, errors, bytesIn };
     }
-    function parseTokens(tokens, options = {}) {
+    function parseTokens(tokens, nodeType, options = {}) {
         for (let i = 0; i < tokens.length; i++) {
             const t = tokens[i];
             if (t.typ == 'Whitespace' && ((i == 0 ||
                 i + 1 == tokens.length ||
                 ['Comma'].includes(tokens[i + 1].typ) ||
                 (i > 0 &&
+                    tokens[i + 1]?.typ != 'Literal' &&
                     funcLike.includes(tokens[i - 1].typ) &&
                     !['var', 'calc'].includes(tokens[i - 1].val))))) {
                 tokens.splice(i--, 1);
@@ -3771,7 +3840,7 @@
                     if (t.chi.length > 1) {
                         /*(<AttrToken>t).chi =*/
                         // @ts-ignore
-                        parseTokens(t.chi, options);
+                        parseTokens(t.chi, t.typ, options);
                     }
                     // @ts-ignore
                     t.chi.forEach(val => {
@@ -3883,7 +3952,7 @@
                 // @ts-ignore
                 if (t.chi.length > 0) {
                     // @ts-ignore
-                    parseTokens(t.chi, options);
+                    parseTokens(t.chi, t.typ, options);
                     if (t.typ == 'Pseudo-class-func' && t.val == ':is' && options.compress) {
                         //
                         const count = t.chi.filter(t => t.typ != 'Comment').length;

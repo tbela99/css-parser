@@ -1,29 +1,12 @@
-import {
-    AstAtRule, AstComment, AstDeclaration, AstNode, AstRule, AstRuleList,
-    AstRuleStyleSheet, AtRuleToken, AttrToken, ColorToken, DashMatchToken,
-    ErrorDescription, FunctionToken, IncludesToken, LiteralToken, Location, NodeType, ParseResult,
-    ParserOptions, ParseTokenOptions, Position, PseudoClassFunctionToken, PseudoClassToken, StringToken, Token, UrlToken
-} from "../../@types";
-import {
-    isAtKeyword, isDigit,
-    isDimension,
-    isFunction,
-    isHash, isHexColor,
-    isIdent, isIdentStart, isNewLine,
-    isNumber,
-    isPercentage,
-    isPseudo, isWhiteSpace,
-    parseDimension
-} from "./utils";
-import {renderToken} from "../renderer";
-import {COLORS_NAMES} from "../renderer/utils";
-import {deduplicate} from "./deduplicate";
-
+import { isAtKeyword, isDigit, isDimension, isFunction, isHash, isHexColor, isIdent, isIdentStart, isNewLine, isNumber, isPercentage, isPseudo, isWhiteSpace, parseDimension } from "./utils";
+import { renderToken } from "../renderer";
+import { COLORS_NAMES } from "../renderer/utils";
+import { deduplicate } from "./deduplicate";
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
-export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult>  {
-    const errors: ErrorDescription[] = [];
-    const options: ParserOptions = {
+export async function parse(iterator, opt = {}) {
+    const errors = [];
+    const options = {
         src: '',
         sourcemap: false,
         compress: false,
@@ -36,13 +19,13 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     if (options.resolveImport) {
         options.resolveUrls = true;
     }
-    let ind: number = -1;
-    let lin: number = 1;
-    let col: number = 0;
-    const tokens: Token[] = [];
-    const src  = <string>options.src;
-    const stack: Array<AstNode | AstComment> = [];
-    const ast: AstRuleStyleSheet = {
+    let ind = -1;
+    let lin = 1;
+    let col = 0;
+    const tokens = [];
+    const src = options.src;
+    const stack = [];
+    const ast = {
         typ: "StyleSheet",
         chi: []
     };
@@ -52,12 +35,11 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         col: Math.max(col, 1)
     };
     let value;
-    let buffer: string = '';
-    let total:number = iterator.length;
-    let bytesIn: number = total;
-    let map: Map<Token, Position> = new Map<Token, Position>;
-    let context: AstRuleList = ast;
-
+    let buffer = '';
+    let total = iterator.length;
+    let bytesIn = total;
+    let map = new Map;
+    let context = ast;
     if (options.sourcemap) {
         ast.loc = {
             sta: {
@@ -68,7 +50,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             src: ''
         };
     }
-    function getType(val: string): Token {
+    function getType(val) {
         if (val === '') {
             throw new Error('empty string?');
         }
@@ -115,7 +97,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         }
         if (isFunction(val)) {
             val = val.slice(0, -1);
-            return <Token>{
+            return {
                 typ: val == 'url' ? 'UrlFunc' : 'Func',
                 val,
                 chi: []
@@ -167,7 +149,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         };
     }
     // consume and throw away
-    function consume(open: string, close: string) {
+    function consume(open, close) {
         let count = 1;
         let chr;
         while (true) {
@@ -202,73 +184,55 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             }
         }
     }
-    async function parseNode(tokens: Token[]) {
-        let i: number;
-        let loc: Location;
-
+    async function parseNode(tokens) {
+        let i;
+        let loc;
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
-
                 // @ts-ignore
                 context.chi.push(tokens[i]);
-
-                const position: Position = <Position>map.get(tokens[i]);
-
-                loc = <Location>{
+                const position = map.get(tokens[i]);
+                loc = {
                     sta: position,
                     src
                 };
-
                 if (options.sourcemap) {
-
-                    (<AstNode>tokens[i]).loc = loc
+                    tokens[i].loc = loc;
                 }
-
             }
             else if (tokens[i].typ != 'Whitespace') {
                 break;
             }
         }
-
         tokens = tokens.slice(i);
         if (tokens.length == 0) {
             return null;
         }
-
-        let delim: Token = <Token>tokens.at(-1);
-
+        let delim = tokens.at(-1);
         if (delim.typ == 'Semi-colon' || delim.typ == 'Block-start' || delim.typ == 'Block-end') {
             tokens.pop();
         }
         else {
             delim = { typ: 'Semi-colon' };
         }
-
         // @ts-ignore
         while (['Whitespace', 'Bad-string', 'Bad-comment'].includes(tokens.at(-1)?.typ)) {
             tokens.pop();
         }
-
         if (tokens.length == 0) {
             return null;
         }
-
         if (tokens[0]?.typ == 'At-rule') {
-
-            const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
-            const position: Position = <Position>map.get(atRule);
-
+            const atRule = tokens.shift();
+            const position = map.get(atRule);
             if (atRule.val == 'charset' && position.ind > 0) {
-
                 errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
                 return null;
             }
-
             // @ts-ignore
             while (['Whitespace'].includes(tokens[0]?.typ)) {
                 tokens.shift();
             }
-
             if (atRule.val == 'import') {
                 // only @charset and @layer are accepted before @import
                 if (context.chi.length > 0) {
@@ -282,14 +246,11 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                             errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
                             return null;
                         }
-
-                        const name = (<AstAtRule>context.chi[i]).nam;
-
+                        const name = context.chi[i].nam;
                         if (name != 'charset' && name != 'import' && name != 'layer') {
                             errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
                             return null;
                         }
-
                         break;
                     }
                 }
@@ -304,7 +265,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     return null;
                 }
             }
-
             if (atRule.val == 'import') {
                 // @ts-ignore
                 if (tokens[0].typ == 'UrlFunc' && tokens[1].typ == 'Url-token') {
@@ -316,33 +276,24 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 }
                 // @ts-ignore
                 if (tokens[0].typ == 'String') {
-
                     if (options.resolveImport) {
-
-                        const url = (<UrlToken>tokens[0]).val.slice(1, -1);
-
+                        const url = tokens[0].val.slice(1, -1);
                         try {
-
                             // @ts-ignore
-                            const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
-
+                            const root = await options.load(url, options.src).then((src) => {
                                 return parse(src, Object.assign({}, options, {
                                     compress: false,
                                     // @ts-ignore
                                     src: options.resolve(url, options.src).absolute
-                                }))
+                                }));
                             });
-
                             bytesIn += root.bytesIn;
-
                             if (root.ast.chi.length > 0) {
                                 context.chi.push(...root.ast.chi);
                             }
-
                             if (root.errors.length > 0) {
                                 errors.push(...root.errors);
                             }
-
                             return null;
                         }
                         catch (error) {
@@ -354,28 +305,20 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
             // there must be a top level rule in the stack
-
-            const raw = tokens.reduce((acc: string[], curr: Token) => {
-
-                acc.push(renderToken(curr, {removeComments: true}));
-
-                return acc
+            const raw = tokens.reduce((acc, curr) => {
+                acc.push(renderToken(curr, { removeComments: true }));
+                return acc;
             }, []);
-
-            const node: AstAtRule = {
+            const node = {
                 typ: 'AtRule',
                 nam: renderToken(atRule, { removeComments: true }),
                 val: raw.join('')
             };
-
             Object.defineProperty(node, 'raw', { enumerable: false, writable: false, value: raw });
-
             if (delim.typ == 'Block-start') {
-
                 node.chi = [];
             }
-
-            loc = <Location>{
+            loc = {
                 sta: position,
                 src
             };
@@ -389,28 +332,20 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         else {
             // rule
             if (delim.typ == 'Block-start') {
-
-                const position: Position = <Position>map.get(tokens[0]);
-
+                const position = map.get(tokens[0]);
                 if (context.typ == 'Rule') {
-
                     if (tokens[0]?.typ == 'Iden') {
                         errors.push({ action: 'drop', message: 'invalid nesting rule', location: { src, ...position } });
                         return null;
                     }
                 }
-
-                const uniq = new Map<string, string[]>;
-                parseTokens(tokens, 'Rule', {compress: options.compress}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
-
+                const uniq = new Map;
+                parseTokens(tokens, 'Rule', { compress: options.compress }).reduce((acc, curr, index, array) => {
                     if (curr.typ == 'Whitespace') {
-
-                        if((<LiteralToken>array[index - 1])?.val == '+' || (<LiteralToken>array[index + 1])?.val == '+') {
-
+                        if (array[index - 1]?.val == '+' || array[index + 1]?.val == '+') {
                             return acc;
                         }
                     }
-
                     let t = renderToken(curr, { compress: true });
                     if (t == ',') {
                         acc.push([]);
@@ -419,31 +354,25 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         acc[acc.length - 1].push(t);
                     }
                     return acc;
-                }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
-
+                }, [[]]).reduce((acc, curr) => {
                     acc.set(curr.join(''), curr);
                     return acc;
                 }, uniq);
-
-                const node: AstRule = {
+                const node = {
                     typ: 'Rule',
                     // @ts-ignore
                     sel: [...uniq.keys()].join(','),
                     chi: []
                 };
                 let raw = [...uniq.values()];
-
                 Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: raw });
-
-                loc = <Location>{
+                loc = {
                     sta: position,
                     src
                 };
-
                 if (options.sourcemap) {
                     node.loc = loc;
                 }
-
                 // @ts-ignore
                 context.chi.push(node);
                 return node;
@@ -459,7 +388,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         continue;
                     }
                     if (tokens[i].typ == 'Colon') {
-
                         name = tokens.slice(0, i);
                         value = parseTokens(tokens.slice(i + 1), 'Declaration', {
                             parseColor: true,
@@ -477,191 +405,131 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 if (name.length > 0) {
                     for (let i = 1; i < name.length; i++) {
                         if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
-
-                            errors.push(<ErrorDescription>{
+                            errors.push({
                                 action: 'drop',
                                 message: 'invalid declaration',
                                 location: { src, ...position }
                             });
-
                             return null;
                         }
                     }
                 }
-
                 if (value == null) {
-
-                    errors.push(<ErrorDescription>{ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-
                 if (value.length == 0) {
-                    errors.push(<ErrorDescription>{ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-
-                const node: AstDeclaration = {
+                const node = {
                     typ: 'Declaration',
                     // @ts-ignore
                     nam: renderToken(name.shift(), { removeComments: true }),
                     // @ts-ignore
                     val: value
-                }
-
+                };
                 while (node.val[0]?.typ == 'Whitespace') {
                     node.val.shift();
                 }
-
                 if (node.val.length == 0) {
-
-                    errors.push(<ErrorDescription>{ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    errors.push({ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
                     return null;
                 }
-
                 // @ts-ignore
                 context.chi.push(node);
                 return null;
             }
         }
     }
-    function peek(count: number = 1): string {
-
+    function peek(count = 1) {
         if (count == 1) {
-
             return iterator.charAt(ind + 1);
         }
-
         return iterator.slice(ind + 1, ind + count + 1);
     }
-
-    function prev(count: number = 1): string {
-
+    function prev(count = 1) {
         if (count == 1) {
-
             return ind == 0 ? '' : iterator.charAt(ind - 1);
         }
-
         return iterator.slice(ind - 1 - count, ind - 1);
     }
-
-    function next(count: number = 1): string {
-
-        let char: string = '';
-
+    function next(count = 1) {
+        let char = '';
         while (count-- > 0 && ind < total) {
-
-            const codepoint: number = iterator.charCodeAt(++ind);
-
+            const codepoint = iterator.charCodeAt(++ind);
             if (isNaN(codepoint)) {
-
                 return char;
             }
-
             char += iterator.charAt(ind);
-
             if (isNewLine(codepoint)) {
-
                 lin++;
                 col = 0;
             }
-
             else {
-
                 col++;
             }
         }
-
         return char;
     }
-    function pushToken(token: Token) {
-
+    function pushToken(token) {
         tokens.push(token);
-
         map.set(token, { ...position });
-
         position.ind = ind;
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
     }
-
-    function consumeWhiteSpace(): number {
-
-        let count: number = 0;
-
+    function consumeWhiteSpace() {
+        let count = 0;
         while (isWhiteSpace(iterator.charAt(count + ind + 1).charCodeAt(0))) {
-
             count++;
         }
-
         next(count);
-
         return count;
     }
-
-    function consumeString(quoteStr: '"' | "'") {
-
+    function consumeString(quoteStr) {
         const quote = quoteStr;
         let value;
-        let hasNewLine: boolean = false;
-
+        let hasNewLine = false;
         if (buffer.length > 0) {
-
             pushToken(getType(buffer));
             buffer = '';
         }
-
         buffer += quoteStr;
-
         while (ind < total) {
-
             value = peek();
             if (ind >= total) {
-
                 pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
                 break;
             }
-
             if (value == '\\') {
-
-                const sequence: string = peek(6);
-                let escapeSequence: string = '';
+                const sequence = peek(6);
+                let escapeSequence = '';
                 let codepoint;
                 let i;
-
                 for (i = 1; i < sequence.length; i++) {
-
                     codepoint = sequence.charCodeAt(i);
-
                     if (codepoint == 0x20 ||
                         (codepoint >= 0x61 && codepoint <= 0x66) ||
                         (codepoint >= 0x41 && codepoint <= 0x46) ||
                         (codepoint >= 0x30 && codepoint <= 0x39)) {
                         escapeSequence += sequence[i];
-
                         if (codepoint == 0x20) {
-
                             break;
                         }
-
                         continue;
                     }
-
                     break;
                 }
-
                 // not hex or new line
                 // @ts-ignore
                 if (i == 1 && !isNewLine(codepoint)) {
-
                     buffer += sequence[i];
                     next(2);
                     continue;
                 }
-
                 if (escapeSequence.trimEnd().length > 0) {
-
                     const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
-
                     if (codepoint == 0 ||
                         // leading surrogate
                         (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
@@ -670,28 +538,21 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         buffer += String.fromCodePoint(0xFFFD);
                     }
                     else {
-
                         buffer += String.fromCodePoint(codepoint);
                     }
-
                     next(escapeSequence.length + 1);
                     continue;
                 }
-
                 // buffer += value;
                 if (ind >= total) {
-
                     // drop '\\' at the end
                     pushToken(getType(buffer));
                     break;
                 }
-
                 buffer += next(2);
                 continue;
             }
-
             if (value == quote) {
-
                 buffer += value;
                 pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
                 next();
@@ -699,17 +560,14 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 buffer = '';
                 break;
             }
-
             if (isNewLine(value.charCodeAt(0))) {
                 hasNewLine = true;
             }
-
             if (hasNewLine && value == ';') {
                 pushToken({ typ: 'Bad-string', val: buffer });
                 buffer = '';
                 break;
             }
-
             buffer += value;
             // i += value.length;
             next();
@@ -867,32 +725,23 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 }
                 if (value == '=') {
                     buffer += value;
-                    pushToken(<Token>{
+                    pushToken({
                         typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
                         val: buffer
                     });
-
                     buffer = '';
                     break;
                 }
-
                 pushToken(getType(buffer));
-
                 while (isWhiteSpace(value.charCodeAt(0))) {
-
                     value = next();
                 }
-
                 buffer = value;
                 break;
-
             case '>':
-
                 if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
-
                     tokens.pop();
                 }
-
                 if (buffer !== '') {
                     pushToken(getType(buffer));
                     buffer = '';
@@ -901,9 +750,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 consumeWhiteSpace();
                 break;
             case '.':
-
                 const codepoint = peek().charCodeAt(0);
-
                 if (!isDigit(codepoint) && buffer !== '') {
                     pushToken(getType(buffer));
                     buffer = value;
@@ -960,48 +807,34 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         }
                         value = peek();
                         if (value == '"' || value == "'") {
-                            consumeString(<'"' | "'"> next());
-
-                            let token: Token = tokens[tokens.length - 1];
-
-                            if (['String', 'Literal'].includes(token.typ) && urlTokenMatcher.test((<StringToken | LiteralToken>token).val)) {
-                                if ((<StringToken | LiteralToken>token).val.slice(1, 6) != 'data:') {
+                            consumeString(next());
+                            let token = tokens[tokens.length - 1];
+                            if (['String', 'Literal'].includes(token.typ) && urlTokenMatcher.test(token.val)) {
+                                if (token.val.slice(1, 6) != 'data:') {
                                     if (token.typ == 'String') {
                                         token.val = token.val.slice(1, -1);
                                     }
-
                                     // @ts-ignore
                                     token.typ = 'Url-token';
                                 }
                             }
-
                             break;
                         }
-
                         else {
-
                             buffer = '';
-
                             do {
-
                                 let cp = value.charCodeAt(0);
-
                                 // EOF -
                                 if (cp == null) {
-
                                     pushToken({ typ: 'Bad-url-token', val: buffer });
                                     break;
                                 }
-
                                 // ')'
                                 if (cp == 0x29 || cp == null) {
-
                                     if (buffer.length == 0) {
-
                                         pushToken({ typ: 'Bad-url-token', val: '' });
                                     }
                                     else {
-
                                         pushToken({ typ: 'Url-token', val: buffer });
                                     }
                                     if (cp != null) {
@@ -1026,23 +859,19 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                                     // bad url token
                                     buffer += next(whitespace.length);
                                     do {
-
                                         value = peek();
                                         cp = value.charCodeAt(0);
                                         if (cp == null || cp == 0x29) {
                                             break;
                                         }
-
                                         buffer += next();
-                                    }
-                                    while (true);
+                                    } while (true);
                                     pushToken({ typ: 'Bad-url-token', val: buffer });
                                     continue;
                                 }
                                 buffer += next();
                                 value = peek();
-                            }
-                            while (true);
+                            } while (true);
                             buffer = '';
                         }
                     }
@@ -1123,20 +952,16 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     }
     return { ast, errors, bytesIn };
 }
-function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOptions = {}) {
-
+function parseTokens(tokens, nodeType, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
-
         const t = tokens[i];
-
         if (t.typ == 'Whitespace' && ((i == 0 ||
             i + 1 == tokens.length ||
             ['Comma'].includes(tokens[i + 1].typ) ||
             (i > 0 &&
                 tokens[i + 1]?.typ != 'Literal' &&
                 funcLike.includes(tokens[i - 1].typ) &&
-                !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val))))) {
-
+                !['var', 'calc'].includes(tokens[i - 1].val))))) {
             tokens.splice(i--, 1);
             continue;
         }
@@ -1144,13 +969,11 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
             const typ = tokens[i + 1]?.typ;
             if (typ != null) {
                 if (typ == 'Func') {
-
-                    (<PseudoClassFunctionToken>tokens[i + 1]).val = ':' + (<PseudoClassFunctionToken>tokens[i + 1]).val;
+                    tokens[i + 1].val = ':' + tokens[i + 1].val;
                     tokens[i + 1].typ = 'Pseudo-class-func';
                 }
                 else if (typ == 'Iden') {
-
-                    (<PseudoClassToken>tokens[i + 1]).val = ':' + (<PseudoClassToken>tokens[i + 1]).val;
+                    tokens[i + 1].val = ':' + tokens[i + 1].val;
                     tokens[i + 1].typ = 'Pseudo-class';
                 }
                 if (typ == 'Func' || typ == 'Iden') {
@@ -1161,10 +984,8 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
             }
         }
         if (t.typ == 'Attr-start') {
-
-            let k: number = i;
-            let inAttr: number = 1;
-
+            let k = i;
+            let inAttr = 1;
             while (++k < tokens.length) {
                 if (tokens[k].typ == 'Attr-end') {
                     inAttr--;
@@ -1207,14 +1028,12 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                     const typ = tokens[k + 1]?.typ;
                     if (typ != null) {
                         if (typ == 'Iden') {
-
                             tokens[k + 1].typ = 'Pseudo-class';
-                            (<PseudoClassToken>tokens[k + 1]).val = ':' + (<PseudoClassToken>tokens[k + 1]).val;
+                            tokens[k + 1].val = ':' + tokens[k + 1].val;
                         }
                         else if (typ == 'Func') {
-
-                            (<PseudoClassFunctionToken>tokens[k + 1]).typ = 'Pseudo-class-func';
-                            (<PseudoClassFunctionToken>tokens[k + 1]).val = ':' + (<PseudoClassFunctionToken>tokens[k + 1]).val;
+                            tokens[k + 1].typ = 'Pseudo-class-func';
+                            tokens[k + 1].val = ':' + tokens[k + 1].val;
                         }
                         if (typ == 'Func' || typ == 'Iden') {
                             tokens.splice(k, 1);
@@ -1338,8 +1157,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
     }
     return tokens;
 }
-function getBlockType(chr: string): Token {
-
+function getBlockType(chr) {
     if (chr == ';') {
         return { typ: 'Semi-colon' };
     }

@@ -1,6 +1,5 @@
-import { rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
-
-function render(data, opt = {}) {
+import { cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex } from "./utils";
+export function render(data, opt = {}) {
     const options = Object.assign(opt.compress ? {
         indent: '',
         newLine: '',
@@ -83,7 +82,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     }
     return '';
 }
-function renderToken(token, options = {}) {
+export function renderToken(token, options = {}) {
     switch (token.typ) {
         case 'Color':
             if (options.compress || options.colorConvert) {
@@ -226,5 +225,3 @@ function renderToken(token, options = {}) {
     }
     throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
 }
-
-export { render, renderToken };

@@ -272,9 +272,20 @@ interface AstDeclaration extends Node {
 
 interface AstRule extends Node {
 
-    typ: 'Rule',
-    sel: string,
-    chi: Array<AstDeclaration | AstComment | AstRuleList>
+    typ: 'Rule';
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+declare type RawSelectorTokens  = string[][];
+
+interface OptimizedSelector {
+    match: boolean;
+    optimized: string[];
+    selector: string[][],
+    reducible: boolean;
 }
 
 interface AstAtRule extends Node {
@@ -303,14 +314,14 @@ type AstNode =
     | AstDeclaration;
 
 declare function deduplicate(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
-declare function hasDeclaration(node: AstAtRule | AstRule | AstRuleList): boolean;
-declare function deduplicateRule(ast: AstNode, options?: ParserOptions): AstNode;
-declare function reduceSelector(selector: string[][]): null | {
+declare function hasDeclaration(node: AstRule): boolean;
+declare function deduplicateRule(ast: AstRule | AstAtRule): AstRule | AstAtRule;
+declare function reduceSelector(selector: string[][]): {
     match: boolean;
     optimized: string[];
     selector: string[][];
     reducible: boolean;
-};
+} | null;
 
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions): string;

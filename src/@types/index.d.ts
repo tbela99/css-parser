@@ -115,9 +115,20 @@ export interface AstDeclaration extends Node {
 
 export interface AstRule extends Node {
 
-    typ: 'Rule',
-    sel: string,
-    chi: Array<AstDeclaration | AstComment | AstRuleList>
+    typ: 'Rule';
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare type RawSelectorTokens  = string[][];
+
+export interface OptimizedSelector {
+    match: boolean;
+    optimized: string[];
+    selector: string[][],
+    reducible: boolean;
 }
 
 export interface AstAtRule extends Node {

@@ -1,27 +1,20 @@
-import {expect} from "@esm-bundle/chai";
-import {transform} from "../../src/web";
+/* generate from test/specs/shorthand.web-spec.ts */
+import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
+import { transform } from '../../dist/web/index.js';
 
-function dirname(path: string) {
-
+function dirname(path) {
     path = path.replace(/[?#].*$/, '').replace(/[/]*$/, '');
-
-    const index: number = path.lastIndexOf('/');
-
+    const index = path.lastIndexOf('/');
     if (index == 0) {
-
         return '/';
     }
-
     return index < 0 ? '' : path.slice(0, index);
 }
-
-const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
-
+dirname(new URL(import.meta.url).pathname) + '/../files';
 const options = {
     compress: true,
     removeEmpty: true
 };
-
 const marginPadding = `
 
 .test {
@@ -50,14 +43,12 @@ text-align: justify;
 padding-left: 0px;
 margin-top: 0px;
 `;
-
 const borderRadius1 = `
 
 .test {
 border-radius: 4px 3px 6px / 2px 4px;
 border-top-left-radius: 4px 5px;
 `;
-
 const borderRadius2 = `
 
 .test {border-top-left-radius: 4px 2px;
@@ -65,7 +56,6 @@ border-top-right-radius: 3px 4px;
 border-bottom-right-radius: 6px 2px;
 border-bottom-left-radius: 3px 4px;
 `;
-
 const borderRadius3 = `
 
 .test input[type="text"] {
@@ -76,7 +66,6 @@ const borderRadius3 = `
     border-top-width:2px;;;
 
 `;
-
 const borderColor = `
 
 .test input[type="text"] {
@@ -85,7 +74,6 @@ border-right-color: red;
 border-bottom-color: gold;
 border-left-color: red;
 `;
-
 const outline1 = `
 
 a:focus {
@@ -95,7 +83,6 @@ a:focus {
   outline-color: currentColor; }
 
 `;
-
 const outline2 = `
 
 a:focus {
@@ -105,7 +92,6 @@ a:focus {
   outline-style: dotted; }
 
 `;
-
 const inset1 = `
 
 a:focus {    
@@ -115,7 +101,6 @@ top: auto;
     right: auto; }
 
 `;
-
 const font1 = `
 html, body {
     font-family: Verdana, sans-serif;
@@ -124,7 +109,6 @@ html, body {
     font-weight: bold;
 }
 `;
-
 const font2 = `
 samp {
 font: small-caps bold 24px/1 sans-serif;
@@ -133,7 +117,6 @@ font: small-caps bold 24px/1 sans-serif;
   line-height: 1.19em;
   }
 `;
-
 const background1 = `
 p {
 
@@ -142,7 +125,6 @@ p {
 }
 
 `;
-
 const background2 = `
 a:focus {
 
@@ -151,7 +133,6 @@ background-size: cover auto;
 }
 
 `;
-
 const background3 = `
 
 a{
@@ -162,69 +143,43 @@ background-size: cover auto, contain;
 }
 `;
 describe('shorthand', function () {
-
     it('margin padding', function () {
-
-        return transform(marginPadding, options).then(result => expect(result.code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}'))
+        return transform(marginPadding, options).then(result => f(result.code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}'));
     });
-
     it('border-radius #1', function () {
-
-        return transform(borderRadius1, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}'))
+        return transform(borderRadius1, options).then(result => f(result.code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}'));
     });
-
     it('border-radius #2', function () {
-
-        return transform(borderRadius2, options).then(result => expect(result.code).equals('.test{border-radius:4px 3px 6px/2px 4px}'))
+        return transform(borderRadius2, options).then(result => f(result.code).equals('.test{border-radius:4px 3px 6px/2px 4px}'));
     });
-
     it('border-width #3', function () {
-
-        return transform(borderRadius3, options).then(result => expect(result.code).equals('.test input[type=text]{border-width:2px thin}'))
+        return transform(borderRadius3, options).then(result => f(result.code).equals('.test input[type=text]{border-width:2px thin}'));
     });
-
     it('border-color #4', function () {
-
-        return transform(borderColor, options).then(result => expect(result.code).equals('.test input[type=text]{border-color:gold red}'))
+        return transform(borderColor, options).then(result => f(result.code).equals('.test input[type=text]{border-color:gold red}'));
     });
-
     it('outline #5', function () {
-
-        return transform(outline1, options).then(result => expect(result.code).equals('a:focus{outline:0}'))
+        return transform(outline1, options).then(result => f(result.code).equals('a:focus{outline:0}'));
     });
-
-    it('outline #6',  function () {
-
-       return transform(outline2, options).then(result => expect(result.code).equals('a:focus{outline:#dedede dotted thin}'))
+    it('outline #6', function () {
+        return transform(outline2, options).then(result => f(result.code).equals('a:focus{outline:#dedede dotted thin}'));
     });
-
-    it('inset #6',  function () {
-
-       return transform(inset1, options).then(result => expect(result.code).equals('a:focus{inset:auto}'))
+    it('inset #6', function () {
+        return transform(inset1, options).then(result => f(result.code).equals('a:focus{inset:auto}'));
     });
-
-    it('font #7',  function () {
-
-       return transform(font1, options).then(result => expect(result.code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}'))
+    it('font #7', function () {
+        return transform(font1, options).then(result => f(result.code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}'));
     });
-
-    it('font #8',  function () {
-
-       return transform(font2, options).then(result => expect(result.code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}'))
+    it('font #8', function () {
+        return transform(font2, options).then(result => f(result.code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}'));
     });
-
-    it('background #9',  function () {
-
-       return transform(background1, options).then(result => expect(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'))
+    it('background #9', function () {
+        return transform(background1, options).then(result => f(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'));
     });
-
-    it('background #10',  function () {
-
-       return transform(background2, options).then(result => expect(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}'))
+    it('background #10', function () {
+        return transform(background2, options).then(result => f(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}'));
     });
-
     it('background #11', function () {
-
-        return transform(background3, options).then(result => expect(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg) 50%/cover,#eee url(../../media/examples/lizard.png) 35%/contain}'))
+        return transform(background3, options).then(result => f(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg) 50%/cover,#eee url(../../media/examples/lizard.png) 35%/contain}'));
     });
 });

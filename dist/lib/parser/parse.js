@@ -1,4 +1,4 @@
-import { isWhiteSpace, isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHash, isNewLine, isIdentStart, isHexColor } from './utils/syntax.js';
+import { isWhiteSpace, isDigit, isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHash, isNewLine, isIdentStart, isHexColor } from './utils/syntax.js';
 import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/utils/color.js';
 import { deduplicate } from './deduplicate.js';
@@ -306,7 +306,7 @@ async function parse(iterator, opt = {}) {
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
             // there must be a top level rule in the stack
-            const raw = tokens.reduce((acc, curr, index, array) => {
+            const raw = tokens.reduce((acc, curr) => {
                 acc.push(renderToken(curr, { removeComments: true }));
                 return acc;
             }, []);
@@ -341,7 +341,12 @@ async function parse(iterator, opt = {}) {
                     }
                 }
                 const uniq = new Map;
-                parseTokens(tokens, { compress: options.compress }).reduce((acc, curr) => {
+                parseTokens(tokens, 'Rule', { compress: options.compress }).reduce((acc, curr, index, array) => {
+                    if (curr.typ == 'Whitespace') {
+                        if (array[index - 1]?.val == '+' || array[index + 1]?.val == '+') {
+                            return acc;
+                        }
+                    }
                     let t = renderToken(curr, { compress: true });
                     if (t == ',') {
                         acc.push([]);
@@ -385,7 +390,7 @@ async function parse(iterator, opt = {}) {
                     }
                     if (tokens[i].typ == 'Colon') {
                         name = tokens.slice(0, i);
-                        value = parseTokens(tokens.slice(i + 1), {
+                        value = parseTokens(tokens.slice(i + 1), 'Declaration', {
                             parseColor: true,
                             src: options.src,
                             resolveUrls: options.resolveUrls,
@@ -474,7 +479,6 @@ async function parse(iterator, opt = {}) {
         position.ind = ind;
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
-        // }
     }
     function consumeWhiteSpace() {
         let count = 0;
@@ -706,6 +710,9 @@ async function parse(iterator, opt = {}) {
                 break;
             case '~':
             case '|':
+                if (tokens.at(-1)?.typ == 'Whitespace') {
+                    tokens.pop();
+                }
                 if (buffer.length > 0) {
                     pushToken(getType(buffer));
                     buffer = '';
@@ -727,6 +734,9 @@ async function parse(iterator, opt = {}) {
                     break;
                 }
                 pushToken(getType(buffer));
+                while (isWhiteSpace(value.charCodeAt(0))) {
+                    value = next();
+                }
                 buffer = value;
                 break;
             case '>':
@@ -740,6 +750,16 @@ async function parse(iterator, opt = {}) {
                 pushToken({ typ: 'Gt' });
                 consumeWhiteSpace();
                 break;
+            case '.':
+                const codepoint = peek().charCodeAt(0);
+                if (!isDigit(codepoint) && buffer !== '') {
+                    pushToken(getType(buffer));
+                    buffer = value;
+                    break;
+                }
+                buffer += value;
+                break;
+            case '+':
             case ':':
             case ',':
             case '=':
@@ -753,6 +773,9 @@ async function parse(iterator, opt = {}) {
                 }
                 pushToken(getType(value));
                 buffer = '';
+                if (value == '+' && isWhiteSpace(peek().charCodeAt(0))) {
+                    pushToken(getType(next()));
+                }
                 while (isWhiteSpace(peek().charCodeAt(0))) {
                     next();
                 }
@@ -930,13 +953,14 @@ async function parse(iterator, opt = {}) {
     }
     return { ast, errors, bytesIn };
 }
-function parseTokens(tokens, options = {}) {
+function parseTokens(tokens, nodeType, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];
         if (t.typ == 'Whitespace' && ((i == 0 ||
             i + 1 == tokens.length ||
             ['Comma'].includes(tokens[i + 1].typ) ||
             (i > 0 &&
+                tokens[i + 1]?.typ != 'Literal' &&
                 funcLike.includes(tokens[i - 1].typ) &&
                 !['var', 'calc'].includes(tokens[i - 1].val))))) {
             tokens.splice(i--, 1);
@@ -983,7 +1007,7 @@ function parseTokens(tokens, options = {}) {
                 if (t.chi.length > 1) {
                     /*(<AttrToken>t).chi =*/
                     // @ts-ignore
-                    parseTokens(t.chi, options);
+                    parseTokens(t.chi, t.typ, options);
                 }
                 // @ts-ignore
                 t.chi.forEach(val => {
@@ -1095,7 +1119,7 @@ function parseTokens(tokens, options = {}) {
             // @ts-ignore
             if (t.chi.length > 0) {
                 // @ts-ignore
-                parseTokens(t.chi, options);
+                parseTokens(t.chi, t.typ, options);
                 if (t.typ == 'Pseudo-class-func' && t.val == ':is' && options.compress) {
                     //
                     const count = t.chi.filter(t => t.typ != 'Comment').length;

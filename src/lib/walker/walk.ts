@@ -22,7 +22,7 @@ function* doWalk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Gener
 
         for (const child of <Array<AstNode>>node.chi) {
 
-            yield* doWalk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root == null ? node : root))
+            yield* doWalk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node))
         }
     }
 }

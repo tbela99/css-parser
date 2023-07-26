@@ -1,12 +1,10 @@
-import { isIdentStart } from './utils/syntax.js';
-import { getConfig } from './utils/config.js';
-import { PropertyList } from './declaration/list.js';
-import { eq } from './utils/eq.js';
-import { render } from '../renderer/render.js';
-
+import { getConfig, isIdentStart } from "./utils";
+import { PropertyList } from "./declaration";
+import { eq } from "./utils/eq";
+import { render } from "../renderer";
 const configuration = getConfig();
 const combinators = ['+', '>', '~'];
-function deduplicate(ast, options = {}, recursive = false) {
+export function deduplicate(ast, options = {}, recursive = false) {
     // @ts-ignore
     if (('chi' in ast) && ast.chi?.length > 0) {
         let i = 0;
@@ -286,7 +284,7 @@ function hasOnlyDeclarations(node) {
     }
     return true;
 }
-function hasDeclaration(node) {
+export function hasDeclaration(node) {
     // @ts-ignore
     for (let i = 0; i < node.chi?.length; i++) {
         // @ts-ignore
@@ -298,7 +296,7 @@ function hasDeclaration(node) {
     }
     return true;
 }
-function deduplicateRule(ast) {
+export function deduplicateRule(ast) {
     // @ts-ignore
     if (!('chi' in ast) || ast.chi?.length <= 1) {
         return ast;
@@ -531,7 +529,7 @@ function diff(n1, n2, options = {}) {
     }
     return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node2 : node2 };
 }
-function reduceSelector(selector) {
+export function reduceSelector(selector) {
     if (selector.length == 0) {
         return null;
     }
@@ -600,5 +598,3 @@ function reducer(acc, curr) {
     acc.push(curr.join(''));
     return acc;
 }
-
-export { deduplicate, deduplicateRule, hasDeclaration, reduceSelector };

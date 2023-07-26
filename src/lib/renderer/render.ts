@@ -10,8 +10,6 @@ import {
 } from "../../@types";
 import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
 
-const indents: string[] = [];
-
 export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
     const options = Object.assign(opt.compress ? {
@@ -36,30 +34,14 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
             }
         }
 
-        // if (options.compress && curr.typ == 'Whitespace') {
-        //
-        //     if (original[index + 1]?.typ == 'Start-parens' ||
-        //         (index > 0 && (original[index - 1].typ == 'Pseudo-class-func' ||
-        //         original[index - 1].typ == 'End-parens' ||
-        //         original[index - 1].typ == 'UrlFunc' ||
-        //         original[index - 1].typ == 'Func' ||
-        //         (
-        //             original[index - 1].typ == 'Color' &&
-        //             (<ColorToken>original[index - 1]).kin != 'hex' &&
-        //             (<ColorToken>original[index - 1]).kin != 'lit')))) {
-        //
-        //         return acc;
-        //     }
-        // }
-
         return acc + renderToken(curr, options);
     }
 
-    return {code: doRender(data, options, reducer)};
+    return {code: doRender(data, options, reducer, 0)};
 }
 
 // @ts-ignore
-function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0): string {
+function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0, indents: string[] = []): string {
 
     if (indents.length < level + 1) {
 
@@ -84,7 +66,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = doRender(node, options, reducer, level);
+                const str: string = doRender(node, options, reducer, level, indents);
 
                 if (str === '') {
 
@@ -124,7 +106,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
                     str = `@${(<AstAtRule>node).nam} ${(<AstAtRule>node).val};`;
                 } else {
 
-                    str = doRender(node, options, reducer, level + 1);
+                    str = doRender(node, options, reducer, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -136,8 +118,6 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
                     return css;
                 }
-
-                if (str !== '')
 
                     return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
