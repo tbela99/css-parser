@@ -203,6 +203,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         }
     }
     async function parseNode(tokens: Token[]) {
+
         let i: number;
         let loc: Location;
 
@@ -888,15 +889,16 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
             case '>':
 
+                if (buffer !== '') {
+                    pushToken(getType(buffer));
+                    buffer = '';
+                }
+
                 if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
 
                     tokens.pop();
                 }
 
-                if (buffer !== '') {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
                 pushToken({ typ: 'Gt' });
                 consumeWhiteSpace();
                 break;
@@ -1060,6 +1062,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 pushToken(getBlockType(value));
                 let node = null;
                 if (value == '{' || value == ';') {
+
                     node = await parseNode(tokens);
                     if (node != null) {
                         stack.push(node);
@@ -1154,6 +1157,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                     tokens[i + 1].typ = 'Pseudo-class';
                 }
                 if (typ == 'Func' || typ == 'Iden') {
+
                     tokens.splice(i, 1);
                     i--;
                     continue;
@@ -1217,6 +1221,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                             (<PseudoClassFunctionToken>tokens[k + 1]).val = ':' + (<PseudoClassFunctionToken>tokens[k + 1]).val;
                         }
                         if (typ == 'Func' || typ == 'Iden') {
+
                             tokens.splice(k, 1);
                             k--;
                             continue;
@@ -1233,6 +1238,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                     break;
                 }
             }
+
             // @ts-ignore
             t.chi = tokens.splice(i + 1, k - i);
             // @ts-ignore
@@ -1262,11 +1268,13 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                         if (t.chi[m].typ == 'Literal') {
                             // @ts-ignore
                             if (t.chi[m + 1]?.typ == 'Whitespace') {
+
                                 // @ts-ignore
                                 t.chi.splice(m + 1, 1);
                             }
                             // @ts-ignore
                             if (t.chi[m - 1]?.typ == 'Whitespace') {
+
                                 // @ts-ignore
                                 t.chi.splice(m - 1, 1);
                                 m--;
@@ -1307,6 +1315,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                         (i == 0 &&
                             (tokens[i + 1]?.typ == 'Comma' || tokens.length == i + 1)) ||
                         (tokens[i - 1]?.typ == 'Comma' && (tokens[i + 1]?.typ == 'Comma' || tokens.length == i + 1))) {
+
                         tokens.splice(i, 1, ...t.chi);
                         i = Math.max(0, i - t.chi.length);
                     }

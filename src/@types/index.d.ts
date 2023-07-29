@@ -79,6 +79,14 @@ export interface ParseTokenOptions extends ParserOptions {
     parseColor?: boolean;
 }
 
+
+export interface MatchedSelector {
+    match: string[][];
+    selector1: string[][];
+    selector2: string[][];
+    eq: boolean
+}
+
 export interface Position {
 
     ind: number;

@@ -1,3 +1,5 @@
+[![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions)
+
 # css-parser
 
 CSS parser for node and the browser

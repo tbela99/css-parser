@@ -740,12 +740,12 @@ async function parse(iterator, opt = {}) {
                 buffer = value;
                 break;
             case '>':
-                if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
-                    tokens.pop();
-                }
                 if (buffer !== '') {
                     pushToken(getType(buffer));
                     buffer = '';
+                }
+                if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
+                    tokens.pop();
                 }
                 pushToken({ typ: 'Gt' });
                 consumeWhiteSpace();

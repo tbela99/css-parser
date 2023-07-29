@@ -4,6 +4,7 @@
 /package-lock.json export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
+/coverage/ export-ignore
 /rollup.config.mjs export-ignore
 /tsconfig.json export-ignore
 # exclude all files in test/ from stats
@@ -11,6 +12,7 @@
 /docs/** linguist-vendored
 /tools/** linguist-vendored
 /dist/** linguist-vendored
+/coverage/** linguist-vendored
 #
 # do not replace lf by crlf
 *.css text

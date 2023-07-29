@@ -1,27 +1,14 @@
 import dts from 'rollup-plugin-dts';
 import typescript from "@rollup/plugin-typescript";
 import nodeResolve from "@rollup/plugin-node-resolve";
-import {glob} from "glob";
 import terser from "@rollup/plugin-terser";
 import json from "@rollup/plugin-json";
 import commonjs from "@rollup/plugin-commonjs";
 
-export default [...await glob(['./test/specs/**/*.spec.ts', './test/specs/**/*.web-spec.ts']).then(files => files.map(input => {
-    return {
-        input,
-        plugins: [nodeResolve(), commonjs({transformMixedEsModules:true}), json(), typescript()],
-        output:
-            {
-                banner: `/* generate from ${input} */`,
-                file: `${input.replace(/\.spec\.ts$/, '.test.js').replace(/\.web-spec\.ts$/, '.web.js').replace('/specs/', '/spec-runners/')}`,
-                format: 'es'
-            }
-    }
-}))
-].concat([
+export default [
     {
         input: 'src/index.ts',
-        plugins: [nodeResolve(), commonjs({transformMixedEsModules:true}), json(), typescript()],
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [
             {
                 // file: './dist/index.mjs',
@@ -38,7 +25,7 @@ export default [...await glob(['./test/specs/**/*.spec.ts', './test/specs/**/*.w
     },
     {
         input: 'src/web/index.ts',
-        plugins: [nodeResolve(), commonjs({transformMixedEsModules:true}), json(), typescript()],
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [
             {
                 // file: './dist/index.mjs',
@@ -62,4 +49,4 @@ export default [...await glob(['./test/specs/**/*.spec.ts', './test/specs/**/*.w
             format: 'es'
         }
     }
-])
+];
