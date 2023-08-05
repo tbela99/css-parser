@@ -1,7 +1,8 @@
-import {AstDeclaration, AstNode, ShorthandMapType, ShorthandPropertyType} from "../../../@types";
+import {AstDeclaration, AstNode, ShorthandMapType, ShorthandPropertyType, Token} from "../../../@types";
 import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";
+import {parseString} from "../parse";
 
 const config = getConfig();
 
@@ -14,6 +15,11 @@ export class PropertyList {
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>;
     }
 
+    set(nam: string, value: string | Token[]) {
+
+        return this.add({typ: 'Declaration', nam, val: Array.isArray(value) ? value : parseString(String(value))});
+    }
+
     add(declaration: AstNode) {
 
         if (declaration.typ != 'Declaration') {
@@ -22,12 +28,55 @@ export class PropertyList {
             return this;
         }
 
-        const propertyName: string = <string>(<AstDeclaration>declaration).nam;
+        let propertyName: string = <string>(<AstDeclaration>declaration).nam;
+        let shortHandType: 'map' | 'set';
+        let shorthand: string;
 
         if (propertyName in config.properties) {
 
             // @ts-ignore
-            const shorthand: string = <string>config.properties[propertyName].shorthand;
+            if ('map' in (<ShorthandPropertyType>config.properties[propertyName])) {
+
+                shortHandType = 'map';
+                // @ts-ignore
+                shorthand = <string>config.properties[propertyName].map;
+            }
+
+            else {
+
+                shortHandType = 'set';
+                // @ts-ignore
+                shorthand = <string>config.properties[propertyName].shorthand;
+            }
+        }
+
+        else if (propertyName in config.map) {
+
+            shortHandType = 'map';
+            // @ts-ignore
+            shorthand = <string>config.map[propertyName].shorthand;
+        }
+
+        // @ts-ignore
+        if (shortHandType == 'map') {
+
+            // @ts-ignore
+            if (!this.declarations.has(shorthand)) {
+
+                // @ts-ignore
+                this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
+            }
+
+            // @ts-ignore
+            (<PropertyMap>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
+            // return this;
+        }
+
+        // @ts-ignore
+        else if (shortHandType == 'set') {
+
+            // @ts-ignore
+            // const shorthand: string = <string>config.properties[propertyName].shorthand;
 
             if (!this.declarations.has(shorthand)) {
 
@@ -35,26 +84,14 @@ export class PropertyList {
                 this.declarations.set(shorthand, new PropertySet(<ShorthandPropertyType>config.properties[shorthand]));
             }
 
-            (<PropertySet>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
-            return this;
-        }
-
-        if (propertyName in config.map) {
-
             // @ts-ignore
-            const shorthand: string = <string>config.map[propertyName].shorthand;
+            (<PropertySet>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
+            // return this;
+        } else {
 
-            if (!this.declarations.has(shorthand)) {
-
-                // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
-            }
-
-            (<PropertyMap>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
-            return this;
+            this.declarations.set(propertyName, declaration);
         }
 
-        this.declarations.set(propertyName, declaration);
         return this;
     }
 

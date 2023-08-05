@@ -1,5 +1,6 @@
 /test/ export-ignore
 /docs/ export-ignore
+/benchmark
 /tools/ export-ignore
 /package-lock.json export-ignore
 /.gitignore export-ignore

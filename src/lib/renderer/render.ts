@@ -8,11 +8,11 @@ import {
     RenderOptions, RenderResult,
     Token
 } from "../../@types";
-import {cmyk2hex, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
+import {cmyk2hex, COLORS_NAMES, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
 
 export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
-    const options = Object.assign(opt.compress ? {
+    const options = Object.assign(opt.minify ?? true ? {
         indent: '',
         newLine: '',
         removeComments: true
@@ -144,9 +144,14 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
 
         case 'Color':
 
-            if (options.compress || options.colorConvert) {
+            if (options.minify || options.colorConvert) {
 
-                let value: string = token.kin == 'hex' ? token.val.toLowerCase() : '';
+                if (token.kin == 'lit' && token.val.toLowerCase() == 'currentcolor') {
+
+                    return 'currentcolor';
+                }
+
+                let value: string = token.kin == 'hex' ? token.val.toLowerCase() : (token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : '');
 
                 if (token.val == 'rgb' || token.val == 'rgba') {
 
@@ -206,7 +211,7 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
         case 'Pseudo-class-func':
 
             // @ts-ignore
-            return (/* options.compress && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce((acc: string, curr: Token) => {
+            return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce((acc: string, curr: Token) => {
 
                 if (options.removeComments && curr.typ == 'Comment') {
 
@@ -350,7 +355,7 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
         case 'String':
         case 'Iden':
         case 'Delim':
-            return /* options.compress && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
+            return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 
     throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);

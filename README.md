@@ -8,8 +8,19 @@ CSS parser for node and the browser
 
 ```shell
 $ npm install @tbela99/css-parser
-
 ```
+
+### Features
+
+- [x] fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
+- [x] efficient minification, see benchmark
+- [x] replace @import at-rules with actual css content of the imported rule
+- [x] automatically create nested css rules
+- [x] works the same way in node and web browser
+
+### Performance
+
+- [x] flatten @import
 
 ## Transform
 
@@ -28,7 +39,7 @@ transform(css, transformOptions = {})
 
 import {transform} from '@tbela99/css-parser';
 
-const {ast, code, errors, stats} = await transform(css, {compress: true, resolveImport: true, cwd: 'files/css'});
+const {ast, code, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
 ```
 
 ### TransformOptions
@@ -38,7 +49,8 @@ Include ParseOptions and RenderOptions
 #### ParseOptions
 
 - src: string, optional. css file location to be used with sourcemap.
-- compress: boolean, optional. default to _true_. optimize ast and minify css.
+- minify: boolean, optional. default to _true_. optimize ast.
+- nestingRules: boolean, optional. automatically nest rules.
 - removeEmpty: boolean, remove empty nodes from the ast.
 - location: boolean, optional. includes node location in the ast, required for sourcemap generation.
 - cwd: string, optional. the current working directory. when specified url() are resolved using this value
@@ -46,11 +58,11 @@ Include ParseOptions and RenderOptions
 - resolveUrls: boolean, optional. resolve css url() according to the parameters 'src' and 'cwd'
 
 #### RenderOptions
-- compress: boolean, optional. default to _true_. optimize ast and minify css.
+- minify: boolean, optional. default to _true_. minify css output.
 - indent: string, optional. css indention string. uses space character by default.
 - newLine: string, new line character.
 - removeComments: boolean, remove comments in generated css.
-- preserveLicense: boolean, force preserving comments starting with '/\*!' when compress is enabling.
+- preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
 - colorConvert: boolean, convert colors to hex.
 
 
@@ -84,7 +96,7 @@ render(ast, RenderOptions = {});
 import {render} from '@tbela99/css-parser';
 
 // minified
-const {code} = render(ast, {compress: true});
+const {code} = render(ast, {minify: true});
 
 console.log(code);
 ```

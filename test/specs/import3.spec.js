@@ -9,8 +9,8 @@ describe('process import', function () {
     it('process import #3', function () {
         return readFile(dirname(new URL(import.meta.url).pathname) + '/../files/result/font-awesome-line-awesome.css', { encoding: 'utf-8' }).
             then(file => transform(import2, {
-            compress: true,
+            minify: true,
             resolveImport: true
-        }).then((result) => f(result.code).equals(file.trimEnd())));
+        }).then((result) => f(result.code).equals(file.trim())));
     });
 });

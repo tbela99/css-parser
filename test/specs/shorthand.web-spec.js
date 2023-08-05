@@ -12,7 +12,7 @@ function dirname(path) {
 }
 dirname(new URL(import.meta.url).pathname) + '/../files';
 const options = {
-    compress: true,
+    minify: true,
     removeEmpty: true
 };
 const marginPadding = `

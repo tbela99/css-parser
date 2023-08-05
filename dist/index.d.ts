@@ -173,6 +173,275 @@ interface AttrToken {
 }
 declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
 
+interface PropertiesConfig {
+    properties: PropertiesConfigProperties;
+    map: Map;
+}
+interface Map {
+    border: Border;
+    "border-color": BackgroundPositionClass;
+    "border-style": BackgroundPositionClass;
+    "border-width": BackgroundPositionClass;
+    outline: Outline;
+    "outline-color": BackgroundPositionClass;
+    "outline-style": BackgroundPositionClass;
+    "outline-width": BackgroundPositionClass;
+    font: Font;
+    "font-weight": BackgroundPositionClass;
+    "font-style": BackgroundPositionClass;
+    "font-size": BackgroundPositionClass;
+    "line-height": BackgroundPositionClass;
+    "font-stretch": BackgroundPositionClass;
+    "font-variant": BackgroundPositionClass;
+    "font-family": BackgroundPositionClass;
+    background: Background;
+    "background-repeat": BackgroundPositionClass;
+    "background-color": BackgroundPositionClass;
+    "background-image": BackgroundPositionClass;
+    "background-attachment": BackgroundPositionClass;
+    "background-clip": BackgroundPositionClass;
+    "background-origin": BackgroundPositionClass;
+    "background-position": BackgroundPositionClass;
+    "background-size": BackgroundPositionClass;
+}
+interface Background {
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: any[];
+    multiple: boolean;
+    separator: Separator;
+    properties: BackgroundProperties;
+}
+interface BackgroundProperties {
+    "background-repeat": BackgroundRepeat;
+    "background-color": PurpleBackgroundAttachment;
+    "background-image": PurpleBackgroundAttachment;
+    "background-attachment": PurpleBackgroundAttachment;
+    "background-clip": PurpleBackgroundAttachment;
+    "background-origin": PurpleBackgroundAttachment;
+    "background-position": BackgroundPosition;
+    "background-size": BackgroundSize;
+}
+interface PurpleBackgroundAttachment {
+    types: string[];
+    default: string[];
+    keywords: string[];
+    required?: boolean;
+    mapping?: BackgroundAttachmentMapping;
+}
+interface BackgroundAttachmentMapping {
+    "ultra-condensed": string;
+    "extra-condensed": string;
+    condensed: string;
+    "semi-condensed": string;
+    normal: string;
+    "semi-expanded": string;
+    expanded: string;
+    "extra-expanded": string;
+    "ultra-expanded": string;
+}
+interface BackgroundPosition {
+    multiple: boolean;
+    types: string[];
+    default: string[];
+    keywords: string[];
+    mapping: BackgroundPositionMapping;
+    constraints: BackgroundPositionConstraints;
+}
+interface BackgroundPositionConstraints {
+    mapping: ConstraintsMapping;
+}
+interface ConstraintsMapping {
+    max: number;
+}
+interface BackgroundPositionMapping {
+    left: string;
+    top: string;
+    center: string;
+    bottom: string;
+    right: string;
+}
+interface BackgroundRepeat {
+    types: any[];
+    default: string[];
+    multiple: boolean;
+    keywords: string[];
+    mapping: BackgroundRepeatMapping;
+}
+interface BackgroundRepeatMapping {
+    "repeat no-repeat": string;
+    "no-repeat repeat": string;
+    "repeat repeat": string;
+    "space space": string;
+    "round round": string;
+    "no-repeat no-repeat": string;
+}
+interface BackgroundSize {
+    multiple: boolean;
+    previous: string;
+    prefix: Prefix;
+    types: string[];
+    default: string[];
+    keywords: string[];
+    mapping: BackgroundSizeMapping;
+}
+interface BackgroundSizeMapping {
+    "auto auto": string;
+}
+interface Prefix {
+    typ: string;
+    val: string;
+}
+interface Separator {
+    typ: string;
+}
+interface BackgroundPositionClass {
+    shorthand: string;
+}
+interface Border {
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
+    properties: BorderProperties;
+}
+interface BorderProperties {
+    "border-color": BorderColorClass;
+    "border-style": BorderColorClass;
+    "border-width": BorderColorClass;
+}
+interface BorderColorClass {
+}
+interface Font {
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: any[];
+    properties: FontProperties;
+}
+interface FontProperties {
+    "font-weight": FontWeight;
+    "font-style": PurpleBackgroundAttachment;
+    "font-size": PurpleBackgroundAttachment;
+    "line-height": LineHeight;
+    "font-stretch": PurpleBackgroundAttachment;
+    "font-variant": PurpleBackgroundAttachment;
+    "font-family": FontFamily;
+}
+interface FontFamily {
+    types: string[];
+    default: any[];
+    keywords: string[];
+    required: boolean;
+    multiple: boolean;
+    separator: Separator;
+}
+interface FontWeight {
+    types: string[];
+    default: string[];
+    keywords: string[];
+    constraints: FontWeightConstraints;
+    mapping: FontWeightMapping;
+}
+interface FontWeightConstraints {
+    value: Value;
+}
+interface Value {
+    min: string;
+    max: string;
+}
+interface FontWeightMapping {
+    thin: string;
+    hairline: string;
+    "extra light": string;
+    "ultra light": string;
+    light: string;
+    normal: string;
+    regular: string;
+    medium: string;
+    "semi bold": string;
+    "demi bold": string;
+    bold: string;
+    "extra bold": string;
+    "ultra bold": string;
+    black: string;
+    heavy: string;
+    "extra black": string;
+    "ultra black": string;
+}
+interface LineHeight {
+    types: string[];
+    default: string[];
+    keywords: string[];
+    previous: string;
+    prefix: Prefix;
+}
+interface Outline {
+    shorthand: string;
+    pattern: string;
+    keywords: string[];
+    default: string[];
+    properties: OutlineProperties;
+}
+interface OutlineProperties {
+    "outline-color": PurpleBackgroundAttachment;
+    "outline-style": PurpleBackgroundAttachment;
+    "outline-width": PurpleBackgroundAttachment;
+}
+interface PropertiesConfigProperties {
+    inset: BorderRadius;
+    top: BackgroundPositionClass;
+    right: BackgroundPositionClass;
+    bottom: BackgroundPositionClass;
+    left: BackgroundPositionClass;
+    margin: BorderRadius;
+    "margin-top": BackgroundPositionClass;
+    "margin-right": BackgroundPositionClass;
+    "margin-bottom": BackgroundPositionClass;
+    "margin-left": BackgroundPositionClass;
+    padding: BorderColor;
+    "padding-top": BackgroundPositionClass;
+    "padding-right": BackgroundPositionClass;
+    "padding-bottom": BackgroundPositionClass;
+    "padding-left": BackgroundPositionClass;
+    "border-radius": BorderRadius;
+    "border-top-left-radius": BackgroundPositionClass;
+    "border-top-right-radius": BackgroundPositionClass;
+    "border-bottom-right-radius": BackgroundPositionClass;
+    "border-bottom-left-radius": BackgroundPositionClass;
+    "border-width": BorderColor;
+    "border-top-width": BackgroundPositionClass;
+    "border-right-width": BackgroundPositionClass;
+    "border-bottom-width": BackgroundPositionClass;
+    "border-left-width": BackgroundPositionClass;
+    "border-style": BorderColor;
+    "border-top-style": BackgroundPositionClass;
+    "border-right-style": BackgroundPositionClass;
+    "border-bottom-style": BackgroundPositionClass;
+    "border-left-style": BackgroundPositionClass;
+    "border-color": BorderColor;
+    "border-top-color": BackgroundPositionClass;
+    "border-right-color": BackgroundPositionClass;
+    "border-bottom-color": BackgroundPositionClass;
+    "border-left-color": BackgroundPositionClass;
+}
+interface BorderColor {
+    shorthand: string;
+    map?: string;
+    properties: string[];
+    types: string[];
+    keywords: string[];
+}
+interface BorderRadius {
+    shorthand: string;
+    properties: string[];
+    types: string[];
+    multiple: boolean;
+    separator: null | string;
+    keywords: string[];
+}
+
 interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
@@ -190,7 +459,7 @@ interface ParserOptions {
 
     src?: string;
     sourcemap?: boolean;
-    compress?: boolean;
+    minify?: boolean;
     nestingRules?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
@@ -203,7 +472,7 @@ interface ParserOptions {
 
 interface RenderOptions {
 
-    compress?: boolean;
+    minify?: boolean;
     preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
@@ -234,6 +503,13 @@ interface TransformResult extends ParseResult, RenderResult {
         render: string;
         total: string;
     }
+}
+
+interface TokenizeResult {
+    token: string;
+    hint?: string;
+    position: Position;
+    bytesIn: number;
 }
 
 interface Position {
@@ -313,18 +589,50 @@ type AstNode =
     | AstRule
     | AstDeclaration;
 
-declare function deduplicate(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
-declare function hasDeclaration(node: AstRule): boolean;
-declare function deduplicateRule(ast: AstRule | AstAtRule): AstRule | AstAtRule;
+declare const urlTokenMatcher: RegExp;
+declare function parseString(src: string, options?: {
+    location: boolean;
+}): Token[];
+
+declare function tokenize(iterator: string): Generator<TokenizeResult>;
+
+declare function isLength(dimension: DimensionToken): boolean;
+declare function isResolution(dimension: DimensionToken): boolean;
+declare function isAngle(dimension: DimensionToken): boolean;
+declare function isTime(dimension: DimensionToken): boolean;
+declare function isFrequency(dimension: DimensionToken): boolean;
+declare function isIdentStart(codepoint: number): boolean;
+declare function isDigit(codepoint: number): boolean;
+declare function isIdentCodepoint(codepoint: number): boolean;
+declare function isIdent(name: string): boolean;
+declare function isPseudo(name: string): boolean;
+declare function isHash(name: string): boolean;
+declare function isNumber(name: string): boolean;
+declare function isDimension(name: string): boolean;
+declare function isPercentage(name: string): boolean;
+declare function parseDimension(name: string): DimensionToken | LengthToken | AngleToken;
+declare function isHexColor(name: string): boolean;
+declare function isHexDigit(name: string): boolean;
+declare function isFunction(name: string): boolean;
+declare function isAtKeyword(name: string): boolean;
+declare function isNewLine(codepoint: number): boolean;
+declare function isWhiteSpace(codepoint: number): boolean;
+
+declare const getConfig: () => PropertiesConfig;
+
+declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
+declare function renderToken(token: Token, options?: RenderOptions): string;
+
+declare const combinators: string[];
+declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
 declare function reduceSelector(selector: string[][]): {
     match: boolean;
     optimized: string[];
     selector: string[][];
     reducible: boolean;
 } | null;
-
-declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
-declare function renderToken(token: Token, options?: RenderOptions): string;
+declare function hasDeclaration(node: AstRule): boolean;
+declare function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule;
 
 declare function walk(node: AstNode): Generator<{
     node: AstNode;
@@ -344,4 +652,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { deduplicate, deduplicateRule, dirname, hasDeclaration, load, matchUrl, parse, reduceSelector, render, renderToken, resolve, transform, walk };
+export { combinators, dirname, getConfig, hasDeclaration, isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };

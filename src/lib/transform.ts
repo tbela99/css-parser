@@ -4,7 +4,7 @@ import {render} from "./renderer";
 
 export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    options = {compress: true, removeEmpty: true, ...options};
+    options = {minify: true, removeEmpty: true, ...options};
 
     const startTime: number = performance.now();
     const parseResult: ParseResult = <ParseResult>await parse(css, options);

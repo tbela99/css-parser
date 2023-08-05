@@ -1,4 +1,5 @@
 import { parse as parse$1 } from '../lib/parser/parse.js';
+export { parseString, urlTokenMatcher } from '../lib/parser/parse.js';
 import '../lib/renderer/utils/color.js';
 import { transform as transform$1 } from '../lib/transform.js';
 import { load } from './load.js';

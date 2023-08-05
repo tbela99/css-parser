@@ -18,7 +18,7 @@ abbr[title], abbr[data-original-title] {
 describe('process import', function () {
     it('process import #1', function () {
         return transform(atRule, {
-            compress: true,
+            minify: true,
             resolveImport: true
         }).then((result) => f(result.code).equals(`p{color:#8133cc26}abbr:is([title],[data-original-title]){text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
     });

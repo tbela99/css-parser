@@ -2,7 +2,7 @@ import { parse } from './parser/parse.js';
 import { render } from './renderer/render.js';
 
 async function transform(css, options = {}) {
-    options = { compress: true, removeEmpty: true, ...options };
+    options = { minify: true, removeEmpty: true, ...options };
     const startTime = performance.now();
     const parseResult = await parse(css, options);
     const renderTime = performance.now();

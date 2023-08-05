@@ -4,6 +4,7 @@ export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
 export * from './shorthand';
+export * from './config';
 
 export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
@@ -29,7 +30,7 @@ export interface ParserOptions {
 
     src?: string;
     sourcemap?: boolean;
-    compress?: boolean;
+    minify?: boolean;
     nestingRules?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
@@ -42,7 +43,7 @@ export interface ParserOptions {
 
 export interface RenderOptions {
 
-    compress?: boolean;
+    minify?: boolean;
     preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
@@ -79,6 +80,12 @@ export interface ParseTokenOptions extends ParserOptions {
     parseColor?: boolean;
 }
 
+export interface TokenizeResult {
+    token: string;
+    hint?: string;
+    position: Position;
+    bytesIn: number;
+}
 
 export interface MatchedSelector {
     match: string[][];

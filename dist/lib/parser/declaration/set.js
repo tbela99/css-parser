@@ -10,8 +10,7 @@ class PropertySet {
     }
     add(declaration) {
         if (declaration.nam == this.config.shorthand) {
-            this.declarations.clear();
-            this.declarations.set(declaration.nam, declaration);
+            this.declarations = new Map;
         }
         else {
             // expand shorthand
@@ -34,6 +33,10 @@ class PropertySet {
                     }
                     if (token.typ != 'Whitespace' && token.typ != 'Comment') {
                         if (token.typ == 'Iden' && this.config.keywords.includes(token.val)) {
+                            if (tokens.length == 0) {
+                                tokens.push([]);
+                                current++;
+                            }
                             tokens[current].push(token);
                         }
                         if (token.typ == 'Literal' && token.val == this.config.separator) {
@@ -49,10 +52,6 @@ class PropertySet {
                     this.declarations.delete(this.config.shorthand);
                     for (const values of tokens) {
                         this.config.properties.forEach((property, index) => {
-                            // if (property == declaration.nam) {
-                            //
-                            //     return;
-                            // }
                             if (!this.declarations.has(property)) {
                                 this.declarations.set(property, {
                                     typ: 'Declaration',
@@ -81,30 +80,20 @@ class PropertySet {
                 this.declarations.set(declaration.nam, declaration);
                 return this;
             }
-            // declaration.chi = declaration.chi.reduce((acc: Token[], token: Token) => {
-            //
-            //     if (this.config.types.includes(token.typ) || ('0' == (<DimensionToken>token).chi && (
-            //         this.config.types.includes('Length') ||
-            //         this.config.types.includes('Angle') ||
-            //     this.config.types.includes('Dimension'))) || (token.typ == 'Iden' && this.config.keywords.includes(token.chi))) {
-            //
-            //         acc.push(token);
-            //     }
-            //
-            //     return acc;
-            // }, <Token[]>[]);
-            this.declarations.set(declaration.nam, declaration);
         }
+        this.declarations.set(declaration.nam, declaration);
         return this;
+    }
+    isShortHand() {
+        if (this.declarations.has(this.config.shorthand)) {
+            return this.declarations.size == 1;
+        }
+        return this.config.properties.length == this.declarations.size;
     }
     [Symbol.iterator]() {
         let iterator;
         const declarations = this.declarations;
-        if (declarations.size < this.config.properties.length || this.config.properties.some((property, index) => {
-            return !declarations.has(property) || (index > 0 &&
-                // @ts-ignore
-                declarations.get(property).val.length != declarations.get(this.config.properties[Math.floor(index / 2)]).val.length);
-        })) {
+        if (declarations.size < this.config.properties.length) {
             iterator = declarations.values();
         }
         else {
@@ -162,17 +151,20 @@ class PropertySet {
                         return acc;
                     }, [])
                 }][Symbol.iterator]();
-            return {
-                next() {
-                    return iterator.next();
-                }
-            };
+            // return {
+            //     next() {
+            //
+            //         return iterator.next();
+            //     }
+            // }
         }
-        return {
-            next() {
-                return iterator.next();
-            }
-        };
+        return iterator;
+        // return {
+        //     next() {
+        //
+        //         return iterator.next();
+        //     }
+        // }
     }
 }
 

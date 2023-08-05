@@ -1,208 +1,91 @@
 import {
-    AstAtRule, AstComment, AstDeclaration, AstNode, AstRule, AstRuleList,
-    AstRuleStyleSheet, AtRuleToken, AttrToken, ColorToken, DashMatchToken,
-    ErrorDescription, FunctionToken, IncludesToken, LiteralToken, Location, NodeType, ParseResult,
-    ParserOptions, ParseTokenOptions, Position, PseudoClassFunctionToken, PseudoClassToken, StringToken, Token, UrlToken
+    AstAtRule,
+    AstComment,
+    AstDeclaration,
+    AstNode,
+    AstRule,
+    AstRuleList,
+    AstRuleStyleSheet,
+    AtRuleToken,
+    ErrorDescription,
+    FunctionToken,
+    LiteralToken,
+    Location,
+    ParseResult,
+    ParserOptions,
+    ParseTokenOptions,
+    Position,
+    PseudoClassFunctionToken,
+    PseudoClassToken,
+    Token,
+    TokenizeResult,
+    UrlToken
 } from "../../@types";
 import {
-    isAtKeyword, isDigit,
-    isDimension,
+    isAtKeyword, isDimension,
     isFunction,
     isHash, isHexColor,
-    isIdent, isIdentStart, isNewLine,
-    isNumber,
+    isIdent, isIdentStart, isNumber,
     isPercentage,
-    isPseudo, isWhiteSpace,
-    parseDimension
+    isPseudo, parseDimension
 } from "./utils";
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/utils";
-import {deduplicate} from "./deduplicate";
+import {combinators, minify} from "../ast";
+import {tokenize} from "./tokenize";
 
-const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
+export const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
+
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
-export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult>  {
+
+/**
+ *
+ * @param iterator
+ * @param opt
+ */
+export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
     const errors: ErrorDescription[] = [];
     const options: ParserOptions = {
         src: '',
         sourcemap: false,
-        compress: false,
+        minify: true,
         nestingRules: false,
         resolveImport: false,
         resolveUrls: false,
         removeEmpty: true,
         ...opt
     };
+
     if (options.resolveImport) {
         options.resolveUrls = true;
     }
-    let ind: number = -1;
-    let lin: number = 1;
-    let col: number = 0;
-    const tokens: Token[] = [];
-    const src  = <string>options.src;
+
+    const src: string = <string>options.src;
     const stack: Array<AstNode | AstComment> = [];
     const ast: AstRuleStyleSheet = {
         typ: "StyleSheet",
         chi: []
     };
-    const position = {
-        ind: Math.max(ind, 0),
-        lin: lin,
-        col: Math.max(col, 1)
-    };
-    let value;
-    let buffer: string = '';
-    let total:number = iterator.length;
-    let bytesIn: number = total;
+
+    let tokens: TokenizeResult[] = [];
     let map: Map<Token, Position> = new Map<Token, Position>;
+    let bytesIn: number = 0;
     let context: AstRuleList = ast;
 
     if (options.sourcemap) {
         ast.loc = {
             sta: {
-                ind: ind,
-                lin: lin,
-                col: col
+                ind: 0,
+                lin: 1,
+                col: 1
             },
             src: ''
         };
     }
-    function getType(val: string): Token {
-        if (val === '') {
-            throw new Error('empty string?');
-        }
-        if (val == ':') {
-            return { typ: 'Colon' };
-        }
-        if (val == ')') {
-            return { typ: 'End-parens' };
-        }
-        if (val == '(') {
-            return { typ: 'Start-parens' };
-        }
-        if (val == '=') {
-            return { typ: 'Delim', val };
-        }
-        if (val == ';') {
-            return { typ: 'Semi-colon' };
-        }
-        if (val == ',') {
-            return { typ: 'Comma' };
-        }
-        if (val == '<') {
-            return { typ: 'Lt' };
-        }
-        if (val == '>') {
-            return { typ: 'Gt' };
-        }
-        if (isPseudo(val)) {
-            return val.endsWith('(') ? {
-                typ: 'Pseudo-class-func',
-                val: val.slice(0, -1),
-                chi: []
-            }
-                : {
-                    typ: 'Pseudo-class',
-                    val
-                };
-        }
-        if (isAtKeyword(val)) {
-            return {
-                typ: 'At-rule',
-                val: val.slice(1)
-            };
-        }
-        if (isFunction(val)) {
-            val = val.slice(0, -1);
-            return <Token>{
-                typ: val == 'url' ? 'UrlFunc' : 'Func',
-                val,
-                chi: []
-            };
-        }
-        if (isNumber(val)) {
-            return {
-                typ: 'Number',
-                val
-            };
-        }
-        if (isDimension(val)) {
-            return parseDimension(val);
-        }
-        if (isPercentage(val)) {
-            return {
-                typ: 'Perc',
-                val: val.slice(0, -1)
-            };
-        }
-        if (val == 'currentColor') {
-            return {
-                typ: 'Color',
-                val,
-                kin: 'lit'
-            };
-        }
-        if (isIdent(val)) {
-            return {
-                typ: 'Iden',
-                val
-            };
-        }
-        if (val.charAt(0) == '#' && isHash(val)) {
-            return {
-                typ: 'Hash',
-                val
-            };
-        }
-        if ('"\''.includes(val.charAt(0))) {
-            return {
-                typ: 'Unclosed-string',
-                val
-            };
-        }
-        return {
-            typ: 'Literal',
-            val
-        };
-    }
-    // consume and throw away
-    function consume(open: string, close: string) {
-        let count = 1;
-        let chr;
-        while (true) {
-            chr = next();
-            if (chr == '\\') {
-                if (peek() === '') {
-                    break;
-                }
-                continue;
-            }
-            else if (chr == '/' && peek() == '*') {
-                next();
-                while (true) {
-                    chr = next();
-                    if (chr === '') {
-                        break;
-                    }
-                    if (chr == '*' && peek() == '/') {
-                        next();
-                        break;
-                    }
-                }
-            }
-            else if (chr == close) {
-                count--;
-            }
-            else if (chr == open) {
-                count++;
-            }
-            if (chr === '' || count == 0) {
-                break;
-            }
-        }
-    }
-    async function parseNode(tokens: Token[]) {
+
+    async function parseNode(results: TokenizeResult[]) {
+
+        let tokens: Token[] = results.map(mapToken);
 
         let i: number;
         let loc: Location;
@@ -225,8 +108,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     (<AstNode>tokens[i]).loc = loc
                 }
 
-            }
-            else if (tokens[i].typ != 'Whitespace') {
+            } else if (tokens[i].typ != 'Whitespace') {
                 break;
             }
         }
@@ -240,9 +122,8 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
         if (delim.typ == 'Semi-colon' || delim.typ == 'Block-start' || delim.typ == 'Block-end') {
             tokens.pop();
-        }
-        else {
-            delim = { typ: 'Semi-colon' };
+        } else {
+            delim = {typ: 'Semi-colon'};
         }
 
         // @ts-ignore
@@ -261,7 +142,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
             if (atRule.val == 'charset' && position.ind > 0) {
 
-                errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
+                errors.push({action: 'drop', message: 'invalid @charset', location: {src, ...position}});
                 return null;
             }
 
@@ -280,14 +161,14 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                             continue;
                         }
                         if (type != 'AtRule') {
-                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                             return null;
                         }
 
                         const name = (<AstAtRule>context.chi[i]).nam;
 
                         if (name != 'charset' && name != 'import' && name != 'layer') {
-                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                             return null;
                         }
 
@@ -296,12 +177,12 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 }
                 // @ts-ignore
                 if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'UrlFunc') {
-                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                     return null;
                 }
                 // @ts-ignore
                 if (tokens[0].typ == 'UrlFunc' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
-                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                     return null;
                 }
             }
@@ -320,7 +201,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                     if (options.resolveImport) {
 
-                        const url = (<UrlToken>tokens[0]).val.slice(1, -1);
+                        const url: string = (<UrlToken>tokens[0]).val.slice(1, -1);
 
                         try {
 
@@ -328,7 +209,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                             const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
 
                                 return parse(src, Object.assign({}, options, {
-                                    compress: false,
+                                    minify: false,
                                     // @ts-ignore
                                     src: options.resolve(url, options.src).absolute
                                 }))
@@ -345,8 +226,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                             }
 
                             return null;
-                        }
-                        catch (error) {
+                        } catch (error) {
                             console.error(error);
                         }
                     }
@@ -365,11 +245,11 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
             const node: AstAtRule = {
                 typ: 'AtRule',
-                nam: renderToken(atRule, { removeComments: true }),
+                nam: renderToken(atRule, {removeComments: true}),
                 val: raw.join('')
             };
 
-            Object.defineProperty(node, 'raw', { enumerable: false, writable: false, value: raw });
+            Object.defineProperty(node, 'raw', {enumerable: false, writable: false, value: raw});
 
             if (delim.typ == 'Block-start') {
 
@@ -380,43 +260,47 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 sta: position,
                 src
             };
+
             if (options.sourcemap) {
                 node.loc = loc;
             }
+
             // @ts-ignore
             context.chi.push(node);
             return delim.typ == 'Block-start' ? node : null;
-        }
-        else {
+        } else {
             // rule
             if (delim.typ == 'Block-start') {
 
                 const position: Position = <Position>map.get(tokens[0]);
 
-                if (context.typ == 'Rule') {
-
-                    if (tokens[0]?.typ == 'Iden') {
-                        errors.push({ action: 'drop', message: 'invalid nesting rule', location: { src, ...position } });
-                        return null;
-                    }
-                }
+                // if (context.typ == 'Rule') {
+                //
+                //     if (tokens[0]?.typ == 'Iden') {
+                //         errors.push({action: 'drop', message: 'invalid nesting rule', location: {src, ...position}});
+                //         return null;
+                //     }
+                // }
 
                 const uniq = new Map<string, string[]>;
-                parseTokens(tokens, 'Rule', {compress: options.compress}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
+                parseTokens(tokens, {minify: options.minify}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
 
                     if (curr.typ == 'Whitespace') {
 
-                        if((<LiteralToken>array[index - 1])?.val == '+' || (<LiteralToken>array[index + 1])?.val == '+') {
+                        if (
+                            array[index - 1]?.typ == 'Gt' ||
+                            array[index + 1]?.typ == 'Gt' ||
+                            combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                            combinators.includes((<LiteralToken>array[index + 1])?.val)) {
 
                             return acc;
                         }
                     }
 
-                    let t = renderToken(curr, { compress: true });
+                    let t = renderToken(curr, {minify: true});
                     if (t == ',') {
                         acc.push([]);
-                    }
-                    else {
+                    } else {
                         acc[acc.length - 1].push(t);
                     }
                     return acc;
@@ -434,7 +318,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 };
                 let raw = [...uniq.values()];
 
-                Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: raw });
+                Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: raw});
 
                 loc = <Location>{
                     sta: position,
@@ -448,8 +332,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 // @ts-ignore
                 context.chi.push(node);
                 return node;
-            }
-            else {
+            } else {
                 // declaration
                 // @ts-ignore
                 let name = null;
@@ -462,7 +345,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     if (tokens[i].typ == 'Colon') {
 
                         name = tokens.slice(0, i);
-                        value = parseTokens(tokens.slice(i + 1), 'Declaration', {
+                        value = parseTokens(tokens.slice(i + 1), {
                             parseColor: true,
                             src: options.src,
                             resolveUrls: options.resolveUrls,
@@ -482,7 +365,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                             errors.push(<ErrorDescription>{
                                 action: 'drop',
                                 message: 'invalid declaration',
-                                location: { src, ...position }
+                                location: {src, ...position}
                             });
 
                             return null;
@@ -492,19 +375,27 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                 if (value == null) {
 
-                    errors.push(<ErrorDescription>{ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    errors.push(<ErrorDescription>{
+                        action: 'drop',
+                        message: 'invalid declaration',
+                        location: {src, ...position}
+                    });
                     return null;
                 }
 
                 if (value.length == 0) {
-                    errors.push(<ErrorDescription>{ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    errors.push(<ErrorDescription>{
+                        action: 'drop',
+                        message: 'invalid declaration',
+                        location: {src, ...position}
+                    });
                     return null;
                 }
 
                 const node: AstDeclaration = {
                     typ: 'Declaration',
                     // @ts-ignore
-                    nam: renderToken(name.shift(), { removeComments: true }),
+                    nam: renderToken(name.shift(), {removeComments: true}),
                     // @ts-ignore
                     val: value
                 }
@@ -515,7 +406,11 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                 if (node.val.length == 0) {
 
-                    errors.push(<ErrorDescription>{ action: 'drop', message: 'invalid declaration', location: { src, ...position } });
+                    errors.push(<ErrorDescription>{
+                        action: 'drop',
+                        message: 'invalid declaration',
+                        location: {src, ...position}
+                    });
                     return null;
                 }
 
@@ -525,608 +420,289 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             }
         }
     }
-    function peek(count: number = 1): string {
 
-        if (count == 1) {
+    function mapToken(token: TokenizeResult): Token {
 
-            return iterator.charAt(ind + 1);
-        }
+        const node = getTokenType(token.token, token.hint);
 
-        return iterator.slice(ind + 1, ind + count + 1);
+        map.set(node, token.position);
+        return node;
     }
 
-    function prev(count: number = 1): string {
+    const iter = tokenize(iterator);
+    let item: TokenizeResult;
 
-        if (count == 1) {
 
-            return ind == 0 ? '' : iterator.charAt(ind - 1);
-        }
+    while (true) {
 
-        return iterator.slice(ind - 1 - count, ind - 1);
-    }
+        item = iter.next().value;
 
-    function next(count: number = 1): string {
+        if (item == null) {
 
-        let char: string = '';
-
-        while (count-- > 0 && ind < total) {
-
-            const codepoint: number = iterator.charCodeAt(++ind);
-
-            if (isNaN(codepoint)) {
-
-                return char;
-            }
-
-            char += iterator.charAt(ind);
-
-            if (isNewLine(codepoint)) {
-
-                lin++;
-                col = 0;
-            }
-
-            else {
-
-                col++;
-            }
-        }
-
-        return char;
-    }
-    function pushToken(token: Token) {
-
-        tokens.push(token);
-
-        map.set(token, { ...position });
-
-        position.ind = ind;
-        position.lin = lin;
-        position.col = col == 0 ? 1 : col;
-    }
-
-    function consumeWhiteSpace(): number {
-
-        let count: number = 0;
-
-        while (isWhiteSpace(iterator.charAt(count + ind + 1).charCodeAt(0))) {
-
-            count++;
-        }
-
-        next(count);
-
-        return count;
-    }
-
-    function consumeString(quoteStr: '"' | "'") {
-
-        const quote = quoteStr;
-        let value;
-        let hasNewLine: boolean = false;
-
-        if (buffer.length > 0) {
-
-            pushToken(getType(buffer));
-            buffer = '';
-        }
-
-        buffer += quoteStr;
-
-        while (ind < total) {
-
-            value = peek();
-            if (ind >= total) {
-
-                pushToken({ typ: hasNewLine ? 'Bad-string' : 'Unclosed-string', val: buffer });
-                break;
-            }
-
-            if (value == '\\') {
-
-                const sequence: string = peek(6);
-                let escapeSequence: string = '';
-                let codepoint;
-                let i;
-
-                for (i = 1; i < sequence.length; i++) {
-
-                    codepoint = sequence.charCodeAt(i);
-
-                    if (codepoint == 0x20 ||
-                        (codepoint >= 0x61 && codepoint <= 0x66) ||
-                        (codepoint >= 0x41 && codepoint <= 0x46) ||
-                        (codepoint >= 0x30 && codepoint <= 0x39)) {
-                        escapeSequence += sequence[i];
-
-                        if (codepoint == 0x20) {
-
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    break;
-                }
-
-                // not hex or new line
-                // @ts-ignore
-                if (i == 1 && !isNewLine(codepoint)) {
-
-                    buffer += sequence[i];
-                    next(2);
-                    continue;
-                }
-
-                if (escapeSequence.trimEnd().length > 0) {
-
-                    const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
-
-                    if (codepoint == 0 ||
-                        // leading surrogate
-                        (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
-                        // trailing surrogate
-                        (0xDC00 <= codepoint && codepoint <= 0xDFFF)) {
-                        buffer += String.fromCodePoint(0xFFFD);
-                    }
-                    else {
-
-                        buffer += String.fromCodePoint(codepoint);
-                    }
-
-                    next(escapeSequence.length + 1);
-                    continue;
-                }
-
-                // buffer += value;
-                if (ind >= total) {
-
-                    // drop '\\' at the end
-                    pushToken(getType(buffer));
-                    break;
-                }
-
-                buffer += next(2);
-                continue;
-            }
-
-            if (value == quote) {
-
-                buffer += value;
-                pushToken({ typ: hasNewLine ? 'Bad-string' : 'String', val: buffer });
-                next();
-                // i += value.length;
-                buffer = '';
-                break;
-            }
-
-            if (isNewLine(value.charCodeAt(0))) {
-                hasNewLine = true;
-            }
-
-            if (hasNewLine && value == ';') {
-                pushToken({ typ: 'Bad-string', val: buffer });
-                buffer = '';
-                break;
-            }
-
-            buffer += value;
-            // i += value.length;
-            next();
-        }
-    }
-    while (ind < total) {
-        value = next();
-        if (ind >= total) {
-            if (buffer.length > 0) {
-                pushToken(getType(buffer));
-                buffer = '';
-            }
             break;
         }
-        if (isWhiteSpace(value.charCodeAt(0))) {
-            if (buffer.length > 0) {
-                pushToken(getType(buffer));
-                buffer = '';
-            }
-            while (ind < total) {
-                value = next();
-                if (ind >= total) {
-                    break;
-                }
-                if (!isWhiteSpace(value.charCodeAt(0))) {
-                    break;
-                }
-            }
-            pushToken({ typ: 'Whitespace' });
-            buffer = '';
-            if (ind >= total) {
-                break;
-            }
-        }
-        switch (value) {
-            case '/':
-                if (buffer.length > 0 && tokens.at(-1)?.typ == 'Whitespace') {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                    if (peek() != '*') {
-                        pushToken(getType(value));
+
+        tokens.push(item);
+        bytesIn = item.bytesIn;
+
+        if (item.token == ';' || item.token == '{') {
+
+            let node = await parseNode(tokens);
+
+            if (node != null) {
+
+                stack.push(node);
+                // @ts-ignore
+                context = node;
+            } else if (item.token == '{') {
+                // node == null
+                // consume and throw away until the closing '}' or EOF
+
+                let inBlock = 1;
+
+                do {
+
+                    item = iter.next().value;
+
+                    if (item == null) {
+
                         break;
                     }
-                }
-                buffer += value;
-                if (peek() == '*') {
-                    buffer += '*';
-                    // i++;
-                    next();
-                    while (ind < total) {
-                        value = next();
-                        if (ind >= total) {
-                            pushToken({
-                                typ: 'Bad-comment', val: buffer
-                            });
-                            break;
-                        }
-                        if (value == '\\') {
-                            buffer += value;
-                            value = next();
-                            if (ind >= total) {
-                                pushToken({
-                                    typ: 'Bad-comment',
-                                    val: buffer
-                                });
-                                break;
-                            }
-                            buffer += value;
-                            continue;
-                        }
-                        if (value == '*') {
-                            buffer += value;
-                            value = next();
-                            if (ind >= total) {
-                                pushToken({
-                                    typ: 'Bad-comment', val: buffer
-                                });
-                                break;
-                            }
-                            buffer += value;
-                            if (value == '/') {
-                                pushToken({ typ: 'Comment', val: buffer });
-                                buffer = '';
-                                break;
-                            }
-                        }
-                        else {
-                            buffer += value;
-                        }
+
+                    if (item.token == '{') {
+
+                        inBlock++;
+                    } else if (item.token == '}') {
+
+                        inBlock--;
                     }
                 }
-                break;
-            case '<':
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-                buffer += value;
-                value = next();
-                if (ind >= total) {
-                    break;
-                }
-                if (peek(3) == '!--') {
-                    while (ind < total) {
-                        value = next();
-                        if (ind >= total) {
-                            break;
-                        }
-                        buffer += value;
-                        if (value == '>' && prev(2) == '--') {
-                            pushToken({
-                                typ: 'CDOCOMM',
-                                val: buffer
-                            });
-                            buffer = '';
-                            break;
-                        }
-                    }
-                }
-                if (ind >= total) {
-                    pushToken({ typ: 'BADCDO', val: buffer });
-                    buffer = '';
-                }
-                break;
-            case '\\':
-                value = next();
-                // EOF
-                if (ind + 1 >= total) {
-                    // end of stream ignore \\
-                    pushToken(getType(buffer));
-                    buffer = '';
-                    break;
-                }
-                buffer += value;
-                break;
-            case '"':
-            case "'":
-                consumeString(value);
-                break;
-            case '~':
-            case '|':
-                if (tokens.at(-1)?.typ == 'Whitespace') {
-                    tokens.pop();
-                }
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-                buffer += value;
-                value = next();
-                if (ind >= total) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                    break;
-                }
-                if (value == '=') {
-                    buffer += value;
-                    pushToken(<Token>{
-                        typ: buffer[0] == '~' ? 'Includes' : 'Dash-matches',
-                        val: buffer
-                    });
 
-                    buffer = '';
-                    break;
-                }
+                while (inBlock != 0);
+            }
 
-                pushToken(getType(buffer));
+            tokens = [];
+            map = new Map;
+        } else if (item.token == '}') {
 
-                while (isWhiteSpace(value.charCodeAt(0))) {
+            await parseNode(tokens);
+            const previousNode = stack.pop();
 
-                    value = next();
-                }
+            // @ts-ignore
+            context = stack[stack.length - 1] || ast;
+            // @ts-ignore
+            if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+                context.chi.pop();
+            }
 
-                buffer = value;
-                break;
-
-            case '>':
-
-                if (buffer !== '') {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-
-                if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
-
-                    tokens.pop();
-                }
-
-                pushToken({ typ: 'Gt' });
-                consumeWhiteSpace();
-                break;
-            case '.':
-
-                const codepoint = peek().charCodeAt(0);
-
-                if (!isDigit(codepoint) && buffer !== '') {
-                    pushToken(getType(buffer));
-                    buffer = value;
-                    break;
-                }
-                buffer += value;
-                break;
-            case '+':
-            case ':':
-            case ',':
-            case '=':
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-                if (value == ':' && ':' == peek()) {
-                    buffer += value + next();
-                    break;
-                }
-                pushToken(getType(value));
-                buffer = '';
-                if (value == '+' && isWhiteSpace(peek().charCodeAt(0))) {
-                    pushToken(getType(next()));
-                }
-                while (isWhiteSpace(peek().charCodeAt(0))) {
-                    next();
-                }
-                break;
-            case ')':
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-                pushToken({ typ: 'End-parens' });
-                break;
-            case '(':
-                if (buffer.length == 0) {
-                    pushToken({ typ: 'Start-parens' });
-                }
-                else {
-                    buffer += value;
-                    pushToken(getType(buffer));
-                    buffer = '';
-                    const token = tokens[tokens.length - 1];
-                    if (token.typ == 'UrlFunc') {
-                        // consume either string or url token
-                        let whitespace = '';
-                        value = peek();
-                        while (isWhiteSpace(value.charCodeAt(0))) {
-                            whitespace += value;
-                        }
-                        if (whitespace.length > 0) {
-                            next(whitespace.length);
-                        }
-                        value = peek();
-                        if (value == '"' || value == "'") {
-                            consumeString(<'"' | "'"> next());
-
-                            let token: Token = tokens[tokens.length - 1];
-
-                            if (['String', 'Literal'].includes(token.typ) && urlTokenMatcher.test((<StringToken | LiteralToken>token).val)) {
-                                if ((<StringToken | LiteralToken>token).val.slice(1, 6) != 'data:') {
-                                    if (token.typ == 'String') {
-                                        token.val = token.val.slice(1, -1);
-                                    }
-
-                                    // @ts-ignore
-                                    token.typ = 'Url-token';
-                                }
-                            }
-
-                            break;
-                        }
-
-                        else {
-
-                            buffer = '';
-
-                            do {
-
-                                let cp = value.charCodeAt(0);
-
-                                // EOF -
-                                if (cp == null) {
-
-                                    pushToken({ typ: 'Bad-url-token', val: buffer });
-                                    break;
-                                }
-
-                                // ')'
-                                if (cp == 0x29 || cp == null) {
-
-                                    if (buffer.length == 0) {
-
-                                        pushToken({ typ: 'Bad-url-token', val: '' });
-                                    }
-                                    else {
-
-                                        pushToken({ typ: 'Url-token', val: buffer });
-                                    }
-                                    if (cp != null) {
-                                        pushToken(getType(next()));
-                                    }
-                                    break;
-                                }
-                                if (isWhiteSpace(cp)) {
-                                    whitespace = next();
-                                    while (true) {
-                                        value = peek();
-                                        cp = value.charCodeAt(0);
-                                        if (isWhiteSpace(cp)) {
-                                            whitespace += value;
-                                            continue;
-                                        }
-                                        break;
-                                    }
-                                    if (cp == null || cp == 0x29) {
-                                        continue;
-                                    }
-                                    // bad url token
-                                    buffer += next(whitespace.length);
-                                    do {
-
-                                        value = peek();
-                                        cp = value.charCodeAt(0);
-                                        if (cp == null || cp == 0x29) {
-                                            break;
-                                        }
-
-                                        buffer += next();
-                                    }
-                                    while (true);
-                                    pushToken({ typ: 'Bad-url-token', val: buffer });
-                                    continue;
-                                }
-                                buffer += next();
-                                value = peek();
-                            }
-                            while (true);
-                            buffer = '';
-                        }
-                    }
-                }
-                break;
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-            case ';':
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-                pushToken(getBlockType(value));
-                let node = null;
-                if (value == '{' || value == ';') {
-
-                    node = await parseNode(tokens);
-                    if (node != null) {
-                        stack.push(node);
-                        // @ts-ignore
-                        context = node;
-                    }
-                    else if (value == '{') {
-                        // node == null
-                        // consume and throw away until the closing '}' or EOF
-                        consume('{', '}');
-                    }
-                    tokens.length = 0;
-                    map.clear();
-                }
-                else if (value == '}') {
-                    await parseNode(tokens);
-                    const previousNode = stack.pop();
-                    // @ts-ignore
-                    context = stack[stack.length - 1] || ast;
-                    // @ts-ignore
-                    if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
-                        context.chi.pop();
-                    }
-                    tokens.length = 0;
-                    map.clear();
-                    buffer = '';
-                }
-                break;
-            case '!':
-                if (buffer.length > 0) {
-                    pushToken(getType(buffer));
-                    buffer = '';
-                }
-                const important = peek(9);
-                if (important == 'important') {
-                    if (tokens[tokens.length - 1]?.typ == 'Whitespace') {
-                        tokens.pop();
-                    }
-                    pushToken({ typ: 'Important' });
-                    next(9);
-                    buffer = '';
-                    break;
-                }
-                buffer = '!';
-                break;
-            default:
-                buffer += value;
-                break;
+            tokens = [];
+            map = new Map;
         }
     }
-    if (buffer.length > 0) {
-        pushToken(getType(buffer));
-    }
+
     if (tokens.length > 0) {
+
         await parseNode(tokens);
     }
-    if (options.compress) {
+
+
+    if (options.minify) {
+
         if (ast.chi.length > 0) {
-            deduplicate(ast, options, true);
+
+            minify(ast, options, true);
         }
     }
-    return { ast, errors, bytesIn };
+
+    return {ast, errors, bytesIn};
 }
-function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOptions = {}) {
+
+export function parseString(src: string, options = {location: false}): Token[] {
+
+    return [...tokenize(src)].map(t => {
+
+        const token = getTokenType(t.token, t.hint);
+
+        if (options.location) {
+
+            Object.assign(token, {loc: t.position});
+        }
+
+        return token;
+    });
+}
+
+function getTokenType(val: string, hint?: string): Token {
+
+    if (val === '' && hint == null) {
+        throw new Error('empty string?');
+    }
+
+    if (hint != null) {
+
+        return <Token>([
+            'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
+            'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
+            'Comma', 'Gt', 'Lt'
+        ].includes(hint) ? {typ: hint} : {typ: hint, val});
+    }
+
+    if (val == ' ') {
+
+        return {typ: 'Whitespace'};
+    }
+
+    if (val == ';') {
+
+        return {typ: 'Semi-colon'};
+    }
+
+    if (val == '{') {
+
+        return {typ: 'Block-start'};
+    }
+
+    if (val == '}') {
+
+        return {typ: 'Block-end'};
+    }
+
+    if (val == '[') {
+
+        return {typ: 'Attr-start'};
+    }
+
+    if (val == ']') {
+        return {typ: 'Attr-end'};
+    }
+
+    if (val == ':') {
+
+        return {typ: 'Colon'};
+    }
+    if (val == ')') {
+
+        return {typ: 'End-parens'};
+    }
+    if (val == '(') {
+
+        return {typ: 'Start-parens'};
+    }
+    if (val == '=') {
+
+        return {typ: 'Delim', val};
+    }
+    if (val == ';') {
+
+        return {typ: 'Semi-colon'};
+    }
+    if (val == ',') {
+
+        return {typ: 'Comma'};
+    }
+    if (val == '<') {
+
+        return {typ: 'Lt'};
+    }
+    if (val == '>') {
+
+        return {typ: 'Gt'};
+    }
+
+    if (isPseudo(val)) {
+
+        return val.endsWith('(') ? {
+                typ: 'Pseudo-class-func',
+                val: val.slice(0, -1),
+                chi: []
+            }
+            : {
+                typ: 'Pseudo-class',
+                val
+            };
+    }
+
+    if (isAtKeyword(val)) {
+        return {
+            typ: 'At-rule',
+            val: val.slice(1)
+        };
+    }
+
+    if (isFunction(val)) {
+        val = val.slice(0, -1);
+        return <Token>{
+            typ: val == 'url' ? 'UrlFunc' : 'Func',
+            val,
+            chi: []
+        };
+    }
+
+    if (isNumber(val)) {
+        return {
+            typ: 'Number',
+            val
+        };
+    }
+
+    if (isDimension(val)) {
+
+        return parseDimension(val);
+    }
+
+    if (isPercentage(val)) {
+        return {
+            typ: 'Perc',
+            val: val.slice(0, -1)
+        };
+    }
+
+    const v = val.toLowerCase();
+    if (v == 'currentcolor' || val == 'transparent' || v in COLORS_NAMES) {
+        return {
+            typ: 'Color',
+            val,
+            kin: 'lit'
+        };
+    }
+
+    if (isIdent(val)) {
+
+        return {
+            typ: 'Iden',
+            val
+        };
+    }
+
+    if (val.charAt(0) == '#' && isHexColor(val)) {
+
+        return {
+            typ: 'Color',
+            val,
+            kin : 'hex'
+        };
+    }
+
+    if (val.charAt(0) == '#' && isHash(val)) {
+        return {
+            typ: 'Hash',
+            val
+        };
+    }
+
+    if ('"\''.includes(val.charAt(0))) {
+        return {
+            typ: 'Unclosed-string',
+            val
+        };
+    }
+    return {
+        typ: 'Literal',
+        val
+    };
+}
+
+function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
 
     for (let i = 0; i < tokens.length; i++) {
 
@@ -1150,8 +726,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
 
                     (<PseudoClassFunctionToken>tokens[i + 1]).val = ':' + (<PseudoClassFunctionToken>tokens[i + 1]).val;
                     tokens[i + 1].typ = 'Pseudo-class-func';
-                }
-                else if (typ == 'Iden') {
+                } else if (typ == 'Iden') {
 
                     (<PseudoClassToken>tokens[i + 1]).val = ':' + (<PseudoClassToken>tokens[i + 1]).val;
                     tokens[i + 1].typ = 'Pseudo-class';
@@ -1172,15 +747,14 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
             while (++k < tokens.length) {
                 if (tokens[k].typ == 'Attr-end') {
                     inAttr--;
-                }
-                else if (tokens[k].typ == 'Attr-start') {
+                } else if (tokens[k].typ == 'Attr-start') {
                     inAttr++;
                 }
                 if (inAttr == 0) {
                     break;
                 }
             }
-            Object.assign(t, { typ: 'Attr', chi: tokens.splice(i + 1, k - i) });
+            Object.assign(t, {typ: 'Attr', chi: tokens.splice(i + 1, k - i)});
             // @ts-ignore
             if (t.chi.at(-1).typ == 'Attr-end') {
                 // @ts-ignore
@@ -1196,7 +770,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                     if (val.typ == 'String') {
                         const slice = val.val.slice(1, -1);
                         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
-                            Object.assign(val, { typ: 'Iden', val: slice });
+                            Object.assign(val, {typ: 'Iden', val: slice});
                         }
                     }
                 });
@@ -1214,8 +788,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
 
                             tokens[k + 1].typ = 'Pseudo-class';
                             (<PseudoClassToken>tokens[k + 1]).val = ':' + (<PseudoClassToken>tokens[k + 1]).val;
-                        }
-                        else if (typ == 'Func') {
+                        } else if (typ == 'Func') {
 
                             (<PseudoClassFunctionToken>tokens[k + 1]).typ = 'Pseudo-class-func';
                             (<PseudoClassFunctionToken>tokens[k + 1]).val = ':' + (<PseudoClassFunctionToken>tokens[k + 1]).val;
@@ -1230,8 +803,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
                 }
                 if (funcLike.includes(tokens[k].typ)) {
                     parens++;
-                }
-                else if (tokens[k].typ == 'End-parens') {
+                } else if (tokens[k].typ == 'End-parens') {
                     parens--;
                 }
                 if (parens == 0) {
@@ -1308,7 +880,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
             if (t.chi.length > 0) {
                 // @ts-ignore
                 parseTokens(t.chi, t.typ, options);
-                if (t.typ == 'Pseudo-class-func' && t.val == ':is' && options.compress) {
+                if (t.typ == 'Pseudo-class-func' && t.val == ':is' && options.minify) {
                     //
                     const count = t.chi.filter(t => t.typ != 'Comment').length;
                     if (count == 1 ||
@@ -1323,6 +895,7 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
             }
             continue;
         }
+
         if (options.parseColor) {
             if (t.typ == 'Iden') {
                 // named color
@@ -1346,23 +919,4 @@ function parseTokens(tokens: Token[], nodeType: NodeType, options: ParseTokenOpt
         }
     }
     return tokens;
-}
-function getBlockType(chr: string): Token {
-
-    if (chr == ';') {
-        return { typ: 'Semi-colon' };
-    }
-    if (chr == '{') {
-        return { typ: 'Block-start' };
-    }
-    if (chr == '}') {
-        return { typ: 'Block-end' };
-    }
-    if (chr == '[') {
-        return { typ: 'Attr-start' };
-    }
-    if (chr == ']') {
-        return { typ: 'Attr-end' };
-    }
-    throw new Error(`unhandled token: '${chr}'`);
 }

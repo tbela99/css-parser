@@ -117,6 +117,7 @@ var properties = {
 	},
 	"border-width": {
 		shorthand: "border-width",
+		map: "border",
 		properties: [
 			"border-top-width",
 			"border-right-width",
@@ -127,6 +128,9 @@ var properties = {
 			"Length",
 			"Perc"
 		],
+		"default": [
+			"medium"
+		],
 		keywords: [
 			"thin",
 			"medium",
@@ -134,19 +138,24 @@ var properties = {
 		]
 	},
 	"border-top-width": {
+		map: "border",
 		shorthand: "border-width"
 	},
 	"border-right-width": {
+		map: "border",
 		shorthand: "border-width"
 	},
 	"border-bottom-width": {
+		map: "border",
 		shorthand: "border-width"
 	},
 	"border-left-width": {
+		map: "border",
 		shorthand: "border-width"
 	},
 	"border-style": {
 		shorthand: "border-style",
+		map: "border",
 		properties: [
 			"border-top-style",
 			"border-right-style",
@@ -154,6 +163,9 @@ var properties = {
 			"border-left-style"
 		],
 		types: [
+		],
+		"default": [
+			"none"
 		],
 		keywords: [
 			"none",
@@ -169,19 +181,24 @@ var properties = {
 		]
 	},
 	"border-top-style": {
+		map: "border",
 		shorthand: "border-style"
 	},
 	"border-right-style": {
+		map: "border",
 		shorthand: "border-style"
 	},
 	"border-bottom-style": {
+		map: "border",
 		shorthand: "border-style"
 	},
 	"border-left-style": {
+		map: "border",
 		shorthand: "border-style"
 	},
 	"border-color": {
 		shorthand: "border-color",
+		map: "border",
 		properties: [
 			"border-top-color",
 			"border-right-color",
@@ -191,23 +208,95 @@ var properties = {
 		types: [
 			"Color"
 		],
+		"default": [
+			"currentcolor"
+		],
 		keywords: [
 		]
 	},
 	"border-top-color": {
+		map: "border",
 		shorthand: "border-color"
 	},
 	"border-right-color": {
+		map: "border",
 		shorthand: "border-color"
 	},
 	"border-bottom-color": {
+		map: "border",
 		shorthand: "border-color"
 	},
 	"border-left-color": {
+		map: "border",
 		shorthand: "border-color"
 	}
 };
 var map = {
+	border: {
+		shorthand: "border",
+		pattern: "border-color border-style border-width",
+		keywords: [
+			"none"
+		],
+		"default": [
+			"0",
+			"none"
+		],
+		properties: {
+			"border-color": {
+				types: [
+					"Color"
+				],
+				"default": [
+					"currentcolor"
+				],
+				keywords: [
+				]
+			},
+			"border-style": {
+				types: [
+				],
+				"default": [
+					"none"
+				],
+				keywords: [
+					"none",
+					"hidden",
+					"dotted",
+					"dashed",
+					"solid",
+					"double",
+					"groove",
+					"ridge",
+					"inset",
+					"outset"
+				]
+			},
+			"border-width": {
+				types: [
+					"Length",
+					"Perc"
+				],
+				"default": [
+					"medium"
+				],
+				keywords: [
+					"thin",
+					"medium",
+					"thick"
+				]
+			}
+		}
+	},
+	"border-color": {
+		shorthand: "border"
+	},
+	"border-style": {
+		shorthand: "border"
+	},
+	"border-width": {
+		shorthand: "border"
+	},
 	outline: {
 		shorthand: "outline",
 		pattern: "outline-color outline-style outline-width",
@@ -224,12 +313,10 @@ var map = {
 					"Color"
 				],
 				"default": [
-					"currentColor",
-					"invert"
+					"currentColor"
 				],
 				keywords: [
-					"currentColor",
-					"invert"
+					"currentColor"
 				]
 			},
 			"outline-style": {
@@ -567,6 +654,7 @@ var map = {
 				"default": [
 					"transparent"
 				],
+				multiple: true,
 				keywords: [
 				]
 			},
@@ -587,6 +675,7 @@ var map = {
 				"default": [
 					"scroll"
 				],
+				multiple: true,
 				keywords: [
 					"scroll",
 					"fixed",
@@ -599,6 +688,7 @@ var map = {
 				"default": [
 					"border-box"
 				],
+				multiple: true,
 				keywords: [
 					"border-box",
 					"padding-box",
@@ -612,6 +702,7 @@ var map = {
 				"default": [
 					"padding-box"
 				],
+				multiple: true,
 				keywords: [
 					"border-box",
 					"padding-box",

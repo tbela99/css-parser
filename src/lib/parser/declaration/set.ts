@@ -17,8 +17,7 @@ export class PropertySet {
 
         if (declaration.nam == this.config.shorthand) {
 
-            this.declarations.clear();
-            this.declarations.set(<string>declaration.nam, declaration);
+            this.declarations = new Map<string, AstDeclaration>;
         } else {
 
             // expand shorthand
@@ -51,6 +50,12 @@ export class PropertySet {
 
                         if (token.typ == 'Iden' && this.config.keywords.includes(token.val)) {
 
+                            if (tokens.length == 0) {
+
+                                tokens.push([]);
+                                current++;
+                            }
+
                             tokens[current].push(token);
                         }
 
@@ -66,18 +71,13 @@ export class PropertySet {
                     }
                 }
 
-                if (isValid  && tokens.length > 0) {
+                if (isValid && tokens.length > 0) {
 
                     this.declarations.delete(this.config.shorthand);
 
                     for (const values of tokens) {
 
                         this.config.properties.forEach((property: string, index: number) => {
-
-                            // if (property == declaration.nam) {
-                            //
-                            //     return;
-                            // }
 
                             if (!this.declarations.has(property)) {
 
@@ -116,24 +116,20 @@ export class PropertySet {
                 this.declarations.set(<string>declaration.nam, declaration);
                 return this;
             }
-
-            // declaration.chi = declaration.chi.reduce((acc: Token[], token: Token) => {
-            //
-            //     if (this.config.types.includes(token.typ) || ('0' == (<DimensionToken>token).chi && (
-            //         this.config.types.includes('Length') ||
-            //         this.config.types.includes('Angle') ||
-            //     this.config.types.includes('Dimension'))) || (token.typ == 'Iden' && this.config.keywords.includes(token.chi))) {
-            //
-            //         acc.push(token);
-            //     }
-            //
-            //     return acc;
-            // }, <Token[]>[]);
-
-            this.declarations.set(<string>declaration.nam, declaration);
         }
 
+        this.declarations.set(<string>declaration.nam, declaration);
         return this;
+    }
+
+    isShortHand() {
+
+        if (this.declarations.has(this.config.shorthand)) {
+
+            return this.declarations.size == 1;
+        }
+
+        return this.config.properties.length == this.declarations.size;
     }
 
     [Symbol.iterator]() {
@@ -141,15 +137,11 @@ export class PropertySet {
         let iterator: IterableIterator<AstDeclaration>;
         const declarations: Map<string, AstDeclaration> = this.declarations;
 
-        if (declarations.size < this.config.properties.length || this.config.properties.some((property: string, index: number) => {
-
-            return !declarations.has(property) || (index > 0 &&
-                // @ts-ignore
-                declarations.get(property).val.length != declarations.get(this.config.properties[Math.floor(index / 2)]).val.length);
-        })) {
+        if (declarations.size < this.config.properties.length) {
 
             iterator = declarations.values();
-        } else {
+        }
+        else {
 
             const values: Token[][] = [];
             this.config.properties.forEach((property: string) => {
@@ -157,7 +149,7 @@ export class PropertySet {
                 let index: number = 0;
 
                 // @ts-ignore
-                for(const token of this.declarations.get(property).val) {
+                for (const token of this.declarations.get(property).val) {
 
                     if (token.typ == 'Whitespace') {
 
@@ -232,19 +224,21 @@ export class PropertySet {
                 }, <Token[]>[])
             }][Symbol.iterator]();
 
-            return {
-                next() {
-
-                    return iterator.next();
-                }
-            }
+            // return {
+            //     next() {
+            //
+            //         return iterator.next();
+            //     }
+            // }
         }
 
-        return {
-            next() {
+        return iterator;
 
-                return iterator.next();
-            }
-        }
+        // return {
+        //     next() {
+        //
+        //         return iterator.next();
+        //     }
+        // }
     }
 }

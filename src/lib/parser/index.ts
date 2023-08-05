@@ -1,3 +1,4 @@
 
 export * from './parse';
-export * from './deduplicate';
+export * from './tokenize';
+export * from './utils';

@@ -8,6 +8,7 @@ export interface PropertyType {
 export interface ShorthandPropertyType {
 
     shorthand: string;
+    map?: string;
     properties: string[];
     types: string[];
     multiple: boolean;

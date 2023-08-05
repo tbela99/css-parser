@@ -5,15 +5,16 @@ import {AngleToken, DimensionToken, LengthToken} from '../../../@types';
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
+const dimensionUnits = [
+    'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
+    'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
+    'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
+    'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
+];
 
 export function isLength(dimension: DimensionToken): boolean {
 
-    return 'unit' in dimension && [
-        'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
-        'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
-        'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
-        'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
-    ].includes(dimension.unit.toLowerCase());
+    return 'unit' in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
 }
 
 export function isResolution(dimension: DimensionToken): boolean {

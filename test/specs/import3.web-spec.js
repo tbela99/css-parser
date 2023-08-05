@@ -16,7 +16,7 @@ describe('process import', function () {
         return fetch(dirname(new URL(import.meta.url).pathname) + '/../files/result/font-awesome-line-awesome.css').
             then(response => response.text()).
             then(file => transform(import2, {
-            compress: true,
+            minify: true,
             resolveImport: true
         }).then((result) => {
             // const a = document.createElement('a');

@@ -3,7 +3,7 @@ import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
 import { transform } from '../../dist/node/index.js';
 
 const options = {
-    compress: true,
+    minify: true,
     removeEmpty: true
 };
 const marginPadding = `
@@ -172,5 +172,53 @@ describe('shorthand', function () {
     });
     it('background #11', function () {
         return transform(background3, options).then(result => f(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg) 50%/cover,#eee url(../../media/examples/lizard.png) 35%/contain}'));
+    });
+
+    it('border #12', function () {
+        return transform(`a{
+        border: #333 solid;
+        border-width: 2px;
+        }`, options).then(result => f(result.code).equals('a{border:#333 solid 2px}'));
+    });
+
+    it('border #13', function () {
+        return transform(`
+.test input[type="text"] {
+
+border: #333 solid 1px;
+    border-bottom-width: 2px;
+    border-left-width: thin;;
+    border-right-width: thin;
+    border-top-width:2px;;;
+
+        }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid 2px thin}'));
+    });
+
+    it('border #13', function () {
+        return transform(`
+.test input[type="text"] {
+
+border: #333 solid 1px;
+    border-bottom-width: 2px;
+    border-left-width: medium;;
+    border-right-width: medium;
+    border-top-width:2px;;;
+
+        }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid 2px medium}'));
+    });
+
+    it('border #14', function () {
+        return transform(`
+.test input[type="text"] {
+
+border: #333 solid 1px;
+    border-bottom-width: 2px;
+    border-left-width: medium;;
+    border-right-width: medium;
+    border-top-width:2px;;;
+    border-bottom-width: medium;
+    border-top-width:medium;;;
+
+        }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid}'));
     });
 });

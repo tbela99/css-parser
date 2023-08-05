@@ -1,61 +1,22 @@
 import {
     AstDeclaration,
-    ColorToken,
-    IdentToken,
-    NumberToken,
-    PercentageToken,
-    PropertyMapType,
+    PropertyMapType, ShorthandPropertyType,
     Token
 } from "../../../@types";
 import {ShorthandMapType} from "../../../@types";
 import {eq} from "../utils/eq";
-import {isNumber} from "../utils";
+import {getConfig} from "../utils";
 import {renderToken} from "../../renderer";
 import {matchType} from "../utils/type";
+import {parseString} from "../parse";
+import {PropertySet} from "./set";
 
-function getTokenType(val: string): Token {
-
-    if (val == 'transparent' || val == 'currentcolor') {
-
-        return <ColorToken>{
-
-            typ: 'Color',
-            val,
-            kin: 'lit'
-        }
-    }
-
-    if (val.endsWith('%')) {
-        return <PercentageToken>{
-            typ: 'Perc',
-            val: val.slice(0, -1)
-        }
-    }
-
-    return <NumberToken | IdentToken>{
-        typ: isNumber(val) ? 'Number' : 'Iden',
-        val
-    };
-}
-
-function parseString(val: string) {
-    return val.split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
-
-        if (acc.length > 0) {
-
-            acc.push({typ: 'Whitespace'});
-        }
-
-        acc.push(curr);
-        return acc;
-
-    }, <Token[]>[]);
-}
+const propertiesConfig = getConfig();
 
 export class PropertyMap {
 
     protected config: ShorthandMapType;
-    protected declarations: Map<string, AstDeclaration>;
+    protected declarations: Map<string, AstDeclaration | PropertySet>;
     protected requiredCount: any;
     protected pattern: string[];
 
@@ -72,7 +33,7 @@ export class PropertyMap {
 
         if (declaration.nam == this.config.shorthand) {
 
-            this.declarations.clear();
+            this.declarations = new Map<string, AstDeclaration>;
             this.declarations.set(<string>declaration.nam, declaration);
         } else {
 
@@ -101,110 +62,109 @@ export class PropertyMap {
                     return acc;
                 }, [[]]).
                     // @ts-ignore
-                reduce((acc: Token[][], list: Token[], current: number) => {
+                    reduce((acc: Token[][], list: Token[], current: number) => {
 
-                    values.push(...this.pattern.reduce((acc: Token[], property: string) => {
+                        values.push(...this.pattern.reduce((acc: Token[], property: string) => {
 
-                        // let current: number = 0;
-                        const props: PropertyMapType = this.config.properties[property];
+                            // let current: number = 0;
+                            const props: PropertyMapType = this.config.properties[property];
 
-                        for (let i = 0; i < acc.length; i++) {
+                            for (let i = 0; i < acc.length; i++) {
 
-                            if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
+                                if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
 
-                                acc.splice(i, 1);
-                                i--;
+                                    acc.splice(i, 1);
+                                    i--;
 
-                                continue;
-                            }
+                                    continue;
+                                }
 
-                            if (matchType(acc[i], props)) {
+                                if (matchType(acc[i], props)) {
 
-                                if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
+                                    if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
+
+                                        return acc;
+                                    }
+
+                                    if (!(property in tokens)) {
+
+                                        tokens[property] = [[acc[i]]];
+
+                                    } else {
+
+                                        if (current == tokens[property].length) {
+
+                                            tokens[property].push([acc[i]]);
+                                            // tokens[property][current].push();
+                                        } else {
+
+                                            tokens[property][current].push({typ: 'Whitespace'}, acc[i]);
+                                        }
+                                    }
+
+                                    acc.splice(i, 1);
+                                    i--;
+
+                                    // @ts-ignore
+                                    if ('prefix' in props && acc[i]?.typ == props.prefix.typ) {
+
+                                        // @ts-ignore
+                                        if (eq(acc[i], this.config.properties[property].prefix)) {
+
+                                            acc.splice(i, 1);
+                                            i--;
+                                        }
+                                    }
+
+                                    if ((<PropertyMapType>props).multiple) {
+
+                                        continue;
+                                    }
 
                                     return acc;
+                                } else {
+
+                                    if (property in tokens && tokens[property].length > current) {
+                                        return acc;
+                                    }
                                 }
+                            }
+
+                            if (property in tokens && tokens[property].length > current) {
+
+                                return acc;
+                            }
+
+                            // default
+                            if (props.default.length > 0) {
+
+                                const defaults = parseString(props.default[0]);
 
                                 if (!(property in tokens)) {
 
-                                    tokens[property] = [[acc[i]]];
+                                    tokens[property] = [
+                                        [...defaults]
+                                    ];
 
                                 } else {
 
                                     if (current == tokens[property].length) {
 
-                                        tokens[property].push([acc[i]]);
-                                        // tokens[property][current].push();
+                                        tokens[property].push([]);
+                                        tokens[property][current].push(...defaults);
                                     } else {
 
-                                        tokens[property][current].push({typ: 'Whitespace'}, acc[i]);
+                                        tokens[property][current].push({typ: 'Whitespace'}, ...defaults);
                                     }
-                                }
-
-                                acc.splice(i, 1);
-                                i--;
-
-                                // @ts-ignore
-                                if ('prefix' in props && acc[i]?.typ == props.prefix.typ) {
-
-                                    // @ts-ignore
-                                    if (eq(acc[i], this.config.properties[property].prefix)) {
-
-                                        acc.splice(i, 1);
-                                        i--;
-                                    }
-                                }
-
-                                if ((<PropertyMapType>props).multiple) {
-
-                                    continue;
-                                }
-
-                                return acc;
-                            } else {
-
-                                if (property in tokens && tokens[property].length > current) {
-                                    return acc;
                                 }
                             }
-                        }
-
-                        if (property in tokens && tokens[property].length > current) {
 
                             return acc;
-                        }
 
-                        // default
-                        if (props.default.length > 0) {
+                        }, list));
 
-                            const defaults = parseString(props.default[0]);
-
-                            if (!(property in tokens)) {
-
-                                tokens[property] = [
-                                    [...defaults
-                                    ]
-                                ];
-
-                            } else {
-
-                                if (current == tokens[property].length) {
-
-                                    tokens[property].push([]);
-                                    tokens[property][current].push(...defaults);
-                                } else {
-
-                                    tokens[property][current].push({typ: 'Whitespace'}, ...defaults);
-                                }
-                            }
-                        }
-
-                        return acc;
-
-                    }, list));
-
-                    return values;
-                }, []);
+                        return values;
+                    }, []);
 
                 if (values.length == 0) {
 
@@ -224,232 +184,348 @@ export class PropertyMap {
                                 acc.push(...curr);
                                 return acc;
                             }, [])
-                        })
+                        });
 
                         return acc;
                     }, new Map<string, AstDeclaration>);
                 }
             }
 
-            this.declarations.set(<string>declaration.nam, declaration);
+            // @ts-ignore
+            const config: ShorthandPropertyType = <ShorthandPropertyType>propertiesConfig.properties[declaration.nam];
+
+            let property = declaration.nam;
+
+            if (config != null) {
+
+                property = config.shorthand;
+
+                let value = this.declarations.get(property);
+
+                if (!(value instanceof PropertySet)) {
+
+                    // @ts-ignore
+                    this.declarations.set(property, new PropertySet(propertiesConfig.properties[config.shorthand]));
+
+                    // Token[]
+                    if (value != null) {
+
+                        // @ts-ignore
+                        (<PropertySet>this.declarations.get(property)).add(value);
+                    }
+                }
+
+                (<PropertySet>this.declarations.get(property)).add(declaration);
+            } else {
+
+                this.declarations.set(<string>declaration.nam, declaration);
+            }
         }
 
         return this;
     }
 
-    [Symbol.iterator](): IterableIterator<AstDeclaration> {
+    [Symbol.iterator]() {
 
-        let requiredCount = Object.keys(this.config.properties).reduce((acc: number, curr: string) => this.declarations.has(curr) && this.config.properties[curr].required ? ++acc : acc, 0);
+        let iterable: IterableIterator<AstDeclaration>;
+        let requiredCount: number = 0;
+        let property: string;
+        let isShorthand: boolean = true;
+
+        for (property of Object.keys(this.config.properties)) {
+
+            if (this.config.properties[property].required) {
+
+                if (!this.declarations.has(property)) {
+
+                    isShorthand = false;
+                    break;
+                } else {
+
+                    const val = this.declarations.get(property);
+
+                    if (val instanceof PropertySet && !val.isShortHand()) {
+
+                        isShorthand = false;
+                        break;
+                    } else {
+
+                        requiredCount++;
+                    }
+                }
+            }
+        }
 
         if (requiredCount == 0) {
 
             requiredCount = this.declarations.size;
         }
 
-        if (requiredCount < this.requiredCount) {
-
-            // if (this.declarations.size == 1 && this.declarations.has(this.config.shorthand)) {
-            //
-            //     this.declarations
-            // }
-
-            return this.declarations.values();
-        }
-
-        let count = 0;
-        const separator = this.config.separator;
-        const tokens = <{ [key: string]: Token[][] }>{};
-
-        // @ts-ignore
-        const valid: string[] = Object.entries(this.config.properties).reduce((acc, curr) => {
-
-            if (!this.declarations.has(curr[0])) {
-
-                if (curr[1].required) {
-
-                    acc.push(<string>curr[0]);
-                }
-
-                return acc;
-            }
-
-            let current = 0;
-
-            const props = this.config.properties[curr[0]];
+        if (!isShorthand || requiredCount < this.requiredCount) {
 
             // @ts-ignore
-            for (const val of this.declarations.get(curr[0]).val) {
+            iterable = this.declarations.values();
+        } else {
 
-                if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+            let count = 0;
+            const separator = this.config.separator;
+            const tokens = <{ [key: string]: Token[][] }>{};
 
-                    current++;
+            // @ts-ignore
+            /* const valid: string[] =*/  Object.entries(this.config.properties).reduce((acc, curr) => {
 
-                    if (tokens[curr[0]].length == current) {
+                if (!this.declarations.has(curr[0])) {
 
-                        tokens[curr[0]].push([]);
+                    if (curr[1].required) {
+
+                        acc.push(<string>curr[0]);
                     }
-
-                    continue;
-                }
-
-                if (val.typ == 'Whitespace' || val.typ == 'Comment') {
-
-                    continue;
-                }
-
-                if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(val, props.separator)) {
-
-                    continue;
-                }
-
-                if (matchType(val, curr[1])) {
-
-                    if (!(curr[0] in tokens)) {
-
-                        tokens[curr[0]] = [[]];
-                    }
-
-                    // is default value
-
-                    tokens[curr[0]][current].push(val);
-                    continue;
-                }
-
-                acc.push(<string>curr[0]);
-                break;
-            }
-
-            if (count == 0) {
-
-                count = current;
-            }
-
-            return acc;
-        }, <string[]>[]);
-
-        if (valid.length > 0 || Object.values(tokens).every(v => v.every(v => v.length == count))) {
-
-            return this.declarations.values();
-        }
-
-        const values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
-
-            const props = this.config.properties[curr[0]];
-
-            for (let i = 0; i < curr[1].length; i++) {
-
-                if (acc.length == i) {
-
-                    acc.push([]);
-                }
-
-                let values: Token[] = curr[1][i].reduce((acc, curr) => {
-
-                    if (acc.length > 0) {
-
-                        acc.push(<Token>{typ: 'Whitespace'})
-                    }
-
-                    acc.push(curr);
 
                     return acc;
-
-                }, <Token[]>[]);
-
-                if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
-
-                    continue;
                 }
 
-                values = values.filter((val: Token) => {
+                let current = 0;
+
+                const props = this.config.properties[curr[0]];
+                const declaration = this.declarations.get(curr[0]);
+
+                // @ts-ignore
+                for (const val of (declaration instanceof PropertySet ? [...declaration][0] : declaration).val) {
+
+                    if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+
+                        current++;
+
+                        if (tokens[curr[0]].length == current) {
+
+                            tokens[curr[0]].push([]);
+                        }
+
+                        continue;
+                    }
 
                     if (val.typ == 'Whitespace' || val.typ == 'Comment') {
 
-                        return false;
+                        continue;
                     }
 
-                    return !(val.typ == 'Iden' && props.default.includes(val.val));
-                });
+                    if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
 
-                if (values.length > 0) {
+                        continue;
+                    }
 
-                    if ('mapping' in props) {
+                    if (matchType(val, curr[1])) {
 
-                        // @ts-ignore
-                        if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
+                        if (!(curr[0] in tokens)) {
 
-                            let i = values.length;
-                            while (i--) {
+                            tokens[curr[0]] = [[]];
+                        }
 
-                                // @ts-ignore
-                                if (values[i].typ == 'Iden' && values[i].val in props.mapping) {
+                        // is default value
 
-                                    // @ts-ignore
-                                    values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
+                        tokens[curr[0]][current].push(val);
+                        // continue;
+                    } else {
+
+                        acc.push(<string>curr[0]);
+                        break;
+                    }
+                }
+
+                if (count == 0) {
+
+                    count = current;
+                }
+
+                return acc;
+            }, <string[]>[]);
+
+            count++;
+
+            if (!Object.values(tokens).every(v => v.length == count)) {
+
+                // @ts-ignore
+                iterable = this.declarations.values();
+            } else {
+
+                const values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
+
+                    const props = this.config.properties[curr[0]];
+
+                    for (let i = 0; i < curr[1].length; i++) {
+
+                        if (acc.length == i) {
+
+                            acc.push([]);
+                        }
+
+                        let values: Token[] = curr[1][i].reduce((acc, curr) => {
+
+                            if (acc.length > 0) {
+
+                                acc.push(<Token>{typ: 'Whitespace'})
+                            }
+
+                            acc.push(curr);
+
+                            return acc;
+
+                        }, <Token[]>[]);
+
+                        // @todo remove renderToken call
+                        if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
+
+                            continue;
+                        }
+
+                        let doFilterDefault: boolean = true;
+
+                        if (curr[0] in propertiesConfig.properties) {
+
+                            for (let v of values) {
+
+                                if (!['Whitespace', 'Comment', 'Iden'].includes(v.typ)
+                                    || (v.typ == 'Iden' && !this.config.properties[curr[0]].default.includes(v.val))) {
+
+                                    doFilterDefault = false;
+                                    break;
                                 }
                             }
                         }
 
-                    }
+                        // remove default values
+                        values = values.filter((val: Token) => {
 
-                    if ('prefix' in props) {
+                            if (val.typ == 'Whitespace' || val.typ == 'Comment') {
 
-                        // @ts-ignore
-                        acc[i].push({...props.prefix});
-                    }
+                                return false;
+                            }
 
-                    else if (acc[i].length > 0) {
+                            return !doFilterDefault || !(val.typ == 'Iden' && props.default.includes(val.val));
+                        });
 
-                        acc[i].push({typ: 'Whitespace'});
-                    }
+                        if (values.length > 0) {
 
-                    acc[i].push(...values.reduce((acc, curr) => {
+                            if ('mapping' in props) {
 
-                        if (acc.length > 0) {
+                                // @ts-ignore
+                                if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
 
-                            // @ts-ignore
-                            acc.push(<Token>{...(props.separator ?? {typ: 'Whitespace'})});
+                                    let i = values.length;
+                                    while (i--) {
+
+                                        // @ts-ignore
+                                        if (values[i].typ == 'Iden' && values[i].val in props.mapping) {
+
+                                            // @ts-ignore
+                                            values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
+                                        }
+                                    }
+                                }
+
+                            }
+
+                            if ('prefix' in props) {
+
+                                // @ts-ignore
+                                acc[i].push({...props.prefix});
+                            } else if (acc[i].length > 0) {
+
+                                acc[i].push({typ: 'Whitespace'});
+                            }
+
+                            acc[i].push(...values.reduce((acc, curr) => {
+
+                                if (acc.length > 0) {
+
+                                    // @ts-ignore
+                                    acc.push(<Token>{...(props.separator ?? {typ: 'Whitespace'})});
+                                }
+
+                                // @ts-ignore
+                                acc.push(curr);
+                                return acc;
+                            }, []))
                         }
+                    }
 
-                        // @ts-ignore
-                        acc.push(curr);
-                        return acc;
-                    }, []))
-                }
-            }
-
-            return acc;
-        }, <Token[][]>[]).reduce((acc, curr) => {
-
-            if (acc.length > 0) {
-
-                acc.push(<Token>{...separator});
-            }
-
-            if (curr.length == 0) {
-
-                curr.push(...<Token[]>this.config.default[0].split(/\s/).map(getTokenType).reduce((acc: Token[], curr: Token) => {
+                    return acc;
+                }, <Token[][]>[]).reduce((acc, curr) => {
 
                     if (acc.length > 0) {
 
-                        acc.push({typ: 'Whitespace'});
+                        acc.push(<Token>{...separator});
                     }
 
-                    acc.push(curr);
+                    if (curr.length == 0 && this.config.default.length > 0) {
+
+                        curr.push(...parseString(this.config.default[0]).reduce((acc: Token[], curr: Token) => {
+
+                            if (acc.length > 0) {
+
+                                acc.push({typ: 'Whitespace'});
+                            }
+
+                            acc.push(curr);
+                            return acc;
+
+                        }, <Token[]>[]))
+                    }
+
+                    acc.push(...curr);
                     return acc;
 
-                }, <Token[]>[]))
+                }, []);
+
+                iterable = [<AstDeclaration>{
+                    typ: 'Declaration',
+                    nam: this.config.shorthand,
+                    val: values
+                }][Symbol.iterator]();
             }
+        }
 
-            acc.push(...curr);
-            return acc;
+        const iterators = <IterableIterator<AstDeclaration>[]>[];
 
-        }, []);
+        return {
 
-        return [<AstDeclaration>{
-            typ: 'Declaration',
-            nam: this.config.shorthand,
-            val: values
-        }][Symbol.iterator]();
+            // @ts-ignore
+            next() {
+
+                let v = iterable.next();
+
+                while (v.done || v.value instanceof PropertySet) {
+
+                    if (v.value instanceof PropertySet) {
+
+                        // @ts-ignore
+                        iterators.push(iterable);
+
+                        iterable = (<PropertySet>v.value)[Symbol.iterator]();
+
+                        v = iterable.next();
+                    }
+
+                    if (v.done) {
+
+                        if (iterators.length > 0) {
+
+                            // @ts-ignore
+                            iterable = iterators.pop();
+
+                            v = iterable.next();
+                        }
+
+                        if (v.done && iterators.length == 0) {
+
+                            break;
+                        }
+                    }
+                }
+
+                return v;
+
+            }
+        };
     }
 }

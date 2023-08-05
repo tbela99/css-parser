@@ -17,7 +17,7 @@ describe('process import', function () {
         return fetch(dirname(new URL(import.meta.url).pathname) + '/../files/result/font-awesome-all.css').
             then(response => response.text()).
             then(file => transform(import1, {
-            compress: false,
+            minify: false,
             resolveImport: true
         }).then((result) => {
             // const a = document.createElement('a');

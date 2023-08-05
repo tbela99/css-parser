@@ -3,17 +3,19 @@ import {
     ShorthandMapType,
     ShorthandType,
     ShorthandPropertyType,
-    ShorthandDef
+    ShorthandDef, PropertyMapType
 } from "../src/@types";
 
 function createProperties(data: ShorthandPropertyType) {
 
+    const map = data.map;
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
-            return Object.assign(acc, {
-                [property]: {
 
+            return Object.assign(acc,{
+                [property]: {
+                    map,
                     shorthand: data.shorthand
                 }
             });
@@ -50,6 +52,31 @@ export const map: ShorthandMapType = [
 
     [
         {
+            shorthand: 'border',
+            pattern: 'border-color border-style border-width',
+            keywords: ['none'],
+            default: ['0', 'none']
+        },
+        [
+            {
+                shorthand: 'border-color',
+                properties: {
+                }
+            },
+            {
+                shorthand: 'border-style',
+                properties: {
+                }
+            },
+            {
+                shorthand: 'border-width',
+                properties: {
+                }
+            }
+        ]
+    ],
+    [
+        {
             shorthand: 'outline',
             pattern: 'outline-color outline-style outline-width',
             keywords: ['none'],
@@ -60,8 +87,8 @@ export const map: ShorthandMapType = [
                 shorthand: 'outline-color',
                 properties: {
                     types: ['Color'],
-                    default: ['currentColor', 'invert'],
-                    keywords: ['currentColor', 'invert'],
+                    default: ['currentColor'],
+                    keywords: ['currentColor'],
                 }
             },
             {
@@ -194,7 +221,8 @@ export const map: ShorthandMapType = [
             }
         ]
     ],
-    [{
+    [
+        {
         shorthand: 'background',
         pattern: 'background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size',
         keywords: ['none'],
@@ -225,6 +253,7 @@ export const map: ShorthandMapType = [
                 properties: {
                     types: ['Color'],
                     default: ['transparent'],
+                    multiple: true,
                     keywords: []
                 }
             },
@@ -241,6 +270,7 @@ export const map: ShorthandMapType = [
                 properties: {
                     types: [],
                     default: ['scroll'],
+                    multiple: true,
                     keywords: ['scroll', 'fixed', 'local']
                 }
             },
@@ -249,6 +279,7 @@ export const map: ShorthandMapType = [
                 properties: {
                     types: [],
                     default: ['border-box'],
+                    multiple: true,
                     keywords: ['border-box', 'padding-box', 'content-box', 'text']
                 }
             },
@@ -257,6 +288,7 @@ export const map: ShorthandMapType = [
                 properties: {
                     types: [],
                     default: ['padding-box'],
+                    multiple: true,
                     keywords: ['border-box', 'padding-box', 'content-box']
                 }
             },
@@ -345,6 +377,7 @@ export const properties: PropertySetType = [
     },
     {
         shorthand: 'border-width',
+        map: 'border',
         properties: [
             'border-top-width',
             'border-right-width',
@@ -354,25 +387,48 @@ export const properties: PropertySetType = [
         types: ['Length', 'Perc'],
         // multiple: false,
         // separator: null,
+        default: ['medium'],
         keywords: ['thin', 'medium', 'thick']
     },
     {
         shorthand: 'border-style',
+        map: 'border',
         properties: ['border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style'],
         types: [],
         // multiple: false,
         // separator: null,
+        default: ['none'],
         keywords: ['none', 'hidden', 'dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset']
     },
     {
         shorthand: 'border-color',
+        map: 'border',
         properties: ['border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color'],
         types: ['Color'],
         // multiple: false,
         // separator: null,
+        default: ['currentcolor'],
         keywords: []
     }
 ].reduce((acc: PropertySetType, data) => {
+
+    if (data.map) {
+
+        // console.debug({data});
+
+        // @ts-ignore
+        (<PropertyMapType>map[data.map].properties[data.shorthand]).types = data.types;
+        // @ts-ignore
+        (<PropertyMapType>map[data.map].properties[data.shorthand]).default = data.default;
+        // @ts-ignore
+        (<PropertyMapType>map[data.map].properties[data.shorthand]).keywords = data.keywords;
+
+        // @ts-ignore
+        // (<PropertyMapType>map[data.shorthand]).types = data.types;
+        // @ts-ignore
+        // (<PropertyMapType>map[data.shorthand]).keywords = data.keywords;
+
+    }
 
     return Object.assign(acc, createProperties(<ShorthandPropertyType>data));
 }, <PropertySetType>{});

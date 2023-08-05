@@ -2,13 +2,14 @@
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
+const dimensionUnits = [
+    'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
+    'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
+    'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
+    'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
+];
 function isLength(dimension) {
-    return 'unit' in dimension && [
-        'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
-        'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
-        'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
-        'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
-    ].includes(dimension.unit.toLowerCase());
+    return 'unit' in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
 }
 function isResolution(dimension) {
     return 'unit' in dimension && ['dpi', 'dpcm', 'dppx', 'x'].includes(dimension.unit.toLowerCase());
@@ -233,6 +234,22 @@ function isHexColor(name) {
     }
     return true;
 }
+function isHexDigit(name) {
+    if (name.length || name.length > 6) {
+        return false;
+    }
+    for (let chr of name) {
+        let codepoint = chr.charCodeAt(0);
+        if (!isDigit(codepoint) &&
+            // A F
+            !(codepoint >= 0x41 && codepoint <= 0x46) &&
+            // a f
+            !(codepoint >= 0x61 && codepoint <= 0x66)) {
+            return false;
+        }
+    }
+    return true;
+}
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }
@@ -249,4 +266,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
