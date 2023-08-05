@@ -1,0 +1,12 @@
+/test
+/benchmark
+/tools
+/ROADMAP.md
+/rollup.config.mjs
+/tsconfig.json
+/src
+/.idea
+/package-lock.json
+/node_modules
+/coverage
+/.github

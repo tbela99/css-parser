@@ -1,3 +1,5 @@
+[![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions)
+
 # css-parser
 
 CSS parser for node and the browser
@@ -8,13 +10,63 @@ CSS parser for node and the browser
 $ npm install @tbela99/css-parser
 ```
 
-## Parsing
+### Features
+
+- [x] fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
+- [x] efficient minification, see benchmark
+- [x] replace @import at-rules with actual css content of the imported rule
+- [x] automatically create nested css rules
+- [x] works the same way in node and web browser
+
+### Performance
+
+- [x] flatten @import
+
+## Transform
+
+Parse and render css in a single pass.
+
+### Usage
 
 ```javascript
-import {parse} from '@tbela99/css-parser';
 
-const {ast, errors} = parse(css);
+transform(css, transformOptions = {})
 ```
+
+### Example
+
+```javascript
+
+import {transform} from '@tbela99/css-parser';
+
+const {ast, code, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
+```
+
+### TransformOptions
+
+Include ParseOptions and RenderOptions
+
+#### ParseOptions
+
+- src: string, optional. css file location to be used with sourcemap.
+- minify: boolean, optional. default to _true_. optimize ast.
+- nestingRules: boolean, optional. automatically nest rules.
+- removeEmpty: boolean, remove empty nodes from the ast.
+- location: boolean, optional. includes node location in the ast, required for sourcemap generation.
+- cwd: string, optional. the current working directory. when specified url() are resolved using this value
+- resolveImport: boolean, optional. replace @import node by the content of the referenced stylesheet.
+- resolveUrls: boolean, optional. resolve css url() according to the parameters 'src' and 'cwd'
+
+#### RenderOptions
+- minify: boolean, optional. default to _true_. minify css output.
+- indent: string, optional. css indention string. uses space character by default.
+- newLine: string, new line character.
+- removeComments: boolean, remove comments in generated css.
+- preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
+- colorConvert: boolean, convert colors to hex.
+
+
+## Parsing
 
 ### Usage
 
@@ -22,44 +74,90 @@ const {ast, errors} = parse(css);
 
 parse(css, parseOptions = {})
 ```
-### parseOptions
 
-- src: string, optional. css file location
-- location: boolean, optional. includes node location in the ast
-- processImport: boolean, process @import node - not yet implemented
-- deduplicate: boolean, remove duplicate node and merge rules
-- removeEmpty: boolean, remove empty nodes
+### Example
 
+````javascript
+
+const {ast, errors} = await parse(css);
+````
 
 ## Rendering
 
 ### Usage
 
 ```javascript
-import {render} from '@tbela99/css-parser';
-
-// pretty print
-const prettyPrint = render(ast);
-// minified
-const minified = render(ast, {compress: true})
+render(ast, RenderOptions = {});
 ```
 
-### Rendering options
+### Example
 
-- compress: boolean, optional. minify output. Also remove comments
-- indent: string, optional. indention string. uses space character by default.
-- newLine: string, new line character
-- removeComments: boolean, remove comments
+```javascript
+import {render} from '@tbela99/css-parser';
+
+// minified
+const {code} = render(ast, {minify: true});
+
+console.log(code);
+```
 
 ## Node Walker
 
 ```javascript
 import {walk} from '@tbela99/css-parser';
 
-for (const node of walk(ast)) {
+for (const {node, parent, root} of walk(ast)) {
     
     // do somehting
 }
+```
+
+## Exports
+
+There are several ways to import the library into your application.
+
+### Node exports
+
+import as a module
+
+```javascript
+
+import {transform} from '@tbela99/css-parser';
+
+// ...
+```
+import as a CommonJS module
+
+```javascript
+
+import {transform} from '@tbela99/css-parser/cjs';
+
+// ...
+```
+
+### Web export
+
+Programmatic import
+
+```javascript
+
+import {transform} from '@tbela99/css-parser/web';
+
+// ...
+```
+
+Javascript module
+
+```javascript
+
+<script src="dist/web/index.js" type="module"></script>
+```
+
+Single JavaScript file
+
+```javascript
+
+<script src="dist/index-umd-web.js"></script>
 ```
 
 ## AST
@@ -68,6 +166,12 @@ for (const node of walk(ast)) {
 
 - typ: string 'Comment'
 - val: string, the comment
+
+### Declaration
+
+- typ: string 'Declaration'
+- nam: string, declaration name
+- val: array of tokens
 
 ### Rule
 

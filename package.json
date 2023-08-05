@@ -1,21 +1,56 @@
 {
-  "main": "dist/index.js",
-  "browser": "dist/index.js",
-  "module": "dist/index.mjs",
+  "name": "@tbela99/css-parser",
+  "description": "CSS parser for node and the browser",
+  "version": "0.0.1-rc1",
+  "exports": {
+    ".": "./dist/index.js",
+    "./web": "./dist/web/index.js",
+    "./cjs": "./dist/index.cjs"
+  },
+  "type": "module",
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
-    "test": "mocha \"test/**/*.test.mjs\"",
-    "test2": "bun run test/parse.ts",
-    "watch": "rollup -c --watch --watch.onBundleEnd 'npm run test' &",
-    "syntax-update": "./update.sh"
+    "test": "web-test-runner \"test/**/*.web-spec.js\" --node-resolve --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.spec.js\"",
+    "test:cov": "web-test-runner \"test/**/*.web-spec.js\" --node-resolve --root-dir=.  --coverage; c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.spec.js\"",
+    "profile": "node --inspect-brk test/inspect.mjs",
+    "debug": "web-test-runner \"test/**/*.web.js\" --manual --open --node-resolve --root-dir=."
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tbela99/css-parser.git"
+  },
+  "keywords": [
+    "parser",
+    "css",
+    "css parser",
+    "css-parser",
+    "node",
+    "ast",
+    "browser",
+    "css nesting",
+    "css compiler",
+    "nested css"
+  ],
+  "author": "Thierry Bela",
+  "license": "MIT OR LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/tbela99/css-parser/issues"
+  },
+  "homepage": "https://github.com/tbela99/css-parser#readme",
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@rollup/plugin-commonjs": "^25.0.2",
+    "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.0.0",
+    "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.15.10",
+    "@web/test-runner": "^0.16.1",
+    "@webref/css": "^6.5.9",
+    "c8": "^8.0.1",
     "mocha": "^10.2.0",
     "rollup": "^3.20.1",
     "rollup-plugin-dts": "^5.3.0",

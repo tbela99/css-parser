@@ -1,9 +1,10 @@
-import exp from "constants";
 import {Token} from "./tokenize";
 
 export * from './validation';
 export * from './tokenize';
 export * from './stringiterator';
+export * from './shorthand';
+export * from './config';
 
 export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
 
@@ -28,19 +29,69 @@ export interface ErrorDescription {
 export interface ParserOptions {
 
     src?: string;
-    location?: boolean;
-    processImport?: boolean;
-    deduplicate?: boolean;
+    sourcemap?: boolean;
+    minify?: boolean;
+    nestingRules?: boolean;
     removeEmpty?: boolean;
+    resolveUrls?: boolean;
+    resolveImport?: boolean;
+    cwd?: string;
+    load?: (url: string, currentUrl: string) => Promise<string>;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
 }
 
 export interface RenderOptions {
 
-    compress?: boolean;
+    minify?: boolean;
+    preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
+    colorConvert?: boolean;
+}
+
+export interface TransformOptions extends ParserOptions, RenderOptions {
+
+}
+
+export interface ParseResult {
+    ast: AstRuleStyleSheet;
+    errors: ErrorDescription[];
+    bytesIn: number;
+}
+
+export interface RenderResult {
+    code: string ;
+}
+
+export interface TransformResult extends ParseResult, RenderResult {
+
+    stats: {
+        bytesIn: number;
+        bytesOut: number;
+        parse: string;
+        render: string;
+        total: string;
+    }
+}
+
+export interface ParseTokenOptions extends ParserOptions {
+    parseColor?: boolean;
+}
+
+export interface TokenizeResult {
+    token: string;
+    hint?: string;
+    position: Position;
+    bytesIn: number;
+}
+
+export interface MatchedSelector {
+    match: string[][];
+    selector1: string[][];
+    selector2: string[][];
+    eq: boolean
 }
 
 export interface Position {
@@ -53,11 +104,11 @@ export interface Position {
 export interface Location {
 
     sta: Position;
-    end: Position;
+    // end: Position;
     src: string;
 }
 
-type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
+export declare type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
 
 interface Node {
 
@@ -70,25 +121,29 @@ export interface AstComment extends Node {
     typ: 'Comment',
     val: string;
 }
-
-export interface AstInvalidComment extends Node {
-
-    typ: 'InvalidComment',
-    val: string;
-}
-
 export interface AstDeclaration extends Node {
 
-    nam: Token[],
+    nam: string,
     val: Token[];
     typ: 'Declaration'
 }
 
 export interface AstRule extends Node {
 
-    typ: 'Rule',
-    sel: string,
-    chi: Array<AstDeclaration | AstComment | AstRuleList>
+    typ: 'Rule';
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare type RawSelectorTokens  = string[][];
+
+export interface OptimizedSelector {
+    match: boolean;
+    optimized: string[];
+    selector: string[][],
+    reducible: boolean;
 }
 
 export interface AstAtRule extends Node {
@@ -115,5 +170,3 @@ export type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration;
-
-export type AstTraverserHandler = (node: AstNode, location?: Location) => void;

@@ -1,4 +1,3 @@
-
 export interface LiteralToken {
 
     typ: 'Literal';
@@ -48,6 +47,14 @@ export interface FunctionToken {
 
     typ: 'Func',
     val: string;
+    chi: Token[];
+}
+
+export interface FunctionURLToken {
+
+    typ: 'UrlFunc',
+    val: 'url';
+    chi: Array<UrlToken | CommentToken>;
 }
 
 export interface StringToken {
@@ -58,26 +65,61 @@ export interface StringToken {
 
 export interface BadStringToken {
 
-    typ: 'Bad-string',
+    typ: 'Bad-string';
     val: string;
 }
 
 export interface UnclosedStringToken {
 
-    typ: 'Unclosed-string',
+    typ: 'Unclosed-string';
     val: string;
 }
 
 export interface DimensionToken {
 
-    typ: 'Dimension',
+    typ: 'Dimension';
     val: string;
     unit: string;
 }
 
+export interface LengthToken {
+
+    typ: 'Length';
+    val: string;
+    unit: string;
+}
+
+export interface AngleToken {
+
+    typ: 'Angle';
+    val: string;
+    unit: string;
+}
+
+export interface TimeToken {
+
+    typ: 'Time';
+    val: string;
+    unit: 'ms' | 's';
+}
+
+export interface FrequencyToken {
+
+    typ: 'Frequency';
+    val: string;
+    unit: 'Hz' | 'Khz';
+}
+
+export interface ResolutionToken {
+
+    typ: 'Resolution';
+    val: string;
+    unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
+}
+
 export interface HashToken {
 
-    typ: 'Hash',
+    typ: 'Hash';
     val: string;
 }
 
@@ -172,6 +214,7 @@ export interface PseudoClassFunctionToken {
 
     typ: 'Pseudo-class-func';
     val: string;
+    chi: Token[];
 }
 
 export interface DelimToken {
@@ -205,13 +248,32 @@ export interface ImportantToken {
 export interface ColorToken {
 
     typ: 'Color';
-    value: string;
+    val: string;
+    kin: 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+    chi?: Token[];
 }
 
+export interface AttrToken {
+
+    typ: 'Attr',
+    chi: Token[]
+}
+
+export interface TokenStream {
+    buffer: string;
+    ind: number;
+    lin: number;
+    col: number;
+}
+
+export declare type TokenType = 'Dimension' | 'Number' | 'Perc' | 'Angle' | 'Length' | 'Time' | 'Frequency' |
+    'Resolution' | 'Attr';
+
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
-    NumberToken | AtRuleToken | PercentageToken | FunctionToken | DimensionToken | StringToken |
+    NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |
+    AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
-    BadUrlToken | UrlToken | ImportantToken | ColorToken | EOFToken;
+    BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
