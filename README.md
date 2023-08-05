@@ -13,7 +13,7 @@ $ npm install @tbela99/css-parser
 ### Features
 
 - [x] fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- [x] efficient minification, see benchmark
+- [x] efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - [x] replace @import at-rules with actual css content of the imported rule
 - [x] automatically create nested css rules
 - [x] works the same way in node and web browser
