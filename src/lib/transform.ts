@@ -7,19 +7,18 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
     options = {minify: true, removeEmpty: true, ...options};
 
     const startTime: number = performance.now();
-    const parseResult: ParseResult = <ParseResult>await parse(css, options);
 
-    const renderTime: number = performance.now();
-    const rendered: RenderResult = render(parseResult.ast, options);
-    const endTime: number = performance.now();
+    return parse(css, options).then((parseResult: ParseResult) => {
 
-    return {
-        ...parseResult, ...rendered, stats: {
-            bytesIn: parseResult.bytesIn,
-            bytesOut: rendered.code.length,
-            parse: `${(renderTime - startTime).toFixed(2)}ms`,
-            render: `${(endTime - renderTime).toFixed(2)}ms`,
-            total: `${(endTime - startTime).toFixed(2)}ms`
+        const rendered: RenderResult = render(parseResult.ast, options);
+
+        return {
+            ...parseResult, ...rendered, stats: {
+                bytesOut: rendered.code.length,
+                ...parseResult.stats,
+                render: rendered.stats.total,
+                total: `${(performance.now() - startTime).toFixed(2)}ms`
+            }
         }
-    }
+    });
 }

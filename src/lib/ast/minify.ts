@@ -90,15 +90,11 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
 
                 curr.splice(0, 2);
-            }
-
-            else if (combinators.includes(curr[1])) {
+            } else if (combinators.includes(curr[1])) {
 
                 curr.splice(0, 1);
             }
-        }
-
-        else if (ast.typ == 'Rule' && (isIdent(curr[0]) || isFunction(curr[0]))) {
+        } else if (ast.typ == 'Rule' && (isIdent(curr[0]) || isFunction(curr[0]))) {
 
             curr.unshift('&', ' ');
         }
@@ -186,7 +182,8 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             // @ts-ignore
             return null;
         }
-        return {result, node1: exchanged ? node2 : node1, node2: exchanged ? node2 : node2};
+
+        return {result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2};
     }
 
     function matchSelectors(selector1: string[][], selector2: string[][], parentType: NodeType): null | MatchedSelector {
@@ -454,12 +451,37 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             if (node.typ == 'AtRule' && (<AstAtRule>node).nam == 'font-face') {
                 continue;
             }
-            if (node.typ == 'AtRule' && (<AstAtRule>node).val == 'all') {
+            if (node.typ == 'AtRule') {
+
+                if ((<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
+
+                    // @ts-ignore
+                    ast.chi?.splice(i, 1, ...node.chi);
+                    i--;
+                    continue;
+                }
+
+                // console.debug({previous, node});
+
                 // @ts-ignore
-                ast.chi?.splice(i, 1, ...node.chi);
-                i--;
-                continue;
+                if (previous?.typ == 'AtRule' &&
+                    (<AstAtRule>previous).nam == (<AstAtRule>node).nam &&
+                    (<AstAtRule>previous).val == (<AstAtRule>node).val) {
+
+                    if ('chi' in node) {
+
+                        // @ts-ignore
+                        previous.chi.push(...node.chi);
+                    }
+
+                    // else {
+
+                    ast?.chi?.splice(i--, 1);
+                    continue;
+                    // }
+                }
             }
+
             // @ts-ignore
             if (node.typ == 'Rule') {
 
@@ -568,23 +590,17 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                             if (curr[1] == ' ') {
 
                                 curr.splice(0, 2);
-                            }
-
-                            else {
+                            } else {
 
                                 if (ast.typ != 'Rule' && combinators.includes(curr[1])) {
 
                                     wrap = false;
-                                }
-
-                                else {
+                                } else {
 
                                     curr.splice(0, 1);
                                 }
                             }
-                        }
-
-                        else if (combinators.includes(curr[0])) {
+                        } else if (combinators.includes(curr[0])) {
 
                             curr.unshift('&');
                             wrap = false;
@@ -814,6 +830,7 @@ export function reduceSelector(selector: string[][]) {
         reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
     };
 }
+
 function hasOnlyDeclarations(node: AstRule): boolean {
     let k: number = node.chi.length;
 

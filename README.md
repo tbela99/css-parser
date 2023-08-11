@@ -1,4 +1,4 @@
-[![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions)
+[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions)
 
 # css-parser
 
@@ -12,15 +12,15 @@ $ npm install @tbela99/css-parser
 
 ### Features
 
-- [x] fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- [x] efficient minification, see benchmark
-- [x] replace @import at-rules with actual css content of the imported rule
-- [x] automatically create nested css rules
-- [x] works the same way in node and web browser
+- fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
+- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- replace @import at-rules with actual css content of the imported rule
+- automatically create nested css rules
+- works the same way in node and web browser
 
 ### Performance
 
-- [x] flatten @import
+- flatten @import
 
 ## Transform
 
@@ -50,7 +50,7 @@ Include ParseOptions and RenderOptions
 
 - src: string, optional. css file location to be used with sourcemap.
 - minify: boolean, optional. default to _true_. optimize ast.
-- nestingRules: boolean, optional. automatically nest rules.
+- nestingRules: boolean, optional. automatically generated nested rules.
 - removeEmpty: boolean, remove empty nodes from the ast.
 - location: boolean, optional. includes node location in the ast, required for sourcemap generation.
 - cwd: string, optional. the current working directory. when specified url() are resolved using this value

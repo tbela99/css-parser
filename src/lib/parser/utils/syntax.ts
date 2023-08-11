@@ -139,12 +139,7 @@ export function isHash(name: string): boolean {
         return false;
     }
 
-    if (isIdent(name.charAt(1))) {
-
-        return true;
-    }
-
-    return true;
+    return isIdent(name.charAt(1));
 }
 
 export function isNumber(name: string): boolean {

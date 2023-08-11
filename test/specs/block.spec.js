@@ -4,6 +4,7 @@ import { readFile } from 'fs/promises';
 import { transform } from '../../dist/node/index.js';
 import { dirname } from 'path';
 import { readFileSync } from 'fs';
+import {render} from "../../src/index.js";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 describe('parse block', function () {
@@ -197,5 +198,65 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
         return transform(file, {
             minify: true
         }).then(result => f(result.code).equals(`abbr:is([title],[data-original-title],abbr>[data-original-title]){text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
+    });
+
+    it('merge at-rule & escape sequence #14', function () {
+        const file = `
+
+@media (max-width: 767px) {.main-heading { font-size: 32px; font-weight: 300; }}
+@media (max-width: 767px) {.section { max-width: 100vw; padding-left: 16px; padding-right: 16px; }}
+@media (max-width: 767px) {.hero-cta-form, .sign-in-form__third-party-container, .google-sign-in-cta-widget { margin-top: 0px; width: 100%; }}
+@media (max-width: 767px) {.babybear\\:z-0 { z-index: 0; }}
+@media (max-width: 767px) {.babybear\\:mr-0 { margin-right: 0px; }}
+@media (max-width: 767px) {.babybear\\:hidden { display: none; }}
+@media (max-width: 767px) {.babybear\\:min-h-\\[0\\] { min-height: 0px; }}
+
+`;
+        return transform(file, {
+            minify: true
+        }).then(result => f(result.code).equals(`@media (max-width:767px){.main-heading{font-size:32px;font-weight:300}.section{max-width:100vw;padding-left:16px;padding-right:16px}.hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget{margin-top:0;width:100%}.babybear\\:z-0{z-index:0}.babybear\\:mr-0{margin-right:0}.babybear\\:hidden{display:none}.babybear\\:min-h-\\[0\\]{min-height:0}}`));
+    });
+
+    it('merge at-rule & escape sequence #15', function () {
+        const file = `
+
+@media (max-width: 767px) {.main-heading { font-size: 32px; font-weight: 300; }}
+@media (max-width: 767px) {.section { max-width: 100vw; padding-left: 16px; padding-right: 16px; }}
+@media (max-width: 767px) {.hero-cta-form, .sign-in-form__third-party-container, .google-sign-in-cta-widget { margin-top: 0px; width: 100%; }}
+@media (max-width: 767px) {.babybear\\:z-0 { z-index: 0; }}
+@media (max-width: 767px) {.babybear\\:mr-0 { margin-right: 0px; }}
+@media (max-width: 767px) {.babybear\\:hidden { display: none; }}
+@media (max-width: 767px) {.babybear\\:min-h-\\[0\\] { min-height: 0px; }}
+
+`;
+        return transform(file, {
+            minify: true
+        }).then(result => f(render(result.ast, {minify: false}).code).equals(`@media (max-width:767px) {
+ .main-heading {
+  font-size: 32px;
+  font-weight: 300
+ }
+ .section {
+  max-width: 100vw;
+  padding-left: 16px;
+  padding-right: 16px
+ }
+ .hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget {
+  margin-top: 0;
+  width: 100%
+ }
+ .babybear\\:z-0 {
+  z-index: 0
+ }
+ .babybear\\:mr-0 {
+  margin-right: 0
+ }
+ .babybear\\:hidden {
+  display: none
+ }
+ .babybear\\:min-h-\\[0\\] {
+  min-height: 0
+ }
+}`));
     });
 });

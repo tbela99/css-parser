@@ -36,10 +36,11 @@ function* tokenize(iterator) {
         }
         buffer += quoteStr;
         while (value = peek()) {
-            if (ind >= iterator.length) {
-                yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-                break;
-            }
+            // if (ind >= iterator.length) {
+            //
+            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
+            //     break;
+            // }
             if (value == '\\') {
                 const sequence = peek(6);
                 let escapeSequence = '';
@@ -62,7 +63,7 @@ function* tokenize(iterator) {
                 // not hex or new line
                 // @ts-ignore
                 if (i == 1 && !isNewLine(codepoint)) {
-                    buffer += sequence[i];
+                    buffer += value + sequence[i];
                     next(2);
                     continue;
                 }
@@ -82,11 +83,12 @@ function* tokenize(iterator) {
                     continue;
                 }
                 // buffer += value;
-                if (ind >= iterator.length) {
-                    // drop '\\' at the end
-                    yield pushToken(buffer);
-                    break;
-                }
+                // if (ind >= iterator.length) {
+                //
+                //     // drop '\\' at the end
+                //     yield pushToken(buffer);
+                //     break;
+                // }
                 buffer += next(2);
                 continue;
             }
@@ -255,7 +257,7 @@ function* tokenize(iterator) {
                     buffer = '';
                     break;
                 }
-                buffer += value;
+                buffer += prev() + value;
                 break;
             case '"':
             case "'":

@@ -60,11 +60,11 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
         while (value = peek()) {
 
-            if (ind >= iterator.length) {
-
-                yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-                break;
-            }
+            // if (ind >= iterator.length) {
+            //
+            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
+            //     break;
+            // }
 
             if (value == '\\') {
 
@@ -98,7 +98,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 // @ts-ignore
                 if (i == 1 && !isNewLine(codepoint)) {
 
-                    buffer += sequence[i];
+                    buffer += value + sequence[i];
                     next(2);
                     continue;
                 }
@@ -123,12 +123,12 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 }
 
                 // buffer += value;
-                if (ind >= iterator.length) {
-
-                    // drop '\\' at the end
-                    yield pushToken(buffer);
-                    break;
-                }
+                // if (ind >= iterator.length) {
+                //
+                //     // drop '\\' at the end
+                //     yield pushToken(buffer);
+                //     break;
+                // }
 
                 buffer += next(2);
                 continue;
@@ -340,7 +340,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                 break;
             case '\\':
+
                 value = next();
+
                 // EOF
                 if (ind + 1 >= iterator.length) {
                     // end of stream ignore \\
@@ -348,7 +350,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     buffer = '';
                     break;
                 }
-                buffer += value;
+
+                buffer += prev() + value;
+
                 break;
             case '"':
             case "'":

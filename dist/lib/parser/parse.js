@@ -12,6 +12,7 @@ const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
  * @param opt
  */
 async function parse(iterator, opt = {}) {
+    const startTime = performance.now();
     const errors = [];
     const options = {
         src: '',
@@ -150,7 +151,7 @@ async function parse(iterator, opt = {}) {
                                     src: options.resolve(url, options.src).absolute
                                 }));
                             });
-                            bytesIn += root.bytesIn;
+                            bytesIn += root.stats.bytesIn;
                             if (root.ast.chi.length > 0) {
                                 context.chi.push(...root.ast.chi);
                             }
@@ -196,13 +197,6 @@ async function parse(iterator, opt = {}) {
             // rule
             if (delim.typ == 'Block-start') {
                 const position = map.get(tokens[0]);
-                // if (context.typ == 'Rule') {
-                //
-                //     if (tokens[0]?.typ == 'Iden') {
-                //         errors.push({action: 'drop', message: 'invalid nesting rule', location: {src, ...position}});
-                //         return null;
-                //     }
-                // }
                 const uniq = new Map;
                 parseTokens(tokens, { minify: options.minify }).reduce((acc, curr, index, array) => {
                     if (curr.typ == 'Whitespace') {
@@ -378,12 +372,21 @@ async function parse(iterator, opt = {}) {
     if (tokens.length > 0) {
         await parseNode(tokens);
     }
+    const endParseTime = performance.now();
     if (options.minify) {
         if (ast.chi.length > 0) {
             minify(ast, options, true);
         }
     }
-    return { ast, errors, bytesIn };
+    const endTime = performance.now();
+    return {
+        ast, errors, stats: {
+            bytesIn,
+            parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+            minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            total: `${(endTime - startTime).toFixed(2)}ms`
+        }
+    };
 }
 function parseString(src, options = { location: false }) {
     return [...tokenize(src)].map(t => {

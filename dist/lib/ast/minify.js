@@ -135,7 +135,7 @@ function minify(ast, options = {}, recursive = false) {
             // @ts-ignore
             return null;
         }
-        return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node2 : node2 };
+        return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2 };
     }
     function matchSelectors(selector1, selector2, parentType) {
         let match = [[]];
@@ -323,11 +323,27 @@ function minify(ast, options = {}, recursive = false) {
             if (node.typ == 'AtRule' && node.nam == 'font-face') {
                 continue;
             }
-            if (node.typ == 'AtRule' && node.val == 'all') {
+            if (node.typ == 'AtRule') {
+                if (node.nam == 'media' && node.val == 'all') {
+                    // @ts-ignore
+                    ast.chi?.splice(i, 1, ...node.chi);
+                    i--;
+                    continue;
+                }
+                // console.debug({previous, node});
                 // @ts-ignore
-                ast.chi?.splice(i, 1, ...node.chi);
-                i--;
-                continue;
+                if (previous?.typ == 'AtRule' &&
+                    previous.nam == node.nam &&
+                    previous.val == node.val) {
+                    if ('chi' in node) {
+                        // @ts-ignore
+                        previous.chi.push(...node.chi);
+                    }
+                    // else {
+                    ast?.chi?.splice(i--, 1);
+                    continue;
+                    // }
+                }
             }
             // @ts-ignore
             if (node.typ == 'Rule') {
