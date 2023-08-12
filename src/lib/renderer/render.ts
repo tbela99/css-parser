@@ -63,6 +63,10 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
     switch (data.typ) {
 
+        case 'Declaration':
+
+            return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
+
         case 'Comment':
 
             return options.removeComments ? '' : (<AstComment>data).val;

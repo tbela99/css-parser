@@ -125,7 +125,7 @@ export class PropertyList {
                     }
                 }
 
-                return value;
+                return <{value: AstNode, done: boolean}>value;
             }
         }
     }

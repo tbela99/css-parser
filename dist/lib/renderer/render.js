@@ -35,6 +35,8 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
+        case 'Declaration':
+            return `${data.nam}:${options.indent}${data.val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
         case 'Comment':
             return options.removeComments ? '' : data.val;
         case 'StyleSheet':

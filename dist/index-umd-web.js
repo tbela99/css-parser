@@ -1069,6 +1069,21 @@
 
     const getConfig = () => config$1;
 
+    const funcList = ['clamp', 'calc'];
+    function matchType(val, properties) {
+        if (val.typ == 'Iden' && properties.keywords.includes(val.val) ||
+            (properties.types.includes(val.typ))) {
+            return true;
+        }
+        if (val.typ == 'Number' && val.val == '0') {
+            return properties.types.some(type => type == 'Length' || type == 'Angle');
+        }
+        if (val.typ == 'Func' && funcList.includes(val.val)) {
+            return val.chi.every((t => ['Literal', 'Comma', 'Whitespace', 'Start-parens', 'End-parens'].includes(t.typ) || matchType(t, properties)));
+        }
+        return false;
+    }
+
     // name to color
     const COLORS_NAMES = Object.seal({
         'aliceblue': '#f0f8ff',
@@ -1597,6 +1612,8 @@
         const indent = indents[level];
         const indentSub = indents[level + 1];
         switch (data.typ) {
+            case 'Declaration':
+                return `${data.nam}:${options.indent}${data.val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
             case 'Comment':
                 return options.removeComments ? '' : data.val;
             case 'StyleSheet':
@@ -2000,17 +2017,6 @@
         }
     }
 
-    function matchType(val, properties) {
-        if (val.typ == 'Iden' && properties.keywords.includes(val.val) ||
-            (properties.types.includes(val.typ))) {
-            return true;
-        }
-        if (val.typ == 'Number' && val.val == '0') {
-            return properties.types.some(type => type == 'Length' || type == 'Angle');
-        }
-        return false;
-    }
-
     const propertiesConfig = getConfig();
     class PropertyMap {
         config;
@@ -2239,7 +2245,10 @@
                     return acc;
                 }, []);
                 count++;
-                if (!Object.values(tokens).every(v => v.length == count)) {
+                if (Object.entries(this.config.properties).some(entry => {
+                    // missing required property
+                    return entry[1].required && !(entry[0] in tokens);
+                }) || !Object.values(tokens).every(v => v.length == count)) {
                     // @ts-ignore
                     iterable = this.declarations.values();
                 }
@@ -4106,13 +4115,13 @@
         };
     }
     function parseString(src, options = { location: false }) {
-        return [...tokenize(src)].map(t => {
+        return parseTokens([...tokenize(src)].map(t => {
             const token = getTokenType(t.token, t.hint);
             if (options.location) {
                 Object.assign(token, { loc: t.position });
             }
             return token;
-        });
+        }));
     }
     function getTokenType(val, hint) {
         if (val === '' && hint == null) {
@@ -4623,6 +4632,7 @@
     exports.isTime = isTime;
     exports.isWhiteSpace = isWhiteSpace;
     exports.load = load;
+    exports.matchType = matchType;
     exports.matchUrl = matchUrl;
     exports.minify = minify;
     exports.minifyRule = minifyRule;

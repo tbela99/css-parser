@@ -1,13 +1,12 @@
 import {
-    AstDeclaration,
+    AstDeclaration, IdentToken,
     PropertyMapType, ShorthandPropertyType,
     Token
 } from "../../../@types";
 import {ShorthandMapType} from "../../../@types";
 import {eq} from "../utils/eq";
-import {getConfig} from "../utils";
+import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";
-import {matchType} from "../utils/type";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
 
@@ -342,7 +341,12 @@ export class PropertyMap {
 
             count++;
 
-            if (!Object.values(tokens).every(v => v.length == count)) {
+            if (Object.entries(this.config.properties).some(entry => {
+
+                // missing required property
+                return entry[1].required && !(entry[0] in tokens);
+
+            }) || !Object.values(tokens).every(v => v.length == count)) {
 
                 // @ts-ignore
                 iterable = this.declarations.values();

@@ -173,6 +173,30 @@ interface AttrToken {
 }
 declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
 
+interface PropertyMapType {
+    default: string[];
+    types: string[];
+    keywords: string[];
+    required?: boolean;
+    multiple?: boolean;
+    prefix?: {
+        typ: 'Literal';
+        val: string;
+    };
+    previous?: string;
+    separator?: {
+        typ: 'Comma';
+    };
+    constraints?: {
+        [key: string]: {
+            [key: string]: any;
+        };
+    };
+    mapping?: {
+        [key: string]: any;
+    };
+}
+
 interface PropertiesConfig {
     properties: PropertiesConfigProperties;
     map: Map;
@@ -629,6 +653,8 @@ declare function isWhiteSpace(codepoint: number): boolean;
 
 declare const getConfig: () => PropertiesConfig;
 
+declare function matchType(val: Token, properties: PropertyMapType): boolean;
+
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions): string;
 
@@ -661,4 +687,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { combinators, dirname, getConfig, hasDeclaration, isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };
+export { combinators, dirname, getConfig, hasDeclaration, isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };

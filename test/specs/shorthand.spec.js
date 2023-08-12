@@ -221,4 +221,17 @@ border: #333 solid 1px;
 
         }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid}'));
     });
+
+    it('clamp & calc #15', function () {
+        return transform(`
+@media all {
+    html {
+        font-family: Blanco, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        font-size: clamp(12px, 0.8rem + 0.25vw, 20px);
+        font-weight: 400;
+        line-height: 1.7;
+    }
+}
+`, options).then(result => f(result.code).equals('html{font:clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}'));
+    });
 });
