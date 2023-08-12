@@ -58,11 +58,19 @@ export interface TransformOptions extends ParserOptions, RenderOptions {
 export interface ParseResult {
     ast: AstRuleStyleSheet;
     errors: ErrorDescription[];
-    bytesIn: number;
+    stats: {
+        bytesIn: number;
+        parse: string;
+        minify: string;
+        total: string;
+    }
 }
 
 export interface RenderResult {
     code: string ;
+    stats: {
+        total: string;
+    }
 }
 
 export interface TransformResult extends ParseResult, RenderResult {
@@ -71,6 +79,7 @@ export interface TransformResult extends ParseResult, RenderResult {
         bytesIn: number;
         bytesOut: number;
         parse: string;
+        minify: string;
         render: string;
         total: string;
     }

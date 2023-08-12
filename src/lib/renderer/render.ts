@@ -12,6 +12,8 @@ import {cmyk2hex, COLORS_NAMES, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from ".
 
 export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
+    const startTime: number = performance.now();
+
     const options = Object.assign(opt.minify ?? true ? {
         indent: '',
         newLine: '',
@@ -37,7 +39,10 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
         return acc + renderToken(curr, options);
     }
 
-    return {code: doRender(data, options, reducer, 0)};
+    return {code: doRender(data, options, reducer, 0), stats: {
+
+            total: `${(performance.now() - startTime).toFixed(2)}ms`
+        }};
 }
 
 // @ts-ignore
@@ -87,7 +92,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
             if (data.typ == 'AtRule' && !('chi' in data)) {
 
-                return `${indent}@${(<AstAtRule>data).nam} ${(<AstAtRule>data).val};`;
+                return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
             }
 
             // @ts-ignore
@@ -103,7 +108,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(<() => string>reducer, '').trimEnd()};`;
                 } else if (node.typ == 'AtRule' && !('chi' in node)) {
 
-                    str = `@${(<AstAtRule>node).nam} ${(<AstAtRule>node).val};`;
+                    str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
 
                     str = doRender(node, options, reducer, level + 1, indents);
@@ -129,7 +134,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
             if (data.typ == 'AtRule') {
 
-                return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val ? ' ' + (<AstAtRule>data).val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
+                return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
 
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
@@ -358,5 +363,8 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 
-    throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    console.error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    // throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+
+    return '';
 }

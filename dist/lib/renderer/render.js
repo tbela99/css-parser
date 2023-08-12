@@ -1,6 +1,7 @@
 import { COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
 
 function render(data, opt = {}) {
+    const startTime = performance.now();
     const options = Object.assign(opt.minify ?? true ? {
         indent: '',
         newLine: '',
@@ -19,7 +20,9 @@ function render(data, opt = {}) {
         }
         return acc + renderToken(curr, options);
     }
-    return { code: doRender(data, options, reducer, 0) };
+    return { code: doRender(data, options, reducer, 0), stats: {
+            total: `${(performance.now() - startTime).toFixed(2)}ms`
+        } };
 }
 // @ts-ignore
 function doRender(data, options, reducer, level = 0, indents = []) {
@@ -48,7 +51,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
         case 'AtRule':
         case 'Rule':
             if (data.typ == 'AtRule' && !('chi' in data)) {
-                return `${indent}@${data.nam} ${data.val};`;
+                return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
             let children = data.chi.reduce((css, node) => {
@@ -60,7 +63,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == 'AtRule' && !('chi' in node)) {
-                    str = `@${node.nam} ${node.val};`;
+                    str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
                     str = doRender(node, options, reducer, level + 1, indents);
@@ -77,7 +80,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                 children = children.slice(0, -1);
             }
             if (data.typ == 'AtRule') {
-                return `@${data.nam}${data.val ? ' ' + data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+                return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
     }
@@ -227,7 +230,9 @@ function renderToken(token, options = {}) {
         case 'Delim':
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
-    throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    console.error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    // throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    return '';
 }
 
 export { render, renderToken };

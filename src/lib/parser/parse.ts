@@ -44,6 +44,8 @@ const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
  * @param opt
  */
 export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
+
+    const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const options: ParserOptions = {
         src: '',
@@ -215,7 +217,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                                 }))
                             });
 
-                            bytesIn += root.bytesIn;
+                            bytesIn += root.stats.bytesIn;
 
                             if (root.ast.chi.length > 0) {
                                 context.chi.push(...root.ast.chi);
@@ -273,14 +275,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             if (delim.typ == 'Block-start') {
 
                 const position: Position = <Position>map.get(tokens[0]);
-
-                // if (context.typ == 'Rule') {
-                //
-                //     if (tokens[0]?.typ == 'Iden') {
-                //         errors.push({action: 'drop', message: 'invalid nesting rule', location: {src, ...position}});
-                //         return null;
-                //     }
-                // }
 
                 const uniq = new Map<string, string[]>;
                 parseTokens(tokens, {minify: options.minify}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
@@ -506,6 +500,8 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     }
 
 
+    const endParseTime: number = performance.now();
+
     if (options.minify) {
 
         if (ast.chi.length > 0) {
@@ -514,7 +510,16 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         }
     }
 
-    return {ast, errors, bytesIn};
+    const endTime: number = performance.now();
+
+    return {
+        ast, errors,  stats: {
+            bytesIn,
+            parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+            minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            total: `${(endTime - startTime).toFixed(2)}ms`
+        }
+    };
 }
 
 export function parseString(src: string, options = {location: false}): Token[] {
@@ -679,7 +684,7 @@ function getTokenType(val: string, hint?: string): Token {
         return {
             typ: 'Color',
             val,
-            kin : 'hex'
+            kin: 'hex'
         };
     }
 

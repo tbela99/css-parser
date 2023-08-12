@@ -87,10 +87,7 @@ function isHash(name) {
     if (name.charAt(0) != '#') {
         return false;
     }
-    if (isIdent(name.charAt(1))) {
-        return true;
-    }
-    return true;
+    return isIdent(name.charAt(1));
 }
 function isNumber(name) {
     if (name.length == 0) {

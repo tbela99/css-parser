@@ -91,10 +91,7 @@ function isHash(name) {
     if (name.charAt(0) != '#') {
         return false;
     }
-    if (isIdent(name.charAt(1))) {
-        return true;
-    }
-    return true;
+    return isIdent(name.charAt(1));
 }
 function isNumber(name) {
     if (name.length == 0) {
@@ -1564,6 +1561,7 @@ function hsl2rgb(h, s, l, a = null) {
 }
 
 function render(data, opt = {}) {
+    const startTime = performance.now();
     const options = Object.assign(opt.minify ?? true ? {
         indent: '',
         newLine: '',
@@ -1582,7 +1580,9 @@ function render(data, opt = {}) {
         }
         return acc + renderToken(curr, options);
     }
-    return { code: doRender(data, options, reducer, 0) };
+    return { code: doRender(data, options, reducer, 0), stats: {
+            total: `${(performance.now() - startTime).toFixed(2)}ms`
+        } };
 }
 // @ts-ignore
 function doRender(data, options, reducer, level = 0, indents = []) {
@@ -1611,7 +1611,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
         case 'AtRule':
         case 'Rule':
             if (data.typ == 'AtRule' && !('chi' in data)) {
-                return `${indent}@${data.nam} ${data.val};`;
+                return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
             let children = data.chi.reduce((css, node) => {
@@ -1623,7 +1623,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == 'AtRule' && !('chi' in node)) {
-                    str = `@${node.nam} ${node.val};`;
+                    str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
                     str = doRender(node, options, reducer, level + 1, indents);
@@ -1640,7 +1640,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                 children = children.slice(0, -1);
             }
             if (data.typ == 'AtRule') {
-                return `@${data.nam}${data.val ? ' ' + data.val + options.indent : ''}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+                return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
     }
@@ -1790,7 +1790,9 @@ function renderToken(token, options = {}) {
         case 'Delim':
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
-    throw new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    console.error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    // throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    return '';
 }
 
 function eq(a, b) {
@@ -2579,7 +2581,7 @@ function minify(ast, options = {}, recursive = false) {
             // @ts-ignore
             return null;
         }
-        return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node2 : node2 };
+        return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2 };
     }
     function matchSelectors(selector1, selector2, parentType) {
         let match = [[]];
@@ -2767,11 +2769,27 @@ function minify(ast, options = {}, recursive = false) {
             if (node.typ == 'AtRule' && node.nam == 'font-face') {
                 continue;
             }
-            if (node.typ == 'AtRule' && node.val == 'all') {
+            if (node.typ == 'AtRule') {
+                if (node.nam == 'media' && node.val == 'all') {
+                    // @ts-ignore
+                    ast.chi?.splice(i, 1, ...node.chi);
+                    i--;
+                    continue;
+                }
+                // console.debug({previous, node});
                 // @ts-ignore
-                ast.chi?.splice(i, 1, ...node.chi);
-                i--;
-                continue;
+                if (previous?.typ == 'AtRule' &&
+                    previous.nam == node.nam &&
+                    previous.val == node.val) {
+                    if ('chi' in node) {
+                        // @ts-ignore
+                        previous.chi.push(...node.chi);
+                    }
+                    // else {
+                    ast?.chi?.splice(i--, 1);
+                    continue;
+                    // }
+                }
             }
             // @ts-ignore
             if (node.typ == 'Rule') {
@@ -3286,10 +3304,11 @@ function* tokenize(iterator) {
         }
         buffer += quoteStr;
         while (value = peek()) {
-            if (ind >= iterator.length) {
-                yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-                break;
-            }
+            // if (ind >= iterator.length) {
+            //
+            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
+            //     break;
+            // }
             if (value == '\\') {
                 const sequence = peek(6);
                 let escapeSequence = '';
@@ -3312,7 +3331,7 @@ function* tokenize(iterator) {
                 // not hex or new line
                 // @ts-ignore
                 if (i == 1 && !isNewLine(codepoint)) {
-                    buffer += sequence[i];
+                    buffer += value + sequence[i];
                     next(2);
                     continue;
                 }
@@ -3332,11 +3351,12 @@ function* tokenize(iterator) {
                     continue;
                 }
                 // buffer += value;
-                if (ind >= iterator.length) {
-                    // drop '\\' at the end
-                    yield pushToken(buffer);
-                    break;
-                }
+                // if (ind >= iterator.length) {
+                //
+                //     // drop '\\' at the end
+                //     yield pushToken(buffer);
+                //     break;
+                // }
                 buffer += next(2);
                 continue;
             }
@@ -3505,7 +3525,7 @@ function* tokenize(iterator) {
                     buffer = '';
                     break;
                 }
-                buffer += value;
+                buffer += prev() + value;
                 break;
             case '"':
             case "'":
@@ -3707,6 +3727,7 @@ const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
  * @param opt
  */
 async function parse$1(iterator, opt = {}) {
+    const startTime = performance.now();
     const errors = [];
     const options = {
         src: '',
@@ -3845,7 +3866,7 @@ async function parse$1(iterator, opt = {}) {
                                     src: options.resolve(url, options.src).absolute
                                 }));
                             });
-                            bytesIn += root.bytesIn;
+                            bytesIn += root.stats.bytesIn;
                             if (root.ast.chi.length > 0) {
                                 context.chi.push(...root.ast.chi);
                             }
@@ -3891,13 +3912,6 @@ async function parse$1(iterator, opt = {}) {
             // rule
             if (delim.typ == 'Block-start') {
                 const position = map.get(tokens[0]);
-                // if (context.typ == 'Rule') {
-                //
-                //     if (tokens[0]?.typ == 'Iden') {
-                //         errors.push({action: 'drop', message: 'invalid nesting rule', location: {src, ...position}});
-                //         return null;
-                //     }
-                // }
                 const uniq = new Map;
                 parseTokens(tokens, { minify: options.minify }).reduce((acc, curr, index, array) => {
                     if (curr.typ == 'Whitespace') {
@@ -4073,12 +4087,21 @@ async function parse$1(iterator, opt = {}) {
     if (tokens.length > 0) {
         await parseNode(tokens);
     }
+    const endParseTime = performance.now();
     if (options.minify) {
         if (ast.chi.length > 0) {
             minify(ast, options, true);
         }
     }
-    return { ast, errors, bytesIn };
+    const endTime = performance.now();
+    return {
+        ast, errors, stats: {
+            bytesIn,
+            parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+            minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            total: `${(endTime - startTime).toFixed(2)}ms`
+        }
+    };
 }
 function parseString(src, options = { location: false }) {
     return [...tokenize(src)].map(t => {
@@ -4429,19 +4452,17 @@ function parseTokens(tokens, options = {}) {
 async function transform$1(css, options = {}) {
     options = { minify: true, removeEmpty: true, ...options };
     const startTime = performance.now();
-    const parseResult = await parse$1(css, options);
-    const renderTime = performance.now();
-    const rendered = render(parseResult.ast, options);
-    const endTime = performance.now();
-    return {
-        ...parseResult, ...rendered, stats: {
-            bytesIn: parseResult.bytesIn,
-            bytesOut: rendered.code.length,
-            parse: `${(renderTime - startTime).toFixed(2)}ms`,
-            render: `${(endTime - renderTime).toFixed(2)}ms`,
-            total: `${(endTime - startTime).toFixed(2)}ms`
-        }
-    };
+    return parse$1(css, options).then((parseResult) => {
+        const rendered = render(parseResult.ast, options);
+        return {
+            ...parseResult, ...rendered, stats: {
+                bytesOut: rendered.code.length,
+                ...parseResult.stats,
+                render: rendered.stats.total,
+                total: `${(performance.now() - startTime).toFixed(2)}ms`
+            }
+        };
+    });
 }
 
 const matchUrl = /^(https?:)?\/\//;
