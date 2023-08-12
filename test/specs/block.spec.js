@@ -4,7 +4,7 @@ import { readFile } from 'fs/promises';
 import { transform } from '../../dist/node/index.js';
 import { dirname } from 'path';
 import { readFileSync } from 'fs';
-import {render} from "../../src/index.js";
+import {render} from "../../dist/index.js";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 describe('parse block', function () {
