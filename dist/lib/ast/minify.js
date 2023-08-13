@@ -344,6 +344,17 @@ function minify(ast, options = {}, recursive = false) {
                     continue;
                     // }
                 }
+                // @ts-ignore
+                if (hasDeclaration(node)) {
+                    // @ts-ignore
+                    minifyRule(node);
+                }
+                else {
+                    minify(node, options, recursive);
+                }
+                previous = node;
+                nodeIndex = i;
+                continue;
             }
             // @ts-ignore
             if (node.typ == 'Rule') {

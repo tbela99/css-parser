@@ -300,7 +300,7 @@ describe('CSS Nesting', function () {
 `;
         return transform(nesting3, {
             minify: true, nestingRules: true, resolveImport: true
-        }).then((result) => f(result.code).equals(`[data-bs-theme=dark]{.carousel .carousel-control-next-icon,.carousel .carousel-control-prev-icon,&.carousel .carousel-control-next-icon,&.carousel .carousel-control-prev-icon{filter:invert(1)grayscale(100)}.carousel .carousel-indicators [data-bs-target],&.carousel .carousel-indicators [data-bs-target]{background-color:#000}.carousel .carousel-caption,&.carousel .carousel-caption{color:#000}}`));
+        }).then((result) => f(result.code).equals(`[data-bs-theme=dark]{.carousel .carousel-control-next-icon,.carousel .carousel-control-prev-icon,&.carousel .carousel-control-next-icon,&.carousel .carousel-control-prev-icon{filter:invert(1) grayscale(100)}.carousel .carousel-indicators [data-bs-target],&.carousel .carousel-indicators [data-bs-target]{background-color:#000}.carousel .carousel-caption,&.carousel .carousel-caption{color:#000}}`));
     });
 
     it('nesting #14', function () {

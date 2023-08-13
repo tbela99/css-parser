@@ -5,6 +5,7 @@ import { minify, combinators } from '../ast/minify.js';
 import { tokenize } from './tokenize.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
+const trimWhiteSpace = ['Gt', 'Gte', 'Lt', 'Lte'];
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
 /**
  *
@@ -169,7 +170,7 @@ async function parse(iterator, opt = {}) {
             // https://www.w3.org/TR/css-nesting-1/#conditionals
             // allowed nesting at-rules
             // there must be a top level rule in the stack
-            const raw = tokens.reduce((acc, curr) => {
+            const raw = parseTokens(tokens, { minify: options.minify }).reduce((acc, curr) => {
                 acc.push(renderToken(curr, { removeComments: true }));
                 return acc;
             }, []);
@@ -200,8 +201,8 @@ async function parse(iterator, opt = {}) {
                 const uniq = new Map;
                 parseTokens(tokens, { minify: options.minify }).reduce((acc, curr, index, array) => {
                     if (curr.typ == 'Whitespace') {
-                        if (array[index - 1]?.typ == 'Gt' ||
-                            array[index + 1]?.typ == 'Gt' ||
+                        if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                            trimWhiteSpace.includes(array[index + 1]?.typ) ||
                             combinators.includes(array[index - 1]?.val) ||
                             combinators.includes(array[index + 1]?.val)) {
                             return acc;
@@ -405,7 +406,7 @@ function getTokenType(val, hint) {
         return ([
             'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
             'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-            'Comma', 'Gt', 'Lt'
+            'Comma', 'Gt', 'Lt', 'Gte', 'Lte'
         ].includes(hint) ? { typ: hint } : { typ: hint, val });
     }
     if (val == ' ') {
@@ -533,11 +534,12 @@ function parseTokens(tokens, options = {}) {
         const t = tokens[i];
         if (t.typ == 'Whitespace' && ((i == 0 ||
             i + 1 == tokens.length ||
-            ['Comma'].includes(tokens[i + 1].typ) ||
+            ['Comma', 'Gte', 'Lte'].includes(tokens[i + 1].typ)) ||
             (i > 0 &&
-                tokens[i + 1]?.typ != 'Literal' &&
-                funcLike.includes(tokens[i - 1].typ) &&
-                !['var', 'calc'].includes(tokens[i - 1].val))))) {
+                // tokens[i + 1]?.typ != 'Literal' ||
+                // funcLike.includes(tokens[i - 1].typ) &&
+                // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
+                trimWhiteSpace.includes(tokens[i - 1].typ)))) {
             tokens.splice(i--, 1);
             continue;
         }
@@ -654,7 +656,7 @@ function parseTokens(tokens, options = {}) {
                     let m = t.chi.length;
                     while (m-- > 0) {
                         // @ts-ignore
-                        if (t.chi[m].typ == 'Literal') {
+                        if (['Literal'].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
                             // @ts-ignore
                             if (t.chi[m + 1]?.typ == 'Whitespace') {
                                 // @ts-ignore

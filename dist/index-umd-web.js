@@ -1589,15 +1589,15 @@
             compress: false,
             removeComments: false,
         }, { colorConvert: true, preserveLicense: false }, opt);
-        function reducer(acc, curr, index, original) {
-            if (curr.typ == 'Comment' && options.removeComments) {
-                if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-                    return acc;
+        return { code: doRender(data, options, function reducer(acc, curr) {
+                if (curr.typ == 'Comment' && options.removeComments) {
+                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                        return acc;
+                    }
+                    return acc + curr.val;
                 }
-            }
-            return acc + renderToken(curr, options);
-        }
-        return { code: doRender(data, options, reducer, 0), stats: {
+                return acc + renderToken(curr, options, reducer);
+            }, 0), stats: {
                 total: `${(performance.now() - startTime).toFixed(2)}ms`
             } };
     }
@@ -1613,9 +1613,9 @@
         const indentSub = indents[level + 1];
         switch (data.typ) {
             case 'Declaration':
-                return `${data.nam}:${options.indent}${data.val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
+                return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
             case 'Comment':
-                return options.removeComments ? '' : data.val;
+                return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
             case 'StyleSheet':
                 return data.chi.reduce((css, node) => {
                     const str = doRender(node, options, reducer, level, indents);
@@ -1636,7 +1636,7 @@
                 let children = data.chi.reduce((css, node) => {
                     let str;
                     if (node.typ == 'Comment') {
-                        str = options.removeComments ? '' : node.val;
+                        str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                     }
                     else if (node.typ == 'Declaration') {
                         if (node.val.length == 0) {
@@ -1669,7 +1669,18 @@
         }
         return '';
     }
-    function renderToken(token, options = {}) {
+    function renderToken(token, options = {}, reducer) {
+        if (reducer == null) {
+            reducer = function (acc, curr) {
+                if (curr.typ == 'Comment' && options.removeComments) {
+                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                        return acc;
+                    }
+                    return acc + curr.val;
+                }
+                return acc + renderToken(curr, options, reducer);
+            };
+        }
         switch (token.typ) {
             case 'Color':
                 if (options.minify || options.colorConvert) {
@@ -1720,22 +1731,19 @@
             case 'UrlFunc':
             case 'Pseudo-class-func':
                 // @ts-ignore
-                return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce((acc, curr) => {
-                    if (options.removeComments && curr.typ == 'Comment') {
-                        if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-                            return acc;
-                        }
-                    }
-                    return acc + renderToken(curr, options);
-                }, '') + ')';
+                return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
             case 'Includes':
                 return '~=';
             case 'Dash-match':
                 return '|=';
             case 'Lt':
                 return '<';
+            case 'Lte':
+                return '<=';
             case 'Gt':
                 return '>';
+            case 'Gte':
+                return '>=';
             case 'End-parens':
                 return ')';
             case 'Attr-start':
@@ -1753,7 +1761,7 @@
             case 'Important':
                 return '!important';
             case 'Attr':
-                return '[' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options), '') + ']';
+                return '[' + token.chi.reduce(reducer, '') + ']';
             case 'Time':
             case 'Frequency':
             case 'Angle':
@@ -1800,7 +1808,7 @@
                 }
                 return num;
             case 'Comment':
-                if (options.removeComments) {
+                if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                     return '';
                 }
             case 'Url-token':
@@ -2071,6 +2079,7 @@
                                     i--;
                                     continue;
                                 }
+                                // @ts-ignore
                                 if (('propertyName' in acc[i] && acc[i].propertyName == property) || matchType(acc[i], props)) {
                                     if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
                                         return acc;
@@ -2236,17 +2245,18 @@
                             if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
                                 continue;
                             }
-                            match = matchType(val, curr[1]);
+                            // @ts-ignore
+                            match = val.typ == 'Comment' || matchType(val, curr[1]);
                             if (isShorthand) {
                                 isShorthand = match;
                             }
+                            // @ts-ignore
                             if (('propertyName' in val && val.propertyName == property) || match) {
                                 if (!(curr[0] in tokens)) {
                                     tokens[curr[0]] = [[]];
                                 }
                                 // is default value
                                 tokens[curr[0]][current].push(val);
-                                // continue;
                             }
                             else {
                                 acc.push(curr[0]);
@@ -2263,7 +2273,9 @@
                 if (!isShorthand || Object.entries(this.config.properties).some(entry => {
                     // missing required property
                     return entry[1].required && !(entry[0] in tokens);
-                }) || !Object.values(tokens).every(v => v.length == count)) {
+                }) ||
+                    // @ts-ignore
+                    !Object.values(tokens).every(v => v.filter(t => t.typ != 'Comment').length == count)) {
                     // @ts-ignore
                     iterable = this.declarations.values();
                 }
@@ -2816,6 +2828,17 @@
                         continue;
                         // }
                     }
+                    // @ts-ignore
+                    if (hasDeclaration(node)) {
+                        // @ts-ignore
+                        minifyRule(node);
+                    }
+                    else {
+                        minify(node, options, recursive);
+                    }
+                    previous = node;
+                    nodeIndex = i;
+                    continue;
                 }
                 // @ts-ignore
                 if (node.typ == 'Rule') {
@@ -3330,11 +3353,6 @@
             }
             buffer += quoteStr;
             while (value = peek()) {
-                // if (ind >= iterator.length) {
-                //
-                //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-                //     break;
-                // }
                 if (value == '\\') {
                     const sequence = peek(6);
                     let escapeSequence = '';
@@ -3376,13 +3394,6 @@
                         next(escapeSequence.length + 1);
                         continue;
                     }
-                    // buffer += value;
-                    // if (ind >= iterator.length) {
-                    //
-                    //     // drop '\\' at the end
-                    //     yield pushToken(buffer);
-                    //     break;
-                    // }
                     buffer += next(2);
                     continue;
                 }
@@ -3403,7 +3414,6 @@
                     break;
                 }
                 buffer += value;
-                // i += value.length;
                 next();
             }
         }
@@ -3519,6 +3529,11 @@
                         yield pushToken(buffer);
                         buffer = '';
                     }
+                    if (peek() == '=') {
+                        yield pushToken('', 'Lte');
+                        next();
+                        break;
+                    }
                     buffer += value;
                     value = next();
                     if (ind >= iterator.length) {
@@ -3587,7 +3602,13 @@
                         yield pushToken(buffer);
                         buffer = '';
                     }
-                    yield pushToken('', 'Gt');
+                    if (peek() == '=') {
+                        yield pushToken('', 'Gte');
+                        next();
+                    }
+                    else {
+                        yield pushToken('', 'Gt');
+                    }
                     consumeWhiteSpace();
                     break;
                 case '.':
@@ -3746,6 +3767,7 @@
     }
 
     const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
+    const trimWhiteSpace = ['Gt', 'Gte', 'Lt', 'Lte'];
     const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
     /**
      *
@@ -3910,7 +3932,7 @@
                 // https://www.w3.org/TR/css-nesting-1/#conditionals
                 // allowed nesting at-rules
                 // there must be a top level rule in the stack
-                const raw = tokens.reduce((acc, curr) => {
+                const raw = parseTokens(tokens, { minify: options.minify }).reduce((acc, curr) => {
                     acc.push(renderToken(curr, { removeComments: true }));
                     return acc;
                 }, []);
@@ -3941,8 +3963,8 @@
                     const uniq = new Map;
                     parseTokens(tokens, { minify: options.minify }).reduce((acc, curr, index, array) => {
                         if (curr.typ == 'Whitespace') {
-                            if (array[index - 1]?.typ == 'Gt' ||
-                                array[index + 1]?.typ == 'Gt' ||
+                            if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
                                 combinators.includes(array[index - 1]?.val) ||
                                 combinators.includes(array[index + 1]?.val)) {
                                 return acc;
@@ -4146,7 +4168,7 @@
             return ([
                 'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
                 'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-                'Comma', 'Gt', 'Lt'
+                'Comma', 'Gt', 'Lt', 'Gte', 'Lte'
             ].includes(hint) ? { typ: hint } : { typ: hint, val });
         }
         if (val == ' ') {
@@ -4274,11 +4296,12 @@
             const t = tokens[i];
             if (t.typ == 'Whitespace' && ((i == 0 ||
                 i + 1 == tokens.length ||
-                ['Comma'].includes(tokens[i + 1].typ) ||
+                ['Comma', 'Gte', 'Lte'].includes(tokens[i + 1].typ)) ||
                 (i > 0 &&
-                    tokens[i + 1]?.typ != 'Literal' &&
-                    funcLike.includes(tokens[i - 1].typ) &&
-                    !['var', 'calc'].includes(tokens[i - 1].val))))) {
+                    // tokens[i + 1]?.typ != 'Literal' ||
+                    // funcLike.includes(tokens[i - 1].typ) &&
+                    // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
+                    trimWhiteSpace.includes(tokens[i - 1].typ)))) {
                 tokens.splice(i--, 1);
                 continue;
             }
@@ -4395,7 +4418,7 @@
                         let m = t.chi.length;
                         while (m-- > 0) {
                             // @ts-ignore
-                            if (t.chi[m].typ == 'Literal') {
+                            if (['Literal'].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
                                 // @ts-ignore
                                 if (t.chi[m + 1]?.typ == 'Whitespace') {
                                     // @ts-ignore

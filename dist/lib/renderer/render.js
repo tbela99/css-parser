@@ -12,15 +12,15 @@ function render(data, opt = {}) {
         compress: false,
         removeComments: false,
     }, { colorConvert: true, preserveLicense: false }, opt);
-    function reducer(acc, curr, index, original) {
-        if (curr.typ == 'Comment' && options.removeComments) {
-            if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-                return acc;
+    return { code: doRender(data, options, function reducer(acc, curr) {
+            if (curr.typ == 'Comment' && options.removeComments) {
+                if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                    return acc;
+                }
+                return acc + curr.val;
             }
-        }
-        return acc + renderToken(curr, options);
-    }
-    return { code: doRender(data, options, reducer, 0), stats: {
+            return acc + renderToken(curr, options, reducer);
+        }, 0), stats: {
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         } };
 }
@@ -36,9 +36,9 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case 'Declaration':
-            return `${data.nam}:${options.indent}${data.val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
+            return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
         case 'Comment':
-            return options.removeComments ? '' : data.val;
+            return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
         case 'StyleSheet':
             return data.chi.reduce((css, node) => {
                 const str = doRender(node, options, reducer, level, indents);
@@ -59,7 +59,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
             let children = data.chi.reduce((css, node) => {
                 let str;
                 if (node.typ == 'Comment') {
-                    str = options.removeComments ? '' : node.val;
+                    str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                 }
                 else if (node.typ == 'Declaration') {
                     if (node.val.length == 0) {
@@ -92,7 +92,18 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     }
     return '';
 }
-function renderToken(token, options = {}) {
+function renderToken(token, options = {}, reducer) {
+    if (reducer == null) {
+        reducer = function (acc, curr) {
+            if (curr.typ == 'Comment' && options.removeComments) {
+                if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                    return acc;
+                }
+                return acc + curr.val;
+            }
+            return acc + renderToken(curr, options, reducer);
+        };
+    }
     switch (token.typ) {
         case 'Color':
             if (options.minify || options.colorConvert) {
@@ -143,22 +154,19 @@ function renderToken(token, options = {}) {
         case 'UrlFunc':
         case 'Pseudo-class-func':
             // @ts-ignore
-            return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce((acc, curr) => {
-                if (options.removeComments && curr.typ == 'Comment') {
-                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-                        return acc;
-                    }
-                }
-                return acc + renderToken(curr, options);
-            }, '') + ')';
+            return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case 'Includes':
             return '~=';
         case 'Dash-match':
             return '|=';
         case 'Lt':
             return '<';
+        case 'Lte':
+            return '<=';
         case 'Gt':
             return '>';
+        case 'Gte':
+            return '>=';
         case 'End-parens':
             return ')';
         case 'Attr-start':
@@ -176,7 +184,7 @@ function renderToken(token, options = {}) {
         case 'Important':
             return '!important';
         case 'Attr':
-            return '[' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options), '') + ']';
+            return '[' + token.chi.reduce(reducer, '') + ']';
         case 'Time':
         case 'Frequency':
         case 'Angle':
@@ -223,7 +231,7 @@ function renderToken(token, options = {}) {
             }
             return num;
         case 'Comment':
-            if (options.removeComments) {
+            if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
             }
         case 'Url-token':

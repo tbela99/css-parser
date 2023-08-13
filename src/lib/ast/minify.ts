@@ -480,6 +480,22 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                     continue;
                     // }
                 }
+
+                // @ts-ignore
+                if (hasDeclaration(node)) {
+
+                    // @ts-ignore
+                    minifyRule(node);
+                }
+
+                else {
+
+                    minify(node, options, recursive);
+                }
+
+                previous = node;
+                nodeIndex = i;
+                continue;
             }
 
             // @ts-ignore
@@ -654,6 +670,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         if ((node.typ == 'Rule' && node.sel == previous.sel) ||
                             // @ts-ignore
                             (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
+
                             // @ts-ignore
                             node.chi.unshift(...previous.chi);
                             // @ts-ignore

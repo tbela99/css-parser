@@ -131,8 +131,14 @@ interface DashMatchToken {
 interface LessThanToken {
     typ: 'Lt';
 }
+interface LessThanOrEqualToken {
+    typ: 'Lte';
+}
 interface GreaterThanToken {
     typ: 'Gt';
+}
+interface GreaterThanOrEqualToken {
+    typ: 'Gte';
 }
 interface PseudoClassToken {
     typ: 'Pseudo-class';
@@ -171,7 +177,7 @@ interface AttrToken {
     typ: 'Attr';
     chi: Token[];
 }
-declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
+declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken | NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken | AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken | UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken | AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken | BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken | DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
 
 interface PropertyMapType {
     default: string[];
@@ -656,7 +662,7 @@ declare const getConfig: () => PropertiesConfig;
 declare function matchType(val: Token, properties: PropertyMapType): boolean;
 
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
-declare function renderToken(token: Token, options?: RenderOptions): string;
+declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string): string;
 
 declare const combinators: string[];
 declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;

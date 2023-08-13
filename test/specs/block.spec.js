@@ -1,10 +1,9 @@
 /* generate from test/specs/block.spec.ts */
 import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
 import { readFile } from 'fs/promises';
-import { transform } from '../../dist/node/index.js';
+import { transform, render, parse } from '../../dist/index.js';
 import { dirname } from 'path';
 import { readFileSync } from 'fs';
-import {render} from "../../dist/index.js";
 
 const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 describe('parse block', function () {
@@ -256,6 +255,185 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
  }
  .babybear\\:min-h-\\[0\\] {
   min-height: 0
+ }
+}`));
+    });
+
+    it('comments #16', function () {
+        const file = `
+/* this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg)
+}
+
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {minify: false, removeComments: true, preserveLicense: true}).code).equals(`.nav-pills {
+ .nav-link.active,.show>.nav-link {
+  color: var(--bs-nav-pills-link-active-color);
+  background-color: var(--bs-nav-pills-link-active-bg)
+ }
+}`));
+    });
+
+
+    it('comments #17', function () {
+        const file = `
+/* this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg)
+}
+
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {minify: false, removeComments: true, preserveLicense: true}).code).equals(`.nav-pills {
+ .nav-link.active,.show>.nav-link {
+  color: var(--bs-nav-pills-link-active-color);
+  background-color: var(--bs-nav-pills-link-active-bg)
+ }
+}`));
+    });
+
+    it('comments #18', function () {
+        const file = `
+
+/* this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+/* this is a comment */
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg)
+}
+
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: false,
+            preserveLicense: true}).code).equals(`/* this is a comment */
+.nav-pills {
+ .nav-link.active,.show>.nav-link {
+  /* this is a comment */
+  color: var(--bs-nav-pills-link-active-color);
+  background-color: var(--bs-nav-pills-link-active-bg)
+ }
+}`));
+    });
+
+    it('license comments #19', function () {
+        const file = `
+/*! this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+/*! this is a comment */
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg)
+}
+
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: false,
+            preserveLicense: true}).code).equals(`/*! this is a comment */
+.nav-pills {
+ .nav-link.active,.show>.nav-link {
+  /*! this is a comment */
+  color: var(--bs-nav-pills-link-active-color);
+  background-color: var(--bs-nav-pills-link-active-bg)
+ }
+}`));
+    });
+
+    it('license comments #20', function () {
+        const file = `
+/*! this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+/*! this is a comment */
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg)
+}
+
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`/*! this is a comment */
+.nav-pills {
+ .nav-link.active,.show>.nav-link {
+  /*! this is a comment */
+  color: var(--bs-nav-pills-link-active-color);
+  background-color: var(--bs-nav-pills-link-active-bg)
+ }
+}`));
+    });
+
+    it('license comments #21', function () {
+        const file = `
+/*! this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+/*! this is a comment */
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg) /*! this is a comment */
+}
+
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`/*! this is a comment */
+.nav-pills {
+ .nav-link.active,.show>.nav-link {
+  /*! this is a comment */
+  color: var(--bs-nav-pills-link-active-color);
+  background-color: var(--bs-nav-pills-link-active-bg) /*! this is a comment */
+ }
+}`));
+    });
+
+    it('media query #22', function () {
+        const file = `
+       @media (resolution >= 2dppx) and (resolution <= 5dppx) {
+
+/*! this is a comment */
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+/*! this is a comment */
+    color: var(--bs-nav-pills-link-active-color);
+    background-color: var(--bs-nav-pills-link-active-bg) /*! this is a comment */
+}
+}
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`@media (resolution>=2dppx) and (resolution<=5dppx) {
+ /*! this is a comment */
+ .nav-pills {
+  .nav-link.active,.show>.nav-link {
+   /*! this is a comment */
+   color: var(--bs-nav-pills-link-active-color);
+   background-color: var(--bs-nav-pills-link-active-bg) /*! this is a comment */
+  }
  }
 }`));
     });

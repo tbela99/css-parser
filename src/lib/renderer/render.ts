@@ -26,27 +26,28 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
     }, {colorConvert: true, preserveLicense: false}, opt);
 
-    function reducer(acc: string, curr: Token, index: number, original: Token[]): string {
 
-        if (curr.typ == 'Comment' && options.removeComments) {
+    return {code: doRender(data, options, function reducer(acc: string, curr: Token): string {
 
-            if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+            if (curr.typ == 'Comment' && options.removeComments) {
 
-                return acc;
+                if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+
+                    return acc;
+                }
+
+                return acc + curr.val;
             }
-        }
 
-        return acc + renderToken(curr, options);
-    }
-
-    return {code: doRender(data, options, reducer, 0), stats: {
+            return acc + renderToken(curr, options, reducer);
+        }, 0), stats: {
 
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }};
 }
 
 // @ts-ignore
-function doRender(data: AstNode, options: RenderOptions, reducer: Function, level: number = 0, indents: string[] = []): string {
+function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
 
     if (indents.length < level + 1) {
 
@@ -65,11 +66,11 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
         case 'Declaration':
 
-            return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
+            return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce(reducer, '')}`;
 
         case 'Comment':
 
-            return options.removeComments ? '' : (<AstComment>data).val;
+            return !options.removeComments || (options.preserveLicense && (<AstComment>data).val.startsWith('/*!')) ? (<AstComment>data).val : '';
 
         case 'StyleSheet':
 
@@ -106,7 +107,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
 
                 if (node.typ == 'Comment') {
 
-                    str = options.removeComments ? '' : (<AstComment>node).val;
+                    str = options.removeComments && (!options.preserveLicense || !(<AstComment>node).val.startsWith('/*!')) ? '' : (<AstComment>node).val;
                 } else if (node.typ == 'Declaration') {
 
                     if ((<AstDeclaration>node).val.length == 0) {
@@ -115,7 +116,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
                         return '';
                     }
 
-                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(<() => string>reducer, '').trimEnd()};`;
+                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '').trimEnd()};`;
                 } else if (node.typ == 'AtRule' && !('chi' in node)) {
 
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
@@ -153,7 +154,24 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
     return '';
 }
 
-export function renderToken(token: Token, options: RenderOptions = {}): string {
+export function renderToken(token: Token, options: RenderOptions = {}, reducer?: (acc: string, curr: Token) => string): string {
+
+    if (reducer == null) {
+        reducer = function (acc: string, curr: Token): string {
+
+            if (curr.typ == 'Comment' && options.removeComments) {
+
+                if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+
+                    return acc;
+                }
+
+                return acc + curr.val;
+            }
+
+            return acc + renderToken(curr, options, reducer);
+        }
+    }
 
     switch (token.typ) {
 
@@ -226,19 +244,7 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
         case 'Pseudo-class-func':
 
             // @ts-ignore
-            return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce((acc: string, curr: Token) => {
-
-                if (options.removeComments && curr.typ == 'Comment') {
-
-                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-
-                        return acc;
-                    }
-                }
-
-                return acc + renderToken(curr, options);
-
-            }, '') + ')';
+            return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
 
         case 'Includes':
             return '~=';
@@ -249,8 +255,14 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
         case 'Lt':
             return '<';
 
+        case 'Lte':
+            return '<=';
+
         case 'Gt':
             return '>';
+
+        case 'Gte':
+            return '>=';
 
         case 'End-parens':
             return ')';
@@ -278,7 +290,7 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
 
         case 'Attr':
 
-            return '[' + (<AttrToken>token).chi.reduce((acc, curr) => acc + renderToken(curr, options), '') + ']';
+            return '[' + (<AttrToken>token).chi.reduce(reducer, '') + ']';
 
         case 'Time':
         case 'Frequency':
@@ -356,7 +368,7 @@ export function renderToken(token: Token, options: RenderOptions = {}): string {
 
         case 'Comment':
 
-            if (options.removeComments) {
+            if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
 
                 return '';
             }

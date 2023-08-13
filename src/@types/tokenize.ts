@@ -199,11 +199,20 @@ export interface LessThanToken {
     typ: 'Lt';
 }
 
+export interface LessThanOrEqualToken {
+
+    typ: 'Lte';
+}
+
 export interface GreaterThanToken {
 
     typ: 'Gt';
 }
 
+export interface GreaterThanOrEqualToken {
+
+    typ: 'Gte';
+}
 export interface PseudoClassToken {
 
     typ: 'Pseudo-class';
@@ -275,5 +284,6 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
+    DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
+    PseudoClassToken | PseudoClassFunctionToken | DelimToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;

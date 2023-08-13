@@ -60,12 +60,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
         while (value = peek()) {
 
-            // if (ind >= iterator.length) {
-            //
-            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-            //     break;
-            // }
-
             if (value == '\\') {
 
                 const sequence: string = peek(6);
@@ -122,14 +116,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     continue;
                 }
 
-                // buffer += value;
-                // if (ind >= iterator.length) {
-                //
-                //     // drop '\\' at the end
-                //     yield pushToken(buffer);
-                //     break;
-                // }
-
                 buffer += next(2);
                 continue;
             }
@@ -155,7 +141,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             }
 
             buffer += value;
-            // i += value.length;
             next();
         }
     }
@@ -305,10 +290,19 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 }
                 break;
             case '<':
+
                 if (buffer.length > 0) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
+
+                if (peek() == '=') {
+
+                    yield pushToken('', 'Lte');
+                    next();
+                    break;
+                }
+
                 buffer += value;
                 value = next();
                 if (ind >= iterator.length) {
@@ -398,7 +392,16 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     buffer = '';
                 }
 
-                yield pushToken('', 'Gt');
+                if (peek() == '=') {
+
+                    yield pushToken('', 'Gte');
+                    next();
+                }
+                else {
+
+                    yield pushToken('', 'Gt');
+                }
+
                 consumeWhiteSpace();
                 break;
             case '.':

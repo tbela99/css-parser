@@ -36,11 +36,6 @@ function* tokenize(iterator) {
         }
         buffer += quoteStr;
         while (value = peek()) {
-            // if (ind >= iterator.length) {
-            //
-            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-            //     break;
-            // }
             if (value == '\\') {
                 const sequence = peek(6);
                 let escapeSequence = '';
@@ -82,13 +77,6 @@ function* tokenize(iterator) {
                     next(escapeSequence.length + 1);
                     continue;
                 }
-                // buffer += value;
-                // if (ind >= iterator.length) {
-                //
-                //     // drop '\\' at the end
-                //     yield pushToken(buffer);
-                //     break;
-                // }
                 buffer += next(2);
                 continue;
             }
@@ -109,7 +97,6 @@ function* tokenize(iterator) {
                 break;
             }
             buffer += value;
-            // i += value.length;
             next();
         }
     }
@@ -225,6 +212,11 @@ function* tokenize(iterator) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
+                if (peek() == '=') {
+                    yield pushToken('', 'Lte');
+                    next();
+                    break;
+                }
                 buffer += value;
                 value = next();
                 if (ind >= iterator.length) {
@@ -293,7 +285,13 @@ function* tokenize(iterator) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
-                yield pushToken('', 'Gt');
+                if (peek() == '=') {
+                    yield pushToken('', 'Gte');
+                    next();
+                }
+                else {
+                    yield pushToken('', 'Gt');
+                }
                 consumeWhiteSpace();
                 break;
             case '.':
