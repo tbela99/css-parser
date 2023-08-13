@@ -109,6 +109,12 @@ function doRender(data: AstNode, options: RenderOptions, reducer: Function, leve
                     str = options.removeComments ? '' : (<AstComment>node).val;
                 } else if (node.typ == 'Declaration') {
 
+                    if ((<AstDeclaration>node).val.length == 0) {
+
+                        console.error(`invalid declaration`, node);
+                        return '';
+                    }
+
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(<() => string>reducer, '').trimEnd()};`;
                 } else if (node.typ == 'AtRule' && !('chi' in node)) {
 

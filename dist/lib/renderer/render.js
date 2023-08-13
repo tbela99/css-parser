@@ -62,6 +62,10 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                     str = options.removeComments ? '' : node.val;
                 }
                 else if (node.typ == 'Declaration') {
+                    if (node.val.length == 0) {
+                        console.error(`invalid declaration`, node);
+                        return '';
+                    }
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == 'AtRule' && !('chi' in node)) {
