@@ -160,6 +160,62 @@ Single JavaScript file
 <script src="dist/index-umd-web.js"></script>
 ```
 
+## Example
+
+### Automatic CSS Nesting
+
+CSS
+
+```css
+
+table.colortable td {
+  text-align:center;
+}
+table.colortable td.c {
+  text-transform:uppercase;
+}
+table.colortable td:first-child, table.colortable td:first-child+td {
+  border:1px solid black;
+}
+table.colortable th {
+  text-align:center;
+  background:black;
+  color:white;
+}
+```
+
+Javascript
+```javascript
+import {parse, render} from '@tbela99/css-parser';
+
+
+const options = {minify: true, nestingRules: true};
+
+const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
+//
+console.debug(code);
+```
+
+Result
+```css
+table.colortable {
+ & td {
+  text-align: center;
+  &.c {
+   text-transform: uppercase
+  }
+  &:first-child,&:first-child+td {
+   border: 1px solid #000
+  }
+ }
+ & th {
+  text-align: center;
+  background: #000;
+  color: #fff
+ }
+}
+```
+
 ## AST
 
 ### Comment

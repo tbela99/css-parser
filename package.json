@@ -50,7 +50,6 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.4.10",
     "@web/test-runner": "^0.17.0",
-    "@webref/css": "^6.6.2",
     "c8": "^8.0.1",
     "mocha": "^10.2.0",
     "rollup": "^3.28.0",

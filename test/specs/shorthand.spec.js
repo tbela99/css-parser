@@ -1,6 +1,7 @@
 /* generate from test/specs/shorthand.spec.ts */
 import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
 import { transform } from '../../dist/node/index.js';
+import {render} from "../../dist/index.js";
 
 const options = {
     minify: true,
@@ -233,5 +234,84 @@ border: #333 solid 1px;
     }
 }
 `, options).then(result => f(result.code).equals('html{font:clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}'));
+    });
+
+    it('shorthand parsing #16', function () {
+        return transform(`
+@media all {
+    html {
+        font-family: Blanco, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        font-size: clamp(12px, 0.8rem + 0.25vw, 20px);
+        font-weight: 400;
+        line-height: 1.7;
+    }
+}
+
+button.jetpack-instant-search__overlay-close {
+    align-items: center;
+    appearance: none;
+    background-image: none;
+    background-position: initial;
+    background-size: initial;
+    background-repeat: initial;
+    background-attachment: initial;
+    background-origin: initial;
+    background-clip: initial;
+    border-top: none;
+    border-right: none;
+    border-left: none;
+    border-image: initial;
+    border-bottom: 1px solid rgb(230, 241, 245);
+    border-radius: 0px;
+    box-shadow: none;
+    cursor: pointer;
+    display: flex;
+    height: 61px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0px;
+    outline: none;
+    padding: 0px;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    width: 60px;
+    background-color: transparent !important;
+}
+
+`, options).then(result => f(render(result.ast, {minify: false}).code).equals(`html {
+ font: clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"
+}
+button.jetpack-instant-search__overlay-close {
+ align-items: center;
+ appearance: none;
+ background-image: none;
+ background-position: initial;
+ background-size: initial;
+ background-repeat: initial;
+ background-attachment: initial;
+ background-origin: initial;
+ background-clip: initial;
+ background-color: #0000 !important;
+ border-top: none;
+ border-right: none;
+ border-left: none;
+ border-image: initial;
+ border-bottom: 1px solid #e6f1f5;
+ border-radius: 0;
+ box-shadow: none;
+ cursor: pointer;
+ display: flex;
+ height: 61px;
+ justify-content: center;
+ line-height: 1;
+ margin: 0;
+ outline: none;
+ padding: 0;
+ text-decoration: none;
+ text-shadow: none;
+ text-transform: none;
+ width: 60px
+}`));
     });
 });

@@ -82,6 +82,7 @@ export class PropertyMap {
                                     continue;
                                 }
 
+                                // @ts-ignore
                                 if (('propertyName' in acc[i] && acc[i].propertyName == property) || matchType(acc[i], props)) {
 
                                     if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
