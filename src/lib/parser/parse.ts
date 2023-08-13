@@ -524,7 +524,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
 export function parseString(src: string, options = {location: false}): Token[] {
 
-    return [...tokenize(src)].map(t => {
+    return parseTokens([...tokenize(src)].map(t => {
 
         const token = getTokenType(t.token, t.hint);
 
@@ -534,7 +534,7 @@ export function parseString(src: string, options = {location: false}): Token[] {
         }
 
         return token;
-    });
+    }));
 }
 
 function getTokenType(val: string, hint?: string): Token {

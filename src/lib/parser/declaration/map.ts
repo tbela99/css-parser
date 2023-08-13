@@ -1,13 +1,11 @@
 import {
-    AstDeclaration,
-    PropertyMapType, ShorthandPropertyType,
+    AstDeclaration, PropertyMapType, ShorthandPropertyType,
     Token
 } from "../../../@types";
 import {ShorthandMapType} from "../../../@types";
 import {eq} from "../utils/eq";
-import {getConfig} from "../utils";
+import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";
-import {matchType} from "../utils/type";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
 
@@ -30,6 +28,11 @@ export class PropertyMap {
     }
 
     add(declaration: AstDeclaration) {
+
+        for (const val of declaration.val) {
+
+            Object.defineProperty(val, 'propertyName', {enumerable: false, writable: true, value: declaration.nam});
+        }
 
         if (declaration.nam == this.config.shorthand) {
 
@@ -79,7 +82,8 @@ export class PropertyMap {
                                     continue;
                                 }
 
-                                if (matchType(acc[i], props)) {
+                                // @ts-ignore
+                                if (('propertyName' in acc[i] && acc[i].propertyName == property) || matchType(acc[i], props)) {
 
                                     if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
 
@@ -268,11 +272,13 @@ export class PropertyMap {
         } else {
 
             let count = 0;
+            let match: boolean;
             const separator = this.config.separator;
             const tokens = <{ [key: string]: Token[][] }>{};
 
             // @ts-ignore
-            /* const valid: string[] =*/  Object.entries(this.config.properties).reduce((acc, curr) => {
+            /* const valid: string[] =*/
+            Object.entries(this.config.properties).reduce((acc, curr) => {
 
                 if (!this.declarations.has(curr[0])) {
 
@@ -287,48 +293,56 @@ export class PropertyMap {
                 let current = 0;
 
                 const props = this.config.properties[curr[0]];
-                const declaration = this.declarations.get(curr[0]);
+                const properties = this.declarations.get(curr[0]);
 
-                // @ts-ignore
-                for (const val of (declaration instanceof PropertySet ? [...declaration][0] : declaration).val) {
+                for (const declaration of <AstDeclaration[]>[(properties instanceof PropertySet ? [...properties][0] : properties)]) {
 
-                    if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+                    // @ts-ignore
+                    for (const val of declaration.val) {
 
-                        current++;
+                        if (separator != null && separator.typ == val.typ && eq(separator, val)) {
 
-                        if (tokens[curr[0]].length == current) {
+                            current++;
 
-                            tokens[curr[0]].push([]);
+                            if (tokens[curr[0]].length == current) {
+
+                                tokens[curr[0]].push([]);
+                            }
+
+                            continue;
                         }
 
-                        continue;
-                    }
+                        if (val.typ == 'Whitespace' || val.typ == 'Comment') {
 
-                    if (val.typ == 'Whitespace' || val.typ == 'Comment') {
-
-                        continue;
-                    }
-
-                    if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
-
-                        continue;
-                    }
-
-                    if (matchType(val, curr[1])) {
-
-                        if (!(curr[0] in tokens)) {
-
-                            tokens[curr[0]] = [[]];
+                            continue;
                         }
 
-                        // is default value
+                        if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
 
-                        tokens[curr[0]][current].push(val);
-                        // continue;
-                    } else {
+                            continue;
+                        }
 
-                        acc.push(<string>curr[0]);
-                        break;
+                        match = matchType(val, curr[1]);
+
+                        if (isShorthand) {
+
+                            isShorthand = match;
+                        }
+
+                        if (('propertyName' in val && val.propertyName == property) || match) {
+
+                            if (!(curr[0] in tokens)) {
+
+                                tokens[curr[0]] = [[]];
+                            }
+
+                            // is default value
+                            tokens[curr[0]][current].push(val);
+                        } else {
+
+                            acc.push(<string>curr[0]);
+                            break;
+                        }
                     }
                 }
 
@@ -342,11 +356,17 @@ export class PropertyMap {
 
             count++;
 
-            if (!Object.values(tokens).every(v => v.length == count)) {
+            if (!isShorthand || Object.entries(this.config.properties).some(entry => {
+
+                // missing required property
+                return entry[1].required && !(entry[0] in tokens);
+
+            }) || !Object.values(tokens).every(v => v.length == count)) {
 
                 // @ts-ignore
                 iterable = this.declarations.values();
-            } else {
+            }
+            else {
 
                 const values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
 

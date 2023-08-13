@@ -3,6 +3,7 @@ export { parseString, urlTokenMatcher } from '../lib/parser/parse.js';
 export { tokenize } from '../lib/parser/tokenize.js';
 export { isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension } from '../lib/parser/utils/syntax.js';
 export { getConfig } from '../lib/parser/utils/config.js';
+export { matchType } from '../lib/parser/utils/type.js';
 export { render, renderToken } from '../lib/renderer/render.js';
 import { transform as transform$1 } from '../lib/transform.js';
 export { combinators, hasDeclaration, minify, minifyRule, reduceSelector } from '../lib/ast/minify.js';

@@ -15,7 +15,7 @@ $ npm install @tbela99/css-parser
 - fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - replace @import at-rules with actual css content of the imported rule
-- automatically create nested css rules
+- automatically generate nested css rules
 - works the same way in node and web browser
 
 ### Performance
@@ -79,7 +79,7 @@ parse(css, parseOptions = {})
 
 ````javascript
 
-const {ast, errors} = await parse(css);
+const {ast, errors, stats} = await parse(css);
 ````
 
 ## Rendering
@@ -96,7 +96,7 @@ render(ast, RenderOptions = {});
 import {render} from '@tbela99/css-parser';
 
 // minified
-const {code} = render(ast, {minify: true});
+const {code, stats} = render(ast, {minify: true});
 
 console.log(code);
 ```
@@ -158,6 +158,62 @@ Single JavaScript file
 ```javascript
 
 <script src="dist/index-umd-web.js"></script>
+```
+
+## Example
+
+### Automatic CSS Nesting
+
+CSS
+
+```css
+
+table.colortable td {
+  text-align:center;
+}
+table.colortable td.c {
+  text-transform:uppercase;
+}
+table.colortable td:first-child, table.colortable td:first-child+td {
+  border:1px solid black;
+}
+table.colortable th {
+  text-align:center;
+  background:black;
+  color:white;
+}
+```
+
+Javascript
+```javascript
+import {parse, render} from '@tbela99/css-parser';
+
+
+const options = {minify: true, nestingRules: true};
+
+const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
+//
+console.debug(code);
+```
+
+Result
+```css
+table.colortable {
+ & td {
+  text-align: center;
+  &.c {
+   text-transform: uppercase
+  }
+  &:first-child,&:first-child+td {
+   border: 1px solid #000
+  }
+ }
+ & th {
+  text-align: center;
+  background: #000;
+  color: #fff
+ }
+}
 ```
 
 ## AST

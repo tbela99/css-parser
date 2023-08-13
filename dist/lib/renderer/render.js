@@ -35,6 +35,8 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
+        case 'Declaration':
+            return `${data.nam}:${options.indent}${data.val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
         case 'Comment':
             return options.removeComments ? '' : data.val;
         case 'StyleSheet':
@@ -60,6 +62,10 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                     str = options.removeComments ? '' : node.val;
                 }
                 else if (node.typ == 'Declaration') {
+                    if (node.val.length == 0) {
+                        console.error(`invalid declaration`, node);
+                        return '';
+                    }
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == 'AtRule' && !('chi' in node)) {
