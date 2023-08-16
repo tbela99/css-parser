@@ -165,37 +165,30 @@
         return true;
     }
     function isDimension(name) {
-        let index = 0;
-        while (index++ < name.length) {
-            if (isDigit(name.charCodeAt(name.length - index))) {
-                index--;
-                break;
+        let index = name.length;
+        while (index--) {
+            if (isLetter(name.charCodeAt(index))) {
+                continue;
             }
-            if (index == 3) {
-                break;
-            }
+            index++;
+            break;
         }
-        if (index == 0 || index > 3) {
-            return false;
-        }
-        const number = name.slice(0, -index);
-        return number.length > 0 && isIdentStart(name.charCodeAt(name.length - index)) && isNumber(number);
+        const number = name.slice(0, index);
+        return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
     }
     function isPercentage(name) {
         return name.endsWith('%') && isNumber(name.slice(0, -1));
     }
     function parseDimension(name) {
-        let index = 0;
-        while (index++ < name.length) {
-            if (isDigit(name.charCodeAt(name.length - index))) {
-                index--;
-                break;
+        let index = name.length;
+        while (index--) {
+            if (isLetter(name.charCodeAt(index))) {
+                continue;
             }
-            if (index == 3) {
-                break;
-            }
+            index++;
+            break;
         }
-        const dimension = { typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index) };
+        const dimension = { typ: 'Dimension', val: name.slice(0, index), unit: name.slice(index) };
         if (isAngle(dimension)) {
             // @ts-ignore
             dimension.typ = 'Angle';
@@ -1504,7 +1497,7 @@
         return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
     }
     function getAngle(token) {
-        if (token.typ == 'Dimension') {
+        if (token.typ == 'Angle') {
             switch (token.unit) {
                 case 'deg':
                     // @ts-ignore
@@ -1577,6 +1570,23 @@
         return values;
     }
 
+    function reduceNumber(val) {
+        val = (+val).toString();
+        if (val === '0') {
+            return '0';
+        }
+        const chr = val.charAt(0);
+        if (chr == '-') {
+            const slice = val.slice(0, 2);
+            if (slice == '-0') {
+                return val.length == 2 ? '0' : '-' + val.slice(2);
+            }
+        }
+        if (chr == '0') {
+            return val.slice(1);
+        }
+        return val;
+    }
     function render(data, opt = {}) {
         const startTime = performance.now();
         const options = Object.assign(opt.minify ?? true ? {
@@ -1589,7 +1599,8 @@
             compress: false,
             removeComments: false,
         }, { colorConvert: true, preserveLicense: false }, opt);
-        return { code: doRender(data, options, function reducer(acc, curr) {
+        return {
+            code: doRender(data, options, function reducer(acc, curr) {
                 if (curr.typ == 'Comment' && options.removeComments) {
                     if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                         return acc;
@@ -1599,7 +1610,8 @@
                 return acc + renderToken(curr, options, reducer);
             }, 0), stats: {
                 total: `${(performance.now() - startTime).toFixed(2)}ms`
-            } };
+            }
+        };
     }
     // @ts-ignore
     function doRender(data, options, reducer, level = 0, indents = []) {
@@ -1763,35 +1775,71 @@
             case 'Attr':
                 return '[' + token.chi.reduce(reducer, '') + ']';
             case 'Time':
-            case 'Frequency':
             case 'Angle':
             case 'Length':
             case 'Dimension':
-                const val = (+token.val).toString();
+            case 'Frequency':
+            case 'Resolution':
+                let val = reduceNumber(token.val);
+                let unit = token.unit;
+                if (token.typ == 'Angle') {
+                    const angle = getAngle(token);
+                    let v;
+                    let value = val + unit;
+                    for (const u of ['turn', 'deg', 'rad', 'grad']) {
+                        if (token.unit == u) {
+                            continue;
+                        }
+                        switch (u) {
+                            case 'turn':
+                                v = reduceNumber(angle);
+                                if (v.length + 4 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                            case 'deg':
+                                v = reduceNumber(angle * 360);
+                                if (v.length + 3 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                            case 'rad':
+                                v = reduceNumber(angle * (2 * Math.PI));
+                                if (v.length + 3 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                            case 'grad':
+                                v = reduceNumber(angle * 400);
+                                if (v.length + 4 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                        }
+                    }
+                }
                 if (val === '0') {
-                    if (token.typ == 'Time') {
+                    if (unit == 'Time') {
                         return '0s';
                     }
-                    if (token.typ == 'Frequency') {
+                    if (unit == 'Frequency') {
                         return '0Hz';
                     }
                     // @ts-ignore
-                    if (token.typ == 'Resolution') {
+                    if (unit == 'Resolution') {
                         return '0x';
                     }
                     return '0';
                 }
-                const chr = val.charAt(0);
-                if (chr == '-') {
-                    const slice = val.slice(0, 2);
-                    if (slice == '-0') {
-                        return (val.length == 2 ? '0' : '-' + val.slice(2)) + token.unit;
-                    }
-                }
-                else if (chr == '0') {
-                    return val.slice(1) + token.unit;
-                }
-                return val + token.unit;
+                return val + unit;
             case 'Perc':
                 return token.val + '%';
             case 'Number':
@@ -3372,9 +3420,23 @@
                         }
                         break;
                     }
+                    // @ts-ignore
+                    if (isNewLine(codepoint)) {
+                        if (i == 1) {
+                            buffer += value + escapeSequence.slice(0, i);
+                            next(i + 1);
+                            continue;
+                        }
+                        // else {
+                        yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
+                        buffer = '';
+                        // }
+                        next(i + 1);
+                        break;
+                    }
                     // not hex or new line
                     // @ts-ignore
-                    if (i == 1 && !isNewLine(codepoint)) {
+                    else if (i == 1) {
                         buffer += value + sequence[i];
                         next(2);
                         continue;
@@ -3403,19 +3465,28 @@
                     next();
                     // i += value.length;
                     buffer = '';
-                    break;
+                    return;
                 }
                 if (isNewLine(value.charCodeAt(0))) {
                     hasNewLine = true;
                 }
                 if (hasNewLine && value == ';') {
-                    yield pushToken(buffer, 'Bad-string');
+                    yield pushToken(buffer + value, 'Bad-string');
                     buffer = '';
+                    next();
                     break;
                 }
                 buffer += value;
                 next();
             }
+            if (hasNewLine) {
+                yield pushToken(buffer, 'Bad-string');
+            }
+            else {
+                // EOF - 'Unclosed-string' fixed
+                yield pushToken(buffer + quote, 'String');
+            }
+            buffer = '';
         }
         function peek(count = 1) {
             if (count == 1) {
@@ -3650,7 +3721,7 @@
                     break;
                 case '(':
                     if (buffer.length == 0) {
-                        yield pushToken('', 'Start-parens');
+                        yield pushToken(value);
                         break;
                     }
                     buffer += value;
@@ -3764,6 +3835,7 @@
         if (buffer.length > 0) {
             yield pushToken(buffer);
         }
+        // yield pushToken('', 'EOF');
     }
 
     const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -3814,6 +3886,10 @@
             let tokens = results.map(mapToken);
             let i;
             let loc;
+            // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
+            //
+            //     tokens.pop();
+            // }
             for (i = 0; i < tokens.length; i++) {
                 if (tokens[i].typ == 'Comment') {
                     // @ts-ignore
@@ -4168,7 +4244,7 @@
             return ([
                 'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
                 'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-                'Comma', 'Gt', 'Lt', 'Gte', 'Lte'
+                'Comma', 'Gt', 'Lt', 'Gte', 'Lte', 'EOF'
             ].includes(hint) ? { typ: hint } : { typ: hint, val });
         }
         if (val == ' ') {

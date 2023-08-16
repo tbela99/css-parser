@@ -92,6 +92,11 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         let i: number;
         let loc: Location;
 
+        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
+        //
+        //     tokens.pop();
+        // }
+
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
 
@@ -282,7 +287,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     if (curr.typ == 'Whitespace') {
 
                         if (
-                            trimWhiteSpace.includes(array[index - 1]?.typ)  ||
+                            trimWhiteSpace.includes(array[index - 1]?.typ) ||
                             trimWhiteSpace.includes(array[index + 1]?.typ) ||
                             combinators.includes((<LiteralToken>array[index - 1])?.val) ||
                             combinators.includes((<LiteralToken>array[index + 1])?.val)) {
@@ -426,7 +431,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     const iter = tokenize(iterator);
     let item: TokenizeResult;
 
-
     while (true) {
 
         item = iter.next().value;
@@ -513,7 +517,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     const endTime: number = performance.now();
 
     return {
-        ast, errors,  stats: {
+        ast, errors, stats: {
             bytesIn,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
@@ -548,7 +552,7 @@ function getTokenType(val: string, hint?: string): Token {
         return <Token>([
             'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
             'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-            'Comma', 'Gt', 'Lt', 'Gte', 'Lte'
+            'Comma', 'Gt', 'Lt', 'Gte', 'Lte', 'EOF'
         ].includes(hint) ? {typ: hint} : {typ: hint, val});
     }
 
@@ -714,13 +718,13 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
         const t = tokens[i];
 
         if (t.typ == 'Whitespace' && ((i == 0 ||
-            i + 1 == tokens.length ||
-            ['Comma', 'Gte', 'Lte'].includes(tokens[i + 1].typ)) ||
+                i + 1 == tokens.length ||
+                ['Comma', 'Gte', 'Lte'].includes(tokens[i + 1].typ)) ||
             (i > 0 &&
                 // tokens[i + 1]?.typ != 'Literal' ||
                 // funcLike.includes(tokens[i - 1].typ) &&
                 // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
-            trimWhiteSpace.includes(tokens[i - 1].typ)))) {
+                trimWhiteSpace.includes(tokens[i - 1].typ)))) {
 
             tokens.splice(i--, 1);
             continue;

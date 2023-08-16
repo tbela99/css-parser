@@ -1,6 +1,6 @@
 /* generate from test/specs/block.spec.ts */
 import {expect as f} from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import {parse, render} from '../../dist/index.js';
+import {parse, render} from '../../dist/node/index.js';
 
 describe('Parse color', function () {
 

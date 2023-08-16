@@ -1,4 +1,5 @@
 import {
+    AngleToken,
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -8,7 +9,37 @@ import {
     RenderOptions, RenderResult,
     Token
 } from "../../@types";
-import {cmyk2hex, COLORS_NAMES, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
+import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
+
+function reduceNumber(val: string | number) {
+
+    val = (+val).toString();
+
+    if (val === '0') {
+
+        return '0';
+    }
+
+    const chr: string = val.charAt(0);
+
+    if (chr == '-') {
+
+        const slice: string = val.slice(0, 2);
+
+        if (slice == '-0') {
+
+            return val.length == 2 ? '0' : '-' + val.slice(2);
+        }
+
+    }
+
+    if (chr == '0') {
+
+        return val.slice(1);
+    }
+
+    return val;
+}
 
 export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
@@ -27,7 +58,8 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
     }, {colorConvert: true, preserveLicense: false}, opt);
 
 
-    return {code: doRender(data, options, function reducer(acc: string, curr: Token): string {
+    return {
+        code: doRender(data, options, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == 'Comment' && options.removeComments) {
 
@@ -43,7 +75,8 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
         }, 0), stats: {
 
             total: `${(performance.now() - startTime).toFixed(2)}ms`
-        }};
+        }
+    };
 }
 
 // @ts-ignore
@@ -135,7 +168,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, 
                     return css;
                 }
 
-                    return `${css}${options.newLine}${indentSub}${str}`;
+                return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
 
             if (children.endsWith(';')) {
@@ -293,27 +326,100 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
             return '[' + (<AttrToken>token).chi.reduce(reducer, '') + ']';
 
         case 'Time':
-        case 'Frequency':
         case 'Angle':
         case 'Length':
         case 'Dimension':
+        case 'Frequency':
+        case 'Resolution':
 
-            const val: string = (+token.val).toString();
+            let val: string = reduceNumber(token.val);
+            let unit: string = token.unit;
+
+            if (token.typ == 'Angle') {
+
+                const angle = getAngle(<AngleToken>token);
+
+                let v: string;
+                let value = val + unit;
+
+                for (const u of ['turn', 'deg', 'rad', 'grad']) {
+
+                    if (token.unit == u) {
+
+                        continue;
+                    }
+
+                    switch (u) {
+
+                        case 'turn':
+
+                            v = reduceNumber(angle);
+
+                            if (v.length + 4 < value.length) {
+
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+
+                            break;
+
+                        case 'deg':
+
+                            v = reduceNumber(angle * 360);
+
+                            if (v.length + 3 < value.length) {
+
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+
+                            break;
+
+                        case 'rad':
+
+                            v = reduceNumber(angle * (2 * Math.PI));
+
+                            if (v.length + 3 < value.length) {
+
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+
+                            break;
+
+                        case 'grad':
+
+                            v = reduceNumber(angle * 400);
+
+                            if (v.length + 4 < value.length) {
+
+                                val = v;
+                                unit = u;
+                                value = v + u;
+                            }
+
+                            break;
+                    }
+                }
+            }
 
             if (val === '0') {
 
-                if (token.typ == 'Time') {
+                if (unit == 'Time') {
 
                     return '0s';
                 }
 
-                if (token.typ == 'Frequency') {
+                if (unit == 'Frequency') {
 
                     return '0Hz';
                 }
 
                 // @ts-ignore
-                if (token.typ == 'Resolution') {
+                if (unit == 'Resolution') {
 
                     return '0x';
                 }
@@ -321,23 +427,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
                 return '0';
             }
 
-            const chr: string = val.charAt(0);
-
-            if (chr == '-') {
-
-                const slice: string = val.slice(0, 2);
-
-                if (slice == '-0') {
-
-                    return (val.length == 2 ? '0' : '-' + val.slice(2)) + token.unit;
-                }
-
-            } else if (chr == '0') {
-
-                return val.slice(1) + token.unit;
-            }
-
-            return val + (<DimensionToken>token).unit;
+            return val + unit;
 
         case 'Perc':
 

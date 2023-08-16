@@ -52,6 +52,10 @@ async function parse(iterator, opt = {}) {
         let tokens = results.map(mapToken);
         let i;
         let loc;
+        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
+        //
+        //     tokens.pop();
+        // }
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
                 // @ts-ignore
@@ -406,7 +410,7 @@ function getTokenType(val, hint) {
         return ([
             'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
             'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-            'Comma', 'Gt', 'Lt', 'Gte', 'Lte'
+            'Comma', 'Gt', 'Lt', 'Gte', 'Lte', 'EOF'
         ].includes(hint) ? { typ: hint } : { typ: hint, val });
     }
     if (val == ' ') {

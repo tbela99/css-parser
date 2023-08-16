@@ -1,9 +1,9 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser for node and the browser",
-  "version": "0.0.1-rc3",
+  "version": "0.0.1-rc4",
   "exports": {
-    ".": "./dist/index.js",
+    ".": "./dist/node/index.js",
     "./umd": "./dist/index-umd-web.js",
     "./web": "./dist/web/index.js",
     "./cjs": "./dist/index.cjs"
@@ -24,14 +24,16 @@
   "keywords": [
     "parser",
     "css",
-    "css parser",
     "css-parser",
     "node",
     "ast",
+    "nesting",
+    "nested",
+    "compiler",
     "browser",
-    "css nesting",
-    "css compiler",
-    "nested css"
+    "css-nesting",
+    "css-compiler",
+    "nested-css"
   ],
   "author": "Thierry Bela",
   "license": "MIT OR LGPL-3.0",
@@ -44,7 +46,6 @@
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.1.0",
-    "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",

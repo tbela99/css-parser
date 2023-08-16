@@ -102,8 +102,8 @@
   transform: rotate(0)
  }
  100% {
-  -webkit-transform: rotate(360deg);
-  transform: rotate(360deg)
+  -webkit-transform: rotate(1turn);
+  transform: rotate(1turn)
  }
 }
 @keyframes fa-spin {
@@ -112,8 +112,8 @@
   transform: rotate(0)
  }
  100% {
-  -webkit-transform: rotate(360deg);
-  transform: rotate(360deg)
+  -webkit-transform: rotate(1turn);
+  transform: rotate(1turn)
  }
 }
 .fa-rotate-90 {

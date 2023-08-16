@@ -159,37 +159,30 @@ function isNumber(name) {
     return true;
 }
 function isDimension(name) {
-    let index = 0;
-    while (index++ < name.length) {
-        if (isDigit(name.charCodeAt(name.length - index))) {
-            index--;
-            break;
+    let index = name.length;
+    while (index--) {
+        if (isLetter(name.charCodeAt(index))) {
+            continue;
         }
-        if (index == 3) {
-            break;
-        }
+        index++;
+        break;
     }
-    if (index == 0 || index > 3) {
-        return false;
-    }
-    const number = name.slice(0, -index);
-    return number.length > 0 && isIdentStart(name.charCodeAt(name.length - index)) && isNumber(number);
+    const number = name.slice(0, index);
+    return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
 }
 function isPercentage(name) {
     return name.endsWith('%') && isNumber(name.slice(0, -1));
 }
 function parseDimension(name) {
-    let index = 0;
-    while (index++ < name.length) {
-        if (isDigit(name.charCodeAt(name.length - index))) {
-            index--;
-            break;
+    let index = name.length;
+    while (index--) {
+        if (isLetter(name.charCodeAt(index))) {
+            continue;
         }
-        if (index == 3) {
-            break;
-        }
+        index++;
+        break;
     }
-    const dimension = { typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index) };
+    const dimension = { typ: 'Dimension', val: name.slice(0, index), unit: name.slice(index) };
     if (isAngle(dimension)) {
         // @ts-ignore
         dimension.typ = 'Angle';

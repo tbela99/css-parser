@@ -1,7 +1,6 @@
 /* generate from test/specs/shorthand.spec.ts */
 import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import { transform } from '../../dist/node/index.js';
-import {render} from "../../dist/index.js";
+import { transform , render} from "../../dist/node/index.js";
 
 const options = {
     minify: true,

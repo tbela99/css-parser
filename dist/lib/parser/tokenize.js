@@ -55,9 +55,23 @@ function* tokenize(iterator) {
                     }
                     break;
                 }
+                // @ts-ignore
+                if (isNewLine(codepoint)) {
+                    if (i == 1) {
+                        buffer += value + escapeSequence.slice(0, i);
+                        next(i + 1);
+                        continue;
+                    }
+                    // else {
+                    yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
+                    buffer = '';
+                    // }
+                    next(i + 1);
+                    break;
+                }
                 // not hex or new line
                 // @ts-ignore
-                if (i == 1 && !isNewLine(codepoint)) {
+                else if (i == 1) {
                     buffer += value + sequence[i];
                     next(2);
                     continue;
@@ -86,19 +100,28 @@ function* tokenize(iterator) {
                 next();
                 // i += value.length;
                 buffer = '';
-                break;
+                return;
             }
             if (isNewLine(value.charCodeAt(0))) {
                 hasNewLine = true;
             }
             if (hasNewLine && value == ';') {
-                yield pushToken(buffer, 'Bad-string');
+                yield pushToken(buffer + value, 'Bad-string');
                 buffer = '';
+                next();
                 break;
             }
             buffer += value;
             next();
         }
+        if (hasNewLine) {
+            yield pushToken(buffer, 'Bad-string');
+        }
+        else {
+            // EOF - 'Unclosed-string' fixed
+            yield pushToken(buffer + quote, 'String');
+        }
+        buffer = '';
     }
     function peek(count = 1) {
         if (count == 1) {
@@ -333,7 +356,7 @@ function* tokenize(iterator) {
                 break;
             case '(':
                 if (buffer.length == 0) {
-                    yield pushToken('', 'Start-parens');
+                    yield pushToken(value);
                     break;
                 }
                 buffer += value;
@@ -447,6 +470,7 @@ function* tokenize(iterator) {
     if (buffer.length > 0) {
         yield pushToken(buffer);
     }
+    // yield pushToken('', 'EOF');
 }
 
 export { tokenize };

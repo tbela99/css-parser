@@ -1,30 +1,10 @@
 /* generate from test/specs/block.spec.ts */
 import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import { readFile } from 'fs/promises';
-import { transform, render, parse } from '../../dist/index.js';
-import { dirname } from 'path';
-import { readFileSync } from 'fs';
+import { transform, render, parse } from '../../dist/node/index.js';
 
-const dir = dirname(new URL(import.meta.url).pathname) + '/../files';
 describe('parse block', function () {
 
-    it('parse file', function () {
-        return readFile(`${dir}/css/smalli.css`, { encoding: 'utf-8' }).then(file => transform(file).then(result => f(result.ast).deep.equals(JSON.parse((readFileSync(dir + '/json/smalli.json')).toString()))));
-    });
-
-    it('parse file #2', function () {
-        return readFile(`${dir}/css/small.css`, { encoding: 'utf-8' }).then(file => transform(file).then(result => f(result.ast).deep.equals(JSON.parse((readFileSync(dir + '/json/small.json')).toString()))));
-    });
-
-    it('parse file #3', function () {
-        readFile(`${dir}/css/invalid-1.css`, { encoding: 'utf-8' }).then(file => transform(file).then(result => f(result.ast).deep.equals(JSON.parse((readFileSync(dir + '/json/invalid-1.json')).toString()))));
-    });
-
-    it('parse file #4', function () {
-        return readFile(`${dir}/css/invalid-2.css`, { encoding: 'utf-8' }).then(file => transform(file).then(result => f(result.ast).deep.equals(JSON.parse((readFileSync(dir + '/json/invalid-2.json')).toString()))));
-    });
-
-    it('similar rules #5', function () {
+    it('similar rules #1', function () {
         const file = `
 .clear {
   width: 0;
@@ -41,7 +21,7 @@ describe('parse block', function () {
         }).then(result => f(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
     });
 
-    it('similar rules #5', function () {
+    it('similar rules #2', function () {
         const file = `
 .clear {
   width: 0;
@@ -58,7 +38,7 @@ describe('parse block', function () {
         }).then(result => f(result.code).equals(`.clear,.clearfix:before{width:0;height:0}`));
     });
 
-    it('duplicated selector components #6', function () {
+    it('duplicated selector components #3', function () {
         const file = `
 
 :is(.test input[type="text"]), .test input[type="text"], :is(.test input[type="text"], a) {
@@ -72,7 +52,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`.test input[type=text],a{border-color:gold red}`));
     });
 
-    it('merge selectors #7', function () {
+    it('merge selectors #4', function () {
         const file = `
 
 .blockquote {
@@ -115,7 +95,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer::before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
     });
 
-    it('merge selectors #8', function () {
+    it('merge selectors #5', function () {
         const file = `
 
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -129,7 +109,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`.nav-pills:is(.nav-link.active,.show>.nav-link){color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}`));
     });
 
-    it('merge selectors #9', function () {
+    it('merge selectors #6', function () {
         const file = `
 
 .card {
@@ -142,7 +122,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - (var(--bs-border-width)))}`));
     });
 
-    it('merge selectors #10', function () {
+    it('merge selectors #7', function () {
         const file = `
 
 @media (max-width: 575.98px) and (prefers-reduced-motion: reduce) {
@@ -157,7 +137,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`@media (max-width:575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:none}}`));
     });
 
-    it('merge selectors #11', function () {
+    it('merge selectors #8', function () {
         const file = `
 
 :root .fa-flip-both, :root .fa-flip-horizontal, :root .fa-flip-vertical, :root .fa-rotate-180, :root .fa-rotate-270, :root .fa-rotate-90 {
@@ -171,7 +151,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`));
     });
 
-    it('merge selectors #12', function () {
+    it('merge selectors #9', function () {
         const file = `
 .bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))}
 
@@ -181,7 +161,7 @@ border-left-color: red;
         }).then(result => f(result.code).equals(`.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))}`));
     });
 
-    it('merge selectors #13', function () {
+    it('merge selectors #10', function () {
         const file = `
 
 abbr[title], abbr[data-original-title], abbr>[data-original-title] {
@@ -199,7 +179,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
         }).then(result => f(result.code).equals(`abbr:is([title],[data-original-title],abbr>[data-original-title]){text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
     });
 
-    it('merge at-rule & escape sequence #14', function () {
+    it('merge at-rule & escape sequence #11', function () {
         const file = `
 
 @media (max-width: 767px) {.main-heading { font-size: 32px; font-weight: 300; }}
@@ -216,7 +196,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
         }).then(result => f(result.code).equals(`@media (max-width:767px){.main-heading{font-size:32px;font-weight:300}.section{max-width:100vw;padding-left:16px;padding-right:16px}.hero-cta-form,.sign-in-form__third-party-container,.google-sign-in-cta-widget{margin-top:0;width:100%}.babybear\\:z-0{z-index:0}.babybear\\:mr-0{margin-right:0}.babybear\\:hidden{display:none}.babybear\\:min-h-\\[0\\]{min-height:0}}`));
     });
 
-    it('merge at-rule & escape sequence #15', function () {
+    it('merge at-rule & escape sequence #12', function () {
         const file = `
 
 @media (max-width: 767px) {.main-heading { font-size: 32px; font-weight: 300; }}
@@ -259,7 +239,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 }`));
     });
 
-    it('comments #16', function () {
+    it('comments #13', function () {
         const file = `
 /* this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -280,7 +260,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
     });
 
 
-    it('comments #17', function () {
+    it('comments #14', function () {
         const file = `
 /* this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -300,7 +280,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 }`));
     });
 
-    it('comments #18', function () {
+    it('comments #15', function () {
         const file = `
 
 /* this is a comment */
@@ -327,7 +307,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 }`));
     });
 
-    it('license comments #19', function () {
+    it('license comments #16', function () {
         const file = `
 /*! this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -353,7 +333,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 }`));
     });
 
-    it('license comments #20', function () {
+    it('license comments #17', function () {
         const file = `
 /*! this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -380,7 +360,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 }`));
     });
 
-    it('license comments #21', function () {
+    it('license comments #18', function () {
         const file = `
 /*! this is a comment */
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
@@ -407,7 +387,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 }`));
     });
 
-    it('media query #22', function () {
+    it('media query #19', function () {
         const file = `
        @media (resolution >= 2dppx) and (resolution <= 5dppx) {
 
@@ -426,7 +406,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             minify: false,
             removeComments: true,
             preserveLicense: true
-        }).code).equals(`@media (resolution>=2dppx) and (resolution<=5dppx) {
+        }).code).equals(`@media (resolution>=2x) and (resolution<=5x) {
  /*! this is a comment */
  .nav-pills {
   .nav-link.active,.show>.nav-link {

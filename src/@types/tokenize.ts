@@ -135,7 +135,8 @@ export interface BlockEndToken {
 
 export interface AttrStartToken {
 
-    typ: 'Attr-start'
+    typ: 'Attr-start';
+    chi?: Token[];
 }
 
 export interface AttrEndToken {
@@ -145,7 +146,8 @@ export interface AttrEndToken {
 
 export interface ParensStartToken {
 
-    typ: 'Start-parens'
+    typ: 'Start-parens';
+    chi?: Token[];
 }
 
 export interface ParensEndToken {

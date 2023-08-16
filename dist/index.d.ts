@@ -91,12 +91,14 @@ interface BlockEndToken {
 }
 interface AttrStartToken {
     typ: 'Attr-start';
+    chi?: Token[];
 }
 interface AttrEndToken {
     typ: 'Attr-end';
 }
 interface ParensStartToken {
     typ: 'Start-parens';
+    chi?: Token[];
 }
 interface ParensEndToken {
     typ: 'End-parens';
