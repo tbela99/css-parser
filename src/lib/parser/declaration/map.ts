@@ -322,13 +322,15 @@ export class PropertyMap {
                             continue;
                         }
 
-                        match = matchType(val, curr[1]);
+                        // @ts-ignore
+                        match = val.typ == 'Comment' || matchType(val, curr[1]);
 
                         if (isShorthand) {
 
                             isShorthand = match;
                         }
 
+                        // @ts-ignore
                         if (('propertyName' in val && val.propertyName == property) || match) {
 
                             if (!(curr[0] in tokens)) {
@@ -360,8 +362,10 @@ export class PropertyMap {
 
                 // missing required property
                 return entry[1].required && !(entry[0] in tokens);
+            }) ||
 
-            }) || !Object.values(tokens).every(v => v.length == count)) {
+                // @ts-ignore
+                !Object.values(tokens).every(v => v.filter(t => t.typ != 'Comment').length == count)) {
 
                 // @ts-ignore
                 iterable = this.declarations.values();

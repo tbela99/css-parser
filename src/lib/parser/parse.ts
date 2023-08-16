@@ -8,7 +8,6 @@ import {
     AstRuleStyleSheet,
     AtRuleToken,
     ErrorDescription,
-    FunctionToken,
     LiteralToken,
     Location,
     ParseResult,
@@ -36,6 +35,7 @@ import {tokenize} from "./tokenize";
 
 export const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 
+const trimWhiteSpace = ['Gt', 'Gte', 'Lt', 'Lte'];
 const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
 
 /**
@@ -91,6 +91,11 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
         let i: number;
         let loc: Location;
+
+        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
+        //
+        //     tokens.pop();
+        // }
 
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
@@ -238,7 +243,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
             // allowed nesting at-rules
             // there must be a top level rule in the stack
 
-            const raw = tokens.reduce((acc: string[], curr: Token) => {
+            const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
 
                 acc.push(renderToken(curr, {removeComments: true}));
 
@@ -282,8 +287,8 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                     if (curr.typ == 'Whitespace') {
 
                         if (
-                            array[index - 1]?.typ == 'Gt' ||
-                            array[index + 1]?.typ == 'Gt' ||
+                            trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                            trimWhiteSpace.includes(array[index + 1]?.typ) ||
                             combinators.includes((<LiteralToken>array[index - 1])?.val) ||
                             combinators.includes((<LiteralToken>array[index + 1])?.val)) {
 
@@ -426,7 +431,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     const iter = tokenize(iterator);
     let item: TokenizeResult;
 
-
     while (true) {
 
         item = iter.next().value;
@@ -513,7 +517,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     const endTime: number = performance.now();
 
     return {
-        ast, errors,  stats: {
+        ast, errors, stats: {
             bytesIn,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
@@ -548,7 +552,7 @@ function getTokenType(val: string, hint?: string): Token {
         return <Token>([
             'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
             'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-            'Comma', 'Gt', 'Lt'
+            'Comma', 'Gt', 'Lt', 'Gte', 'Lte', 'EOF'
         ].includes(hint) ? {typ: hint} : {typ: hint, val});
     }
 
@@ -714,12 +718,13 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
         const t = tokens[i];
 
         if (t.typ == 'Whitespace' && ((i == 0 ||
-            i + 1 == tokens.length ||
-            ['Comma'].includes(tokens[i + 1].typ) ||
+                i + 1 == tokens.length ||
+                ['Comma', 'Gte', 'Lte'].includes(tokens[i + 1].typ)) ||
             (i > 0 &&
-                tokens[i + 1]?.typ != 'Literal' &&
-                funcLike.includes(tokens[i - 1].typ) &&
-                !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val))))) {
+                // tokens[i + 1]?.typ != 'Literal' ||
+                // funcLike.includes(tokens[i - 1].typ) &&
+                // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
+                trimWhiteSpace.includes(tokens[i - 1].typ)))) {
 
             tokens.splice(i--, 1);
             continue;
@@ -842,7 +847,7 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                     let m = t.chi.length;
                     while (m-- > 0) {
                         // @ts-ignore
-                        if (t.chi[m].typ == 'Literal') {
+                        if (['Literal'].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
                             // @ts-ignore
                             if (t.chi[m + 1]?.typ == 'Whitespace') {
 

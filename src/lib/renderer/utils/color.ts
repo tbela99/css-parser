@@ -1,4 +1,4 @@
-import {ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../../@types";
+import {AngleToken, ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../../@types";
 
 // name to color
 export const COLORS_NAMES: {[key: string]: string} = Object.seal({
@@ -471,9 +471,9 @@ export function cmyk2hex(token: ColorToken) {
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 
-function getAngle(token: NumberToken | DimensionToken): number {
+export function getAngle(token: NumberToken | AngleToken): number {
 
-    if (token.typ == 'Dimension') {
+    if (token.typ == 'Angle') {
 
         switch (token.unit) {
 

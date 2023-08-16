@@ -252,29 +252,21 @@ export function isNumber(name: string): boolean {
 
 export function isDimension(name: string) {
 
-    let index: number = 0;
+    let index: number = name.length;
 
-    while (index++ < name.length) {
+    while (index--) {
 
-        if (isDigit(<number>name.charCodeAt(name.length - index))) {
+        if (isLetter(<number>name.charCodeAt(index))) {
 
-            index--;
-            break;
+            continue
         }
 
-        if (index == 3) {
-
-            break;
-        }
+        index++;
+        break;
     }
 
-    if (index == 0 || index > 3) {
-
-        return false;
-    }
-
-    const number: string = name.slice(0, -index);
-    return number.length > 0 && isIdentStart(<number>name.charCodeAt(name.length - index)) && isNumber(number);
+    const number: string = name.slice(0, index);
+    return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
 }
 
 export function isPercentage(name: string) {
@@ -284,23 +276,20 @@ export function isPercentage(name: string) {
 
 export function parseDimension(name: string): DimensionToken | LengthToken | AngleToken {
 
-    let index: number = 0;
+    let index: number = name.length;
 
-    while (index++ < name.length) {
+    while (index--) {
 
-        if (isDigit(<number>name.charCodeAt(name.length - index))) {
+        if (isLetter(<number>name.charCodeAt(index))) {
 
-            index--;
-            break;
+            continue
         }
 
-        if (index == 3) {
-
-            break;
-        }
+        index++;
+        break;
     }
 
-    const dimension = <DimensionToken>{typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index)};
+    const dimension = <DimensionToken>{typ: 'Dimension', val: name.slice(0, index), unit: name.slice(index)};
 
     if (isAngle(dimension)) {
 

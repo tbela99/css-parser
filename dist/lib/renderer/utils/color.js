@@ -418,7 +418,7 @@ function cmyk2hex(token) {
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 function getAngle(token) {
-    if (token.typ == 'Dimension') {
+    if (token.typ == 'Angle') {
         switch (token.unit) {
             case 'deg':
                 // @ts-ignore
@@ -491,4 +491,4 @@ function hsl2rgb(h, s, l, a = null) {
     return values;
 }
 
-export { COLORS_NAMES, NAMES_COLORS, cmyk2hex, hsl2Hex, hwb2hex, rgb2Hex };
+export { COLORS_NAMES, NAMES_COLORS, cmyk2hex, getAngle, hsl2Hex, hwb2hex, rgb2Hex };

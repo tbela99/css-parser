@@ -13,6 +13,7 @@
 /docs/** linguist-vendored
 /tools/** linguist-vendored
 /dist/** linguist-vendored
+/test/** linguist-vendored
 /coverage/** linguist-vendored
 #
 # do not replace lf by crlf

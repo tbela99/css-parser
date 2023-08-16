@@ -165,37 +165,30 @@
         return true;
     }
     function isDimension(name) {
-        let index = 0;
-        while (index++ < name.length) {
-            if (isDigit(name.charCodeAt(name.length - index))) {
-                index--;
-                break;
+        let index = name.length;
+        while (index--) {
+            if (isLetter(name.charCodeAt(index))) {
+                continue;
             }
-            if (index == 3) {
-                break;
-            }
+            index++;
+            break;
         }
-        if (index == 0 || index > 3) {
-            return false;
-        }
-        const number = name.slice(0, -index);
-        return number.length > 0 && isIdentStart(name.charCodeAt(name.length - index)) && isNumber(number);
+        const number = name.slice(0, index);
+        return number.length > 0 && isIdentStart(name.charCodeAt(index)) && isNumber(number);
     }
     function isPercentage(name) {
         return name.endsWith('%') && isNumber(name.slice(0, -1));
     }
     function parseDimension(name) {
-        let index = 0;
-        while (index++ < name.length) {
-            if (isDigit(name.charCodeAt(name.length - index))) {
-                index--;
-                break;
+        let index = name.length;
+        while (index--) {
+            if (isLetter(name.charCodeAt(index))) {
+                continue;
             }
-            if (index == 3) {
-                break;
-            }
+            index++;
+            break;
         }
-        const dimension = { typ: 'Dimension', val: name.slice(0, -index), unit: name.slice(-index) };
+        const dimension = { typ: 'Dimension', val: name.slice(0, index), unit: name.slice(index) };
         if (isAngle(dimension)) {
             // @ts-ignore
             dimension.typ = 'Angle';
@@ -1504,7 +1497,7 @@
         return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
     }
     function getAngle(token) {
-        if (token.typ == 'Dimension') {
+        if (token.typ == 'Angle') {
             switch (token.unit) {
                 case 'deg':
                     // @ts-ignore
@@ -1577,6 +1570,23 @@
         return values;
     }
 
+    function reduceNumber(val) {
+        val = (+val).toString();
+        if (val === '0') {
+            return '0';
+        }
+        const chr = val.charAt(0);
+        if (chr == '-') {
+            const slice = val.slice(0, 2);
+            if (slice == '-0') {
+                return val.length == 2 ? '0' : '-' + val.slice(2);
+            }
+        }
+        if (chr == '0') {
+            return val.slice(1);
+        }
+        return val;
+    }
     function render(data, opt = {}) {
         const startTime = performance.now();
         const options = Object.assign(opt.minify ?? true ? {
@@ -1589,17 +1599,19 @@
             compress: false,
             removeComments: false,
         }, { colorConvert: true, preserveLicense: false }, opt);
-        function reducer(acc, curr, index, original) {
-            if (curr.typ == 'Comment' && options.removeComments) {
-                if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-                    return acc;
+        return {
+            code: doRender(data, options, function reducer(acc, curr) {
+                if (curr.typ == 'Comment' && options.removeComments) {
+                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                        return acc;
+                    }
+                    return acc + curr.val;
                 }
-            }
-            return acc + renderToken(curr, options);
-        }
-        return { code: doRender(data, options, reducer, 0), stats: {
+                return acc + renderToken(curr, options, reducer);
+            }, 0), stats: {
                 total: `${(performance.now() - startTime).toFixed(2)}ms`
-            } };
+            }
+        };
     }
     // @ts-ignore
     function doRender(data, options, reducer, level = 0, indents = []) {
@@ -1613,9 +1625,9 @@
         const indentSub = indents[level + 1];
         switch (data.typ) {
             case 'Declaration':
-                return `${data.nam}:${options.indent}${data.val.reduce((acc, curr) => acc + renderToken(curr), '')}`;
+                return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
             case 'Comment':
-                return options.removeComments ? '' : data.val;
+                return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
             case 'StyleSheet':
                 return data.chi.reduce((css, node) => {
                     const str = doRender(node, options, reducer, level, indents);
@@ -1636,7 +1648,7 @@
                 let children = data.chi.reduce((css, node) => {
                     let str;
                     if (node.typ == 'Comment') {
-                        str = options.removeComments ? '' : node.val;
+                        str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                     }
                     else if (node.typ == 'Declaration') {
                         if (node.val.length == 0) {
@@ -1669,7 +1681,18 @@
         }
         return '';
     }
-    function renderToken(token, options = {}) {
+    function renderToken(token, options = {}, reducer) {
+        if (reducer == null) {
+            reducer = function (acc, curr) {
+                if (curr.typ == 'Comment' && options.removeComments) {
+                    if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
+                        return acc;
+                    }
+                    return acc + curr.val;
+                }
+                return acc + renderToken(curr, options, reducer);
+            };
+        }
         switch (token.typ) {
             case 'Color':
                 if (options.minify || options.colorConvert) {
@@ -1720,22 +1743,19 @@
             case 'UrlFunc':
             case 'Pseudo-class-func':
                 // @ts-ignore
-                return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce((acc, curr) => {
-                    if (options.removeComments && curr.typ == 'Comment') {
-                        if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
-                            return acc;
-                        }
-                    }
-                    return acc + renderToken(curr, options);
-                }, '') + ')';
+                return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
             case 'Includes':
                 return '~=';
             case 'Dash-match':
                 return '|=';
             case 'Lt':
                 return '<';
+            case 'Lte':
+                return '<=';
             case 'Gt':
                 return '>';
+            case 'Gte':
+                return '>=';
             case 'End-parens':
                 return ')';
             case 'Attr-start':
@@ -1753,37 +1773,73 @@
             case 'Important':
                 return '!important';
             case 'Attr':
-                return '[' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options), '') + ']';
+                return '[' + token.chi.reduce(reducer, '') + ']';
             case 'Time':
-            case 'Frequency':
             case 'Angle':
             case 'Length':
             case 'Dimension':
-                const val = (+token.val).toString();
+            case 'Frequency':
+            case 'Resolution':
+                let val = reduceNumber(token.val);
+                let unit = token.unit;
+                if (token.typ == 'Angle') {
+                    const angle = getAngle(token);
+                    let v;
+                    let value = val + unit;
+                    for (const u of ['turn', 'deg', 'rad', 'grad']) {
+                        if (token.unit == u) {
+                            continue;
+                        }
+                        switch (u) {
+                            case 'turn':
+                                v = reduceNumber(angle);
+                                if (v.length + 4 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                            case 'deg':
+                                v = reduceNumber(angle * 360);
+                                if (v.length + 3 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                            case 'rad':
+                                v = reduceNumber(angle * (2 * Math.PI));
+                                if (v.length + 3 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                            case 'grad':
+                                v = reduceNumber(angle * 400);
+                                if (v.length + 4 < value.length) {
+                                    val = v;
+                                    unit = u;
+                                    value = v + u;
+                                }
+                                break;
+                        }
+                    }
+                }
                 if (val === '0') {
-                    if (token.typ == 'Time') {
+                    if (unit == 'Time') {
                         return '0s';
                     }
-                    if (token.typ == 'Frequency') {
+                    if (unit == 'Frequency') {
                         return '0Hz';
                     }
                     // @ts-ignore
-                    if (token.typ == 'Resolution') {
+                    if (unit == 'Resolution') {
                         return '0x';
                     }
                     return '0';
                 }
-                const chr = val.charAt(0);
-                if (chr == '-') {
-                    const slice = val.slice(0, 2);
-                    if (slice == '-0') {
-                        return (val.length == 2 ? '0' : '-' + val.slice(2)) + token.unit;
-                    }
-                }
-                else if (chr == '0') {
-                    return val.slice(1) + token.unit;
-                }
-                return val + token.unit;
+                return val + unit;
             case 'Perc':
                 return token.val + '%';
             case 'Number':
@@ -1800,7 +1856,7 @@
                 }
                 return num;
             case 'Comment':
-                if (options.removeComments) {
+                if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                     return '';
                 }
             case 'Url-token':
@@ -2071,6 +2127,7 @@
                                     i--;
                                     continue;
                                 }
+                                // @ts-ignore
                                 if (('propertyName' in acc[i] && acc[i].propertyName == property) || matchType(acc[i], props)) {
                                     if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
                                         return acc;
@@ -2236,17 +2293,18 @@
                             if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
                                 continue;
                             }
-                            match = matchType(val, curr[1]);
+                            // @ts-ignore
+                            match = val.typ == 'Comment' || matchType(val, curr[1]);
                             if (isShorthand) {
                                 isShorthand = match;
                             }
+                            // @ts-ignore
                             if (('propertyName' in val && val.propertyName == property) || match) {
                                 if (!(curr[0] in tokens)) {
                                     tokens[curr[0]] = [[]];
                                 }
                                 // is default value
                                 tokens[curr[0]][current].push(val);
-                                // continue;
                             }
                             else {
                                 acc.push(curr[0]);
@@ -2263,7 +2321,9 @@
                 if (!isShorthand || Object.entries(this.config.properties).some(entry => {
                     // missing required property
                     return entry[1].required && !(entry[0] in tokens);
-                }) || !Object.values(tokens).every(v => v.length == count)) {
+                }) ||
+                    // @ts-ignore
+                    !Object.values(tokens).every(v => v.filter(t => t.typ != 'Comment').length == count)) {
                     // @ts-ignore
                     iterable = this.declarations.values();
                 }
@@ -2816,6 +2876,17 @@
                         continue;
                         // }
                     }
+                    // @ts-ignore
+                    if (hasDeclaration(node)) {
+                        // @ts-ignore
+                        minifyRule(node);
+                    }
+                    else {
+                        minify(node, options, recursive);
+                    }
+                    previous = node;
+                    nodeIndex = i;
+                    continue;
                 }
                 // @ts-ignore
                 if (node.typ == 'Rule') {
@@ -3330,11 +3401,6 @@
             }
             buffer += quoteStr;
             while (value = peek()) {
-                // if (ind >= iterator.length) {
-                //
-                //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-                //     break;
-                // }
                 if (value == '\\') {
                     const sequence = peek(6);
                     let escapeSequence = '';
@@ -3354,9 +3420,23 @@
                         }
                         break;
                     }
+                    // @ts-ignore
+                    if (isNewLine(codepoint)) {
+                        if (i == 1) {
+                            buffer += value + escapeSequence.slice(0, i);
+                            next(i + 1);
+                            continue;
+                        }
+                        // else {
+                        yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
+                        buffer = '';
+                        // }
+                        next(i + 1);
+                        break;
+                    }
                     // not hex or new line
                     // @ts-ignore
-                    if (i == 1 && !isNewLine(codepoint)) {
+                    else if (i == 1) {
                         buffer += value + sequence[i];
                         next(2);
                         continue;
@@ -3376,13 +3456,6 @@
                         next(escapeSequence.length + 1);
                         continue;
                     }
-                    // buffer += value;
-                    // if (ind >= iterator.length) {
-                    //
-                    //     // drop '\\' at the end
-                    //     yield pushToken(buffer);
-                    //     break;
-                    // }
                     buffer += next(2);
                     continue;
                 }
@@ -3392,20 +3465,28 @@
                     next();
                     // i += value.length;
                     buffer = '';
-                    break;
+                    return;
                 }
                 if (isNewLine(value.charCodeAt(0))) {
                     hasNewLine = true;
                 }
                 if (hasNewLine && value == ';') {
-                    yield pushToken(buffer, 'Bad-string');
+                    yield pushToken(buffer + value, 'Bad-string');
                     buffer = '';
+                    next();
                     break;
                 }
                 buffer += value;
-                // i += value.length;
                 next();
             }
+            if (hasNewLine) {
+                yield pushToken(buffer, 'Bad-string');
+            }
+            else {
+                // EOF - 'Unclosed-string' fixed
+                yield pushToken(buffer + quote, 'String');
+            }
+            buffer = '';
         }
         function peek(count = 1) {
             if (count == 1) {
@@ -3519,6 +3600,11 @@
                         yield pushToken(buffer);
                         buffer = '';
                     }
+                    if (peek() == '=') {
+                        yield pushToken('', 'Lte');
+                        next();
+                        break;
+                    }
                     buffer += value;
                     value = next();
                     if (ind >= iterator.length) {
@@ -3587,7 +3673,13 @@
                         yield pushToken(buffer);
                         buffer = '';
                     }
-                    yield pushToken('', 'Gt');
+                    if (peek() == '=') {
+                        yield pushToken('', 'Gte');
+                        next();
+                    }
+                    else {
+                        yield pushToken('', 'Gt');
+                    }
                     consumeWhiteSpace();
                     break;
                 case '.':
@@ -3629,7 +3721,7 @@
                     break;
                 case '(':
                     if (buffer.length == 0) {
-                        yield pushToken('', 'Start-parens');
+                        yield pushToken(value);
                         break;
                     }
                     buffer += value;
@@ -3743,9 +3835,11 @@
         if (buffer.length > 0) {
             yield pushToken(buffer);
         }
+        // yield pushToken('', 'EOF');
     }
 
     const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
+    const trimWhiteSpace = ['Gt', 'Gte', 'Lt', 'Lte'];
     const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
     /**
      *
@@ -3792,6 +3886,10 @@
             let tokens = results.map(mapToken);
             let i;
             let loc;
+            // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
+            //
+            //     tokens.pop();
+            // }
             for (i = 0; i < tokens.length; i++) {
                 if (tokens[i].typ == 'Comment') {
                     // @ts-ignore
@@ -3910,7 +4008,7 @@
                 // https://www.w3.org/TR/css-nesting-1/#conditionals
                 // allowed nesting at-rules
                 // there must be a top level rule in the stack
-                const raw = tokens.reduce((acc, curr) => {
+                const raw = parseTokens(tokens, { minify: options.minify }).reduce((acc, curr) => {
                     acc.push(renderToken(curr, { removeComments: true }));
                     return acc;
                 }, []);
@@ -3941,8 +4039,8 @@
                     const uniq = new Map;
                     parseTokens(tokens, { minify: options.minify }).reduce((acc, curr, index, array) => {
                         if (curr.typ == 'Whitespace') {
-                            if (array[index - 1]?.typ == 'Gt' ||
-                                array[index + 1]?.typ == 'Gt' ||
+                            if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
                                 combinators.includes(array[index - 1]?.val) ||
                                 combinators.includes(array[index + 1]?.val)) {
                                 return acc;
@@ -4146,7 +4244,7 @@
             return ([
                 'Whitespace', 'Semi-colon', 'Colon', 'Block-start',
                 'Block-start', 'Attr-start', 'Attr-end', 'Start-parens', 'End-parens',
-                'Comma', 'Gt', 'Lt'
+                'Comma', 'Gt', 'Lt', 'Gte', 'Lte', 'EOF'
             ].includes(hint) ? { typ: hint } : { typ: hint, val });
         }
         if (val == ' ') {
@@ -4274,11 +4372,12 @@
             const t = tokens[i];
             if (t.typ == 'Whitespace' && ((i == 0 ||
                 i + 1 == tokens.length ||
-                ['Comma'].includes(tokens[i + 1].typ) ||
+                ['Comma', 'Gte', 'Lte'].includes(tokens[i + 1].typ)) ||
                 (i > 0 &&
-                    tokens[i + 1]?.typ != 'Literal' &&
-                    funcLike.includes(tokens[i - 1].typ) &&
-                    !['var', 'calc'].includes(tokens[i - 1].val))))) {
+                    // tokens[i + 1]?.typ != 'Literal' ||
+                    // funcLike.includes(tokens[i - 1].typ) &&
+                    // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
+                    trimWhiteSpace.includes(tokens[i - 1].typ)))) {
                 tokens.splice(i--, 1);
                 continue;
             }
@@ -4395,7 +4494,7 @@
                         let m = t.chi.length;
                         while (m-- > 0) {
                             // @ts-ignore
-                            if (t.chi[m].typ == 'Literal') {
+                            if (['Literal'].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
                                 // @ts-ignore
                                 if (t.chi[m + 1]?.typ == 'Whitespace') {
                                     // @ts-ignore

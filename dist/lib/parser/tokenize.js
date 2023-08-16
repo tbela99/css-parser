@@ -36,11 +36,6 @@ function* tokenize(iterator) {
         }
         buffer += quoteStr;
         while (value = peek()) {
-            // if (ind >= iterator.length) {
-            //
-            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-            //     break;
-            // }
             if (value == '\\') {
                 const sequence = peek(6);
                 let escapeSequence = '';
@@ -60,9 +55,23 @@ function* tokenize(iterator) {
                     }
                     break;
                 }
+                // @ts-ignore
+                if (isNewLine(codepoint)) {
+                    if (i == 1) {
+                        buffer += value + escapeSequence.slice(0, i);
+                        next(i + 1);
+                        continue;
+                    }
+                    // else {
+                    yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
+                    buffer = '';
+                    // }
+                    next(i + 1);
+                    break;
+                }
                 // not hex or new line
                 // @ts-ignore
-                if (i == 1 && !isNewLine(codepoint)) {
+                else if (i == 1) {
                     buffer += value + sequence[i];
                     next(2);
                     continue;
@@ -82,13 +91,6 @@ function* tokenize(iterator) {
                     next(escapeSequence.length + 1);
                     continue;
                 }
-                // buffer += value;
-                // if (ind >= iterator.length) {
-                //
-                //     // drop '\\' at the end
-                //     yield pushToken(buffer);
-                //     break;
-                // }
                 buffer += next(2);
                 continue;
             }
@@ -98,20 +100,28 @@ function* tokenize(iterator) {
                 next();
                 // i += value.length;
                 buffer = '';
-                break;
+                return;
             }
             if (isNewLine(value.charCodeAt(0))) {
                 hasNewLine = true;
             }
             if (hasNewLine && value == ';') {
-                yield pushToken(buffer, 'Bad-string');
+                yield pushToken(buffer + value, 'Bad-string');
                 buffer = '';
+                next();
                 break;
             }
             buffer += value;
-            // i += value.length;
             next();
         }
+        if (hasNewLine) {
+            yield pushToken(buffer, 'Bad-string');
+        }
+        else {
+            // EOF - 'Unclosed-string' fixed
+            yield pushToken(buffer + quote, 'String');
+        }
+        buffer = '';
     }
     function peek(count = 1) {
         if (count == 1) {
@@ -225,6 +235,11 @@ function* tokenize(iterator) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
+                if (peek() == '=') {
+                    yield pushToken('', 'Lte');
+                    next();
+                    break;
+                }
                 buffer += value;
                 value = next();
                 if (ind >= iterator.length) {
@@ -293,7 +308,13 @@ function* tokenize(iterator) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
-                yield pushToken('', 'Gt');
+                if (peek() == '=') {
+                    yield pushToken('', 'Gte');
+                    next();
+                }
+                else {
+                    yield pushToken('', 'Gt');
+                }
                 consumeWhiteSpace();
                 break;
             case '.':
@@ -335,7 +356,7 @@ function* tokenize(iterator) {
                 break;
             case '(':
                 if (buffer.length == 0) {
-                    yield pushToken('', 'Start-parens');
+                    yield pushToken(value);
                     break;
                 }
                 buffer += value;
@@ -449,6 +470,7 @@ function* tokenize(iterator) {
     if (buffer.length > 0) {
         yield pushToken(buffer);
     }
+    // yield pushToken('', 'EOF');
 }
 
 export { tokenize };

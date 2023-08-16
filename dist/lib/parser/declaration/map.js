@@ -55,6 +55,7 @@ class PropertyMap {
                                 i--;
                                 continue;
                             }
+                            // @ts-ignore
                             if (('propertyName' in acc[i] && acc[i].propertyName == property) || matchType(acc[i], props)) {
                                 if ('prefix' in props && props.previous != null && !(props.previous in tokens)) {
                                     return acc;
@@ -220,17 +221,18 @@ class PropertyMap {
                         if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
                             continue;
                         }
-                        match = matchType(val, curr[1]);
+                        // @ts-ignore
+                        match = val.typ == 'Comment' || matchType(val, curr[1]);
                         if (isShorthand) {
                             isShorthand = match;
                         }
+                        // @ts-ignore
                         if (('propertyName' in val && val.propertyName == property) || match) {
                             if (!(curr[0] in tokens)) {
                                 tokens[curr[0]] = [[]];
                             }
                             // is default value
                             tokens[curr[0]][current].push(val);
-                            // continue;
                         }
                         else {
                             acc.push(curr[0]);
@@ -247,7 +249,9 @@ class PropertyMap {
             if (!isShorthand || Object.entries(this.config.properties).some(entry => {
                 // missing required property
                 return entry[1].required && !(entry[0] in tokens);
-            }) || !Object.values(tokens).every(v => v.length == count)) {
+            }) ||
+                // @ts-ignore
+                !Object.values(tokens).every(v => v.filter(t => t.typ != 'Comment').length == count)) {
                 // @ts-ignore
                 iterable = this.declarations.values();
             }

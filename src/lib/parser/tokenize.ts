@@ -41,6 +41,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
         position.ind = ind;
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
+
         return result;
     }
 
@@ -60,17 +61,11 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
         while (value = peek()) {
 
-            // if (ind >= iterator.length) {
-            //
-            //     yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'Unclosed-string');
-            //     break;
-            // }
-
             if (value == '\\') {
 
                 const sequence: string = peek(6);
                 let escapeSequence: string = '';
-                let codepoint;
+                let codepoint: number;
                 let i;
 
                 for (i = 1; i < sequence.length; i++) {
@@ -94,9 +89,29 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     break;
                 }
 
-                // not hex or new line
                 // @ts-ignore
-                if (i == 1 && !isNewLine(codepoint)) {
+                if (isNewLine(codepoint)) {
+
+                    if (i == 1) {
+
+                        buffer += value + escapeSequence.slice(0, i);
+                        next(i + 1);
+                        continue;
+                    }
+
+                    // else {
+
+                    yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
+                    buffer = '';
+                    // }
+
+                    next(i + 1);
+                    break;
+                }
+
+                    // not hex or new line
+                // @ts-ignore
+                else if (i == 1) {
 
                     buffer += value + sequence[i];
                     next(2);
@@ -122,14 +137,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     continue;
                 }
 
-                // buffer += value;
-                // if (ind >= iterator.length) {
-                //
-                //     // drop '\\' at the end
-                //     yield pushToken(buffer);
-                //     break;
-                // }
-
                 buffer += next(2);
                 continue;
             }
@@ -141,7 +148,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 next();
                 // i += value.length;
                 buffer = '';
-                break;
+                return;
             }
 
             if (isNewLine(value.charCodeAt(0))) {
@@ -149,15 +156,27 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             }
 
             if (hasNewLine && value == ';') {
-                yield pushToken(buffer, 'Bad-string',);
+
+                yield pushToken(buffer + value, 'Bad-string');
                 buffer = '';
+                next();
                 break;
             }
 
             buffer += value;
-            // i += value.length;
             next();
         }
+
+        if (hasNewLine) {
+
+            yield pushToken(buffer, 'Bad-string');
+        } else {
+
+            // EOF - 'Unclosed-string' fixed
+            yield pushToken(buffer + quote, 'String');
+        }
+
+        buffer = '';
     }
 
     function peek(count: number = 1): string {
@@ -305,10 +324,19 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 }
                 break;
             case '<':
+
                 if (buffer.length > 0) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
+
+                if (peek() == '=') {
+
+                    yield pushToken('', 'Lte');
+                    next();
+                    break;
+                }
+
                 buffer += value;
                 value = next();
                 if (ind >= iterator.length) {
@@ -398,7 +426,15 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     buffer = '';
                 }
 
-                yield pushToken('', 'Gt');
+                if (peek() == '=') {
+
+                    yield pushToken('', 'Gte');
+                    next();
+                } else {
+
+                    yield pushToken('', 'Gt');
+                }
+
                 consumeWhiteSpace();
                 break;
             case '.':
@@ -456,7 +492,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                 if (buffer.length == 0) {
 
-                    yield pushToken('', 'Start-parens');
+                    yield pushToken(value);
                     break;
                 }
 
@@ -624,4 +660,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
     if (buffer.length > 0) {
         yield pushToken(buffer);
     }
+
+    // yield pushToken('', 'EOF');
 }

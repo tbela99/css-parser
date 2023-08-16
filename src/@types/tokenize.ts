@@ -135,7 +135,8 @@ export interface BlockEndToken {
 
 export interface AttrStartToken {
 
-    typ: 'Attr-start'
+    typ: 'Attr-start';
+    chi?: Token[];
 }
 
 export interface AttrEndToken {
@@ -145,7 +146,8 @@ export interface AttrEndToken {
 
 export interface ParensStartToken {
 
-    typ: 'Start-parens'
+    typ: 'Start-parens';
+    chi?: Token[];
 }
 
 export interface ParensEndToken {
@@ -199,11 +201,20 @@ export interface LessThanToken {
     typ: 'Lt';
 }
 
+export interface LessThanOrEqualToken {
+
+    typ: 'Lte';
+}
+
 export interface GreaterThanToken {
 
     typ: 'Gt';
 }
 
+export interface GreaterThanOrEqualToken {
+
+    typ: 'Gte';
+}
 export interface PseudoClassToken {
 
     typ: 'Pseudo-class';
@@ -275,5 +286,6 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | GreaterThanToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken |
+    DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
+    PseudoClassToken | PseudoClassFunctionToken | DelimToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
