@@ -12,10 +12,10 @@ import { load } from './load.js';
 import { resolve } from '../lib/fs/resolve.js';
 export { dirname, matchUrl } from '../lib/fs/resolve.js';
 
-function parse(iterator, opt = {}) {
+async function parse(iterator, opt = {}) {
     return parse$1(iterator, Object.assign(opt, { load, resolve, cwd: opt.cwd ?? process.cwd() }));
 }
-function transform(css, options = {}) {
+async function transform(css, options = {}) {
     return transform$1(css, Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() }));
 }
 

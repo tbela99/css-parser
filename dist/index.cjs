@@ -1825,14 +1825,14 @@ function renderToken(token, options = {}, reducer) {
                 }
             }
             if (val === '0') {
-                if (unit == 'Time') {
+                if (token.typ == 'Time') {
                     return '0s';
                 }
-                if (unit == 'Frequency') {
+                if (token.typ == 'Frequency') {
                     return '0Hz';
                 }
                 // @ts-ignore
-                if (unit == 'Resolution') {
+                if (token.typ == 'Resolution') {
                     return '0x';
                 }
                 return '0';
@@ -3884,10 +3884,6 @@ async function parse$1(iterator, opt = {}) {
         let tokens = results.map(mapToken);
         let i;
         let loc;
-        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
-        //
-        //     tokens.pop();
-        // }
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
                 // @ts-ignore
@@ -4698,10 +4694,10 @@ async function load(url, currentFile) {
     return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : promises.readFile(resolved.absolute, { encoding: 'utf-8' });
 }
 
-function parse(iterator, opt = {}) {
+async function parse(iterator, opt = {}) {
     return parse$1(iterator, Object.assign(opt, { load, resolve, cwd: opt.cwd ?? process.cwd() }));
 }
-function transform(css, options = {}) {
+async function transform(css, options = {}) {
     return transform$1(css, Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() }));
 }
 

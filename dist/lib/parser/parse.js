@@ -52,10 +52,6 @@ async function parse(iterator, opt = {}) {
         let tokens = results.map(mapToken);
         let i;
         let loc;
-        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
-        //
-        //     tokens.pop();
-        // }
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
                 // @ts-ignore

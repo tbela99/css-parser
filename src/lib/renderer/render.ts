@@ -408,18 +408,18 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
             if (val === '0') {
 
-                if (unit == 'Time') {
+                if (token.typ == 'Time') {
 
                     return '0s';
                 }
 
-                if (unit == 'Frequency') {
+                if (token.typ == 'Frequency') {
 
                     return '0Hz';
                 }
 
                 // @ts-ignore
-                if (unit == 'Resolution') {
+                if (token.typ == 'Resolution') {
 
                     return '0x';
                 }

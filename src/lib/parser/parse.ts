@@ -92,11 +92,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         let i: number;
         let loc: Location;
 
-        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
-        //
-        //     tokens.pop();
-        // }
-
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
 

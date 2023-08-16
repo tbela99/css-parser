@@ -12,14 +12,14 @@ import { load } from './load.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
 export { matchUrl } from '../lib/fs/resolve.js';
 
-function parse(iterator, opt = {}) {
+async function parse(iterator, opt = {}) {
     return parse$1(iterator, Object.assign(opt, {
         load,
         resolve,
         cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
-function transform(css, options = {}) {
+async function transform(css, options = {}) {
     return transform$1(css, Object.assign(options, {
         load,
         resolve,

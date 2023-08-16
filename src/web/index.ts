@@ -7,7 +7,7 @@ export * from '../lib/fs';
 import {parse as doParse, transform as doTransform} from "../lib";
 import {dirname, load, resolve} from "./index";
 
-export function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
+export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
 
     return doParse(iterator, Object.assign(opt, {
         load,
@@ -16,7 +16,7 @@ export function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseR
     }));
 }
 
-export function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
+export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
     return doTransform(css, Object.assign(options, {
         load,
