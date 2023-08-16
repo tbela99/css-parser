@@ -1,6 +1,6 @@
 /* generate from test/specs/block.web-spec.ts */
 import {expect as f} from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import {transform, render} from '../../dist/web/index.js';
+import {transform, render, parse} from '../../dist/web/index.js';
 
 describe('parse block', function () {
 
