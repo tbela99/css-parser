@@ -229,13 +229,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
     while (value = next()) {
 
-        if (ind >= iterator.length) {
-            if (buffer.length > 0) {
-                yield pushToken(buffer);
-                buffer = '';
-            }
-            break;
-        }
         if (isWhiteSpace(value.charCodeAt(0))) {
 
             if (buffer.length > 0) {
@@ -245,9 +238,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             }
             while (value = next()) {
 
-                if (ind >= iterator.length) {
-                    break;
-                }
                 if (!isWhiteSpace(value.charCodeAt(0))) {
                     break;
                 }
@@ -256,11 +246,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             yield pushToken('', 'Whitespace');
 
             buffer = '';
-
-            if (ind >= iterator.length) {
-
-                break;
-            }
         }
         switch (value) {
             case '/':
@@ -280,40 +265,16 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 buffer += value;
                 if (peek() == '*') {
 
-                    buffer += '*';
-                    // i++;
-                    next();
+                    buffer += next();
 
                     while (value = next()) {
 
-                        if (ind >= iterator.length) {
-
-                            yield pushToken(buffer, 'Bad-comment');
-                            break;
-                        }
-                        if (value == '\\') {
-                            buffer += value;
-                            value = next();
-                            if (ind >= iterator.length) {
-                                yield pushToken(buffer, 'Bad-comment');
-                                break;
-                            }
-                            buffer += value;
-                            continue;
-                        }
                         if (value == '*') {
 
                             buffer += value;
-                            value = next();
 
-                            if (ind >= iterator.length) {
-
-                                yield pushToken(buffer, 'Bad-comment');
-                                break;
-                            }
-                            buffer += value;
-                            if (value == '/') {
-                                yield pushToken(buffer, 'Comment');
+                            if (peek() == '/') {
+                                yield pushToken(buffer + next(), 'Comment');
                                 buffer = '';
                                 break;
                             }
@@ -321,6 +282,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                             buffer += value;
                         }
                     }
+
+                    yield pushToken(buffer, 'Bad-comment');
+                    buffer = '';
                 }
                 break;
             case '<':
@@ -338,18 +302,13 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 }
 
                 buffer += value;
-                value = next();
-                if (ind >= iterator.length) {
-                    break;
-                }
 
                 if (peek(3) == '!--') {
 
+                    buffer += next(3);
+
                     while (value = next()) {
 
-                        if (ind >= iterator.length) {
-                            break;
-                        }
                         buffer += value;
                         if (value == '>' && prev(2) == '--') {
 
@@ -360,19 +319,17 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     }
                 }
 
-                if (ind >= iterator.length) {
+                // if (!peek()) {
 
-                    yield pushToken(buffer, 'BADCDO');
+                    yield pushToken(buffer, 'Bad-cdo');
                     buffer = '';
-                }
+                // }
 
                 break;
             case '\\':
 
-                value = next();
-
                 // EOF
-                if (ind + 1 >= iterator.length) {
+                if (!(value = next())) {
                     // end of stream ignore \\
                     yield pushToken(buffer);
                     buffer = '';
@@ -380,7 +337,6 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 }
 
                 buffer += prev() + value;
-
                 break;
             case '"':
             case "'":
@@ -394,8 +350,8 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     buffer = '';
                 }
                 buffer += value;
-                value = next();
-                if (ind >= iterator.length) {
+
+                if (!(value = next())) {
                     yield pushToken(buffer);
                     buffer = '';
                     break;
@@ -639,9 +595,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     buffer = '';
                 }
 
-                const important = peek(9);
-
-                if (important == 'important') {
+                if (peek(9) == 'important') {
 
                     yield pushToken('', 'Important');
                     next(9);

@@ -179,3 +179,9 @@ export type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration;
+
+export interface WalkResult {
+    node: AstNode;
+    parent?: AstRuleList;
+    root?: AstRuleList;
+}

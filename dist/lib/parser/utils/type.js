@@ -13,4 +13,4 @@ function matchType(val, properties) {
     return false;
 }
 
-export { matchType };
+export { funcList, matchType };

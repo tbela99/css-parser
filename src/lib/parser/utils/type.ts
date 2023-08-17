@@ -1,6 +1,6 @@
 import {FunctionToken, IdentToken, PropertyMapType, Token} from "../../../@types";
 
-const funcList = ['clamp', 'calc'];
+export const funcList = ['clamp', 'calc'];
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
 

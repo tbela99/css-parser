@@ -1,5 +1,6 @@
 import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
 
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 function reduceNumber(val) {
     val = (+val).toString();
     if (val === '0') {
@@ -304,4 +305,4 @@ function renderToken(token, options = {}, reducer) {
     return '';
 }
 
-export { render, renderToken };
+export { colorsFunc, render, renderToken };

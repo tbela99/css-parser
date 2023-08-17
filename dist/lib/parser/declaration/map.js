@@ -1,7 +1,8 @@
 import { eq } from '../utils/eq.js';
+import { renderToken } from '../../renderer/render.js';
+import '../../renderer/utils/color.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
-import { renderToken } from '../../renderer/render.js';
 import { parseString } from '../parse.js';
 import { PropertySet } from './set.js';
 

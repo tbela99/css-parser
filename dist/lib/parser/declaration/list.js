@@ -1,4 +1,5 @@
 import { PropertySet } from './set.js';
+import '../../renderer/utils/color.js';
 import { getConfig } from '../utils/config.js';
 import { PropertyMap } from './map.js';
 import { parseString } from '../parse.js';

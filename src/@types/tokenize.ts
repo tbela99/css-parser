@@ -180,7 +180,7 @@ export interface CDOCommentToken {
 
 export interface BadCDOCommentToken {
 
-    typ: 'BADCDO';
+    typ: 'Bad-cdo';
     val: string;
 }
 
@@ -277,8 +277,9 @@ export interface TokenStream {
     col: number;
 }
 
+// export declare type BadTokenType = 'Bad-comment' | 'Bad-string' | 'Bad-url-token';
 export declare type TokenType = 'Dimension' | 'Number' | 'Perc' | 'Angle' | 'Length' | 'Time' | 'Frequency' |
-    'Resolution' | 'Attr';
+    'Resolution' | 'Attr' ;
 
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |
