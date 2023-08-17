@@ -6,8 +6,7 @@ import {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
-    AtRuleToken,
-    ErrorDescription,
+    AtRuleToken, ErrorDescription,
     LiteralToken,
     Location,
     ParseResult,
@@ -17,18 +16,17 @@ import {
     PseudoClassFunctionToken,
     PseudoClassToken,
     Token,
-    TokenizeResult,
-    UrlToken
+    TokenizeResult, UrlToken
 } from "../../@types";
 import {
-    isAtKeyword, isDimension,
+    isAtKeyword, isColor, isDimension,
     isFunction,
     isHash, isHexColor,
     isIdent, isIdentStart, isNumber,
     isPercentage,
     isPseudo, parseDimension
 } from "./utils";
-import {renderToken} from "../renderer";
+import {colorsFunc, renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/utils";
 import {combinators, minify} from "../ast";
 import {tokenize} from "./tokenize";
@@ -91,11 +89,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
         let i: number;
         let loc: Location;
-
-        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
-        //
-        //     tokens.pop();
-        // }
 
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
@@ -438,6 +431,14 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         if (item == null) {
 
             break;
+        }
+
+        // console.debug({item});
+
+        if (item.hint != null && item.hint.startsWith('Bad-')) {
+
+            // bad token
+            continue;
         }
 
         tokens.push(item);
@@ -828,17 +829,11 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                 // @ts-ignore
                 t.chi.pop();
             }
-            let isColor = true;
+
             // @ts-ignore
-            if (options.parseColor && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
-                // @ts-ignore
-                for (const v of t.chi) {
-                    if (v.typ == 'Func' && v.val == 'var') {
-                        isColor = false;
-                        break;
-                    }
-                }
-                if (isColor) {
+            if (options.parseColor && t.typ == 'Func' && isColor(t)) {
+
+                // if (isColor) {
                     // @ts-ignore
                     t.typ = 'Color';
                     // @ts-ignore
@@ -863,8 +858,9 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                             }
                         }
                     }
+
                     continue;
-                }
+                // }
             }
             if (t.typ == 'UrlFunc') {
                 // @ts-ignore
@@ -889,7 +885,7 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
             // @ts-ignore
             if (t.chi.length > 0) {
                 // @ts-ignore
-                parseTokens(t.chi, t.typ, options);
+                parseTokens(t.chi, options);
                 if (t.typ == 'Pseudo-class-func' && t.val == ':is' && options.minify) {
                     //
                     const count = t.chi.filter(t => t.typ != 'Comment').length;
@@ -910,7 +906,7 @@ function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
             if (t.typ == 'Iden') {
                 // named color
                 const value = t.val.toLowerCase();
-                if (COLORS_NAMES[value] != null) {
+                if (value in COLORS_NAMES) {
                     Object.assign(t, {
                         typ: 'Color',
                         val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,

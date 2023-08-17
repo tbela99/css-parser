@@ -11,6 +11,8 @@ import {
 } from "../../@types";
 import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
 
+export const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
+
 function reduceNumber(val: string | number) {
 
     val = (+val).toString();
@@ -408,18 +410,18 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
             if (val === '0') {
 
-                if (unit == 'Time') {
+                if (token.typ == 'Time') {
 
                     return '0s';
                 }
 
-                if (unit == 'Frequency') {
+                if (token.typ == 'Frequency') {
 
                     return '0Hz';
                 }
 
                 // @ts-ignore
-                if (unit == 'Resolution') {
+                if (token.typ == 'Resolution') {
 
                     return '0x';
                 }

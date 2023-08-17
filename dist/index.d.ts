@@ -119,7 +119,7 @@ interface CDOCommentToken {
     val: string;
 }
 interface BadCDOCommentToken {
-    typ: 'BADCDO';
+    typ: 'Bad-cdo';
     val: string;
 }
 interface IncludesToken {
@@ -642,6 +642,7 @@ declare function isResolution(dimension: DimensionToken): boolean;
 declare function isAngle(dimension: DimensionToken): boolean;
 declare function isTime(dimension: DimensionToken): boolean;
 declare function isFrequency(dimension: DimensionToken): boolean;
+declare function isColor(token: Token): boolean;
 declare function isIdentStart(codepoint: number): boolean;
 declare function isDigit(codepoint: number): boolean;
 declare function isIdentCodepoint(codepoint: number): boolean;
@@ -661,8 +662,10 @@ declare function isWhiteSpace(codepoint: number): boolean;
 
 declare const getConfig: () => PropertiesConfig;
 
+declare const funcList: string[];
 declare function matchType(val: Token, properties: PropertyMapType): boolean;
 
+declare const colorsFunc: string[];
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string): string;
 
@@ -695,4 +698,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { combinators, dirname, getConfig, hasDeclaration, isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };
+export { colorsFunc, combinators, dirname, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };

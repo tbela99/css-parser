@@ -1,7 +1,9 @@
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {AngleToken, DimensionToken, LengthToken} from '../../../@types';
+import {AngleToken, DimensionToken, LengthToken, Token} from '../../../@types';
+import {colorsFunc} from "../../renderer";
+import {COLORS_NAMES} from "../../renderer/utils";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
@@ -35,6 +37,34 @@ export function isTime(dimension: DimensionToken): boolean {
 export function isFrequency(dimension: DimensionToken): boolean {
 
     return 'unit' in dimension && ['hz', 'khz'].includes(dimension.unit.toLowerCase());
+}
+
+export function isColor(token: Token): boolean {
+
+    if (token.typ == 'Color') {
+
+        return true;
+    }
+    if (token.typ == 'Iden') {
+        // named color
+        return token.val.toLowerCase() in COLORS_NAMES;
+    }
+
+    if (token.typ == 'Func' && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+
+        // @ts-ignore
+        for (const v of token.chi) {
+
+            if (!['Number', 'Perc', 'Comma', 'Whitespace'].includes(v.typ)) {
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 function isLetter(codepoint: number): boolean {
@@ -119,27 +149,16 @@ export function isIdent(name: string): boolean {
 
 export function isPseudo(name: string): boolean {
 
-    if (name.charAt(0) != ':') {
-
-        return false;
-    }
-
-    if (name.endsWith('(')) {
-
-        return isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1))
-    }
-
-    return isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1))
+    return  name.charAt(0) == ':' &&
+        (
+            (name.endsWith('(') && isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1))) ||
+            isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1))
+        );
 }
 
 export function isHash(name: string): boolean {
 
-    if (name.charAt(0) != '#') {
-
-        return false;
-    }
-
-    return isIdent(name.charAt(1));
+    return name.charAt(0) == '#' && isIdent(name.charAt(1));
 }
 
 export function isNumber(name: string): boolean {

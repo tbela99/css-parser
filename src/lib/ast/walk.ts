@@ -1,4 +1,4 @@
-import {AstNode, AstRuleList} from "../../@types";
+import {AstNode, AstRuleList, WalkResult} from "../../@types";
 
 export function* walk(node: AstNode): Generator<{
     node: AstNode,
@@ -10,11 +10,7 @@ export function* walk(node: AstNode): Generator<{
     yield* doWalk(node, null, null);
 }
 
-function* doWalk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<{
-    node: AstNode,
-    parent?: AstRuleList,
-    root?: AstRuleList
-}> {
+function* doWalk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult> {
 
     yield {node, parent, root};
 

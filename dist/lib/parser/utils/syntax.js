@@ -1,3 +1,6 @@
+import { colorsFunc } from '../../renderer/render.js';
+import { COLORS_NAMES } from '../../renderer/utils/color.js';
+
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 // '\\'
@@ -22,6 +25,25 @@ function isTime(dimension) {
 }
 function isFrequency(dimension) {
     return 'unit' in dimension && ['hz', 'khz'].includes(dimension.unit.toLowerCase());
+}
+function isColor(token) {
+    if (token.typ == 'Color') {
+        return true;
+    }
+    if (token.typ == 'Iden') {
+        // named color
+        return token.val.toLowerCase() in COLORS_NAMES;
+    }
+    if (token.typ == 'Func' && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+        // @ts-ignore
+        for (const v of token.chi) {
+            if (!['Number', 'Perc', 'Comma', 'Whitespace'].includes(v.typ)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
 }
 function isLetter(codepoint) {
     // lowercase
@@ -75,19 +97,12 @@ function isIdent(name) {
     return true;
 }
 function isPseudo(name) {
-    if (name.charAt(0) != ':') {
-        return false;
-    }
-    if (name.endsWith('(')) {
-        return isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1));
-    }
-    return isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1));
+    return name.charAt(0) == ':' &&
+        ((name.endsWith('(') && isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1))) ||
+            isIdent(name.charAt(1) == ':' ? name.slice(2) : name.slice(1)));
 }
 function isHash(name) {
-    if (name.charAt(0) != '#') {
-        return false;
-    }
-    return isIdent(name.charAt(1));
+    return name.charAt(0) == '#' && isIdent(name.charAt(1));
 }
 function isNumber(name) {
     if (name.length == 0) {
@@ -256,4 +271,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };

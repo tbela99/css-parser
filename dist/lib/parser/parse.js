@@ -1,4 +1,4 @@
-import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHexColor, isHash, isIdentStart } from './utils/syntax.js';
+import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
 import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/utils/color.js';
 import { minify, combinators } from '../ast/minify.js';
@@ -52,10 +52,6 @@ async function parse(iterator, opt = {}) {
         let tokens = results.map(mapToken);
         let i;
         let loc;
-        // if ((<Token>tokens.at(-1))?.typ == 'EOF') {
-        //
-        //     tokens.pop();
-        // }
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == 'Comment') {
                 // @ts-ignore
@@ -331,6 +327,11 @@ async function parse(iterator, opt = {}) {
         item = iter.next().value;
         if (item == null) {
             break;
+        }
+        // console.debug({item});
+        if (item.hint != null && item.hint.startsWith('Bad-')) {
+            // bad token
+            continue;
         }
         tokens.push(item);
         bytesIn = item.bytesIn;
@@ -641,41 +642,33 @@ function parseTokens(tokens, options = {}) {
                 // @ts-ignore
                 t.chi.pop();
             }
-            let isColor = true;
             // @ts-ignore
-            if (options.parseColor && ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'].includes(t.val)) {
+            if (options.parseColor && t.typ == 'Func' && isColor(t)) {
+                // if (isColor) {
                 // @ts-ignore
-                for (const v of t.chi) {
-                    if (v.typ == 'Func' && v.val == 'var') {
-                        isColor = false;
-                        break;
-                    }
-                }
-                if (isColor) {
+                t.typ = 'Color';
+                // @ts-ignore
+                t.kin = t.val;
+                // @ts-ignore
+                let m = t.chi.length;
+                while (m-- > 0) {
                     // @ts-ignore
-                    t.typ = 'Color';
-                    // @ts-ignore
-                    t.kin = t.val;
-                    // @ts-ignore
-                    let m = t.chi.length;
-                    while (m-- > 0) {
+                    if (['Literal'].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
                         // @ts-ignore
-                        if (['Literal'].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
+                        if (t.chi[m + 1]?.typ == 'Whitespace') {
                             // @ts-ignore
-                            if (t.chi[m + 1]?.typ == 'Whitespace') {
-                                // @ts-ignore
-                                t.chi.splice(m + 1, 1);
-                            }
+                            t.chi.splice(m + 1, 1);
+                        }
+                        // @ts-ignore
+                        if (t.chi[m - 1]?.typ == 'Whitespace') {
                             // @ts-ignore
-                            if (t.chi[m - 1]?.typ == 'Whitespace') {
-                                // @ts-ignore
-                                t.chi.splice(m - 1, 1);
-                                m--;
-                            }
+                            t.chi.splice(m - 1, 1);
+                            m--;
                         }
                     }
-                    continue;
                 }
+                continue;
+                // }
             }
             if (t.typ == 'UrlFunc') {
                 // @ts-ignore
@@ -700,7 +693,7 @@ function parseTokens(tokens, options = {}) {
             // @ts-ignore
             if (t.chi.length > 0) {
                 // @ts-ignore
-                parseTokens(t.chi, t.typ);
+                parseTokens(t.chi, options);
                 if (t.typ == 'Pseudo-class-func' && t.val == ':is' && options.minify) {
                     //
                     const count = t.chi.filter(t => t.typ != 'Comment').length;
@@ -719,7 +712,7 @@ function parseTokens(tokens, options = {}) {
             if (t.typ == 'Iden') {
                 // named color
                 const value = t.val.toLowerCase();
-                if (COLORS_NAMES[value] != null) {
+                if (value in COLORS_NAMES) {
                     Object.assign(t, {
                         typ: 'Color',
                         val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,

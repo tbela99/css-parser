@@ -1,5 +1,6 @@
 import { parse } from './parser/parse.js';
 import { render } from './renderer/render.js';
+import './renderer/utils/color.js';
 
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, ...options };
