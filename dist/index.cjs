@@ -2712,7 +2712,7 @@ function minify(ast, options = {}, recursive = false, errors) {
         const result = (intersect.length == 0 ? null : {
             ...node1,
             // @ts-ignore
-            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) /*|| splitRule(n1.sel) */).concat(n2?.raw?.reduce(reducer, []) /* || splitRule(n2.sel) */)])].join(','),
+            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(','),
             chi: intersect.reverse()
         });
         if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0)) {
@@ -3294,60 +3294,42 @@ function minifyRule(ast) {
     ast.chi = [...properties].concat(ast.chi.slice(k));
     return ast;
 }
-/*
-function splitRule(buffer: string): string[][] {
-
-    const result: string[][] = [[]];
-    let str: string = '';
-
+function splitRule(buffer) {
+    const result = [[]];
+    let str = '';
     for (let i = 0; i < buffer.length; i++) {
-
-        let chr: string = buffer.charAt(i);
-
+        let chr = buffer.charAt(i);
         if (isWhiteSpace(chr.charCodeAt(0))) {
-
             let k = i;
-
             while (k + 1 < buffer.length) {
-
                 if (isWhiteSpace(buffer[k + 1].charCodeAt(0))) {
-
                     k++;
                     continue;
                 }
-
                 break;
             }
-
             if (str !== '') {
-
                 // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
-
             // @ts-ignore
             if (result.at(-1).length > 0) {
-
                 // @ts-ignore
                 result.at(-1).push(' ');
             }
-
             i = k;
             continue;
         }
-
         if (chr == ',') {
             if (str !== '') {
                 // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
-
             result.push([]);
             continue;
         }
-
         str += chr;
         if (chr == '\\') {
             str += buffer.charAt(++i);
@@ -3383,7 +3365,8 @@ function splitRule(buffer: string): string[][] {
                 str += chr;
                 if (chr == open) {
                     inParens++;
-                } else if (chr == close) {
+                }
+                else if (chr == close) {
                     inParens--;
                 }
                 if (inParens == 0) {
@@ -3393,20 +3376,16 @@ function splitRule(buffer: string): string[][] {
             i = k;
         }
     }
-
     if (str !== '') {
         // @ts-ignore
         result.at(-1).push(str);
     }
-
     return result;
 }
-*/
 function reduceRuleSelector(node) {
-    // if (node.raw == null) {
-    //
-    //     Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: splitRule(node.sel)})
-    // }
+    if (node.raw == null) {
+        Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: splitRule(node.sel) });
+    }
     // @ts-ignore
     // if (node.raw != null) {
     // @ts-ignore
