@@ -16,9 +16,9 @@ export interface NodeParseEventsMap {
 export interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
-    action: 'drop';
+    action: 'drop' | 'ignore';
     message: string;
-    location: {
+    location?: {
         src: string,
         lin: number,
         col: number;
@@ -68,6 +68,7 @@ export interface ParseResult {
 
 export interface RenderResult {
     code: string ;
+    errors: ErrorDescription[];
     stats: {
         total: string;
     }
@@ -127,7 +128,7 @@ interface Node {
 
 export interface AstComment extends Node {
 
-    typ: 'Comment',
+    typ: 'Comment' | 'CDOCOMM',
     val: string;
 }
 export interface AstDeclaration extends Node {

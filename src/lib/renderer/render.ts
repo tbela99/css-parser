@@ -5,7 +5,7 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleStyleSheet, AttrToken, ColorToken, DimensionToken,
+    AstRuleStyleSheet, AttrToken, ColorToken, DimensionToken, ErrorDescription,
     RenderOptions, RenderResult,
     Token
 } from "../../@types";
@@ -46,6 +46,7 @@ function reduceNumber(val: string | number) {
 export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
     const startTime: number = performance.now();
+    const errors: ErrorDescription[] = [];
 
     const options = Object.assign(opt.minify ?? true ? {
         indent: '',
@@ -61,7 +62,7 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 
 
     return {
-        code: doRender(data, options, function reducer(acc: string, curr: Token): string {
+        code: doRender(data, options, errors, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == 'Comment' && options.removeComments) {
 
@@ -73,8 +74,8 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
                 return acc + curr.val;
             }
 
-            return acc + renderToken(curr, options, reducer);
-        }, 0), stats: {
+            return acc + renderToken(curr, options, reducer, errors);
+        }, 0), errors, stats: {
 
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
@@ -82,7 +83,7 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
 }
 
 // @ts-ignore
-function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
+function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
 
     if (indents.length < level + 1) {
 
@@ -104,6 +105,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, 
             return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce(reducer, '')}`;
 
         case 'Comment':
+        case 'CDOCOMM':
 
             return !options.removeComments || (options.preserveLicense && (<AstComment>data).val.startsWith('/*!')) ? (<AstComment>data).val : '';
 
@@ -111,7 +113,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, 
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = doRender(node, options, reducer, level, indents);
+                const str: string = doRender(node, options, errors, reducer, level, indents);
 
                 if (str === '') {
 
@@ -147,7 +149,8 @@ function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, 
 
                     if ((<AstDeclaration>node).val.length == 0) {
 
-                        console.error(`invalid declaration`, node);
+                        // @ts-ignore
+                        errors.push({action: 'ignore', message: `render: invalid declaration ${JSON.stringify(node)}`, location: node.loc});
                         return '';
                     }
 
@@ -157,7 +160,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, 
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
 
-                    str = doRender(node, options, reducer, level + 1, indents);
+                    str = doRender(node, options, errors, reducer, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -189,7 +192,7 @@ function doRender(data: AstNode, options: RenderOptions, reducer: (acc: string, 
     return '';
 }
 
-export function renderToken(token: Token, options: RenderOptions = {}, reducer?: (acc: string, curr: Token) => string): string {
+export function renderToken(token: Token, options: RenderOptions = {}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string {
 
     if (reducer == null) {
         reducer = function (acc: string, curr: Token): string {
@@ -204,7 +207,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
                 return acc + curr.val;
             }
 
-            return acc + renderToken(curr, options, reducer);
+            return acc + renderToken(curr, options, reducer, errors);
         }
     }
 
@@ -437,26 +440,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
         case 'Number':
 
-            const num: string = (+token.val).toString();
-
-            if (token.val.length < num.length) {
-
-                return token.val;
-            }
-
-            if (num.charAt(0) === '0' && num.length > 1) {
-
-                return num.slice(1);
-            }
-
-            const slice: string = num.slice(0, 2);
-
-            if (slice == '-0') {
-
-                return '-' + num.slice(2);
-            }
-
-            return num;
+            return reduceNumber(token.val);
 
         case 'Comment':
 
@@ -477,8 +461,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 
-    console.error(`unexpected token ${JSON.stringify(token, null, 1)}`);
-    // throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
 
     return '';
 }

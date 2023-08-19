@@ -6,7 +6,7 @@ import '../renderer/utils/color.js';
 
 const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
-function minify(ast, options = {}, recursive = false) {
+function minify(ast, options = {}, recursive = false, errors) {
     function wrapNodes(previous, node, match, ast, i, nodeIndex) {
         // @ts-ignore
         let pSel = match.selector1.reduce(reducer, []).join(',');
@@ -199,8 +199,7 @@ function minify(ast, options = {}, recursive = false) {
             }
         }
         if (match.length > 1) {
-            console.error(`unsupported multilevel matching`);
-            console.error({ match, selector1, selector2 });
+            errors?.push({ action: 'ignore', message: `minify: unsupported multilevel matching\n${JSON.stringify({ match, selector1, selector2 }, null, 1)}` });
             return null;
         }
         for (const part of match) {
@@ -350,7 +349,7 @@ function minify(ast, options = {}, recursive = false) {
                     minifyRule(node);
                 }
                 else {
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
                 previous = node;
                 nodeIndex = i;
@@ -404,7 +403,7 @@ function minify(ast, options = {}, recursive = false) {
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(wrapper, options, recursive);
+                        minify(wrapper, options, recursive, errors);
                         continue;
                     }
                     // @ts-ignore
@@ -504,7 +503,7 @@ function minify(ast, options = {}, recursive = false) {
                                 minifyRule(node);
                             }
                             else {
-                                minify(node, options, recursive);
+                                minify(node, options, recursive, errors);
                             }
                             i--;
                             previous = node;
@@ -549,7 +548,7 @@ function minify(ast, options = {}, recursive = false) {
                         minifyRule(previous);
                     }
                     else {
-                        minify(previous, options, recursive);
+                        minify(previous, options, recursive, errors);
                     }
                 }
             }
@@ -565,7 +564,7 @@ function minify(ast, options = {}, recursive = false) {
             else {
                 // @ts-ignore
                 if (!(node.typ == 'AtRule' && node.nam != 'font-face')) {
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
             }
         }

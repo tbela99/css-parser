@@ -9,6 +9,7 @@
 /rollup.config.mjs export-ignore
 /tsconfig.json export-ignore
 # exclude all files in test/ from stats
+/rollup.config.mjs linguist-vendored
 /test/** linguist-vendored
 /docs/** linguist-vendored
 /tools/** linguist-vendored

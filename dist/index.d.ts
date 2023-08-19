@@ -477,9 +477,9 @@ interface BorderRadius {
 interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
-    action: 'drop';
+    action: 'drop' | 'ignore';
     message: string;
-    location: {
+    location?: {
         src: string,
         lin: number,
         col: number;
@@ -529,6 +529,7 @@ interface ParseResult {
 
 interface RenderResult {
     code: string ;
+    errors: ErrorDescription[];
     stats: {
         total: string;
     }
@@ -577,7 +578,7 @@ interface Node {
 
 interface AstComment extends Node {
 
-    typ: 'Comment',
+    typ: 'Comment' | 'CDOCOMM',
     val: string;
 }
 interface AstDeclaration extends Node {
@@ -647,6 +648,7 @@ declare function isIdentStart(codepoint: number): boolean;
 declare function isDigit(codepoint: number): boolean;
 declare function isIdentCodepoint(codepoint: number): boolean;
 declare function isIdent(name: string): boolean;
+declare function isNonPrintable(codepoint: number): boolean;
 declare function isPseudo(name: string): boolean;
 declare function isHash(name: string): boolean;
 declare function isNumber(name: string): boolean;
@@ -667,10 +669,10 @@ declare function matchType(val: Token, properties: PropertyMapType): boolean;
 
 declare const colorsFunc: string[];
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
-declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string): string;
+declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
 declare const combinators: string[];
-declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean): AstNode;
+declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[]): AstNode;
 declare function reduceSelector(selector: string[][]): {
     match: boolean;
     optimized: string[];
@@ -698,4 +700,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { colorsFunc, combinators, dirname, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };
+export { colorsFunc, combinators, dirname, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };

@@ -515,6 +515,7 @@ function reduceNumber(val) {
 }
 function render(data, opt = {}) {
     const startTime = performance.now();
+    const errors = [];
     const options = Object.assign(opt.minify ?? true ? {
         indent: '',
         newLine: '',
@@ -526,21 +527,21 @@ function render(data, opt = {}) {
         removeComments: false,
     }, { colorConvert: true, preserveLicense: false }, opt);
     return {
-        code: doRender(data, options, function reducer(acc, curr) {
+        code: doRender(data, options, errors, function reducer(acc, curr) {
             if (curr.typ == 'Comment' && options.removeComments) {
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                     return acc;
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, reducer);
-        }, 0), stats: {
+            return acc + renderToken(curr, options, reducer, errors);
+        }, 0), errors, stats: {
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
     };
 }
 // @ts-ignore
-function doRender(data, options, reducer, level = 0, indents = []) {
+function doRender(data, options, errors, reducer, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
@@ -553,10 +554,11 @@ function doRender(data, options, reducer, level = 0, indents = []) {
         case 'Declaration':
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
         case 'Comment':
+        case 'CDOCOMM':
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
         case 'StyleSheet':
             return data.chi.reduce((css, node) => {
-                const str = doRender(node, options, reducer, level, indents);
+                const str = doRender(node, options, errors, reducer, level, indents);
                 if (str === '') {
                     return css;
                 }
@@ -578,7 +580,8 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                 }
                 else if (node.typ == 'Declaration') {
                     if (node.val.length == 0) {
-                        console.error(`invalid declaration`, node);
+                        // @ts-ignore
+                        errors.push({ action: 'ignore', message: `render: invalid declaration ${JSON.stringify(node)}`, location: node.loc });
                         return '';
                     }
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
@@ -587,7 +590,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
-                    str = doRender(node, options, reducer, level + 1, indents);
+                    str = doRender(node, options, errors, reducer, level + 1, indents);
                 }
                 if (css === '') {
                     return str;
@@ -607,7 +610,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     }
     return '';
 }
-function renderToken(token, options = {}, reducer) {
+function renderToken(token, options = {}, reducer, errors) {
     if (reducer == null) {
         reducer = function (acc, curr) {
             if (curr.typ == 'Comment' && options.removeComments) {
@@ -616,7 +619,7 @@ function renderToken(token, options = {}, reducer) {
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, reducer);
+            return acc + renderToken(curr, options, reducer, errors);
         };
     }
     switch (token.typ) {
@@ -769,18 +772,7 @@ function renderToken(token, options = {}, reducer) {
         case 'Perc':
             return token.val + '%';
         case 'Number':
-            const num = (+token.val).toString();
-            if (token.val.length < num.length) {
-                return token.val;
-            }
-            if (num.charAt(0) === '0' && num.length > 1) {
-                return num.slice(1);
-            }
-            const slice = num.slice(0, 2);
-            if (slice == '-0') {
-                return '-' + num.slice(2);
-            }
-            return num;
+            return reduceNumber(token.val);
         case 'Comment':
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
@@ -795,8 +787,7 @@ function renderToken(token, options = {}, reducer) {
         case 'Delim':
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
-    console.error(`unexpected token ${JSON.stringify(token, null, 1)}`);
-    // throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
 }
 
@@ -894,6 +885,15 @@ function isIdent(name) {
         }
     }
     return true;
+}
+function isNonPrintable(codepoint) {
+    // null -> backspace
+    return (codepoint >= 0 && codepoint <= 0x8) ||
+        // tab
+        codepoint == 0xb ||
+        // delete
+        codepoint == 0x7f ||
+        (codepoint >= 0xe && codepoint <= 0x1f);
 }
 function isPseudo(name) {
     return name.charAt(0) == ':' &&
@@ -2549,7 +2549,7 @@ class PropertyList {
 
 const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
-function minify(ast, options = {}, recursive = false) {
+function minify(ast, options = {}, recursive = false, errors) {
     function wrapNodes(previous, node, match, ast, i, nodeIndex) {
         // @ts-ignore
         let pSel = match.selector1.reduce(reducer, []).join(',');
@@ -2742,8 +2742,7 @@ function minify(ast, options = {}, recursive = false) {
             }
         }
         if (match.length > 1) {
-            console.error(`unsupported multilevel matching`);
-            console.error({ match, selector1, selector2 });
+            errors?.push({ action: 'ignore', message: `minify: unsupported multilevel matching\n${JSON.stringify({ match, selector1, selector2 }, null, 1)}` });
             return null;
         }
         for (const part of match) {
@@ -2893,7 +2892,7 @@ function minify(ast, options = {}, recursive = false) {
                     minifyRule(node);
                 }
                 else {
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
                 previous = node;
                 nodeIndex = i;
@@ -2947,7 +2946,7 @@ function minify(ast, options = {}, recursive = false) {
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(wrapper, options, recursive);
+                        minify(wrapper, options, recursive, errors);
                         continue;
                     }
                     // @ts-ignore
@@ -3047,7 +3046,7 @@ function minify(ast, options = {}, recursive = false) {
                                 minifyRule(node);
                             }
                             else {
-                                minify(node, options, recursive);
+                                minify(node, options, recursive, errors);
                             }
                             i--;
                             previous = node;
@@ -3092,7 +3091,7 @@ function minify(ast, options = {}, recursive = false) {
                         minifyRule(previous);
                     }
                     else {
-                        minify(previous, options, recursive);
+                        minify(previous, options, recursive, errors);
                     }
                 }
             }
@@ -3108,7 +3107,7 @@ function minify(ast, options = {}, recursive = false) {
             else {
                 // @ts-ignore
                 if (!(node.typ == 'AtRule' && node.nam != 'font-face')) {
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
             }
         }
@@ -3431,23 +3430,7 @@ function* tokenize(iterator) {
                     }
                     break;
                 }
-                // @ts-ignore
-                if (isNewLine(codepoint)) {
-                    if (i == 1) {
-                        buffer += value + escapeSequence.slice(0, i);
-                        next(i + 1);
-                        continue;
-                    }
-                    // else {
-                    yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
-                    buffer = '';
-                    // }
-                    next(i + 1);
-                    break;
-                }
-                // not hex or new line
-                // @ts-ignore
-                else if (i == 1) {
+                if (i == 1) {
                     buffer += value + sequence[i];
                     next(2);
                     continue;
@@ -3464,7 +3447,7 @@ function* tokenize(iterator) {
                     else {
                         buffer += String.fromCodePoint(codepoint);
                     }
-                    next(escapeSequence.length + 1);
+                    next(escapeSequence.length + 1 + (isWhiteSpace(peek()?.charCodeAt(0)) ? 1 : 0));
                     continue;
                 }
                 buffer += next(2);
@@ -3588,17 +3571,18 @@ function* tokenize(iterator) {
                     buffer += next(3);
                     while (value = next()) {
                         buffer += value;
-                        if (value == '>' && prev(2) == '--') {
-                            yield pushToken(buffer, 'CDOCOMM');
-                            buffer = '';
+                        if (value == '-' && peek(2) == '->') {
                             break;
                         }
                     }
+                    if (value === '') {
+                        yield pushToken(buffer, 'Bad-cdo');
+                    }
+                    else {
+                        yield pushToken(buffer + next(2), 'CDOCOMM');
+                    }
+                    buffer = '';
                 }
-                // if (!peek()) {
-                yield pushToken(buffer, 'Bad-cdo');
-                buffer = '';
-                // }
                 break;
             case '\\':
                 // EOF
@@ -3699,73 +3683,150 @@ function* tokenize(iterator) {
                 if (buffer == 'url(') {
                     yield pushToken(buffer);
                     buffer = '';
-                    // consume either string or url token
+                    consumeWhiteSpace();
+                    value = peek();
+                    let cp;
                     let whitespace = '';
-                    value = peek();
-                    while (isWhiteSpace(value.charCodeAt(0))) {
-                        whitespace += value;
-                    }
-                    if (whitespace.length > 0) {
-                        next(whitespace.length);
-                    }
-                    value = peek();
+                    let hasWhiteSpace = false;
+                    let errorState = false;
                     if (value == '"' || value == "'") {
-                        yield* consumeString(next());
+                        const quote = value;
+                        let inquote = true;
+                        let hasNewLine = false;
+                        buffer = next();
+                        while (value = next()) {
+                            cp = value.charCodeAt(0);
+                            // consume an invalid string
+                            if (inquote) {
+                                buffer += value;
+                                if (isNewLine(cp)) {
+                                    hasNewLine = true;
+                                    while (value = next()) {
+                                        buffer += value;
+                                        if (value == ';') {
+                                            inquote = false;
+                                            break;
+                                        }
+                                    }
+                                    if (value === '') {
+                                        yield pushToken(buffer, 'Bad-string');
+                                        buffer = '';
+                                        break;
+                                    }
+                                    cp = value.charCodeAt(0);
+                                }
+                                // '\\'
+                                if (cp == 0x5c) {
+                                    buffer += next();
+                                }
+                                else if (value == quote) {
+                                    inquote = false;
+                                }
+                                continue;
+                            }
+                            if (!inquote) {
+                                if (isWhiteSpace(cp)) {
+                                    whitespace += value;
+                                    while (value = peek()) {
+                                        hasWhiteSpace = true;
+                                        if (isWhiteSpace(value?.charCodeAt(0))) {
+                                            whitespace += next();
+                                            continue;
+                                        }
+                                        break;
+                                    }
+                                    if (!(value = next())) {
+                                        yield pushToken(buffer, hasNewLine ? 'Bad-url-token' : 'Url-token');
+                                        buffer = '';
+                                        break;
+                                    }
+                                }
+                                cp = value.charCodeAt(0);
+                                // ')'
+                                if (cp == 0x29) {
+                                    yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'String');
+                                    yield pushToken('', 'End-parens');
+                                    buffer = '';
+                                    break;
+                                }
+                                while (value = next()) {
+                                    cp = value.charCodeAt(0);
+                                    if (cp == 0x5c) {
+                                        buffer += value + next();
+                                        continue;
+                                    }
+                                    if (cp == 0x29) {
+                                        yield pushToken(buffer, 'Bad-string');
+                                        yield pushToken('', 'End-parens');
+                                        buffer = '';
+                                        break;
+                                    }
+                                    buffer += value;
+                                }
+                                if (hasNewLine) {
+                                    yield pushToken(buffer, 'Bad-string');
+                                    buffer = '';
+                                }
+                                break;
+                            }
+                            buffer += value;
+                        }
                         break;
                     }
                     else {
                         buffer = '';
-                        do {
-                            let cp = value.charCodeAt(0);
-                            // EOF -
-                            if (cp == null) {
-                                yield pushToken('', 'Bad-url-token');
-                                break;
-                            }
+                        while (value = next()) {
+                            cp = value.charCodeAt(0);
                             // ')'
-                            if (cp == 0x29 || cp == null) {
-                                if (buffer.length == 0) {
-                                    yield pushToken(buffer, 'Bad-url-token');
-                                }
-                                else {
-                                    yield pushToken(buffer, 'Url-token');
-                                }
-                                if (cp != null) {
-                                    yield pushToken(next());
-                                }
+                            if (cp == 0x29) {
+                                yield pushToken(buffer, 'Url-token');
+                                yield pushToken('', 'End-parens');
+                                buffer = '';
                                 break;
                             }
                             if (isWhiteSpace(cp)) {
-                                whitespace = next();
-                                while (true) {
-                                    value = peek();
+                                hasWhiteSpace = true;
+                                whitespace = value;
+                                while (isWhiteSpace(peek()?.charCodeAt(0))) {
+                                    whitespace += next();
+                                }
+                                continue;
+                            }
+                            if (isNonPrintable(cp) ||
+                                // '"'
+                                cp == 0x22 ||
+                                // "'"
+                                cp == 0x27 ||
+                                // \('
+                                cp == 0x28 ||
+                                hasWhiteSpace) {
+                                errorState = true;
+                            }
+                            if (errorState) {
+                                buffer += whitespace + value;
+                                while (value = peek()) {
                                     cp = value.charCodeAt(0);
-                                    if (isWhiteSpace(cp)) {
-                                        whitespace += value;
+                                    if (cp == 0x5c) {
+                                        buffer += next(2);
                                         continue;
                                     }
-                                    break;
-                                }
-                                if (cp == null || cp == 0x29) {
-                                    continue;
-                                }
-                                // bad url token
-                                buffer += next(whitespace.length);
-                                do {
-                                    value = peek();
-                                    cp = value.charCodeAt(0);
-                                    if (cp == null || cp == 0x29) {
+                                    // ')'
+                                    if (cp == 0x29) {
                                         break;
                                     }
                                     buffer += next();
-                                } while (true);
+                                }
                                 yield pushToken(buffer, 'Bad-url-token');
-                                continue;
+                                buffer = '';
+                                break;
                             }
-                            buffer += next();
-                            value = peek();
-                        } while (true);
+                            buffer += value;
+                        }
+                    }
+                    if (buffer !== '') {
+                        yield pushToken(buffer, 'Url-token');
                         buffer = '';
+                        break;
                     }
                     break;
                 }
@@ -3856,14 +3917,18 @@ async function parse$1(iterator, opt = {}) {
         let i;
         let loc;
         for (i = 0; i < tokens.length; i++) {
-            if (tokens[i].typ == 'Comment') {
-                // @ts-ignore
-                context.chi.push(tokens[i]);
+            if (tokens[i].typ == 'Comment' || tokens[i].typ == 'CDOCOMM') {
                 const position = map.get(tokens[i]);
+                if (tokens[i].typ == 'CDOCOMM' && context.typ != 'StyleSheet') {
+                    errors.push({ action: 'drop', message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`, location: { src, ...position } });
+                    continue;
+                }
                 loc = {
                     sta: position,
                     src
                 };
+                // @ts-ignore
+                context.chi.push(tokens[i]);
                 if (options.sourcemap) {
                     tokens[i].loc = loc;
                 }
@@ -3894,7 +3959,7 @@ async function parse$1(iterator, opt = {}) {
             const atRule = tokens.shift();
             const position = map.get(atRule);
             if (atRule.val == 'charset' && position.ind > 0) {
-                errors.push({ action: 'drop', message: 'invalid @charset', location: { src, ...position } });
+                errors.push({ action: 'drop', message: 'parse: invalid @charset', location: { src, ...position } });
                 return null;
             }
             // @ts-ignore
@@ -3924,12 +3989,12 @@ async function parse$1(iterator, opt = {}) {
                 }
                 // @ts-ignore
                 if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'UrlFunc') {
-                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    errors.push({ action: 'drop', message: 'parse: invalid @import', location: { src, ...position } });
                     return null;
                 }
                 // @ts-ignore
                 if (tokens[0].typ == 'UrlFunc' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
-                    errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                    errors.push({ action: 'drop', message: 'parse: invalid @import', location: { src, ...position } });
                     return null;
                 }
             }
@@ -3965,7 +4030,8 @@ async function parse$1(iterator, opt = {}) {
                             return null;
                         }
                         catch (error) {
-                            console.error(error);
+                            // @ts-ignore
+                            errors.push({ action: 'ignore', message: 'parse: ' + error.message, error });
                         }
                     }
                 }
@@ -4072,7 +4138,7 @@ async function parse$1(iterator, opt = {}) {
                         if (name[i].typ != 'Whitespace' && name[i].typ != 'Comment') {
                             errors.push({
                                 action: 'drop',
-                                message: 'invalid declaration',
+                                message: 'parse: invalid declaration',
                                 location: { src, ...position }
                             });
                             return null;
@@ -4082,7 +4148,7 @@ async function parse$1(iterator, opt = {}) {
                 if (value == null) {
                     errors.push({
                         action: 'drop',
-                        message: 'invalid declaration',
+                        message: 'parse: invalid declaration',
                         location: { src, ...position }
                     });
                     return null;
@@ -4090,7 +4156,7 @@ async function parse$1(iterator, opt = {}) {
                 if (value.length == 0) {
                     errors.push({
                         action: 'drop',
-                        message: 'invalid declaration',
+                        message: 'parse: invalid declaration',
                         location: { src, ...position }
                     });
                     return null;
@@ -4108,7 +4174,7 @@ async function parse$1(iterator, opt = {}) {
                 if (node.val.length == 0) {
                     errors.push({
                         action: 'drop',
-                        message: 'invalid declaration',
+                        message: 'parse: invalid declaration',
                         location: { src, ...position }
                     });
                     return null;
@@ -4132,12 +4198,12 @@ async function parse$1(iterator, opt = {}) {
             break;
         }
         // console.debug({item});
+        bytesIn = item.bytesIn;
         if (item.hint != null && item.hint.startsWith('Bad-')) {
             // bad token
             continue;
         }
         tokens.push(item);
-        bytesIn = item.bytesIn;
         if (item.token == ';' || item.token == '{') {
             let node = await parseNode(tokens);
             if (node != null) {
@@ -4184,12 +4250,14 @@ async function parse$1(iterator, opt = {}) {
     const endParseTime = performance.now();
     if (options.minify) {
         if (ast.chi.length > 0) {
-            minify(ast, options, true);
+            minify(ast, options, true, errors);
         }
     }
     const endTime = performance.now();
     return {
-        ast, errors, stats: {
+        ast,
+        errors,
+        stats: {
             bytesIn,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
@@ -4542,7 +4610,10 @@ async function transform$1(css, options = {}) {
     return parse$1(css, options).then((parseResult) => {
         const rendered = render(parseResult.ast, options);
         return {
-            ...parseResult, ...rendered, stats: {
+            ...parseResult,
+            ...rendered,
+            errors: parseResult.errors.concat(rendered.errors),
+            stats: {
                 bytesOut: rendered.code.length,
                 ...parseResult.stats,
                 render: rendered.stats.total,
@@ -4690,6 +4761,7 @@ exports.isIdentCodepoint = isIdentCodepoint;
 exports.isIdentStart = isIdentStart;
 exports.isLength = isLength;
 exports.isNewLine = isNewLine;
+exports.isNonPrintable = isNonPrintable;
 exports.isNumber = isNumber;
 exports.isPercentage = isPercentage;
 exports.isPseudo = isPseudo;

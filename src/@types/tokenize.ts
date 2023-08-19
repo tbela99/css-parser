@@ -277,9 +277,11 @@ export interface TokenStream {
     col: number;
 }
 
-// export declare type BadTokenType = 'Bad-comment' | 'Bad-string' | 'Bad-url-token';
+// export declare type BadTokenType = ;
 export declare type TokenType = 'Dimension' | 'Number' | 'Perc' | 'Angle' | 'Length' | 'Time' | 'Frequency' |
-    'Resolution' | 'Attr' ;
+    'Resolution' | 'Attr' | 'Start-parens' | 'End-parens' | 'Bad-comment' | 'Bad-string' | 'Bad-url-token' |
+    'String' | 'Gt' | 'Gte' | 'Lt' | 'Lte' | 'Bad-cdo' | 'CDOCOMM' | 'Includes' | 'Dash-matches' | 'Important' |
+    'Url-token' | 'Comment' | 'Whitespace';
 
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |

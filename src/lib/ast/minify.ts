@@ -3,7 +3,7 @@ import {
     AstAtRule,
     AstDeclaration,
     AstNode,
-    AstRule, MatchedSelector,
+    AstRule, ErrorDescription, MatchedSelector,
     NodeType,
     OptimizedSelector,
     ParserOptions, ShorthandPropertyType
@@ -17,7 +17,7 @@ const configuration = getConfig();
 export const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
 
-export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false): AstNode {
+export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[]): AstNode {
 
     function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast: AstNode, i: number, nodeIndex: number): AstRule {
 
@@ -277,8 +277,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         }
         if (match.length > 1) {
 
-            console.error(`unsupported multilevel matching`);
-            console.error({match, selector1, selector2});
+            errors?.push({action: 'ignore', message: `minify: unsupported multilevel matching\n${JSON.stringify({match, selector1, selector2}, null, 1)}`});
             return null;
         }
 
@@ -490,7 +489,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
 
                 else {
 
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
 
                 previous = node;
@@ -563,7 +562,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(<AstRule>wrapper, options, recursive);
+                        minify(<AstRule>wrapper, options, recursive, errors);
                         continue;
                     }
                     // @ts-ignore
@@ -679,9 +678,11 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                             if (hasDeclaration(node)) {
                                 // @ts-ignore
                                 minifyRule(node);
-                            } else {
-                                minify(node, options, recursive);
                             }
+                            else {
+                                minify(node, options, recursive, errors);
+                            }
+
                             i--;
                             previous = node;
                             nodeIndex = i;
@@ -722,7 +723,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         // @ts-ignore
                         minifyRule(previous);
                     } else {
-                        minify(previous, options, recursive);
+                        minify(previous, options, recursive, errors);
                     }
                 }
             }
@@ -737,7 +738,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             } else {
                 // @ts-ignore
                 if (!(node.typ == 'AtRule' && (<AstAtRule>node).nam != 'font-face')) {
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
             }
         }

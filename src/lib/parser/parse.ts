@@ -26,15 +26,15 @@ import {
     isPercentage,
     isPseudo, parseDimension
 } from "./utils";
-import {colorsFunc, renderToken} from "../renderer";
+import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/utils";
 import {combinators, minify} from "../ast";
 import {tokenize} from "./tokenize";
 
-export const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
+export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 
-const trimWhiteSpace = ['Gt', 'Gte', 'Lt', 'Lte'];
-const funcLike = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
+const trimWhiteSpace: string[] = ['Gt', 'Gte', 'Lt', 'Lte'];
+const funcLike: string[] = ['Start-parens', 'Func', 'UrlFunc', 'Pseudo-class-func'];
 
 /**
  *
@@ -91,17 +91,24 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         let loc: Location;
 
         for (i = 0; i < tokens.length; i++) {
-            if (tokens[i].typ == 'Comment') {
 
-                // @ts-ignore
-                context.chi.push(tokens[i]);
+            if (tokens[i].typ == 'Comment' || tokens[i].typ == 'CDOCOMM') {
 
                 const position: Position = <Position>map.get(tokens[i]);
+
+                if (tokens[i].typ == 'CDOCOMM' && context.typ != 'StyleSheet') {
+
+                    errors.push({action: 'drop', message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`, location: {src, ...position}});
+                    continue;
+                }
 
                 loc = <Location>{
                     sta: position,
                     src
                 };
+
+                // @ts-ignore
+                context.chi.push(tokens[i]);
 
                 if (options.sourcemap) {
 
@@ -142,7 +149,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
             if (atRule.val == 'charset' && position.ind > 0) {
 
-                errors.push({action: 'drop', message: 'invalid @charset', location: {src, ...position}});
+                errors.push({action: 'drop', message: 'parse: invalid @charset', location: {src, ...position}});
                 return null;
             }
 
@@ -177,12 +184,12 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 }
                 // @ts-ignore
                 if (tokens[0]?.typ != 'String' && tokens[0]?.typ != 'UrlFunc') {
-                    errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                    errors.push({action: 'drop', message: 'parse: invalid @import', location: {src, ...position}});
                     return null;
                 }
                 // @ts-ignore
                 if (tokens[0].typ == 'UrlFunc' && tokens[1]?.typ != 'Url-token' && tokens[1]?.typ != 'String') {
-                    errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                    errors.push({action: 'drop', message: 'parse: invalid @import', location: {src, ...position}});
                     return null;
                 }
             }
@@ -227,7 +234,9 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                             return null;
                         } catch (error) {
-                            console.error(error);
+
+                            // @ts-ignore
+                            errors.push({action: 'ignore', message: 'parse: ' + error.message, error});
                         }
                     }
                 }
@@ -356,7 +365,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                             errors.push(<ErrorDescription>{
                                 action: 'drop',
-                                message: 'invalid declaration',
+                                message: 'parse: invalid declaration',
                                 location: {src, ...position}
                             });
 
@@ -369,7 +378,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                     errors.push(<ErrorDescription>{
                         action: 'drop',
-                        message: 'invalid declaration',
+                        message: 'parse: invalid declaration',
                         location: {src, ...position}
                     });
                     return null;
@@ -378,7 +387,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 if (value.length == 0) {
                     errors.push(<ErrorDescription>{
                         action: 'drop',
-                        message: 'invalid declaration',
+                        message: 'parse: invalid declaration',
                         location: {src, ...position}
                     });
                     return null;
@@ -400,7 +409,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
                     errors.push(<ErrorDescription>{
                         action: 'drop',
-                        message: 'invalid declaration',
+                        message: 'parse: invalid declaration',
                         location: {src, ...position}
                     });
                     return null;
@@ -435,6 +444,8 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
         // console.debug({item});
 
+        bytesIn = item.bytesIn;
+
         if (item.hint != null && item.hint.startsWith('Bad-')) {
 
             // bad token
@@ -442,7 +453,6 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
         }
 
         tokens.push(item);
-        bytesIn = item.bytesIn;
 
         if (item.token == ';' || item.token == '{') {
 
@@ -511,20 +521,22 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
         if (ast.chi.length > 0) {
 
-            minify(ast, options, true);
+            minify(ast, options, true, errors);
         }
     }
 
     const endTime: number = performance.now();
 
     return {
-        ast, errors, stats: {
+        ast,
+        errors,
+        stats: {
             bytesIn,
             parse: `${(endParseTime - startTime).toFixed(2)}ms`,
             minify: `${(endTime - endParseTime).toFixed(2)}ms`,
             total: `${(endTime - startTime).toFixed(2)}ms`
         }
-    };
+    }
 }
 
 export function parseString(src: string, options = {location: false}): Token[] {

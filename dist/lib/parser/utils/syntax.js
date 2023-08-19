@@ -96,6 +96,15 @@ function isIdent(name) {
     }
     return true;
 }
+function isNonPrintable(codepoint) {
+    // null -> backspace
+    return (codepoint >= 0 && codepoint <= 0x8) ||
+        // tab
+        codepoint == 0xb ||
+        // delete
+        codepoint == 0x7f ||
+        (codepoint >= 0xe && codepoint <= 0x1f);
+}
 function isPseudo(name) {
     return name.charAt(0) == ':' &&
         ((name.endsWith('(') && isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1))) ||
@@ -271,4 +280,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };

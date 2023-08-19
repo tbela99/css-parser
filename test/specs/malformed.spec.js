@@ -72,4 +72,76 @@ describe('malformed tokens', function () {
  filter: drop-shadow(#0000004d 0 2px 5px)
 }`));
     });
+
+    it('bad url() #7', async function () {
+        const css = `
+       
+.search-and-account a svg {
+ filter: url( 
+ "230,241,245 '
+ ;);
+ 
+ a {color: pink;}
+/* secret
+`;
+
+        return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`.search-and-account a svg {
+ filter: url();
+ a {
+  color: pink
+ }
+}`));
+    });
+
+    it('bad url() #8', async function () {
+        const css = `
+       
+.search-and-account a svg {
+ filter: url( 
+ "230,241,245 '
+ );
+ 
+ a {color: pink;}
+/* secret
+`;
+
+        return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`.search-and-account a svg {
+ filter: url()
+}`));
+    });
+
+    it('bad comment #9', async function () {
+        const css = `
+       
+<!-- secret -->
+.search-and-account a svg {
+<!-- secret -->
+ filter: url( 
+ "230,241,245 '
+ ;);
+ 
+ a {color: pink;}
+/* secret
+`;
+
+        return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            minify: false,
+            removeComments: false,
+            preserveLicense: true
+        }).code).equals(`<!-- secret -->
+.search-and-account a svg {
+ filter: url();
+ a {
+  color: pink
+ }
+}`));
+    });
 });
