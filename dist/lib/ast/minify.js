@@ -473,82 +473,97 @@ function minify(ast, options = {}, recursive = false, errors) {
                 }
             }
             // @ts-ignore
-            if (previous != null && 'chi' in previous && ('chi' in node)) {
+            if (previous != null) {
                 // @ts-ignore
-                if (previous.typ == node.typ) {
-                    let shouldMerge = true;
+                if ('chi' in previous && ('chi' in node)) {
                     // @ts-ignore
-                    let k = previous.chi.length;
-                    while (k-- > 0) {
+                    if (previous.typ == node.typ) {
+                        let shouldMerge = true;
                         // @ts-ignore
-                        if (previous.chi[k].typ == 'Comment') {
-                            continue;
+                        let k = previous.chi.length;
+                        while (k-- > 0) {
+                            // @ts-ignore
+                            if (previous.chi[k].typ == 'Comment') {
+                                continue;
+                            }
+                            // @ts-ignore
+                            shouldMerge = previous.chi[k].typ == 'Declaration';
+                            break;
                         }
-                        // @ts-ignore
-                        shouldMerge = previous.chi[k].typ == 'Declaration';
-                        break;
-                    }
-                    if (shouldMerge) {
-                        // @ts-ignore
-                        if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                        if (shouldMerge) {
                             // @ts-ignore
-                            (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
-                            // @ts-ignore
-                            node.chi.unshift(...previous.chi);
-                            // @ts-ignore
-                            ast.chi.splice(nodeIndex, 1);
-                            // @ts-ignore
-                            if (hasDeclaration(node)) {
+                            if ((node.typ == 'Rule' && node.sel == previous.sel) ||
                                 // @ts-ignore
-                                minifyRule(node);
+                                (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
+                                // @ts-ignore
+                                node.chi.unshift(...previous.chi);
+                                // @ts-ignore
+                                ast.chi.splice(nodeIndex, 1);
+                                // @ts-ignore
+                                if (hasDeclaration(node)) {
+                                    // @ts-ignore
+                                    minifyRule(node);
+                                }
+                                else {
+                                    minify(node, options, recursive, errors);
+                                }
+                                i--;
+                                previous = node;
+                                nodeIndex = i;
+                                continue;
                             }
-                            else {
-                                minify(node, options, recursive, errors);
+                            else if (node.typ == 'Rule' && previous?.typ == 'Rule') {
+                                const intersect = diff(previous, node, options);
+                                if (intersect != null) {
+                                    if (intersect.node1.chi.length == 0) {
+                                        // @ts-ignore
+                                        ast.chi.splice(i--, 1);
+                                        // @ts-ignore
+                                        node = ast.chi[i];
+                                    }
+                                    else {
+                                        // @ts-ignore
+                                        ast.chi.splice(i, 1, intersect.node1);
+                                        node = intersect.node1;
+                                    }
+                                    if (intersect.node2.chi.length == 0) {
+                                        // @ts-ignore
+                                        ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        previous = intersect.result;
+                                    }
+                                    else {
+                                        // @ts-ignore
+                                        ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        previous = intersect.result;
+                                        // @ts-ignore
+                                        i = nodeIndex;
+                                    }
+                                }
                             }
-                            i--;
-                            previous = node;
-                            nodeIndex = i;
-                            continue;
                         }
-                        else if (node.typ == 'Rule' && previous?.typ == 'Rule') {
-                            const intersect = diff(previous, node, options);
-                            if (intersect != null) {
-                                if (intersect.node1.chi.length == 0) {
-                                    // @ts-ignore
-                                    ast.chi.splice(i--, 1);
-                                    // @ts-ignore
-                                    node = ast.chi[i];
-                                }
-                                else {
-                                    // @ts-ignore
-                                    ast.chi.splice(i, 1, intersect.node1);
-                                    node = intersect.node1;
-                                }
-                                if (intersect.node2.chi.length == 0) {
-                                    // @ts-ignore
-                                    ast.chi.splice(nodeIndex, 1, intersect.result);
-                                    previous = intersect.result;
-                                }
-                                else {
-                                    // @ts-ignore
-                                    ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
-                                    previous = intersect.result;
-                                    // @ts-ignore
-                                    i = nodeIndex;
-                                }
-                            }
+                    }
+                    // @ts-ignore
+                    if (recursive && previous != node) {
+                        // @ts-ignore
+                        if (hasDeclaration(previous)) {
+                            // @ts-ignore
+                            minifyRule(previous);
+                        }
+                        else {
+                            minify(previous, options, recursive, errors);
                         }
                     }
                 }
-                // @ts-ignore
-                if (recursive && previous != node) {
-                    // @ts-ignore
-                    if (hasDeclaration(previous)) {
+                else {
+                    if ('chi' in previous) {
                         // @ts-ignore
-                        minifyRule(previous);
-                    }
-                    else {
-                        minify(previous, options, recursive, errors);
+                        if (hasDeclaration(previous)) {
+                            // @ts-ignore
+                            minifyRule(previous);
+                        }
+                        else {
+                            minify(previous, options, recursive, errors);
+                        }
                     }
                 }
             }

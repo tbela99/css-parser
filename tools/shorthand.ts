@@ -13,7 +13,7 @@ function createProperties(data: ShorthandPropertyType) {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
 
-            return Object.assign(acc,{
+            return Object.assign(acc, {
                 [property]: {
                     map,
                     shorthand: data.shorthand
@@ -41,7 +41,8 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
             }
         });
     }, {
-        [data.shorthand]: {...data,
+        [data.shorthand]: {
+            ...data,
             properties: {}
         }
     })
@@ -60,17 +61,46 @@ export const map: ShorthandMapType = [
         [
             {
                 shorthand: 'border-color',
-                properties: {
-                }
+                properties: {}
             },
             {
                 shorthand: 'border-style',
-                properties: {
-                }
+                properties: {}
             },
             {
                 shorthand: 'border-width',
+                properties: {}
+            }
+        ]
+    ],
+
+    [
+        {
+            shorthand: 'overflow',
+            pattern: 'overflow-x overflow-y',
+            keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll'],
+            default: [],
+            mapping: {
+                'visible visible': 'visible',
+                'auto auto': 'auto',
+                'hidden hidden': 'hidden',
+                'scroll scroll': 'scroll'
+            }
+        },
+        [
+            {
+                shorthand: 'overflow-x',
                 properties: {
+
+                    default: [],
+                    keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
+                }
+            },
+            {
+                shorthand: 'overflow-y',
+                properties: {
+                    default: [],
+                    keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
                 }
             }
         ]
@@ -223,13 +253,13 @@ export const map: ShorthandMapType = [
     ],
     [
         {
-        shorthand: 'background',
-        pattern: 'background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size',
-        keywords: ['none'],
-        default: [],
-        multiple: true,
-        separator: {typ: 'Comma'}
-    },
+            shorthand: 'background',
+            pattern: 'background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size',
+            keywords: ['none'],
+            default: [],
+            multiple: true,
+            separator: {typ: 'Comma'}
+        },
         [
             {
                 shorthand: 'background-repeat',

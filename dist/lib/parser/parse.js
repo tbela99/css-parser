@@ -328,13 +328,9 @@ async function parse(iterator, opt = {}) {
     }
     const iter = tokenize(iterator);
     let item;
-    while (true) {
-        item = iter.next().value;
-        if (item == null) {
-            break;
-        }
-        // console.debug({item});
+    while (item = iter.next().value) {
         bytesIn = item.bytesIn;
+        // parse error
         if (item.hint != null && item.hint.startsWith('Bad-')) {
             // bad token
             continue;
@@ -382,6 +378,17 @@ async function parse(iterator, opt = {}) {
     }
     if (tokens.length > 0) {
         await parseNode(tokens);
+    }
+    while (stack.length > 0 && context != ast) {
+        const previousNode = stack.pop();
+        // @ts-ignore
+        context = stack[stack.length - 1] || ast;
+        // @ts-ignore
+        if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+            context.chi.pop();
+            continue;
+        }
+        break;
     }
     const endParseTime = performance.now();
     if (options.minify) {

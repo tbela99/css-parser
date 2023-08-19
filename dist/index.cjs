@@ -1369,6 +1369,55 @@ var map = {
 	"border-width": {
 		shorthand: "border"
 	},
+	overflow: {
+		shorthand: "overflow",
+		pattern: "overflow-x overflow-y",
+		keywords: [
+			"auto",
+			"visible",
+			"hidden",
+			"clip",
+			"scroll"
+		],
+		"default": [
+		],
+		mapping: {
+			"visible visible": "visible",
+			"auto auto": "auto",
+			"hidden hidden": "hidden",
+			"scroll scroll": "scroll"
+		},
+		properties: {
+			"overflow-x": {
+				"default": [
+				],
+				keywords: [
+					"auto",
+					"visible",
+					"hidden",
+					"clip",
+					"scroll"
+				]
+			},
+			"overflow-y": {
+				"default": [
+				],
+				keywords: [
+					"auto",
+					"visible",
+					"hidden",
+					"clip",
+					"scroll"
+				]
+			}
+		}
+	},
+	"overflow-x": {
+		shorthand: "overflow"
+	},
+	"overflow-y": {
+		shorthand: "overflow"
+	},
 	outline: {
 		shorthand: "outline",
 		pattern: "outline-color outline-style outline-width",
@@ -2422,6 +2471,14 @@ class PropertyMap {
                     acc.push(...curr);
                     return acc;
                 }, []);
+                if (this.config.mapping != null) {
+                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '');
+                    if (val in this.config.mapping) {
+                        values.length = 0;
+                        // @ts-ignore
+                        values.push({ typ: ['"', "'"].includes(val.charAt(0)) ? 'String' : 'Iden', val: this.config.mapping[val] });
+                    }
+                }
                 iterable = [{
                         typ: 'Declaration',
                         nam: this.config.shorthand,
@@ -3016,82 +3073,97 @@ function minify(ast, options = {}, recursive = false, errors) {
                 }
             }
             // @ts-ignore
-            if (previous != null && 'chi' in previous && ('chi' in node)) {
+            if (previous != null) {
                 // @ts-ignore
-                if (previous.typ == node.typ) {
-                    let shouldMerge = true;
+                if ('chi' in previous && ('chi' in node)) {
                     // @ts-ignore
-                    let k = previous.chi.length;
-                    while (k-- > 0) {
+                    if (previous.typ == node.typ) {
+                        let shouldMerge = true;
                         // @ts-ignore
-                        if (previous.chi[k].typ == 'Comment') {
-                            continue;
+                        let k = previous.chi.length;
+                        while (k-- > 0) {
+                            // @ts-ignore
+                            if (previous.chi[k].typ == 'Comment') {
+                                continue;
+                            }
+                            // @ts-ignore
+                            shouldMerge = previous.chi[k].typ == 'Declaration';
+                            break;
                         }
-                        // @ts-ignore
-                        shouldMerge = previous.chi[k].typ == 'Declaration';
-                        break;
-                    }
-                    if (shouldMerge) {
-                        // @ts-ignore
-                        if ((node.typ == 'Rule' && node.sel == previous.sel) ||
+                        if (shouldMerge) {
                             // @ts-ignore
-                            (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
-                            // @ts-ignore
-                            node.chi.unshift(...previous.chi);
-                            // @ts-ignore
-                            ast.chi.splice(nodeIndex, 1);
-                            // @ts-ignore
-                            if (hasDeclaration(node)) {
+                            if ((node.typ == 'Rule' && node.sel == previous.sel) ||
                                 // @ts-ignore
-                                minifyRule(node);
+                                (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
+                                // @ts-ignore
+                                node.chi.unshift(...previous.chi);
+                                // @ts-ignore
+                                ast.chi.splice(nodeIndex, 1);
+                                // @ts-ignore
+                                if (hasDeclaration(node)) {
+                                    // @ts-ignore
+                                    minifyRule(node);
+                                }
+                                else {
+                                    minify(node, options, recursive, errors);
+                                }
+                                i--;
+                                previous = node;
+                                nodeIndex = i;
+                                continue;
                             }
-                            else {
-                                minify(node, options, recursive, errors);
+                            else if (node.typ == 'Rule' && previous?.typ == 'Rule') {
+                                const intersect = diff(previous, node, options);
+                                if (intersect != null) {
+                                    if (intersect.node1.chi.length == 0) {
+                                        // @ts-ignore
+                                        ast.chi.splice(i--, 1);
+                                        // @ts-ignore
+                                        node = ast.chi[i];
+                                    }
+                                    else {
+                                        // @ts-ignore
+                                        ast.chi.splice(i, 1, intersect.node1);
+                                        node = intersect.node1;
+                                    }
+                                    if (intersect.node2.chi.length == 0) {
+                                        // @ts-ignore
+                                        ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        previous = intersect.result;
+                                    }
+                                    else {
+                                        // @ts-ignore
+                                        ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        previous = intersect.result;
+                                        // @ts-ignore
+                                        i = nodeIndex;
+                                    }
+                                }
                             }
-                            i--;
-                            previous = node;
-                            nodeIndex = i;
-                            continue;
                         }
-                        else if (node.typ == 'Rule' && previous?.typ == 'Rule') {
-                            const intersect = diff(previous, node, options);
-                            if (intersect != null) {
-                                if (intersect.node1.chi.length == 0) {
-                                    // @ts-ignore
-                                    ast.chi.splice(i--, 1);
-                                    // @ts-ignore
-                                    node = ast.chi[i];
-                                }
-                                else {
-                                    // @ts-ignore
-                                    ast.chi.splice(i, 1, intersect.node1);
-                                    node = intersect.node1;
-                                }
-                                if (intersect.node2.chi.length == 0) {
-                                    // @ts-ignore
-                                    ast.chi.splice(nodeIndex, 1, intersect.result);
-                                    previous = intersect.result;
-                                }
-                                else {
-                                    // @ts-ignore
-                                    ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
-                                    previous = intersect.result;
-                                    // @ts-ignore
-                                    i = nodeIndex;
-                                }
-                            }
+                    }
+                    // @ts-ignore
+                    if (recursive && previous != node) {
+                        // @ts-ignore
+                        if (hasDeclaration(previous)) {
+                            // @ts-ignore
+                            minifyRule(previous);
+                        }
+                        else {
+                            minify(previous, options, recursive, errors);
                         }
                     }
                 }
-                // @ts-ignore
-                if (recursive && previous != node) {
-                    // @ts-ignore
-                    if (hasDeclaration(previous)) {
+                else {
+                    if ('chi' in previous) {
                         // @ts-ignore
-                        minifyRule(previous);
-                    }
-                    else {
-                        minify(previous, options, recursive, errors);
+                        if (hasDeclaration(previous)) {
+                            // @ts-ignore
+                            minifyRule(previous);
+                        }
+                        else {
+                            minify(previous, options, recursive, errors);
+                        }
                     }
                 }
             }
@@ -4192,13 +4264,9 @@ async function parse$1(iterator, opt = {}) {
     }
     const iter = tokenize(iterator);
     let item;
-    while (true) {
-        item = iter.next().value;
-        if (item == null) {
-            break;
-        }
-        // console.debug({item});
+    while (item = iter.next().value) {
         bytesIn = item.bytesIn;
+        // parse error
         if (item.hint != null && item.hint.startsWith('Bad-')) {
             // bad token
             continue;
@@ -4246,6 +4314,17 @@ async function parse$1(iterator, opt = {}) {
     }
     if (tokens.length > 0) {
         await parseNode(tokens);
+    }
+    while (stack.length > 0 && context != ast) {
+        const previousNode = stack.pop();
+        // @ts-ignore
+        context = stack[stack.length - 1] || ast;
+        // @ts-ignore
+        if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+            context.chi.pop();
+            continue;
+        }
+        break;
     }
     const endParseTime = performance.now();
     if (options.minify) {
