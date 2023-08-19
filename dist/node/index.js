@@ -1,7 +1,7 @@
 import { parse as parse$1 } from '../lib/parser/parse.js';
 export { parseString, urlTokenMatcher } from '../lib/parser/parse.js';
 export { tokenize } from '../lib/parser/tokenize.js';
-export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isHexDigit, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension } from '../lib/parser/utils/syntax.js';
+export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension } from '../lib/parser/utils/syntax.js';
 export { getConfig } from '../lib/parser/utils/config.js';
 export { funcList, matchType } from '../lib/parser/utils/type.js';
 export { colorsFunc, render, renderToken } from '../lib/renderer/render.js';

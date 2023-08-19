@@ -175,7 +175,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         const result = (intersect.length == 0 ? null : {
             ...node1,
             // @ts-ignore
-            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(','),
+            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) /*|| splitRule(n1.sel) */).concat(n2?.raw?.reduce(reducer, []) /* || splitRule(n2.sel) */)])].join(','),
             chi: intersect.reverse()
         });
         if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0)) {
@@ -940,6 +940,7 @@ export function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule {
     return ast;
 }
 
+/*
 function splitRule(buffer: string): string[][] {
 
     const result: string[][] = [[]];
@@ -1046,13 +1047,14 @@ function splitRule(buffer: string): string[][] {
 
     return result;
 }
+*/
 
 function reduceRuleSelector(node: AstRule) {
 
-    if (node.raw == null) {
-
-        Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: splitRule(node.sel)})
-    }
+    // if (node.raw == null) {
+    //
+    //     Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: splitRule(node.sel)})
+    // }
 
     // @ts-ignore
     // if (node.raw != null) {

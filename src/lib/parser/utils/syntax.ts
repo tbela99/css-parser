@@ -374,6 +374,7 @@ export function isHexColor(name: string): boolean {
     return true;
 }
 
+/*
 export function isHexDigit(name: string): boolean {
 
     if (name.length || name.length > 6) {
@@ -397,6 +398,7 @@ export function isHexDigit(name: string): boolean {
 
     return true;
 }
+*/
 
 function isEscape(name: string): boolean {
 

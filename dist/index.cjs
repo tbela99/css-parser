@@ -1038,22 +1038,6 @@ function isHexColor(name) {
     }
     return true;
 }
-function isHexDigit(name) {
-    if (name.length || name.length > 6) {
-        return false;
-    }
-    for (let chr of name) {
-        let codepoint = chr.charCodeAt(0);
-        if (!isDigit(codepoint) &&
-            // A F
-            !(codepoint >= 0x41 && codepoint <= 0x46) &&
-            // a f
-            !(codepoint >= 0x61 && codepoint <= 0x66)) {
-            return false;
-        }
-    }
-    return true;
-}
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }
@@ -2728,7 +2712,7 @@ function minify(ast, options = {}, recursive = false, errors) {
         const result = (intersect.length == 0 ? null : {
             ...node1,
             // @ts-ignore
-            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(','),
+            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) /*|| splitRule(n1.sel) */).concat(n2?.raw?.reduce(reducer, []) /* || splitRule(n2.sel) */)])].join(','),
             chi: intersect.reverse()
         });
         if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0)) {
@@ -3310,42 +3294,60 @@ function minifyRule(ast) {
     ast.chi = [...properties].concat(ast.chi.slice(k));
     return ast;
 }
-function splitRule(buffer) {
-    const result = [[]];
-    let str = '';
+/*
+function splitRule(buffer: string): string[][] {
+
+    const result: string[][] = [[]];
+    let str: string = '';
+
     for (let i = 0; i < buffer.length; i++) {
-        let chr = buffer.charAt(i);
+
+        let chr: string = buffer.charAt(i);
+
         if (isWhiteSpace(chr.charCodeAt(0))) {
+
             let k = i;
+
             while (k + 1 < buffer.length) {
+
                 if (isWhiteSpace(buffer[k + 1].charCodeAt(0))) {
+
                     k++;
                     continue;
                 }
+
                 break;
             }
+
             if (str !== '') {
+
                 // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
+
             // @ts-ignore
             if (result.at(-1).length > 0) {
+
                 // @ts-ignore
                 result.at(-1).push(' ');
             }
+
             i = k;
             continue;
         }
+
         if (chr == ',') {
             if (str !== '') {
                 // @ts-ignore
                 result.at(-1).push(str);
                 str = '';
             }
+
             result.push([]);
             continue;
         }
+
         str += chr;
         if (chr == '\\') {
             str += buffer.charAt(++i);
@@ -3381,8 +3383,7 @@ function splitRule(buffer) {
                 str += chr;
                 if (chr == open) {
                     inParens++;
-                }
-                else if (chr == close) {
+                } else if (chr == close) {
                     inParens--;
                 }
                 if (inParens == 0) {
@@ -3392,16 +3393,20 @@ function splitRule(buffer) {
             i = k;
         }
     }
+
     if (str !== '') {
         // @ts-ignore
         result.at(-1).push(str);
     }
+
     return result;
 }
+*/
 function reduceRuleSelector(node) {
-    if (node.raw == null) {
-        Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: splitRule(node.sel) });
-    }
+    // if (node.raw == null) {
+    //
+    //     Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: splitRule(node.sel)})
+    // }
     // @ts-ignore
     // if (node.raw != null) {
     // @ts-ignore
@@ -4834,7 +4839,6 @@ exports.isFrequency = isFrequency;
 exports.isFunction = isFunction;
 exports.isHash = isHash;
 exports.isHexColor = isHexColor;
-exports.isHexDigit = isHexDigit;
 exports.isIdent = isIdent;
 exports.isIdentCodepoint = isIdentCodepoint;
 exports.isIdentStart = isIdentStart;
