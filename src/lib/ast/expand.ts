@@ -5,8 +5,8 @@ import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
 
 export function expand(ast: AstNode): AstNode {
-
-    if (!['AstRule', 'AstRuleStyleSheet', 'AstAtRule'].includes(ast.typ)) {
+    //
+    if (!['Rule', 'StyleSheet', 'AtRule'].includes(ast.typ)) {
 
         return ast;
     }

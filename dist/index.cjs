@@ -4665,7 +4665,8 @@ function* walkValues(values, parent) {
 }
 
 function expand(ast) {
-    if (!['AstRule', 'AstRuleStyleSheet', 'AstAtRule'].includes(ast.typ)) {
+    //
+    if (!['Rule', 'StyleSheet', 'AtRule'].includes(ast.typ)) {
         return ast;
     }
     if ('Rule' == ast.typ) {

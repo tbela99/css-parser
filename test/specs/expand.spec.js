@@ -1,6 +1,6 @@
 /* generate from test/specs/nesting.spec.ts */
 import {expect as f} from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import {transform, render, expand} from '../../dist/node/index.js';
+import {parse, render} from '../../dist/node/index.js';
 
 describe('flatten nested css rules', function () {
     it('flatten #1', function () {
@@ -11,9 +11,9 @@ describe('flatten nested css rules', function () {
         &Bar { color: red; }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.foo {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  color: blue
 }
 Bar.foo {
@@ -35,9 +35,9 @@ Bar.foo {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.header {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.header {
  background-color: blue
 }
 .header p {
@@ -60,9 +60,9 @@ Bar.foo {
     }
   }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.foo {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {
@@ -82,9 +82,9 @@ Bar.foo {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.foo {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {
@@ -108,9 +108,9 @@ Bar.foo {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.foo {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {
@@ -139,9 +139,9 @@ html {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`@layer base {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`@layer base {
  html {
   block-size: 100%
  }
@@ -167,9 +167,9 @@ html {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`@layer base {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`@layer base {
  html {
   block-size: 100%
  }
@@ -194,9 +194,9 @@ html {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.card {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.card {
  inline-size: 40ch;
  aspect-ratio: 3/4
 }
@@ -214,9 +214,9 @@ html {
   && { padding: 2ch; }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`.foo {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  color: blue
 }
 .foo.foo {
@@ -238,9 +238,9 @@ html {
   }
 }
 `;
-        return transform(nesting1, {
+        return parse(nesting1, {
             minify: true, nestingRules: true
-        }).then((result) => f(render(expand(result.ast), {minify: false}).code).equals(`@scope (.card) to (>header) {
+        }).then((result) => f(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`@scope (.card) to (>header) {
  :scope {
   inline-size: 40ch;
   aspect-ratio: 3/4
