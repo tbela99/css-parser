@@ -292,6 +292,52 @@
   "border-width": {
    "shorthand": "border"
   },
+  "overflow": {
+   "shorthand": "overflow",
+   "pattern": "overflow-x overflow-y",
+   "keywords": [
+    "auto",
+    "visible",
+    "hidden",
+    "clip",
+    "scroll"
+   ],
+   "default": [],
+   "mapping": {
+    "visible visible": "visible",
+    "auto auto": "auto",
+    "hidden hidden": "hidden",
+    "scroll scroll": "scroll"
+   },
+   "properties": {
+    "overflow-x": {
+     "default": [],
+     "keywords": [
+      "auto",
+      "visible",
+      "hidden",
+      "clip",
+      "scroll"
+     ]
+    },
+    "overflow-y": {
+     "default": [],
+     "keywords": [
+      "auto",
+      "visible",
+      "hidden",
+      "clip",
+      "scroll"
+     ]
+    }
+   }
+  },
+  "overflow-x": {
+   "shorthand": "overflow"
+  },
+  "overflow-y": {
+   "shorthand": "overflow"
+  },
   "outline": {
    "shorthand": "outline",
    "pattern": "outline-color outline-style outline-width",

@@ -313,4 +313,17 @@ button.jetpack-instant-search__overlay-close {
  width: 60px
 }`));
     });
+
+    it('shorthand parsing #17', function () {
+        return transform(`
+
+a {
+overflow-x: hidden;
+overflow-y: hidden;
+
+}
+`, options).then(result => f(render(result.ast, {minify: false}).code).equals(`a {
+ overflow: hidden
+}`));
+    });
 });

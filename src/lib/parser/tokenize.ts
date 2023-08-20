@@ -1,7 +1,7 @@
-import {Token, TokenizeResult} from "../../@types";
+import {Token, TokenizeResult, TokenType} from "../../@types";
 import {
     isDigit,
-    isNewLine,
+    isNewLine, isNonPrintable,
     isWhiteSpace
 } from "./utils";
 
@@ -34,7 +34,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
         return count;
     }
 
-    function pushToken(token: string, hint?: string): TokenizeResult {
+    function pushToken(token: string, hint?: TokenType): TokenizeResult {
 
         const result = {token, hint, position: {...position}, bytesIn: ind};
 
@@ -89,29 +89,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     break;
                 }
 
-                // @ts-ignore
-                if (isNewLine(codepoint)) {
-
-                    if (i == 1) {
-
-                        buffer += value + escapeSequence.slice(0, i);
-                        next(i + 1);
-                        continue;
-                    }
-
-                    // else {
-
-                    yield pushToken(buffer + value + escapeSequence.slice(0, i), 'Bad-string');
-                    buffer = '';
-                    // }
-
-                    next(i + 1);
-                    break;
-                }
-
-                    // not hex or new line
-                // @ts-ignore
-                else if (i == 1) {
+                if (i == 1) {
 
                     buffer += value + sequence[i];
                     next(2);
@@ -133,8 +111,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                         buffer += String.fromCodePoint(codepoint);
                     }
 
-                    next(escapeSequence.length + 1);
-                    continue;
+                    next(escapeSequence.length + 1 + (isWhiteSpace(peek()?.charCodeAt(0)) ? 1 : 0));
+
+                        continue;
                 }
 
                 buffer += next(2);
@@ -310,20 +289,24 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     while (value = next()) {
 
                         buffer += value;
-                        if (value == '>' && prev(2) == '--') {
+                        if (value == '-' && peek(2) == '->') {
 
-                            yield pushToken(buffer, 'CDOCOMM');
-                            buffer = '';
                             break;
                         }
                     }
-                }
 
-                // if (!peek()) {
+                    if (value === '') {
 
-                    yield pushToken(buffer, 'Bad-cdo');
+                        yield pushToken(buffer, 'Bad-cdo');
+                    }
+
+                    else {
+
+                        yield pushToken(buffer + next(2), 'CDOCOMM');
+                    }
+
                     buffer = '';
-                // }
+                }
 
                 break;
             case '\\':
@@ -460,109 +443,220 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     yield pushToken(buffer);
                     buffer = '';
 
-                    // consume either string or url token
-                    let whitespace = '';
-
+                    consumeWhiteSpace();
                     value = peek();
 
-                    while (isWhiteSpace(value.charCodeAt(0))) {
-
-                        whitespace += value;
-                    }
-
-                    if (whitespace.length > 0) {
-
-                        next(whitespace.length);
-                    }
-
-                    value = peek();
+                    let cp : number;
+                    let whitespace: string = '';
+                    let hasWhiteSpace = false;
+                    let errorState = false;
 
                     if (value == '"' || value == "'") {
 
-                        yield* consumeString(<'"' | "'">next());
+                        const quote = value;
+                        let inquote = true;
+                        let hasNewLine = false;
+                        buffer = next();
+
+                        while (value = next()) {
+
+                            cp = value.charCodeAt(0);
+
+                            // consume an invalid string
+                            if (inquote) {
+
+                                buffer += value;
+
+                                if (isNewLine(cp)) {
+
+                                    hasNewLine = true;
+
+                                    while(value = next()) {
+
+                                        buffer += value;
+
+                                        if (value == ';') {
+
+                                            inquote = false;
+                                            break;
+                                        }
+                                    }
+
+                                    if (value === '') {
+
+                                        yield pushToken(buffer, 'Bad-string');
+                                        buffer = '';
+                                        break;
+                                    }
+
+                                    cp = value.charCodeAt(0);
+                                }
+
+                                // '\\'
+                                if (cp == 0x5c) {
+
+                                    buffer += next();
+                                }
+
+                                else if (value == quote) {
+
+                                    inquote = false;
+                                }
+
+                                continue;
+                            }
+
+                            if (!inquote) {
+
+                                if (isWhiteSpace(cp)) {
+
+                                    whitespace += value;
+
+                                    while (value = peek()) {
+
+                                        hasWhiteSpace = true;
+
+                                        if (isWhiteSpace(value?.charCodeAt(0))) {
+
+                                            whitespace += next();
+                                            continue;
+                                        }
+
+                                        break;
+                                    }
+
+                                    if (!(value = next())) {
+
+                                        yield pushToken(buffer, hasNewLine ? 'Bad-url-token' : 'Url-token');
+                                        buffer = '';
+                                        break;
+                                    }
+                                }
+
+                                cp = value.charCodeAt(0);
+
+                                // ')'
+                                if (cp == 0x29) {
+
+                                    yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'String');
+                                    yield pushToken('', 'End-parens');
+                                    buffer = '';
+                                    break;
+                                }
+
+                                while(value = next()) {
+
+                                    cp = value.charCodeAt(0);
+
+                                    if (cp == 0x5c) {
+
+                                        buffer += value + next();
+                                        continue;
+                                    }
+
+                                    if (cp == 0x29) {
+
+                                        yield pushToken(buffer, 'Bad-string');
+                                        yield pushToken('', 'End-parens');
+                                        buffer = '';
+                                        break;
+                                    }
+
+                                    buffer += value;
+                                }
+
+                                if (hasNewLine) {
+
+                                    yield pushToken(buffer, 'Bad-string');
+                                    buffer = '';
+                                }
+
+                                break;
+                            }
+
+                            buffer += value;
+                        }
 
                         break;
                     } else {
 
                         buffer = '';
 
-                        do {
+                        while (value = next()) {
 
-                            let cp = value.charCodeAt(0);
-
-                            // EOF -
-                            if (cp == null) {
-
-                                yield pushToken('', 'Bad-url-token');
-                                break;
-                            }
+                            cp = value.charCodeAt(0);
 
                             // ')'
-                            if (cp == 0x29 || cp == null) {
+                            if (cp == 0x29) {
 
-                                if (buffer.length == 0) {
-
-                                    yield pushToken(buffer, 'Bad-url-token');
-                                } else {
-
-                                    yield pushToken(buffer, 'Url-token');
-                                }
-
-                                if (cp != null) {
-
-                                    yield pushToken(next());
-                                }
-
+                                yield pushToken(buffer, 'Url-token');
+                                yield pushToken('', 'End-parens');
+                                buffer = '';
                                 break;
                             }
 
                             if (isWhiteSpace(cp)) {
 
-                                whitespace = next();
+                                hasWhiteSpace = true;
+                                whitespace = value;
 
-                                while (true) {
+                                while(isWhiteSpace(peek()?.charCodeAt(0))) {
 
-                                    value = peek();
+                                    whitespace += next();
+                                }
+
+                                continue;
+                            }
+
+                            if (isNonPrintable(cp) ||
+                                // '"'
+                                cp == 0x22 ||
+                                // "'"
+                                cp == 0x27 ||
+                                // \('
+                                cp == 0x28 ||
+                                hasWhiteSpace) {
+
+                                errorState = true;
+                            }
+
+                            if (errorState) {
+
+                                buffer += whitespace + value;
+
+                                while(value = peek()) {
+
                                     cp = value.charCodeAt(0);
 
-                                    if (isWhiteSpace(cp)) {
-                                        whitespace += value;
+                                    if (cp == 0x5c) {
+
+                                        buffer += next(2);
                                         continue;
                                     }
 
-                                    break;
-                                }
+                                    // ')'
+                                    if (cp == 0x29) {
 
-                                if (cp == null || cp == 0x29) {
-                                    continue;
-                                }
-
-                                // bad url token
-                                buffer += next(whitespace.length);
-
-                                do {
-
-                                    value = peek();
-                                    cp = value.charCodeAt(0);
-
-                                    if (cp == null || cp == 0x29) {
                                         break;
                                     }
 
                                     buffer += next();
                                 }
 
-                                while (true);
-
                                 yield pushToken(buffer, 'Bad-url-token');
-                                continue;
+                                buffer = '';
+                                break;
                             }
 
-                            buffer += next();
-                            value = peek();
+                            buffer += value;
                         }
-                        while (true);
+                    }
+
+                    if (buffer !== '') {
+
+                        yield pushToken(buffer, 'Url-token');
                         buffer = '';
+                        break;
                     }
 
                     break;

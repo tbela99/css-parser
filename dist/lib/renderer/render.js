@@ -1,4 +1,5 @@
 import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
+import { expand } from '../ast/expand.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 function reduceNumber(val) {
@@ -20,6 +21,7 @@ function reduceNumber(val) {
 }
 function render(data, opt = {}) {
     const startTime = performance.now();
+    const errors = [];
     const options = Object.assign(opt.minify ?? true ? {
         indent: '',
         newLine: '',
@@ -29,23 +31,23 @@ function render(data, opt = {}) {
         newLine: '\n',
         compress: false,
         removeComments: false,
-    }, { colorConvert: true, preserveLicense: false }, opt);
+    }, { colorConvert: true, expandNestingRules: false, preserveLicense: false }, opt);
     return {
-        code: doRender(data, options, function reducer(acc, curr) {
+        code: doRender(options.expandNestingRules ? expand(data) : data, options, errors, function reducer(acc, curr) {
             if (curr.typ == 'Comment' && options.removeComments) {
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                     return acc;
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, reducer);
-        }, 0), stats: {
+            return acc + renderToken(curr, options, reducer, errors);
+        }, 0), errors, stats: {
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
     };
 }
 // @ts-ignore
-function doRender(data, options, reducer, level = 0, indents = []) {
+function doRender(data, options, errors, reducer, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
@@ -58,10 +60,11 @@ function doRender(data, options, reducer, level = 0, indents = []) {
         case 'Declaration':
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
         case 'Comment':
+        case 'CDOCOMM':
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
         case 'StyleSheet':
             return data.chi.reduce((css, node) => {
-                const str = doRender(node, options, reducer, level, indents);
+                const str = doRender(node, options, errors, reducer, level, indents);
                 if (str === '') {
                     return css;
                 }
@@ -83,7 +86,8 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                 }
                 else if (node.typ == 'Declaration') {
                     if (node.val.length == 0) {
-                        console.error(`invalid declaration`, node);
+                        // @ts-ignore
+                        errors.push({ action: 'ignore', message: `render: invalid declaration ${JSON.stringify(node)}`, location: node.loc });
                         return '';
                     }
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
@@ -92,7 +96,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
-                    str = doRender(node, options, reducer, level + 1, indents);
+                    str = doRender(node, options, errors, reducer, level + 1, indents);
                 }
                 if (css === '') {
                     return str;
@@ -112,7 +116,7 @@ function doRender(data, options, reducer, level = 0, indents = []) {
     }
     return '';
 }
-function renderToken(token, options = {}, reducer) {
+function renderToken(token, options = {}, reducer, errors) {
     if (reducer == null) {
         reducer = function (acc, curr) {
             if (curr.typ == 'Comment' && options.removeComments) {
@@ -121,7 +125,7 @@ function renderToken(token, options = {}, reducer) {
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, reducer);
+            return acc + renderToken(curr, options, reducer, errors);
         };
     }
     switch (token.typ) {
@@ -274,18 +278,7 @@ function renderToken(token, options = {}, reducer) {
         case 'Perc':
             return token.val + '%';
         case 'Number':
-            const num = (+token.val).toString();
-            if (token.val.length < num.length) {
-                return token.val;
-            }
-            if (num.charAt(0) === '0' && num.length > 1) {
-                return num.slice(1);
-            }
-            const slice = num.slice(0, 2);
-            if (slice == '-0') {
-                return '-' + num.slice(2);
-            }
-            return num;
+            return reduceNumber(token.val);
         case 'Comment':
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
@@ -300,8 +293,7 @@ function renderToken(token, options = {}, reducer) {
         case 'Delim':
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
-    console.error(`unexpected token ${JSON.stringify(token, null, 1)}`);
-    // throw  new Error(`unexpected token ${JSON.stringify(token, null, 1)}`);
+    errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
 }
 

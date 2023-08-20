@@ -1,8 +1,19 @@
 /* generate from test/specs/block.spec.ts */
-import {transform, render} from '../../dist/node/index.js';
+import {transform, render, dirname} from '../../dist/web/index.js';
 import {expect} from "@esm-bundle/chai";
-import {readFile} from "fs/promises";
-import {dirname} from "path";
+
+async function readFile(file) {
+
+    return fetch(file).then(response => {
+
+        if (!response.ok) {
+
+            throw new Error(`${response.status} ${response.statusText}`);
+        }
+
+        return response.text();
+    })
+}
 
 describe('malformed tokens', function () {
 

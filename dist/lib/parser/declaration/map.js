@@ -340,6 +340,14 @@ class PropertyMap {
                     acc.push(...curr);
                     return acc;
                 }, []);
+                if (this.config.mapping != null) {
+                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '');
+                    if (val in this.config.mapping) {
+                        values.length = 0;
+                        // @ts-ignore
+                        values.push({ typ: ['"', "'"].includes(val.charAt(0)) ? 'String' : 'Iden', val: this.config.mapping[val] });
+                    }
+                }
                 iterable = [{
                         typ: 'Declaration',
                         nam: this.config.shorthand,

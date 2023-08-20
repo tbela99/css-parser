@@ -146,6 +146,16 @@ export function isIdent(name: string): boolean {
     return true;
 }
 
+export function isNonPrintable(codepoint: number): boolean {
+
+    // null -> backspace
+    return (codepoint >= 0 && codepoint <= 0x8) ||
+        // tab
+        codepoint == 0xb ||
+        // delete
+        codepoint == 0x7f ||
+        (codepoint  >= 0xe && codepoint <= 0x1f);
+}
 
 export function isPseudo(name: string): boolean {
 
@@ -364,6 +374,7 @@ export function isHexColor(name: string): boolean {
     return true;
 }
 
+/*
 export function isHexDigit(name: string): boolean {
 
     if (name.length || name.length > 6) {
@@ -387,6 +398,7 @@ export function isHexDigit(name: string): boolean {
 
     return true;
 }
+*/
 
 function isEscape(name: string): boolean {
 

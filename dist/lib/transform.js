@@ -8,7 +8,10 @@ async function transform(css, options = {}) {
     return parse(css, options).then((parseResult) => {
         const rendered = render(parseResult.ast, options);
         return {
-            ...parseResult, ...rendered, stats: {
+            ...parseResult,
+            ...rendered,
+            errors: parseResult.errors.concat(rendered.errors),
+            stats: {
                 bytesOut: rendered.code.length,
                 ...parseResult.stats,
                 render: rendered.stats.total,

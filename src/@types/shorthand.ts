@@ -53,6 +53,7 @@ export interface ShorthandMapType {
     pattern: string;
     keywords: string[];
     default: string[];
+    mapping?: string[];
     multiple?: boolean;
     separator?: Token;
     properties: {

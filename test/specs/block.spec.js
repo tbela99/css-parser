@@ -441,4 +441,28 @@ transition: all 0s ease 0s; flex: 0 1 0%; position: relative; align-self: stretc
  align-items: center
 }`));
     });
+
+    it('media query #20', function () {
+        const file = `
+      
+a {
+overflow-x: hidden;
+overflow-y: hidden;
+
+}
+<!-- secret -->
+.search-and-account a svg {
+/* secret
+`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`a {
+ overflow: hidden
+}`));
+    });
 });

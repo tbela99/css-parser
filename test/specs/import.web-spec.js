@@ -1,15 +1,7 @@
 /* generate from test/specs/import.web-spec.ts */
 import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import { transform } from '../../dist/web/index.js';
+import { transform , dirname} from '../../dist/web/index.js';
 
-function dirname(path) {
-    path = path.replace(/[?#].*$/, '').replace(/[/]*$/, '');
-    const index = path.lastIndexOf('/');
-    if (index == 0) {
-        return '/';
-    }
-    return index < 0 ? '' : path.slice(0, index);
-}
 const atRule = `
 @import '${dirname(new URL(import.meta.url).pathname) + '/../files/css/color.css'}';
 abbr[title], abbr[data-original-title] {

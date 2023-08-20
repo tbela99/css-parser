@@ -3,7 +3,7 @@ import {
     AstAtRule,
     AstDeclaration,
     AstNode,
-    AstRule, MatchedSelector,
+    AstRule, ErrorDescription, MatchedSelector,
     NodeType,
     OptimizedSelector,
     ParserOptions, ShorthandPropertyType
@@ -16,8 +16,9 @@ import {render} from "../renderer";
 const configuration = getConfig();
 export const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
+const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 
-export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false): AstNode {
+export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[]): AstNode {
 
     function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast: AstNode, i: number, nodeIndex: number): AstRule {
 
@@ -31,9 +32,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         const wrapper = <AstRule>{...previous, chi: [], sel: match.match.reduce(reducer, []).join(',')};
 
         // @ts-ignore
-        Object.defineProperty(wrapper, 'raw', {
-            enumerable: false,
-            writable: true,
+        Object.defineProperty(wrapper, 'raw', {...definedPropertySettings,
             // @ts-ignore
             value: match.match.map(t => t.slice())
         });
@@ -44,7 +43,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             wrapper.chi.push(...previous.chi);
 
             // @ts-ignore
-            if ((nSel == '&' || nSel === '') && hasOnlyDeclarations(previous)) {
+            if ((nSel == '&' || nSel === '') ) {
 
                 // @ts-ignore
                 wrapper.chi.push(...node.chi);
@@ -128,11 +127,11 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         node1 = {...node1, chi: node1.chi.slice()};
         node2 = {...node2, chi: node2.chi.slice()};
         if (raw1 != null) {
-            Object.defineProperty(node1, 'raw', {enumerable: false, writable: true, value: raw1});
+            Object.defineProperty(node1, 'raw', {...definedPropertySettings, value: raw1});
         }
 
         if (raw2 != null) {
-            Object.defineProperty(node2, 'raw', {enumerable: false, writable: true, value: raw2});
+            Object.defineProperty(node2, 'raw', {...definedPropertySettings, value: raw2});
         }
 
         const intersect = [];
@@ -175,7 +174,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         const result = (intersect.length == 0 ? null : {
             ...node1,
             // @ts-ignore
-            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(','),
+            sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel) ).concat(n2?.raw?.reduce(reducer, [])  || splitRule(n2.sel) )])].join(','),
             chi: intersect.reverse()
         });
         if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0)) {
@@ -277,8 +276,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         }
         if (match.length > 1) {
 
-            console.error(`unsupported multilevel matching`);
-            console.error({match, selector1, selector2});
+            errors?.push({action: 'ignore', message: `minify: unsupported multilevel matching\n${JSON.stringify({match, selector1, selector2}, null, 1)}`});
             return null;
         }
 
@@ -490,7 +488,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
 
                 else {
 
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
 
                 previous = node;
@@ -563,7 +561,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(<AstRule>wrapper, options, recursive);
+                        minify(<AstRule>wrapper, options, recursive, errors);
                         continue;
                     }
                     // @ts-ignore
@@ -576,8 +574,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         wrapper = {...node, chi: [], sel: node.optimized.optimized[0]};
                         // @ts-ignore
                         Object.defineProperty(wrapper, 'raw', {
-                            enumerable: false,
-                            writable: true,
+                            ...definedPropertySettings,
                             // @ts-ignore
                             value: [[node.optimized.optimized[0]]]
                         });
@@ -649,83 +646,110 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                     node.sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
                 }
             }
-            // @ts-ignore
-            if (previous != null && 'chi' in previous && ('chi' in node)) {
-                // @ts-ignore
-                if (previous.typ == node.typ) {
-                    let shouldMerge = true;
-                    // @ts-ignore
-                    let k = previous.chi.length;
-                    while (k-- > 0) {
-                        // @ts-ignore
-                        if (previous.chi[k].typ == 'Comment') {
-                            continue;
-                        }
-                        // @ts-ignore
-                        shouldMerge = previous.chi[k].typ == 'Declaration';
-                        break;
-                    }
-                    if (shouldMerge) {
-                        // @ts-ignore
-                        if ((node.typ == 'Rule' && node.sel == previous.sel) ||
-                            // @ts-ignore
-                            (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
 
+            // @ts-ignore
+            if (previous != null ) {
+
+                // @ts-ignore
+                if ('chi' in previous && ('chi' in node)) {
+
+                    // @ts-ignore
+                    if (previous.typ == node.typ) {
+                        let shouldMerge = true;
+                        // @ts-ignore
+                        let k = previous.chi.length;
+                        while (k-- > 0) {
                             // @ts-ignore
-                            node.chi.unshift(...previous.chi);
+                            if (previous.chi[k].typ == 'Comment') {
+                                continue;
+                            }
                             // @ts-ignore
-                            ast.chi.splice(nodeIndex, 1);
+                            shouldMerge = previous.chi[k].typ == 'Declaration';
+                            break;
+                        }
+                        if (shouldMerge) {
                             // @ts-ignore
-                            if (hasDeclaration(node)) {
+                            if ((node.typ == 'Rule' && node.sel == previous.sel) ||
                                 // @ts-ignore
-                                minifyRule(node);
-                            } else {
-                                minify(node, options, recursive);
-                            }
-                            i--;
-                            previous = node;
-                            nodeIndex = i;
-                            continue;
-                        } else if (node.typ == 'Rule' && previous?.typ == 'Rule') {
-                            const intersect = diff(<AstRule>previous, <AstRule>node, options);
-                            if (intersect != null) {
-                                if (intersect.node1.chi.length == 0) {
+                                (node.typ == 'AtRule') && node.val != 'font-face' && node.val == previous.val) {
+
+                                // @ts-ignore
+                                node.chi.unshift(...previous.chi);
+                                // @ts-ignore
+                                ast.chi.splice(nodeIndex, 1);
+                                // @ts-ignore
+                                if (hasDeclaration(node)) {
                                     // @ts-ignore
-                                    ast.chi.splice(i--, 1);
-                                    // @ts-ignore
-                                    node = ast.chi[i];
-                                } else {
-                                    // @ts-ignore
-                                    ast.chi.splice(i, 1, intersect.node1);
-                                    node = intersect.node1;
+                                    minifyRule(node);
                                 }
-                                if (intersect.node2.chi.length == 0) {
-                                    // @ts-ignore
-                                    ast.chi.splice(nodeIndex, 1, intersect.result);
-                                    previous = intersect.result;
-                                } else {
-                                    // @ts-ignore
-                                    ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
-                                    previous = intersect.result;
-                                    // @ts-ignore
-                                    i = nodeIndex;
+                                else {
+                                    minify(node, options, recursive, errors);
+                                }
+
+                                i--;
+                                previous = node;
+                                nodeIndex = i;
+                                continue;
+                            } else if (node.typ == 'Rule' && previous?.typ == 'Rule') {
+                                const intersect = diff(<AstRule>previous, <AstRule>node, options);
+                                if (intersect != null) {
+                                    if (intersect.node1.chi.length == 0) {
+                                        // @ts-ignore
+                                        ast.chi.splice(i--, 1);
+                                        // @ts-ignore
+                                        node = ast.chi[i];
+                                    } else {
+                                        // @ts-ignore
+                                        ast.chi.splice(i, 1, intersect.node1);
+                                        node = intersect.node1;
+                                    }
+                                    if (intersect.node2.chi.length == 0) {
+                                        // @ts-ignore
+                                        ast.chi.splice(nodeIndex, 1, intersect.result);
+                                        previous = intersect.result;
+                                    } else {
+                                        // @ts-ignore
+                                        ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
+                                        previous = intersect.result;
+                                        // @ts-ignore
+                                        i = nodeIndex;
+                                    }
                                 }
                             }
+                        }
+                    }
+
+                    // @ts-ignore
+                    if (recursive && previous != node) {
+                        // @ts-ignore
+                        if (hasDeclaration(previous)) {
+                            // @ts-ignore
+                            minifyRule(previous);
+                        } else {
+                            minify(previous, options, recursive, errors);
                         }
                     }
                 }
+                else {
 
-                // @ts-ignore
-                if (recursive && previous != node) {
-                    // @ts-ignore
-                    if (hasDeclaration(previous)) {
+                    if ('chi' in previous) {
+
                         // @ts-ignore
-                        minifyRule(previous);
-                    } else {
-                        minify(previous, options, recursive);
+                        if (hasDeclaration(previous)) {
+
+                            // @ts-ignore
+                            minifyRule(previous);
+                        }
+
+                        else {
+
+                            minify(previous, options, recursive, errors);
+                        }
                     }
                 }
             }
+
+
             previous = node;
             nodeIndex = i;
         }
@@ -737,7 +761,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             } else {
                 // @ts-ignore
                 if (!(node.typ == 'AtRule' && (<AstAtRule>node).nam != 'font-face')) {
-                    minify(node, options, recursive);
+                    minify(node, options, recursive, errors);
                 }
             }
         }
@@ -848,22 +872,6 @@ export function reduceSelector(selector: string[][]) {
     };
 }
 
-function hasOnlyDeclarations(node: AstRule): boolean {
-    let k: number = node.chi.length;
-
-    while (k--) {
-
-        if (node.chi[k].typ == 'Comment') {
-
-            continue;
-        }
-
-        return node.chi[k].typ == 'Declaration';
-    }
-
-    return true;
-}
-
 export function hasDeclaration(node: AstRule): boolean {
 
     // @ts-ignore
@@ -914,7 +922,7 @@ export function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule {
     return ast;
 }
 
-function splitRule(buffer: string): string[][] {
+export function splitRule(buffer: string): string[][] {
 
     const result: string[][] = [[]];
     let str: string = '';
@@ -1021,11 +1029,12 @@ function splitRule(buffer: string): string[][] {
     return result;
 }
 
+
 function reduceRuleSelector(node: AstRule) {
 
     if (node.raw == null) {
 
-        Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: splitRule(node.sel)})
+        Object.defineProperty(node, 'raw', {...definedPropertySettings, value: splitRule(node.sel)})
     }
 
     // @ts-ignore
@@ -1037,7 +1046,7 @@ function reduceRuleSelector(node: AstRule) {
     }, <string[][]>[]));
 
     if (optimized != null) {
-        Object.defineProperty(node, 'optimized', {enumerable: false, writable: true, value: optimized});
+        Object.defineProperty(node, 'optimized', {...definedPropertySettings, value: optimized});
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
 
@@ -1056,7 +1065,7 @@ function reduceRuleSelector(node: AstRule) {
         if (sel.length < node.sel.length) {
             node.sel = sel;
             // node.raw = raw;
-            Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: raw});
+            Object.defineProperty(node, 'raw', {...definedPropertySettings, value: raw});
         }
     }
     // }

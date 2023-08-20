@@ -13,7 +13,10 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
         const rendered: RenderResult = render(parseResult.ast, options);
 
         return {
-            ...parseResult, ...rendered, stats: {
+            ...parseResult,
+            ...rendered,
+            errors: parseResult.errors.concat(rendered.errors),
+            stats: {
                 bytesOut: rendered.code.length,
                 ...parseResult.stats,
                 render: rendered.stats.total,
