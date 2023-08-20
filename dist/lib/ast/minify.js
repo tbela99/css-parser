@@ -1,4 +1,4 @@
-import { isIdentStart, isIdent, isFunction, isWhiteSpace } from '../parser/utils/syntax.js';
+import { isIdentStart, isWhiteSpace, isIdent, isFunction } from '../parser/utils/syntax.js';
 import { PropertyList } from '../parser/declaration/list.js';
 import { eq } from '../parser/utils/eq.js';
 import { render } from '../renderer/render.js';
@@ -6,6 +6,7 @@ import '../renderer/utils/color.js';
 
 const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
+const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 function minify(ast, options = {}, recursive = false, errors) {
     function wrapNodes(previous, node, match, ast, i, nodeIndex) {
         // @ts-ignore
@@ -15,9 +16,7 @@ function minify(ast, options = {}, recursive = false, errors) {
         // @ts-ignore
         const wrapper = { ...previous, chi: [], sel: match.match.reduce(reducer, []).join(',') };
         // @ts-ignore
-        Object.defineProperty(wrapper, 'raw', {
-            enumerable: false,
-            writable: true,
+        Object.defineProperty(wrapper, 'raw', { ...definedPropertySettings,
             // @ts-ignore
             value: match.match.map(t => t.slice())
         });
@@ -25,7 +24,7 @@ function minify(ast, options = {}, recursive = false, errors) {
             // @ts-ignore
             wrapper.chi.push(...previous.chi);
             // @ts-ignore
-            if ((nSel == '&' || nSel === '') && hasOnlyDeclarations(previous)) {
+            if ((nSel == '&' || nSel === '')) {
                 // @ts-ignore
                 wrapper.chi.push(...node.chi);
             }
@@ -96,10 +95,10 @@ function minify(ast, options = {}, recursive = false, errors) {
         node1 = { ...node1, chi: node1.chi.slice() };
         node2 = { ...node2, chi: node2.chi.slice() };
         if (raw1 != null) {
-            Object.defineProperty(node1, 'raw', { enumerable: false, writable: true, value: raw1 });
+            Object.defineProperty(node1, 'raw', { ...definedPropertySettings, value: raw1 });
         }
         if (raw2 != null) {
-            Object.defineProperty(node2, 'raw', { enumerable: false, writable: true, value: raw2 });
+            Object.defineProperty(node2, 'raw', { ...definedPropertySettings, value: raw2 });
         }
         const intersect = [];
         while (i--) {
@@ -416,8 +415,7 @@ function minify(ast, options = {}, recursive = false, errors) {
                         wrapper = { ...node, chi: [], sel: node.optimized.optimized[0] };
                         // @ts-ignore
                         Object.defineProperty(wrapper, 'raw', {
-                            enumerable: false,
-                            writable: true,
+                            ...definedPropertySettings,
                             // @ts-ignore
                             value: [[node.optimized.optimized[0]]]
                         });
@@ -665,16 +663,6 @@ function reduceSelector(selector) {
         reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
     };
 }
-function hasOnlyDeclarations(node) {
-    let k = node.chi.length;
-    while (k--) {
-        if (node.chi[k].typ == 'Comment') {
-            continue;
-        }
-        return node.chi[k].typ == 'Declaration';
-    }
-    return true;
-}
 function hasDeclaration(node) {
     // @ts-ignore
     for (let i = 0; i < node.chi?.length; i++) {
@@ -800,7 +788,7 @@ function splitRule(buffer) {
 }
 function reduceRuleSelector(node) {
     if (node.raw == null) {
-        Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: splitRule(node.sel) });
+        Object.defineProperty(node, 'raw', { ...definedPropertySettings, value: splitRule(node.sel) });
     }
     // @ts-ignore
     // if (node.raw != null) {
@@ -810,7 +798,7 @@ function reduceRuleSelector(node) {
         return acc;
     }, []));
     if (optimized != null) {
-        Object.defineProperty(node, 'optimized', { enumerable: false, writable: true, value: optimized });
+        Object.defineProperty(node, 'optimized', { ...definedPropertySettings, value: optimized });
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
         const raw = [
@@ -828,10 +816,10 @@ function reduceRuleSelector(node) {
         if (sel.length < node.sel.length) {
             node.sel = sel;
             // node.raw = raw;
-            Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: raw });
+            Object.defineProperty(node, 'raw', { ...definedPropertySettings, value: raw });
         }
     }
     // }
 }
 
-export { combinators, hasDeclaration, minify, minifyRule, reduceSelector };
+export { combinators, hasDeclaration, minify, minifyRule, reduceSelector, splitRule };

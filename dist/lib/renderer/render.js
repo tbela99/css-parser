@@ -1,4 +1,5 @@
 import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
+import { expand } from '../ast/expand.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 function reduceNumber(val) {
@@ -30,9 +31,9 @@ function render(data, opt = {}) {
         newLine: '\n',
         compress: false,
         removeComments: false,
-    }, { colorConvert: true, preserveLicense: false }, opt);
+    }, { colorConvert: true, expandNestingRules: false, preserveLicense: false }, opt);
     return {
-        code: doRender(data, options, errors, function reducer(acc, curr) {
+        code: doRender(options.expandNestingRules ? expand(data) : data, options, errors, function reducer(acc, curr) {
             if (curr.typ == 'Comment' && options.removeComments) {
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                     return acc;

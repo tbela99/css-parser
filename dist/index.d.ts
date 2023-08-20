@@ -505,6 +505,7 @@ interface ParserOptions {
 interface RenderOptions {
 
     minify?: boolean;
+    expandNestingRules?: boolean;
     preserveLicense?: boolean;
     indent?: string;
     newLine?: string;
@@ -631,6 +632,34 @@ type AstNode =
     | AstRule
     | AstDeclaration;
 
+declare const combinators: string[];
+declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[]): AstNode;
+declare function reduceSelector(selector: string[][]): {
+    match: boolean;
+    optimized: string[];
+    selector: string[][];
+    reducible: boolean;
+} | null;
+declare function hasDeclaration(node: AstRule): boolean;
+declare function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule;
+declare function splitRule(buffer: string): string[][];
+
+declare function walk(node: AstNode): Generator<{
+    node: AstNode;
+    parent?: AstRuleList;
+    root?: AstRuleList;
+}>;
+declare function walkValues(values: Token[], parent?: Token): Generator<{
+    value: Token;
+    parent: Token | null;
+}>;
+
+declare function expand(ast: AstNode): AstNode;
+
+declare const colorsFunc: string[];
+declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
+declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
+
 declare const urlTokenMatcher: RegExp;
 declare function parseString(src: string, options?: {
     location: boolean;
@@ -666,27 +695,6 @@ declare const getConfig: () => PropertiesConfig;
 declare const funcList: string[];
 declare function matchType(val: Token, properties: PropertyMapType): boolean;
 
-declare const colorsFunc: string[];
-declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
-declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
-
-declare const combinators: string[];
-declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[]): AstNode;
-declare function reduceSelector(selector: string[][]): {
-    match: boolean;
-    optimized: string[];
-    selector: string[][];
-    reducible: boolean;
-} | null;
-declare function hasDeclaration(node: AstRule): boolean;
-declare function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule;
-
-declare function walk(node: AstNode): Generator<{
-    node: AstNode;
-    parent?: AstRuleList;
-    root?: AstRuleList;
-}>;
-
 declare function load(url: string, currentFile: string): Promise<string>;
 
 declare const matchUrl: RegExp;
@@ -699,4 +707,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { colorsFunc, combinators, dirname, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, tokenize, transform, urlTokenMatcher, walk };
+export { colorsFunc, combinators, dirname, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };

@@ -16,6 +16,7 @@ import {render} from "../renderer";
 const configuration = getConfig();
 export const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
+const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 
 export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[]): AstNode {
 
@@ -31,9 +32,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         const wrapper = <AstRule>{...previous, chi: [], sel: match.match.reduce(reducer, []).join(',')};
 
         // @ts-ignore
-        Object.defineProperty(wrapper, 'raw', {
-            enumerable: false,
-            writable: true,
+        Object.defineProperty(wrapper, 'raw', {...definedPropertySettings,
             // @ts-ignore
             value: match.match.map(t => t.slice())
         });
@@ -44,7 +43,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             wrapper.chi.push(...previous.chi);
 
             // @ts-ignore
-            if ((nSel == '&' || nSel === '') && hasOnlyDeclarations(previous)) {
+            if ((nSel == '&' || nSel === '') ) {
 
                 // @ts-ignore
                 wrapper.chi.push(...node.chi);
@@ -128,11 +127,11 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         node1 = {...node1, chi: node1.chi.slice()};
         node2 = {...node2, chi: node2.chi.slice()};
         if (raw1 != null) {
-            Object.defineProperty(node1, 'raw', {enumerable: false, writable: true, value: raw1});
+            Object.defineProperty(node1, 'raw', {...definedPropertySettings, value: raw1});
         }
 
         if (raw2 != null) {
-            Object.defineProperty(node2, 'raw', {enumerable: false, writable: true, value: raw2});
+            Object.defineProperty(node2, 'raw', {...definedPropertySettings, value: raw2});
         }
 
         const intersect = [];
@@ -575,8 +574,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         wrapper = {...node, chi: [], sel: node.optimized.optimized[0]};
                         // @ts-ignore
                         Object.defineProperty(wrapper, 'raw', {
-                            enumerable: false,
-                            writable: true,
+                            ...definedPropertySettings,
                             // @ts-ignore
                             value: [[node.optimized.optimized[0]]]
                         });
@@ -874,22 +872,6 @@ export function reduceSelector(selector: string[][]) {
     };
 }
 
-function hasOnlyDeclarations(node: AstRule): boolean {
-    let k: number = node.chi.length;
-
-    while (k--) {
-
-        if (node.chi[k].typ == 'Comment') {
-
-            continue;
-        }
-
-        return node.chi[k].typ == 'Declaration';
-    }
-
-    return true;
-}
-
 export function hasDeclaration(node: AstRule): boolean {
 
     // @ts-ignore
@@ -940,7 +922,7 @@ export function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule {
     return ast;
 }
 
-function splitRule(buffer: string): string[][] {
+export function splitRule(buffer: string): string[][] {
 
     const result: string[][] = [[]];
     let str: string = '';
@@ -1052,7 +1034,7 @@ function reduceRuleSelector(node: AstRule) {
 
     if (node.raw == null) {
 
-        Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: splitRule(node.sel)})
+        Object.defineProperty(node, 'raw', {...definedPropertySettings, value: splitRule(node.sel)})
     }
 
     // @ts-ignore
@@ -1064,7 +1046,7 @@ function reduceRuleSelector(node: AstRule) {
     }, <string[][]>[]));
 
     if (optimized != null) {
-        Object.defineProperty(node, 'optimized', {enumerable: false, writable: true, value: optimized});
+        Object.defineProperty(node, 'optimized', {...definedPropertySettings, value: optimized});
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
 
@@ -1083,7 +1065,7 @@ function reduceRuleSelector(node: AstRule) {
         if (sel.length < node.sel.length) {
             node.sel = sel;
             // node.raw = raw;
-            Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: raw});
+            Object.defineProperty(node, 'raw', {...definedPropertySettings, value: raw});
         }
     }
     // }

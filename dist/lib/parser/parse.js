@@ -184,7 +184,7 @@ async function parse(iterator, opt = {}) {
                 nam: renderToken(atRule, { removeComments: true }),
                 val: raw.join('')
             };
-            Object.defineProperty(node, 'raw', { enumerable: false, writable: false, value: raw });
+            Object.defineProperty(node, 'raw', { enumerable: false, configurable: true, writable: true, value: raw });
             if (delim.typ == 'Block-start') {
                 node.chi = [];
             }
@@ -232,7 +232,7 @@ async function parse(iterator, opt = {}) {
                     chi: []
                 };
                 let raw = [...uniq.values()];
-                Object.defineProperty(node, 'raw', { enumerable: false, writable: true, value: raw });
+                Object.defineProperty(node, 'raw', { enumerable: false, configurable: true, writable: true, value: raw });
                 loc = {
                     sta: position,
                     src

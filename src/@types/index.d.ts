@@ -44,6 +44,7 @@ export interface ParserOptions {
 export interface RenderOptions {
 
     minify?: boolean;
+    expandNestingRules?: boolean;
     preserveLicense?: boolean;
     indent?: string;
     newLine?: string;

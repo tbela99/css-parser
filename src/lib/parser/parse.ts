@@ -258,7 +258,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 val: raw.join('')
             };
 
-            Object.defineProperty(node, 'raw', {enumerable: false, writable: false, value: raw});
+            Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
 
             if (delim.typ == 'Block-start') {
 
@@ -319,7 +319,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 };
                 let raw = [...uniq.values()];
 
-                Object.defineProperty(node, 'raw', {enumerable: false, writable: true, value: raw});
+                Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
 
                 loc = <Location>{
                     sta: position,

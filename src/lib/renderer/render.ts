@@ -5,11 +5,12 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleStyleSheet, AttrToken, ColorToken, DimensionToken, ErrorDescription,
+    AstRuleStyleSheet, AttrToken, ColorToken, ErrorDescription,
     RenderOptions, RenderResult,
     Token
 } from "../../@types";
 import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
+import {expand} from "../ast";
 
 export const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 
@@ -58,11 +59,11 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
         compress: false,
         removeComments: false,
 
-    }, {colorConvert: true, preserveLicense: false}, opt);
+    }, {colorConvert: true, expandNestingRules: false, preserveLicense: false}, opt);
 
 
     return {
-        code: doRender(data, options, errors, function reducer(acc: string, curr: Token): string {
+        code: doRender(options.expandNestingRules ? expand(data) : data, options, errors, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == 'Comment' && options.removeComments) {
 
