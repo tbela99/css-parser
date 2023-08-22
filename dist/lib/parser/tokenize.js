@@ -121,12 +121,16 @@ function* tokenize(iterator) {
     }
     function next(count = 1) {
         let char = '';
-        while (count-- > 0 && ind < iterator.length) {
+        let chr = '';
+        if (count < 0) {
+            return '';
+        }
+        while (count-- && (chr = iterator.charAt(ind + 1))) {
+            char += chr;
             const codepoint = iterator.charCodeAt(++ind);
             if (isNaN(codepoint)) {
                 return char;
             }
-            char += iterator.charAt(ind);
             if (isNewLine(codepoint)) {
                 lin++;
                 col = 0;

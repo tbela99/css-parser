@@ -96,7 +96,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     }, <string[]>[]).join(',');
                 } else {
 
-                    rule.sel = replaceCompount(rule.sel, ast.sel);
+                    rule.sel = replaceCompound(rule.sel, ast.sel);
                 }
 
                 delete rule.raw;
@@ -115,7 +115,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     if (astAtRule.val.includes('&')) {
 
-                        astAtRule.val = replaceCompount(astAtRule.val, ast.sel);
+                        astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
 
                     // @ts-ignore
@@ -172,7 +172,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
     return ast.chi.length > 0 ? [ast].concat(result) : result;
 }
 
-function replaceCompount(input: string, replace: string) {
+export function replaceCompound(input: string, replace: string) {
 
     const tokens = parseString(input);
 

@@ -633,7 +633,7 @@ type AstNode =
     | AstDeclaration;
 
 declare const combinators: string[];
-declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[]): AstNode;
+declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode;
 declare function reduceSelector(selector: string[][]): {
     match: boolean;
     optimized: string[];
@@ -644,7 +644,7 @@ declare function hasDeclaration(node: AstRule): boolean;
 declare function minifyRule(ast: AstRule | AstAtRule): AstRule | AstAtRule;
 declare function splitRule(buffer: string): string[][];
 
-declare function walk(node: AstNode): Generator<{
+declare function walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<{
     node: AstNode;
     parent?: AstRuleList;
     root?: AstRuleList;
@@ -655,6 +655,7 @@ declare function walkValues(values: Token[], parent?: Token): Generator<{
 }>;
 
 declare function expand(ast: AstNode): AstNode;
+declare function replaceCompound(input: string, replace: string): string;
 
 declare const colorsFunc: string[];
 declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
@@ -707,4 +708,4 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { colorsFunc, combinators, dirname, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };
+export { colorsFunc, combinators, dirname, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };

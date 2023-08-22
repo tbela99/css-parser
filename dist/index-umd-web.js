@@ -2244,12 +2244,16 @@
         }
         function next(count = 1) {
             let char = '';
-            while (count-- > 0 && ind < iterator.length) {
+            let chr = '';
+            if (count < 0) {
+                return '';
+            }
+            while (count-- && (chr = iterator.charAt(ind + 1))) {
+                char += chr;
                 const codepoint = iterator.charCodeAt(++ind);
                 if (isNaN(codepoint)) {
                     return char;
                 }
-                char += iterator.charAt(ind);
                 if (isNewLine(codepoint)) {
                     lin++;
                     col = 0;
@@ -3826,10 +3830,180 @@
         }
     }
 
+    function* walk(node, parent, root) {
+        yield { node, parent, root };
+        if ('chi' in node) {
+            for (const child of node.chi) {
+                yield* walk(child, node, (root ?? node));
+            }
+        }
+    }
+    function* walkValues(values, parent) {
+        for (const value of values) {
+            // @ts-ignore
+            yield { value, parent };
+            if ('chi' in value) {
+                yield* walkValues(value.chi, value);
+            }
+        }
+    }
+
+    function expand(ast) {
+        //
+        if (!['Rule', 'StyleSheet', 'AtRule'].includes(ast.typ)) {
+            return ast;
+        }
+        if ('Rule' == ast.typ) {
+            return {
+                typ: 'StyleSheet',
+                chi: expandRule(ast)
+            };
+        }
+        if (!('chi' in ast)) {
+            return { ...ast };
+        }
+        const result = { ...ast, chi: [] };
+        // @ts-ignore
+        for (let i = 0; i < ast.chi.length; i++) {
+            // @ts-ignore
+            const node = ast.chi[i];
+            if (node.typ == 'Rule') {
+                // @ts-ignore
+                result.chi.push(...expandRule(node));
+                // i += expanded.length - 1;
+            }
+            else if (node.typ == 'AtRule' && 'chi' in node) {
+                let hasRule = false;
+                let j = node.chi.length;
+                while (j--) {
+                    if (node.chi[j].typ == 'Rule' || node.chi[j].typ == 'AtRule') {
+                        hasRule = true;
+                        break;
+                    }
+                }
+                // @ts-ignore
+                result.chi.push({ ...(hasRule ? expand(node) : node) });
+            }
+            else {
+                // @ts-ignore
+                result.chi.push(node);
+            }
+        }
+        return result;
+    }
+    function expandRule(node) {
+        const ast = { ...node, chi: node.chi.slice() };
+        const result = [];
+        if (ast.typ == 'Rule') {
+            let i = 0;
+            // @ts-ignore
+            delete ast.raw;
+            // @ts-ignore
+            delete ast.optimized;
+            for (; i < ast.chi.length; i++) {
+                if (ast.chi[i].typ == 'Rule') {
+                    const rule = ast.chi[i];
+                    if (!rule.sel.includes('&')) {
+                        const selRule = splitRule(rule.sel);
+                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
+                        rule.sel = selRule.reduce((acc, curr) => {
+                            acc.push(curr.join(''));
+                            return acc;
+                        }, []).join(',');
+                    }
+                    else {
+                        rule.sel = replaceCompound(rule.sel, ast.sel);
+                    }
+                    delete rule.raw;
+                    delete rule.optimized;
+                    ast.chi.splice(i--, 1);
+                    result.push(...expandRule(rule));
+                }
+                else if (ast.chi[i].typ == 'AtRule') {
+                    let astAtRule = ast.chi[i];
+                    const values = [];
+                    if (astAtRule.nam == 'scope') {
+                        if (astAtRule.val.includes('&')) {
+                            astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
+                        }
+                        // @ts-ignore
+                        astAtRule = expand(astAtRule);
+                    }
+                    else {
+                        // @ts-ignore
+                        const clone = { ...ast, chi: astAtRule.chi.slice() };
+                        // @ts-ignore
+                        astAtRule.chi.length = 0;
+                        for (const r of expandRule(clone)) {
+                            if (r.typ == 'AtRule' && 'chi' in r) {
+                                if (astAtRule.val !== '' && r.val !== '') {
+                                    if (astAtRule.nam == 'media' && r.nam == 'media') {
+                                        r.val = astAtRule.val + ' and ' + r.val;
+                                    }
+                                    else if (astAtRule.nam == 'layer' && r.nam == 'layer') {
+                                        r.val = astAtRule.val + '.' + r.val;
+                                    }
+                                }
+                                // @ts-ignore
+                                values.push(r);
+                            }
+                            else if (r.typ == 'Rule') {
+                                // @ts-ignore
+                                astAtRule.chi.push(...expandRule(r));
+                            }
+                            else {
+                                // @ts-ignore
+                                astAtRule.chi.push(r);
+                            }
+                        }
+                    }
+                    // @ts-ignore
+                    result.push(...(astAtRule.chi.length > 0 ? [astAtRule].concat(values) : values));
+                    ast.chi.splice(i--, 1);
+                }
+            }
+        }
+        // @ts-ignore
+        return ast.chi.length > 0 ? [ast].concat(result) : result;
+    }
+    function replaceCompound(input, replace) {
+        const tokens = parseString(input);
+        for (const t of walkValues(tokens)) {
+            if (t.value.typ == 'Literal') {
+                if (t.value.val == '&') {
+                    t.value.val = replace;
+                }
+                else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {
+                    t.value.val = replaceCompoundLiteral(t.value.val, replace);
+                }
+            }
+        }
+        return tokens.reduce((acc, curr) => acc + renderToken(curr), '');
+    }
+    function replaceCompoundLiteral(selector, replace) {
+        const tokens = [''];
+        let i = 0;
+        for (; i < selector.length; i++) {
+            if (selector.charAt(i) == '&') {
+                tokens.push('&');
+                tokens.push('');
+            }
+            else {
+                tokens[tokens.length - 1] += selector.charAt(i);
+            }
+        }
+        return tokens.sort((a, b) => {
+            if (a == '&') {
+                return 1;
+            }
+            return b == '&' ? -1 : 0;
+        }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
+    }
+
     const combinators = ['+', '>', '~'];
     const notEndingWith = ['(', '['].concat(combinators);
     const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
-    function minify(ast, options = {}, recursive = false, errors) {
+    function minify(ast, options = {}, recursive = false, errors, nestingContent) {
         function wrapNodes(previous, node, match, ast, i, nodeIndex) {
             // @ts-ignore
             let pSel = match.selector1.reduce(reducer, []).join(',');
@@ -4118,8 +4292,28 @@
                 selector2
             };
         }
+        function fixSelector(node) {
+            // @ts-ignore
+            if (node.sel.includes('&')) {
+                const attributes = parseString(node.sel);
+                for (const attr of walkValues(attributes)) {
+                    if (attr.value.typ == 'Pseudo-class-func' && attr.value.val == ':is') {
+                        let i = attr.value.chi.length;
+                        while (i--) {
+                            if (attr.value.chi[i].typ == 'Literal' && attr.value.chi[i].val == '&') {
+                                attr.value.chi.splice(i, 1);
+                            }
+                        }
+                    }
+                }
+                node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), '');
+            }
+        }
         // @ts-ignore
         if (('chi' in ast) && ast.chi?.length > 0) {
+            if (!nestingContent) {
+                nestingContent = options.nestingRules && ast.typ == 'Rule';
+            }
             let i = 0;
             let previous;
             let node;
@@ -4134,7 +4328,6 @@
                 node = ast.chi[i];
                 // @ts-ignore
                 if (previous == node) {
-                    // console.error('idem!');
                     // @ts-ignore
                     ast.chi.splice(i, 1);
                     i--;
@@ -4150,7 +4343,6 @@
                         i--;
                         continue;
                     }
-                    // console.debug({previous, node});
                     // @ts-ignore
                     if (previous?.typ == 'AtRule' &&
                         previous.nam == node.nam &&
@@ -4170,7 +4362,7 @@
                         minifyRule(node);
                     }
                     else {
-                        minify(node, options, recursive, errors);
+                        minify(node, options, recursive, errors, nestingContent);
                     }
                     previous = node;
                     nodeIndex = i;
@@ -4224,7 +4416,7 @@
                             nodeIndex = --i;
                             // @ts-ignore
                             previous = ast.chi[nodeIndex];
-                            minify(wrapper, options, recursive, errors);
+                            minify(wrapper, options, recursive, errors, nestingContent);
                             continue;
                         }
                         // @ts-ignore
@@ -4257,7 +4449,7 @@
                         let wrap = true;
                         // @ts-ignore
                         const selector = node.optimized.selector.reduce((acc, curr) => {
-                            if (curr[0] == '&') {
+                            if (curr[0] == '&' && curr.length > 1) {
                                 if (curr[1] == ' ') {
                                     curr.splice(0, 2);
                                 }
@@ -4281,7 +4473,7 @@
                         if (!wrap) {
                             wrap = selector.some(s => s[0] != '&');
                         }
-                        const rule = selector.map(s => {
+                        let rule = selector.map(s => {
                             if (s[0] == '&') {
                                 // @ts-ignore
                                 s[0] = node.optimized.optimized[0];
@@ -4289,7 +4481,14 @@
                             return s.join('');
                         }).join(',');
                         // @ts-ignore
-                        node.sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                        let sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                        if (rule.includes('&')) {
+                            // @ts-ignore
+                            rule = replaceCompound(rule, node.optimized.optimized[0]);
+                        }
+                        if (sel.length < node.sel.length) {
+                            node.sel = sel;
+                        }
                     }
                 }
                 // @ts-ignore
@@ -4325,7 +4524,7 @@
                                         minifyRule(node);
                                     }
                                     else {
-                                        minify(node, options, recursive, errors);
+                                        minify(node, options, recursive, errors, nestingContent);
                                     }
                                     i--;
                                     previous = node;
@@ -4370,7 +4569,7 @@
                                 minifyRule(previous);
                             }
                             else {
-                                minify(previous, options, recursive, errors);
+                                minify(previous, options, recursive, errors, nestingContent);
                             }
                         }
                     }
@@ -4382,10 +4581,18 @@
                                 minifyRule(previous);
                             }
                             else {
-                                minify(previous, options, recursive, errors);
+                                minify(previous, options, recursive, errors, nestingContent);
                             }
                         }
                     }
+                }
+                if (!nestingContent &&
+                    // @ts-ignore
+                    previous != null &&
+                    // previous.optimized != null &&
+                    previous.typ == 'Rule' &&
+                    previous.sel.includes('&')) {
+                    fixSelector(previous);
                 }
                 previous = node;
                 nodeIndex = i;
@@ -4399,9 +4606,17 @@
                 else {
                     // @ts-ignore
                     if (!(node.typ == 'AtRule' && node.nam != 'font-face')) {
-                        minify(node, options, recursive, errors);
+                        minify(node, options, recursive, errors, nestingContent);
                     }
                 }
+            }
+            if (!nestingContent &&
+                // @ts-ignore
+                node != null &&
+                // previous.optimized != null &&
+                node.typ == 'Rule' &&
+                node.sel.includes('&')) {
+                fixSelector(node);
             }
         }
         return ast;
@@ -4641,181 +4856,6 @@
                 Object.defineProperty(node, 'raw', { ...definedPropertySettings, value: raw });
             }
         }
-        // }
-    }
-
-    function* walk(node) {
-        // @ts-ignore
-        yield* doWalk(node, null, null);
-    }
-    function* doWalk(node, parent, root) {
-        yield { node, parent, root };
-        if ('chi' in node) {
-            for (const child of node.chi) {
-                yield* doWalk(child, node, (root ?? node));
-            }
-        }
-    }
-    function* walkValues(values, parent) {
-        for (const value of values) {
-            // @ts-ignore
-            yield { value, parent };
-            if ('chi' in value) {
-                yield* walkValues(value.chi, value);
-            }
-        }
-    }
-
-    function expand(ast) {
-        //
-        if (!['Rule', 'StyleSheet', 'AtRule'].includes(ast.typ)) {
-            return ast;
-        }
-        if ('Rule' == ast.typ) {
-            return {
-                typ: 'StyleSheet',
-                chi: expandRule(ast)
-            };
-        }
-        if (!('chi' in ast)) {
-            return { ...ast };
-        }
-        const result = { ...ast, chi: [] };
-        // @ts-ignore
-        for (let i = 0; i < ast.chi.length; i++) {
-            // @ts-ignore
-            const node = ast.chi[i];
-            if (node.typ == 'Rule') {
-                // @ts-ignore
-                result.chi.push(...expandRule(node));
-                // i += expanded.length - 1;
-            }
-            else if (node.typ == 'AtRule' && 'chi' in node) {
-                let hasRule = false;
-                let j = node.chi.length;
-                while (j--) {
-                    if (node.chi[j].typ == 'Rule' || node.chi[j].typ == 'AtRule') {
-                        hasRule = true;
-                        break;
-                    }
-                }
-                // @ts-ignore
-                result.chi.push({ ...(hasRule ? expand(node) : node) });
-            }
-            else {
-                // @ts-ignore
-                result.chi.push(node);
-            }
-        }
-        return result;
-    }
-    function expandRule(node) {
-        const ast = { ...node, chi: node.chi.slice() };
-        const result = [];
-        if (ast.typ == 'Rule') {
-            let i = 0;
-            // @ts-ignore
-            delete ast.raw;
-            // @ts-ignore
-            delete ast.optimized;
-            for (; i < ast.chi.length; i++) {
-                if (ast.chi[i].typ == 'Rule') {
-                    const rule = ast.chi[i];
-                    if (!rule.sel.includes('&')) {
-                        const selRule = splitRule(rule.sel);
-                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
-                        rule.sel = selRule.reduce((acc, curr) => {
-                            acc.push(curr.join(''));
-                            return acc;
-                        }, []).join(',');
-                    }
-                    else {
-                        rule.sel = replaceCompount(rule.sel, ast.sel);
-                    }
-                    delete rule.raw;
-                    delete rule.optimized;
-                    ast.chi.splice(i--, 1);
-                    result.push(...expandRule(rule));
-                }
-                else if (ast.chi[i].typ == 'AtRule') {
-                    let astAtRule = ast.chi[i];
-                    const values = [];
-                    if (astAtRule.nam == 'scope') {
-                        if (astAtRule.val.includes('&')) {
-                            astAtRule.val = replaceCompount(astAtRule.val, ast.sel);
-                        }
-                        // @ts-ignore
-                        astAtRule = expand(astAtRule);
-                    }
-                    else {
-                        // @ts-ignore
-                        const clone = { ...ast, chi: astAtRule.chi.slice() };
-                        // @ts-ignore
-                        astAtRule.chi.length = 0;
-                        for (const r of expandRule(clone)) {
-                            if (r.typ == 'AtRule' && 'chi' in r) {
-                                if (astAtRule.val !== '' && r.val !== '') {
-                                    if (astAtRule.nam == 'media' && r.nam == 'media') {
-                                        r.val = astAtRule.val + ' and ' + r.val;
-                                    }
-                                    else if (astAtRule.nam == 'layer' && r.nam == 'layer') {
-                                        r.val = astAtRule.val + '.' + r.val;
-                                    }
-                                }
-                                // @ts-ignore
-                                values.push(r);
-                            }
-                            else if (r.typ == 'Rule') {
-                                // @ts-ignore
-                                astAtRule.chi.push(...expandRule(r));
-                            }
-                            else {
-                                // @ts-ignore
-                                astAtRule.chi.push(r);
-                            }
-                        }
-                    }
-                    // @ts-ignore
-                    result.push(...(astAtRule.chi.length > 0 ? [astAtRule].concat(values) : values));
-                    ast.chi.splice(i--, 1);
-                }
-            }
-        }
-        // @ts-ignore
-        return ast.chi.length > 0 ? [ast].concat(result) : result;
-    }
-    function replaceCompount(input, replace) {
-        const tokens = parseString(input);
-        for (const t of walkValues(tokens)) {
-            if (t.value.typ == 'Literal') {
-                if (t.value.val == '&') {
-                    t.value.val = replace;
-                }
-                else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {
-                    t.value.val = replaceCompoundLiteral(t.value.val, replace);
-                }
-            }
-        }
-        return tokens.reduce((acc, curr) => acc + renderToken(curr), '');
-    }
-    function replaceCompoundLiteral(selector, replace) {
-        const tokens = [''];
-        let i = 0;
-        for (; i < selector.length; i++) {
-            if (selector.charAt(i) == '&') {
-                tokens.push('&');
-                tokens.push('');
-            }
-            else {
-                tokens[tokens.length - 1] += selector.charAt(i);
-            }
-        }
-        return tokens.sort((a, b) => {
-            if (a == '&') {
-                return 1;
-            }
-            return b == '&' ? -1 : 0;
-        }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
     }
 
     async function transform$1(css, options = {}) {
@@ -5007,6 +5047,7 @@
     exports.reduceSelector = reduceSelector;
     exports.render = render;
     exports.renderToken = renderToken;
+    exports.replaceCompound = replaceCompound;
     exports.resolve = resolve;
     exports.splitRule = splitRule;
     exports.tokenize = tokenize;

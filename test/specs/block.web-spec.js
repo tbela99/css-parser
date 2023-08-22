@@ -176,7 +176,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 `;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`abbr:is([title],[data-original-title],abbr>[data-original-title]){text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
+        }).then(result => f(result.code).equals(`abbr[title],abbr[data-original-title],abbr>[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
     });
 
     it('merge at-rule & escape sequence #11', function () {

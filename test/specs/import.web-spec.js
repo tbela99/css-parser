@@ -19,6 +19,6 @@ describe('process import', function () {
         return transform(atRule, {
             minify: true,
             resolveImport: true
-        }).then(result => f(result.code).equals(`p{color:#8133cc26}abbr:is([title],[data-original-title]){text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
+        }).then(result => f(result.code).equals(`p{color:#8133cc26}abbr[title],abbr[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
     });
 });

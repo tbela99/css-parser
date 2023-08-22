@@ -1,16 +1,10 @@
-import {AstNode, AstRuleList, Token, WalkResult} from "../../@types";
+import {AstNode, AstRuleList, Token} from "../../@types";
 
-export function* walk(node: AstNode): Generator<{
+export function* walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<{
     node: AstNode,
     parent?: AstRuleList,
     root?: AstRuleList
 }> {
-
-    // @ts-ignore
-    yield* doWalk(node, null, null);
-}
-
-function* doWalk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult> {
 
     yield {node, parent, root};
 
@@ -18,7 +12,7 @@ function* doWalk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Gener
 
         for (const child of <Array<AstNode>>node.chi) {
 
-            yield* doWalk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node))
+            yield* walk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node))
         }
     }
 }

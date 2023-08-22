@@ -68,7 +68,7 @@ function expandRule(node) {
                     }, []).join(',');
                 }
                 else {
-                    rule.sel = replaceCompount(rule.sel, ast.sel);
+                    rule.sel = replaceCompound(rule.sel, ast.sel);
                 }
                 delete rule.raw;
                 delete rule.optimized;
@@ -80,7 +80,7 @@ function expandRule(node) {
                 const values = [];
                 if (astAtRule.nam == 'scope') {
                     if (astAtRule.val.includes('&')) {
-                        astAtRule.val = replaceCompount(astAtRule.val, ast.sel);
+                        astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
                     // @ts-ignore
                     astAtRule = expand(astAtRule);
@@ -122,7 +122,7 @@ function expandRule(node) {
     // @ts-ignore
     return ast.chi.length > 0 ? [ast].concat(result) : result;
 }
-function replaceCompount(input, replace) {
+function replaceCompound(input, replace) {
     const tokens = parseString(input);
     for (const t of walkValues(tokens)) {
         if (t.value.typ == 'Literal') {
@@ -156,4 +156,4 @@ function replaceCompoundLiteral(selector, replace) {
     }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
 }
 
-export { expand };
+export { expand, replaceCompound };
