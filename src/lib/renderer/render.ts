@@ -437,7 +437,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
         case 'Perc':
 
-            return token.val + '%';
+            const perc = reduceNumber(token.val);
+            return options.minify && perc == '0' ? '0' : perc + '%';
 
         case 'Number':
 

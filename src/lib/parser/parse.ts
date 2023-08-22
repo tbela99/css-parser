@@ -284,7 +284,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                 const position: Position = <Position>map.get(tokens[0]);
 
                 const uniq = new Map<string, string[]>;
-                parseTokens(tokens, {minify: options.minify}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
+                parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
 
                     if (curr.typ == 'Whitespace') {
 
@@ -298,7 +298,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
                         }
                     }
 
-                    let t = renderToken(curr, {minify: true});
+                    let t = renderToken(curr, {minify: false});
                     if (t == ',') {
                         acc.push([]);
                     } else {

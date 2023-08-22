@@ -12,7 +12,7 @@ export function* walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): 
 
         for (const child of <Array<AstNode>>node.chi) {
 
-            yield* walk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node))
+            yield* walk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node));
         }
     }
 }

@@ -772,7 +772,8 @@
                 }
                 return val + unit;
             case 'Perc':
-                return token.val + '%';
+                const perc = reduceNumber(token.val);
+                return options.minify && perc == '0' ? '0' : perc + '%';
             case 'Number':
                 return reduceNumber(token.val);
             case 'Comment':
@@ -2820,7 +2821,7 @@
                 if (delim.typ == 'Block-start') {
                     const position = map.get(tokens[0]);
                     const uniq = new Map;
-                    parseTokens(tokens, { minify: options.minify }).reduce((acc, curr, index, array) => {
+                    parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
                         if (curr.typ == 'Whitespace') {
                             if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
                                 trimWhiteSpace.includes(array[index + 1]?.typ) ||
@@ -2829,7 +2830,7 @@
                                 return acc;
                             }
                         }
-                        let t = renderToken(curr, { minify: true });
+                        let t = renderToken(curr, { minify: false });
                         if (t == ',') {
                             acc.push([]);
                         }
