@@ -276,7 +276,8 @@ function renderToken(token, options = {}, reducer, errors) {
             }
             return val + unit;
         case 'Perc':
-            return token.val + '%';
+            const perc = reduceNumber(token.val);
+            return options.minify && perc == '0' ? '0' : perc + '%';
         case 'Number':
             return reduceNumber(token.val);
         case 'Comment':

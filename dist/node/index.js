@@ -1,6 +1,6 @@
 export { combinators, hasDeclaration, minify, minifyRule, reduceSelector, splitRule } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
-export { expand } from '../lib/ast/expand.js';
+export { expand, replaceCompound } from '../lib/ast/expand.js';
 export { colorsFunc, render, renderToken } from '../lib/renderer/render.js';
 import { parse as parse$1 } from '../lib/parser/parse.js';
 export { parseString, urlTokenMatcher } from '../lib/parser/parse.js';

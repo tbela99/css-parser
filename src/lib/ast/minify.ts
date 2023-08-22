@@ -3,14 +3,17 @@ import {
     AstAtRule,
     AstDeclaration,
     AstNode,
-    AstRule, ErrorDescription, MatchedSelector,
+    AstRule, ErrorDescription, LiteralToken, MatchedSelector,
     NodeType,
     OptimizedSelector,
     ParserOptions, ShorthandPropertyType
 } from "../../@types";
 import {PropertyList} from "../parser/declaration";
 import {eq} from "../parser/utils/eq";
-import {render} from "../renderer";
+import {render, renderToken} from "../renderer";
+import {replaceCompound} from "./expand";
+import {parseString} from "../parser";
+import {walkValues} from "./walk";
 
 
 const configuration = getConfig();
@@ -18,7 +21,7 @@ export const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 
-export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[]): AstNode {
+export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean): AstNode {
 
     function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast: AstNode, i: number, nodeIndex: number): AstRule {
 
@@ -422,8 +425,41 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
         }
     }
 
+    function fixSelector(node: AstRule) {
+
+        // @ts-ignore
+        if (node.sel.includes('&')) {
+
+            const attributes = parseString(node.sel);
+
+            for (const attr of walkValues(attributes)) {
+
+                if (attr.value.typ == 'Pseudo-class-func' && attr.value.val == ':is') {
+
+                    let i = attr.value.chi.length;
+
+                    while (i--) {
+
+                        if (attr.value.chi[i].typ == 'Literal' && (<LiteralToken>attr.value.chi[i]).val == '&') {
+
+                            attr.value.chi.splice(i, 1);
+                        }
+                    }
+                }
+            }
+
+            node.sel = attributes.reduce((acc, curr) => acc + renderToken(curr), '');
+        }
+    }
+
     // @ts-ignore
     if (('chi' in ast) && ast.chi?.length > 0) {
+
+        if (!nestingContent) {
+
+            nestingContent = options.nestingRules && ast.typ == 'Rule';
+        }
+
         let i: number = 0;
         let previous: AstNode;
         let node: AstNode;
@@ -439,7 +475,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
 
             // @ts-ignore
             if (previous == node) {
-                // console.error('idem!');
+
                 // @ts-ignore
                 ast.chi.splice(i, 1);
                 i--;
@@ -458,8 +494,6 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                     i--;
                     continue;
                 }
-
-                // console.debug({previous, node});
 
                 // @ts-ignore
                 if (previous?.typ == 'AtRule' &&
@@ -488,7 +522,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
 
                 else {
 
-                    minify(node, options, recursive, errors);
+                    minify(node, options, recursive, errors, nestingContent);
                 }
 
                 previous = node;
@@ -561,7 +595,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(<AstRule>wrapper, options, recursive, errors);
+                        minify(<AstRule>wrapper, options, recursive, errors, nestingContent);
                         continue;
                     }
                     // @ts-ignore
@@ -598,7 +632,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                     // @ts-ignore
                     const selector: string[][] = node.optimized.selector.reduce((acc, curr) => {
 
-                        if (curr[0] == '&') {
+                        if (curr[0] == '&' && curr.length > 1) {
 
                             if (curr[1] == ' ') {
 
@@ -631,7 +665,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         wrap = selector.some(s => s[0] != '&');
                     }
 
-                    const rule = selector.map(s => {
+                    let rule = selector.map(s => {
 
                         if (s[0] == '&') {
 
@@ -643,7 +677,18 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                     }).join(',');
 
                     // @ts-ignore
-                    node.sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                    let sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+
+                    if (rule.includes('&')) {
+
+                        // @ts-ignore
+                        rule = replaceCompound(rule, node.optimized.optimized[0]);
+                    }
+
+                    if (sel.length < (<AstRule>node).sel.length) {
+
+                        (<AstRule>node).sel = sel;
+                    }
                 }
             }
 
@@ -683,7 +728,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                                     minifyRule(node);
                                 }
                                 else {
-                                    minify(node, options, recursive, errors);
+                                    minify(node, options, recursive, errors, nestingContent);
                                 }
 
                                 i--;
@@ -726,7 +771,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                             // @ts-ignore
                             minifyRule(previous);
                         } else {
-                            minify(previous, options, recursive, errors);
+                            minify(previous, options, recursive, errors, nestingContent);
                         }
                     }
                 }
@@ -743,16 +788,26 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
 
                         else {
 
-                            minify(previous, options, recursive, errors);
+                            minify(previous, options, recursive, errors, nestingContent);
                         }
                     }
                 }
             }
 
+            if (!nestingContent &&
+                // @ts-ignore
+                previous != null &&
+                // previous.optimized != null &&
+                previous.typ == 'Rule' &&
+                (<AstRule>previous).sel.includes('&')) {
+
+                fixSelector((<AstRule>previous));
+            }
 
             previous = node;
             nodeIndex = i;
         }
+
         // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
@@ -761,9 +816,19 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             } else {
                 // @ts-ignore
                 if (!(node.typ == 'AtRule' && (<AstAtRule>node).nam != 'font-face')) {
-                    minify(node, options, recursive, errors);
+                    minify(node, options, recursive, errors, nestingContent);
                 }
             }
+        }
+
+        if (!nestingContent &&
+            // @ts-ignore
+            node != null &&
+            // previous.optimized != null &&
+            node.typ == 'Rule' &&
+            (<AstRule>node).sel.includes('&')) {
+
+            fixSelector((<AstRule>node));
         }
     }
     return ast;
@@ -1048,6 +1113,7 @@ function reduceRuleSelector(node: AstRule) {
     if (optimized != null) {
         Object.defineProperty(node, 'optimized', {...definedPropertySettings, value: optimized});
     }
+
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
 
         const raw = [
@@ -1061,6 +1127,7 @@ function reduceRuleSelector(node: AstRule) {
                 return acc;
             }, [])).concat(')')
         ];
+
         const sel = raw[0].join('');
         if (sel.length < node.sel.length) {
             node.sel = sel;
@@ -1068,5 +1135,4 @@ function reduceRuleSelector(node: AstRule) {
             Object.defineProperty(node, 'raw', {...definedPropertySettings, value: raw});
         }
     }
-    // }
 }

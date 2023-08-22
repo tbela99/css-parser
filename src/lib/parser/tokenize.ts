@@ -113,7 +113,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                     next(escapeSequence.length + 1 + (isWhiteSpace(peek()?.charCodeAt(0)) ? 1 : 0));
 
-                        continue;
+                    continue;
                 }
 
                 buffer += next(2);
@@ -181,17 +181,22 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
     function next(count: number = 1): string {
 
         let char: string = '';
+        let chr: string = '';
 
-        while (count-- > 0 && ind < iterator.length) {
+        if (count < 0) {
 
+            return '';
+        }
+
+        while (count-- && (chr = iterator.charAt(ind + 1))) {
+
+            char += chr;
             const codepoint: number = iterator.charCodeAt(++ind);
 
             if (isNaN(codepoint)) {
 
                 return char;
             }
-
-            char += iterator.charAt(ind);
 
             if (isNewLine(codepoint)) {
 
@@ -298,9 +303,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     if (value === '') {
 
                         yield pushToken(buffer, 'Bad-cdo');
-                    }
-
-                    else {
+                    } else {
 
                         yield pushToken(buffer + next(2), 'CDOCOMM');
                     }
@@ -446,7 +449,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     consumeWhiteSpace();
                     value = peek();
 
-                    let cp : number;
+                    let cp: number;
                     let whitespace: string = '';
                     let hasWhiteSpace = false;
                     let errorState = false;
@@ -471,7 +474,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                                     hasNewLine = true;
 
-                                    while(value = next()) {
+                                    while (value = next()) {
 
                                         buffer += value;
 
@@ -496,9 +499,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                                 if (cp == 0x5c) {
 
                                     buffer += next();
-                                }
-
-                                else if (value == quote) {
+                                } else if (value == quote) {
 
                                     inquote = false;
                                 }
@@ -544,7 +545,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                                     break;
                                 }
 
-                                while(value = next()) {
+                                while (value = next()) {
 
                                     cp = value.charCodeAt(0);
 
@@ -600,7 +601,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                                 hasWhiteSpace = true;
                                 whitespace = value;
 
-                                while(isWhiteSpace(peek()?.charCodeAt(0))) {
+                                while (isWhiteSpace(peek()?.charCodeAt(0))) {
 
                                     whitespace += next();
                                 }
@@ -624,7 +625,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                                 buffer += whitespace + value;
 
-                                while(value = peek()) {
+                                while (value = peek()) {
 
                                     cp = value.charCodeAt(0);
 
