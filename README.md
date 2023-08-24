@@ -16,6 +16,7 @@ $ npm install @tbela99/css-parser
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - replace @import at-rules with actual css content of the imported rule
 - automatically generate nested css rules
+- compute css shorthands. see the list
 - expand nested css
 - works the same way in node and web browser
 

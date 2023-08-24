@@ -1950,7 +1950,7 @@
         }
         let key;
         for (key of k1) {
-            if (!eq(a[key], b[key])) {
+            if (!(key in b) || !eq(a[key], b[key])) {
                 return false;
             }
         }
@@ -3897,10 +3897,6 @@
         const result = [];
         if (ast.typ == 'Rule') {
             let i = 0;
-            // @ts-ignore
-            delete ast.raw;
-            // @ts-ignore
-            delete ast.optimized;
             for (; i < ast.chi.length; i++) {
                 if (ast.chi[i].typ == 'Rule') {
                     const rule = ast.chi[i];
@@ -3915,8 +3911,6 @@
                     else {
                         rule.sel = replaceCompound(rule.sel, ast.sel);
                     }
-                    delete rule.raw;
-                    delete rule.optimized;
                     ast.chi.splice(i--, 1);
                     result.push(...expandRule(rule));
                 }

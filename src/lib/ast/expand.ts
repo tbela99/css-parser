@@ -1,4 +1,4 @@
-import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet} from "../../@types";
+import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
 import {combinators, splitRule} from "./minify";
 import {parseString} from "../parser";
 import {walkValues} from "./walk";
@@ -65,23 +65,18 @@ export function expand(ast: AstNode): AstNode {
 
 function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
-    const ast = <AstRule>{...node, chi: node.chi.slice()};
+    const ast: AstRule = <AstRule>{...node, chi: node.chi.slice()};
     const result: Array<AstRule | AstAtRule> = [];
 
     if (ast.typ == 'Rule') {
 
-        let i = 0;
-
-        // @ts-ignore
-        delete ast.raw;
-        // @ts-ignore
-        delete ast.optimized;
+        let i:number = 0;
 
         for (; i < ast.chi.length; i++) {
 
             if (ast.chi[i].typ == 'Rule') {
 
-                const rule = <AstRule>(<AstRule>ast).chi[i];
+                const rule: AstRule = <AstRule>(<AstRule>ast).chi[i];
 
                 if (!rule.sel.includes('&')) {
 
@@ -99,16 +94,13 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     rule.sel = replaceCompound(rule.sel, ast.sel);
                 }
 
-                delete rule.raw;
-                delete rule.optimized;
-
                 ast.chi.splice(i--, 1);
 
                 result.push(...<AstRule[]>expandRule(rule));
             } else if (ast.chi[i].typ == 'AtRule') {
 
 
-                let astAtRule = <AstAtRule>ast.chi[i];
+                let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
                 const values = <Array<AstRule | AstAtRule>>[];
 
                 if (astAtRule.nam == 'scope') {
@@ -125,7 +117,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                 else {
 
                     // @ts-ignore
-                    const clone = <AstRule>{...ast, chi: astAtRule.chi.slice()};
+                    const clone: AstRule = <AstRule>{...ast, chi: astAtRule.chi.slice()};
 
                     // @ts-ignore
                     astAtRule.chi.length = 0;
@@ -174,7 +166,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
 export function replaceCompound(input: string, replace: string) {
 
-    const tokens = parseString(input);
+    const tokens: Token[] = parseString(input);
 
     for (const t of walkValues(tokens)) {
 
@@ -197,7 +189,7 @@ function replaceCompoundLiteral(selector: string, replace: string) {
 
     const tokens: string[] = [''];
 
-    let i = 0;
+    let i: number = 0;
 
     for (; i < selector.length; i++) {
 
@@ -219,5 +211,5 @@ function replaceCompoundLiteral(selector: string, replace: string) {
         }
 
         return b == '&' ? -1 : 0;
-    }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
+    }).reduce((acc: string, curr: string) => acc + (curr == '&' ? replace : curr), '');
 }

@@ -47,7 +47,7 @@ export function eq(a: { [key: string]: any }, b: { [key: string]: any }): boolea
 
     for (key of k1) {
 
-        if (!eq(a[key], b[key])) {
+        if (!(key in b) || !eq(a[key], b[key])) {
 
             return false;
         }
