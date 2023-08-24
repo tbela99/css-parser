@@ -14,11 +14,47 @@ $ npm install @tbela99/css-parser
 
 - fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- replace @import at-rules with actual css content of the imported rule
 - automatically generate nested css rules
-- compute css shorthands. see the list
+- compute css shorthands. see the list below
 - expand nested css
 - works the same way in node and web browser
+
+#### Minification
+
+- [x] merge identical rules
+- [x] merge adjacent rules
+- [x] minify colors
+- [x] minify numbers and Dimensions tokens
+- [x] compute shorthand: see the list below
+- [x] remove redundant declarations
+- [x] simple shorthand properties (padding, margin, etc). must have all required properties
+- [x] complex shorthand properties (background, font, etc.). may have optional properties
+- [x] conditionally unwrap :is()
+- [x] automatic css nesting
+- [x] automatically wrap selectors using :is()
+- [x] multi-level shorthand properties (border - [border-width, border-color, border-style, etc.]) https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties
+- [x] avoid reparsing (declarations, selectors, at-rule)
+- [x] node and browser versions
+- [x] decode and replace utf-8 escape sequence
+
+#### Computed shorthands
+- [x] background
+- [x] border
+- [x] border-bottom
+- [x] border-color
+- [x] border-left
+- [x] border-radius
+- [x] border-right
+- [x] border-style
+- [x] border-top
+- [x] border-width
+- [x] font
+- [x] inset
+- [x] margin
+- [x] outline
+- [x] overflow
+- [x] padding
+- [x] text-decoration
 
 ### Performance
 

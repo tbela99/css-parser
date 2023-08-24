@@ -1,3 +1,4 @@
+# Changelog
 
 ## v0.0.1
 
@@ -39,9 +40,11 @@
 - [x] text-decoration
 
 ### Performance
+
 - [x] flatten @import
 
 ### Error handling
+
 - [x] parse bad comments / cdo comments
 - [x] parse bad string 1
 - [x] parse bad string 2
@@ -51,9 +54,11 @@
 - [x] parse bad import
 
 # Testing
+
 - [x] node tests
 - [x] browser tests
 
 # Code Coverage
+
 - [x] node
 - [x] browser

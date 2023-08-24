@@ -2,7 +2,7 @@
 /benchmark
 /tools
 /ROADMAP.md
-/ROADMAP.draft.md
+/CHANGELOG.md
 /rollup.config.mjs
 /tsconfig.json
 /src
