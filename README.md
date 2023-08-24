@@ -10,14 +10,14 @@ CSS parser for node and the browser
 $ npm install @tbela99/css-parser
 ```
 
+## Features
+
 - fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - automatically generate nested css rules
 - compute css shorthands. see the list below
 - expand nested css
 - works the same way in node and web browser
-
-### Features
 
 ## Transform
 
