@@ -27,8 +27,6 @@ $ npm install @tbela99/css-parser
 - [x] minify numbers and Dimensions tokens
 - [x] compute shorthand: see the list below
 - [x] remove redundant declarations
-- [x] simple shorthand properties (padding, margin, etc). must have all required properties
-- [x] complex shorthand properties (background, font, etc.). may have optional properties
 - [x] conditionally unwrap :is()
 - [x] automatic css nesting
 - [x] automatically wrap selectors using :is()
