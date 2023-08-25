@@ -501,7 +501,7 @@ export function getAngle(token: NumberToken | AngleToken): number {
     }
 
     // @ts-ignore
-    return token.val / 360
+    return token.val / 360;
 }
 
 function hsl2rgb(h: number, s: number, l: number, a: number | null = null) {

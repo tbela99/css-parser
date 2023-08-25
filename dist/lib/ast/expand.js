@@ -52,10 +52,6 @@ function expandRule(node) {
     const result = [];
     if (ast.typ == 'Rule') {
         let i = 0;
-        // @ts-ignore
-        delete ast.raw;
-        // @ts-ignore
-        delete ast.optimized;
         for (; i < ast.chi.length; i++) {
             if (ast.chi[i].typ == 'Rule') {
                 const rule = ast.chi[i];
@@ -70,8 +66,6 @@ function expandRule(node) {
                 else {
                     rule.sel = replaceCompound(rule.sel, ast.sel);
                 }
-                delete rule.raw;
-                delete rule.optimized;
                 ast.chi.splice(i--, 1);
                 result.push(...expandRule(rule));
             }

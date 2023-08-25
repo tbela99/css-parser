@@ -26,4 +26,29 @@ describe('Parse color', function () {
  color: #00bfff80
 }`));
     });
+
+    it('hsl #5', function () {
+        return parse(`a {
+color: hsl(300deg 100% 50% / 1);
+`).then(result => f(render(result.ast, {minify: false}).code).equals(`a {
+ color: #f0f
+}`));
+    });
+
+    it('device-cmyk #6', function () {
+        return parse(`a {
+color: device-cmyk(0 81% 81% 30%);
+`).then(result => f(render(result.ast, {minify: false}).code).equals(`a {
+ color: #b32222
+}`));
+    });
+
+    it('hwb #7', function () {
+        return parse(`
+a {
+color: hwb(3.1416rad 0% 0% / 100%)
+`).then(result => f(render(result.ast, {minify: false}).code).equals(`a {
+ color: cyan
+}`));
+    });
 });

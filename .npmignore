@@ -2,6 +2,7 @@
 /benchmark
 /tools
 /ROADMAP.md
+/CHANGELOG.md
 /rollup.config.mjs
 /tsconfig.json
 /src
