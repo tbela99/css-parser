@@ -127,7 +127,7 @@ import as a CommonJS module
 
 ```javascript
 
-import {transform} from '@tbela99/css-parser/cjs';
+const {transform} = require('@tbela99/css-parser/cjs');
 
 // ...
 ```
