@@ -828,7 +828,7 @@ function isColor(token) {
     if (token.typ == 'Func' && token.chi.length > 0 && colorsFunc.includes(token.val)) {
         // @ts-ignore
         for (const v of token.chi) {
-            if (!['Number', 'Perc', 'Comma', 'Whitespace'].includes(v.typ)) {
+            if (!['Number', 'Angle', 'Perc', 'Comma', 'Whitespace', 'Literal'].includes(v.typ)) {
                 return false;
             }
         }

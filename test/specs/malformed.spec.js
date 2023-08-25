@@ -144,4 +144,39 @@ describe('malformed tokens', function () {
  }
 }`));
     });
+
+    it('bad declaration #10', async function () {
+        const css = `
+       
+a {
+color: 
+;
+`;
+
+        return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            minify: false,
+            removeComments: false,
+            preserveLicense: true
+        }).code).equals(``));
+    });
+
+    it('bad declaration #11', async function () {
+        const css = `
+      
+a {
+color: hwb(3.1416rad 0% 0% / 100%);
+transform: rotate(3.1416rad);
+color: 
+;
+`;
+
+        return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            minify: false,
+            removeComments: false,
+            preserveLicense: true
+        }).code).equals(`a {
+ color: cyan;
+ transform: rotate(3.1416rad)
+}`));
+    });
 });
