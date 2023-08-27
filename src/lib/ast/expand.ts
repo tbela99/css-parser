@@ -1,27 +1,28 @@
-import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
 import {combinators, splitRule} from "./minify";
 import {parseString} from "../parser";
 import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
+import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
+import {EnumToken, NodeType} from "./types";
 
 export function expand(ast: AstNode): AstNode {
     //
-    if (!['Rule', 'StyleSheet', 'AtRule'].includes(ast.typ)) {
+    if (![NodeType.RuleNodeType, NodeType.StyleSheetNodeType, NodeType.AtRuleNodeType].includes(ast.typ)) {
 
         return ast;
     }
 
-    if ('Rule' == ast.typ) {
+    if (NodeType.RuleNodeType == ast.typ) {
 
         return <AstRuleStyleSheet>{
-            typ: 'StyleSheet',
+            typ: NodeType.StyleSheetNodeType,
             chi: expandRule(<AstRule>ast)
         }
     }
 
     if (!('chi' in ast)) {
 
-        return <AstAtRule> {...ast};
+        return <AstAtRule>{...ast};
     }
 
     const result = <AstRuleStyleSheet | AstAtRule>{...ast, chi: []};
@@ -32,19 +33,19 @@ export function expand(ast: AstNode): AstNode {
         // @ts-ignore
         const node = ast.chi[i];
 
-        if (node.typ == 'Rule') {
+        if (node.typ == NodeType.RuleNodeType) {
 
             // @ts-ignore
             result.chi.push(...expandRule(<AstRule>node));
             // i += expanded.length - 1;
-        } else if (node.typ == 'AtRule' && 'chi' in node) {
+        } else if (node.typ == NodeType.AtRuleNodeType && 'chi' in node) {
 
             let hasRule = false;
             let j = node.chi.length;
 
             while (j--) {
 
-                if (node.chi[j].typ == 'Rule' || node.chi[j].typ == 'AtRule') {
+                if (node.chi[j].typ == NodeType.RuleNodeType || node.chi[j].typ == NodeType.AtRuleNodeType) {
 
                     hasRule = true;
                     break;
@@ -68,13 +69,13 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
     const ast: AstRule = <AstRule>{...node, chi: node.chi.slice()};
     const result: Array<AstRule | AstAtRule> = [];
 
-    if (ast.typ == 'Rule') {
+    if (ast.typ == NodeType.RuleNodeType) {
 
-        let i:number = 0;
+        let i: number = 0;
 
         for (; i < ast.chi.length; i++) {
 
-            if (ast.chi[i].typ == 'Rule') {
+            if (ast.chi[i].typ == NodeType.RuleNodeType) {
 
                 const rule: AstRule = <AstRule>(<AstRule>ast).chi[i];
 
@@ -97,7 +98,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                 ast.chi.splice(i--, 1);
 
                 result.push(...<AstRule[]>expandRule(rule));
-            } else if (ast.chi[i].typ == 'AtRule') {
+            } else if (ast.chi[i].typ == NodeType.AtRuleNodeType) {
 
 
                 let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
@@ -110,11 +111,8 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
 
-                    // @ts-ignore
-                    astAtRule = <AstRule>expand(astAtRule);
-                }
-
-                else {
+                    astAtRule = <AstAtRule>expand(astAtRule);
+                } else {
 
                     // @ts-ignore
                     const clone: AstRule = <AstRule>{...ast, chi: astAtRule.chi.slice()};
@@ -124,15 +122,14 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     for (const r of (<Array<AstRule | AstAtRule>>expandRule(clone))) {
 
-                        if (r.typ == 'AtRule' && 'chi' in r) {
+                        if (r.typ == NodeType.AtRuleNodeType && 'chi' in r) {
 
-                            if (astAtRule.val !== '' && r.val !== '') {
+                            if (astAtRule.val !== '' && (<AstAtRule>r).val !== '') {
 
-                                if (astAtRule.nam == 'media' && r.nam == 'media') {
+                                if (astAtRule.nam == 'media' && (<AstAtRule>r).nam == 'media') {
 
                                     (<AstAtRule>r).val = astAtRule.val + ' and ' + (<AstAtRule>r).val;
-                                }
-                                else if (astAtRule.nam == 'layer' && r.nam == 'layer') {
+                                } else if (astAtRule.nam == 'layer' && (<AstAtRule>r).nam == 'layer') {
 
                                     (<AstAtRule>r).val = astAtRule.val + '.' + (<AstAtRule>r).val;
                                 }
@@ -140,7 +137,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                             // @ts-ignore
                             values.push(r);
-                        } else if (r.typ == 'Rule') {
+                        } else if (r.typ == NodeType.RuleNodeType) {
 
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
@@ -170,7 +167,7 @@ export function replaceCompound(input: string, replace: string) {
 
     for (const t of walkValues(tokens)) {
 
-        if (t.value.typ == 'Literal') {
+        if (t.value.typ == EnumToken.LiteralTokenType) {
 
             if (t.value.val == '&') {
 

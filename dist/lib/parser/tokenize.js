@@ -1,4 +1,7 @@
 import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from './utils/syntax.js';
+import { EnumToken } from '../ast/types.js';
+import './parse.js';
+import '../renderer/utils/color.js';
 
 function* tokenize(iterator) {
     let ind = -1;
@@ -80,7 +83,7 @@ function* tokenize(iterator) {
             }
             if (value == quote) {
                 buffer += value;
-                yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'String');
+                yield pushToken(buffer, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
                 next();
                 // i += value.length;
                 buffer = '';
@@ -90,7 +93,7 @@ function* tokenize(iterator) {
                 hasNewLine = true;
             }
             if (hasNewLine && value == ';') {
-                yield pushToken(buffer + value, 'Bad-string');
+                yield pushToken(buffer + value, EnumToken.BadStringTokenType);
                 buffer = '';
                 next();
                 break;
@@ -99,11 +102,11 @@ function* tokenize(iterator) {
             next();
         }
         if (hasNewLine) {
-            yield pushToken(buffer, 'Bad-string');
+            yield pushToken(buffer, EnumToken.BadStringTokenType);
         }
         else {
             // EOF - 'Unclosed-string' fixed
-            yield pushToken(buffer + quote, 'String');
+            yield pushToken(buffer + quote, EnumToken.StringTokenType);
         }
         buffer = '';
     }
@@ -152,7 +155,7 @@ function* tokenize(iterator) {
                     break;
                 }
             }
-            yield pushToken('', 'Whitespace');
+            yield pushToken('', EnumToken.WhitespaceTokenType);
             buffer = '';
         }
         switch (value) {
@@ -172,7 +175,7 @@ function* tokenize(iterator) {
                         if (value == '*') {
                             buffer += value;
                             if (peek() == '/') {
-                                yield pushToken(buffer + next(), 'Comment');
+                                yield pushToken(buffer + next(), EnumToken.CommentTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -181,7 +184,7 @@ function* tokenize(iterator) {
                             buffer += value;
                         }
                     }
-                    yield pushToken(buffer, 'Bad-comment');
+                    yield pushToken(buffer, EnumToken.BadCommentTokenType);
                     buffer = '';
                 }
                 break;
@@ -191,7 +194,7 @@ function* tokenize(iterator) {
                     buffer = '';
                 }
                 if (peek() == '=') {
-                    yield pushToken('', 'Lte');
+                    yield pushToken('', EnumToken.LteTokenType);
                     next();
                     break;
                 }
@@ -205,10 +208,10 @@ function* tokenize(iterator) {
                         }
                     }
                     if (value === '') {
-                        yield pushToken(buffer, 'Bad-cdo');
+                        yield pushToken(buffer, EnumToken.BadCdoTokenType);
                     }
                     else {
-                        yield pushToken(buffer + next(2), 'CDOCOMM');
+                        yield pushToken(buffer + next(2), EnumToken.CDOCOMMTokenType);
                     }
                     buffer = '';
                 }
@@ -241,7 +244,7 @@ function* tokenize(iterator) {
                 }
                 if (value == '=') {
                     buffer += value;
-                    yield pushToken(buffer, buffer[0] == '~' ? 'Includes' : 'Dash-matches');
+                    yield pushToken(buffer, buffer[0] == '~' ? EnumToken.IncludesTokenType : EnumToken.DashMatchTokenType);
                     buffer = '';
                     break;
                 }
@@ -257,11 +260,11 @@ function* tokenize(iterator) {
                     buffer = '';
                 }
                 if (peek() == '=') {
-                    yield pushToken('', 'Gte');
+                    yield pushToken('', EnumToken.GteTokenType);
                     next();
                 }
                 else {
-                    yield pushToken('', 'Gt');
+                    yield pushToken('', EnumToken.GtTokenType);
                 }
                 consumeWhiteSpace();
                 break;
@@ -300,7 +303,7 @@ function* tokenize(iterator) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
-                yield pushToken('', 'End-parens');
+                yield pushToken('', EnumToken.EndParensTokenType);
                 break;
             case '(':
                 if (buffer.length == 0) {
@@ -338,7 +341,7 @@ function* tokenize(iterator) {
                                         }
                                     }
                                     if (value === '') {
-                                        yield pushToken(buffer, 'Bad-string');
+                                        yield pushToken(buffer, EnumToken.BadUrlTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -365,7 +368,7 @@ function* tokenize(iterator) {
                                         break;
                                     }
                                     if (!(value = next())) {
-                                        yield pushToken(buffer, hasNewLine ? 'Bad-url-token' : 'Url-token');
+                                        yield pushToken(buffer, hasNewLine ? EnumToken.BadUrlTokenType : EnumToken.UrlTokenTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -373,8 +376,8 @@ function* tokenize(iterator) {
                                 cp = value.charCodeAt(0);
                                 // ')'
                                 if (cp == 0x29) {
-                                    yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'String');
-                                    yield pushToken('', 'End-parens');
+                                    yield pushToken(buffer, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
+                                    yield pushToken('', EnumToken.EndParensTokenType);
                                     buffer = '';
                                     break;
                                 }
@@ -385,15 +388,15 @@ function* tokenize(iterator) {
                                         continue;
                                     }
                                     if (cp == 0x29) {
-                                        yield pushToken(buffer, 'Bad-string');
-                                        yield pushToken('', 'End-parens');
+                                        yield pushToken(buffer, EnumToken.BadStringTokenType);
+                                        yield pushToken('', EnumToken.EndParensTokenType);
                                         buffer = '';
                                         break;
                                     }
                                     buffer += value;
                                 }
                                 if (hasNewLine) {
-                                    yield pushToken(buffer, 'Bad-string');
+                                    yield pushToken(buffer, EnumToken.BadStringTokenType);
                                     buffer = '';
                                 }
                                 break;
@@ -408,8 +411,8 @@ function* tokenize(iterator) {
                             cp = value.charCodeAt(0);
                             // ')'
                             if (cp == 0x29) {
-                                yield pushToken(buffer, 'Url-token');
-                                yield pushToken('', 'End-parens');
+                                yield pushToken(buffer, EnumToken.UrlTokenTokenType);
+                                yield pushToken('', EnumToken.EndParensTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -445,7 +448,7 @@ function* tokenize(iterator) {
                                     }
                                     buffer += next();
                                 }
-                                yield pushToken(buffer, 'Bad-url-token');
+                                yield pushToken(buffer, EnumToken.BadUrlTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -453,7 +456,7 @@ function* tokenize(iterator) {
                         }
                     }
                     if (buffer !== '') {
-                        yield pushToken(buffer, 'Url-token');
+                        yield pushToken(buffer, EnumToken.UrlTokenTokenType);
                         buffer = '';
                         break;
                     }
@@ -479,7 +482,7 @@ function* tokenize(iterator) {
                     buffer = '';
                 }
                 if (peek(9) == 'important') {
-                    yield pushToken('', 'Important');
+                    yield pushToken('', EnumToken.ImportantTokenType);
                     next(9);
                     buffer = '';
                     break;

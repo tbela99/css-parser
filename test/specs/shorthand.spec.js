@@ -134,54 +134,54 @@ background-size: cover auto, contain;
 }
 `;
 describe('shorthand', function () {
-    it('margin padding', function () {
+    it('margin padding #1', function () {
         return transform(marginPadding, options).then(result => f(result.code).equals('.test{margin:0 0 0 5px;top:4px;padding:0;text-align:justify}'));
     });
-    it('border-radius #1', function () {
+    it('border-radius #2', function () {
         return transform(borderRadius1, options).then(result => f(result.code).equals('.test{border-radius:4px 3px 6px/5px 4px 2px}'));
     });
-    it('border-radius #2', function () {
+    it('border-radius #3', function () {
         return transform(borderRadius2, options).then(result => f(result.code).equals('.test{border-radius:4px 3px 6px/2px 4px}'));
     });
-    it('border-width #3', function () {
+    it('border-width #4', function () {
         return transform(borderRadius3, options).then(result => f(result.code).equals('.test input[type=text]{border-width:2px thin}'));
     });
-    it('border-color #4', function () {
+    it('border-color #5', function () {
         return transform(borderColor, options).then(result => f(result.code).equals('.test input[type=text]{border-color:gold red}'));
     });
-    it('outline #5', function () {
+    it('outline #6', function () {
         return transform(outline1, options).then(result => f(result.code).equals('a:focus{outline:0}'));
     });
-    it('outline #6', function () {
+    it('outline #7', function () {
         return transform(outline2, options).then(result => f(result.code).equals('a:focus{outline:#dedede dotted thin}'));
     });
-    it('inset #6', function () {
+    it('inset #8', function () {
         return transform(inset1, options).then(result => f(result.code).equals('a:focus{inset:auto}'));
     });
-    it('font #7', function () {
+    it('font #9', function () {
         return transform(font1, options).then(result => f(result.code).equals('html,body{font:700 15px/1.5 Verdana,sans-serif}'));
     });
-    it('font #8', function () {
+    it('font #10', function () {
         return transform(font2, options).then(result => f(result.code).equals('samp{font:700 1em/1.19em small-caps monospace,serif}'));
     });
-    it('background #9', function () {
+    it('background #11', function () {
         return transform(background1, options).then(result => f(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'));
     });
-    it('background #10', function () {
+    it('background #12', function () {
         return transform(background2, options).then(result => f(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}'));
     });
-    it('background #11', function () {
+    it('background #13', function () {
         return transform(background3, options).then(result => f(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg) 50%/cover,#eee url(../../media/examples/lizard.png) 35%/contain}'));
     });
 
-    it('border #12', function () {
+    it('border #14', function () {
         return transform(`a{
         border: #333 solid;
         border-width: 2px;
         }`, options).then(result => f(result.code).equals('a{border:#333 solid 2px}'));
     });
 
-    it('border #13', function () {
+    it('border #15', function () {
         return transform(`
 .test input[type="text"] {
 
@@ -194,7 +194,7 @@ border: #333 solid 1px;
         }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid 2px thin}'));
     });
 
-    it('border #13', function () {
+    it('border #16', function () {
         return transform(`
 .test input[type="text"] {
 
@@ -207,7 +207,7 @@ border: #333 solid 1px;
         }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid 2px medium}'));
     });
 
-    it('border #14', function () {
+    it('border #17', function () {
         return transform(`
 .test input[type="text"] {
 
@@ -222,7 +222,7 @@ border: #333 solid 1px;
         }`, options).then(result => f(result.code).equals('.test input[type=text]{border:#333 solid}'));
     });
 
-    it('clamp & calc #15', function () {
+    it('clamp & calc #18', function () {
         return transform(`
 @media all {
     html {
@@ -235,7 +235,7 @@ border: #333 solid 1px;
 `, options).then(result => f(result.code).equals('html{font:clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}'));
     });
 
-    it('shorthand parsing #16', function () {
+    it('shorthand parsing #19', function () {
         return transform(`
 @media all {
     html {
@@ -314,7 +314,7 @@ button.jetpack-instant-search__overlay-close {
 }`));
     });
 
-    it('shorthand parsing #17', function () {
+    it('shorthand parsing #20', function () {
         return transform(`
 
 a {

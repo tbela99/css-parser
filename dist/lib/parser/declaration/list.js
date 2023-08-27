@@ -1,7 +1,8 @@
 import { PropertySet } from './set.js';
 import '../../renderer/utils/color.js';
-import { PropertyMap } from './map.js';
+import '../../ast/types.js';
 import { parseString } from '../parse.js';
+import { PropertyMap } from './map.js';
 import { getConfig } from '../utils/config.js';
 
 const config = getConfig();
@@ -11,10 +12,10 @@ class PropertyList {
         this.declarations = new Map;
     }
     set(nam, value) {
-        return this.add({ typ: 'Declaration', nam, val: Array.isArray(value) ? value : parseString(String(value)) });
+        return this.add({ typ: 5 /* NodeType.DeclarationNodeType */, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
     }
     add(declaration) {
-        if (declaration.typ != 'Declaration') {
+        if (declaration.typ != 5 /* NodeType.DeclarationNodeType */) {
             this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
             return this;
         }

@@ -5,12 +5,16 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleStyleSheet, AttrToken, ColorToken, ErrorDescription,
-    RenderOptions, RenderResult,
+    AstRuleStyleSheet,
+    AttrToken,
+    ColorToken,
+    ErrorDescription,
+    RenderOptions,
+    RenderResult,
     Token
 } from "../../@types";
 import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
-import {expand} from "../ast";
+import {EnumToken, expand, NodeType} from "../ast";
 
 export const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 
@@ -65,7 +69,7 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
     return {
         code: doRender(options.expandNestingRules ? expand(data) : data, options, errors, function reducer(acc: string, curr: Token): string {
 
-            if (curr.typ == 'Comment' && options.removeComments) {
+            if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
 
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
 
@@ -101,16 +105,16 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
 
     switch (data.typ) {
 
-        case 'Declaration':
+        case NodeType.DeclarationNodeType:
 
             return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce(reducer, '')}`;
 
-        case 'Comment':
-        case 'CDOCOMM':
+        case NodeType.CommentNodeType:
+        case NodeType.CDOCOMMNodeType:
 
             return !options.removeComments || (options.preserveLicense && (<AstComment>data).val.startsWith('/*!')) ? (<AstComment>data).val : '';
 
-        case 'StyleSheet':
+        case NodeType.StyleSheetNodeType:
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
@@ -130,10 +134,10 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
 
             }, '');
 
-        case 'AtRule':
-        case 'Rule':
+        case NodeType.AtRuleNodeType:
+        case NodeType.RuleNodeType:
 
-            if (data.typ == 'AtRule' && !('chi' in data)) {
+            if (data.typ == NodeType.AtRuleNodeType && !('chi' in data)) {
 
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
             }
@@ -143,20 +147,24 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
 
                 let str: string;
 
-                if (node.typ == 'Comment') {
+                if (node.typ == NodeType.CommentNodeType) {
 
                     str = options.removeComments && (!options.preserveLicense || !(<AstComment>node).val.startsWith('/*!')) ? '' : (<AstComment>node).val;
-                } else if (node.typ == 'Declaration') {
+                } else if (node.typ == NodeType.DeclarationNodeType) {
 
                     if ((<AstDeclaration>node).val.length == 0) {
 
                         // @ts-ignore
-                        errors.push({action: 'ignore', message: `render: invalid declaration ${JSON.stringify(node)}`, location: node.loc});
+                        errors.push(<ErrorDescription>{
+                            action: 'ignore',
+                            message: `render: invalid declaration ${JSON.stringify(node)}`,
+                            location: node.loc
+                        });
                         return '';
                     }
 
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '').trimEnd()};`;
-                } else if (node.typ == 'AtRule' && !('chi' in node)) {
+                } else if (node.typ == NodeType.AtRuleNodeType && !('chi' in node)) {
 
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
@@ -182,7 +190,7 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
                 children = children.slice(0, -1);
             }
 
-            if (data.typ == 'AtRule') {
+            if (data.typ == NodeType.AtRuleNodeType) {
 
                 return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
@@ -198,7 +206,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
     if (reducer == null) {
         reducer = function (acc: string, curr: Token): string {
 
-            if (curr.typ == 'Comment' && options.removeComments) {
+            if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
 
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
 
@@ -214,9 +222,9 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
     switch (token.typ) {
 
-        case 'Color':
+        case EnumToken.ColorTokenType:
 
-            if (options.minify || options.colorConvert) {
+            if (options.colorConvert) {
 
                 if (token.kin == 'lit' && token.val.toLowerCase() == 'currentcolor') {
 
@@ -271,77 +279,77 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
                 return token.val;
             }
 
-        case 'Start-parens':
+        case EnumToken.StartParensTokenType:
 
             if (!('chi' in token)) {
 
                 return '(';
             }
 
-        case 'Func':
-        case 'UrlFunc':
-        case 'Pseudo-class-func':
+        case EnumToken.FunctionTokenType:
+        case EnumToken.UrlFunctionTokenType:
+        case EnumToken.PseudoClassFuncTokenType:
 
             // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
 
-        case 'Includes':
+        case EnumToken.IncludesTokenType:
             return '~=';
 
-        case 'Dash-match':
+        case EnumToken.DashMatchTokenType:
             return '|=';
 
-        case 'Lt':
+        case EnumToken.LtTokenType:
             return '<';
 
-        case 'Lte':
+        case EnumToken.LteTokenType:
             return '<=';
 
-        case 'Gt':
+        case EnumToken.GtTokenType:
             return '>';
 
-        case 'Gte':
+        case EnumToken.GteTokenType:
             return '>=';
 
-        case 'End-parens':
+        case EnumToken.EndParensTokenType:
             return ')';
 
-        case 'Attr-start':
+        case EnumToken.AttrStartTokenType:
             return '[';
 
-        case 'Attr-end':
+        case EnumToken.AttrEndTokenType:
             return ']';
 
-        case 'Whitespace':
+        case EnumToken.WhitespaceTokenType:
             return ' ';
 
-        case 'Colon':
+        case EnumToken.ColonTokenType:
             return ':';
 
-        case 'Semi-colon':
+        case EnumToken.SemiColonTokenType:
             return ';';
 
-        case 'Comma':
+        case EnumToken.CommaTokenType:
             return ',';
 
-        case 'Important':
+        case EnumToken.ImportantTokenType:
             return '!important';
 
-        case 'Attr':
+        case EnumToken.AttrTokenType:
 
             return '[' + (<AttrToken>token).chi.reduce(reducer, '') + ']';
 
-        case 'Time':
-        case 'Angle':
-        case 'Length':
-        case 'Dimension':
-        case 'Frequency':
-        case 'Resolution':
+        case EnumToken.TimeTokenType:
+        case EnumToken.AngleTokenType:
+        case EnumToken.LengthTokenType:
+        case EnumToken.DimensionTokenType:
+        case EnumToken.FrequencyTokenType:
+        case EnumToken.ResolutionTokenType:
 
             let val: string = reduceNumber(token.val);
             let unit: string = token.unit;
 
-            if (token.typ == 'Angle') {
+            if (token.typ == EnumToken.AngleTokenType) {
 
                 const angle = getAngle(<AngleToken>token);
 
@@ -414,18 +422,18 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
             if (val === '0') {
 
-                if (token.typ == 'Time') {
+                if (token.typ == EnumToken.TimeTokenType) {
 
                     return '0s';
                 }
 
-                if (token.typ == 'Frequency') {
+                if (token.typ == EnumToken.FrequencyTokenType) {
 
                     return '0Hz';
                 }
 
                 // @ts-ignore
-                if (token.typ == 'Resolution') {
+                if (token.typ == EnumToken.ResolutionTokenType) {
 
                     return '0x';
                 }
@@ -435,31 +443,31 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
             return val + unit;
 
-        case 'Perc':
+        case EnumToken.PercentageTokenType:
 
             const perc = reduceNumber(token.val);
             return options.minify && perc == '0' ? '0' : perc + '%';
 
-        case 'Number':
+        case EnumToken.NumberTokenType:
 
             return reduceNumber(token.val);
 
-        case 'Comment':
+        case EnumToken.CommentTokenType:
 
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
 
                 return '';
             }
 
-        case 'Url-token':
-        case 'At-rule':
+        case EnumToken.UrlTokenTokenType:
+        case EnumToken.AtRuleTokenType:
 
-        case 'Hash':
-        case 'Pseudo-class':
-        case 'Literal':
-        case 'String':
-        case 'Iden':
-        case 'Delim':
+        case EnumToken.HashTokenType:
+        case EnumToken.PseudoClassTokenType:
+        case EnumToken.LiteralTokenType:
+        case EnumToken.StringTokenType:
+        case EnumToken.IdenTokenType:
+        case EnumToken.DelimTokenType:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 

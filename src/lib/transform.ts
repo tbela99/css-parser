@@ -4,7 +4,7 @@ import {render} from "./renderer";
 
 export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    options = {minify: true, removeEmpty: true, ...options};
+    options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
 
     const startTime: number = performance.now();
 

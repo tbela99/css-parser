@@ -3,13 +3,13 @@ import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";
 import {parseString} from "../parse";
+import {NodeType} from "../../ast";
 
 const config = getConfig();
 
 export class PropertyList {
 
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
-
     constructor() {
 
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>;
@@ -17,12 +17,12 @@ export class PropertyList {
 
     set(nam: string, value: string | Token[]) {
 
-        return this.add({typ: 'Declaration', nam, val: Array.isArray(value) ? value : parseString(String(value))});
+        return this.add({typ: NodeType.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value))});
     }
 
     add(declaration: AstNode) {
 
-        if (declaration.typ != 'Declaration') {
+        if (declaration.typ != NodeType.DeclarationNodeType) {
 
             this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
             return this;

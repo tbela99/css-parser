@@ -1,3 +1,4 @@
+export { EnumToken, NodeType } from '../lib/ast/types.js';
 export { combinators, hasDeclaration, minify, minifyRule, reduceSelector, splitRule } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
 export { expand, replaceCompound } from '../lib/ast/expand.js';

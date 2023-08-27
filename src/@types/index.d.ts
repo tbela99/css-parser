@@ -1,18 +1,10 @@
-import {Token} from "./tokenize";
+import {NodeType} from "../lib";
+import {FunctionToken, Token} from "./tokenize";
 
-export * from './validation';
 export * from './tokenize';
-export * from './stringiterator';
 export * from './shorthand';
 export * from './config';
 
-export declare type NodeTraverseCallback = (node: AstNode, location: Location, parent: AstRuleList, root: AstRuleStyleSheet) => void;
-
-export interface NodeParseEventsMap {
-
-    enter?: NodeTraverseCallback[];
-    exit?: NodeTraverseCallback[]
-}
 export interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
@@ -32,10 +24,12 @@ export interface ParserOptions {
     sourcemap?: boolean;
     minify?: boolean;
     nestingRules?: boolean;
+    removeCharset?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
+    inlineCssVariable?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
@@ -93,7 +87,7 @@ export interface ParseTokenOptions extends ParserOptions {
 
 export interface TokenizeResult {
     token: string;
-    hint?: string;
+    hint?: EnumToken;
     position: Position;
     bytesIn: number;
 }
@@ -119,8 +113,6 @@ export interface Location {
     src: string;
 }
 
-export declare type NodeType = 'StyleSheet' | 'InvalidComment' | 'Comment' | 'Declaration' | 'InvalidAtRule' | 'AtRule' | 'Rule';
-
 interface Node {
 
     typ: NodeType;
@@ -129,19 +121,19 @@ interface Node {
 
 export interface AstComment extends Node {
 
-    typ: 'Comment' | 'CDOCOMM',
+    typ: NodeType.CommentNodeType | NodeType.CDOCOMMNodeType,
     val: string;
 }
 export interface AstDeclaration extends Node {
 
     nam: string,
     val: Token[];
-    typ: 'Declaration'
+    typ: NodeType.DeclarationNodeType
 }
 
 export interface AstRule extends Node {
 
-    typ: 'Rule';
+    typ: NodeType.RuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
     optimized?: OptimizedSelector;
@@ -159,6 +151,7 @@ export interface OptimizedSelector {
 
 export interface AstAtRule extends Node {
 
+    typ: AtRuleNodeType,
     nam: string;
     val: string;
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
@@ -166,11 +159,12 @@ export interface AstAtRule extends Node {
 
 export interface AstRuleList extends Node {
 
+    typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
     chi: Array<Node | AstComment>
 }
 
 export interface AstRuleStyleSheet extends AstRuleList {
-    typ: 'StyleSheet',
+    typ: StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
@@ -186,4 +180,17 @@ export interface WalkResult {
     node: AstNode;
     parent?: AstRuleList;
     root?: AstRuleList;
+}
+
+export interface WalkAttributesResult {
+    value: Token;
+    parent?: FunctionToken;
+}
+
+export interface VariableScopeInfo {
+    globalScope: boolean;
+    parent: Set<AstRule | AstAtRule>;
+    declarationCount: number;
+    replaceable: boolean;
+    val: Token[];
 }
