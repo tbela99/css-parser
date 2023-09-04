@@ -29,7 +29,7 @@ export interface ParserOptions {
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
-    inlineCssVariable?: boolean;
+    inlineCssVariables?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
@@ -40,10 +40,15 @@ export interface RenderOptions {
     minify?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
+    sourcemap?: boolean;
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
     colorConvert?: boolean;
+    cwd?: string;
+    load?: (url: string, currentUrl: string) => Promise<string>;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
+
 }
 
 export interface TransformOptions extends ParserOptions, RenderOptions {
@@ -66,7 +71,8 @@ export interface RenderResult {
     errors: ErrorDescription[];
     stats: {
         total: string;
-    }
+    },
+    map?: SourceMapObject
 }
 
 export interface TransformResult extends ParseResult, RenderResult {
@@ -193,4 +199,14 @@ export interface VariableScopeInfo {
     declarationCount: number;
     replaceable: boolean;
     val: Token[];
+}
+
+export interface SourceMapObject {
+    version : number;
+    file?: string;
+    sourceRoot?: string;
+    sources?: string[];
+    sourcesContent?: Array<string | null>;
+    names?: string[];
+    mappings: string;
 }

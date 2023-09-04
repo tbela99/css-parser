@@ -9,16 +9,20 @@ import {
     AttrToken,
     ColorToken,
     ErrorDescription,
+    Location,
+    Position,
     RenderOptions,
     RenderResult,
     Token
 } from "../../@types";
 import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
 import {EnumToken, expand, NodeType} from "../ast";
+import {SourceMap} from "./sourcemap";
+import {isNewLine} from "../parser";
 
 export const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 
-function reduceNumber(val: string | number) {
+export function reduceNumber(val: string | number) {
 
     val = (+val).toString();
 
@@ -48,12 +52,29 @@ function reduceNumber(val: string | number) {
     return val;
 }
 
-export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
+function update(position: Position, str: string) {
+
+    let i = 0;
+
+    for (; i < str.length; i++) {
+
+        if (isNewLine(str[i].charCodeAt(0))) {
+
+            position.lin++;
+            position.col = 0;
+        } else {
+
+            position.col++
+        }
+    }
+}
+
+export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
 
-    const options = Object.assign(opt.minify ?? true ? {
+    options = Object.assign(options.minify ?? true ? {
         indent: '',
         newLine: '',
         removeComments: true
@@ -63,11 +84,16 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
         compress: false,
         removeComments: false,
 
-    }, {colorConvert: true, expandNestingRules: false, preserveLicense: false}, opt);
+    }, {colorConvert: true, expandNestingRules: false, preserveLicense: false}, options);
+    const sourcemap = options.sourcemap ? new SourceMap : null;
 
+    const result: RenderResult = {
+        code: doRender(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
 
-    return {
-        code: doRender(options.expandNestingRules ? expand(data) : data, options, errors, function reducer(acc: string, curr: Token): string {
+            ind: 0,
+            lin: 1,
+            col: 1
+        }, errors, function reducer(acc: string, curr: Token): string {
 
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
 
@@ -85,10 +111,19 @@ export function render(data: AstNode, opt: RenderOptions = {}): RenderResult {
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
     };
+
+    if (sourcemap != null) {
+
+        result.map = sourcemap.toJSON();
+        // @ts-ignore
+        result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
+    }
+
+    return result;
 }
 
 // @ts-ignore
-function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
+function doRender(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
 
     if (indents.length < level + 1) {
 
@@ -118,7 +153,7 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = doRender(node, options, errors, reducer, level, indents);
+                const str: string = doRender(node, options, sourcemap, {...position}, errors, reducer, level, indents);
 
                 if (str === '') {
 
@@ -127,7 +162,29 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
 
                 if (css === '') {
 
+                    if (sourcemap != null) {
+
+                        if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
+
+                            sourcemap.add({src: '', sta: {...position}}, <Location>node.loc);
+                        }
+
+                        update(position, str);
+                    }
+
                     return str;
+                }
+
+                if (sourcemap != null) {
+
+                    update(position, <string>options.newLine);
+
+                    if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
+
+                        sourcemap.add({src: '', sta: {...position}}, <Location>node.loc);
+                    }
+
+                    update(position, str);
                 }
 
                 return `${css}${options.newLine}${str}`;
@@ -169,7 +226,7 @@ function doRender(data: AstNode, options: RenderOptions, errors: ErrorDescriptio
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
 
-                    str = doRender(node, options, errors, reducer, level + 1, indents);
+                    str = doRender(node, options, sourcemap, {...position}, errors, reducer, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -221,6 +278,23 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
     }
 
     switch (token.typ) {
+
+        case EnumToken.BinaryExpressionTokenType:
+
+            return renderToken(token.l) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r);
+
+        case EnumToken.Add:
+
+            return ' + ';
+
+        case EnumToken.Sub:
+            return ' - ';
+
+        case EnumToken.Mul:
+            return '*';
+
+        case EnumToken.Div:
+            return '/';
 
         case EnumToken.ColorTokenType:
 
@@ -279,19 +353,17 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
                 return token.val;
             }
 
-        case EnumToken.StartParensTokenType:
-
-            if (!('chi' in token)) {
-
-                return '(';
-            }
-
+        case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
 
             // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
+
+        case EnumToken.StartParensTokenType:
+
+            return '(';
 
         case EnumToken.IncludesTokenType:
             return '~=';

@@ -3,7 +3,7 @@ import {EnumToken} from "../lib";
 
 interface BaseToken {
 
-    type: EnumToken;
+    typ: EnumToken;
     loc?: Location;
 }
 
@@ -156,12 +156,17 @@ export interface AttrEndToken extends BaseToken {
 export interface ParensStartToken extends BaseToken {
 
     typ: EnumToken.StartParensTokenType;
-    chi?: Token[];
 }
 
 export interface ParensEndToken extends BaseToken {
 
     typ: EnumToken.EndParensTokenType
+}
+
+export interface ParensToken extends BaseToken {
+
+    typ: EnumToken.ParensTokenType;
+    chi: Token[];
 }
 
 export interface WhitespaceToken extends BaseToken {
@@ -280,13 +285,45 @@ export interface AttrToken extends BaseToken {
     chi: Token[]
 }
 
+export interface AddToken extends BaseToken {
+
+    typ: EnumToken.Add;
+}
+
+export interface SubToken extends BaseToken {
+
+    typ: EnumToken.Sub;
+}
+
+export interface DivToken extends BaseToken {
+
+    typ: EnumToken.Div;
+}
+
+export interface MulToken extends BaseToken {
+
+    typ: EnumToken.Mul;
+}
+
+export interface BinaryExpression extends BaseToken {
+
+    typ: EnumToken.BinaryExpressionTokenType
+    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
+    l: BinaryExpressionNode;
+    r: BinaryExpressionNode;
+}
+
+export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
+    AngleToken | LengthToken | FrequencyToken | BinaryExpression | FunctionToken | ParensToken;
+
 export declare type TokenType = EnumToken;
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |
     AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
-    AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
+    AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | ParensToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
-    PseudoClassToken | PseudoClassFunctionToken | DelimToken |
+    PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpression |
+    AddToken | SubToken | DivToken | MulToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
