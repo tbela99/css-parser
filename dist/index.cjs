@@ -2159,7 +2159,7 @@ function matchType(val, properties) {
     return false;
 }
 
-function* tokenize(iterator) {
+function* tokenize(stream) {
     let ind = -1;
     let lin = 1;
     let col = 0;
@@ -2170,9 +2170,10 @@ function* tokenize(iterator) {
     };
     let value;
     let buffer = '';
+    // let input: string = '';
     function consumeWhiteSpace() {
         let count = 0;
-        while (isWhiteSpace(iterator.charAt(count + ind + 1).charCodeAt(0))) {
+        while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
             count++;
         }
         next(count);
@@ -2268,15 +2269,15 @@ function* tokenize(iterator) {
     }
     function peek(count = 1) {
         if (count == 1) {
-            return iterator.charAt(ind + 1);
+            return stream.charAt(ind + 1);
         }
-        return iterator.slice(ind + 1, ind + count + 1);
+        return stream.slice(ind + 1, ind + count + 1);
     }
     function prev(count = 1) {
         if (count == 1) {
-            return ind == 0 ? '' : iterator.charAt(ind - 1);
+            return ind == 0 ? '' : stream.charAt(ind - 1);
         }
-        return iterator.slice(ind - 1 - count, ind - 1);
+        return stream.slice(ind - 1 - count, ind - 1);
     }
     function next(count = 1) {
         let char = '';
@@ -2284,9 +2285,9 @@ function* tokenize(iterator) {
         if (count < 0) {
             return '';
         }
-        while (count-- && (chr = iterator.charAt(ind + 1))) {
+        while (count-- && (chr = stream.charAt(ind + 1))) {
             char += chr;
-            const codepoint = iterator.charCodeAt(++ind);
+            const codepoint = stream.charCodeAt(++ind);
             if (isNaN(codepoint)) {
                 return char;
             }

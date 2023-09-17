@@ -32,9 +32,9 @@ export interface MinifyFeature {
 
 export interface ParserOptions extends PropertyListOptions {
 
+    minify?: boolean;
     src?: string;
     sourcemap?: boolean;
-    minify?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
     removeCharset?: boolean;

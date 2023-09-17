@@ -25,9 +25,9 @@ Parse and render css in a single pass.
 
 ### Usage
 
-```javascript
+```typescript
 
-transform(css, transformOptions = {})
+transform(css, transformOptions: TransformOptions = {}): TransformResult
 ```
 
 ### Example
@@ -36,7 +36,7 @@ transform(css, transformOptions = {})
 
 import {transform} from '@tbela99/css-parser';
 
-const {ast, code, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
+const {ast, code, map, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
 ```
 
 ### TransformOptions
@@ -45,21 +45,28 @@ Include ParseOptions and RenderOptions
 
 #### ParseOptions
 
-- src: string, optional. css file location to be used with sourcemap.
 - minify: boolean, optional. default to _true_. optimize ast.
+- removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
+- computeShorthand: boolean, optional. compute shorthand properties.
+- src: string, optional. css file location to be used with sourcemap.
+- sourcemap: boolean, optional. generate sourcemap
+- expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules to false.
 - nestingRules: boolean, optional. automatically generated nested rules.
-- removeEmpty: boolean, remove empty nodes from the ast.
-- location: boolean, optional. includes node location in the ast, required for sourcemap generation.
-- cwd: string, optional. the current working directory. when specified url() are resolved using this value
+- removeCharset: boolean, optional. remove @charset.
+- removeEmpty: boolean, optional. remove empty nodes from the ast.
+- resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
 - resolveImport: boolean, optional. replace @import node by the content of the referenced stylesheet.
-- resolveUrls: boolean, optional. resolve css url() according to the parameters 'src' and 'cwd'
+- cwd: string, optional. the current working directory. when specified url() are resolved using this value
+- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} rule.
 
 #### RenderOptions
 - minify: boolean, optional. default to _true_. minify css output.
-- indent: string, optional. css indention string. uses space character by default.
-- newLine: string, new line character.
-- removeComments: boolean, remove comments in generated css.
+- expandNestingRules: boolean, optional. expand nesting rules.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
+- sourcemap: boolean, optional. generate sourcemap.
+- indent: string, optional. css indention string. uses space character by default.
+- newLine: string, optional. new line character.
+- removeComments: boolean, remove comments in generated css.
 - colorConvert: boolean, convert colors to hex.
 
 

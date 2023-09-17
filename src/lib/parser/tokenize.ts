@@ -2,7 +2,7 @@ import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "./utils";
 import {TokenizeResult, TokenType} from "../../@types";
 import {EnumToken} from "../ast";
 
-export function* tokenize(iterator: string): Generator<TokenizeResult> {
+export function* tokenize(stream: string): Generator<TokenizeResult> {
 
     let ind: number = -1;
     let lin: number = 1;
@@ -17,12 +17,13 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
     let value;
     let buffer: string = '';
+    // let input: string = '';
 
     function consumeWhiteSpace(): number {
 
         let count: number = 0;
 
-        while (isWhiteSpace(iterator.charAt(count + ind + 1).charCodeAt(0))) {
+        while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
 
             count++;
         }
@@ -159,20 +160,20 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
         if (count == 1) {
 
-            return iterator.charAt(ind + 1);
+            return stream.charAt(ind + 1);
         }
 
-        return iterator.slice(ind + 1, ind + count + 1);
+        return stream.slice(ind + 1, ind + count + 1);
     }
 
     function prev(count: number = 1): string {
 
         if (count == 1) {
 
-            return ind == 0 ? '' : iterator.charAt(ind - 1);
+            return ind == 0 ? '' : stream.charAt(ind - 1);
         }
 
-        return iterator.slice(ind - 1 - count, ind - 1);
+        return stream.slice(ind - 1 - count, ind - 1);
     }
 
     function next(count: number = 1): string {
@@ -185,10 +186,10 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             return '';
         }
 
-        while (count-- && (chr = iterator.charAt(ind + 1))) {
+        while (count-- && (chr = stream.charAt(ind + 1))) {
 
             char += chr;
-            const codepoint: number = iterator.charCodeAt(++ind);
+            const codepoint: number = stream.charCodeAt(++ind);
 
             if (isNaN(codepoint)) {
 

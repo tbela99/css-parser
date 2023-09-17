@@ -112,7 +112,7 @@ declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
 
-declare function tokenize(iterator: string): Generator<TokenizeResult>;
+declare function tokenize(stream: string): Generator<TokenizeResult>;
 
 declare function isLength(dimension: DimensionToken): boolean;
 declare function isResolution(dimension: DimensionToken): boolean;
