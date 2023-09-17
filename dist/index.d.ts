@@ -34,30 +34,37 @@ declare enum EnumToken$1 {
     AttrEndTokenType = 24,
     StartParensTokenType = 25,
     EndParensTokenType = 26,
-    WhitespaceTokenType = 27,
-    IncludesTokenType = 28,
-    DashMatchTokenType = 29,
-    LtTokenType = 30,
-    LteTokenType = 31,
-    GtTokenType = 32,
-    GteTokenType = 33,
-    PseudoClassTokenType = 34,
-    PseudoClassFuncTokenType = 35,
-    DelimTokenType = 36,
-    UrlTokenTokenType = 37,
-    EOFTokenType = 38,
-    ImportantTokenType = 39,
-    ColorTokenType = 40,
-    AttrTokenType = 41,
-    BadCommentTokenType = 42,
-    BadCdoTokenType = 43,
-    BadUrlTokenType = 44,
-    BadStringTokenType = 45,
+    ParensTokenType = 27,
+    WhitespaceTokenType = 28,
+    IncludesTokenType = 29,
+    DashMatchTokenType = 30,
+    LtTokenType = 31,
+    LteTokenType = 32,
+    GtTokenType = 33,
+    GteTokenType = 34,
+    PseudoClassTokenType = 35,
+    PseudoClassFuncTokenType = 36,
+    DelimTokenType = 37,
+    UrlTokenTokenType = 38,
+    EOFTokenType = 39,
+    ImportantTokenType = 40,
+    ColorTokenType = 41,
+    AttrTokenType = 42,
+    BadCommentTokenType = 43,
+    BadCdoTokenType = 44,
+    BadUrlTokenType = 45,
+    BadStringTokenType = 46,
+    BinaryExpressionTokenType = 47,
+    UnaryExpressionTokenType = 48,
+    Add = 49,
+    Mul = 50,
+    Div = 51,
+    Sub = 52,
     Time = 17,
     Iden = 3,
     Hash = 20,
     Angle = 16,
-    Color = 40,
+    Color = 41,
     Comma = 4,
     String = 12,
     Length = 15,
@@ -69,11 +76,13 @@ declare enum EnumToken$1 {
     Dimension = 14,
     Frequency = 18,
     Resolution = 19,
-    Whitespace = 27
+    Whitespace = 28
 }
 
 declare const combinators: string[];
-declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, variableScope?: Map<string, VariableScopeInfo>): AstNode;
+declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+    [key: string]: any;
+}): AstNode;
 declare function reduceSelector(selector: string[][]): {
     match: boolean;
     optimized: string[];
@@ -81,20 +90,24 @@ declare function reduceSelector(selector: string[][]): {
     reducible: boolean;
 } | null;
 declare function hasDeclaration(node: AstRule): boolean;
-declare function minifyRule(ast: AstRule | AstAtRule, parent: AstRule | AstAtRule | AstRuleStyleSheet, options?: ParserOptions, variableScope?: Map<string, VariableScopeInfo>): AstRule | AstAtRule;
+declare function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+    [key: string]: any;
+}): AstRule | AstAtRule;
 declare function splitRule(buffer: string): string[][];
 
 declare function walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult>;
-declare function walkValues(values: Token[], parent?: FunctionToken): Generator<WalkAttributesResult>;
+declare function walkValues(values: Token[], parent?: FunctionToken | ParensToken): Generator<WalkAttributesResult>;
 
 declare function expand(ast: AstNode): AstNode;
 declare function replaceCompound(input: string, replace: string): string;
 
 declare const colorsFunc: string[];
-declare function render(data: AstNode, opt?: RenderOptions): RenderResult;
+declare function reduceNumber(val: string | number): string;
+declare function doRender(data: AstNode, options?: RenderOptions): RenderResult;
 declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
 declare const urlTokenMatcher: RegExp;
+declare function doParse(iterator: string, options?: ParserOptions): Promise<ParseResult>;
 declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
@@ -131,7 +144,7 @@ declare function matchType(val: Token, properties: PropertyMapType): boolean;
 
 interface BaseToken {
 
-    type: EnumToken$1;
+    typ: EnumToken$1;
     loc?: Location;
 }
 
@@ -215,42 +228,42 @@ interface UnclosedStringToken extends BaseToken {
 interface DimensionToken extends BaseToken {
 
     typ: EnumToken$1.DimensionTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: string;
 }
 
 interface LengthToken extends BaseToken {
 
     typ: EnumToken$1.LengthTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: string;
 }
 
 interface AngleToken extends BaseToken {
 
     typ: EnumToken$1.AngleTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: string;
 }
 
 interface TimeToken extends BaseToken {
 
     typ: EnumToken$1.TimeTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: 'ms' | 's';
 }
 
 interface FrequencyToken extends BaseToken {
 
     typ: EnumToken$1.FrequencyTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: 'Hz' | 'Khz';
 }
 
 interface ResolutionToken extends BaseToken {
 
     typ: EnumToken$1.ResolutionTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 
@@ -284,12 +297,17 @@ interface AttrEndToken extends BaseToken {
 interface ParensStartToken extends BaseToken {
 
     typ: EnumToken$1.StartParensTokenType;
-    chi?: Token[];
 }
 
 interface ParensEndToken extends BaseToken {
 
     typ: EnumToken$1.EndParensTokenType
+}
+
+interface ParensToken extends BaseToken {
+
+    typ: EnumToken$1.ParensTokenType;
+    chi: Token[];
 }
 
 interface WhitespaceToken extends BaseToken {
@@ -407,14 +425,55 @@ interface AttrToken extends BaseToken {
     typ: EnumToken$1.AttrTokenType,
     chi: Token[]
 }
+
+interface AddToken extends BaseToken {
+
+    typ: EnumToken$1.Add;
+}
+
+interface SubToken extends BaseToken {
+
+    typ: EnumToken$1.Sub;
+}
+
+interface DivToken extends BaseToken {
+
+    typ: EnumToken$1.Div;
+}
+
+interface MulToken extends BaseToken {
+
+    typ: EnumToken$1.Mul;
+}
+
+interface UnaryExpression extends BaseToken {
+
+    typ: EnumToken$1.UnaryExpressionTokenType
+    sign: EnumToken$1.Add | EnumToken$1.Sub ;
+    val: UnaryExpressionNode;
+}
+
+interface BinaryExpressionToken extends BaseToken {
+
+    typ: EnumToken$1.BinaryExpressionTokenType
+    op: EnumToken$1.Add | EnumToken$1.Sub | EnumToken$1.Div | EnumToken$1.Mul;
+    l: BinaryExpressionNode;
+    r: BinaryExpressionNode;
+}
+
+declare type UnaryExpressionNode = BinaryExpressionNode | NumberToken | DimensionToken | TimeToken | LengthToken | AngleToken | FrequencyToken;
+
+declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
+    AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
     NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |
     AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken |
     UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
-    AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | CDOCommentToken |
+    AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | ParensToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
-    PseudoClassToken | PseudoClassFunctionToken | DelimToken |
+    PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
+    AddToken | SubToken | DivToken | MulToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
 
 interface PropertyMapType {
@@ -447,10 +506,10 @@ interface PropertyMapType {
 
 interface PropertiesConfig {
     properties: PropertiesConfigProperties;
-    map:        Map$1;
+    map:        Map;
 }
 
-interface Map$1 {
+interface Map {
     border:                  Border;
     "border-color":          BackgroundPositionClass;
     "border-style":          BackgroundPositionClass;
@@ -759,21 +818,39 @@ interface ErrorDescription {
     error?: Error;
 }
 
-interface ParserOptions {
+interface PropertyListOptions {
+
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
+}
+
+interface MinifyFeature {
+
+    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) => void;
+    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: {[key: string]: any}) => void;
+}
+
+interface ParserOptions extends PropertyListOptions {
 
     src?: string;
     sourcemap?: boolean;
     minify?: boolean;
     nestingRules?: boolean;
+    expandNestingRules?: boolean;
     removeCharset?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
-    inlineCssVariable?: boolean;
+    inlineCssVariables?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
+}
+
+interface MinifyOptions extends ParserOptions {
+
+    features: MinifyFeature[];
 }
 
 interface RenderOptions {
@@ -781,10 +858,15 @@ interface RenderOptions {
     minify?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
+    sourcemap?: boolean;
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
     colorConvert?: boolean;
+    cwd?: string;
+    load?: (url: string, currentUrl: string) => Promise<string>;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
+
 }
 
 interface TransformOptions extends ParserOptions, RenderOptions {
@@ -807,7 +889,8 @@ interface RenderResult {
     errors: ErrorDescription[];
     stats: {
         total: string;
-    }
+    },
+    map?: SourceMapObject
 }
 
 interface TransformResult extends ParseResult, RenderResult {
@@ -917,12 +1000,14 @@ interface WalkAttributesResult {
     parent?: FunctionToken;
 }
 
-interface VariableScopeInfo {
-    globalScope: boolean;
-    parent: Set<AstRule | AstAtRule>;
-    declarationCount: number;
-    replaceable: boolean;
-    val: Token[];
+interface SourceMapObject {
+    version : number;
+    file?: string;
+    sourceRoot?: string;
+    sources?: string[];
+    sourcesContent?: Array<string | null>;
+    names?: string[];
+    mappings: string;
 }
 
 declare function load(url: string, currentFile: string): Promise<string>;
@@ -934,7 +1019,8 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
     relative: string;
 };
 
+declare function render(data: AstNode, options?: RenderOptions): RenderResult;
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken$1 as EnumToken, NodeType, colorsFunc, combinators, dirname, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };
+export { EnumToken$1 as EnumToken, NodeType, colorsFunc, combinators, dirname, doParse, doRender, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceNumber, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };

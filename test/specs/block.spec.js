@@ -2,7 +2,7 @@
 import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
 import { transform, render, parse } from '../../dist/node/index.js';
 
-describe('parse block', function () {
+describe('doParse block', function () {
 
     it('similar rules #1', function () {
         const file = `
@@ -158,7 +158,7 @@ border-left-color: red;
 `;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))}`));
+        }).then(result => f(result.code).equals(`.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1*(var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))}`));
     });
 
     it('merge selectors #10', function () {

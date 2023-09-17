@@ -1,5 +1,6 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../parser/parse.js';
+import '../sourcemap/lib/encode.js';
 
 // name to color
 const COLORS_NAMES = Object.seal({

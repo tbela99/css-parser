@@ -1,9 +1,9 @@
-import {combinators, splitRule} from "./minify";
-import {parseString} from "../parser";
-import {walkValues} from "./walk";
-import {renderToken} from "../renderer";
-import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
-import {EnumToken, NodeType} from "./types";
+import {combinators, splitRule} from "../minify";
+import {parseString} from "../../parser";
+import {walkValues} from "../walk";
+import {renderToken} from "../../renderer";
+import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../../@types";
+import {EnumToken, NodeType} from "../types";
 
 export function expand(ast: AstNode): AstNode {
     //
@@ -22,7 +22,7 @@ export function expand(ast: AstNode): AstNode {
 
     if (!('chi' in ast)) {
 
-        return <AstAtRule>{...ast};
+        return ast;
     }
 
     const result = <AstRuleStyleSheet | AstAtRule>{...ast, chi: []};

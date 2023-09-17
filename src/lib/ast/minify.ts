@@ -1,9 +1,8 @@
 import {isFunction, isIdent, isIdentStart, isWhiteSpace, parseString} from "../parser";
 
-import {PropertyList} from "../parser/declaration";
 import {eq} from "../parser/utils/eq";
-import {render, renderToken} from "../renderer";
-import {replaceCompound} from "./expand";
+import {doRender, renderToken} from "../renderer";
+import {replaceCompound, InlineCssVariables, ComputeShorthand} from "./features";
 import {walkValues} from "./walk";
 import {
     AstAtRule,
@@ -11,12 +10,10 @@ import {
     AstNode,
     AstRule,
     AstRuleStyleSheet,
-    ErrorDescription, FunctionToken,
-    LiteralToken,
-    MatchedSelector,
+    ErrorDescription, LiteralToken,
+    MatchedSelector, MinifyOptions,
     OptimizedSelector,
-    ParserOptions,
-    VariableScopeInfo
+    ParserOptions
 } from "../../@types";
 import {EnumToken, NodeType} from "./types";
 
@@ -24,8 +21,21 @@ export const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 
-export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, variableScope?: Map<string, VariableScopeInfo>): AstNode {
+export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {[key: string]: any} = {}): AstNode {
 
+    if (!('features' in <MinifyOptions>options)) {
+
+        // @ts-ignore
+        options = <MinifyOptions>{removeDuplicateDeclarations: true, computeShorthand: true, ...options, features: <Function[]>[]};
+
+        (<MinifyOptions>options).features.push(new ComputeShorthand);
+
+        if (options.inlineCssVariables) {
+
+            (<MinifyOptions>options).features.push(new InlineCssVariables);
+        }
+    }
+    
     function reducer(acc: string[], curr: string[], index: number, array: string[][]) {
 
         // trim :is()
@@ -50,11 +60,6 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
 
         acc.push(curr.join(''));
         return acc;
-    }
-
-    if (variableScope == null) {
-
-        variableScope = new Map;
     }
 
     // @ts-ignore
@@ -123,10 +128,10 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                 if (hasDeclaration(node)) {
 
                     // @ts-ignore
-                    minifyRule(node, ast, options, variableScope);
+                    minifyRule(node, <MinifyOptions>options, ast, context);
                 } else {
 
-                    minify(node, options, recursive, errors, nestingContent, variableScope);
+                    minify(node, options, recursive, errors, nestingContent, context);
                 }
 
                 previous = node;
@@ -199,7 +204,7 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(<AstRule>wrapper, options, recursive, errors, nestingContent, variableScope);
+                        minify(<AstRule>wrapper, options, recursive, errors, nestingContent, context);
                         continue;
                     }
                     // @ts-ignore
@@ -332,9 +337,9 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                                 // @ts-ignore
                                 if (hasDeclaration(node)) {
                                     // @ts-ignore
-                                    minifyRule(node, ast, options, variableScope);
+                                    minifyRule(node, <MinifyOptions>options, ast, context);
                                 } else {
-                                    minify(node, options, recursive, errors, nestingContent, variableScope);
+                                    minify(node, options, recursive, errors, nestingContent, context);
                                 }
 
                                 i--;
@@ -380,10 +385,10 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         // @ts-ignore
                         if (hasDeclaration(previous)) {
                             // @ts-ignore
-                            minifyRule(previous, ast, options, variableScope);
+                            minifyRule(previous, <MinifyOptions>options, ast, context);
                         } else {
 
-                            minify(previous, options, recursive, errors, nestingContent, variableScope);
+                            minify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 } else {
@@ -394,10 +399,10 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
                         if (hasDeclaration(previous)) {
 
                             // @ts-ignore
-                            minifyRule(previous, ast, options, variableScope);
+                            minifyRule(previous, <MinifyOptions>options, ast, context);
                         } else {
 
-                            minify(previous, options, recursive, errors, nestingContent, variableScope);
+                            minify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
@@ -422,13 +427,13 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             // @ts-ignore
             if (node.chi.some(n => n.typ == NodeType.DeclarationNodeType)) {
 
-                minifyRule(<AstRule | AstAtRule>node, <AstRule | AstAtRule>ast, options, variableScope);
+                minifyRule(<AstRule | AstAtRule>node, <MinifyOptions>options, <AstRule | AstAtRule>ast, context);
             } else {
 
                 // @ts-ignore
                 if (!(node.typ == NodeType.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
 
-                    minify(node, options, recursive, errors, nestingContent, variableScope);
+                    minify(node, options, recursive, errors, nestingContent, context);
                 }
             }
         }
@@ -441,6 +446,18 @@ export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boo
             (<AstRule>node).sel.includes('&')) {
 
             fixSelector((<AstRule>node));
+        }
+    }
+
+    if (ast.typ == NodeType.StyleSheetNodeType) {
+
+        for (const feature of (<MinifyOptions>options).features) {
+
+            if ('cleanup' in feature) {
+
+                // @ts-ignore
+                feature.cleanup(<AstRuleStyleSheet>ast, options, context);
+            }
         }
     }
 
@@ -567,7 +584,7 @@ export function hasDeclaration(node: AstRule): boolean {
     return true;
 }
 
-export function minifyRule(ast: AstRule | AstAtRule, parent: AstRule | AstAtRule | AstRuleStyleSheet, options: ParserOptions = {}, variableScope: Map<string, VariableScopeInfo> = new Map): AstRule | AstAtRule {
+export function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}): AstRule | AstAtRule {
 
     // @ts-ignore
     if (!('chi' in ast) || ast.chi.length == 0) {
@@ -577,115 +594,9 @@ export function minifyRule(ast: AstRule | AstAtRule, parent: AstRule | AstAtRule
 
     Object.defineProperty(ast, 'parent', {...definedPropertySettings, value: parent});
 
-    // @ts-ignore
-    const j: number = ast.chi.length;
-    let k: number = 0;
-    let properties: PropertyList = new PropertyList();
+    for (const feature of (<MinifyOptions>options).features) {
 
-    // @ts-ignore
-    for (; k < j; k++) {
-
-        // @ts-ignore
-        const node = ast.chi[k];
-
-        if (node.typ == NodeType.CommentNodeType || node.typ == NodeType.DeclarationNodeType) {
-
-            properties.add(node);
-            continue;
-        }
-
-        break;
-    }
-
-    const isRoot: boolean = parent.typ == NodeType.StyleSheetNodeType && ast.typ == NodeType.RuleNodeType && (<AstRule>ast).sel == ':root';
-
-    // @ts-ignore
-    ast.chi = [...properties].concat(ast.chi.slice(k));
-
-    if (options.inlineCssVariable) {
-
-        for (const node of ast.chi) {
-
-            if (node.typ == NodeType.CDOCOMMNodeType || node.typ == NodeType.CommentNodeType) {
-
-                continue;
-            }
-
-            if (node.typ != NodeType.DeclarationNodeType) {
-
-                break;
-            }
-
-            // css variable
-            if ((<AstDeclaration>node).nam.startsWith('--')) {
-
-                if (!variableScope.has((<AstDeclaration>node).nam)) {
-
-                    const info =  {
-                        globalScope: isRoot,
-                        // @ts-ignore
-                        parent: <Set<AstRule | AstAtRule>> new Set(),
-                        declarationCount: 1,
-                        replaceable: isRoot,
-                        val: (<AstDeclaration>node).val
-                    };
-
-                    info.parent.add(ast);
-
-                    variableScope.set((<AstDeclaration>node).nam, info);
-                } else {
-
-                    const info = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
-
-                    info.globalScope = isRoot;
-
-                    if (!isRoot) {
-
-                        ++info.declarationCount;
-                    }
-
-                    if (info.replaceable) {
-
-                        info.replaceable = isRoot && info.declarationCount == 1;
-                    }
-
-                    info.parent.add(ast);
-                    info.val = (<AstDeclaration>node).val;
-                }
-            } else {
-
-                for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
-
-                    if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
-
-                        if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
-
-                            const info = <VariableScopeInfo>variableScope.get(value.chi[0].val);
-
-                            if (info != null && info.replaceable) {
-
-                                if (parentValue != null) {
-
-                                    let i = 0;
-
-                                    for (; i < (<FunctionToken>parentValue).chi.length; i++) {
-
-                                        if ((<FunctionToken>parentValue).chi[i] == value) {
-
-                                            (<FunctionToken>parentValue).chi.splice(i, 1, ...info.val);
-                                            break;
-                                        }
-                                    }
-                                } else {
-
-                                    (<AstDeclaration>node).val = info.val;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        feature.run(ast, options, parent, context);
     }
 
     return ast;
@@ -1203,7 +1114,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
         chi: intersect.reverse()
     });
 
-    if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0)) {
+    if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0)) {
         // @ts-ignore
         return null;
     }

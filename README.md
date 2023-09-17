@@ -84,7 +84,7 @@ const {ast, errors, stats} = await parse(css);
 ### Usage
 
 ```javascript
-render(ast, RenderOptions = {});
+doRender(ast, RenderOptions = {});
 ```
 
 ### Example
@@ -163,34 +163,27 @@ Single JavaScript file
 
 CSS
 
-```css
+```javascript
+const {parse, render} = require("@tbela99/css-parser/cjs");
 
+const css = `
 table.colortable td {
-  text-align:center;
+ text-align:center;
 }
 table.colortable td.c {
-  text-transform:uppercase;
+ text-transform:uppercase;
 }
 table.colortable td:first-child, table.colortable td:first-child+td {
-  border:1px solid black;
+ border:1px solid black;
 }
 table.colortable th {
-  text-align:center;
-  background:black;
-  color:white;
+ text-align:center;
+ background:black;
+ color:white;
 }
-```
+`;
 
-Javascript
-```javascript
-import {parse, render} from '@tbela99/css-parser';
-
-
-const options = {minify: true, nestingRules: true};
-
-const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
-//
-console.debug(code);
+const result = await parse(css, {nestingRules:true}).then(result => render(result.ast, {minify:false}).code);
 ```
 
 Result

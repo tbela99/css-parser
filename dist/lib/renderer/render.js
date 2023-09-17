@@ -1,7 +1,9 @@
 import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
 import { EnumToken } from '../ast/types.js';
 import '../parser/parse.js';
-import { expand } from '../ast/expand.js';
+import { isNewLine } from '../parser/utils/syntax.js';
+import { SourceMap } from './sourcemap/sourcemap.js';
+import { expand } from '../ast/features/expand.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 function reduceNumber(val) {
@@ -21,10 +23,22 @@ function reduceNumber(val) {
     }
     return val;
 }
-function render(data, opt = {}) {
+function update(position, str) {
+    let i = 0;
+    for (; i < str.length; i++) {
+        if (isNewLine(str[i].charCodeAt(0))) {
+            position.lin++;
+            position.col = 0;
+        }
+        else {
+            position.col++;
+        }
+    }
+}
+function doRender(data, options = {}) {
     const startTime = performance.now();
     const errors = [];
-    const options = Object.assign(opt.minify ?? true ? {
+    options = Object.assign(options.minify ?? true ? {
         indent: '',
         newLine: '',
         removeComments: true
@@ -33,9 +47,14 @@ function render(data, opt = {}) {
         newLine: '\n',
         compress: false,
         removeComments: false,
-    }, { colorConvert: true, expandNestingRules: false, preserveLicense: false }, opt);
-    return {
-        code: doRender(options.expandNestingRules ? expand(data) : data, options, errors, function reducer(acc, curr) {
+    }, { colorConvert: true, expandNestingRules: false, preserveLicense: false }, options);
+    const sourcemap = options.sourcemap ? new SourceMap : null;
+    const result = {
+        code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, {
+            ind: 0,
+            lin: 1,
+            col: 1
+        }, errors, function reducer(acc, curr) {
             if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
                 if (!options.preserveLicense || !curr.val.startsWith('/*!')) {
                     return acc;
@@ -47,9 +66,15 @@ function render(data, opt = {}) {
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
     };
+    if (sourcemap != null) {
+        result.map = sourcemap.toJSON();
+        // @ts-ignore
+        result.map.sources = result.map.sources?.map(s => options?.resolve(s, options?.cwd)?.relative);
+    }
+    return result;
 }
 // @ts-ignore
-function doRender(data, options, errors, reducer, level = 0, indents = []) {
+function renderAstNode(data, options, sourcemap, position, errors, reducer, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
@@ -66,12 +91,25 @@ function doRender(data, options, errors, reducer, level = 0, indents = []) {
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
         case 2 /* NodeType.StyleSheetNodeType */:
             return data.chi.reduce((css, node) => {
-                const str = doRender(node, options, errors, reducer, level, indents);
+                const str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, level, indents);
                 if (str === '') {
                     return css;
                 }
                 if (css === '') {
+                    if (sourcemap != null) {
+                        if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
+                            sourcemap.add({ src: '', sta: { ...position } }, node.loc);
+                        }
+                        update(position, str);
+                    }
                     return str;
+                }
+                if (sourcemap != null) {
+                    update(position, options.newLine);
+                    if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
+                        sourcemap.add({ src: '', sta: { ...position } }, node.loc);
+                    }
+                    update(position, str);
                 }
                 return `${css}${options.newLine}${str}`;
             }, '');
@@ -102,7 +140,7 @@ function doRender(data, options, errors, reducer, level = 0, indents = []) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
-                    str = doRender(node, options, errors, reducer, level + 1, indents);
+                    str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, level + 1, indents);
                 }
                 if (css === '') {
                     return str;
@@ -135,6 +173,16 @@ function renderToken(token, options = {}, reducer, errors) {
         };
     }
     switch (token.typ) {
+        case EnumToken.BinaryExpressionTokenType:
+            return renderToken(token.l) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r);
+        case EnumToken.Add:
+            return ' + ';
+        case EnumToken.Sub:
+            return ' - ';
+        case EnumToken.Mul:
+            return '*';
+        case EnumToken.Div:
+            return '/';
         case EnumToken.ColorTokenType:
             if (options.colorConvert) {
                 if (token.kin == 'lit' && token.val.toLowerCase() == 'currentcolor') {
@@ -176,15 +224,14 @@ function renderToken(token, options = {}, reducer, errors) {
             if (token.kin == 'hex' || token.kin == 'lit') {
                 return token.val;
             }
-        case EnumToken.StartParensTokenType:
-            if (!('chi' in token)) {
-                return '(';
-            }
+        case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
+        case EnumToken.StartParensTokenType:
+            return '(';
         case EnumToken.IncludesTokenType:
             return '~=';
         case EnumToken.DashMatchTokenType:
@@ -221,6 +268,16 @@ function renderToken(token, options = {}, reducer, errors) {
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
+            if (token.val.typ == EnumToken.BinaryExpressionTokenType) {
+                const result = renderToken(token.val);
+                if (!('unit' in token)) {
+                    return result;
+                }
+                if (!result.includes(' ')) {
+                    return result + token.unit;
+                }
+                return `(${result})*1${token.unit}`;
+            }
             let val = reduceNumber(token.val);
             let unit = token.unit;
             if (token.typ == EnumToken.AngleTokenType) {
@@ -304,4 +361,4 @@ function renderToken(token, options = {}, reducer, errors) {
     return '';
 }
 
-export { colorsFunc, render, renderToken };
+export { colorsFunc, doRender, reduceNumber, renderToken };

@@ -3,20 +3,32 @@ import '../../renderer/utils/color.js';
 import '../../ast/types.js';
 import { parseString } from '../parse.js';
 import { PropertyMap } from './map.js';
+import '../../renderer/sourcemap/lib/encode.js';
 import { getConfig } from '../utils/config.js';
 
 const config = getConfig();
 class PropertyList {
+    options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
-    constructor() {
+    constructor(options = {}) {
+        for (const key of Object.keys(this.options)) {
+            if (key in options) {
+                // @ts-ignore
+                this.options[key] = options[key];
+            }
+        }
         this.declarations = new Map;
     }
     set(nam, value) {
         return this.add({ typ: 5 /* NodeType.DeclarationNodeType */, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
     }
     add(declaration) {
-        if (declaration.typ != 5 /* NodeType.DeclarationNodeType */) {
+        if (declaration.typ != 5 /* NodeType.DeclarationNodeType */ || !this.options.removeDuplicateDeclarations) {
             this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
+            return this;
+        }
+        if (!this.options.computeShorthand) {
+            this.declarations.set(declaration.nam, declaration);
             return this;
         }
         let propertyName = declaration.nam;

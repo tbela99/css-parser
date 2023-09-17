@@ -2,7 +2,7 @@
 import {expect as f} from '../../node_modules/@esm-bundle/chai/esm/chai.js';
 import {transform, render, parse} from '../../dist/web/index.js';
 
-describe('parse block', function () {
+describe('doParse block', function () {
 
     it('similar rules #1', function () {
         const file = `

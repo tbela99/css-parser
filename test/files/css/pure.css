@@ -764,7 +764,7 @@ a.pure-button-selected {
 /*csslint box-model:false*/
 /*
 Box-model set to false because we're setting a height on select elements, which
-also have border and padding. This is done because some browsers don't render
+also have border and padding. This is done because some browsers don't doRender
 the padding. We explicitly set the box-model for select elements to border-box,
 so we can ignore the csslint warning.
 */

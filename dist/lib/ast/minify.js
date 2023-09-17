@@ -1,16 +1,25 @@
 import { parseString } from '../parser/parse.js';
 import { isIdentStart, isWhiteSpace, isIdent, isFunction } from '../parser/utils/syntax.js';
 import { EnumToken } from './types.js';
-import { PropertyList } from '../parser/declaration/list.js';
 import { eq } from '../parser/utils/eq.js';
-import { renderToken, render } from '../renderer/render.js';
-import { replaceCompound } from './expand.js';
+import { renderToken, doRender } from '../renderer/render.js';
+import { replaceCompound } from './features/expand.js';
+import { InlineCssVariables } from './features/inlinecssvariables.js';
+import { ComputeShorthand } from './features/shorthand.js';
 import { walkValues } from './walk.js';
 
 const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
-function minify(ast, options = {}, recursive = false, errors, nestingContent, variableScope) {
+function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
+    if (!('features' in options)) {
+        // @ts-ignore
+        options = { removeDuplicateDeclarations: true, computeShorthand: true, ...options, features: [] };
+        options.features.push(new ComputeShorthand);
+        if (options.inlineCssVariables) {
+            options.features.push(new InlineCssVariables);
+        }
+    }
     function reducer(acc, curr, index, array) {
         // trim :is()
         if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
@@ -29,9 +38,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
         }
         acc.push(curr.join(''));
         return acc;
-    }
-    if (variableScope == null) {
-        variableScope = new Map;
     }
     // @ts-ignore
     if ('chi' in ast && ast.chi.length > 0) {
@@ -83,10 +89,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
                 // @ts-ignore
                 if (hasDeclaration(node)) {
                     // @ts-ignore
-                    minifyRule(node, ast, options, variableScope);
+                    minifyRule(node, options, ast, context);
                 }
                 else {
-                    minify(node, options, recursive, errors, nestingContent, variableScope);
+                    minify(node, options, recursive, errors, nestingContent, context);
                 }
                 previous = node;
                 nodeIndex = i;
@@ -140,7 +146,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(wrapper, options, recursive, errors, nestingContent, variableScope);
+                        minify(wrapper, options, recursive, errors, nestingContent, context);
                         continue;
                     }
                     // @ts-ignore
@@ -245,10 +251,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
                                 // @ts-ignore
                                 if (hasDeclaration(node)) {
                                     // @ts-ignore
-                                    minifyRule(node, ast, options, variableScope);
+                                    minifyRule(node, options, ast, context);
                                 }
                                 else {
-                                    minify(node, options, recursive, errors, nestingContent, variableScope);
+                                    minify(node, options, recursive, errors, nestingContent, context);
                                 }
                                 i--;
                                 previous = node;
@@ -290,10 +296,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
                         // @ts-ignore
                         if (hasDeclaration(previous)) {
                             // @ts-ignore
-                            minifyRule(previous, ast, options, variableScope);
+                            minifyRule(previous, options, ast, context);
                         }
                         else {
-                            minify(previous, options, recursive, errors, nestingContent, variableScope);
+                            minify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
@@ -302,10 +308,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
                         // @ts-ignore
                         if (hasDeclaration(previous)) {
                             // @ts-ignore
-                            minifyRule(previous, ast, options, variableScope);
+                            minifyRule(previous, options, ast, context);
                         }
                         else {
-                            minify(previous, options, recursive, errors, nestingContent, variableScope);
+                            minify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
@@ -325,12 +331,12 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
             if (node.chi.some(n => n.typ == 5 /* NodeType.DeclarationNodeType */)) {
-                minifyRule(node, ast, options, variableScope);
+                minifyRule(node, options, ast, context);
             }
             else {
                 // @ts-ignore
                 if (!(node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam != 'font-face')) {
-                    minify(node, options, recursive, errors, nestingContent, variableScope);
+                    minify(node, options, recursive, errors, nestingContent, context);
                 }
             }
         }
@@ -341,6 +347,14 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, va
             node.typ == 4 /* NodeType.RuleNodeType */ &&
             node.sel.includes('&')) {
             fixSelector(node);
+        }
+    }
+    if (ast.typ == 2 /* NodeType.StyleSheetNodeType */) {
+        for (const feature of options.features) {
+            if ('cleanup' in feature) {
+                // @ts-ignore
+                feature.cleanup(ast, options, context);
+            }
         }
     }
     return ast;
@@ -436,88 +450,14 @@ function hasDeclaration(node) {
     }
     return true;
 }
-function minifyRule(ast, parent, options = {}, variableScope = new Map) {
+function minifyRule(ast, options, parent, context) {
     // @ts-ignore
     if (!('chi' in ast) || ast.chi.length == 0) {
         return ast;
     }
     Object.defineProperty(ast, 'parent', { ...definedPropertySettings, value: parent });
-    // @ts-ignore
-    const j = ast.chi.length;
-    let k = 0;
-    let properties = new PropertyList();
-    // @ts-ignore
-    for (; k < j; k++) {
-        // @ts-ignore
-        const node = ast.chi[k];
-        if (node.typ == 0 /* NodeType.CommentNodeType */ || node.typ == 5 /* NodeType.DeclarationNodeType */) {
-            properties.add(node);
-            continue;
-        }
-        break;
-    }
-    const isRoot = parent.typ == 2 /* NodeType.StyleSheetNodeType */ && ast.typ == 4 /* NodeType.RuleNodeType */ && ast.sel == ':root';
-    // @ts-ignore
-    ast.chi = [...properties].concat(ast.chi.slice(k));
-    if (options.inlineCssVariable) {
-        for (const node of ast.chi) {
-            if (node.typ == 1 /* NodeType.CDOCOMMNodeType */ || node.typ == 0 /* NodeType.CommentNodeType */) {
-                continue;
-            }
-            if (node.typ != 5 /* NodeType.DeclarationNodeType */) {
-                break;
-            }
-            // css variable
-            if (node.nam.startsWith('--')) {
-                if (!variableScope.has(node.nam)) {
-                    const info = {
-                        globalScope: isRoot,
-                        // @ts-ignore
-                        parent: new Set(),
-                        declarationCount: 1,
-                        replaceable: isRoot,
-                        val: node.val
-                    };
-                    info.parent.add(ast);
-                    variableScope.set(node.nam, info);
-                }
-                else {
-                    const info = variableScope.get(node.nam);
-                    info.globalScope = isRoot;
-                    if (!isRoot) {
-                        ++info.declarationCount;
-                    }
-                    if (info.replaceable) {
-                        info.replaceable = isRoot && info.declarationCount == 1;
-                    }
-                    info.parent.add(ast);
-                    info.val = node.val;
-                }
-            }
-            else {
-                for (const { value, parent: parentValue } of walkValues(node.val)) {
-                    if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
-                        if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
-                            const info = variableScope.get(value.chi[0].val);
-                            if (info != null && info.replaceable) {
-                                if (parentValue != null) {
-                                    let i = 0;
-                                    for (; i < parentValue.chi.length; i++) {
-                                        if (parentValue.chi[i] == value) {
-                                            parentValue.chi.splice(i, 1, ...info.val);
-                                            break;
-                                        }
-                                    }
-                                }
-                                else {
-                                    node.val = info.val;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    for (const feature of options.features) {
+        feature.run(ast, options, parent, context);
     }
     return ast;
 }
@@ -897,7 +837,7 @@ function diff(n1, n2, reducer, options = {}) {
         sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(','),
         chi: intersect.reverse()
     });
-    if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + render(curr, options).code.length, 0)) {
+    if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0)) {
         // @ts-ignore
         return null;
     }

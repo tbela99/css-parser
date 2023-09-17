@@ -1,4 +1,4 @@
-import {AstNode, AstRuleList, FunctionToken, Token, WalkAttributesResult, WalkResult} from "../../@types";
+import {AstNode, AstRuleList, FunctionToken, ParensToken, Token, WalkAttributesResult, WalkResult} from "../../@types";
 
 export function* walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult> {
 
@@ -6,23 +6,23 @@ export function* walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): 
 
     if ('chi' in node) {
 
-        for (const child of <Array<AstNode>>node.chi) {
+        for (const child of (<Array<AstNode>>node.chi).slice()) {
 
             yield* walk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node));
         }
     }
 }
 
-export function* walkValues(values: Token[], parent?: FunctionToken): Generator<WalkAttributesResult> {
+export function* walkValues(values: Token[], parent?: FunctionToken | ParensToken): Generator<WalkAttributesResult> {
 
-    for (const value of values) {
+    for (const value of values.slice()) {
 
         // @ts-ignore
         yield {value, parent};
 
         if ('chi' in value) {
 
-            yield* walkValues(<Token[]>value.chi, <FunctionToken>value);
+            yield* walkValues((<Token[]>value.chi).slice(), <FunctionToken | ParensToken>value);
         }
     }
 }

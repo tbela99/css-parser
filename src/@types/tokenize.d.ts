@@ -87,42 +87,42 @@ export interface UnclosedStringToken extends BaseToken {
 export interface DimensionToken extends BaseToken {
 
     typ: EnumToken.DimensionTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: string;
 }
 
 export interface LengthToken extends BaseToken {
 
     typ: EnumToken.LengthTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: string;
 }
 
 export interface AngleToken extends BaseToken {
 
     typ: EnumToken.AngleTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: string;
 }
 
 export interface TimeToken extends BaseToken {
 
     typ: EnumToken.TimeTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: 'ms' | 's';
 }
 
 export interface FrequencyToken extends BaseToken {
 
     typ: EnumToken.FrequencyTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: 'Hz' | 'Khz';
 }
 
 export interface ResolutionToken extends BaseToken {
 
     typ: EnumToken.ResolutionTokenType;
-    val: string;
+    val: string | BinaryExpressionToken;
     unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 
@@ -305,7 +305,14 @@ export interface MulToken extends BaseToken {
     typ: EnumToken.Mul;
 }
 
-export interface BinaryExpression extends BaseToken {
+export interface UnaryExpression extends BaseToken {
+
+    typ: EnumToken.UnaryExpressionTokenType
+    sign: EnumToken.Add | EnumToken.Sub ;
+    val: UnaryExpressionNode;
+}
+
+export interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
     op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
@@ -313,8 +320,10 @@ export interface BinaryExpression extends BaseToken {
     r: BinaryExpressionNode;
 }
 
+export declare type UnaryExpressionNode = BinaryExpressionNode | NumberToken | DimensionToken | TimeToken | LengthToken | AngleToken | FrequencyToken;
+
 export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
-    AngleToken | LengthToken | FrequencyToken | BinaryExpression | FunctionToken | ParensToken;
+    AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
 export declare type TokenType = EnumToken;
 export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
@@ -324,6 +333,6 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | ParensToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
-    PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpression |
+    PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
     AddToken | SubToken | DivToken | MulToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;

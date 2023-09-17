@@ -243,7 +243,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                         break;
                     }
                 }
+
                 buffer += value;
+
                 if (peek() == '*') {
 
                     buffer += next();
@@ -267,7 +269,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     yield pushToken(buffer, EnumToken.BadCommentTokenType);
                     buffer = '';
                 }
+
                 break;
+
             case '<':
 
                 if (buffer.length > 0) {
@@ -389,6 +393,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 buffer += value;
                 break;
             case '+':
+            case '*':
             case ':':
             case ',':
             case '=':
@@ -408,7 +413,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 yield pushToken(value);
                 buffer = '';
 
-                if (value == '+' && isWhiteSpace(peek().charCodeAt(0))) {
+                if (['+', '*', '/'].includes(value)   && isWhiteSpace(peek().charCodeAt(0))) {
 
                     yield pushToken(next());
                 }

@@ -1,6 +1,7 @@
 import { EnumToken } from '../../ast/types.js';
 import '../parse.js';
 import '../../renderer/utils/color.js';
+import '../../renderer/sourcemap/lib/encode.js';
 
 const funcList = ['clamp', 'calc'];
 function matchType(val, properties) {

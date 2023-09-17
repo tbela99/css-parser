@@ -3,6 +3,7 @@ import { isLength } from '../utils/syntax.js';
 import { EnumToken } from '../../ast/types.js';
 import '../parse.js';
 import '../../renderer/utils/color.js';
+import '../../renderer/sourcemap/lib/encode.js';
 
 class PropertySet {
     config;

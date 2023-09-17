@@ -2,6 +2,7 @@ import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from './utils/syntax
 import { EnumToken } from '../ast/types.js';
 import './parse.js';
 import '../renderer/utils/color.js';
+import '../renderer/sourcemap/lib/encode.js';
 
 function* tokenize(iterator) {
     let ind = -1;
@@ -278,6 +279,7 @@ function* tokenize(iterator) {
                 buffer += value;
                 break;
             case '+':
+            case '*':
             case ':':
             case ',':
             case '=':
@@ -291,7 +293,7 @@ function* tokenize(iterator) {
                 }
                 yield pushToken(value);
                 buffer = '';
-                if (value == '+' && isWhiteSpace(peek().charCodeAt(0))) {
+                if (['+', '*', '/'].includes(value) && isWhiteSpace(peek().charCodeAt(0))) {
                     yield pushToken(next());
                 }
                 while (isWhiteSpace(peek().charCodeAt(0))) {

@@ -37,6 +37,7 @@ export enum EnumToken {
     AttrEndTokenType,
     StartParensTokenType,
     EndParensTokenType,
+    ParensTokenType,
     WhitespaceTokenType,
     IncludesTokenType,
     DashMatchTokenType,
@@ -56,6 +57,13 @@ export enum EnumToken {
     BadCdoTokenType,
     BadUrlTokenType,
     BadStringTokenType,
+    BinaryExpressionTokenType,
+    UnaryExpressionTokenType,
+    /* arithmetic tokens */
+    Add,
+    Mul,
+    Div,
+    Sub,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,

@@ -12,7 +12,7 @@ export * from '../lib';
 export * from './load';
 export * from '../lib/fs';
 
-import {parse as doParse, render as doRender} from "../lib";
+import {doParse, doRender} from "../lib";
 import {dirname, load, resolve} from "./index";
 
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {

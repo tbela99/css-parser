@@ -1,9 +1,9 @@
-import { splitRule, combinators } from './minify.js';
-import { parseString } from '../parser/parse.js';
-import { renderToken } from '../renderer/render.js';
-import '../renderer/utils/color.js';
-import { EnumToken } from './types.js';
-import { walkValues } from './walk.js';
+import { splitRule, combinators } from '../minify.js';
+import { parseString } from '../../parser/parse.js';
+import { renderToken } from '../../renderer/render.js';
+import '../../renderer/utils/color.js';
+import { EnumToken } from '../types.js';
+import { walkValues } from '../walk.js';
 
 function expand(ast) {
     //
@@ -17,7 +17,7 @@ function expand(ast) {
         };
     }
     if (!('chi' in ast)) {
-        return { ...ast };
+        return ast;
     }
     const result = { ...ast, chi: [] };
     // @ts-ignore

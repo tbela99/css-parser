@@ -18,12 +18,25 @@ export interface ErrorDescription {
     error?: Error;
 }
 
-export interface ParserOptions {
+export interface PropertyListOptions {
+
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
+}
+
+export interface MinifyFeature {
+
+    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) => void;
+    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: {[key: string]: any}) => void;
+}
+
+export interface ParserOptions extends PropertyListOptions {
 
     src?: string;
     sourcemap?: boolean;
     minify?: boolean;
     nestingRules?: boolean;
+    expandNestingRules?: boolean;
     removeCharset?: boolean;
     removeEmpty?: boolean;
     resolveUrls?: boolean;
@@ -33,6 +46,11 @@ export interface ParserOptions {
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
+}
+
+export interface MinifyOptions extends ParserOptions {
+
+    features: MinifyFeature[];
 }
 
 export interface RenderOptions {
@@ -198,7 +216,7 @@ export interface VariableScopeInfo {
     parent: Set<AstRule | AstAtRule>;
     declarationCount: number;
     replaceable: boolean;
-    val: Token[];
+    node: AstDeclaration;
 }
 
 export interface SourceMapObject {

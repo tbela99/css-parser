@@ -6,7 +6,7 @@ import {
     AstNode,
     AstRule,
     AstRuleStyleSheet,
-    AttrToken,
+    AttrToken, BinaryExpressionToken,
     ColorToken,
     ErrorDescription,
     Location,
@@ -69,7 +69,7 @@ function update(position: Position, str: string) {
     }
 }
 
-export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
+export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
 
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
@@ -88,7 +88,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
     const sourcemap = options.sourcemap ? new SourceMap : null;
 
     const result: RenderResult = {
-        code: doRender(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
+        code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
 
             ind: 0,
             lin: 1,
@@ -123,7 +123,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
 }
 
 // @ts-ignore
-function doRender(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
+function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
 
     if (indents.length < level + 1) {
 
@@ -153,7 +153,7 @@ function doRender(data: AstNode, options: RenderOptions, sourcemap: SourceMap | 
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = doRender(node, options, sourcemap, {...position}, errors, reducer, level, indents);
+                const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, level, indents);
 
                 if (str === '') {
 
@@ -226,7 +226,7 @@ function doRender(data: AstNode, options: RenderOptions, sourcemap: SourceMap | 
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
 
-                    str = doRender(node, options, sourcemap, {...position}, errors, reducer, level + 1, indents);
+                    str = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -418,7 +418,24 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
 
-            let val: string = reduceNumber(token.val);
+            if ((<BinaryExpressionToken>token.val).typ == EnumToken.BinaryExpressionTokenType) {
+
+                const result = renderToken(<BinaryExpressionToken>token.val);
+
+                if (!('unit' in token)) {
+
+                    return result;
+                }
+
+                if (!result.includes(' ')) {
+
+                    return result + token.unit;
+                }
+
+                return `(${result})*1${token.unit}`;
+            }
+
+            let val: string = reduceNumber(<string | number>token.val);
             let unit: string = token.unit;
 
             if (token.typ == EnumToken.AngleTokenType) {
