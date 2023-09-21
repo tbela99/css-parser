@@ -17,7 +17,10 @@ import {dirname, load, resolve} from "./index";
 
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
-    return doRender(data, Object.assign(options, {load, resolve, cwd: options.cwd ?? process.cwd()}));
+    return doRender(data, Object.assign(options, {
+        load,
+        resolve,
+        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)    }));
 }
 
 export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {

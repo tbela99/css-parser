@@ -109,7 +109,7 @@ describe('CSS Nesting', function () {
 `;
         return transform(nesting3, {
             minify: true, nestingRules: true, resolveImport: true
-        }).then((result) => f(result.code).equals(`.form-floating{>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + calc(var(--bs-border-width) * 2))}}`));
+        }).then((result) => f(result.code).equals(`.form-floating{>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + calc(var(--bs-border-width)*2))}}`));
     });
     it('nesting #7', function () {
         const nesting3 = `
@@ -146,7 +146,7 @@ describe('CSS Nesting', function () {
 `;
         return transform(nesting3, {
             minify: true, nestingRules: true, resolveImport: true
-        }).then((result) => f(result.code).equals(`.form-floating{position:relative;>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + calc(var(--bs-border-width) * 2));min-height:calc(3.5rem + calc(var(--bs-border-width) * 2));line-height:1.25;z-index:2;white-space:nowrap}>label{position:absolute;top:0;left:0;z-index:2;height:100%;padding:1rem .75rem;overflow:hidden;text-align:start;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;border:var(--bs-border-width) solid #0000;transform-origin:0 0;transition:opacity .1s ease-in-out,transform .1s ease-in-out}}`));
+        }).then((result) => f(result.code).equals(`.form-floating{position:relative;>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + calc(var(--bs-border-width)*2));min-height:calc(3.5rem + calc(var(--bs-border-width)*2));line-height:1.25;z-index:2;white-space:nowrap}>label{position:absolute;top:0;left:0;z-index:2;height:100%;padding:1rem .75rem;overflow:hidden;text-align:start;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;border:var(--bs-border-width) solid #0000;transform-origin:0 0;transition:opacity .1s ease-in-out,transform .1s ease-in-out}}`));
     });
 
     it('nesting #8', function () {

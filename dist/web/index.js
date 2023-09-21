@@ -15,7 +15,11 @@ import { resolve, dirname } from '../lib/fs/resolve.js';
 export { matchUrl } from '../lib/fs/resolve.js';
 
 function render(data, options = {}) {
-    return doRender(data, Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() }));
+    return doRender(data, Object.assign(options, {
+        load,
+        resolve,
+        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+    }));
 }
 async function parse(iterator, opt = {}) {
     return doParse(iterator, Object.assign(opt, {
