@@ -116,7 +116,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 
         result.map = sourcemap.toJSON();
         // @ts-ignore
-        result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
+        // result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
     }
 
     return result;
@@ -166,7 +166,15 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
                         if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
 
-                            sourcemap.add({src: '', sta: {...position}}, <Location>node.loc);
+                            let src: string = (<Location>node.loc)?.src ?? '';
+
+                            if (src !== '') {
+
+                                // @ts-ignore
+                                src = options.resolve(src, options.cwd ?? '').relative;
+                            }
+
+                            sourcemap.add({src: '', sta: {...position}}, {...<Location>node.loc, src});
                         }
 
                         update(position, str);
@@ -181,7 +189,15 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
                     if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
 
-                        sourcemap.add({src: '', sta: {...position}}, <Location>node.loc);
+                        let src: string = (<Location>node.loc)?.src ?? '';
+
+                        if (src !== '') {
+
+                            // @ts-ignore
+                            src = options.resolve(src, options.cwd ?? '').relative;
+                        }
+
+                        sourcemap.add({src: '', sta: {...position}}, {...<Location>node.loc, src});
                     }
 
                     update(position, str);

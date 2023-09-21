@@ -1,4 +1,5 @@
-// export const char_to_integer: {[key: string]: number} = {};
+// from https://github.com/Rich-Harris/vlq/tree/master
+// credit: Rich Harris
 const integer_to_char = {};
 let i = 0;
 for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {

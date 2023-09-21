@@ -51,11 +51,24 @@ export class SourceMap {
         }
     }
 
+    toUrl() {
+
+        // /*# sourceMappingURL=${url} */
+        return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
+    }
+
     toJSON(): SourceMapObject
     {
 
         // console.error(this.#line);
         // console.error([...this.#map.keys()]);
+
+        console.error({
+
+            version: this.#version,
+            sources: this.#sources.slice(),
+            mappings: [...this.#map.values()]
+        });
 
         const mappings: string[] = [];
 

@@ -582,7 +582,8 @@ function hsl2rgb(h, s, l, a = null) {
     return values;
 }
 
-// export const char_to_integer: {[key: string]: number} = {};
+// from https://github.com/Rich-Harris/vlq/tree/master
+// credit: Rich Harris
 const integer_to_char = {};
 let i = 0;
 for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {
@@ -649,9 +650,18 @@ class SourceMap {
             this.lastLocation = original;
         }
     }
+    toUrl() {
+        // /*# sourceMappingURL=${url} */
+        return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
+    }
     toJSON() {
         // console.error(this.#line);
         // console.error([...this.#map.keys()]);
+        console.error({
+            version: this.#version,
+            sources: this.#sources.slice(),
+            mappings: [...this.#map.values()]
+        });
         const mappings = [];
         let i = 0;
         for (; i <= this.#line; i++) {
@@ -734,7 +744,7 @@ function doRender(data, options = {}) {
     if (sourcemap != null) {
         result.map = sourcemap.toJSON();
         // @ts-ignore
-        result.map.sources = result.map.sources?.map(s => options?.resolve(s, options?.cwd)?.relative);
+        // result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
     }
     return result;
 }
@@ -763,7 +773,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, leve
                 if (css === '') {
                     if (sourcemap != null) {
                         if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
-                            sourcemap.add({ src: '', sta: { ...position } }, node.loc);
+                            let src = node.loc?.src ?? '';
+                            if (src !== '') {
+                                // @ts-ignore
+                                src = options.resolve(src, options.cwd ?? '').relative;
+                            }
+                            sourcemap.add({ src: '', sta: { ...position } }, { ...node.loc, src });
                         }
                         update(position, str);
                     }
@@ -772,7 +787,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, leve
                 if (sourcemap != null) {
                     update(position, options.newLine);
                     if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
-                        sourcemap.add({ src: '', sta: { ...position } }, node.loc);
+                        let src = node.loc?.src ?? '';
+                        if (src !== '') {
+                            // @ts-ignore
+                            src = options.resolve(src, options.cwd ?? '').relative;
+                        }
+                        sourcemap.add({ src: '', sta: { ...position } }, { ...node.loc, src });
                     }
                     update(position, str);
                 }

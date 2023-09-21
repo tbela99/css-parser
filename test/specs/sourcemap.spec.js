@@ -12,7 +12,6 @@ describe('sourcemap', function () {
         // minify: true,
         // preserveLicense: true,
         src: `${dir}/line-awesome.css`,
-        cwd: dir,
         resolveImport: true,
         sourcemap: true
     };
@@ -23,8 +22,6 @@ describe('sourcemap', function () {
         return parse(file, options).then(result => {
 
             const output = render(result.ast, {...options, minify: false, removeComments: true});
-
-            console.error(output.code);
 
             return readFile(`${dir}/files/sourcemap/line-awesome-sourcemap.css`, {encoding: 'utf-8'}).
             then(expected => f(`/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(output.map))} */`).equals(expected));
