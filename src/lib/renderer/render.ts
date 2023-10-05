@@ -5,8 +5,10 @@ import {
     AstDeclaration,
     AstNode,
     AstRule,
+    AstRuleList,
     AstRuleStyleSheet,
-    AttrToken, BinaryExpressionToken,
+    AttrToken,
+    BinaryExpressionToken,
     ColorToken,
     ErrorDescription,
     Location,
@@ -20,7 +22,7 @@ import {EnumToken, expand, NodeType} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isNewLine} from "../parser";
 
-export const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
+export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 
 export function reduceNumber(val: string | number) {
 
@@ -71,22 +73,26 @@ function update(position: Position, str: string) {
 
 export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
 
+    options = {
+        ...(options.minify ?? true ? {
+            indent: '',
+            newLine: '',
+            removeComments: true
+        } : {
+            indent: ' ',
+            newLine: '\n',
+            compress: false,
+            removeComments: false,
+
+        }), sourcemap: false, colorConvert: true, expandNestingRules: false, preserveLicense: false, ...options
+    };
+
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
-
-    options = Object.assign(options.minify ?? true ? {
-        indent: '',
-        newLine: '',
-        removeComments: true
-    } : {
-        indent: ' ',
-        newLine: '\n',
-        compress: false,
-        removeComments: false,
-
-    }, {colorConvert: true, expandNestingRules: false, preserveLicense: false}, options);
-    const sourcemap = options.sourcemap ? new SourceMap : null;
-
+    const sourcemap: SourceMap | null = options.sourcemap ? new SourceMap : null;
+    const cache: {
+        [key: string]: any
+    } = Object.create(null);
     const result: RenderResult = {
         code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
 
@@ -105,12 +111,18 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
                 return acc + curr.val;
             }
 
-            return acc + renderToken(curr, options, reducer, errors);
-        }, 0), errors, stats: {
+            return acc + renderToken(curr, options, cache, reducer, errors);
+        }, cache), errors, stats: {
 
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
     };
+
+    if (options.output != null) {
+
+        // @ts-ignore
+        options.output = options.resolve(options.output, options.cwd).absolute;
+    }
 
     if (sourcemap != null) {
 
@@ -122,8 +134,44 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     return result;
 }
 
+function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
+    [p: string]: any
+}, sourcemap: SourceMap, position: Position, str: string) {
+    if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
+
+        let src: string = (<Location>node.loc)?.src ?? '';
+        let output: string = <string>options.output ?? '';
+
+        if (src !== '') {
+
+            if (!(src in cache)) {
+
+                // @ts-ignore
+                cache[src] = options.resolve(src, options.cwd ?? '').relative;
+            }
+        }
+
+        if (!(output in cache)) {
+
+            // @ts-ignore
+            cache[output] = options.resolve(output, options.cwd).relative;
+        }
+
+        // @ts-ignore
+        sourcemap.add({src: cache[output], sta: {...position}}, {
+            ...<Location>node.loc,
+            // @ts-ignore
+            src: options.resolve(cache[src], options.cwd).relative
+        });
+    }
+
+    update(position, str);
+}
+
 // @ts-ignore
-function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, level: number = 0, indents: string[] = []): string {
+function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, cache: {
+    [key: string]: any
+}, level: number = 0, indents: string[] = []): string {
 
     if (indents.length < level + 1) {
 
@@ -153,7 +201,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
-                const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, level, indents);
+                const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level, indents);
 
                 if (str === '') {
 
@@ -164,20 +212,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
                     if (sourcemap != null) {
 
-                        if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
-
-                            let src: string = (<Location>node.loc)?.src ?? '';
-
-                            if (src !== '') {
-
-                                // @ts-ignore
-                                src = options.resolve(src, options.cwd ?? '').relative;
-                            }
-
-                            sourcemap.add({src: '', sta: {...position}}, {...<Location>node.loc, src});
-                        }
-
-                        update(position, str);
+                        updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
 
                     return str;
@@ -186,21 +221,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 if (sourcemap != null) {
 
                     update(position, <string>options.newLine);
-
-                    if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
-
-                        let src: string = (<Location>node.loc)?.src ?? '';
-
-                        if (src !== '') {
-
-                            // @ts-ignore
-                            src = options.resolve(src, options.cwd ?? '').relative;
-                        }
-
-                        sourcemap.add({src: '', sta: {...position}}, {...<Location>node.loc, src});
-                    }
-
-                    update(position, str);
+                    updateSourceMap(node, options, cache, sourcemap, position, str);
                 }
 
                 return `${css}${options.newLine}${str}`;
@@ -242,7 +263,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
 
-                    str = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, level + 1, indents);
+                    str = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level + 1, indents);
                 }
 
                 if (css === '') {
@@ -274,7 +295,9 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
     return '';
 }
 
-export function renderToken(token: Token, options: RenderOptions = {}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string {
+export function renderToken(token: Token, options: RenderOptions = {}, cache: {
+    [key: string]: any
+} = Object.create(null), reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string {
 
     if (reducer == null) {
         reducer = function (acc: string, curr: Token): string {
@@ -289,7 +312,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
                 return acc + curr.val;
             }
 
-            return acc + renderToken(curr, options, reducer, errors);
+            return acc + renderToken(curr, options, cache, reducer, errors);
         }
     }
 
@@ -297,7 +320,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
         case EnumToken.BinaryExpressionTokenType:
 
-            return renderToken(token.l) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r);
+            return renderToken(token.l, options, cache) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
 
         case EnumToken.Add:
 
@@ -436,7 +459,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
             if ((<BinaryExpressionToken>token.val).typ == EnumToken.BinaryExpressionTokenType) {
 
-                const result = renderToken(<BinaryExpressionToken>token.val);
+                const result: string = renderToken(<BinaryExpressionToken>token.val, options, cache);
 
                 if (!('unit' in token)) {
 
@@ -456,7 +479,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
             if (token.typ == EnumToken.AngleTokenType) {
 
-                const angle = getAngle(<AngleToken>token);
+                const angle: number = getAngle(<AngleToken>token);
 
                 let v: string;
                 let value = val + unit;
@@ -550,7 +573,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
 
         case EnumToken.PercentageTokenType:
 
-            const perc = reduceNumber(token.val);
+            const perc: string = reduceNumber(token.val);
             return options.minify && perc == '0' ? '0' : perc + '%';
 
         case EnumToken.NumberTokenType:
@@ -565,6 +588,39 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
             }
 
         case EnumToken.UrlTokenTokenType:
+
+            if (token.typ == EnumToken.UrlTokenTokenType) {
+
+                if (options.output != null) {
+
+                    if (!('original' in token)) {
+
+                        // do not modify original token
+                        token = {...token};
+                        Object.defineProperty(token, 'original', {enumerable: false, writable: false, value: token.val})
+                    }
+
+                    // @ts-ignore
+                    if (!(token.original in cache)) {
+
+                        let output: string = <string>options.output ?? '';
+                        const key = output + 'abs';
+
+                        if (!(key in cache)) {
+
+                            // @ts-ignore
+                            cache[key] = options.dirname(options.resolve(output, options.cwd).absolute);
+                        }
+
+                        // @ts-ignore
+                        cache[token.original] = options.resolve(token.original, cache[key]).relative;
+                    }
+
+                    // @ts-ignore
+                    token.val = cache[token.original];
+                }
+            }
+
         case EnumToken.AtRuleTokenType:
 
         case EnumToken.HashTokenType:

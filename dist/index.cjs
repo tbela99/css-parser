@@ -655,12 +655,6 @@ class SourceMap {
         return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
     }
     toJSON() {
-        // console.error({
-        //
-        //     version: this.#version,
-        //     sources: this.#sources.slice(),
-        //     mappings: [...this.#map.values()]
-        // });
         const mappings = [];
         let i = 0;
         for (; i <= this.#line; i++) {
@@ -710,19 +704,22 @@ function update(position, str) {
     }
 }
 function doRender(data, options = {}) {
+    options = {
+        ...(options.minify ?? true ? {
+            indent: '',
+            newLine: '',
+            removeComments: true
+        } : {
+            indent: ' ',
+            newLine: '\n',
+            compress: false,
+            removeComments: false,
+        }), sourcemap: false, colorConvert: true, expandNestingRules: false, preserveLicense: false, ...options
+    };
     const startTime = performance.now();
     const errors = [];
-    options = Object.assign(options.minify ?? true ? {
-        indent: '',
-        newLine: '',
-        removeComments: true
-    } : {
-        indent: ' ',
-        newLine: '\n',
-        compress: false,
-        removeComments: false,
-    }, { colorConvert: true, expandNestingRules: false, preserveLicense: false }, options);
     const sourcemap = options.sourcemap ? new SourceMap : null;
+    const cache = Object.create(null);
     const result = {
         code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, {
             ind: 0,
@@ -735,11 +732,15 @@ function doRender(data, options = {}) {
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, reducer, errors);
-        }, 0), errors, stats: {
+            return acc + renderToken(curr, options, cache, reducer, errors);
+        }, cache), errors, stats: {
             total: `${(performance.now() - startTime).toFixed(2)}ms`
         }
     };
+    if (options.output != null) {
+        // @ts-ignore
+        options.output = options.resolve(options.output, options.cwd).absolute;
+    }
     if (sourcemap != null) {
         result.map = sourcemap.toJSON();
         // @ts-ignore
@@ -747,8 +748,31 @@ function doRender(data, options = {}) {
     }
     return result;
 }
+function updateSourceMap(node, options, cache, sourcemap, position, str) {
+    if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
+        let src = node.loc?.src ?? '';
+        let output = options.output ?? '';
+        if (src !== '') {
+            if (!(src in cache)) {
+                // @ts-ignore
+                cache[src] = options.resolve(src, options.cwd ?? '').relative;
+            }
+        }
+        if (!(output in cache)) {
+            // @ts-ignore
+            cache[output] = options.resolve(output, options.cwd).relative;
+        }
+        // @ts-ignore
+        sourcemap.add({ src: cache[output], sta: { ...position } }, {
+            ...node.loc,
+            // @ts-ignore
+            src: options.resolve(cache[src], options.cwd).relative
+        });
+    }
+    update(position, str);
+}
 // @ts-ignore
-function renderAstNode(data, options, sourcemap, position, errors, reducer, level = 0, indents = []) {
+function renderAstNode(data, options, sourcemap, position, errors, reducer, cache, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
@@ -765,35 +789,19 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, leve
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
         case 2 /* NodeType.StyleSheetNodeType */:
             return data.chi.reduce((css, node) => {
-                const str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, level, indents);
+                const str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level, indents);
                 if (str === '') {
                     return css;
                 }
                 if (css === '') {
                     if (sourcemap != null) {
-                        if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
-                            let src = node.loc?.src ?? '';
-                            if (src !== '') {
-                                // @ts-ignore
-                                src = options.resolve(src, options.cwd ?? '').relative;
-                            }
-                            sourcemap.add({ src: '', sta: { ...position } }, { ...node.loc, src });
-                        }
-                        update(position, str);
+                        updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
                     return str;
                 }
                 if (sourcemap != null) {
                     update(position, options.newLine);
-                    if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
-                        let src = node.loc?.src ?? '';
-                        if (src !== '') {
-                            // @ts-ignore
-                            src = options.resolve(src, options.cwd ?? '').relative;
-                        }
-                        sourcemap.add({ src: '', sta: { ...position } }, { ...node.loc, src });
-                    }
-                    update(position, str);
+                    updateSourceMap(node, options, cache, sourcemap, position, str);
                 }
                 return `${css}${options.newLine}${str}`;
             }, '');
@@ -824,7 +832,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, leve
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
-                    str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, level + 1, indents);
+                    str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level + 1, indents);
                 }
                 if (css === '') {
                     return str;
@@ -844,7 +852,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, leve
     }
     return '';
 }
-function renderToken(token, options = {}, reducer, errors) {
+function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
     if (reducer == null) {
         reducer = function (acc, curr) {
             if (curr.typ == exports.EnumToken.CommentTokenType && options.removeComments) {
@@ -853,12 +861,12 @@ function renderToken(token, options = {}, reducer, errors) {
                 }
                 return acc + curr.val;
             }
-            return acc + renderToken(curr, options, reducer, errors);
+            return acc + renderToken(curr, options, cache, reducer, errors);
         };
     }
     switch (token.typ) {
         case exports.EnumToken.BinaryExpressionTokenType:
-            return renderToken(token.l) + (token.op == exports.EnumToken.Add ? ' + ' : (token.op == exports.EnumToken.Sub ? ' - ' : (token.op == exports.EnumToken.Mul ? '*' : '/'))) + renderToken(token.r);
+            return renderToken(token.l, options, cache) + (token.op == exports.EnumToken.Add ? ' + ' : (token.op == exports.EnumToken.Sub ? ' - ' : (token.op == exports.EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
         case exports.EnumToken.Add:
             return ' + ';
         case exports.EnumToken.Sub:
@@ -953,7 +961,7 @@ function renderToken(token, options = {}, reducer, errors) {
         case exports.EnumToken.FrequencyTokenType:
         case exports.EnumToken.ResolutionTokenType:
             if (token.val.typ == exports.EnumToken.BinaryExpressionTokenType) {
-                const result = renderToken(token.val);
+                const result = renderToken(token.val, options, cache);
                 if (!('unit' in token)) {
                     return result;
                 }
@@ -1032,6 +1040,28 @@ function renderToken(token, options = {}, reducer, errors) {
                 return '';
             }
         case exports.EnumToken.UrlTokenTokenType:
+            if (token.typ == exports.EnumToken.UrlTokenTokenType) {
+                if (options.output != null) {
+                    if (!('original' in token)) {
+                        // do not modify original token
+                        token = { ...token };
+                        Object.defineProperty(token, 'original', { enumerable: false, writable: false, value: token.val });
+                    }
+                    // @ts-ignore
+                    if (!(token.original in cache)) {
+                        let output = options.output ?? '';
+                        const key = output + 'abs';
+                        if (!(key in cache)) {
+                            // @ts-ignore
+                            cache[key] = options.dirname(options.resolve(output, options.cwd).absolute);
+                        }
+                        // @ts-ignore
+                        cache[token.original] = options.resolve(token.original, cache[key]).relative;
+                    }
+                    // @ts-ignore
+                    token.val = cache[token.original];
+                }
+            }
         case exports.EnumToken.AtRuleTokenType:
         case exports.EnumToken.HashTokenType:
         case exports.EnumToken.PseudoClassTokenType:
@@ -5416,10 +5446,10 @@ async function load(url, currentFile) {
 }
 
 function render(data, options = {}) {
-    return doRender(data, Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() }));
+    return doRender(data, Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
 }
 async function parse(iterator, opt = {}) {
-    return doParse(iterator, Object.assign(opt, { load, resolve, cwd: opt.cwd ?? process.cwd() }));
+    return doParse(iterator, Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
 }
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };

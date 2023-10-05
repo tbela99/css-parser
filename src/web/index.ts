@@ -20,6 +20,7 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
     return doRender(data, Object.assign(options, {
         load,
         resolve,
+        dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)    }));
 }
 
@@ -28,6 +29,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
     return doParse(iterator, Object.assign(opt, {
         load,
         resolve,
+        dirname,
         cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }

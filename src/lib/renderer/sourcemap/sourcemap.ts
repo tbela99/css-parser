@@ -59,12 +59,6 @@ export class SourceMap {
 
     toJSON(): SourceMapObject
     {
-        // console.error({
-        //
-        //     version: this.#version,
-        //     sources: this.#sources.slice(),
-        //     mappings: [...this.#map.values()]
-        // });
 
         const mappings: string[] = [];
 

@@ -104,7 +104,9 @@ declare function replaceCompound(input: string, replace: string): string;
 declare const colorsFunc: string[];
 declare function reduceNumber(val: string | number): string;
 declare function doRender(data: AstNode, options?: RenderOptions): RenderResult;
-declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
+declare function renderToken(token: Token, options?: RenderOptions, cache?: {
+    [key: string]: any;
+}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
 declare const urlTokenMatcher: RegExp;
 declare function doParse(iterator: string, options?: ParserOptions): Promise<ParseResult>;
@@ -844,6 +846,7 @@ interface ParserOptions extends PropertyListOptions {
     cwd?: string;
     inlineCssVariables?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
+    dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
 }
@@ -851,6 +854,11 @@ interface ParserOptions extends PropertyListOptions {
 interface MinifyOptions extends ParserOptions {
 
     features: MinifyFeature[];
+}
+
+interface ResoledPath  {
+    absolute: string;
+    relative: string;
 }
 
 interface RenderOptions {
@@ -863,9 +871,10 @@ interface RenderOptions {
     newLine?: string;
     removeComments?: boolean;
     colorConvert?: boolean;
+    output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResoledPath;
 
 }
 

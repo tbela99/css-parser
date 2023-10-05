@@ -11,14 +11,14 @@ export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFun
 export { getConfig } from '../lib/parser/utils/config.js';
 export { funcList, matchType } from '../lib/parser/utils/type.js';
 import { load } from './load.js';
-import { resolve } from '../lib/fs/resolve.js';
-export { dirname, matchUrl } from '../lib/fs/resolve.js';
+import { resolve, dirname } from '../lib/fs/resolve.js';
+export { matchUrl } from '../lib/fs/resolve.js';
 
 function render(data, options = {}) {
-    return doRender(data, Object.assign(options, { load, resolve, cwd: options.cwd ?? process.cwd() }));
+    return doRender(data, Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
 }
 async function parse(iterator, opt = {}) {
-    return doParse(iterator, Object.assign(opt, { load, resolve, cwd: opt.cwd ?? process.cwd() }));
+    return doParse(iterator, Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
 }
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
@@ -39,4 +39,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { doParse, doRender, load, parse, render, resolve, transform };
+export { dirname, doParse, doRender, load, parse, render, resolve, transform };

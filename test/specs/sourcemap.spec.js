@@ -7,7 +7,7 @@ import {readFile} from "fs/promises";
 describe('sourcemap', function () {
 
     const dir = resolve(dirname(new URL(import.meta.url).pathname) + '/..');
-    const file = `@import '${dir}/line-awesome.css`;
+    const file = `@import '${dir}/files/css/line-awesome.css`;
     const options = {
         // minify: true,
         // preserveLicense: true,
@@ -17,7 +17,6 @@ describe('sourcemap', function () {
     };
 
     it('sourcemap file #1', async () => {
-
 
         return parse(file, options).then(result => {
 

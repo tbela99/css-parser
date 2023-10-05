@@ -18,6 +18,7 @@ function render(data, options = {}) {
     return doRender(data, Object.assign(options, {
         load,
         resolve,
+        dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
@@ -25,6 +26,7 @@ async function parse(iterator, opt = {}) {
     return doParse(iterator, Object.assign(opt, {
         load,
         resolve,
+        dirname,
         cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }

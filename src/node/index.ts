@@ -13,16 +13,16 @@ export * from './load';
 export * from '../lib/fs';
 
 import {doParse, doRender} from "../lib";
-import {load, resolve} from "../node";
+import {load, resolve, dirname} from "../node";
 
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
-    return doRender(data, Object.assign(options, {load, resolve, cwd: options.cwd ?? process.cwd()}));
+    return doRender(data, Object.assign(options, {load, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
 }
 
 export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
 
-    return doParse(iterator, Object.assign(opt, {load, resolve, cwd: opt.cwd ?? process.cwd()}));
+    return doParse(iterator, Object.assign(opt, {load, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
 }
 
 export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {

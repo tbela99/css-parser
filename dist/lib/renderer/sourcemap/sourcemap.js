@@ -37,12 +37,6 @@ class SourceMap {
         return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
     }
     toJSON() {
-        // console.error({
-        //
-        //     version: this.#version,
-        //     sources: this.#sources.slice(),
-        //     mappings: [...this.#map.values()]
-        // });
         const mappings = [];
         let i = 0;
         for (; i <= this.#line; i++) {

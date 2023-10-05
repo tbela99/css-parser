@@ -44,6 +44,7 @@ export interface ParserOptions extends PropertyListOptions {
     cwd?: string;
     inlineCssVariables?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
+    dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
     nodeEventFilter?: NodeType[]
 }
@@ -51,6 +52,11 @@ export interface ParserOptions extends PropertyListOptions {
 export interface MinifyOptions extends ParserOptions {
 
     features: MinifyFeature[];
+}
+
+export interface ResoledPath  {
+    absolute: string;
+    relative: string;
 }
 
 export interface RenderOptions {
@@ -63,9 +69,10 @@ export interface RenderOptions {
     newLine?: string;
     removeComments?: boolean;
     colorConvert?: boolean;
+    output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResoledPath;
 
 }
 
