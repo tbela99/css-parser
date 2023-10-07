@@ -24,6 +24,10 @@ async function doParse(iterator, options = {}) {
         resolveUrls: false,
         removeCharset: false,
         removeEmpty: true,
+        removeDuplicateDeclarations: true,
+        computeShorthand: true,
+        computeCalcExpression: true,
+        inlineCssVariables: false,
         ...options
     };
     if (options.expandNestingRules) {

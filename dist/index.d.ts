@@ -56,10 +56,11 @@ declare enum EnumToken$1 {
     BadStringTokenType = 46,
     BinaryExpressionTokenType = 47,
     UnaryExpressionTokenType = 48,
-    Add = 49,
-    Mul = 50,
-    Div = 51,
-    Sub = 52,
+    ListToken = 49,
+    Add = 50,
+    Mul = 51,
+    Div = 52,
+    Sub = 53,
     Time = 17,
     Iden = 3,
     Hash = 20,
@@ -90,9 +91,6 @@ declare function reduceSelector(selector: string[][]): {
     reducible: boolean;
 } | null;
 declare function hasDeclaration(node: AstRule): boolean;
-declare function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
-    [key: string]: any;
-}): AstRule | AstAtRule;
 declare function splitRule(buffer: string): string[][];
 
 declare function walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult>;
@@ -463,6 +461,12 @@ interface BinaryExpressionToken extends BaseToken {
     r: BinaryExpressionNode;
 }
 
+interface ListToken extends BaseToken {
+
+    typ: EnumToken$1.ListToken
+    chi: Token[];
+}
+
 declare type UnaryExpressionNode = BinaryExpressionNode | NumberToken | DimensionToken | TimeToken | LengthToken | AngleToken | FrequencyToken;
 
 declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
@@ -474,7 +478,7 @@ declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiC
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | ParensToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
-    PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
+    ListToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
     AddToken | SubToken | DivToken | MulToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
 
@@ -844,7 +848,10 @@ interface ParserOptions extends PropertyListOptions {
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
     inlineCssVariables?: boolean;
+    computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
@@ -1032,4 +1039,4 @@ declare function render(data: AstNode, options?: RenderOptions): RenderResult;
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken$1 as EnumToken, NodeType, colorsFunc, combinators, dirname, doParse, doRender, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, minifyRule, parse, parseDimension, parseString, reduceNumber, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };
+export { EnumToken$1 as EnumToken, NodeType, colorsFunc, combinators, dirname, doParse, doRender, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, parse, parseDimension, parseString, reduceNumber, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };

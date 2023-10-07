@@ -42,7 +42,10 @@ export interface ParserOptions extends PropertyListOptions {
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
     inlineCssVariables?: boolean;
+    computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };

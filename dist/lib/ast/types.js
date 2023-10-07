@@ -60,11 +60,12 @@ var EnumToken;
     EnumToken[EnumToken["BadStringTokenType"] = 46] = "BadStringTokenType";
     EnumToken[EnumToken["BinaryExpressionTokenType"] = 47] = "BinaryExpressionTokenType";
     EnumToken[EnumToken["UnaryExpressionTokenType"] = 48] = "UnaryExpressionTokenType";
+    EnumToken[EnumToken["ListToken"] = 49] = "ListToken";
     /* arithmetic tokens */
-    EnumToken[EnumToken["Add"] = 49] = "Add";
-    EnumToken[EnumToken["Mul"] = 50] = "Mul";
-    EnumToken[EnumToken["Div"] = 51] = "Div";
-    EnumToken[EnumToken["Sub"] = 52] = "Sub";
+    EnumToken[EnumToken["Add"] = 50] = "Add";
+    EnumToken[EnumToken["Mul"] = 51] = "Mul";
+    EnumToken[EnumToken["Div"] = 52] = "Div";
+    EnumToken[EnumToken["Sub"] = 53] = "Sub";
     /* aliases */
     EnumToken[EnumToken["Time"] = 17] = "Time";
     EnumToken[EnumToken["Iden"] = 3] = "Iden";

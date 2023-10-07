@@ -320,6 +320,12 @@ export interface BinaryExpressionToken extends BaseToken {
     r: BinaryExpressionNode;
 }
 
+export interface ListToken extends BaseToken {
+
+    typ: EnumToken.ListToken
+    chi: Token[];
+}
+
 export declare type UnaryExpressionNode = BinaryExpressionNode | NumberToken | DimensionToken | TimeToken | LengthToken | AngleToken | FrequencyToken;
 
 export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
@@ -333,6 +339,6 @@ export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken 
     AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | ParensToken | CDOCommentToken |
     BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
     DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
-    PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
+    ListToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
     AddToken | SubToken | DivToken | MulToken |
     BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;

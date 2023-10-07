@@ -6,6 +6,7 @@ import { renderToken, doRender } from '../renderer/render.js';
 import { replaceCompound } from './features/expand.js';
 import { InlineCssVariables } from './features/inlinecssvariables.js';
 import { ComputeShorthand } from './features/shorthand.js';
+import { ComputeCalcExpression } from './features/calc.js';
 import { walkValues } from './walk.js';
 
 const combinators = ['+', '>', '~'];
@@ -14,10 +15,13 @@ const definedPropertySettings = { configurable: true, enumerable: false, writabl
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     if (!('features' in options)) {
         // @ts-ignore
-        options = { removeDuplicateDeclarations: true, computeShorthand: true, ...options, features: [] };
+        options = { removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: [], ...options };
         options.features.push(new ComputeShorthand);
         if (options.inlineCssVariables) {
             options.features.push(new InlineCssVariables);
+        }
+        if (options.computeCalcExpression) {
+            options.features.push(new ComputeCalcExpression);
         }
     }
     function reducer(acc, curr, index, array) {
@@ -87,11 +91,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     // }
                 }
                 // @ts-ignore
-                if (hasDeclaration(node)) {
+                if (!hasDeclaration(node)) {
                     // @ts-ignore
-                    minifyRule(node, options, ast, context);
-                }
-                else {
+                    // minifyRule(node, <MinifyOptions>options, ast, context);
+                    // } else {
                     minify(node, options, recursive, errors, nestingContent, context);
                 }
                 previous = node;
@@ -249,11 +252,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                                 // @ts-ignore
                                 ast.chi.splice(nodeIndex, 1);
                                 // @ts-ignore
-                                if (hasDeclaration(node)) {
+                                if (!hasDeclaration(node)) {
                                     // @ts-ignore
-                                    minifyRule(node, options, ast, context);
-                                }
-                                else {
+                                    // minifyRule(node, <MinifyOptions>options, ast, context);
+                                    // } else {
                                     minify(node, options, recursive, errors, nestingContent, context);
                                 }
                                 i--;
@@ -294,11 +296,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     // @ts-ignore
                     if (recursive && previous != node) {
                         // @ts-ignore
-                        if (hasDeclaration(previous)) {
+                        if (!hasDeclaration(previous)) {
                             // @ts-ignore
-                            minifyRule(previous, options, ast, context);
-                        }
-                        else {
+                            // minifyRule(previous, <MinifyOptions>options, ast, context);
+                            // } else {
                             minify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
@@ -306,11 +307,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 else {
                     if ('chi' in previous) {
                         // @ts-ignore
-                        if (hasDeclaration(previous)) {
+                        if (!hasDeclaration(previous)) {
                             // @ts-ignore
-                            minifyRule(previous, options, ast, context);
-                        }
-                        else {
+                            // minifyRule(previous, <MinifyOptions>options, ast, context);
+                            // } else {
                             minify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
@@ -330,10 +330,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
-            if (node.chi.some(n => n.typ == 5 /* NodeType.DeclarationNodeType */)) {
-                minifyRule(node, options, ast, context);
-            }
-            else {
+            if (!node.chi.some(n => n.typ == 5 /* NodeType.DeclarationNodeType */)) {
+                // minifyRule(<AstRule | AstAtRule>node, <MinifyOptions>options, <AstRule | AstAtRule>ast, context);
+                // } else {
                 // @ts-ignore
                 if (!(node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam != 'font-face')) {
                     minify(node, options, recursive, errors, nestingContent, context);
@@ -350,6 +349,33 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         }
     }
     if (ast.typ == 2 /* NodeType.StyleSheetNodeType */) {
+        let parent;
+        let parents = [ast];
+        while (parents.length > 0) {
+            parent = parents.shift();
+            // @ts-ignore
+            for (let k = 0; k < parent.chi.length; k++) {
+                // @ts-ignore
+                const node = parent.chi[k];
+                if (!('chi' in node) || node.typ == 2 /* NodeType.StyleSheetNodeType */ || (node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam == 'font-face')) {
+                    continue;
+                }
+                // @ts-ignore
+                if (node.chi.length > 0) {
+                    parents.push(node);
+                    Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: parent });
+                    for (const feature of options.features) {
+                        feature.run(node, options, parent, context);
+                    }
+                }
+                // @ts-ignore
+                if (options.removeEmpty && node.chi.length == 0) {
+                    // @ts-ignore
+                    parent.chi.splice(k, 1);
+                    k--;
+                }
+            }
+        }
         for (const feature of options.features) {
             if ('cleanup' in feature) {
                 // @ts-ignore
@@ -450,17 +476,23 @@ function hasDeclaration(node) {
     }
     return true;
 }
-function minifyRule(ast, options, parent, context) {
-    // @ts-ignore
-    if (!('chi' in ast) || ast.chi.length == 0) {
-        return ast;
-    }
-    Object.defineProperty(ast, 'parent', { ...definedPropertySettings, value: parent });
-    for (const feature of options.features) {
-        feature.run(ast, options, parent, context);
-    }
-    return ast;
-}
+// export function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}): AstRule | AstAtRule {
+//
+//     // @ts-ignore
+//     if (!('chi' in ast) || ast.chi.length == 0) {
+//
+//         return ast;
+//     }
+//
+//     Object.defineProperty(ast, 'parent', {...definedPropertySettings, value: parent});
+//
+//     for (const feature of (<MinifyOptions>options).features) {
+//
+//         feature.run(ast, options, parent, context);
+//     }
+//
+//     return ast;
+// }
 function splitRule(buffer) {
     const result = [[]];
     let str = '';
@@ -878,4 +910,4 @@ function reduceRuleSelector(node) {
     }
 }
 
-export { combinators, hasDeclaration, minify, minifyRule, reduceSelector, splitRule };
+export { combinators, hasDeclaration, minify, reduceSelector, splitRule };

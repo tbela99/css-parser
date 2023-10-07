@@ -58,7 +58,6 @@ import {
     TokenizeResult,
     UnclosedStringToken,
     UrlToken,
-    VariableScopeInfo,
     WhitespaceToken
 } from "../../@types";
 
@@ -66,7 +65,7 @@ export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-
 
 const trimWhiteSpace: EnumToken[] = [EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType];
 const funcLike: EnumToken[] = [EnumToken.ParensTokenType, EnumToken.StartParensTokenType, EnumToken.FunctionTokenType, EnumToken.UrlFunctionTokenType, EnumToken.PseudoClassFuncTokenType];
-const BadTokensTypes = [EnumToken.BadCommentTokenType,
+const BadTokensTypes: EnumToken[] = [EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
     EnumToken.BadUrlTokenType,
     EnumToken.BadStringTokenType];
@@ -82,6 +81,10 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         resolveUrls: false,
         removeCharset: false,
         removeEmpty: true,
+        removeDuplicateDeclarations: true,
+        computeShorthand: true,
+        computeCalcExpression: true,
+        inlineCssVariables: false,
         ...options
     };
 

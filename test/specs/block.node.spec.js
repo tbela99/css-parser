@@ -119,7 +119,7 @@ border-left-color: red;
 `;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - (var(--bs-border-width)))}`));
+        }).then(result => f(result.code).equals(`.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width))}`));
     });
 
     it('merge selectors #7', function () {
@@ -158,7 +158,7 @@ border-left-color: red;
 `;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1*(var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))}`));
+        }).then(result => f(result.code).equals(`.bs-popover-auto[data-popper-placement^=top]>.popover-arrow,.bs-popover-top>.popover-arrow{bottom:calc(-1*var(--bs-popover-arrow-height) - var(--bs-popover-border-width))}`));
     });
 
     it('merge selectors #10', function () {

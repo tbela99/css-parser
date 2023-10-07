@@ -28,7 +28,6 @@ export class ComputeShorthand {
 
         // @ts-ignore
         ast.chi = [...properties].concat(ast.chi.slice(k));
-
         return ast;
     }
 }

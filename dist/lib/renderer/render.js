@@ -118,6 +118,10 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
         case 0 /* NodeType.CommentNodeType */:
         case 1 /* NodeType.CDOCOMMNodeType */:
+            if (data.val.startsWith('# sourceMappingURL=')) {
+                // ignore sourcemap
+                return '';
+            }
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
         case 2 /* NodeType.StyleSheetNodeType */:
             return data.chi.reduce((css, node) => {
@@ -197,6 +201,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         };
     }
     switch (token.typ) {
+        case EnumToken.ListToken:
+            return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.BinaryExpressionTokenType:
             return renderToken(token.l, options, cache) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
         case EnumToken.Add:
@@ -252,6 +258,12 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
+            if (token.typ == EnumToken.FunctionTokenType &&
+                token.val == 'calc' &&
+                token.chi.length == 1) {
+                // calc(200px) => 200px
+                return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
+            }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.StartParensTokenType:

@@ -59,6 +59,7 @@ export enum EnumToken {
     BadStringTokenType,
     BinaryExpressionTokenType,
     UnaryExpressionTokenType,
+    ListToken,
     /* arithmetic tokens */
     Add,
     Mul,

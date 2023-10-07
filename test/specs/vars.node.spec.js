@@ -59,24 +59,24 @@ describe('Inline css variable', function () {
  animation-iteration-count: 1
 }
 .animate__animated.animate__repeat-2 {
- -webkit-animation-iteration-count: calc(1*2);
- animation-iteration-count: calc(1*2)
+ -webkit-animation-iteration-count: 2;
+ animation-iteration-count: 2
 }
 .animate__animated.animate__delay-1s {
  -webkit-animation-delay: 1s;
  animation-delay: 1s
 }
 .animate__animated.animate__delay-2s {
- -webkit-animation-delay: calc(1s*2);
- animation-delay: calc(1s*2)
+ -webkit-animation-delay: 2s;
+ animation-delay: 2s
 }
 .animate__animated.animate__delay-3s {
- -webkit-animation-delay: calc(1s*3);
- animation-delay: calc(1s*3)
+ -webkit-animation-delay: 3s;
+ animation-delay: 3s
 }
 .animate__animated.animate__delay-4s {
- -webkit-animation-delay: calc(1s*4);
- animation-delay: calc(1s*4)
+ -webkit-animation-delay: 4s;
+ animation-delay: 4s
 }`));
     });
 });

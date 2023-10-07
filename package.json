@@ -12,10 +12,10 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
-    "test": "web-test-runner \"test/**/*.web-spec.js\" --node-resolve --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.spec.js\"",
-    "test:cov": "web-test-runner \"test/**/*.web-spec.js\" --node-resolve --root-dir=.  --coverage; c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.spec.js\"",
+    "test": "web-test-runner \"test/**/*.web.spec.js\" --node-resolve --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.node.spec.js\"",
+    "test:cov": "web-test-runner \"test/**/*.web.spec.js\" --node-resolve --root-dir=.  --coverage; c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.spec.js\"",
     "profile": "node --inspect-brk test/inspect.mjs",
-    "debug": "web-test-runner \"test/**/*.web.js\" --manual --open --node-resolve --root-dir=."
+    "debug": "web-test-runner \"test/**/*.web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
   "repository": {
     "type": "git",
@@ -43,6 +43,7 @@
   "homepage": "https://github.com/tbela99/css-parser#readme",
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@happy-dom/global-registrator": "^12.8.0",
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.1.0",

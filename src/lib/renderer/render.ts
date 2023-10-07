@@ -10,7 +10,7 @@ import {
     AttrToken,
     BinaryExpressionToken,
     ColorToken,
-    ErrorDescription,
+    ErrorDescription, ListToken,
     Location,
     Position,
     RenderOptions,
@@ -195,6 +195,12 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
         case NodeType.CommentNodeType:
         case NodeType.CDOCOMMNodeType:
 
+            if ((<AstComment>data).val.startsWith('# sourceMappingURL=')) {
+
+                // ignore sourcemap
+                return '';
+            }
+
             return !options.removeComments || (options.preserveLicense && (<AstComment>data).val.startsWith('/*!')) ? (<AstComment>data).val : '';
 
         case NodeType.StyleSheetNodeType:
@@ -318,6 +324,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
     switch (token.typ) {
 
+        case EnumToken.ListToken:
+
+            return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+
         case EnumToken.BinaryExpressionTokenType:
 
             return renderToken(token.l, options, cache) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
@@ -396,6 +406,15 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
+
+            if (
+                token.typ == EnumToken.FunctionTokenType &&
+                token.val == 'calc' &&
+                token.chi.length == 1) {
+
+                // calc(200px) => 200px
+                return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '')
+            }
 
             // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';

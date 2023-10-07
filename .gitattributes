@@ -2,6 +2,8 @@
 /docs/ export-ignore
 /benchmark
 /tools/ export-ignore
+/happydom.ts export-ignore
+/bunfig.toml export-ignore
 /package-lock.json export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
