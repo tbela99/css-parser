@@ -13,6 +13,14 @@ const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
+    if (!('nodes' in context)) {
+        context.nodes = new WeakSet;
+    }
+    if (context.nodes.has(ast)) {
+        // console.error('skipped', ast.typ);
+        return ast;
+    }
+    context.nodes.add(ast);
     if (!('features' in options)) {
         // @ts-ignore
         options = { removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: [], ...options };
@@ -85,16 +93,11 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                         // @ts-ignore
                         previous.chi.push(...node.chi);
                     }
-                    // else {
                     ast?.chi?.splice(i--, 1);
                     continue;
-                    // }
                 }
                 // @ts-ignore
                 if (!hasDeclaration(node)) {
-                    // @ts-ignore
-                    // minifyRule(node, <MinifyOptions>options, ast, context);
-                    // } else {
                     minify(node, options, recursive, errors, nestingContent, context);
                 }
                 previous = node;
@@ -131,9 +134,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                             const nextNode = ast.chi[i];
                             // @ts-ignore
                             if (nextNode.typ != 4 /* NodeType.RuleNodeType */) {
-                                // i--;
-                                // previous = wrapper;
-                                // nodeIndex = i;
                                 break;
                             }
                             reduceRuleSelector(nextNode);
@@ -331,8 +331,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
             if (!node.chi.some(n => n.typ == 5 /* NodeType.DeclarationNodeType */)) {
-                // minifyRule(<AstRule | AstAtRule>node, <MinifyOptions>options, <AstRule | AstAtRule>ast, context);
-                // } else {
                 // @ts-ignore
                 if (!(node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam != 'font-face')) {
                     minify(node, options, recursive, errors, nestingContent, context);
@@ -476,23 +474,6 @@ function hasDeclaration(node) {
     }
     return true;
 }
-// export function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}): AstRule | AstAtRule {
-//
-//     // @ts-ignore
-//     if (!('chi' in ast) || ast.chi.length == 0) {
-//
-//         return ast;
-//     }
-//
-//     Object.defineProperty(ast, 'parent', {...definedPropertySettings, value: parent});
-//
-//     for (const feature of (<MinifyOptions>options).features) {
-//
-//         feature.run(ast, options, parent, context);
-//     }
-//
-//     return ast;
-// }
 function splitRule(buffer) {
     const result = [[]];
     let str = '';

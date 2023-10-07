@@ -5,8 +5,6 @@ export const enum NodeType {
     AtRuleNodeType = 3,
     RuleNodeType = 4,
     DeclarationNodeType = 5
-    // InvalidCommentNodeType,
-    // InvalidAtRuleNodeType
 }
 
 export enum EnumToken {
@@ -59,6 +57,7 @@ export enum EnumToken {
     BadStringTokenType,
     BinaryExpressionTokenType,
     UnaryExpressionTokenType,
+    /* catch all */
     ListToken,
     /* arithmetic tokens */
     Add,

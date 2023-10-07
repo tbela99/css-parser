@@ -6,8 +6,6 @@ var NodeType;
     NodeType[NodeType["AtRuleNodeType"] = 3] = "AtRuleNodeType";
     NodeType[NodeType["RuleNodeType"] = 4] = "RuleNodeType";
     NodeType[NodeType["DeclarationNodeType"] = 5] = "DeclarationNodeType";
-    // InvalidCommentNodeType,
-    // InvalidAtRuleNodeType
 })(NodeType || (NodeType = {}));
 var EnumToken;
 (function (EnumToken) {
@@ -60,6 +58,7 @@ var EnumToken;
     EnumToken[EnumToken["BadStringTokenType"] = 46] = "BadStringTokenType";
     EnumToken[EnumToken["BinaryExpressionTokenType"] = 47] = "BinaryExpressionTokenType";
     EnumToken[EnumToken["UnaryExpressionTokenType"] = 48] = "UnaryExpressionTokenType";
+    /* catch all */
     EnumToken[EnumToken["ListToken"] = 49] = "ListToken";
     /* arithmetic tokens */
     EnumToken[EnumToken["Add"] = 50] = "Add";

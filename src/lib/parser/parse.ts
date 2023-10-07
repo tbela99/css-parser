@@ -610,7 +610,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
     }
 }
 
-export function parseString(src: string, options = {location: false}): Token[] {
+export function parseString(src: string, options: {location: boolean} = {location: false}): Token[] {
 
     return parseTokens([...tokenize(src)].map(t => {
 
@@ -795,7 +795,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     };
 }
 
-function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
+export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
 
     for (let i = 0; i < tokens.length; i++) {
 

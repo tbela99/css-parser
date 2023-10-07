@@ -1,28 +1,53 @@
 import {AstNode, AstRuleList, FunctionToken, ParensToken, Token, WalkAttributesResult, WalkResult} from "../../@types";
 
-export function* walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult> {
+export function* walk(node: AstNode): Generator<WalkResult> {
 
-    yield {node, parent, root};
+    const parents: AstNode[] = [node];
+     const root = <AstRuleList>node;
 
-    if ('chi' in node) {
+     const weakMap: WeakMap<AstNode, AstNode> = new WeakMap;
 
-        for (const child of (<Array<AstNode>>node.chi).slice()) {
+     while (parents.length > 0) {
 
-            yield* walk(<AstNode>child, <AstRuleList>node, <AstRuleList>(root ?? node));
-        }
-    }
+         node = <AstNode>parents.shift();
+
+         // @ts-ignore
+         yield {node, parent: weakMap.get(node), root};
+
+         if ('chi' in node) {
+
+             for (const child of <AstNode[]>(<AstRuleList>node).chi) {
+
+                 weakMap.set(child, node);
+             }
+
+             parents.unshift(...<AstNode[]>(<AstRuleList>node).chi);
+         }
+     }
 }
 
-export function* walkValues(values: Token[], parent?: FunctionToken | ParensToken): Generator<WalkAttributesResult> {
+export function* walkValues(values: Token[]): Generator<WalkAttributesResult> {
 
-    for (const value of values.slice()) {
+    const stack: Token[] = values.slice();
+    const weakMap: WeakMap<Token, FunctionToken | ParensToken> = new WeakMap;
+
+    let value: Token;
+
+    while (stack.length > 0) {
+
+        value = <Token> stack.shift();
 
         // @ts-ignore
-        yield {value, parent};
+        yield {value, parent: <FunctionToken | ParensToken>weakMap.get(value)};
 
         if ('chi' in value) {
 
-            yield* walkValues((<Token[]>value.chi).slice(), <FunctionToken | ParensToken>value);
+            for (const child of (<FunctionToken | ParensToken>value).chi) {
+
+                weakMap.set(child, <FunctionToken | ParensToken>value);
+            }
+
+            stack.unshift(...(<FunctionToken | ParensToken>value).chi);
         }
     }
 }

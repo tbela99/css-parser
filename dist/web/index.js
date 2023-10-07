@@ -5,7 +5,7 @@ export { expand, replaceCompound } from '../lib/ast/features/expand.js';
 import { doRender } from '../lib/renderer/render.js';
 export { colorsFunc, reduceNumber, renderToken } from '../lib/renderer/render.js';
 import { doParse } from '../lib/parser/parse.js';
-export { parseString, urlTokenMatcher } from '../lib/parser/parse.js';
+export { parseString, parseTokens, urlTokenMatcher } from '../lib/parser/parse.js';
 export { tokenize } from '../lib/parser/tokenize.js';
 export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension } from '../lib/parser/utils/syntax.js';
 export { getConfig } from '../lib/parser/utils/config.js';

@@ -2,7 +2,6 @@ import {
     AstAtRule,
     AstDeclaration,
     AstRule,
-    AstRuleStyleSheet,
     BinaryExpressionNode,
     BinaryExpressionToken,
     DimensionToken,
@@ -10,7 +9,6 @@ import {
     LiteralToken,
     NumberToken,
     ParensToken,
-    PropertyListOptions,
     Token
 } from "../../../@types";
 import {EnumToken, NodeType} from "../types";
@@ -55,7 +53,13 @@ export class ComputeCalcExpression {
     }
 }
 
-function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul) {
+/**
+ * evaluate arithmetic operation
+ * @param l
+ * @param r
+ * @param op
+ */
+function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul): Token {
 
     const defaultReturn: BinaryExpressionToken = <BinaryExpressionToken>{
         typ: EnumToken.BinaryExpressionTokenType,
@@ -119,22 +123,26 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
     return defaultReturn;
 }
 
+/**
+ * evaluate an array of tokens
+ * @param tokens
+ */
 export function evaluate(tokens: Token[]): Token[] {
 
-    tokens = inlineExpression(evaluateExpression(buildExpression(tokens)));
+   const  nodes: Token[] = inlineExpression(evaluateExpression(buildExpression(tokens)));
 
-    if (tokens.length <= 1) {
+    if (nodes.length <= 1) {
 
-        return tokens;
+        return nodes;
     }
 
     const map: Map<EnumToken, Token[]> = new Map;
     let token: Token;
     let i: number;
 
-    for (i = 0; i < tokens.length; i++) {
+    for (i = 0; i < nodes.length; i++) {
 
-        token = tokens[i];
+        token = nodes[i];
 
         if (token.typ == EnumToken.Add) {
 
@@ -143,14 +151,14 @@ export function evaluate(tokens: Token[]): Token[] {
 
         if (token.typ == EnumToken.Sub) {
 
-            if (!isScalarToken(<Token>tokens[i + 1])) {
+            if (!isScalarToken(<Token>nodes[i + 1])) {
 
-                token = {typ: EnumToken.ListToken, chi: [tokens[i], tokens[i + 1]]};
+                token = {typ: EnumToken.ListToken, chi: [nodes[i], nodes[i + 1]]};
             }
 
             else {
 
-                token = doEvaluate(<Token>tokens[i + 1], {typ: EnumToken.NumberTokenType, val: '-1'}, EnumToken.Mul);
+                token = doEvaluate(<Token>nodes[i + 1], {typ: EnumToken.NumberTokenType, val: '-1'}, EnumToken.Mul);
             }
 
             i++;
@@ -191,7 +199,11 @@ export function evaluate(tokens: Token[]): Token[] {
     }, <Token[]>[]);
 }
 
-function inlineExpression(token: Token) {
+/**
+ * convert BinaryExpression into an array
+ * @param token
+ */
+function inlineExpression(token: Token): Token[] {
 
     const result: Token[] = [];
 
@@ -212,7 +224,11 @@ function inlineExpression(token: Token) {
     return result;
 }
 
-function evaluateExpression(token: Token) {
+/**
+ * evaluate expression
+ * @param token
+ */
+function evaluateExpression(token: Token): Token {
 
     if (token.typ != EnumToken.BinaryExpressionTokenType) {
 
@@ -221,22 +237,46 @@ function evaluateExpression(token: Token) {
 
     if (token.r.typ == EnumToken.BinaryExpressionTokenType) {
 
-        token.r = <BinaryExpressionNode>doEvaluate(token.r.l, token.r.r, token.r.op);
+        token.r = <BinaryExpressionNode> evaluateExpression(token.r);
     }
 
     if (token.l.typ == EnumToken.BinaryExpressionTokenType) {
 
-        token.l = <BinaryExpressionNode>doEvaluate(token.l.l, token.l.r, token.l.op);
+        token.l = <BinaryExpressionNode> evaluateExpression(token.l);
     }
 
-    return doEvaluate(token.l, token.r, token.op);
+    const result = doEvaluate(token.l, token.r, token.op);
+
+    if (
+        result.typ == EnumToken.BinaryExpressionTokenType &&
+        [EnumToken.Mul, EnumToken.Div].includes(result.op)
+    ) {
+
+        // wrap expression
+        if (result.l.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.l.op)) {
+
+            result.l = {typ: EnumToken.ParensTokenType, chi: [result.l]};
+        }
+
+        else if (result.r.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.r.op)) {
+
+            result.r = {typ: EnumToken.ParensTokenType, chi: [result.r]};
+        }
+    }
+
+    return result;
 }
 
-function isScalarToken(token: Token) {
+function isScalarToken(token: Token): boolean {
 
-    return token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
+    return token.typ != EnumToken.BinaryExpressionTokenType &&  token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
 }
 
+/**
+ *
+ * generate binary expression tree
+ * @param tokens
+ */
 function buildExpression(tokens: Token[]): BinaryExpressionToken {
 
     return <BinaryExpressionToken>factor(factor(tokens.filter(t => t.typ != EnumToken.WhitespaceTokenType), ['/', '*']), ['+', '-'])[0];
@@ -262,9 +302,22 @@ function getArithmeticOperation(op: '+' | '-' | '/' | '*') {
     return EnumToken.Mul;
 }
 
+/**
+ *
+ * generate binary expression tree
+ * @param token
+ */
 function factorToken(token: Token): Token {
 
     if (token.typ == EnumToken.ParensTokenType || (token.typ == EnumToken.FunctionTokenType && (<FunctionToken>token).val == 'calc')) {
+
+        if (token.typ == EnumToken.FunctionTokenType && (<FunctionToken>token).val == 'calc') {
+
+            token = <ParensToken>{...token, typ: EnumToken.ParensTokenType};
+
+            // @ts-ignore
+            delete token.val;
+        }
 
         return buildExpression((<ParensToken>token).chi);
     }
@@ -272,10 +325,20 @@ function factorToken(token: Token): Token {
     return token;
 }
 
+/**
+ * generate binary expression tree
+ * @param tokens
+ * @param ops
+ */
 function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<'+' | '-' | '/' | '*'>): Token[] {
 
     let isOp: boolean;
     const opList: EnumToken[] = [EnumToken.Add, EnumToken.Sub, EnumToken.Div, EnumToken.Mul];
+
+    if (tokens.length == 1) {
+
+        return [factorToken(tokens[0])];
+    }
 
     for (let i = 0; i < tokens.length; i++) {
 

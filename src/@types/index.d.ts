@@ -1,5 +1,5 @@
 import {NodeType} from "../lib";
-import {FunctionToken, Token} from "./tokenize";
+import {FunctionToken, ParensToken, Token} from "./tokenize";
 
 export * from './tokenize';
 export * from './shorthand';
@@ -218,7 +218,7 @@ export interface WalkResult {
 
 export interface WalkAttributesResult {
     value: Token;
-    parent?: FunctionToken;
+    parent: FunctionToken | ParensToken | null;
 }
 
 export interface VariableScopeInfo {

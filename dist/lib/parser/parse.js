@@ -787,4 +787,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, parseString, urlTokenMatcher };
+export { doParse, parseString, parseTokens, urlTokenMatcher };

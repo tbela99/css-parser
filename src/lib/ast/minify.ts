@@ -3,7 +3,7 @@ import {isFunction, isIdent, isIdentStart, isWhiteSpace, parseString} from "../p
 import {eq} from "../parser/utils/eq";
 import {doRender, renderToken} from "../renderer";
 import {ComputeCalcExpression, ComputeShorthand, InlineCssVariables, replaceCompound} from "./features";
-import {walk, walkValues} from "./walk";
+import {walkValues} from "./walk";
 import {
     AstAtRule,
     AstDeclaration,
@@ -19,11 +19,24 @@ import {
 } from "../../@types";
 import {EnumToken, NodeType} from "./types";
 
-export const combinators = ['+', '>', '~'];
-const notEndingWith = ['(', '['].concat(combinators);
+export const combinators: string[] = ['+', '>', '~'];
+const notEndingWith: string[] = ['(', '['].concat(combinators);
 const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 
 export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {[key: string]: any} = {}): AstNode {
+
+    if (!('nodes' in context)) {
+
+        context.nodes = <WeakSet<AstNode>>new WeakSet;
+    }
+
+    if (context.nodes.has(ast)) {
+
+        // console.error('skipped', ast.typ);
+        return ast;
+    }
+
+    context.nodes.add(ast);
 
     if (!('features' in <MinifyOptions>options)) {
 
@@ -43,7 +56,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
         }
     }
 
-    function reducer(acc: string[], curr: string[], index: number, array: string[][]) {
+    function reducer(acc: string[], curr: string[], index: number, array: string[][]): string[] {
 
         // trim :is()
         if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
@@ -124,19 +137,12 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                         previous.chi.push(...node.chi);
                     }
 
-                    // else {
-
                     ast?.chi?.splice(i--, 1);
                     continue;
-                    // }
                 }
 
                 // @ts-ignore
                 if (!hasDeclaration(node)) {
-
-                    // @ts-ignore
-                    // minifyRule(node, <MinifyOptions>options, ast, context);
-                // } else {
 
                     minify(node, options, recursive, errors, nestingContent, context);
                 }
@@ -182,13 +188,10 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                         while (i < ast.chi.length) {
 
                             // @ts-ignore
-                            const nextNode = <AstRule>ast.chi[i];
+                            const nextNode: AstRule = <AstRule>ast.chi[i];
 
                             // @ts-ignore
                             if (nextNode.typ != NodeType.RuleNodeType) {
-                                // i--;
-                                // previous = wrapper;
-                                // nodeIndex = i;
 
                                 break;
                             }
@@ -434,9 +437,6 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             // @ts-ignore
             if (!node.chi.some(n => n.typ == NodeType.DeclarationNodeType)) {
 
-                // minifyRule(<AstRule | AstAtRule>node, <MinifyOptions>options, <AstRule | AstAtRule>ast, context);
-            // } else {
-
                 // @ts-ignore
                 if (!(node.typ == NodeType.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
 
@@ -632,24 +632,6 @@ export function hasDeclaration(node: AstRule): boolean {
 
     return true;
 }
-
-// export function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}): AstRule | AstAtRule {
-//
-//     // @ts-ignore
-//     if (!('chi' in ast) || ast.chi.length == 0) {
-//
-//         return ast;
-//     }
-//
-//     Object.defineProperty(ast, 'parent', {...definedPropertySettings, value: parent});
-//
-//     for (const feature of (<MinifyOptions>options).features) {
-//
-//         feature.run(ast, options, parent, context);
-//     }
-//
-//     return ast;
-// }
 
 export function splitRule(buffer: string): string[][] {
 
@@ -927,9 +909,9 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
 
         if (curr[0] == ':is(') {
 
-            let inFunction = 0;
-            let canReduce = true;
-            const isCompound = curr.reduce((acc, token, index: number) => {
+            let inFunction: number = 0;
+            let canReduce: boolean = true;
+            const isCompound: string[][] = curr.reduce((acc, token, index: number) => {
 
                 if (index == 0) {
 

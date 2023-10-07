@@ -12,8 +12,6 @@
         NodeType[NodeType["AtRuleNodeType"] = 3] = "AtRuleNodeType";
         NodeType[NodeType["RuleNodeType"] = 4] = "RuleNodeType";
         NodeType[NodeType["DeclarationNodeType"] = 5] = "DeclarationNodeType";
-        // InvalidCommentNodeType,
-        // InvalidAtRuleNodeType
     })(exports.NodeType || (exports.NodeType = {}));
     exports.EnumToken = void 0;
     (function (EnumToken) {
@@ -66,6 +64,7 @@
         EnumToken[EnumToken["BadStringTokenType"] = 46] = "BadStringTokenType";
         EnumToken[EnumToken["BinaryExpressionTokenType"] = 47] = "BinaryExpressionTokenType";
         EnumToken[EnumToken["UnaryExpressionTokenType"] = 48] = "UnaryExpressionTokenType";
+        /* catch all */
         EnumToken[EnumToken["ListToken"] = 49] = "ListToken";
         /* arithmetic tokens */
         EnumToken[EnumToken["Add"] = 50] = "Add";
@@ -3538,20 +3537,35 @@
         return true;
     }
 
-    function* walk(node, parent, root) {
-        yield { node, parent, root };
-        if ('chi' in node) {
-            for (const child of node.chi.slice()) {
-                yield* walk(child, node, (root ?? node));
+    function* walk(node) {
+        const parents = [node];
+        const root = node;
+        const weakMap = new WeakMap;
+        while (parents.length > 0) {
+            node = parents.shift();
+            // @ts-ignore
+            yield { node, parent: weakMap.get(node), root };
+            if ('chi' in node) {
+                for (const child of node.chi) {
+                    weakMap.set(child, node);
+                }
+                parents.unshift(...node.chi);
             }
         }
     }
-    function* walkValues(values, parent) {
-        for (const value of values.slice()) {
+    function* walkValues(values) {
+        const stack = values.slice();
+        const weakMap = new WeakMap;
+        let value;
+        while (stack.length > 0) {
+            value = stack.shift();
             // @ts-ignore
-            yield { value, parent };
+            yield { value, parent: weakMap.get(value) };
             if ('chi' in value) {
-                yield* walkValues(value.chi.slice(), value);
+                for (const child of value.chi) {
+                    weakMap.set(child, value);
+                }
+                stack.unshift(...value.chi);
             }
         }
     }
@@ -4508,6 +4522,12 @@
             return ast;
         }
     }
+    /**
+     * evaluate arithmetic operation
+     * @param l
+     * @param r
+     * @param op
+     */
     function doEvaluate(l, r, op) {
         const defaultReturn = {
             typ: exports.EnumToken.BinaryExpressionTokenType,
@@ -4554,25 +4574,29 @@
         }
         return defaultReturn;
     }
+    /**
+     * evaluate an array of tokens
+     * @param tokens
+     */
     function evaluate(tokens) {
-        tokens = inlineExpression(evaluateExpression(buildExpression(tokens)));
-        if (tokens.length <= 1) {
-            return tokens;
+        const nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
+        if (nodes.length <= 1) {
+            return nodes;
         }
         const map = new Map;
         let token;
         let i;
-        for (i = 0; i < tokens.length; i++) {
-            token = tokens[i];
+        for (i = 0; i < nodes.length; i++) {
+            token = nodes[i];
             if (token.typ == exports.EnumToken.Add) {
                 continue;
             }
             if (token.typ == exports.EnumToken.Sub) {
-                if (!isScalarToken(tokens[i + 1])) {
-                    token = { typ: exports.EnumToken.ListToken, chi: [tokens[i], tokens[i + 1]] };
+                if (!isScalarToken(nodes[i + 1])) {
+                    token = { typ: exports.EnumToken.ListToken, chi: [nodes[i], nodes[i + 1]] };
                 }
                 else {
-                    token = doEvaluate(tokens[i + 1], { typ: exports.EnumToken.NumberTokenType, val: '-1' }, exports.EnumToken.Mul);
+                    token = doEvaluate(nodes[i + 1], { typ: exports.EnumToken.NumberTokenType, val: '-1' }, exports.EnumToken.Mul);
                 }
                 i++;
             }
@@ -4598,6 +4622,10 @@
             return acc;
         }, []);
     }
+    /**
+     * convert BinaryExpression into an array
+     * @param token
+     */
     function inlineExpression(token) {
         const result = [];
         if (token.typ == exports.EnumToken.BinaryExpressionTokenType) {
@@ -4613,21 +4641,40 @@
         }
         return result;
     }
+    /**
+     * evaluate expression
+     * @param token
+     */
     function evaluateExpression(token) {
         if (token.typ != exports.EnumToken.BinaryExpressionTokenType) {
             return token;
         }
         if (token.r.typ == exports.EnumToken.BinaryExpressionTokenType) {
-            token.r = doEvaluate(token.r.l, token.r.r, token.r.op);
+            token.r = evaluateExpression(token.r);
         }
         if (token.l.typ == exports.EnumToken.BinaryExpressionTokenType) {
-            token.l = doEvaluate(token.l.l, token.l.r, token.l.op);
+            token.l = evaluateExpression(token.l);
         }
-        return doEvaluate(token.l, token.r, token.op);
+        const result = doEvaluate(token.l, token.r, token.op);
+        if (result.typ == exports.EnumToken.BinaryExpressionTokenType &&
+            [exports.EnumToken.Mul, exports.EnumToken.Div].includes(result.op)) {
+            if (result.l.typ == exports.EnumToken.BinaryExpressionTokenType && [exports.EnumToken.Sub, exports.EnumToken.Add].includes(result.l.op)) {
+                result.l = { typ: exports.EnumToken.ParensTokenType, chi: [result.l] };
+            }
+            else if (result.r.typ == exports.EnumToken.BinaryExpressionTokenType && [exports.EnumToken.Sub, exports.EnumToken.Add].includes(result.r.op)) {
+                result.r = { typ: exports.EnumToken.ParensTokenType, chi: [result.r] };
+            }
+        }
+        return result;
     }
     function isScalarToken(token) {
-        return token.typ != exports.EnumToken.ParensTokenType && token.typ != exports.EnumToken.FunctionTokenType;
+        return token.typ != exports.EnumToken.BinaryExpressionTokenType && token.typ != exports.EnumToken.ParensTokenType && token.typ != exports.EnumToken.FunctionTokenType;
     }
+    /**
+     *
+     * generate binary expression tree
+     * @param tokens
+     */
     function buildExpression(tokens) {
         return factor(factor(tokens.filter(t => t.typ != exports.EnumToken.WhitespaceTokenType), ['/', '*']), ['+', '-'])[0];
     }
@@ -4643,15 +4690,33 @@
         }
         return exports.EnumToken.Mul;
     }
+    /**
+     *
+     * generate binary expression tree
+     * @param token
+     */
     function factorToken(token) {
         if (token.typ == exports.EnumToken.ParensTokenType || (token.typ == exports.EnumToken.FunctionTokenType && token.val == 'calc')) {
+            if (token.typ == exports.EnumToken.FunctionTokenType && token.val == 'calc') {
+                token = { ...token, typ: exports.EnumToken.ParensTokenType };
+                // @ts-ignore
+                delete token.val;
+            }
             return buildExpression(token.chi);
         }
         return token;
     }
+    /**
+     * generate binary expression tree
+     * @param tokens
+     * @param ops
+     */
     function factor(tokens, ops) {
         let isOp;
         const opList = [exports.EnumToken.Add, exports.EnumToken.Sub, exports.EnumToken.Div, exports.EnumToken.Mul];
+        if (tokens.length == 1) {
+            return [factorToken(tokens[0])];
+        }
         for (let i = 0; i < tokens.length; i++) {
             isOp = opList.includes(tokens[i].typ);
             if (isOp ||
@@ -4673,6 +4738,14 @@
     const notEndingWith = ['(', '['].concat(combinators);
     const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
     function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
+        if (!('nodes' in context)) {
+            context.nodes = new WeakSet;
+        }
+        if (context.nodes.has(ast)) {
+            // console.error('skipped', ast.typ);
+            return ast;
+        }
+        context.nodes.add(ast);
         if (!('features' in options)) {
             // @ts-ignore
             options = { removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: [], ...options };
@@ -4745,16 +4818,11 @@
                             // @ts-ignore
                             previous.chi.push(...node.chi);
                         }
-                        // else {
                         ast?.chi?.splice(i--, 1);
                         continue;
-                        // }
                     }
                     // @ts-ignore
                     if (!hasDeclaration(node)) {
-                        // @ts-ignore
-                        // minifyRule(node, <MinifyOptions>options, ast, context);
-                        // } else {
                         minify(node, options, recursive, errors, nestingContent, context);
                     }
                     previous = node;
@@ -4791,9 +4859,6 @@
                                 const nextNode = ast.chi[i];
                                 // @ts-ignore
                                 if (nextNode.typ != 4 /* NodeType.RuleNodeType */) {
-                                    // i--;
-                                    // previous = wrapper;
-                                    // nodeIndex = i;
                                     break;
                                 }
                                 reduceRuleSelector(nextNode);
@@ -4991,8 +5056,6 @@
             if (recursive && node != null && ('chi' in node)) {
                 // @ts-ignore
                 if (!node.chi.some(n => n.typ == 5 /* NodeType.DeclarationNodeType */)) {
-                    // minifyRule(<AstRule | AstAtRule>node, <MinifyOptions>options, <AstRule | AstAtRule>ast, context);
-                    // } else {
                     // @ts-ignore
                     if (!(node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam != 'font-face')) {
                         minify(node, options, recursive, errors, nestingContent, context);
@@ -5136,23 +5199,6 @@
         }
         return true;
     }
-    // export function minifyRule(ast: AstRule | AstAtRule, options: MinifyOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}): AstRule | AstAtRule {
-    //
-    //     // @ts-ignore
-    //     if (!('chi' in ast) || ast.chi.length == 0) {
-    //
-    //         return ast;
-    //     }
-    //
-    //     Object.defineProperty(ast, 'parent', {...definedPropertySettings, value: parent});
-    //
-    //     for (const feature of (<MinifyOptions>options).features) {
-    //
-    //         feature.run(ast, options, parent, context);
-    //     }
-    //
-    //     return ast;
-    // }
     function splitRule(buffer) {
         const result = [[]];
         let str = '';
@@ -5758,6 +5804,7 @@
     exports.parse = parse;
     exports.parseDimension = parseDimension;
     exports.parseString = parseString;
+    exports.parseTokens = parseTokens;
     exports.reduceNumber = reduceNumber;
     exports.reduceSelector = reduceSelector;
     exports.render = render;

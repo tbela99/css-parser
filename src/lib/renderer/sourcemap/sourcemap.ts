@@ -53,7 +53,7 @@ export class SourceMap {
 
     toUrl() {
 
-        // sourceMappingURL = ${url}
+        // /*# sourceMappingURL = ${url} */
         return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
     }
 

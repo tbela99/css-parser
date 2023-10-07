@@ -93,8 +93,8 @@ declare function reduceSelector(selector: string[][]): {
 declare function hasDeclaration(node: AstRule): boolean;
 declare function splitRule(buffer: string): string[][];
 
-declare function walk(node: AstNode, parent?: AstRuleList, root?: AstRuleList): Generator<WalkResult>;
-declare function walkValues(values: Token[], parent?: FunctionToken | ParensToken): Generator<WalkAttributesResult>;
+declare function walk(node: AstNode): Generator<WalkResult>;
+declare function walkValues(values: Token[]): Generator<WalkAttributesResult>;
 
 declare function expand(ast: AstNode): AstNode;
 declare function replaceCompound(input: string, replace: string): string;
@@ -111,6 +111,7 @@ declare function doParse(iterator: string, options?: ParserOptions): Promise<Par
 declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
+declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
 
 declare function tokenize(stream: string): Generator<TokenizeResult>;
 
@@ -921,6 +922,10 @@ interface TransformResult extends ParseResult, RenderResult {
     }
 }
 
+interface ParseTokenOptions extends ParserOptions {
+    parseColor?: boolean;
+}
+
 interface TokenizeResult {
     token: string;
     hint?: EnumToken;
@@ -1013,7 +1018,7 @@ interface WalkResult {
 
 interface WalkAttributesResult {
     value: Token;
-    parent?: FunctionToken;
+    parent: FunctionToken | ParensToken | null;
 }
 
 interface SourceMapObject {
@@ -1039,4 +1044,4 @@ declare function render(data: AstNode, options?: RenderOptions): RenderResult;
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken$1 as EnumToken, NodeType, colorsFunc, combinators, dirname, doParse, doRender, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, parse, parseDimension, parseString, reduceNumber, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };
+export { EnumToken$1 as EnumToken, NodeType, colorsFunc, combinators, dirname, doParse, doRender, expand, funcList, getConfig, hasDeclaration, isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, load, matchType, matchUrl, minify, parse, parseDimension, parseString, parseTokens, reduceNumber, reduceSelector, render, renderToken, replaceCompound, resolve, splitRule, tokenize, transform, urlTokenMatcher, walk, walkValues };

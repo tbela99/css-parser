@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.0
+- [x] sourcemap generation
+- [x] reduce calc(): 
+- [x] inline css variables
+
 ## v0.0.1
 
 ### Minification

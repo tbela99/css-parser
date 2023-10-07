@@ -24,7 +24,6 @@ describe('calc expression', function () {
 `).then(result => f(result.code).equals(`.foo{width:calc(3.5rem + var(--bs-border-width)*2)}`));
     });
 
-
     it('calc #3', function () {
         const css = `
 `;
@@ -32,5 +31,49 @@ describe('calc expression', function () {
    bottom:calc(-1*(var(--bs-popover-arrow-height)) - var(--bs-popover-border-width))
 }
 `).then(result => f(result.code).equals(`.foo{bottom:calc(-1*var(--bs-popover-arrow-height) - var(--bs-popover-border-width))}`));
+    });
+
+    it('calc #4', function () {
+        const css = `
+`;
+        return transform(`
+:root {
+
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc(var(--preferred-width) + 5px);
+}
+`, {inlineCssVariables: true}).then(result => f(result.code).equals(`.foo-bar{width:25px}`));
+    });
+
+    it('calc #4', function () {
+        const css = `
+`;
+        return transform(`
+:root {
+
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc((var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);
+}
+`, {inlineCssVariables: true}).then(result => f(result.code).equals(`.foo-bar{width:12px;height:25%}`));
+    });
+
+    it('calc #5', function () {
+        const css = `
+`;
+        return transform(`
+:root {
+
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc((var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);
+}
+`).then(result => f(result.code).equals(`:root{--preferred-width:20px}.foo-bar{width:calc((var(--preferred-width) + 1px)/3 + 5px);height:25%}`));
     });
 });
