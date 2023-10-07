@@ -1,8 +1,23 @@
 import { EnumToken } from '../types.js';
 import { reduceNumber, renderToken } from '../../renderer/render.js';
 import { walkValues } from '../walk.js';
+import { MinifyFeature } from '../utiles/minifyfeature.js';
 
-class ComputeCalcExpression {
+class ComputeCalcExpression extends MinifyFeature {
+    static get ordering() {
+        return 1;
+    }
+    static register(options) {
+        if (options.computeCalcExpression) {
+            for (const feature of options.features) {
+                if (feature instanceof ComputeCalcExpression) {
+                    return;
+                }
+            }
+            // @ts-ignore
+            options.features.push(new ComputeCalcExpression());
+        }
+    }
     run(ast) {
         if (!('chi' in ast)) {
             return ast;
@@ -15,11 +30,10 @@ class ComputeCalcExpression {
             const set = new Set;
             for (const { parent } of walkValues(node.val)) {
                 if (parent != null && parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') {
-                    if (set.has(parent)) {
-                        continue;
+                    if (!set.has(parent)) {
+                        set.add(parent);
+                        parent.chi = evaluate(parent.chi);
                     }
-                    set.add(parent);
-                    parent.chi = evaluate(parent.chi);
                 }
             }
         }
@@ -162,6 +176,7 @@ function evaluateExpression(token) {
     const result = doEvaluate(token.l, token.r, token.op);
     if (result.typ == EnumToken.BinaryExpressionTokenType &&
         [EnumToken.Mul, EnumToken.Div].includes(result.op)) {
+        // wrap expression
         if (result.l.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.l.op)) {
             result.l = { typ: EnumToken.ParensTokenType, chi: [result.l] };
         }
@@ -238,4 +253,4 @@ function factor(tokens, ops) {
     return tokens;
 }
 
-export { ComputeCalcExpression, evaluate };
+export { ComputeCalcExpression };

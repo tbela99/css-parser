@@ -1,10 +1,11 @@
 import { PropertySet } from './set.js';
 import '../../renderer/utils/color.js';
 import '../../ast/types.js';
+import '../../ast/minify.js';
 import { parseString } from '../parse.js';
-import { PropertyMap } from './map.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { getConfig } from '../utils/config.js';
+import { PropertyMap } from './map.js';
 
 const config = getConfig();
 class PropertyList {

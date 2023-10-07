@@ -6,7 +6,7 @@ import {
     BinaryExpressionToken,
     DimensionToken,
     FunctionToken,
-    LiteralToken,
+    LiteralToken, MinifyOptions,
     NumberToken,
     ParensToken,
     Token
@@ -14,10 +14,32 @@ import {
 import {EnumToken, NodeType} from "../types";
 import {reduceNumber, renderToken} from "../../renderer";
 import {walkValues} from "../walk";
+import {MinifyFeature} from "../utiles/minifyfeature";
 
-export class ComputeCalcExpression {
+export class ComputeCalcExpression extends MinifyFeature {
 
-    run(ast: AstRule | AstAtRule) {
+    static get ordering() {
+        return 1;
+    }
+
+    static register(options: MinifyOptions) {
+
+        if (options.computeCalcExpression) {
+
+            for (const feature of options.features) {
+
+                if (feature instanceof ComputeCalcExpression) {
+
+                    return
+                }
+            }
+
+            // @ts-ignore
+            options.features.push(new ComputeCalcExpression());
+        }
+    }
+
+    run(ast: AstRule | AstAtRule): AstRule | AstAtRule {
 
         if (!('chi' in ast)) {
 
@@ -38,13 +60,11 @@ export class ComputeCalcExpression {
 
                 if (parent != null && parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') {
 
-                    if (set.has(<FunctionToken>parent)) {
+                    if (!set.has(<FunctionToken>parent)) {
 
-                        continue;
+                        set.add(parent);
+                        parent.chi = evaluate(parent.chi);
                     }
-
-                    set.add(parent);
-                    parent.chi = evaluate(parent.chi);
                 }
             }
         }
@@ -127,9 +147,9 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
  * evaluate an array of tokens
  * @param tokens
  */
-export function evaluate(tokens: Token[]): Token[] {
+function evaluate(tokens: Token[]): Token[] {
 
-   const  nodes: Token[] = inlineExpression(evaluateExpression(buildExpression(tokens)));
+    const nodes: Token[] = inlineExpression(evaluateExpression(buildExpression(tokens)));
 
     if (nodes.length <= 1) {
 
@@ -154,9 +174,7 @@ export function evaluate(tokens: Token[]): Token[] {
             if (!isScalarToken(<Token>nodes[i + 1])) {
 
                 token = {typ: EnumToken.ListToken, chi: [nodes[i], nodes[i + 1]]};
-            }
-
-            else {
+            } else {
 
                 token = doEvaluate(<Token>nodes[i + 1], {typ: EnumToken.NumberTokenType, val: '-1'}, EnumToken.Mul);
             }
@@ -167,11 +185,9 @@ export function evaluate(tokens: Token[]): Token[] {
         if (!map.has(token.typ)) {
 
             map.set(token.typ, [token]);
-        }
+        } else {
 
-        else {
-
-            (<Token[]> map.get(token.typ)).push(token);
+            (<Token[]>map.get(token.typ)).push(token);
         }
     }
 
@@ -237,12 +253,12 @@ function evaluateExpression(token: Token): Token {
 
     if (token.r.typ == EnumToken.BinaryExpressionTokenType) {
 
-        token.r = <BinaryExpressionNode> evaluateExpression(token.r);
+        token.r = <BinaryExpressionNode>evaluateExpression(token.r);
     }
 
     if (token.l.typ == EnumToken.BinaryExpressionTokenType) {
 
-        token.l = <BinaryExpressionNode> evaluateExpression(token.l);
+        token.l = <BinaryExpressionNode>evaluateExpression(token.l);
     }
 
     const result = doEvaluate(token.l, token.r, token.op);
@@ -256,9 +272,7 @@ function evaluateExpression(token: Token): Token {
         if (result.l.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.l.op)) {
 
             result.l = {typ: EnumToken.ParensTokenType, chi: [result.l]};
-        }
-
-        else if (result.r.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.r.op)) {
+        } else if (result.r.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.r.op)) {
 
             result.r = {typ: EnumToken.ParensTokenType, chi: [result.r]};
         }
@@ -269,7 +283,7 @@ function evaluateExpression(token: Token): Token {
 
 function isScalarToken(token: Token): boolean {
 
-    return token.typ != EnumToken.BinaryExpressionTokenType &&  token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
+    return token.typ != EnumToken.BinaryExpressionTokenType && token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
 }
 
 /**

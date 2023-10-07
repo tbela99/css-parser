@@ -1,17 +1,17 @@
 import { parseString } from '../parser/parse.js';
 import { isIdentStart, isWhiteSpace, isIdent, isFunction } from '../parser/utils/syntax.js';
 import { EnumToken } from './types.js';
+import { walkValues } from './walk.js';
+import { replaceCompound } from './expand.js';
 import { eq } from '../parser/utils/eq.js';
 import { renderToken, doRender } from '../renderer/render.js';
-import { replaceCompound } from './features/expand.js';
-import { InlineCssVariables } from './features/inlinecssvariables.js';
-import { ComputeShorthand } from './features/shorthand.js';
-import { ComputeCalcExpression } from './features/calc.js';
-import { walkValues } from './walk.js';
+import * as index from './features/index.js';
 
 const combinators = ['+', '>', '~'];
 const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
+// @ts-ignore
+const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     if (!('nodes' in context)) {
         context.nodes = new WeakSet;
@@ -24,12 +24,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     if (!('features' in options)) {
         // @ts-ignore
         options = { removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: [], ...options };
-        options.features.push(new ComputeShorthand);
-        if (options.inlineCssVariables) {
-            options.features.push(new InlineCssVariables);
-        }
-        if (options.computeCalcExpression) {
-            options.features.push(new ComputeCalcExpression);
+        // @ts-ignore
+        for (const feature of features) {
+            feature.register(options);
         }
     }
     function reducer(acc, curr, index, array) {

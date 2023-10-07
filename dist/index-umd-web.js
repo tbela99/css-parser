@@ -3715,7 +3715,28 @@
         }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
     }
 
-    class InlineCssVariables {
+    class MinifyFeature {
+        static get ordering() { return 10000; }
+        register(options) { }
+        run(ast, options = {}, parent, context) {
+        }
+    }
+
+    class InlineCssVariables extends MinifyFeature {
+        static get ordering() {
+            return 0;
+        }
+        static register(options) {
+            if (options.inlineCssVariables) {
+                for (const feature of options.features) {
+                    if (feature instanceof InlineCssVariables) {
+                        return;
+                    }
+                }
+                // @ts-ignore
+                options.features.push(new InlineCssVariables());
+            }
+        }
         run(ast, options = {}, parent, context) {
             if (!('variableScope' in context)) {
                 context.variableScope = new Map;
@@ -4476,7 +4497,21 @@
         }
     }
 
-    class ComputeShorthand {
+    class ComputeShorthand extends MinifyFeature {
+        static get ordering() {
+            return 2;
+        }
+        static register(options) {
+            if (options.computeShorthand) {
+                for (const feature of options.features) {
+                    if (feature instanceof ComputeShorthand) {
+                        return;
+                    }
+                }
+                // @ts-ignore
+                options.features.push(new ComputeShorthand());
+            }
+        }
         run(ast, options = {}, parent, context) {
             // @ts-ignore
             const j = ast.chi.length;
@@ -4498,7 +4533,21 @@
         }
     }
 
-    class ComputeCalcExpression {
+    class ComputeCalcExpression extends MinifyFeature {
+        static get ordering() {
+            return 1;
+        }
+        static register(options) {
+            if (options.computeCalcExpression) {
+                for (const feature of options.features) {
+                    if (feature instanceof ComputeCalcExpression) {
+                        return;
+                    }
+                }
+                // @ts-ignore
+                options.features.push(new ComputeCalcExpression());
+            }
+        }
         run(ast) {
             if (!('chi' in ast)) {
                 return ast;
@@ -4511,11 +4560,10 @@
                 const set = new Set;
                 for (const { parent } of walkValues(node.val)) {
                     if (parent != null && parent.typ == exports.EnumToken.FunctionTokenType && parent.val == 'calc') {
-                        if (set.has(parent)) {
-                            continue;
+                        if (!set.has(parent)) {
+                            set.add(parent);
+                            parent.chi = evaluate(parent.chi);
                         }
-                        set.add(parent);
-                        parent.chi = evaluate(parent.chi);
                     }
                 }
             }
@@ -4658,6 +4706,7 @@
         const result = doEvaluate(token.l, token.r, token.op);
         if (result.typ == exports.EnumToken.BinaryExpressionTokenType &&
             [exports.EnumToken.Mul, exports.EnumToken.Div].includes(result.op)) {
+            // wrap expression
             if (result.l.typ == exports.EnumToken.BinaryExpressionTokenType && [exports.EnumToken.Sub, exports.EnumToken.Add].includes(result.l.op)) {
                 result.l = { typ: exports.EnumToken.ParensTokenType, chi: [result.l] };
             }
@@ -4734,9 +4783,18 @@
         return tokens;
     }
 
+    var allFeatures = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        ComputeCalcExpression: ComputeCalcExpression,
+        ComputeShorthand: ComputeShorthand,
+        InlineCssVariables: InlineCssVariables
+    });
+
     const combinators = ['+', '>', '~'];
     const notEndingWith = ['(', '['].concat(combinators);
     const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
+    // @ts-ignore
+    const features = Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering);
     function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
         if (!('nodes' in context)) {
             context.nodes = new WeakSet;
@@ -4749,12 +4807,9 @@
         if (!('features' in options)) {
             // @ts-ignore
             options = { removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: [], ...options };
-            options.features.push(new ComputeShorthand);
-            if (options.inlineCssVariables) {
-                options.features.push(new InlineCssVariables);
-            }
-            if (options.computeCalcExpression) {
-                options.features.push(new ComputeCalcExpression);
+            // @ts-ignore
+            for (const feature of features) {
+                feature.register(options);
             }
         }
         function reducer(acc, curr, index, array) {

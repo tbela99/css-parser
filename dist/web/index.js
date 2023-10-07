@@ -1,7 +1,7 @@
 export { EnumToken, NodeType } from '../lib/ast/types.js';
 export { combinators, hasDeclaration, minify, reduceSelector, splitRule } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
-export { expand, replaceCompound } from '../lib/ast/features/expand.js';
+export { expand, replaceCompound } from '../lib/ast/expand.js';
 import { doRender } from '../lib/renderer/render.js';
 export { colorsFunc, reduceNumber, renderToken } from '../lib/renderer/render.js';
 import { doParse } from '../lib/parser/parse.js';

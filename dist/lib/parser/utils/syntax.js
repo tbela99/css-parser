@@ -1,6 +1,7 @@
 import { colorsFunc } from '../../renderer/render.js';
 import { COLORS_NAMES } from '../../renderer/utils/color.js';
 import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
 import '../parse.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax

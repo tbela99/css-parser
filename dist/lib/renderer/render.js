@@ -1,9 +1,10 @@
 import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
 import { EnumToken } from '../ast/types.js';
+import '../ast/minify.js';
+import { expand } from '../ast/expand.js';
+import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isNewLine } from '../parser/utils/syntax.js';
-import { SourceMap } from './sourcemap/sourcemap.js';
-import { expand } from '../ast/features/expand.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 function reduceNumber(val) {

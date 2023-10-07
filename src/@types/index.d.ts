@@ -26,8 +26,13 @@ export interface PropertyListOptions {
 
 export interface MinifyFeature {
 
-    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) => void;
-    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: {[key: string]: any}) => void;
+    ordering: number;
+
+    register: (options: MinifyOptions | ParserOptions) => void;
+    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) => void;
+    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
 }
 
 export interface ParserOptions extends PropertyListOptions {
@@ -48,7 +53,10 @@ export interface ParserOptions extends PropertyListOptions {
     computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
+        absolute: string,
+        relative: string
+    };
     nodeEventFilter?: NodeType[]
 }
 
@@ -57,7 +65,7 @@ export interface MinifyOptions extends ParserOptions {
     features: MinifyFeature[];
 }
 
-export interface ResoledPath  {
+export interface ResoledPath {
     absolute: string;
     relative: string;
 }
@@ -95,7 +103,7 @@ export interface ParseResult {
 }
 
 export interface RenderResult {
-    code: string ;
+    code: string;
     errors: ErrorDescription[];
     stats: {
         total: string;
@@ -158,6 +166,7 @@ export interface AstComment extends Node {
     typ: NodeType.CommentNodeType | NodeType.CDOCOMMNodeType,
     val: string;
 }
+
 export interface AstDeclaration extends Node {
 
     nam: string,
@@ -174,7 +183,7 @@ export interface AstRule extends Node {
     raw?: RawSelectorTokens;
 }
 
-export declare type RawSelectorTokens  = string[][];
+export declare type RawSelectorTokens = string[][];
 
 export interface OptimizedSelector {
     match: boolean;
@@ -230,7 +239,7 @@ export interface VariableScopeInfo {
 }
 
 export interface SourceMapObject {
-    version : number;
+    version: number;
     file?: string;
     sourceRoot?: string;
     sources?: string[];

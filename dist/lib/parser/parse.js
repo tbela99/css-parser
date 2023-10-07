@@ -2,7 +2,7 @@ import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimensio
 import { EnumToken } from '../ast/types.js';
 import { minify, combinators } from '../ast/minify.js';
 import { walkValues } from '../ast/walk.js';
-import { expand } from '../ast/features/expand.js';
+import { expand } from '../ast/expand.js';
 import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/utils/color.js';
 import { tokenize } from './tokenize.js';

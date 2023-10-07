@@ -1,10 +1,26 @@
 import { PropertyList } from '../../parser/declaration/list.js';
 import '../../renderer/utils/color.js';
 import '../types.js';
+import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/sourcemap/lib/encode.js';
+import { MinifyFeature } from '../utiles/minifyfeature.js';
 
-class ComputeShorthand {
+class ComputeShorthand extends MinifyFeature {
+    static get ordering() {
+        return 2;
+    }
+    static register(options) {
+        if (options.computeShorthand) {
+            for (const feature of options.features) {
+                if (feature instanceof ComputeShorthand) {
+                    return;
+                }
+            }
+            // @ts-ignore
+            options.features.push(new ComputeShorthand());
+        }
+    }
     run(ast, options = {}, parent, context) {
         // @ts-ignore
         const j = ast.chi.length;

@@ -2,7 +2,7 @@
 
 # css-parser
 
-CSS parser for node and the browser
+CSS parser and minifier for node and the browser
 
 ## Installation
 
@@ -13,12 +13,14 @@ $ npm install @tbela99/css-parser
 ## Features
 
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - automatically generate nested css rules
 - generate sourcemap
 - compute css shorthands. see the list below
 - compute calc() expression
 - nested css expansion
+- remove duplicate properties
+- flatten @import rules
 - works the same way in node and web browser
 
 ## Transform
@@ -64,6 +66,7 @@ Include ParseOptions and RenderOptions
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} rule.
 
 #### RenderOptions
+
 - minify: boolean, optional. default to _true_. minify css output.
 - expandNestingRules: boolean, optional. expand nesting rules.
 - sourcemap: boolean, optional. generate sourcemap
@@ -326,7 +329,7 @@ const css = `
     height: calc(100% / 4);}
 `
 
-const prettyPrint = await parse(css).then(result => render(result.ast, {minify: false}).code);
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
 
 ```
 result
@@ -336,7 +339,6 @@ result
     width: 12px;
     height: 25%
 }
-
 
 ```
 
@@ -370,8 +372,14 @@ result
 - typ: string 'Stylesheet'
 - chi: array of children
 
+## Sourcemap
+
+- [x] sourcemap generation
+
 ## Minification
 
+- [x] reduce calc()
+- [x] inline css variables
 - [x] merge identical rules
 - [x] merge adjacent rules
 - [x] minify colors
@@ -381,12 +389,11 @@ result
 - [x] conditionally unwrap :is()
 - [x] automatic css nesting
 - [x] automatically wrap selectors using :is()
-- [x] multi-level shorthand properties (border - [border-width, border-color, border-style, etc.]) https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties
 - [x] avoid reparsing (declarations, selectors, at-rule)
 - [x] node and browser versions
 - [x] decode and replace utf-8 escape sequence
 
-## Computed shorthands
+## Computed shorthands properties
 - [x] background
 - [x] border
 - [x] border-bottom
@@ -408,3 +415,7 @@ result
 ## Performance
 
 - [x] flatten @import
+
+---
+
+Thanks to [Jetbrains](https://jetbrains.com) for sponsoring this project with a free license

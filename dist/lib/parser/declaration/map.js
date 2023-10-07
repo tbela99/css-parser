@@ -2,10 +2,11 @@ import { eq } from '../utils/eq.js';
 import { renderToken } from '../../renderer/render.js';
 import '../../renderer/utils/color.js';
 import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
 import { parseString } from '../parse.js';
-import { PropertySet } from './set.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
+import { PropertySet } from './set.js';
 
 const propertiesConfig = getConfig();
 class PropertyMap {

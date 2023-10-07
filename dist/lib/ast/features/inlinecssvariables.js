@@ -1,7 +1,22 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
+import { MinifyFeature } from '../utiles/minifyfeature.js';
 
-class InlineCssVariables {
+class InlineCssVariables extends MinifyFeature {
+    static get ordering() {
+        return 0;
+    }
+    static register(options) {
+        if (options.inlineCssVariables) {
+            for (const feature of options.features) {
+                if (feature instanceof InlineCssVariables) {
+                    return;
+                }
+            }
+            // @ts-ignore
+            options.features.push(new InlineCssVariables());
+        }
+    }
     run(ast, options = {}, parent, context) {
         if (!('variableScope' in context)) {
             context.variableScope = new Map;

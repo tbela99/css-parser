@@ -833,8 +833,13 @@ interface PropertyListOptions {
 
 interface MinifyFeature {
 
-    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) => void;
-    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: {[key: string]: any}) => void;
+    ordering: number;
+
+    register: (options: MinifyOptions | ParserOptions) => void;
+    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) => void;
+    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
 }
 
 interface ParserOptions extends PropertyListOptions {
@@ -855,7 +860,10 @@ interface ParserOptions extends PropertyListOptions {
     computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => { absolute: string, relative: string };
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
+        absolute: string,
+        relative: string
+    };
     nodeEventFilter?: NodeType[]
 }
 
@@ -864,7 +872,7 @@ interface MinifyOptions extends ParserOptions {
     features: MinifyFeature[];
 }
 
-interface ResoledPath  {
+interface ResoledPath {
     absolute: string;
     relative: string;
 }
@@ -902,7 +910,7 @@ interface ParseResult {
 }
 
 interface RenderResult {
-    code: string ;
+    code: string;
     errors: ErrorDescription[];
     stats: {
         total: string;
@@ -958,6 +966,7 @@ interface AstComment extends Node {
     typ: NodeType.CommentNodeType | NodeType.CDOCOMMNodeType,
     val: string;
 }
+
 interface AstDeclaration extends Node {
 
     nam: string,
@@ -974,7 +983,7 @@ interface AstRule extends Node {
     raw?: RawSelectorTokens;
 }
 
-declare type RawSelectorTokens  = string[][];
+declare type RawSelectorTokens = string[][];
 
 interface OptimizedSelector {
     match: boolean;
@@ -1022,7 +1031,7 @@ interface WalkAttributesResult {
 }
 
 interface SourceMapObject {
-    version : number;
+    version: number;
     file?: string;
     sourceRoot?: string;
     sources?: string[];

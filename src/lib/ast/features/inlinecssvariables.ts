@@ -3,14 +3,36 @@ import {
     AstDeclaration,
     AstRule,
     AstRuleStyleSheet,
-    FunctionToken,
+    FunctionToken, MinifyOptions,
     ParserOptions,
     VariableScopeInfo
 } from "../../../@types";
 import {EnumToken, NodeType} from "../types";
 import {walkValues} from "../walk";
+import {MinifyFeature} from "../utiles/minifyfeature";
 
-export class InlineCssVariables {
+export class InlineCssVariables extends MinifyFeature {
+
+    static get ordering() {
+        return 0;
+    }
+
+    static register(options: MinifyOptions) {
+
+        if (options.inlineCssVariables) {
+
+            for (const feature of options.features) {
+
+                if (feature instanceof InlineCssVariables) {
+
+                    return;
+                }
+            }
+
+            // @ts-ignore
+            options.features.push(new InlineCssVariables());
+        }
+    }
 
     run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) {
 

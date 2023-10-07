@@ -1,8 +1,9 @@
 import {isFunction, isIdent, isIdentStart, isWhiteSpace, parseString} from "../parser";
 
 import {eq} from "../parser/utils/eq";
+import {replaceCompound} from './expand';
 import {doRender, renderToken} from "../renderer";
-import {ComputeCalcExpression, ComputeShorthand, InlineCssVariables, replaceCompound} from "./features";
+import * as allFeatures from "./features";
 import {walkValues} from "./walk";
 import {
     AstAtRule,
@@ -12,7 +13,7 @@ import {
     AstRuleStyleSheet,
     ErrorDescription,
     LiteralToken,
-    MatchedSelector,
+    MatchedSelector, MinifyFeature,
     MinifyOptions,
     OptimizedSelector,
     ParserOptions
@@ -22,7 +23,8 @@ import {EnumToken, NodeType} from "./types";
 export const combinators: string[] = ['+', '>', '~'];
 const notEndingWith: string[] = ['(', '['].concat(combinators);
 const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
-
+// @ts-ignore
+const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering)
 export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {[key: string]: any} = {}): AstNode {
 
     if (!('nodes' in context)) {
@@ -43,16 +45,10 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
         // @ts-ignore
         options = <MinifyOptions>{removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: <Function[]>[], ...options};
 
-        (<MinifyOptions>options).features.push(new ComputeShorthand);
+        // @ts-ignore
+        for (const feature of features) {
 
-        if (options.inlineCssVariables) {
-
-            (<MinifyOptions>options).features.push(new InlineCssVariables);
-        }
-
-        if (options.computeCalcExpression) {
-
-            (<MinifyOptions>options).features.push(new ComputeCalcExpression);
+            feature.register(options);
         }
     }
 

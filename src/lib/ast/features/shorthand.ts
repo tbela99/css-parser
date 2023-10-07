@@ -1,8 +1,30 @@
 import {PropertyList} from "../../parser/declaration";
 import {NodeType} from "../types";
-import {AstAtRule, AstRule, AstRuleStyleSheet, PropertyListOptions} from "../../../@types";
+import {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types";
+import {MinifyFeature} from "../utiles/minifyfeature";
 
-export class ComputeShorthand {
+export class ComputeShorthand extends MinifyFeature {
+
+    static get ordering() {
+        return 2;
+    }
+
+    static register(options: MinifyOptions) {
+
+        if (options.computeShorthand) {
+
+            for (const feature of options.features) {
+
+                if (feature instanceof ComputeShorthand) {
+
+                    return;
+                }
+            }
+
+            // @ts-ignore
+            options.features.push(new ComputeShorthand());
+        }
+    }
 
     run(ast: AstRule | AstAtRule, options: PropertyListOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) {
 
