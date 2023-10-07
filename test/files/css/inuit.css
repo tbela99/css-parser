@@ -47,7 +47,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Thank you for choosing inuit.css. May your web fonts render perfectly.
+ * Thank you for choosing inuit.css. May your web fonts doRender perfectly.
  */
 /*------------------------------------*\
     $CONTENTS
@@ -997,7 +997,7 @@ blockquote {
     $CODE
 \*------------------------------------*/
 /**
- * Use an explicit font stack to ensure browsers render correct `line-height`.
+ * Use an explicit font stack to ensure browsers doRender correct `line-height`.
  */
 pre {
   overflow: auto; }

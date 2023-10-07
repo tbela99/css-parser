@@ -1,30 +1,53 @@
-import {AstDeclaration, AstNode, ShorthandMapType, ShorthandPropertyType, Token} from "../../../@types";
+import {
+    AstDeclaration,
+    AstNode,
+    PropertyListOptions,
+    ShorthandMapType,
+    ShorthandPropertyType,
+    Token
+} from "../../../@types";
 import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";
 import {parseString} from "../parse";
+import {NodeType} from "../../ast";
 
 const config = getConfig();
 
 export class PropertyList {
 
+    protected options: PropertyListOptions = {removeDuplicateDeclarations: true, computeShorthand: true};
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
+    constructor(options: PropertyListOptions = {}) {
 
-    constructor() {
+        for (const key of Object.keys(this.options)) {
+
+            if (key in options) {
+
+                // @ts-ignore
+                this.options[key] = options[key];
+            }
+        }
 
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>;
     }
 
     set(nam: string, value: string | Token[]) {
 
-        return this.add({typ: 'Declaration', nam, val: Array.isArray(value) ? value : parseString(String(value))});
+        return this.add({typ: NodeType.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value))});
     }
 
     add(declaration: AstNode) {
 
-        if (declaration.typ != 'Declaration') {
+        if (declaration.typ != NodeType.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
 
             this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
+            return this;
+        }
+
+        if (!this.options.computeShorthand) {
+
+            this.declarations.set((<AstDeclaration>declaration).nam, declaration);
             return this;
         }
 

@@ -1,6 +1,16 @@
-import {AstDeclaration, DimensionToken, NumberToken, ShorthandPropertyType, Token} from "../../../@types";
+import {
+    AstDeclaration,
+    DimensionToken,
+     LiteralToken,
+
+    NumberToken,
+    ShorthandPropertyType,
+    Token,
+    WhitespaceToken
+} from "../../../@types";
 import {eq} from "../utils/eq";
 import {isLength} from "../utils";
+import {EnumToken, NodeType} from "../../ast";
 
 export class PropertySet {
 
@@ -30,7 +40,8 @@ export class PropertySet {
                 // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
 
-                    if (this.config.types.includes(token.typ) || (token.typ == 'Number' && token.val == '0' &&
+                    // @ts-ignore
+                    if (this.config.types.some(t => token.typ == EnumToken[t]) || (token.typ == EnumToken.NumberTokenType && token.val == '0' &&
                         (this.config.types.includes('Length') ||
                             this.config.types.includes('Angle') ||
                             this.config.types.includes('Dimension')
@@ -46,9 +57,9 @@ export class PropertySet {
                         continue;
                     }
 
-                    if (token.typ != 'Whitespace' && token.typ != 'Comment') {
+                    if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
 
-                        if (token.typ == 'Iden' && this.config.keywords.includes(token.val)) {
+                        if (token.typ == EnumToken.IdenTokenType&& this.config.keywords.includes(token.val)) {
 
                             if (tokens.length == 0) {
 
@@ -59,7 +70,7 @@ export class PropertySet {
                             tokens[current].push(token);
                         }
 
-                        if (token.typ == 'Literal' && token.val == this.config.separator) {
+                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
 
                             tokens.push([]);
                             current++;
@@ -82,7 +93,7 @@ export class PropertySet {
                             if (!this.declarations.has(property)) {
 
                                 this.declarations.set(property, <AstDeclaration>{
-                                    typ: 'Declaration',
+                                    typ: NodeType.DeclarationNodeType,
                                     nam: property,
                                     val: []
                                 });
@@ -105,7 +116,7 @@ export class PropertySet {
 
                             if (val.length > 0) {
 
-                                val.push({typ: 'Whitespace'});
+                                val.push(<WhitespaceToken>{typ: EnumToken.WhitespaceTokenType});
                             }
 
                             val.push(<Token>{...values[index]});
@@ -151,7 +162,7 @@ export class PropertySet {
                 // @ts-ignore
                 for (const token of this.declarations.get(property).val) {
 
-                    if (token.typ == 'Whitespace') {
+                    if (token.typ == EnumToken.WhitespaceTokenType) {
 
                         continue;
                     }
@@ -178,8 +189,8 @@ export class PropertySet {
 
                     if (t.val == k.val && t.val == '0') {
 
-                        if ((t.typ == 'Number' && isLength(<DimensionToken>k)) ||
-                            (k.typ == 'Number' && isLength(<DimensionToken>t)) ||
+                        if ((t.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>k)) ||
+                            (k.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>t)) ||
                             (isLength(<DimensionToken>k) || isLength(<DimensionToken>t))) {
 
                             value.splice(i, 1);
@@ -198,7 +209,7 @@ export class PropertySet {
             }
 
             iterator = [<AstDeclaration>{
-                typ: 'Declaration',
+                typ: NodeType.DeclarationNodeType,
                 nam: this.config.shorthand,
                 val: values.reduce((acc: Token[], curr: Token[]) => {
 
@@ -209,14 +220,14 @@ export class PropertySet {
 
                         while (i < k) {
 
-                            curr.splice(i, 0, {typ: 'Whitespace'});
+                            curr.splice(i, 0, <WhitespaceToken>{typ: EnumToken.WhitespaceTokenType});
                             i += 2;
                         }
                     }
 
                     if (acc.length > 0) {
 
-                        acc.push({typ: 'Literal', val: this.config.separator});
+                        acc.push(<LiteralToken>{typ: EnumToken.LiteralTokenType, val: this.config.separator});
                     }
 
                     acc.push(...curr);

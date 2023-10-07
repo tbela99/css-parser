@@ -1,13 +1,19 @@
 import {
-    AstDeclaration, PropertyMapType, ShorthandPropertyType,
-    Token
+    AstDeclaration,
+    IdentToken,
+
+    PropertyMapType,
+    ShorthandMapType,
+    ShorthandPropertyType, StringToken,
+    Token,
+    WhitespaceToken
 } from "../../../@types";
-import {ShorthandMapType} from "../../../@types";
 import {eq} from "../utils/eq";
 import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
+import {EnumToken, NodeType} from "../../ast";
 
 const propertiesConfig = getConfig();
 
@@ -40,7 +46,10 @@ export class PropertyMap {
             this.declarations.set(<string>declaration.nam, declaration);
         } else {
 
-            const separator = <Token>this.config.separator;
+            const separator = this.config.separator != null ? <Token>{
+                ...this.config.separator,
+                typ: EnumToken[this.config.separator.typ]
+            } : null;
 
             // expand shorthand
             if (declaration.nam != this.config.shorthand && this.declarations.has(this.config.shorthand)) {
@@ -51,17 +60,15 @@ export class PropertyMap {
                 // @ts-ignore
                 this.declarations.get(this.config.shorthand).val.slice().reduce((acc: Token[][], curr: Token) => {
 
+                    // @ts-ignore
                     if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
 
                         acc.push([]);
                         return acc;
                     }
-                    // else {
 
                     // @ts-ignore
                     acc.at(-1).push(curr);
-                    // }
-
                     return acc;
                 }, [[]]).
                     // @ts-ignore
@@ -74,7 +81,7 @@ export class PropertyMap {
 
                             for (let i = 0; i < acc.length; i++) {
 
-                                if (acc[i].typ == 'Comment' || acc[i].typ == 'Whitespace') {
+                                if (acc[i].typ == EnumToken.CommentTokenType || acc[i].typ == EnumToken.WhitespaceTokenType) {
 
                                     acc.splice(i, 1);
                                     i--;
@@ -99,10 +106,9 @@ export class PropertyMap {
                                         if (current == tokens[property].length) {
 
                                             tokens[property].push([acc[i]]);
-                                            // tokens[property][current].push();
                                         } else {
 
-                                            tokens[property][current].push({typ: 'Whitespace'}, acc[i]);
+                                            tokens[property][current].push(<WhitespaceToken>{typ: EnumToken.WhitespaceTokenType}, acc[i]);
                                         }
                                     }
 
@@ -110,10 +116,13 @@ export class PropertyMap {
                                     i--;
 
                                     // @ts-ignore
-                                    if ('prefix' in props && acc[i]?.typ == props.prefix.typ) {
+                                    if ('prefix' in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
 
-                                        // @ts-ignore
-                                        if (eq(acc[i], this.config.properties[property].prefix)) {
+                                        if (eq(acc[i], {
+                                            ...this.config.properties[property].prefix,
+                                            // @ts-ignore
+                                            typ: EnumToken[props.prefix.typ]
+                                        })) {
 
                                             acc.splice(i, 1);
                                             i--;
@@ -158,7 +167,7 @@ export class PropertyMap {
                                         tokens[property][current].push(...defaults);
                                     } else {
 
-                                        tokens[property][current].push({typ: 'Whitespace'}, ...defaults);
+                                        tokens[property][current].push(<WhitespaceToken>{typ: EnumToken.WhitespaceTokenType}, ...defaults);
                                     }
                                 }
                             }
@@ -176,7 +185,7 @@ export class PropertyMap {
 
                         acc.set(curr[0], <AstDeclaration>{
 
-                            typ: 'Declaration',
+                            typ: NodeType.DeclarationNodeType,
                             nam: curr[0],
                             val: curr[1].reduce((acc, curr) => {
 
@@ -273,7 +282,10 @@ export class PropertyMap {
 
             let count = 0;
             let match: boolean;
-            const separator = this.config.separator;
+            const separator = this.config.separator != null ? {
+                ...this.config.separator,
+                typ: EnumToken[this.config.separator.typ]
+            } : null;
             const tokens = <{ [key: string]: Token[][] }>{};
 
             // @ts-ignore
@@ -312,18 +324,22 @@ export class PropertyMap {
                             continue;
                         }
 
-                        if (val.typ == 'Whitespace' || val.typ == 'Comment') {
-
-                            continue;
-                        }
-
-                        if (props.multiple && props.separator != null && props.separator.typ == val.typ && eq(props.separator, val)) {
+                        if (val.typ == EnumToken.WhitespaceTokenType || val.typ == EnumToken.CommentTokenType) {
 
                             continue;
                         }
 
                         // @ts-ignore
-                        match = val.typ == 'Comment' || matchType(val, curr[1]);
+                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && eq({
+                            ...props.separator,
+                            typ: EnumToken[props.separator.typ]
+                        }, val)) {
+
+                            continue;
+                        }
+
+                        // @ts-ignore
+                        match = val.typ == EnumToken.CommentTokenType || matchType(val, curr[1]);
 
                         if (isShorthand) {
 
@@ -360,17 +376,16 @@ export class PropertyMap {
 
             if (!isShorthand || Object.entries(this.config.properties).some(entry => {
 
-                // missing required property
-                return entry[1].required && !(entry[0] in tokens);
-            }) ||
+                    // missing required property
+                    return entry[1].required && !(entry[0] in tokens);
+                }) ||
 
                 // @ts-ignore
-                !Object.values(tokens).every(v => v.filter(t => t.typ != 'Comment').length == count)) {
+                !Object.values(tokens).every(v => v.filter(t => t.typ != EnumToken.CommentTokenType).length == count)) {
 
                 // @ts-ignore
                 iterable = this.declarations.values();
-            }
-            else {
+            } else {
 
                 const values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
 
@@ -387,7 +402,7 @@ export class PropertyMap {
 
                             if (acc.length > 0) {
 
-                                acc.push(<Token>{typ: 'Whitespace'})
+                                acc.push(<Token>{typ: EnumToken.WhitespaceTokenType})
                             }
 
                             acc.push(curr);
@@ -408,8 +423,8 @@ export class PropertyMap {
 
                             for (let v of values) {
 
-                                if (!['Whitespace', 'Comment', 'Iden'].includes(v.typ)
-                                    || (v.typ == 'Iden' && !this.config.properties[curr[0]].default.includes(v.val))) {
+                                if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.IdenTokenType].includes(v.typ)
+                                    || (v.typ == EnumToken.IdenTokenType && !this.config.properties[curr[0]].default.includes(v.val))) {
 
                                     doFilterDefault = false;
                                     break;
@@ -420,12 +435,12 @@ export class PropertyMap {
                         // remove default values
                         values = values.filter((val: Token) => {
 
-                            if (val.typ == 'Whitespace' || val.typ == 'Comment') {
+                            if (val.typ == EnumToken.WhitespaceTokenType || val.typ == EnumToken.CommentTokenType) {
 
                                 return false;
                             }
 
-                            return !doFilterDefault || !(val.typ == 'Iden' && props.default.includes(val.val));
+                            return !doFilterDefault || !(val.typ == EnumToken.IdenTokenType && props.default.includes(val.val));
                         });
 
                         if (values.length > 0) {
@@ -439,23 +454,22 @@ export class PropertyMap {
                                     while (i--) {
 
                                         // @ts-ignore
-                                        if (values[i].typ == 'Iden' && values[i].val in props.mapping) {
+                                        if (values[i].typ == EnumToken.IdenTokenType && values[i].val in props.mapping) {
 
                                             // @ts-ignore
                                             values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
                                         }
                                     }
                                 }
-
                             }
 
                             if ('prefix' in props) {
 
                                 // @ts-ignore
-                                acc[i].push({...props.prefix});
+                                acc[i].push({...props.prefix, typ: EnumToken[props.prefix.typ]});
                             } else if (acc[i].length > 0) {
 
-                                acc[i].push({typ: 'Whitespace'});
+                                acc[i].push(<WhitespaceToken>{typ: EnumToken.WhitespaceTokenType});
                             }
 
                             acc[i].push(...values.reduce((acc, curr) => {
@@ -463,7 +477,12 @@ export class PropertyMap {
                                 if (acc.length > 0) {
 
                                     // @ts-ignore
-                                    acc.push(<Token>{...(props.separator ?? {typ: 'Whitespace'})});
+                                    acc.push(<Token>{
+                                        ...((props.separator && {
+                                            ...props.separator,
+                                            typ: EnumToken[props.separator.typ]
+                                        }) ?? {typ: EnumToken.WhitespaceTokenType})
+                                    });
                                 }
 
                                 // @ts-ignore
@@ -487,7 +506,7 @@ export class PropertyMap {
 
                             if (acc.length > 0) {
 
-                                acc.push({typ: 'Whitespace'});
+                                acc.push(<WhitespaceToken>{typ: EnumToken.WhitespaceTokenType});
                             }
 
                             acc.push(curr);
@@ -508,13 +527,16 @@ export class PropertyMap {
                     if (val in this.config.mapping) {
 
                         values.length = 0;
-                        // @ts-ignore
-                        values.push({typ: ['"', "'"].includes(val.charAt(0)) ? 'String' : 'Iden', val: <string>this.config.mapping[val]});
+                        values.push(<StringToken | IdentToken>{
+                            typ: ['"', "'"].includes(val.charAt(0)) ? EnumToken.StringTokenType : EnumToken.IdenTokenType,
+                            // @ts-ignore
+                            val: <string>this.config.mapping[val]
+                        });
                     }
                 }
 
                 iterable = [<AstDeclaration>{
-                    typ: 'Declaration',
+                    typ: NodeType.DeclarationNodeType,
                     nam: this.config.shorthand,
                     val: values
                 }][Symbol.iterator]();

@@ -1,5 +1,10 @@
 import { eq } from '../utils/eq.js';
 import { isLength } from '../utils/syntax.js';
+import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
+import '../parse.js';
+import '../../renderer/utils/color.js';
+import '../../renderer/sourcemap/lib/encode.js';
 
 class PropertySet {
     config;
@@ -20,7 +25,8 @@ class PropertySet {
                 const tokens = [];
                 // @ts-ignore
                 for (let token of this.declarations.get(this.config.shorthand).val) {
-                    if (this.config.types.includes(token.typ) || (token.typ == 'Number' && token.val == '0' &&
+                    // @ts-ignore
+                    if (this.config.types.some(t => token.typ == EnumToken[t]) || (token.typ == EnumToken.NumberTokenType && token.val == '0' &&
                         (this.config.types.includes('Length') ||
                             this.config.types.includes('Angle') ||
                             this.config.types.includes('Dimension')))) {
@@ -31,15 +37,15 @@ class PropertySet {
                         tokens[current].push(token);
                         continue;
                     }
-                    if (token.typ != 'Whitespace' && token.typ != 'Comment') {
-                        if (token.typ == 'Iden' && this.config.keywords.includes(token.val)) {
+                    if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
+                        if (token.typ == EnumToken.IdenTokenType && this.config.keywords.includes(token.val)) {
                             if (tokens.length == 0) {
                                 tokens.push([]);
                                 current++;
                             }
                             tokens[current].push(token);
                         }
-                        if (token.typ == 'Literal' && token.val == this.config.separator) {
+                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
                             tokens.push([]);
                             current++;
                             continue;
@@ -54,7 +60,7 @@ class PropertySet {
                         this.config.properties.forEach((property, index) => {
                             if (!this.declarations.has(property)) {
                                 this.declarations.set(property, {
-                                    typ: 'Declaration',
+                                    typ: 5 /* NodeType.DeclarationNodeType */,
                                     nam: property,
                                     val: []
                                 });
@@ -71,7 +77,7 @@ class PropertySet {
                             // @ts-ignore
                             const val = this.declarations.get(property).val;
                             if (val.length > 0) {
-                                val.push({ typ: 'Whitespace' });
+                                val.push({ typ: EnumToken.WhitespaceTokenType });
                             }
                             val.push({ ...values[index] });
                         });
@@ -102,7 +108,7 @@ class PropertySet {
                 let index = 0;
                 // @ts-ignore
                 for (const token of this.declarations.get(property).val) {
-                    if (token.typ == 'Whitespace') {
+                    if (token.typ == EnumToken.WhitespaceTokenType) {
                         continue;
                     }
                     if (values.length == index) {
@@ -118,8 +124,8 @@ class PropertySet {
                     const t = value[i];
                     const k = value[i == 1 ? 0 : i % 2];
                     if (t.val == k.val && t.val == '0') {
-                        if ((t.typ == 'Number' && isLength(k)) ||
-                            (k.typ == 'Number' && isLength(t)) ||
+                        if ((t.typ == EnumToken.NumberTokenType && isLength(k)) ||
+                            (k.typ == EnumToken.NumberTokenType && isLength(t)) ||
                             (isLength(k) || isLength(t))) {
                             value.splice(i, 1);
                             continue;
@@ -133,19 +139,19 @@ class PropertySet {
                 }
             }
             iterator = [{
-                    typ: 'Declaration',
+                    typ: 5 /* NodeType.DeclarationNodeType */,
                     nam: this.config.shorthand,
                     val: values.reduce((acc, curr) => {
                         if (curr.length > 1) {
                             const k = curr.length * 2 - 1;
                             let i = 1;
                             while (i < k) {
-                                curr.splice(i, 0, { typ: 'Whitespace' });
+                                curr.splice(i, 0, { typ: EnumToken.WhitespaceTokenType });
                                 i += 2;
                             }
                         }
                         if (acc.length > 0) {
-                            acc.push({ typ: 'Literal', val: this.config.separator });
+                            acc.push({ typ: EnumToken.LiteralTokenType, val: this.config.separator });
                         }
                         acc.push(...curr);
                         return acc;

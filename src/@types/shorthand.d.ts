@@ -1,4 +1,4 @@
-import {NodeType, Token} from "./index";
+import {NodeType} from "../lib";
 
 export interface PropertyType {
 

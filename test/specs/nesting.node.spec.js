@@ -109,7 +109,7 @@ describe('CSS Nesting', function () {
 `;
         return transform(nesting3, {
             minify: true, nestingRules: true, resolveImport: true
-        }).then((result) => f(result.code).equals(`.form-floating{>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + calc(var(--bs-border-width) * 2))}}`));
+        }).then((result) => f(result.code).equals(`.form-floating{>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + var(--bs-border-width)*2)}}`));
     });
     it('nesting #7', function () {
         const nesting3 = `
@@ -146,7 +146,7 @@ describe('CSS Nesting', function () {
 `;
         return transform(nesting3, {
             minify: true, nestingRules: true, resolveImport: true
-        }).then((result) => f(result.code).equals(`.form-floating{position:relative;>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + calc(var(--bs-border-width) * 2));min-height:calc(3.5rem + calc(var(--bs-border-width) * 2));line-height:1.25;z-index:2;white-space:nowrap}>label{position:absolute;top:0;left:0;z-index:2;height:100%;padding:1rem .75rem;overflow:hidden;text-align:start;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;border:var(--bs-border-width) solid #0000;transform-origin:0 0;transition:opacity .1s ease-in-out,transform .1s ease-in-out}}`));
+        }).then((result) => f(result.code).equals(`.form-floating{position:relative;>.form-control,>.form-control-plaintext,>.form-select{height:calc(3.5rem + var(--bs-border-width)*2);min-height:calc(3.5rem + var(--bs-border-width)*2);line-height:1.25;z-index:2;white-space:nowrap}>label{position:absolute;top:0;left:0;z-index:2;height:100%;padding:1rem .75rem;overflow:hidden;text-align:start;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;border:var(--bs-border-width) solid #0000;transform-origin:0 0;transition:opacity .1s ease-in-out,transform .1s ease-in-out}}`));
     });
 
     it('nesting #8', function () {
@@ -192,7 +192,7 @@ describe('CSS Nesting', function () {
 `;
         return transform(nesting3, {
             minify: true, nestingRules: true, resolveImport: true
-        }).then((result) => f(result.code).equals(`.card{--bs-card-spacer-y:1rem;--bs-card-spacer-x:1rem;--bs-card-title-spacer-y:.5rem;--bs-card-border-width:var(--bs-border-width);--bs-card-border-color:var(--bs-border-color-translucent);--bs-card-border-radius:var(--bs-border-radius);--bs-card-inner-border-radius:calc(var(--bs-border-radius) - (var(--bs-border-width)));--bs-card-cap-padding-y:.5rem;--bs-card-cap-padding-x:1rem;--bs-card-cap-bg:rgba(var(--bs-body-color-rgb),.03);--bs-card-bg:var(--bs-body-bg);--bs-card-img-overlay-padding:1rem;--bs-card-group-margin:.75rem;position:relative;display:flex;flex-direction:column;min-width:0;height:var(--bs-card-height);color:var(--bs-body-color);word-wrap:break-word;background-color:var(--bs-card-bg);background-clip:border-box;border:var(--bs-card-border-width) solid var(--bs-card-border-color);border-radius:var(--bs-card-border-radius);>hr{margin-right:0;margin-left:0}}`));
+        }).then((result) => f(result.code).equals(`.card{--bs-card-spacer-y:1rem;--bs-card-spacer-x:1rem;--bs-card-title-spacer-y:.5rem;--bs-card-border-width:var(--bs-border-width);--bs-card-border-color:var(--bs-border-color-translucent);--bs-card-border-radius:var(--bs-border-radius);--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width));--bs-card-cap-padding-y:.5rem;--bs-card-cap-padding-x:1rem;--bs-card-cap-bg:rgba(var(--bs-body-color-rgb),.03);--bs-card-bg:var(--bs-body-bg);--bs-card-img-overlay-padding:1rem;--bs-card-group-margin:.75rem;position:relative;display:flex;flex-direction:column;min-width:0;height:var(--bs-card-height);color:var(--bs-body-color);word-wrap:break-word;background-color:var(--bs-card-bg);background-clip:border-box;border:var(--bs-card-border-width) solid var(--bs-card-border-color);border-radius:var(--bs-card-border-radius);>hr{margin-right:0;margin-left:0}}`));
     });
     it('nesting #9', function () {
         const nesting3 = `
@@ -359,7 +359,17 @@ a {
     });
 
     // see https://www.w3.org/TR/css-nesting-1/#conditionals
+/*
+.header {
+        font-size: 40px;
+    }
 
+@media (max-width: 760px) {
+    .header {
+            font-size: 24px;
+        }
+    }
+*/
     /*
 
 // .parent {

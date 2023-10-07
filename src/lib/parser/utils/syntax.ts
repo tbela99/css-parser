@@ -1,9 +1,10 @@
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {AngleToken, DimensionToken, LengthToken, Token} from '../../../@types';
 import {colorsFunc} from "../../renderer";
 import {COLORS_NAMES} from "../../renderer/utils";
+import {AngleToken, DimensionToken, LengthToken, Token} from "../../../@types";
+import {EnumToken} from "../../ast";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
@@ -41,21 +42,21 @@ export function isFrequency(dimension: DimensionToken): boolean {
 
 export function isColor(token: Token): boolean {
 
-    if (token.typ == 'Color') {
+    if (token.typ == EnumToken.ColorTokenType) {
 
         return true;
     }
-    if (token.typ == 'Iden') {
+    if (token.typ == EnumToken.IdenTokenType) {
         // named color
         return token.val.toLowerCase() in COLORS_NAMES;
     }
 
-    if (token.typ == 'Func' && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+    if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
 
         // @ts-ignore
         for (const v of token.chi) {
 
-            if (!['Number', 'Angle', 'Perc', 'Comma', 'Whitespace', 'Literal'].includes(v.typ)) {
+            if (![EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
 
                 return false;
             }
@@ -318,24 +319,24 @@ export function parseDimension(name: string): DimensionToken | LengthToken | Ang
         break;
     }
 
-    const dimension = <DimensionToken>{typ: 'Dimension', val: name.slice(0, index), unit: name.slice(index)};
+    const dimension = <DimensionToken>{typ: EnumToken.DimensionTokenType, val: name.slice(0, index), unit: name.slice(index)};
 
     if (isAngle(dimension)) {
 
         // @ts-ignore
-        dimension.typ = 'Angle';
+        dimension.typ = EnumToken.AngleTokenType;
     } else if (isLength(dimension)) {
 
         // @ts-ignore
-        dimension.typ = 'Length';
+        dimension.typ = EnumToken.LengthTokenType;
     } else if (isTime(dimension)) {
 
         // @ts-ignore
-        dimension.typ = 'Time';
+        dimension.typ = EnumToken.TimeTokenType;
     } else if (isResolution(dimension)) {
 
         // @ts-ignore
-        dimension.typ = 'Resolution';
+        dimension.typ = EnumToken.ResolutionTokenType;
 
         if (dimension.unit == 'dppx') {
 
@@ -344,7 +345,7 @@ export function parseDimension(name: string): DimensionToken | LengthToken | Ang
     } else if (isFrequency(dimension)) {
 
         // @ts-ignore
-        dimension.typ = 'Frequency';
+        dimension.typ = EnumToken.FrequencyTokenType;
     }
 
     return dimension;

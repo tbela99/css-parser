@@ -2,7 +2,7 @@
 
 # css-parser
 
-CSS parser for node and the browser
+CSS parser and minifier for node and the browser
 
 ## Installation
 
@@ -12,11 +12,15 @@ $ npm install @tbela99/css-parser
 
 ## Features
 
-- fault tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
+- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - automatically generate nested css rules
+- generate sourcemap
 - compute css shorthands. see the list below
-- expand nested css
+- compute calc() expression
+- nested css expansion
+- remove duplicate properties
+- flatten @import rules
 - works the same way in node and web browser
 
 ## Transform
@@ -25,9 +29,9 @@ Parse and render css in a single pass.
 
 ### Usage
 
-```javascript
+```typescript
 
-transform(css, transformOptions = {})
+transform(css, transformOptions: TransformOptions = {}): TransformResult
 ```
 
 ### Example
@@ -36,7 +40,7 @@ transform(css, transformOptions = {})
 
 import {transform} from '@tbela99/css-parser';
 
-const {ast, code, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
+const {ast, code, map, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
 ```
 
 ### TransformOptions
@@ -45,23 +49,35 @@ Include ParseOptions and RenderOptions
 
 #### ParseOptions
 
-- src: string, optional. css file location to be used with sourcemap.
 - minify: boolean, optional. default to _true_. optimize ast.
+- src: string, optional. original css file location to be used with sourcemap.
+- sourcemap: boolean, optional. preserve node location data.
 - nestingRules: boolean, optional. automatically generated nested rules.
-- removeEmpty: boolean, remove empty nodes from the ast.
-- location: boolean, optional. includes node location in the ast, required for sourcemap generation.
+- expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules to false.
+- removeCharset: boolean, optional. remove @charset.
+- removeEmpty: boolean, optional. remove empty rule lists from the ast.
+- resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
+- resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
 - cwd: string, optional. the current working directory. when specified url() are resolved using this value
-- resolveImport: boolean, optional. replace @import node by the content of the referenced stylesheet.
-- resolveUrls: boolean, optional. resolve css url() according to the parameters 'src' and 'cwd'
+- removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
+- computeShorthand: boolean, optional. compute shorthand properties.
+- inlineCssVariables: boolean, optional. replace css variables with their current value.
+- computeCalcExpression: boolean, optional. evaluate calc() expression
+- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} rule.
 
 #### RenderOptions
-- minify: boolean, optional. default to _true_. minify css output.
-- indent: string, optional. css indention string. uses space character by default.
-- newLine: string, new line character.
-- removeComments: boolean, remove comments in generated css.
-- preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
-- colorConvert: boolean, convert colors to hex.
 
+- minify: boolean, optional. default to _true_. minify css output.
+- expandNestingRules: boolean, optional. expand nesting rules.
+- sourcemap: boolean, optional. generate sourcemap
+- preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
+- sourcemap: boolean, optional. generate sourcemap.
+- indent: string, optional. css indention string. uses space character by default.
+- newLine: string, optional. new line character.
+- removeComments: boolean, remove comments in generated css.
+- colorConvert: boolean, convert colors to hex.
+- output: string, optional. file where to store css. url() are resolved according to the specified value. no file is created though.
+- cwd: string, optional. value used as current working directory. when output is not provided, urls are resolved according to this value.
 
 ## Parsing
 
@@ -84,7 +100,7 @@ const {ast, errors, stats} = await parse(css);
 ### Usage
 
 ```javascript
-render(ast, RenderOptions = {});
+doRender(ast, RenderOptions = {});
 ```
 
 ### Example
@@ -163,34 +179,27 @@ Single JavaScript file
 
 CSS
 
-```css
+```javascript
+const {parse, render} = require("@tbela99/css-parser/cjs");
 
+const css = `
 table.colortable td {
-  text-align:center;
+ text-align:center;
 }
 table.colortable td.c {
-  text-transform:uppercase;
+ text-transform:uppercase;
 }
 table.colortable td:first-child, table.colortable td:first-child+td {
-  border:1px solid black;
+ border:1px solid black;
 }
 table.colortable th {
-  text-align:center;
-  background:black;
-  color:white;
+ text-align:center;
+ background:black;
+ color:white;
 }
-```
+`;
 
-Javascript
-```javascript
-import {parse, render} from '@tbela99/css-parser';
-
-
-const options = {minify: true, nestingRules: true};
-
-const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
-//
-console.debug(code);
+const result = await parse(css, {nestingRules:true}).then(result => render(result.ast, {minify:false}).code);
 ```
 
 Result
@@ -270,6 +279,69 @@ table.colortable th {
 }
 ```
 
+### Example 3
+
+### Calc() resolution
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+.foo-bar {
+    width: calc(100px * 2);
+    height: calc(((75.37% - 63.5px) - 900px) + (2 * 100px));
+    max-width: calc(3.5rem + calc(var(--bs-border-width) * 2));
+}
+`;
+
+const prettyPrint = await parse(css).then(result => render(result.ast, {minify: false}).code);
+
+```
+result
+
+```css
+.foo-bar {
+    width: 200px;
+    height: calc(75.37% - 763.5px);
+    max-width: calc(3.5rem + var(--bs-border-width)*2)
+}
+```
+
+### Example 4
+
+### CSS variable inlining
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+:root {
+
+--preferred-width: 20px;
+}
+.foo-bar {
+
+    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+result
+
+```css
+.foo-bar {
+    width: 12px;
+    height: 25%
+}
+
+```
+
 ## AST
 
 ### Comment
@@ -300,8 +372,14 @@ table.colortable th {
 - typ: string 'Stylesheet'
 - chi: array of children
 
+## Sourcemap
+
+- [x] sourcemap generation
+
 ## Minification
 
+- [x] reduce calc()
+- [x] inline css variables
 - [x] merge identical rules
 - [x] merge adjacent rules
 - [x] minify colors
@@ -311,12 +389,11 @@ table.colortable th {
 - [x] conditionally unwrap :is()
 - [x] automatic css nesting
 - [x] automatically wrap selectors using :is()
-- [x] multi-level shorthand properties (border - [border-width, border-color, border-style, etc.]) https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties
 - [x] avoid reparsing (declarations, selectors, at-rule)
 - [x] node and browser versions
 - [x] decode and replace utf-8 escape sequence
 
-## Computed shorthands
+## Computed shorthands properties
 - [x] background
 - [x] border
 - [x] border-bottom
@@ -338,3 +415,7 @@ table.colortable th {
 ## Performance
 
 - [x] flatten @import
+
+---
+
+Thanks to [Jetbrains](https://jetbrains.com) for sponsoring this project with a free license

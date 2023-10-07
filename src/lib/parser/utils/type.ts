@@ -1,23 +1,31 @@
-import {FunctionToken, IdentToken, PropertyMapType, Token} from "../../../@types";
+import {EnumToken} from "../../ast";
+import {IdentToken, PropertyMapType, Token} from "../../../@types";
 
 export const funcList = ['clamp', 'calc'];
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
 
-    if (val.typ == 'Iden' && properties.keywords.includes((<IdentToken>val).val) ||
-        (properties.types.includes(val.typ))) {
+    if (val.typ == EnumToken.IdenTokenType && properties.keywords.includes((<IdentToken>val).val) ||
+        // @ts-ignore
+        (properties.types.some((t: keyof EnumToken) => EnumToken[t] == val.typ))) {
 
         return true;
     }
 
-    if (val.typ == 'Number' && val.val == '0') {
+    if (val.typ == EnumToken.NumberTokenType && val.val == '0') {
 
-        return properties.types.some(type => type == 'Length' || type == 'Angle')
+        // @ts-ignore
+        return properties.types.some((type: keyof EnumToken) => {
+
+            // @ts-ignore
+            const typ = EnumToken[type];
+           return typ  == EnumToken.LengthTokenType || typ == EnumToken.AngleTokenType
+        })
     }
 
-    if (val.typ == 'Func' && funcList.includes((<FunctionToken>val).val)) {
+    if (val.typ == EnumToken.FunctionTokenType && funcList.includes(val.val)) {
 
-        return val.chi.every((t => ['Literal', 'Comma', 'Whitespace', 'Start-parens', 'End-parens'].includes(t.typ) || matchType(t, properties)));
+        return val.chi.every((t => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType,EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
     }
 
     return false;

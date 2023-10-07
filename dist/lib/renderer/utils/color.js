@@ -1,3 +1,8 @@
+import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
+import '../../parser/parse.js';
+import '../sourcemap/lib/encode.js';
+
 // name to color
 const COLORS_NAMES = Object.seal({
     'aliceblue': '#f0f8ff',
@@ -310,18 +315,18 @@ function rgb2Hex(token) {
         // @ts-ignore
         t = token.chi[i];
         // @ts-ignore
-        value += Math.round(t.typ == 'Perc' ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0');
+        value += Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0');
     }
     // @ts-ignore
     if (token.chi.length == 7) {
         // @ts-ignore
         t = token.chi[6];
         // @ts-ignore
-        if ((t.typ == 'Number' && t.val < 1) ||
+        if ((t.typ == EnumToken.NumberTokenType && t.val < 1) ||
             // @ts-ignore
-            (t.typ == 'Perc' && t.val < 100)) {
+            (t.typ == EnumToken.PercentageTokenType && t.val < 100)) {
             // @ts-ignore
-            value += Math.round(255 * (t.typ == 'Perc' ? t.val / 100 : t.val)).toString(16).padStart(2, '0');
+            value += Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)).toString(16).padStart(2, '0');
         }
     }
     return value;
@@ -333,21 +338,21 @@ function hsl2Hex(token) {
     // @ts-ignore
     t = token.chi[2];
     // @ts-ignore
-    let s = t.typ == 'Perc' ? t.val / 100 : t.val;
+    let s = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
     t = token.chi[4];
     // @ts-ignore
-    let l = t.typ == 'Perc' ? t.val / 100 : t.val;
+    let l = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     let a = null;
     if (token.chi?.length == 7) {
         // @ts-ignore
         t = token.chi[6];
         // @ts-ignore
-        if ((t.typ == 'Perc' && t.val < 100) ||
+        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
             // @ts-ignore
-            (t.typ == 'Number' && t.val < 1)) {
+            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
             // @ts-ignore
-            a = (t.typ == 'Perc' ? t.val / 100 : t.val);
+            a = (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
         }
     }
     return `#${hsl2rgb(h, s, l, a).reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
@@ -359,21 +364,21 @@ function hwb2hex(token) {
     // @ts-ignore
     t = token.chi[2];
     // @ts-ignore
-    let white = t.typ == 'Perc' ? t.val / 100 : t.val;
+    let white = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
     t = token.chi[4];
     // @ts-ignore
-    let black = t.typ == 'Perc' ? t.val / 100 : t.val;
+    let black = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     let a = null;
     if (token.chi?.length == 7) {
         // @ts-ignore
         t = token.chi[6];
         // @ts-ignore
-        if ((t.typ == 'Perc' && t.val < 100) ||
+        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
             // @ts-ignore
-            (t.typ == 'Number' && t.val < 1)) {
+            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
             // @ts-ignore
-            a = (t.typ == 'Perc' ? t.val / 100 : t.val);
+            a = (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
         }
     }
     const rgb = hsl2rgb(h, 1, .5, a);
@@ -390,19 +395,19 @@ function cmyk2hex(token) {
     // @ts-ignore
     let t = token.chi[0];
     // @ts-ignore
-    const c = t.typ == 'Perc' ? t.val / 100 : t.val;
+    const c = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
     t = token.chi[2];
     // @ts-ignore
-    const m = t.typ == 'Perc' ? t.val / 100 : t.val;
+    const m = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
     t = token.chi[4];
     // @ts-ignore
-    const y = t.typ == 'Perc' ? t.val / 100 : t.val;
+    const y = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
     t = token.chi[6];
     // @ts-ignore
-    const k = t.typ == 'Perc' ? t.val / 100 : t.val;
+    const k = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     const rgb = [
         Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
         Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
@@ -413,12 +418,12 @@ function cmyk2hex(token) {
         // @ts-ignore
         t = token.chi[8];
         // @ts-ignore
-        rgb.push(Math.round(255 * (t.typ == 'Perc' ? t.val / 100 : t.val)));
+        rgb.push(Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)));
     }
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 function getAngle(token) {
-    if (token.typ == 'Angle') {
+    if (token.typ == EnumToken.AngleTokenType) {
         switch (token.unit) {
             case 'deg':
                 // @ts-ignore

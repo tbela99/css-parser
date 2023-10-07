@@ -1,11 +1,8 @@
-import {Token, TokenizeResult, TokenType} from "../../@types";
-import {
-    isDigit,
-    isNewLine, isNonPrintable,
-    isWhiteSpace
-} from "./utils";
+import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "./utils";
+import {TokenizeResult, TokenType} from "../../@types";
+import {EnumToken} from "../ast";
 
-export function* tokenize(iterator: string): Generator<TokenizeResult> {
+export function* tokenize(stream: string): Generator<TokenizeResult> {
 
     let ind: number = -1;
     let lin: number = 1;
@@ -20,12 +17,13 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
     let value;
     let buffer: string = '';
+    // let input: string = '';
 
     function consumeWhiteSpace(): number {
 
         let count: number = 0;
 
-        while (isWhiteSpace(iterator.charAt(count + ind + 1).charCodeAt(0))) {
+        while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
 
             count++;
         }
@@ -123,7 +121,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             if (value == quote) {
 
                 buffer += value;
-                yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'String');
+                yield pushToken(buffer, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
                 next();
                 // i += value.length;
                 buffer = '';
@@ -136,7 +134,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
             if (hasNewLine && value == ';') {
 
-                yield pushToken(buffer + value, 'Bad-string');
+                yield pushToken(buffer + value, EnumToken.BadStringTokenType);
                 buffer = '';
                 next();
                 break;
@@ -148,11 +146,11 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
         if (hasNewLine) {
 
-            yield pushToken(buffer, 'Bad-string');
+            yield pushToken(buffer, EnumToken.BadStringTokenType);
         } else {
 
             // EOF - 'Unclosed-string' fixed
-            yield pushToken(buffer + quote, 'String');
+            yield pushToken(buffer + quote, EnumToken.StringTokenType);
         }
 
         buffer = '';
@@ -162,20 +160,20 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
         if (count == 1) {
 
-            return iterator.charAt(ind + 1);
+            return stream.charAt(ind + 1);
         }
 
-        return iterator.slice(ind + 1, ind + count + 1);
+        return stream.slice(ind + 1, ind + count + 1);
     }
 
     function prev(count: number = 1): string {
 
         if (count == 1) {
 
-            return ind == 0 ? '' : iterator.charAt(ind - 1);
+            return ind == 0 ? '' : stream.charAt(ind - 1);
         }
 
-        return iterator.slice(ind - 1 - count, ind - 1);
+        return stream.slice(ind - 1 - count, ind - 1);
     }
 
     function next(count: number = 1): string {
@@ -188,10 +186,10 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
             return '';
         }
 
-        while (count-- && (chr = iterator.charAt(ind + 1))) {
+        while (count-- && (chr = stream.charAt(ind + 1))) {
 
             char += chr;
-            const codepoint: number = iterator.charCodeAt(++ind);
+            const codepoint: number = stream.charCodeAt(++ind);
 
             if (isNaN(codepoint)) {
 
@@ -227,7 +225,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 }
             }
 
-            yield pushToken('', 'Whitespace');
+            yield pushToken('', EnumToken.WhitespaceTokenType);
 
             buffer = '';
         }
@@ -246,7 +244,9 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                         break;
                     }
                 }
+
                 buffer += value;
+
                 if (peek() == '*') {
 
                     buffer += next();
@@ -258,7 +258,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                             buffer += value;
 
                             if (peek() == '/') {
-                                yield pushToken(buffer + next(), 'Comment');
+                                yield pushToken(buffer + next(), EnumToken.CommentTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -267,10 +267,12 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                         }
                     }
 
-                    yield pushToken(buffer, 'Bad-comment');
+                    yield pushToken(buffer, EnumToken.BadCommentTokenType);
                     buffer = '';
                 }
+
                 break;
+
             case '<':
 
                 if (buffer.length > 0) {
@@ -280,7 +282,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                 if (peek() == '=') {
 
-                    yield pushToken('', 'Lte');
+                    yield pushToken('', EnumToken.LteTokenType);
                     next();
                     break;
                 }
@@ -302,10 +304,10 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                     if (value === '') {
 
-                        yield pushToken(buffer, 'Bad-cdo');
+                        yield pushToken(buffer, EnumToken.BadCdoTokenType);
                     } else {
 
-                        yield pushToken(buffer + next(2), 'CDOCOMM');
+                        yield pushToken(buffer + next(2), EnumToken.CDOCOMMTokenType);
                     }
 
                     buffer = '';
@@ -345,7 +347,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 if (value == '=') {
 
                     buffer += value;
-                    yield pushToken(buffer, buffer[0] == '~' ? 'Includes' : 'Dash-matches');
+                    yield pushToken(buffer, buffer[0] == '~' ? EnumToken.IncludesTokenType : EnumToken.DashMatchTokenType);
 
                     buffer = '';
                     break;
@@ -370,11 +372,11 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                 if (peek() == '=') {
 
-                    yield pushToken('', 'Gte');
+                    yield pushToken('', EnumToken.GteTokenType);
                     next();
                 } else {
 
-                    yield pushToken('', 'Gt');
+                    yield pushToken('', EnumToken.GtTokenType);
                 }
 
                 consumeWhiteSpace();
@@ -392,6 +394,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 buffer += value;
                 break;
             case '+':
+            case '*':
             case ':':
             case ',':
             case '=':
@@ -411,7 +414,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                 yield pushToken(value);
                 buffer = '';
 
-                if (value == '+' && isWhiteSpace(peek().charCodeAt(0))) {
+                if (['+', '*', '/'].includes(value)   && isWhiteSpace(peek().charCodeAt(0))) {
 
                     yield pushToken(next());
                 }
@@ -428,7 +431,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                     buffer = '';
                 }
 
-                yield pushToken('', 'End-parens');
+                yield pushToken('', EnumToken.EndParensTokenType);
                 break;
             case '(':
 
@@ -487,7 +490,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                                     if (value === '') {
 
-                                        yield pushToken(buffer, 'Bad-string');
+                                        yield pushToken(buffer, EnumToken.BadUrlTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -528,7 +531,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                                     if (!(value = next())) {
 
-                                        yield pushToken(buffer, hasNewLine ? 'Bad-url-token' : 'Url-token');
+                                        yield pushToken(buffer, hasNewLine ? EnumToken.BadUrlTokenType : EnumToken.UrlTokenTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -539,8 +542,8 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                                 // ')'
                                 if (cp == 0x29) {
 
-                                    yield pushToken(buffer, hasNewLine ? 'Bad-string' : 'String');
-                                    yield pushToken('', 'End-parens');
+                                    yield pushToken(buffer, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
+                                    yield pushToken('', EnumToken.EndParensTokenType);
                                     buffer = '';
                                     break;
                                 }
@@ -557,8 +560,8 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                                     if (cp == 0x29) {
 
-                                        yield pushToken(buffer, 'Bad-string');
-                                        yield pushToken('', 'End-parens');
+                                        yield pushToken(buffer, EnumToken.BadStringTokenType);
+                                        yield pushToken('', EnumToken.EndParensTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -568,7 +571,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                                 if (hasNewLine) {
 
-                                    yield pushToken(buffer, 'Bad-string');
+                                    yield pushToken(buffer, EnumToken.BadStringTokenType);
                                     buffer = '';
                                 }
 
@@ -590,8 +593,8 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                             // ')'
                             if (cp == 0x29) {
 
-                                yield pushToken(buffer, 'Url-token');
-                                yield pushToken('', 'End-parens');
+                                yield pushToken(buffer, EnumToken.UrlTokenTokenType);
+                                yield pushToken('', EnumToken.EndParensTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -644,7 +647,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
                                     buffer += next();
                                 }
 
-                                yield pushToken(buffer, 'Bad-url-token');
+                                yield pushToken(buffer, EnumToken.BadUrlTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -655,7 +658,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                     if (buffer !== '') {
 
-                        yield pushToken(buffer, 'Url-token');
+                        yield pushToken(buffer, EnumToken.UrlTokenTokenType);
                         buffer = '';
                         break;
                     }
@@ -692,7 +695,7 @@ export function* tokenize(iterator: string): Generator<TokenizeResult> {
 
                 if (peek(9) == 'important') {
 
-                    yield pushToken('', 'Important');
+                    yield pushToken('', EnumToken.ImportantTokenType);
                     next(9);
                     buffer = '';
                     break;

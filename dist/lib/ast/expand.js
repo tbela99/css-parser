@@ -2,37 +2,38 @@ import { splitRule, combinators } from './minify.js';
 import { parseString } from '../parser/parse.js';
 import { renderToken } from '../renderer/render.js';
 import '../renderer/utils/color.js';
+import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 
 function expand(ast) {
     //
-    if (!['Rule', 'StyleSheet', 'AtRule'].includes(ast.typ)) {
+    if (![4 /* NodeType.RuleNodeType */, 2 /* NodeType.StyleSheetNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(ast.typ)) {
         return ast;
     }
-    if ('Rule' == ast.typ) {
+    if (4 /* NodeType.RuleNodeType */ == ast.typ) {
         return {
-            typ: 'StyleSheet',
+            typ: 2 /* NodeType.StyleSheetNodeType */,
             chi: expandRule(ast)
         };
     }
     if (!('chi' in ast)) {
-        return { ...ast };
+        return ast;
     }
     const result = { ...ast, chi: [] };
     // @ts-ignore
     for (let i = 0; i < ast.chi.length; i++) {
         // @ts-ignore
         const node = ast.chi[i];
-        if (node.typ == 'Rule') {
+        if (node.typ == 4 /* NodeType.RuleNodeType */) {
             // @ts-ignore
             result.chi.push(...expandRule(node));
             // i += expanded.length - 1;
         }
-        else if (node.typ == 'AtRule' && 'chi' in node) {
+        else if (node.typ == 3 /* NodeType.AtRuleNodeType */ && 'chi' in node) {
             let hasRule = false;
             let j = node.chi.length;
             while (j--) {
-                if (node.chi[j].typ == 'Rule' || node.chi[j].typ == 'AtRule') {
+                if (node.chi[j].typ == 4 /* NodeType.RuleNodeType */ || node.chi[j].typ == 3 /* NodeType.AtRuleNodeType */) {
                     hasRule = true;
                     break;
                 }
@@ -50,10 +51,10 @@ function expand(ast) {
 function expandRule(node) {
     const ast = { ...node, chi: node.chi.slice() };
     const result = [];
-    if (ast.typ == 'Rule') {
+    if (ast.typ == 4 /* NodeType.RuleNodeType */) {
         let i = 0;
         for (; i < ast.chi.length; i++) {
-            if (ast.chi[i].typ == 'Rule') {
+            if (ast.chi[i].typ == 4 /* NodeType.RuleNodeType */) {
                 const rule = ast.chi[i];
                 if (!rule.sel.includes('&')) {
                     const selRule = splitRule(rule.sel);
@@ -69,14 +70,13 @@ function expandRule(node) {
                 ast.chi.splice(i--, 1);
                 result.push(...expandRule(rule));
             }
-            else if (ast.chi[i].typ == 'AtRule') {
+            else if (ast.chi[i].typ == 3 /* NodeType.AtRuleNodeType */) {
                 let astAtRule = ast.chi[i];
                 const values = [];
                 if (astAtRule.nam == 'scope') {
                     if (astAtRule.val.includes('&')) {
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
-                    // @ts-ignore
                     astAtRule = expand(astAtRule);
                 }
                 else {
@@ -85,7 +85,7 @@ function expandRule(node) {
                     // @ts-ignore
                     astAtRule.chi.length = 0;
                     for (const r of expandRule(clone)) {
-                        if (r.typ == 'AtRule' && 'chi' in r) {
+                        if (r.typ == 3 /* NodeType.AtRuleNodeType */ && 'chi' in r) {
                             if (astAtRule.val !== '' && r.val !== '') {
                                 if (astAtRule.nam == 'media' && r.nam == 'media') {
                                     r.val = astAtRule.val + ' and ' + r.val;
@@ -97,7 +97,7 @@ function expandRule(node) {
                             // @ts-ignore
                             values.push(r);
                         }
-                        else if (r.typ == 'Rule') {
+                        else if (r.typ == 4 /* NodeType.RuleNodeType */) {
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
                         }
@@ -119,7 +119,7 @@ function expandRule(node) {
 function replaceCompound(input, replace) {
     const tokens = parseString(input);
     for (const t of walkValues(tokens)) {
-        if (t.value.typ == 'Literal') {
+        if (t.value.typ == EnumToken.LiteralTokenType) {
             if (t.value.val == '&') {
                 t.value.val = replace;
             }

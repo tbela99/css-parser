@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.0
+
+- [x] sourcemap generation
+- [x] reduce calc(): 
+- [x] inline css variables
+- [x] configure duplicate declarations removal
+- [x] configure shorthand properties computation
+
 ## v0.0.1
 
 ### Minification
