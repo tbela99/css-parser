@@ -1,5 +1,5 @@
 import { parseString } from '../parser/parse.js';
-import { isIdentStart, isWhiteSpace, isIdent, isFunction } from '../parser/utils/syntax.js';
+import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../parser/utils/syntax.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';
@@ -7,7 +7,7 @@ import { eq } from '../parser/utils/eq.js';
 import { renderToken, doRender } from '../renderer/render.js';
 import * as index from './features/index.js';
 
-const combinators = ['+', '>', '~'];
+const combinators = ['+', '>', '~', '||'];
 const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
 // @ts-ignore
@@ -23,7 +23,12 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     context.nodes.add(ast);
     if (!('features' in options)) {
         // @ts-ignore
-        options = { removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: [], ...options };
+        options = {
+            removeDuplicateDeclarations: true,
+            computeShorthand: true,
+            computeCalcExpression: true,
+            features: [], ...options
+        };
         // @ts-ignore
         for (const feature of features) {
             feature.register(options);

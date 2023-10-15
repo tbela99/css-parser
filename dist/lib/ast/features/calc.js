@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { reduceNumber, renderToken } from '../../renderer/render.js';
 import { walkValues } from '../walk.js';
-import { MinifyFeature } from '../utiles/minifyfeature.js';
+import { MinifyFeature } from '../utils/minifyfeature.js';
 
 class ComputeCalcExpression extends MinifyFeature {
     static get ordering() {

@@ -92,7 +92,7 @@ border-left-color: red;
 `;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer::before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
+        }).then(result => f(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer:before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
     });
 
     it('merge selectors #5', function () {
@@ -112,14 +112,17 @@ border-left-color: red;
     it('merge selectors #6', function () {
         const file = `
 
+.foo-bar~div .special\\{ {
+content: '\\21 now\\21';
+}
 .card {
     --bs-card-inner-border-radius: calc(var(--bs-border-radius) - (var(--bs-border-width)));
 }
 
-`;
+\\`;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width))}`));
+        }).then(result => f(result.code).equals(`.foo-bar~div .special\\{{content:'!now!'}.card{--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width))}`));
     });
 
     it('merge selectors #7', function () {
@@ -463,6 +466,60 @@ overflow-y: hidden;
             preserveLicense: true
         }).code).equals(`a {
  overflow: hidden
+}`));
+    });
+
+    it('selector attributes #21', function () {
+        const file =`
+
+:root || E[foo$="bar" i] {
+
+--preferred-width: 20px;
+}
+.foo-bar ~ div \\\\ {
+content: '\\21 now\\21';
+}
+\\`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`:root||E[foo$=bar i] {
+ --preferred-width: 20px
+}
+.foo-bar~div \\\\ {
+ content: '!now!'
+}`));
+    });
+
+    it('namespace selector attribute #22', function () {
+        const file =`
+
+@namespace foo "http://www.example.com";
+[foo|att="val"] { color: blue }
+ [*|att] { color: yellow }
+[|att] { color: green }
+[att] { color: green }
+\\`;
+        return parse(file, {
+            minify: true,
+            nestingRules: true
+        }).then(result => f(render(result.ast, {
+            minify: false,
+            removeComments: true,
+            preserveLicense: true
+        }).code).equals(`@namespace foo "http://www.example.com";
+[foo|att=val] {
+ color: blue
+}
+[*|att] {
+ color: #ff0
+}
+[att] {
+ color: green
 }`));
     });
 });

@@ -1,6 +1,6 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { MinifyFeature } from '../utiles/minifyfeature.js';
+import { MinifyFeature } from '../utils/minifyfeature.js';
 
 class InlineCssVariables extends MinifyFeature {
     static get ordering() {

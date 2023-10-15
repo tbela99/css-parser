@@ -8,12 +8,12 @@ import {
     TransformResult
 } from "../@types";
 
-export * from '../lib';
-export * from './load';
-export * from '../lib/fs';
-
 import {doParse, doRender} from "../lib";
-import {dirname, load, resolve} from "./index";
+import {resolve, dirname} from "../lib/fs";
+import {load} from "./load";
+
+export {minify, expand, parseString, parseTokens, renderToken, walk, walkValues, NodeType, EnumToken} from '../lib';
+export {dirname, resolve, load};
 
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 

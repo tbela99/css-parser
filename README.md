@@ -13,7 +13,7 @@ $ npm install @tbela99/css-parser
 ## Features
 
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - automatically generate nested css rules
 - generate sourcemap
 - compute css shorthands. see the list below
@@ -100,7 +100,7 @@ const {ast, errors, stats} = await parse(css);
 ### Usage
 
 ```javascript
-doRender(ast, RenderOptions = {});
+render(ast, RenderOptions = {});
 ```
 
 ### Example

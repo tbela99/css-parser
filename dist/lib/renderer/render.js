@@ -85,12 +85,12 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
     if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
-        if (src !== '') {
-            if (!(src in cache)) {
-                // @ts-ignore
-                cache[src] = options.resolve(src, options.cwd ?? '').relative;
-            }
+        // if (src !== '') {
+        if (!(src in cache)) {
+            // @ts-ignore
+            cache[src] = options.resolve(src, options.cwd ?? '').relative;
         }
+        // }
         if (!(output in cache)) {
             // @ts-ignore
             cache[output] = options.resolve(output, options.cwd).relative;
@@ -267,12 +267,30 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
+        case EnumToken.MatchExpressionTokenType:
+            return renderToken(token.l, options, cache, reducer, errors) +
+                renderToken({ typ: token.op }, options, cache, reducer, errors) +
+                renderToken(token.r, options, cache, reducer, errors) +
+                (token.attr ? ' ' + token.attr : '');
+        case EnumToken.NameSpaceAttributeTokenType:
+            return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors) + '|') +
+                renderToken(token.r, options, cache, reducer, errors);
+        case EnumToken.BlockStartTokenType:
+            return '{';
+        case EnumToken.BlockEndTokenType:
+            return '}';
         case EnumToken.StartParensTokenType:
             return '(';
-        case EnumToken.IncludesTokenType:
+        case EnumToken.IncludeMatchTokenType:
             return '~=';
         case EnumToken.DashMatchTokenType:
             return '|=';
+        case EnumToken.StartMatchTokenType:
+            return '^=';
+        case EnumToken.EndMatchTokenType:
+            return '$=';
+        case EnumToken.ContainMatchTokenType:
+            return '*=';
         case EnumToken.LtTokenType:
             return '<';
         case EnumToken.LteTokenType:
@@ -281,6 +299,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '>';
         case EnumToken.GteTokenType:
             return '>=';
+        case EnumToken.ColumnCombinatorTokenType:
+            return '||';
         case EnumToken.EndParensTokenType:
             return ')';
         case EnumToken.AttrStartTokenType:
@@ -384,6 +404,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
             }
+        case EnumToken.PseudoClassTokenType:
+            // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+            if (token.typ == EnumToken.PseudoClassTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+                return token.val.slice(1);
+            }
         case EnumToken.UrlTokenTokenType:
             if (token.typ == EnumToken.UrlTokenTokenType) {
                 if (options.output != null) {
@@ -409,11 +434,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             }
         case EnumToken.AtRuleTokenType:
         case EnumToken.HashTokenType:
-        case EnumToken.PseudoClassTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.StringTokenType:
         case EnumToken.IdenTokenType:
         case EnumToken.DelimTokenType:
+            // ::before, ::after, ::first-line, and ::first-letter -> :before, :after, :first-line, and :first-letter
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });

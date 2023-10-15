@@ -8,7 +8,7 @@ import { COLORS_NAMES } from '../renderer/utils/color.js';
 import { tokenize } from './tokenize.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
-const trimWhiteSpace = [EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType];
+const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
 const funcLike = [EnumToken.ParensTokenType, EnumToken.StartParensTokenType, EnumToken.FunctionTokenType, EnumToken.UrlFunctionTokenType, EnumToken.PseudoClassFuncTokenType];
 const BadTokensTypes = [EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
@@ -440,7 +440,9 @@ function getTokenType(val, hint) {
         return ([
             EnumToken.WhitespaceTokenType, EnumToken.SemiColonTokenType, EnumToken.ColonTokenType, EnumToken.BlockStartTokenType,
             EnumToken.BlockStartTokenType, EnumToken.AttrStartTokenType, EnumToken.AttrEndTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType,
-            EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.EOFTokenType
+            EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.CommaTokenType,
+            EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
+            EnumToken.EOFTokenType
         ].includes(hint) ? { typ: hint } : { typ: hint, val });
     }
     if (val == ' ') {
@@ -568,7 +570,7 @@ function parseTokens(tokens, options = {}) {
         const t = tokens[i];
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
             i + 1 == tokens.length ||
-            [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType].includes(tokens[i + 1].typ)) ||
+            [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType].includes(tokens[i + 1].typ)) ||
             (i > 0 &&
                 // tokens[i + 1]?.typ != Literal ||
                 // funcLike.includes(tokens[i - 1].typ) &&
@@ -591,9 +593,9 @@ function parseTokens(tokens, options = {}) {
                 if (typ == EnumToken.FunctionTokenType || typ == EnumToken.IdenTokenType) {
                     tokens.splice(i, 1);
                     i--;
-                    continue;
                 }
             }
+            continue;
         }
         if (t.typ == EnumToken.AttrStartTokenType) {
             let k = i;
@@ -614,21 +616,114 @@ function parseTokens(tokens, options = {}) {
             if (t.chi.at(-1).typ == EnumToken.AttrEndTokenType) {
                 // @ts-ignore
                 t.chi.pop();
+            }
+            // @ts-ignore
+            if (t.chi.length > 1) {
+                /*(<AttrToken>t).chi =*/
                 // @ts-ignore
-                if (t.chi.length > 1) {
-                    /*(<AttrToken>t).chi =*/
-                    // @ts-ignore
-                    parseTokens(t.chi, t.typ);
+                parseTokens(t.chi, t.typ);
+            }
+            // @ts-ignore
+            // t.chi.forEach(val => {
+            //     if (val.typ == EnumToken.StringTokenType) {
+            //         const slice = val.val.slice(1, -1);
+            //         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+            //             Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
+            //         }
+            //     }
+            // });
+            let m = t.chi.length;
+            let val;
+            for (m = 0; m < t.chi.length; m++) {
+                val = t.chi[m];
+                if (val.typ == EnumToken.StringTokenType) {
+                    const slice = val.val.slice(1, -1);
+                    if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+                        Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
+                    }
                 }
-                // @ts-ignore
-                t.chi.forEach(val => {
+                else if (val.typ == EnumToken.LiteralTokenType && val.val == '|') {
+                    let upper = m;
+                    let lower = m;
+                    while (++upper < t.chi.length) {
+                        if (t.chi[upper].typ == EnumToken.CommentTokenType) {
+                            continue;
+                        }
+                        break;
+                    }
+                    while (lower-- > 0) {
+                        if (t.chi[lower].typ == EnumToken.CommentTokenType) {
+                            continue;
+                        }
+                        break;
+                    }
+                    // @ts-ignore
+                    t.chi[m] = {
+                        typ: EnumToken.NameSpaceAttributeTokenType,
+                        l: t.chi[lower],
+                        r: t.chi[upper]
+                    };
+                    t.chi.splice(upper, 1);
+                    if (lower >= 0) {
+                        t.chi.splice(lower, 1);
+                        m--;
+                    }
+                }
+                else if ([
+                    EnumToken.DashMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType
+                ].includes(t.chi[m].typ)) {
+                    let upper = m;
+                    let lower = m;
+                    while (++upper < t.chi.length) {
+                        if (t.chi[upper].typ == EnumToken.CommentTokenType) {
+                            continue;
+                        }
+                        break;
+                    }
+                    while (lower-- > 0) {
+                        if (t.chi[lower].typ == EnumToken.CommentTokenType) {
+                            continue;
+                        }
+                        break;
+                    }
+                    val = t.chi[lower];
                     if (val.typ == EnumToken.StringTokenType) {
                         const slice = val.val.slice(1, -1);
                         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
                             Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
                         }
                     }
-                });
+                    val = t.chi[upper];
+                    if (val.typ == EnumToken.StringTokenType) {
+                        const slice = val.val.slice(1, -1);
+                        if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+                            Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
+                        }
+                    }
+                    t.chi[m] = {
+                        typ: EnumToken.MatchExpressionTokenType,
+                        op: t.chi[m].typ,
+                        l: t.chi[lower],
+                        r: t.chi[upper]
+                    };
+                    t.chi.splice(upper, 1);
+                    t.chi.splice(lower, 1);
+                    upper = m;
+                    m--;
+                    while (upper < t.chi.length && t.chi[upper].typ == EnumToken.WhitespaceTokenType) {
+                        upper++;
+                    }
+                    if (upper < t.chi.length &&
+                        t.chi[upper].typ == EnumToken.Iden &&
+                        ['i', 's'].includes(t.chi[upper].val.toLowerCase())) {
+                        t.chi[m].attr = t.chi[upper].val;
+                        t.chi.splice(upper, 1);
+                    }
+                }
+            }
+            m = t.chi.length;
+            while (t.chi.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                t.chi.pop();
             }
             continue;
         }

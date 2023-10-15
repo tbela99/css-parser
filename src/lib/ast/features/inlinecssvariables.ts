@@ -9,7 +9,7 @@ import {
 } from "../../../@types";
 import {EnumToken, NodeType} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utiles/minifyfeature";
+import {MinifyFeature} from "../utils/minifyfeature";
 
 export class InlineCssVariables extends MinifyFeature {
 

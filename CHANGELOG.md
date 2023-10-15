@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.1
+
+### Minification
+
+- [x] parsing column combinator
+- [x] css selector level 4 attribute modifiers
+- [x] selector-4 parsing https://www.w3.org/TR/selectors-4/
+
 ## v0.1.0
 
 - [x] sourcemap generation

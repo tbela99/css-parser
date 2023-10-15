@@ -38,7 +38,7 @@ var EnumToken;
     EnumToken[EnumToken["EndParensTokenType"] = 26] = "EndParensTokenType";
     EnumToken[EnumToken["ParensTokenType"] = 27] = "ParensTokenType";
     EnumToken[EnumToken["WhitespaceTokenType"] = 28] = "WhitespaceTokenType";
-    EnumToken[EnumToken["IncludesTokenType"] = 29] = "IncludesTokenType";
+    EnumToken[EnumToken["IncludeMatchTokenType"] = 29] = "IncludeMatchTokenType";
     EnumToken[EnumToken["DashMatchTokenType"] = 30] = "DashMatchTokenType";
     EnumToken[EnumToken["LtTokenType"] = 31] = "LtTokenType";
     EnumToken[EnumToken["LteTokenType"] = 32] = "LteTokenType";
@@ -65,6 +65,13 @@ var EnumToken;
     EnumToken[EnumToken["Mul"] = 51] = "Mul";
     EnumToken[EnumToken["Div"] = 52] = "Div";
     EnumToken[EnumToken["Sub"] = 53] = "Sub";
+    /* new tokens */
+    EnumToken[EnumToken["ColumnCombinatorTokenType"] = 54] = "ColumnCombinatorTokenType";
+    EnumToken[EnumToken["ContainMatchTokenType"] = 55] = "ContainMatchTokenType";
+    EnumToken[EnumToken["StartMatchTokenType"] = 56] = "StartMatchTokenType";
+    EnumToken[EnumToken["EndMatchTokenType"] = 57] = "EndMatchTokenType";
+    EnumToken[EnumToken["MatchExpressionTokenType"] = 58] = "MatchExpressionTokenType";
+    EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 59] = "NameSpaceAttributeTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 17] = "Time";
     EnumToken[EnumToken["Iden"] = 3] = "Iden";

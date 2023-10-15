@@ -8,7 +8,7 @@ import {
 
 function createProperties(data: ShorthandPropertyType) {
 
-    const map = data.map;
+    const map = <string> data.map;
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
@@ -27,12 +27,9 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
 
     return fields.reduce((acc, curr: ShorthandType) => {
 
-        // if (Object.keys(curr.properties).length > 0) {
-
         Object.assign(acc[data.shorthand].properties, {
             [curr.shorthand]: {...(<ShorthandType>curr).properties}
         });
-        // }
 
         return Object.assign(acc, {
 

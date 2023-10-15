@@ -14,7 +14,7 @@ import {
 import {EnumToken, NodeType} from "../types";
 import {reduceNumber, renderToken} from "../../renderer";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utiles/minifyfeature";
+import {MinifyFeature} from "../utils/minifyfeature";
 
 export class ComputeCalcExpression extends MinifyFeature {
 

@@ -198,16 +198,34 @@ export interface BadCDOCommentToken extends BaseToken {
     val: string;
 }
 
-export interface IncludesToken extends BaseToken {
+export interface IncludeMatchToken extends BaseToken {
 
-    typ: EnumToken.IncludesTokenType;
-    val: '~=';
+    typ: EnumToken.IncludeMatchTokenType;
+    // val: '~=';
 }
 
 export interface DashMatchToken extends BaseToken {
 
     typ: EnumToken.DashMatchTokenType;
-    val: '|=';
+    // val: '|=';
+}
+
+export interface StartMatchToken extends BaseToken {
+
+    typ: EnumToken.StartMatchTokenType;
+    // val: '^=';
+}
+
+export interface EndMatchToken extends BaseToken {
+
+    typ: EnumToken.EndMatchTokenType;
+    // val: '|=';
+}
+
+export interface ContainMatchToken extends BaseToken {
+
+    typ: EnumToken.ContainMatchTokenType;
+    // val: '|=';
 }
 
 export interface LessThanToken extends BaseToken {
@@ -228,6 +246,11 @@ export interface GreaterThanToken extends BaseToken {
 export interface GreaterThanOrEqualToken extends BaseToken {
 
     typ: EnumToken.GteTokenType;
+}
+
+export interface ColumnCombinatorToken extends BaseToken {
+
+    typ: EnumToken.ColumnCombinatorTokenType;
 }
 
 export interface PseudoClassToken extends BaseToken {
@@ -308,16 +331,33 @@ export interface MulToken extends BaseToken {
 export interface UnaryExpression extends BaseToken {
 
     typ: EnumToken.UnaryExpressionTokenType
-    sign: EnumToken.Add | EnumToken.Sub ;
+    sign: EnumToken.Add | EnumToken.Sub;
     val: UnaryExpressionNode;
 }
 
 export interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
-    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
-    l: BinaryExpressionNode;
-    r: BinaryExpressionNode;
+    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul | EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType |
+        EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType;
+    l: BinaryExpressionNode | Token;
+    r: BinaryExpressionNode | Token;
+}
+
+export interface MatchExpressionToken extends BaseToken {
+
+    typ: EnumToken.MatchExpressionTokenType
+    op: EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType | EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType;
+    l: Token;
+    r: Token;
+    attr?: 'i' | 's';
+}
+
+export interface NameSpaceAttributeToken extends BaseToken {
+
+    typ: EnumToken.NameSpaceAttributeTokenType
+   l?: Token;
+    r: Token;
 }
 
 export interface ListToken extends BaseToken {
@@ -326,19 +366,84 @@ export interface ListToken extends BaseToken {
     chi: Token[];
 }
 
-export declare type UnaryExpressionNode = BinaryExpressionNode | NumberToken | DimensionToken | TimeToken | LengthToken | AngleToken | FrequencyToken;
+export declare type UnaryExpressionNode =
+    BinaryExpressionNode
+    | NumberToken
+    | DimensionToken
+    | TimeToken
+    | LengthToken
+    | AngleToken
+    | FrequencyToken;
 
 export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
 export declare type TokenType = EnumToken;
-export declare type Token = LiteralToken | IdentToken | CommaToken | ColonToken | SemiColonToken |
-    NumberToken | AtRuleToken | PercentageToken | FunctionURLToken | FunctionToken | DimensionToken | LengthToken |
-    AngleToken | StringToken | TimeToken | FrequencyToken | ResolutionToken |
-    UnclosedStringToken | HashToken | BadStringToken | BlockStartToken | BlockEndToken |
-    AttrStartToken | AttrEndToken | ParensStartToken | ParensEndToken | ParensToken | CDOCommentToken |
-    BadCDOCommentToken | CommentToken | BadCommentToken | WhitespaceToken | IncludesToken |
-    DashMatchToken | LessThanToken | LessThanOrEqualToken | GreaterThanToken | GreaterThanOrEqualToken |
-    ListToken | PseudoClassToken | PseudoClassFunctionToken | DelimToken | BinaryExpressionToken | UnaryExpression |
-    AddToken | SubToken | DivToken | MulToken |
-    BadUrlToken | UrlToken | ImportantToken | ColorToken | AttrToken | EOFToken;
+export declare type Token =
+    LiteralToken
+    | IdentToken
+    | CommaToken
+    | ColonToken
+    | SemiColonToken
+    |
+    NumberToken
+    | AtRuleToken
+    | PercentageToken
+    | FunctionURLToken
+    | FunctionToken
+    | DimensionToken
+    | LengthToken
+    |
+    AngleToken
+    | StringToken
+    | TimeToken
+    | FrequencyToken
+    | ResolutionToken
+    |
+    UnclosedStringToken
+    | HashToken
+    | BadStringToken
+    | BlockStartToken
+    | BlockEndToken
+    |
+    AttrStartToken
+    | AttrEndToken
+    | ParensStartToken
+    | ParensEndToken
+    | ParensToken
+    | CDOCommentToken
+    |
+    BadCDOCommentToken
+    | CommentToken
+    | BadCommentToken
+    | WhitespaceToken
+    | IncludeMatchToken
+    | StartMatchToken
+    | EndMatchToken
+    | ContainMatchToken | MatchExpressionToken | NameSpaceAttributeToken
+    |
+    DashMatchToken
+    | LessThanToken
+    | LessThanOrEqualToken
+    | GreaterThanToken
+    | GreaterThanOrEqualToken
+    | ColumnCombinatorToken
+    |
+    ListToken
+    | PseudoClassToken
+    | PseudoClassFunctionToken
+    | DelimToken
+    | BinaryExpressionToken
+    | UnaryExpression
+    |
+    AddToken
+    | SubToken
+    | DivToken
+    | MulToken
+    |
+    BadUrlToken
+    | UrlToken
+    | ImportantToken
+    | ColorToken
+    | AttrToken
+    | EOFToken;

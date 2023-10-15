@@ -4,7 +4,7 @@ import '../types.js';
 import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import { MinifyFeature } from '../utiles/minifyfeature.js';
+import { MinifyFeature } from '../utils/minifyfeature.js';
 
 class ComputeShorthand extends MinifyFeature {
     static get ordering() {

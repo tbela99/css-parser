@@ -1,7 +1,7 @@
 import {PropertyList} from "../../parser/declaration";
 import {NodeType} from "../types";
 import {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types";
-import {MinifyFeature} from "../utiles/minifyfeature";
+import {MinifyFeature} from "../utils/minifyfeature";
 
 export class ComputeShorthand extends MinifyFeature {
 

@@ -10,7 +10,7 @@ import {
     AttrToken,
     BinaryExpressionToken,
     ColorToken,
-    ErrorDescription, ListToken,
+    ErrorDescription,
     Location,
     Position,
     RenderOptions,
@@ -127,8 +127,6 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     if (sourcemap != null) {
 
         result.map = sourcemap.toJSON();
-        // @ts-ignore
-        // result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
     }
 
     return result;
@@ -142,14 +140,14 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
         let src: string = (<Location>node.loc)?.src ?? '';
         let output: string = <string>options.output ?? '';
 
-        if (src !== '') {
+        // if (src !== '') {
 
             if (!(src in cache)) {
 
                 // @ts-ignore
                 cache[src] = options.resolve(src, options.cwd ?? '').relative;
             }
-        }
+        // }
 
         if (!(output in cache)) {
 
@@ -419,15 +417,39 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
 
-        case EnumToken.StartParensTokenType:
+        case EnumToken.MatchExpressionTokenType:
+            return renderToken(token.l, options, cache, reducer, errors) +
+                renderToken({typ: token.op}, options, cache, reducer, errors) +
+                renderToken(token.r, options, cache, reducer, errors) +
+                (token.attr ? ' ' + token.attr :  '');
 
+        case EnumToken.NameSpaceAttributeTokenType:
+            return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors) + '|') +
+                renderToken(token.r, options, cache, reducer, errors);
+
+        case EnumToken.BlockStartTokenType:
+            return '{';
+
+        case EnumToken.BlockEndTokenType:
+            return '}';
+
+        case EnumToken.StartParensTokenType:
             return '(';
 
-        case EnumToken.IncludesTokenType:
+        case EnumToken.IncludeMatchTokenType:
             return '~=';
 
         case EnumToken.DashMatchTokenType:
             return '|=';
+
+        case EnumToken.StartMatchTokenType:
+            return '^=';
+
+        case EnumToken.EndMatchTokenType:
+            return '$=';
+
+        case EnumToken.ContainMatchTokenType:
+            return '*=';
 
         case EnumToken.LtTokenType:
             return '<';
@@ -440,6 +462,9 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.GteTokenType:
             return '>=';
+
+        case EnumToken.ColumnCombinatorTokenType:
+            return '||';
 
         case EnumToken.EndParensTokenType:
             return ')';
@@ -606,6 +631,14 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 return '';
             }
 
+        case EnumToken.PseudoClassTokenType:
+
+            // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+            if (token.typ == EnumToken.PseudoClassTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+
+                return token.val.slice(1);
+            }
+
         case EnumToken.UrlTokenTokenType:
 
             if (token.typ == EnumToken.UrlTokenTokenType) {
@@ -641,13 +674,12 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             }
 
         case EnumToken.AtRuleTokenType:
-
         case EnumToken.HashTokenType:
-        case EnumToken.PseudoClassTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.StringTokenType:
         case EnumToken.IdenTokenType:
         case EnumToken.DelimTokenType:
+
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 

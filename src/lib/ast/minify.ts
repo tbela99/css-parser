@@ -16,16 +16,19 @@ import {
     MatchedSelector, MinifyFeature,
     MinifyOptions,
     OptimizedSelector,
-    ParserOptions
+    ParserOptions, RawSelectorTokens
 } from "../../@types";
 import {EnumToken, NodeType} from "./types";
 
-export const combinators: string[] = ['+', '>', '~'];
+export const combinators: string[] = ['+', '>', '~', '||'];
 const notEndingWith: string[] = ['(', '['].concat(combinators);
 const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 // @ts-ignore
 const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering)
-export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {[key: string]: any} = {}): AstNode {
+
+export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
+    [key: string]: any
+} = {}): AstNode {
 
     if (!('nodes' in context)) {
 
@@ -43,7 +46,12 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     if (!('features' in <MinifyOptions>options)) {
 
         // @ts-ignore
-        options = <MinifyOptions>{removeDuplicateDeclarations: true, computeShorthand: true, computeCalcExpression: true, features: <Function[]>[], ...options};
+        options = <MinifyOptions>{
+            removeDuplicateDeclarations: true,
+            computeShorthand: true,
+            computeCalcExpression: true,
+            features: <Function[]>[], ...options
+        };
 
         // @ts-ignore
         for (const feature of features) {
@@ -344,7 +352,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                 if (!hasDeclaration(node)) {
                                     // @ts-ignore
                                     // minifyRule(node, <MinifyOptions>options, ast, context);
-                                // } else {
+                                    // } else {
                                     minify(node, options, recursive, errors, nestingContent, context);
                                 }
 
@@ -392,7 +400,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                         if (!hasDeclaration(previous)) {
                             // @ts-ignore
                             // minifyRule(previous, <MinifyOptions>options, ast, context);
-                        // } else {
+                            // } else {
 
                             minify(previous, options, recursive, errors, nestingContent, context);
                         }
@@ -406,7 +414,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                             // @ts-ignore
                             // minifyRule(previous, <MinifyOptions>options, ast, context);
-                        // } else {
+                            // } else {
 
                             minify(previous, options, recursive, errors, nestingContent, context);
                         }
@@ -463,7 +471,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             parent = <AstRule | AstAtRule | AstRuleStyleSheet>parents.shift();
 
             // @ts-ignore
-            for (let k = 0; k <  parent.chi.length; k++) {
+            for (let k = 0; k < parent.chi.length; k++) {
 
                 // @ts-ignore
                 const node = parent.chi[k];
@@ -516,8 +524,8 @@ export function reduceSelector(selector: string[][]) {
     }
 
     const optimized: string[] = [];
-    const k = selector.reduce((acc, curr) => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
-    let i = 0;
+    const k: number = selector.reduce((acc: number, curr: string[]): number => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
+    let i: number = 0;
     let j;
     let match;
     for (; i < k; i++) {
@@ -739,9 +747,9 @@ export function splitRule(buffer: string): string[][] {
 function matchSelectors(selector1: string[][], selector2: string[][], parentType: NodeType, errors: ErrorDescription[]): null | MatchedSelector {
 
     let match: string[][] = [[]];
-    const j = Math.min(
-        selector1.reduce((acc, curr) => Math.min(acc, curr.length), selector1.length > 0 ? selector1[0].length : 0),
-        selector2.reduce((acc, curr) => Math.min(acc, curr.length), selector2.length > 0 ? selector2[0].length : 0)
+    const j: number = Math.min(
+        selector1.reduce((acc: number, curr: string[]) => Math.min(acc, curr.length), selector1.length > 0 ? selector1[0].length : 0),
+        selector2.reduce((acc: number, curr: string[]) => Math.min(acc, curr.length), selector2.length > 0 ? selector2[0].length : 0)
     );
 
     let i: number = 0;
@@ -1082,10 +1090,10 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
         return null;
     }
     // @ts-ignore
-    const raw1 = node1.raw;
+    const raw1: RawSelectorTokens = <RawSelectorTokens>node1.raw;
 
     // @ts-ignore
-    const raw2 = node2.raw;
+    const raw2: RawSelectorTokens = <RawSelectorTokens>node2.raw;
     // @ts-ignore
     node1 = {...node1, chi: node1.chi.slice()};
     node2 = {...node2, chi: node2.chi.slice()};
@@ -1141,7 +1149,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
         chi: intersect.reverse()
     });
 
-    if (result == null || [n1, n2].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc, curr) => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0)) {
+    if (result == null || [n1, n2].reduce((acc: number, curr: AstRule): number => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc: number, curr: AstRule): number => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0)) {
         // @ts-ignore
         return null;
     }
