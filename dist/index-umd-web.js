@@ -752,8 +752,6 @@
         }
         if (sourcemap != null) {
             result.map = sourcemap.toJSON();
-            // @ts-ignore
-            // result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
         }
         return result;
     }
@@ -1114,7 +1112,6 @@
             case exports.EnumToken.StringTokenType:
             case exports.EnumToken.IdenTokenType:
             case exports.EnumToken.DelimTokenType:
-                // ::before, ::after, ::first-line, and ::first-letter -> :before, :after, :first-line, and :first-letter
                 return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
         }
         errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
