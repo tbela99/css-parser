@@ -72,6 +72,7 @@ var EnumToken;
     EnumToken[EnumToken["EndMatchTokenType"] = 57] = "EndMatchTokenType";
     EnumToken[EnumToken["MatchExpressionTokenType"] = 58] = "MatchExpressionTokenType";
     EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 59] = "NameSpaceAttributeTokenType";
+    EnumToken[EnumToken["FractionTokenType"] = 60] = "FractionTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 17] = "Time";
     EnumToken[EnumToken["Iden"] = 3] = "Iden";

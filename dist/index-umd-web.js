@@ -78,6 +78,7 @@
         EnumToken[EnumToken["EndMatchTokenType"] = 57] = "EndMatchTokenType";
         EnumToken[EnumToken["MatchExpressionTokenType"] = 58] = "MatchExpressionTokenType";
         EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 59] = "NameSpaceAttributeTokenType";
+        EnumToken[EnumToken["FractionTokenType"] = 60] = "FractionTokenType";
         /* aliases */
         EnumToken[EnumToken["Time"] = 17] = "Time";
         EnumToken[EnumToken["Iden"] = 3] = "Iden";
@@ -756,7 +757,7 @@
         return result;
     }
     function updateSourceMap(node, options, cache, sourcemap, position, str) {
-        if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
+        if ([exports.NodeType.RuleNodeType, exports.NodeType.AtRuleNodeType].includes(node.typ)) {
             let src = node.loc?.src ?? '';
             let output = options.output ?? '';
             // if (src !== '') {
@@ -789,16 +790,16 @@
         const indent = indents[level];
         const indentSub = indents[level + 1];
         switch (data.typ) {
-            case 5 /* NodeType.DeclarationNodeType */:
+            case exports.NodeType.DeclarationNodeType:
                 return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
-            case 0 /* NodeType.CommentNodeType */:
-            case 1 /* NodeType.CDOCOMMNodeType */:
+            case exports.NodeType.CommentNodeType:
+            case exports.NodeType.CDOCOMMNodeType:
                 if (data.val.startsWith('# sourceMappingURL=')) {
                     // ignore sourcemap
                     return '';
                 }
                 return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
-            case 2 /* NodeType.StyleSheetNodeType */:
+            case exports.NodeType.StyleSheetNodeType:
                 return data.chi.reduce((css, node) => {
                     const str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level, indents);
                     if (str === '') {
@@ -816,18 +817,18 @@
                     }
                     return `${css}${options.newLine}${str}`;
                 }, '');
-            case 3 /* NodeType.AtRuleNodeType */:
-            case 4 /* NodeType.RuleNodeType */:
-                if (data.typ == 3 /* NodeType.AtRuleNodeType */ && !('chi' in data)) {
+            case exports.NodeType.AtRuleNodeType:
+            case exports.NodeType.RuleNodeType:
+                if (data.typ == exports.NodeType.AtRuleNodeType && !('chi' in data)) {
                     return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 // @ts-ignore
                 let children = data.chi.reduce((css, node) => {
                     let str;
-                    if (node.typ == 0 /* NodeType.CommentNodeType */) {
+                    if (node.typ == exports.NodeType.CommentNodeType) {
                         str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                     }
-                    else if (node.typ == 5 /* NodeType.DeclarationNodeType */) {
+                    else if (node.typ == exports.NodeType.DeclarationNodeType) {
                         if (node.val.length == 0) {
                             // @ts-ignore
                             errors.push({
@@ -839,7 +840,7 @@
                         }
                         str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                     }
-                    else if (node.typ == 3 /* NodeType.AtRuleNodeType */ && !('chi' in node)) {
+                    else if (node.typ == exports.NodeType.AtRuleNodeType && !('chi' in node)) {
                         str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                     }
                     else {
@@ -856,7 +857,7 @@
                 if (children.endsWith(';')) {
                     children = children.slice(0, -1);
                 }
-                if (data.typ == 3 /* NodeType.AtRuleNodeType */) {
+                if (data.typ == exports.NodeType.AtRuleNodeType) {
                     return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
                 }
                 return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
@@ -879,7 +880,35 @@
             case exports.EnumToken.ListToken:
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
             case exports.EnumToken.BinaryExpressionTokenType:
+                if ([exports.EnumToken.Mul, exports.EnumToken.Div].includes(token.op)) {
+                    let result = '';
+                    if (token.l.typ == exports.EnumToken.BinaryExpressionTokenType &&
+                        [exports.EnumToken.Add, exports.EnumToken.Sub].includes(token.l.op)) {
+                        result = '(' + renderToken(token.l, options, cache) + ')';
+                    }
+                    else {
+                        result = renderToken(token.l, options, cache);
+                    }
+                    result += token.op == exports.EnumToken.Mul ? '*' : '/';
+                    if (token.r.typ == exports.EnumToken.BinaryExpressionTokenType &&
+                        [exports.EnumToken.Add, exports.EnumToken.Sub].includes(token.r.op)) {
+                        result += '(' + renderToken(token.r, options, cache) + ')';
+                    }
+                    else {
+                        result += renderToken(token.r, options, cache);
+                    }
+                    return result;
+                }
                 return renderToken(token.l, options, cache) + (token.op == exports.EnumToken.Add ? ' + ' : (token.op == exports.EnumToken.Sub ? ' - ' : (token.op == exports.EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
+            case exports.EnumToken.FractionTokenType:
+                const fraction = renderToken(token.l) + '/' + renderToken(token.r);
+                if (+token.r.val != 0) {
+                    const value = reduceNumber(+token.l.val / +token.r.val);
+                    if (value.length <= fraction.length) {
+                        return value;
+                    }
+                }
+                return fraction;
             case exports.EnumToken.Add:
                 return ' + ';
             case exports.EnumToken.Sub:
@@ -935,7 +964,7 @@
             case exports.EnumToken.PseudoClassFuncTokenType:
                 if (token.typ == exports.EnumToken.FunctionTokenType &&
                     token.val == 'calc' &&
-                    token.chi.length == 1) {
+                    token.chi.length == 1 && token.chi[0].typ != exports.EnumToken.BinaryExpressionTokenType) {
                     // calc(200px) => 200px
                     return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
                 }
@@ -999,7 +1028,7 @@
             case exports.EnumToken.DimensionTokenType:
             case exports.EnumToken.FrequencyTokenType:
             case exports.EnumToken.ResolutionTokenType:
-                if (token.val.typ == exports.EnumToken.BinaryExpressionTokenType) {
+                if (token.val.typ == exports.EnumToken.FractionTokenType) {
                     const result = renderToken(token.val, options, cache);
                     if (!('unit' in token)) {
                         return result;
@@ -1070,10 +1099,10 @@
                 }
                 return val + unit;
             case exports.EnumToken.PercentageTokenType:
-                const perc = reduceNumber(token.val);
-                return options.minify && perc == '0' ? '0' : perc + '%';
+                const perc = token.val.typ == exports.EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+                return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
             case exports.EnumToken.NumberTokenType:
-                return reduceNumber(token.val);
+                return token.val.typ == exports.EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
             case exports.EnumToken.CommentTokenType:
                 if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                     return '';
@@ -2230,6 +2259,7 @@
 
     const getConfig = () => config$1;
 
+    // https://www.w3.org/TR/css-values-4/#math-function
     const funcList = ['clamp', 'calc'];
     function matchType(val, properties) {
         if (val.typ == exports.EnumToken.IdenTokenType && properties.keywords.includes(val.val) ||
@@ -2821,7 +2851,7 @@
         const src = options.src;
         const stack = [];
         let ast = {
-            typ: 2 /* NodeType.StyleSheetNodeType */,
+            typ: exports.NodeType.StyleSheetNodeType,
             chi: []
         };
         let tokens = [];
@@ -2845,7 +2875,7 @@
             for (i = 0; i < tokens.length; i++) {
                 if (tokens[i].typ == exports.EnumToken.CommentTokenType || tokens[i].typ == exports.EnumToken.CDOCOMMTokenType) {
                     const position = map.get(tokens[i]);
-                    if (tokens[i].typ == exports.EnumToken.CDOCOMMTokenType && context.typ != 2 /* NodeType.StyleSheetNodeType */) {
+                    if (tokens[i].typ == exports.EnumToken.CDOCOMMTokenType && context.typ != exports.NodeType.StyleSheetNodeType) {
                         errors.push({
                             action: 'drop',
                             message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
@@ -2907,10 +2937,10 @@
                         let i = context.chi.length;
                         while (i--) {
                             const type = context.chi[i].typ;
-                            if (type == 0 /* NodeType.CommentNodeType */) {
+                            if (type == exports.NodeType.CommentNodeType) {
                                 continue;
                             }
-                            if (type != 3 /* NodeType.AtRuleNodeType */) {
+                            if (type != exports.NodeType.AtRuleNodeType) {
                                 errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
                                 return null;
                             }
@@ -2980,7 +3010,7 @@
                     return acc;
                 }, []);
                 const node = {
-                    typ: 3 /* NodeType.AtRuleNodeType */,
+                    typ: exports.NodeType.AtRuleNodeType,
                     nam: renderToken(atRule, { removeComments: true }),
                     val: raw.join('')
                 };
@@ -3026,7 +3056,7 @@
                         return acc;
                     }, uniq);
                     const node = {
-                        typ: 4 /* NodeType.RuleNodeType */,
+                        typ: exports.NodeType.RuleNodeType,
                         // @ts-ignore
                         sel: [...uniq.keys()].join(','),
                         chi: []
@@ -3090,7 +3120,7 @@
                         return null;
                     }
                     const node = {
-                        typ: 5 /* NodeType.DeclarationNodeType */,
+                        typ: exports.NodeType.DeclarationNodeType,
                         // @ts-ignore
                         nam: renderToken(name.shift(), { removeComments: true }),
                         // @ts-ignore
@@ -3733,12 +3763,12 @@
 
     function expand(ast) {
         //
-        if (![4 /* NodeType.RuleNodeType */, 2 /* NodeType.StyleSheetNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(ast.typ)) {
+        if (![exports.NodeType.RuleNodeType, exports.NodeType.StyleSheetNodeType, exports.NodeType.AtRuleNodeType].includes(ast.typ)) {
             return ast;
         }
-        if (4 /* NodeType.RuleNodeType */ == ast.typ) {
+        if (exports.NodeType.RuleNodeType == ast.typ) {
             return {
-                typ: 2 /* NodeType.StyleSheetNodeType */,
+                typ: exports.NodeType.StyleSheetNodeType,
                 chi: expandRule(ast)
             };
         }
@@ -3750,16 +3780,16 @@
         for (let i = 0; i < ast.chi.length; i++) {
             // @ts-ignore
             const node = ast.chi[i];
-            if (node.typ == 4 /* NodeType.RuleNodeType */) {
+            if (node.typ == exports.NodeType.RuleNodeType) {
                 // @ts-ignore
                 result.chi.push(...expandRule(node));
                 // i += expanded.length - 1;
             }
-            else if (node.typ == 3 /* NodeType.AtRuleNodeType */ && 'chi' in node) {
+            else if (node.typ == exports.NodeType.AtRuleNodeType && 'chi' in node) {
                 let hasRule = false;
                 let j = node.chi.length;
                 while (j--) {
-                    if (node.chi[j].typ == 4 /* NodeType.RuleNodeType */ || node.chi[j].typ == 3 /* NodeType.AtRuleNodeType */) {
+                    if (node.chi[j].typ == exports.NodeType.RuleNodeType || node.chi[j].typ == exports.NodeType.AtRuleNodeType) {
                         hasRule = true;
                         break;
                     }
@@ -3777,10 +3807,10 @@
     function expandRule(node) {
         const ast = { ...node, chi: node.chi.slice() };
         const result = [];
-        if (ast.typ == 4 /* NodeType.RuleNodeType */) {
+        if (ast.typ == exports.NodeType.RuleNodeType) {
             let i = 0;
             for (; i < ast.chi.length; i++) {
-                if (ast.chi[i].typ == 4 /* NodeType.RuleNodeType */) {
+                if (ast.chi[i].typ == exports.NodeType.RuleNodeType) {
                     const rule = ast.chi[i];
                     if (!rule.sel.includes('&')) {
                         const selRule = splitRule(rule.sel);
@@ -3796,7 +3826,7 @@
                     ast.chi.splice(i--, 1);
                     result.push(...expandRule(rule));
                 }
-                else if (ast.chi[i].typ == 3 /* NodeType.AtRuleNodeType */) {
+                else if (ast.chi[i].typ == exports.NodeType.AtRuleNodeType) {
                     let astAtRule = ast.chi[i];
                     const values = [];
                     if (astAtRule.nam == 'scope') {
@@ -3811,7 +3841,7 @@
                         // @ts-ignore
                         astAtRule.chi.length = 0;
                         for (const r of expandRule(clone)) {
-                            if (r.typ == 3 /* NodeType.AtRuleNodeType */ && 'chi' in r) {
+                            if (r.typ == exports.NodeType.AtRuleNodeType && 'chi' in r) {
                                 if (astAtRule.val !== '' && r.val !== '') {
                                     if (astAtRule.nam == 'media' && r.nam == 'media') {
                                         r.val = astAtRule.val + ' and ' + r.val;
@@ -3823,7 +3853,7 @@
                                 // @ts-ignore
                                 values.push(r);
                             }
-                            else if (r.typ == 4 /* NodeType.RuleNodeType */) {
+                            else if (r.typ == exports.NodeType.RuleNodeType) {
                                 // @ts-ignore
                                 astAtRule.chi.push(...expandRule(r));
                             }
@@ -3883,6 +3913,29 @@
         }
     }
 
+    function replace(node, variableScope) {
+        for (const { value, parent: parentValue } of walkValues(node.val)) {
+            if (value?.typ == exports.EnumToken.FunctionTokenType && value.val == 'var') {
+                if (value.chi.length == 1 && value.chi[0].typ == exports.EnumToken.IdenTokenType) {
+                    const info = variableScope.get(value.chi[0].val);
+                    if (info?.replaceable) {
+                        if (parentValue != null) {
+                            let i = 0;
+                            for (; i < parentValue.chi.length; i++) {
+                                if (parentValue.chi[i] == value) {
+                                    parentValue.chi.splice(i, 1, ...info.node.val);
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+                            node.val = info.node.val.slice();
+                        }
+                    }
+                }
+            }
+        }
+    }
     class InlineCssVariables extends MinifyFeature {
         static get ordering() {
             return 0;
@@ -3902,14 +3955,14 @@
             if (!('variableScope' in context)) {
                 context.variableScope = new Map;
             }
-            const isRoot = parent.typ == 2 /* NodeType.StyleSheetNodeType */ && ast.typ == 4 /* NodeType.RuleNodeType */ && ast.sel == ':root';
+            const isRoot = parent.typ == exports.NodeType.StyleSheetNodeType && ast.typ == exports.NodeType.RuleNodeType && ast.sel == ':root';
             const variableScope = context.variableScope;
             // @ts-ignore
             for (const node of ast.chi) {
-                if (node.typ == 1 /* NodeType.CDOCOMMNodeType */ || node.typ == 0 /* NodeType.CommentNodeType */) {
+                if (node.typ == exports.NodeType.CDOCOMMNodeType || node.typ == exports.NodeType.CommentNodeType) {
                     continue;
                 }
-                if (node.typ != 5 /* NodeType.DeclarationNodeType */) {
+                if (node.typ != exports.NodeType.DeclarationNodeType) {
                     break;
                 }
                 // css variable
@@ -3925,6 +3978,16 @@
                         };
                         info.parent.add(ast);
                         variableScope.set(node.nam, info);
+                        let recursive = false;
+                        for (const { value, parent: parentValue } of walkValues(node.val)) {
+                            if (value?.typ == exports.EnumToken.FunctionTokenType && value.val == 'var') {
+                                recursive = true;
+                                break;
+                            }
+                        }
+                        if (recursive) {
+                            replace(node, variableScope);
+                        }
                     }
                     else {
                         const info = variableScope.get(node.nam);
@@ -3940,27 +4003,7 @@
                     }
                 }
                 else {
-                    for (const { value, parent: parentValue } of walkValues(node.val)) {
-                        if (value?.typ == exports.EnumToken.FunctionTokenType && value.val == 'var') {
-                            if (value.chi.length == 1 && value.chi[0].typ == exports.EnumToken.IdenTokenType) {
-                                const info = variableScope.get(value.chi[0].val);
-                                if (info?.replaceable) {
-                                    if (parentValue != null) {
-                                        let i = 0;
-                                        for (; i < parentValue.chi.length; i++) {
-                                            if (parentValue.chi[i] == value) {
-                                                parentValue.chi.splice(i, 1, ...info.node.val);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else {
-                                        node.val = info.node.val.slice();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    replace(node, variableScope);
                 }
             }
         }
@@ -3972,7 +4015,7 @@
                     for (const parent of info.parent) {
                         i = parent.chi?.length ?? 0;
                         while (i--) {
-                            if (parent.chi[i].typ == 5 /* NodeType.DeclarationNodeType */ && parent.chi[i].nam == info.node.nam) {
+                            if (parent.chi[i].typ == exports.NodeType.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
                                 parent.chi.splice(i, 1);
                             }
                         }
@@ -4047,7 +4090,7 @@
                             this.config.properties.forEach((property, index) => {
                                 if (!this.declarations.has(property)) {
                                     this.declarations.set(property, {
-                                        typ: 5 /* NodeType.DeclarationNodeType */,
+                                        typ: exports.NodeType.DeclarationNodeType,
                                         nam: property,
                                         val: []
                                     });
@@ -4126,7 +4169,7 @@
                     }
                 }
                 iterator = [{
-                        typ: 5 /* NodeType.DeclarationNodeType */,
+                        typ: exports.NodeType.DeclarationNodeType,
                         nam: this.config.shorthand,
                         val: values.reduce((acc, curr) => {
                             if (curr.length > 1) {
@@ -4281,7 +4324,7 @@
                     if (values.length == 0) {
                         this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                             acc.set(curr[0], {
-                                typ: 5 /* NodeType.DeclarationNodeType */,
+                                typ: exports.NodeType.DeclarationNodeType,
                                 nam: curr[0],
                                 val: curr[1].reduce((acc, curr) => {
                                     if (acc.length > 0) {
@@ -4523,7 +4566,7 @@
                         }
                     }
                     iterable = [{
-                            typ: 5 /* NodeType.DeclarationNodeType */,
+                            typ: exports.NodeType.DeclarationNodeType,
                             nam: this.config.shorthand,
                             val: values
                         }][Symbol.iterator]();
@@ -4572,10 +4615,10 @@
             this.declarations = new Map;
         }
         set(nam, value) {
-            return this.add({ typ: 5 /* NodeType.DeclarationNodeType */, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
+            return this.add({ typ: exports.NodeType.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
         }
         add(declaration) {
-            if (declaration.typ != 5 /* NodeType.DeclarationNodeType */ || !this.options.removeDuplicateDeclarations) {
+            if (declaration.typ != exports.NodeType.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
                 this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
                 return this;
             }
@@ -4682,7 +4725,7 @@
             for (; k < j; k++) {
                 // @ts-ignore
                 const node = ast.chi[k];
-                if (node.typ == 0 /* NodeType.CommentNodeType */ || node.typ == 5 /* NodeType.DeclarationNodeType */) {
+                if (node.typ == exports.NodeType.CommentNodeType || node.typ == exports.NodeType.DeclarationNodeType) {
                     properties.add(node);
                     continue;
                 }
@@ -4692,6 +4735,97 @@
             ast.chi = [...properties].concat(ast.chi.slice(k));
             return ast;
         }
+    }
+
+    const gcd = (x, y) => {
+        x = Math.abs(x);
+        y = Math.abs(y);
+        let t;
+        if (x == 0 || y == 0) {
+            return 1;
+        }
+        while (y) {
+            t = y;
+            y = x % y;
+            x = t;
+        }
+        return x;
+    };
+    function compute(a, b, op) {
+        if (typeof a == 'number' && typeof b == 'number') {
+            switch (op) {
+                case exports.EnumToken.Add:
+                    return a + b;
+                case exports.EnumToken.Sub:
+                    return a - b;
+                case exports.EnumToken.Mul:
+                    return a * b;
+                case exports.EnumToken.Div:
+                    const r = simplify(a, b);
+                    if (r[1] == 1) {
+                        return r[0];
+                    }
+                    const result = a / b;
+                    const r2 = reduceNumber(r[0]) + '/' + reduceNumber(r[1]);
+                    return reduceNumber(result).length <= r2.length ? result : {
+                        typ: exports.EnumToken.FractionTokenType,
+                        l: { typ: exports.EnumToken.NumberTokenType, val: reduceNumber(r[0]) },
+                        r: { typ: exports.EnumToken.NumberTokenType, val: reduceNumber(r[1]) }
+                    };
+            }
+        }
+        let l1 = typeof a == 'number' ? {
+            typ: exports.EnumToken.FractionTokenType,
+            l: { typ: exports.EnumToken.NumberTokenType, val: reduceNumber(a) },
+            r: { typ: exports.EnumToken.NumberTokenType, val: '1' }
+        } : a;
+        let r1 = typeof b == 'number' ? {
+            typ: exports.EnumToken.FractionTokenType,
+            l: { typ: exports.EnumToken.NumberTokenType, val: reduceNumber(b) },
+            r: { typ: exports.EnumToken.NumberTokenType, val: '1' }
+        } : b;
+        let l2;
+        let r2;
+        switch (op) {
+            case exports.EnumToken.Add:
+                // @ts-ignore
+                l2 = l1.l.val * r1.r.val + l1.r.val * r1.l.val;
+                // @ts-ignore
+                r2 = l1.r.val * r1.r.val;
+                break;
+            case exports.EnumToken.Sub:
+                // @ts-ignore
+                l2 = l1.l.val * r1.r.val - l1.r.val * r1.l.val;
+                // @ts-ignore
+                r2 = l1.r.val * r1.r.val;
+                break;
+            case exports.EnumToken.Mul:
+                // @ts-ignore
+                l2 = l1.l.val * r1.l.val;
+                // @ts-ignore
+                r2 = l1.r.val * r1.r.val;
+                break;
+            case exports.EnumToken.Div:
+                // @ts-ignore
+                l2 = l1.l.val * r1.r.val;
+                // @ts-ignore
+                r2 = l1.r.val * r1.l.val;
+                break;
+        }
+        const a2 = simplify(l2, r2);
+        if (a2[1] == 1) {
+            return a2[0];
+        }
+        const result = a2[0] / a2[1];
+        return reduceNumber(result).length <= reduceNumber(a2[0]).length + 1 + reduceNumber(a2[1]).length ? result : {
+            typ: exports.EnumToken.FractionTokenType,
+            l: { typ: exports.EnumToken.NumberTokenType, val: reduceNumber(a2[0]) },
+            r: { typ: exports.EnumToken.NumberTokenType, val: reduceNumber(a2[1]) }
+        };
+    }
+    function simplify(a, b) {
+        const g = gcd(a, b);
+        return g > 1 ? [a / g, b / g] : [a, b];
     }
 
     class ComputeCalcExpression extends MinifyFeature {
@@ -4715,7 +4849,7 @@
             }
             // @ts-ignore
             for (const node of ast.chi) {
-                if (node.typ != 5 /* NodeType.DeclarationNodeType */) {
+                if (node.typ != exports.NodeType.DeclarationNodeType) {
                     continue;
                 }
                 const set = new Set;
@@ -4749,39 +4883,14 @@
         }
         if ((op == exports.EnumToken.Add || op == exports.EnumToken.Sub)) {
             // @ts-ignore
-            if (l.typ != r.typ || Number.isNaN(+l.val) || Number.isNaN(r.val)) {
+            if (l.typ != r.typ) {
                 return defaultReturn;
             }
-            // @ts-ignore
-            return { ...l, val: reduceNumber(+l.val + (op == exports.EnumToken.Add ? +r.val : -1 * r.val)) };
         }
-        else {
-            // @ts-ignore
-            let val;
-            if (op == exports.EnumToken.Div) {
-                if (r.typ != exports.EnumToken.NumberTokenType || r.val == '0') {
-                    return defaultReturn;
-                }
-                // @ts-ignore
-                val = reduceNumber(l.val / r.val);
-            }
-            else {
-                // @ts-ignore
-                val = reduceNumber(r.val * l.val);
-            }
-            let result;
-            if (r.typ == exports.EnumToken.NumberTokenType || op == exports.EnumToken.Div) {
-                result = { ...l, val };
-            }
-            else {
-                // @ts-ignore
-                result = { ...r, val };
-            }
-            if (renderToken(result).length <= renderToken(defaultReturn).length) {
-                return result;
-            }
-        }
-        return defaultReturn;
+        const typ = l.typ == exports.EnumToken.NumberTokenType ? r.typ : l.typ;
+        // @ts-ignore
+        const val = compute(typeof l.val == 'string' ? +l.val : l.val, typeof r.val == 'string' ? +r.val : r.val, op);
+        return { ...(l.typ == exports.EnumToken.NumberTokenType ? r : l), typ, val: typeof val == 'number' ? reduceNumber(val) : val };
     }
     /**
      * evaluate an array of tokens
@@ -4837,7 +4946,10 @@
      */
     function inlineExpression(token) {
         const result = [];
-        if (token.typ == exports.EnumToken.BinaryExpressionTokenType) {
+        if (token.typ == exports.EnumToken.ParensTokenType && token.chi.length == 1) {
+            result.push(token.chi[0]);
+        }
+        else if (token.typ == exports.EnumToken.BinaryExpressionTokenType) {
             if ([exports.EnumToken.Mul, exports.EnumToken.Div].includes(token.op)) {
                 result.push(token);
             }
@@ -4864,18 +4976,7 @@
         if (token.l.typ == exports.EnumToken.BinaryExpressionTokenType) {
             token.l = evaluateExpression(token.l);
         }
-        const result = doEvaluate(token.l, token.r, token.op);
-        if (result.typ == exports.EnumToken.BinaryExpressionTokenType &&
-            [exports.EnumToken.Mul, exports.EnumToken.Div].includes(result.op)) {
-            // wrap expression
-            if (result.l.typ == exports.EnumToken.BinaryExpressionTokenType && [exports.EnumToken.Sub, exports.EnumToken.Add].includes(result.l.op)) {
-                result.l = { typ: exports.EnumToken.ParensTokenType, chi: [result.l] };
-            }
-            else if (result.r.typ == exports.EnumToken.BinaryExpressionTokenType && [exports.EnumToken.Sub, exports.EnumToken.Add].includes(result.r.op)) {
-                result.r = { typ: exports.EnumToken.ParensTokenType, chi: [result.r] };
-            }
-        }
-        return result;
+        return doEvaluate(token.l, token.r, token.op);
     }
     function isScalarToken(token) {
         return token.typ != exports.EnumToken.BinaryExpressionTokenType && token.typ != exports.EnumToken.ParensTokenType && token.typ != exports.EnumToken.FunctionTokenType;
@@ -4923,7 +5024,7 @@
      */
     function factor(tokens, ops) {
         let isOp;
-        const opList = [exports.EnumToken.Add, exports.EnumToken.Sub, exports.EnumToken.Div, exports.EnumToken.Mul];
+        const opList = ops.map(x => getArithmeticOperation(x));
         if (tokens.length == 1) {
             return [factorToken(tokens[0])];
         }
@@ -4991,7 +5092,7 @@
                     curr.splice(0, 1);
                 }
             }
-            else if (ast.typ == 4 /* NodeType.RuleNodeType */ && (isIdent(curr[0]) || isFunction(curr[0]))) {
+            else if (ast.typ == exports.NodeType.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
                 curr.unshift('&', ' ');
             }
             acc.push(curr.join(''));
@@ -5000,7 +5101,7 @@
         // @ts-ignore
         if ('chi' in ast && ast.chi.length > 0) {
             if (!nestingContent) {
-                nestingContent = options.nestingRules && ast.typ == 4 /* NodeType.RuleNodeType */;
+                nestingContent = options.nestingRules && ast.typ == exports.NodeType.RuleNodeType;
             }
             let i = 0;
             let previous;
@@ -5009,7 +5110,7 @@
             // @ts-ignore
             for (; i < ast.chi.length; i++) {
                 // @ts-ignore
-                if (ast.chi[i].typ == 0 /* NodeType.CommentNodeType */) {
+                if (ast.chi[i].typ == exports.NodeType.CommentNodeType) {
                     continue;
                 }
                 // @ts-ignore
@@ -5021,10 +5122,10 @@
                     i--;
                     continue;
                 }
-                if (node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam == 'font-face') {
+                if (node.typ == exports.NodeType.AtRuleNodeType && node.nam == 'font-face') {
                     continue;
                 }
-                if (node.typ == 3 /* NodeType.AtRuleNodeType */) {
+                if (node.typ == exports.NodeType.AtRuleNodeType) {
                     if (node.nam == 'media' && node.val == 'all') {
                         // @ts-ignore
                         ast.chi?.splice(i, 1, ...node.chi);
@@ -5032,7 +5133,7 @@
                         continue;
                     }
                     // @ts-ignore
-                    if (previous?.typ == 3 /* NodeType.AtRuleNodeType */ &&
+                    if (previous?.typ == exports.NodeType.AtRuleNodeType &&
                         previous.nam == node.nam &&
                         previous.val == node.val) {
                         if ('chi' in node) {
@@ -5051,14 +5152,14 @@
                     continue;
                 }
                 // @ts-ignore
-                if (node.typ == 4 /* NodeType.RuleNodeType */) {
+                if (node.typ == exports.NodeType.RuleNodeType) {
                     reduceRuleSelector(node);
                     let wrapper;
                     let match;
                     // @ts-ignore
                     if (options.nestingRules) {
                         // @ts-ignore
-                        if (previous?.typ == 4 /* NodeType.RuleNodeType */) {
+                        if (previous?.typ == exports.NodeType.RuleNodeType) {
                             // @ts-ignore
                             reduceRuleSelector(previous);
                             // @ts-ignore
@@ -5079,7 +5180,7 @@
                                 // @ts-ignore
                                 const nextNode = ast.chi[i];
                                 // @ts-ignore
-                                if (nextNode.typ != 4 /* NodeType.RuleNodeType */) {
+                                if (nextNode.typ != exports.NodeType.RuleNodeType) {
                                     break;
                                 }
                                 reduceRuleSelector(nextNode);
@@ -5133,7 +5234,7 @@
                                     curr.splice(0, 2);
                                 }
                                 else {
-                                    if (ast.typ != 4 /* NodeType.RuleNodeType */ && combinators.includes(curr[1])) {
+                                    if (ast.typ != exports.NodeType.RuleNodeType && combinators.includes(curr[1])) {
                                         wrap = false;
                                     }
                                     else {
@@ -5181,18 +5282,18 @@
                             let k = previous.chi.length;
                             while (k-- > 0) {
                                 // @ts-ignore
-                                if (previous.chi[k].typ == 0 /* NodeType.CommentNodeType */) {
+                                if (previous.chi[k].typ == exports.NodeType.CommentNodeType) {
                                     continue;
                                 }
                                 // @ts-ignore
-                                shouldMerge = previous.chi[k].typ == 5 /* NodeType.DeclarationNodeType */;
+                                shouldMerge = previous.chi[k].typ == exports.NodeType.DeclarationNodeType;
                                 break;
                             }
                             if (shouldMerge) {
                                 // @ts-ignore
-                                if ((node.typ == 4 /* NodeType.RuleNodeType */ && node.sel == previous.sel) ||
+                                if ((node.typ == exports.NodeType.RuleNodeType && node.sel == previous.sel) ||
                                     // @ts-ignore
-                                    (node.typ == 3 /* NodeType.AtRuleNodeType */) && node.val != 'font-face' && node.val == previous.val) {
+                                    (node.typ == exports.NodeType.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
                                     // @ts-ignore
                                     node.chi.unshift(...previous.chi);
                                     // @ts-ignore
@@ -5209,7 +5310,7 @@
                                     nodeIndex = i;
                                     continue;
                                 }
-                                else if (node.typ == 4 /* NodeType.RuleNodeType */ && previous?.typ == 4 /* NodeType.RuleNodeType */) {
+                                else if (node.typ == exports.NodeType.RuleNodeType && previous?.typ == exports.NodeType.RuleNodeType) {
                                     const intersect = diff(previous, node, reducer, options);
                                     if (intersect != null) {
                                         if (intersect.node1.chi.length == 0) {
@@ -5266,7 +5367,7 @@
                     // @ts-ignore
                     previous != null &&
                     // previous.optimized != null &&
-                    previous.typ == 4 /* NodeType.RuleNodeType */ &&
+                    previous.typ == exports.NodeType.RuleNodeType &&
                     previous.sel.includes('&')) {
                     fixSelector(previous);
                 }
@@ -5276,9 +5377,9 @@
             // @ts-ignore
             if (recursive && node != null && ('chi' in node)) {
                 // @ts-ignore
-                if (!node.chi.some(n => n.typ == 5 /* NodeType.DeclarationNodeType */)) {
+                if (!node.chi.some(n => n.typ == exports.NodeType.DeclarationNodeType)) {
                     // @ts-ignore
-                    if (!(node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam != 'font-face')) {
+                    if (!(node.typ == exports.NodeType.AtRuleNodeType && node.nam != 'font-face')) {
                         minify(node, options, recursive, errors, nestingContent, context);
                     }
                 }
@@ -5287,12 +5388,12 @@
                 // @ts-ignore
                 node != null &&
                 // previous.optimized != null &&
-                node.typ == 4 /* NodeType.RuleNodeType */ &&
+                node.typ == exports.NodeType.RuleNodeType &&
                 node.sel.includes('&')) {
                 fixSelector(node);
             }
         }
-        if (ast.typ == 2 /* NodeType.StyleSheetNodeType */) {
+        if (ast.typ == exports.NodeType.StyleSheetNodeType) {
             let parent;
             let parents = [ast];
             while (parents.length > 0) {
@@ -5301,7 +5402,7 @@
                 for (let k = 0; k < parent.chi.length; k++) {
                     // @ts-ignore
                     const node = parent.chi[k];
-                    if (!('chi' in node) || node.typ == 2 /* NodeType.StyleSheetNodeType */ || (node.typ == 3 /* NodeType.AtRuleNodeType */ && node.nam == 'font-face')) {
+                    if (!('chi' in node) || node.typ == exports.NodeType.StyleSheetNodeType || (node.typ == exports.NodeType.AtRuleNodeType && node.nam == 'font-face')) {
                         continue;
                     }
                     // @ts-ignore
@@ -5412,11 +5513,11 @@
         // @ts-ignore
         for (let i = 0; i < node.chi?.length; i++) {
             // @ts-ignore
-            if (node.chi[i].typ == 0 /* NodeType.CommentNodeType */) {
+            if (node.chi[i].typ == exports.NodeType.CommentNodeType) {
                 continue;
             }
             // @ts-ignore
-            return node.chi[i].typ == 5 /* NodeType.DeclarationNodeType */;
+            return node.chi[i].typ == exports.NodeType.DeclarationNodeType;
         }
         return true;
     }
@@ -5562,7 +5663,7 @@
         if (matchFunction != 0 || inAttr != 0) {
             return null;
         }
-        if (parentType != 4 /* NodeType.RuleNodeType */) {
+        if (parentType != exports.NodeType.RuleNodeType) {
             for (const part of match) {
                 if (part.length > 0 && combinators.includes(part[0].charAt(0))) {
                     return null;
@@ -5768,7 +5869,7 @@
         }
         const intersect = [];
         while (i--) {
-            if (node1.chi[i].typ == 0 /* NodeType.CommentNodeType */) {
+            if (node1.chi[i].typ == exports.NodeType.CommentNodeType) {
                 continue;
             }
             j = node2.chi.length;
@@ -5776,7 +5877,7 @@
                 break;
             }
             while (j--) {
-                if (node2.chi[j].typ == 0 /* NodeType.CommentNodeType */) {
+                if (node2.chi[j].typ == exports.NodeType.CommentNodeType) {
                     continue;
                 }
                 if (node1.chi[i].nam == node2.chi[j].nam) {

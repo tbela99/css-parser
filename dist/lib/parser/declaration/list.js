@@ -1,6 +1,6 @@
 import { PropertySet } from './set.js';
 import '../../renderer/utils/color.js';
-import '../../ast/types.js';
+import { NodeType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { parseString } from '../parse.js';
 import '../../renderer/sourcemap/lib/encode.js';
@@ -21,10 +21,10 @@ class PropertyList {
         this.declarations = new Map;
     }
     set(nam, value) {
-        return this.add({ typ: 5 /* NodeType.DeclarationNodeType */, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
+        return this.add({ typ: NodeType.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
     }
     add(declaration) {
-        if (declaration.typ != 5 /* NodeType.DeclarationNodeType */ || !this.options.removeDuplicateDeclarations) {
+        if (declaration.typ != NodeType.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
             this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
             return this;
         }

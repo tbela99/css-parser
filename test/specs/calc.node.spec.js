@@ -19,9 +19,10 @@ describe('calc expression', function () {
         const css = `
 `;
         return transform(`.foo {
+        height: calc(200% / 6 + 2%/3);
   width: calc(3.5rem + calc(var(--bs-border-width) * 2));
 }
-`).then(result => f(result.code).equals(`.foo{width:calc(3.5rem + var(--bs-border-width)*2)}`));
+`).then(result => f(result.code).equals(`.foo{height:34%;width:calc(3.5rem + var(--bs-border-width)*2)}`));
     });
 
     it('calc #3', function () {

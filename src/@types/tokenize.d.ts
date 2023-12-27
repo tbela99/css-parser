@@ -37,7 +37,7 @@ export interface SemiColonToken extends BaseToken {
 export interface NumberToken extends BaseToken {
 
     typ: EnumToken.NumberTokenType,
-    val: string;
+    val: string | FractionToken;
 }
 
 export interface AtRuleToken extends BaseToken {
@@ -49,7 +49,7 @@ export interface AtRuleToken extends BaseToken {
 export interface PercentageToken extends BaseToken {
 
     typ: EnumToken.PercentageTokenType,
-    val: string;
+    val: string | FractionToken;
 }
 
 export interface FunctionToken extends BaseToken {
@@ -87,42 +87,42 @@ export interface UnclosedStringToken extends BaseToken {
 export interface DimensionToken extends BaseToken {
 
     typ: EnumToken.DimensionTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: string;
 }
 
 export interface LengthToken extends BaseToken {
 
     typ: EnumToken.LengthTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: string;
 }
 
 export interface AngleToken extends BaseToken {
 
     typ: EnumToken.AngleTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: string;
 }
 
 export interface TimeToken extends BaseToken {
 
     typ: EnumToken.TimeTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: 'ms' | 's';
 }
 
 export interface FrequencyToken extends BaseToken {
 
     typ: EnumToken.FrequencyTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: 'Hz' | 'Khz';
 }
 
 export interface ResolutionToken extends BaseToken {
 
     typ: EnumToken.ResolutionTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 
@@ -335,11 +335,16 @@ export interface UnaryExpression extends BaseToken {
     val: UnaryExpressionNode;
 }
 
+export interface FractionToken extends BaseToken {
+
+    typ: EnumToken.FractionTokenType;
+    l: NumberToken;
+    r: NumberToken;
+}
 export interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
-    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul | EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType |
-        EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType;
+    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
     l: BinaryExpressionNode | Token;
     r: BinaryExpressionNode | Token;
 }
@@ -375,7 +380,7 @@ export declare type UnaryExpressionNode =
     | AngleToken
     | FrequencyToken;
 
-export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
+export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FractionToken |
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
 export declare type TokenType = EnumToken;
@@ -435,6 +440,7 @@ export declare type Token =
     | DelimToken
     | BinaryExpressionToken
     | UnaryExpression
+    | FractionToken
     |
     AddToken
     | SubToken

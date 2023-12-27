@@ -1,7 +1,7 @@
 import {
-    AstAtRule,
+    AstAtRule, AstComment,
     AstDeclaration,
-    AstRule,
+    AstRule, AstRuleList,
     AstRuleStyleSheet,
     FunctionToken, MinifyOptions,
     ParserOptions,
@@ -10,6 +10,42 @@ import {
 import {EnumToken, NodeType} from "../types";
 import {walkValues} from "../walk";
 import {MinifyFeature} from "../utils/minifyfeature";
+import {renderToken} from "../../renderer";
+import * as repl from "repl";
+
+function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
+
+    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+
+        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+
+            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
+
+                const info = <VariableScopeInfo>variableScope.get(value.chi[0].val);
+
+                if (info?.replaceable) {
+
+                    if (parentValue != null) {
+
+                        let i: number = 0;
+
+                        for (; i < (<FunctionToken>parentValue).chi.length; i++) {
+
+                            if ((<FunctionToken>parentValue).chi[i] == value) {
+
+                                (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
+                                break;
+                            }
+                        }
+                    } else {
+
+                        (<AstDeclaration>node).val = info.node.val.slice();
+                    }
+                }
+            }
+        }
+    }
+}
 
 export class InlineCssVariables extends MinifyFeature {
 
@@ -34,7 +70,9 @@ export class InlineCssVariables extends MinifyFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) {
+    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) {
 
         if (!('variableScope' in context)) {
 
@@ -63,10 +101,10 @@ export class InlineCssVariables extends MinifyFeature {
 
                 if (!variableScope.has((<AstDeclaration>node).nam)) {
 
-                    const info =  {
+                    const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: <Set<AstRule | AstAtRule>> new Set(),
+                        parent: <Set<AstRule | AstAtRule>>new Set(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: (<AstDeclaration>node)
@@ -75,6 +113,25 @@ export class InlineCssVariables extends MinifyFeature {
                     info.parent.add(ast);
 
                     variableScope.set((<AstDeclaration>node).nam, info);
+
+
+                    let recursive: boolean = false;
+
+                    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+
+                        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+
+                            recursive = true;
+                            break;
+                        }
+                    }
+
+                    if (recursive) {
+
+                        replace(node, variableScope);
+                    }
+
+
                 } else {
 
                     const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
@@ -95,42 +152,12 @@ export class InlineCssVariables extends MinifyFeature {
                     info.node = (<AstDeclaration>node);
                 }
             } else {
-
-                for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
-
-                    if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
-
-                        if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
-
-                            const info = <VariableScopeInfo>variableScope.get(value.chi[0].val);
-
-                            if (info?.replaceable) {
-
-                                if (parentValue != null) {
-
-                                    let i: number = 0;
-
-                                    for (; i < (<FunctionToken>parentValue).chi.length; i++) {
-
-                                        if ((<FunctionToken>parentValue).chi[i] == value) {
-
-                                            (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
-                                            break;
-                                        }
-                                    }
-                                } else {
-
-                                    (<AstDeclaration>node).val = info.node.val.slice();
-                                }
-                            }
-                        }
-                    }
-                }
+                replace(node, variableScope);
             }
         }
     }
 
-    cleanup (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: {[key: string]: any}) {
+    cleanup(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 

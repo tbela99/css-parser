@@ -1,6 +1,7 @@
 import {EnumToken} from "../../ast";
 import {IdentToken, PropertyMapType, Token} from "../../../@types";
 
+// https://www.w3.org/TR/css-values-4/#math-function
 export const funcList = ['clamp', 'calc'];
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {

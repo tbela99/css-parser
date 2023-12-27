@@ -1,7 +1,7 @@
 import { eq } from '../utils/eq.js';
 import { renderToken } from '../../renderer/render.js';
 import '../../renderer/utils/color.js';
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, NodeType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { parseString } from '../parse.js';
 import { getConfig } from '../utils/config.js';
@@ -128,7 +128,7 @@ class PropertyMap {
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                         acc.set(curr[0], {
-                            typ: 5 /* NodeType.DeclarationNodeType */,
+                            typ: NodeType.DeclarationNodeType,
                             nam: curr[0],
                             val: curr[1].reduce((acc, curr) => {
                                 if (acc.length > 0) {
@@ -370,7 +370,7 @@ class PropertyMap {
                     }
                 }
                 iterable = [{
-                        typ: 5 /* NodeType.DeclarationNodeType */,
+                        typ: NodeType.DeclarationNodeType,
                         nam: this.config.shorthand,
                         val: values
                     }][Symbol.iterator]();

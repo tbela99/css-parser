@@ -1,7 +1,6 @@
 import dts from 'rollup-plugin-dts';
 import typescript from "@rollup/plugin-typescript";
 import nodeResolve from "@rollup/plugin-node-resolve";
-// import terser from "@rollup/plugin-terser";
 import json from "@rollup/plugin-json";
 import commonjs from "@rollup/plugin-commonjs";
 
@@ -11,7 +10,6 @@ export default [
         plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
         output: [
             {
-                // file: './dist/index.mjs',
                 dir: './dist',
                 format: 'es',
                 preserveModules: true

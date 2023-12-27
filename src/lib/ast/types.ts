@@ -1,12 +1,12 @@
 import {MatchExpressionToken} from "../../@types";
 
-export const enum NodeType {
-    CommentNodeType = 0,
-    CDOCOMMNodeType = 1,
-    StyleSheetNodeType = 2,
-    AtRuleNodeType = 3,
-    RuleNodeType = 4,
-    DeclarationNodeType = 5
+export enum NodeType {
+    CommentNodeType,
+    CDOCOMMNodeType,
+    StyleSheetNodeType,
+    AtRuleNodeType,
+    RuleNodeType,
+    DeclarationNodeType
 }
 
 export enum EnumToken {
@@ -73,6 +73,7 @@ export enum EnumToken {
     EndMatchTokenType,
     MatchExpressionTokenType,
     NameSpaceAttributeTokenType,
+    FractionTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,

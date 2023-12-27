@@ -4,6 +4,7 @@ import '../parse.js';
 import '../../renderer/utils/color.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
+// https://www.w3.org/TR/css-values-4/#math-function
 const funcList = ['clamp', 'calc'];
 function matchType(val, properties) {
     if (val.typ == EnumToken.IdenTokenType && properties.keywords.includes(val.val) ||

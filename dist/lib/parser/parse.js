@@ -1,5 +1,5 @@
 import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
-import { EnumToken } from '../ast/types.js';
+import { EnumToken, NodeType } from '../ast/types.js';
 import { minify, combinators } from '../ast/minify.js';
 import { walkValues } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -41,7 +41,7 @@ async function doParse(iterator, options = {}) {
     const src = options.src;
     const stack = [];
     let ast = {
-        typ: 2 /* NodeType.StyleSheetNodeType */,
+        typ: NodeType.StyleSheetNodeType,
         chi: []
     };
     let tokens = [];
@@ -65,7 +65,7 @@ async function doParse(iterator, options = {}) {
         for (i = 0; i < tokens.length; i++) {
             if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
                 const position = map.get(tokens[i]);
-                if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != 2 /* NodeType.StyleSheetNodeType */) {
+                if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != NodeType.StyleSheetNodeType) {
                     errors.push({
                         action: 'drop',
                         message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
@@ -127,10 +127,10 @@ async function doParse(iterator, options = {}) {
                     let i = context.chi.length;
                     while (i--) {
                         const type = context.chi[i].typ;
-                        if (type == 0 /* NodeType.CommentNodeType */) {
+                        if (type == NodeType.CommentNodeType) {
                             continue;
                         }
-                        if (type != 3 /* NodeType.AtRuleNodeType */) {
+                        if (type != NodeType.AtRuleNodeType) {
                             errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
                             return null;
                         }
@@ -200,7 +200,7 @@ async function doParse(iterator, options = {}) {
                 return acc;
             }, []);
             const node = {
-                typ: 3 /* NodeType.AtRuleNodeType */,
+                typ: NodeType.AtRuleNodeType,
                 nam: renderToken(atRule, { removeComments: true }),
                 val: raw.join('')
             };
@@ -246,7 +246,7 @@ async function doParse(iterator, options = {}) {
                     return acc;
                 }, uniq);
                 const node = {
-                    typ: 4 /* NodeType.RuleNodeType */,
+                    typ: NodeType.RuleNodeType,
                     // @ts-ignore
                     sel: [...uniq.keys()].join(','),
                     chi: []
@@ -310,7 +310,7 @@ async function doParse(iterator, options = {}) {
                     return null;
                 }
                 const node = {
-                    typ: 5 /* NodeType.DeclarationNodeType */,
+                    typ: NodeType.DeclarationNodeType,
                     // @ts-ignore
                     nam: renderToken(name.shift(), { removeComments: true }),
                     // @ts-ignore

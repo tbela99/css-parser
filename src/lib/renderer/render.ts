@@ -9,8 +9,8 @@ import {
     AstRuleStyleSheet,
     AttrToken,
     BinaryExpressionToken,
-    ColorToken,
-    ErrorDescription,
+    ColorToken, DimensionToken,
+    ErrorDescription, FractionToken,
     Location,
     Position,
     RenderOptions,
@@ -142,11 +142,11 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
 
         // if (src !== '') {
 
-            if (!(src in cache)) {
+        if (!(src in cache)) {
 
-                // @ts-ignore
-                cache[src] = options.resolve(src, options.cwd ?? '').relative;
-            }
+            // @ts-ignore
+            cache[src] = options.resolve(src, options.cwd ?? '').relative;
+        }
         // }
 
         if (!(output in cache)) {
@@ -324,11 +324,58 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.ListToken:
 
-            return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+            return token.chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '');
 
         case EnumToken.BinaryExpressionTokenType:
 
+            if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
+
+                let result: string = '';
+
+                if (
+                    token.l.typ == EnumToken.BinaryExpressionTokenType &&
+                    [EnumToken.Add, EnumToken.Sub].includes(token.l.op)
+                ) {
+
+                    result = '(' + renderToken(token.l, options, cache) + ')';
+                } else {
+
+                    result = renderToken(token.l, options, cache);
+                }
+
+                result += token.op == EnumToken.Mul ? '*' : '/';
+
+                if (
+                    token.r.typ == EnumToken.BinaryExpressionTokenType &&
+                    [EnumToken.Add, EnumToken.Sub].includes(token.r.op)
+                ) {
+
+                    result += '(' + renderToken(token.r, options, cache) + ')';
+                } else {
+
+                    result += renderToken(token.r, options, cache);
+                }
+
+                return result;
+            }
+
             return renderToken(token.l, options, cache) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
+
+        case EnumToken.FractionTokenType:
+
+            const fraction: string = renderToken(token.l) + '/' + renderToken(token.r);
+
+            if (+token.r.val != 0) {
+
+                const value: string = reduceNumber(+token.l.val / +token.r.val);
+
+                if (value.length <= fraction.length) {
+
+                    return value;
+                }
+            }
+
+            return fraction;
 
         case EnumToken.Add:
 
@@ -408,7 +455,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             if (
                 token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
-                token.chi.length == 1) {
+                token.chi.length == 1 && token.chi[0].typ != EnumToken.BinaryExpressionTokenType) {
 
                 // calc(200px) => 200px
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '')
@@ -421,7 +468,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return renderToken(token.l, options, cache, reducer, errors) +
                 renderToken({typ: token.op}, options, cache, reducer, errors) +
                 renderToken(token.r, options, cache, reducer, errors) +
-                (token.attr ? ' ' + token.attr :  '');
+                (token.attr ? ' ' + token.attr : '');
 
         case EnumToken.NameSpaceAttributeTokenType:
             return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors) + '|') +
@@ -501,9 +548,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
 
-            if ((<BinaryExpressionToken>token.val).typ == EnumToken.BinaryExpressionTokenType) {
-
-                const result: string = renderToken(<BinaryExpressionToken>token.val, options, cache);
+            if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
+                const result: string = renderToken(<FractionToken>token.val, options, cache);
 
                 if (!('unit' in token)) {
 
@@ -617,12 +663,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.PercentageTokenType:
 
-            const perc: string = reduceNumber(token.val);
-            return options.minify && perc == '0' ? '0' : perc + '%';
+            const perc: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string
+                >token.val);
+            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
 
         case EnumToken.NumberTokenType:
 
-            return reduceNumber(token.val);
+            return (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string>token.val);
 
         case EnumToken.CommentTokenType:
 

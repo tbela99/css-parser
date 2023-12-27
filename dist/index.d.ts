@@ -1,4 +1,4 @@
-declare const enum NodeType {
+declare enum NodeType {
     CommentNodeType = 0,
     CDOCOMMNodeType = 1,
     StyleSheetNodeType = 2,
@@ -67,6 +67,7 @@ declare enum EnumToken {
     EndMatchTokenType = 57,
     MatchExpressionTokenType = 58,
     NameSpaceAttributeTokenType = 59,
+    FractionTokenType = 60,
     Time = 17,
     Iden = 3,
     Hash = 20,
@@ -140,7 +141,7 @@ interface SemiColonToken extends BaseToken {
 interface NumberToken extends BaseToken {
 
     typ: EnumToken.NumberTokenType,
-    val: string;
+    val: string | FractionToken;
 }
 
 interface AtRuleToken extends BaseToken {
@@ -152,7 +153,7 @@ interface AtRuleToken extends BaseToken {
 interface PercentageToken extends BaseToken {
 
     typ: EnumToken.PercentageTokenType,
-    val: string;
+    val: string | FractionToken;
 }
 
 interface FunctionToken extends BaseToken {
@@ -190,42 +191,42 @@ interface UnclosedStringToken extends BaseToken {
 interface DimensionToken extends BaseToken {
 
     typ: EnumToken.DimensionTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: string;
 }
 
 interface LengthToken extends BaseToken {
 
     typ: EnumToken.LengthTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: string;
 }
 
 interface AngleToken extends BaseToken {
 
     typ: EnumToken.AngleTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: string;
 }
 
 interface TimeToken extends BaseToken {
 
     typ: EnumToken.TimeTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: 'ms' | 's';
 }
 
 interface FrequencyToken extends BaseToken {
 
     typ: EnumToken.FrequencyTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: 'Hz' | 'Khz';
 }
 
 interface ResolutionToken extends BaseToken {
 
     typ: EnumToken.ResolutionTokenType;
-    val: string | BinaryExpressionToken;
+    val: string | FractionToken;
     unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 
@@ -438,11 +439,17 @@ interface UnaryExpression extends BaseToken {
     val: UnaryExpressionNode;
 }
 
+interface FractionToken extends BaseToken {
+
+    typ: EnumToken.FractionTokenType;
+    l: NumberToken;
+    r: NumberToken;
+}
+
 interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
-    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul | EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType |
-        EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType;
+    op: EnumToken.Add | EnumToken.Sub | EnumToken.Div | EnumToken.Mul;
     l: BinaryExpressionNode | Token;
     r: BinaryExpressionNode | Token;
 }
@@ -478,7 +485,7 @@ declare type UnaryExpressionNode =
     | AngleToken
     | FrequencyToken;
 
-declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken |
+declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FractionToken |
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 declare type Token =
     LiteralToken
@@ -536,6 +543,7 @@ declare type Token =
     | DelimToken
     | BinaryExpressionToken
     | UnaryExpression
+    | FractionToken
     |
     AddToken
     | SubToken

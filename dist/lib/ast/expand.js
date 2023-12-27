@@ -2,17 +2,17 @@ import { splitRule, combinators } from './minify.js';
 import { parseString } from '../parser/parse.js';
 import { renderToken } from '../renderer/render.js';
 import '../renderer/utils/color.js';
-import { EnumToken } from './types.js';
+import { NodeType, EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 
 function expand(ast) {
     //
-    if (![4 /* NodeType.RuleNodeType */, 2 /* NodeType.StyleSheetNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(ast.typ)) {
+    if (![NodeType.RuleNodeType, NodeType.StyleSheetNodeType, NodeType.AtRuleNodeType].includes(ast.typ)) {
         return ast;
     }
-    if (4 /* NodeType.RuleNodeType */ == ast.typ) {
+    if (NodeType.RuleNodeType == ast.typ) {
         return {
-            typ: 2 /* NodeType.StyleSheetNodeType */,
+            typ: NodeType.StyleSheetNodeType,
             chi: expandRule(ast)
         };
     }
@@ -24,16 +24,16 @@ function expand(ast) {
     for (let i = 0; i < ast.chi.length; i++) {
         // @ts-ignore
         const node = ast.chi[i];
-        if (node.typ == 4 /* NodeType.RuleNodeType */) {
+        if (node.typ == NodeType.RuleNodeType) {
             // @ts-ignore
             result.chi.push(...expandRule(node));
             // i += expanded.length - 1;
         }
-        else if (node.typ == 3 /* NodeType.AtRuleNodeType */ && 'chi' in node) {
+        else if (node.typ == NodeType.AtRuleNodeType && 'chi' in node) {
             let hasRule = false;
             let j = node.chi.length;
             while (j--) {
-                if (node.chi[j].typ == 4 /* NodeType.RuleNodeType */ || node.chi[j].typ == 3 /* NodeType.AtRuleNodeType */) {
+                if (node.chi[j].typ == NodeType.RuleNodeType || node.chi[j].typ == NodeType.AtRuleNodeType) {
                     hasRule = true;
                     break;
                 }
@@ -51,10 +51,10 @@ function expand(ast) {
 function expandRule(node) {
     const ast = { ...node, chi: node.chi.slice() };
     const result = [];
-    if (ast.typ == 4 /* NodeType.RuleNodeType */) {
+    if (ast.typ == NodeType.RuleNodeType) {
         let i = 0;
         for (; i < ast.chi.length; i++) {
-            if (ast.chi[i].typ == 4 /* NodeType.RuleNodeType */) {
+            if (ast.chi[i].typ == NodeType.RuleNodeType) {
                 const rule = ast.chi[i];
                 if (!rule.sel.includes('&')) {
                     const selRule = splitRule(rule.sel);
@@ -70,7 +70,7 @@ function expandRule(node) {
                 ast.chi.splice(i--, 1);
                 result.push(...expandRule(rule));
             }
-            else if (ast.chi[i].typ == 3 /* NodeType.AtRuleNodeType */) {
+            else if (ast.chi[i].typ == NodeType.AtRuleNodeType) {
                 let astAtRule = ast.chi[i];
                 const values = [];
                 if (astAtRule.nam == 'scope') {
@@ -85,7 +85,7 @@ function expandRule(node) {
                     // @ts-ignore
                     astAtRule.chi.length = 0;
                     for (const r of expandRule(clone)) {
-                        if (r.typ == 3 /* NodeType.AtRuleNodeType */ && 'chi' in r) {
+                        if (r.typ == NodeType.AtRuleNodeType && 'chi' in r) {
                             if (astAtRule.val !== '' && r.val !== '') {
                                 if (astAtRule.nam == 'media' && r.nam == 'media') {
                                     r.val = astAtRule.val + ' and ' + r.val;
@@ -97,7 +97,7 @@ function expandRule(node) {
                             // @ts-ignore
                             values.push(r);
                         }
-                        else if (r.typ == 4 /* NodeType.RuleNodeType */) {
+                        else if (r.typ == NodeType.RuleNodeType) {
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
                         }
