@@ -128,7 +128,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         };
     }
 
-    async function parseNode(results: TokenizeResult[]) {
+    async function parseNode(results: TokenizeResult[]): Promise<AstRule | AstAtRule | null> {
 
         let tokens: Token[] = results.map(mapToken);
 
@@ -362,7 +362,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                         }
                     }
 
-                    let t = renderToken(curr, {minify: false});
+                    let t: string = renderToken(curr, {minify: false});
+
                     if (t == ',') {
                         acc.push([]);
                     } else {
@@ -430,7 +431,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                     name = tokens;
                 }
-                const position = map.get(name[0]);
+                const position: Position = <Position> map.get(name[0]);
 
                 if (name.length > 0) {
 
@@ -496,7 +497,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         return node;
     }
 
-    const iter = tokenize(iterator);
+    const iter: Generator<TokenizeResult> = tokenize(iterator);
     let item: TokenizeResult;
 
     while (item = iter.next().value) {

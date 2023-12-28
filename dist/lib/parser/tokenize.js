@@ -26,7 +26,7 @@ function* tokenize(stream) {
         return count;
     }
     function pushToken(token, hint) {
-        const result = { token, hint, position: { ...position }, bytesIn: ind };
+        const result = { token, hint, position: { ...position }, bytesIn: ind + 1 };
         position.ind = ind;
         position.lin = lin;
         position.col = col == 0 ? 1 : col;

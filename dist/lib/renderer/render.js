@@ -287,7 +287,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.PseudoClassFuncTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
-                token.chi.length == 1 && token.chi[0].typ != EnumToken.BinaryExpressionTokenType) {
+                token.chi.length == 1 &&
+                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
+                token.chi[0].typ != EnumToken.FractionTokenType &&
+                token.chi[0].val?.typ != EnumToken.FractionTokenType) {
                 // calc(200px) => 200px
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
@@ -351,19 +354,26 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            if (token.val.typ == EnumToken.FractionTokenType) {
-                const result = renderToken(token.val, options, cache);
-                if (!('unit' in token)) {
-                    return result;
-                }
-                if (!result.includes(' ')) {
-                    return result + token.unit;
-                }
-                return `(${result})*1${token.unit}`;
-            }
-            let val = reduceNumber(token.val);
+            // if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
+            //     const result: string = renderToken(<FractionToken>token.val, options, cache);
+            //
+            //     if (!('unit' in token)) {
+            //
+            //         return result;
+            //     }
+            //
+            //     return result.includes('/') ? result.replace('/', token.unit + '/') : result + token.unit;
+            //
+            //     // if (!result.includes(' ')) {
+            //     //
+            //     //     return result + token.unit;
+            //     // }
+            //
+            //     // return `(${result})*1${token.unit}`;
+            // }
+            let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
             let unit = token.unit;
-            if (token.typ == EnumToken.AngleTokenType) {
+            if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
                 const angle = getAngle(token);
                 let v;
                 let value = val + unit;
@@ -420,7 +430,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return '0';
             }
-            return val + unit;
+            return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case EnumToken.PercentageTokenType:
             const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');

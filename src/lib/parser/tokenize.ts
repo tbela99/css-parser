@@ -35,7 +35,7 @@ export function* tokenize(stream: string): Generator<TokenizeResult> {
 
     function pushToken(token: string, hint?: TokenType): TokenizeResult {
 
-        const result = {token, hint, position: {...position}, bytesIn: ind};
+        const result = {token, hint, position: {...position}, bytesIn: ind + 1};
 
         position.ind = ind;
         position.lin = lin;

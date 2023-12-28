@@ -11,7 +11,7 @@ import {
     BinaryExpressionToken,
     ColorToken, DimensionToken,
     ErrorDescription, FractionToken,
-    Location,
+    Location, NumberToken,
     Position,
     RenderOptions,
     RenderResult,
@@ -455,7 +455,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             if (
                 token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
-                token.chi.length == 1 && token.chi[0].typ != EnumToken.BinaryExpressionTokenType) {
+                token.chi.length == 1 &&
+                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
+                token.chi[0].typ != EnumToken.FractionTokenType &&
+                (<FractionToken>(<NumberToken>token.chi[0]).val)?.typ != EnumToken.FractionTokenType) {
 
                 // calc(200px) => 200px
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '')
@@ -548,31 +551,33 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
 
-            if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
-                const result: string = renderToken(<FractionToken>token.val, options, cache);
+            // if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
+            //     const result: string = renderToken(<FractionToken>token.val, options, cache);
+            //
+            //     if (!('unit' in token)) {
+            //
+            //         return result;
+            //     }
+            //
+            //     return result.includes('/') ? result.replace('/', token.unit + '/') : result + token.unit;
+            //
+            //     // if (!result.includes(' ')) {
+            //     //
+            //     //     return result + token.unit;
+            //     // }
+            //
+            //     // return `(${result})*1${token.unit}`;
+            // }
 
-                if (!('unit' in token)) {
-
-                    return result;
-                }
-
-                if (!result.includes(' ')) {
-
-                    return result + token.unit;
-                }
-
-                return `(${result})*1${token.unit}`;
-            }
-
-            let val: string = reduceNumber(<string | number>token.val);
+            let val: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string | number>token.val);
             let unit: string = token.unit;
 
-            if (token.typ == EnumToken.AngleTokenType) {
+            if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
 
                 const angle: number = getAngle(<AngleToken>token);
 
                 let v: string;
-                let value = val + unit;
+                let value: string = val + unit;
 
                 for (const u of ['turn', 'deg', 'rad', 'grad']) {
 
@@ -659,12 +664,11 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 return '0';
             }
 
-            return val + unit;
+            return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
 
         case EnumToken.PercentageTokenType:
 
-            const perc: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string
-                >token.val);
+            const perc: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string>token.val);
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
 
         case EnumToken.NumberTokenType:

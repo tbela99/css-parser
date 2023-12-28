@@ -48,7 +48,7 @@ describe('calc expression', function () {
 `, {inlineCssVariables: true}).then(result => f(result.code).equals(`.foo-bar{width:25px}`));
     });
 
-    it('calc #4', function () {
+    it('calc #5', function () {
         const css = `
 `;
         return transform(`
@@ -63,7 +63,7 @@ describe('calc expression', function () {
 `, {inlineCssVariables: true}).then(result => f(result.code).equals(`.foo-bar{width:12px;height:25%}`));
     });
 
-    it('calc #5', function () {
+    it('calc #6', function () {
         const css = `
 `;
         return transform(`
@@ -76,5 +76,27 @@ describe('calc expression', function () {
     height: calc(100% / 4);
 }
 `).then(result => f(result.code).equals(`:root{--preferred-width:20px}.foo-bar{width:calc((var(--preferred-width) + 1px)/3 + 5px);height:25%}`));
+    });
+
+    it('calc #7', function () {
+        const css = `
+`;
+        return transform(`
+
+.foo {
+        height: calc(100px * 2/ 15 + 2px/3);
+}
+`).then(result => f(result.code).equals(`.foo{height:14px}`));
+    });
+
+    it('calc #8', function () {
+        const css = `
+`;
+        return transform(`
+
+.foo {
+        height: calc(100px * 2/ 15);
+}
+`).then(result => f(result.code).equals(`.foo{height:calc(40px/3)}`));
     });
 });

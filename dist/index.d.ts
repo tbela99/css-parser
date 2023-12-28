@@ -445,7 +445,6 @@ interface FractionToken extends BaseToken {
     l: NumberToken;
     r: NumberToken;
 }
-
 interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
