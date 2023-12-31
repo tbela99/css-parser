@@ -9,7 +9,7 @@ export * from './config';
 export * from './visitor';
 export * from './walker';
 
-export interface ErrorDescription {
+export declare interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
@@ -22,13 +22,13 @@ export interface ErrorDescription {
     error?: Error;
 }
 
-export interface PropertyListOptions {
+export declare interface PropertyListOptions {
 
     removeDuplicateDeclarations?: boolean;
     computeShorthand?: boolean;
 }
 
-export interface MinifyFeature {
+export declare interface MinifyFeature {
 
     ordering: number;
 
@@ -39,7 +39,7 @@ export interface MinifyFeature {
     cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
 }
 
-export interface ParserOptions extends PropertyListOptions {
+export declare interface ParserOptions extends PropertyListOptions {
 
     minify?: boolean;
     src?: string;
@@ -65,17 +65,17 @@ export interface ParserOptions extends PropertyListOptions {
     signal?: AbortSignal;
 }
 
-export interface MinifyOptions extends ParserOptions {
+export declare interface MinifyOptions extends ParserOptions {
 
     features: MinifyFeature[];
 }
 
-export interface ResoledPath {
+export declare interface ResolvedPath {
     absolute: string;
     relative: string;
 }
 
-export interface RenderOptions {
+export declare interface RenderOptions {
 
     minify?: boolean;
     expandNestingRules?: boolean;
@@ -88,15 +88,15 @@ export interface RenderOptions {
     output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResoledPath;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
 
 }
 
-export interface TransformOptions extends ParserOptions, RenderOptions {
+export declare interface TransformOptions extends ParserOptions, RenderOptions {
 
 }
 
-export interface ParseResult {
+export declare interface ParseResult {
     ast: AstRuleStyleSheet;
     errors: ErrorDescription[];
     stats: {
@@ -107,7 +107,7 @@ export interface ParseResult {
     }
 }
 
-export interface RenderResult {
+export declare interface RenderResult {
     code: string;
     errors: ErrorDescription[];
     stats: {
@@ -116,7 +116,7 @@ export interface RenderResult {
     map?: SourceMapObject
 }
 
-export interface TransformResult extends ParseResult, RenderResult {
+export declare interface TransformResult extends ParseResult, RenderResult {
 
     stats: {
         bytesIn: number;
@@ -128,30 +128,25 @@ export interface TransformResult extends ParseResult, RenderResult {
     }
 }
 
-export interface ParseTokenOptions extends ParserOptions {
+export declare interface ParseTokenOptions extends ParserOptions {
     parseColor?: boolean;
 }
 
-export interface TokenizeResult {
+export declare interface TokenizeResult {
     token: string;
     hint?: EnumToken;
     position: Position;
     bytesIn: number;
 }
 
-export interface MatchedSelector {
+export declare interface MatchedSelector {
     match: string[][];
     selector1: string[][];
     selector2: string[][];
     eq: boolean
 }
 
-export interface WalkAttributesResult {
-    value: Token;
-    parent: FunctionToken | ParensToken | null;
-}
-
-export interface VariableScopeInfo {
+export declare interface VariableScopeInfo {
     globalScope: boolean;
     parent: Set<AstRule | AstAtRule>;
     declarationCount: number;
@@ -159,7 +154,7 @@ export interface VariableScopeInfo {
     node: AstDeclaration;
 }
 
-export interface SourceMapObject {
+export declare interface SourceMapObject {
     version: number;
     file?: string;
     sourceRoot?: string;

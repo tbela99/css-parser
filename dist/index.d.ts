@@ -175,7 +175,7 @@ export declare interface AstRuleStyleSheet$1 extends AstRuleList {
     chi: Array<AstRuleList | AstComment>
 }
 
-type AstNode =
+export declare type AstNode =
     AstRuleStyleSheet$1
     | AstRuleList
     | AstComment
@@ -675,6 +675,11 @@ export declare interface WalkResult {
     root?: AstRuleList;
 }
 
+export declare interface WalkAttributesResult {
+    value: Token;
+    parent: FunctionToken | ParensToken | null;
+}
+
 export declare interface ErrorDescription {
 
     // drop rule or declaration | fix rule or declaration
@@ -736,7 +741,7 @@ export declare interface MinifyOptions extends ParserOptions {
     features: MinifyFeature[];
 }
 
-export declare interface ResoledPath {
+export declare interface ResolvedPath {
     absolute: string;
     relative: string;
 }
@@ -754,7 +759,7 @@ export declare interface RenderOptions {
     output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
-    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResoledPath;
+    resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
 
 }
 
@@ -796,11 +801,6 @@ export declare interface TransformResult extends ParseResult, RenderResult {
 
 export declare interface ParseTokenOptions extends ParserOptions {
     parseColor?: boolean;
-}
-
-export declare interface WalkAttributesResult {
-    value: Token;
-    parent: FunctionToken | ParensToken | null;
 }
 
 export declare interface SourceMapObject {

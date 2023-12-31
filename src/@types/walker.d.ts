@@ -1,4 +1,5 @@
 import {AstNode, AstRuleList} from "./ast";
+import {FunctionToken, ParensToken, Token} from "./token";
 
 export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | null;
 /**
@@ -10,8 +11,13 @@ export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-chil
  */
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
-export interface WalkResult {
+export declare interface WalkResult {
     node: AstNode;
     parent?: AstRuleList;
     root?: AstRuleList;
+}
+
+export declare interface WalkAttributesResult {
+    value: Token;
+    parent: FunctionToken | ParensToken | null;
 }

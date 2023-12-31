@@ -2,40 +2,40 @@ import {NodeType} from "../lib";
 import {Token} from "./token";
 
 
-export interface Position {
+export declare interface Position {
 
     ind: number;
     lin: number;
     col: number;
 }
 
-export interface Location {
+export declare interface Location {
 
     sta: Position;
     // end: Position;
     src: string;
 }
 
-interface Node {
+export declare interface Node {
 
     typ: NodeType;
     loc?: Location;
 }
 
-export interface AstComment extends Node {
+export declare interface AstComment extends Node {
 
     typ: NodeType.CommentNodeType | NodeType.CDOCOMMNodeType,
     val: string;
 }
 
-export interface AstDeclaration extends Node {
+export declare interface AstDeclaration extends Node {
 
     nam: string,
     val: Token[];
     typ: NodeType.DeclarationNodeType
 }
 
-export interface AstRule extends Node {
+export declare interface AstRule extends Node {
 
     typ: NodeType.RuleNodeType;
     sel: string;
@@ -46,14 +46,14 @@ export interface AstRule extends Node {
 
 export declare type RawSelectorTokens = string[][];
 
-export interface OptimizedSelector {
+export declare interface OptimizedSelector {
     match: boolean;
     optimized: string[];
     selector: string[][],
     reducible: boolean;
 }
 
-export interface AstAtRule extends Node {
+export declare interface AstAtRule extends Node {
 
     typ: AtRuleNodeType,
     nam: string;
@@ -61,18 +61,18 @@ export interface AstAtRule extends Node {
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
-export interface AstRuleList extends Node {
+export declare interface AstRuleList extends Node {
 
     typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
     chi: Array<Node | AstComment>
 }
 
-export interface AstRuleStyleSheet extends AstRuleList {
+export declare interface AstRuleStyleSheet extends AstRuleList {
     typ: StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
-export type AstNode =
+export declare type AstNode =
     AstRuleStyleSheet
     | AstRuleList
     | AstComment

@@ -11,7 +11,7 @@
   "type": "module",
   "typings": "dist/index.d.ts",
   "scripts": {
-    "build": "rollup -c;sed -i 's/^interface/export declare interface/g' dist/index.d.ts 2>/dev/null || sed -i '' 's/^interface/export declare interface/g' dist/index.d.ts;sed -i 's/^declare type/export declare type/g' dist/index.d.ts 2>/dev/null || sed -i '' 's/^declare type/export declare type/g' dist/index.d.ts",
+    "build": "rollup -c;./build.sh dist/index.d.ts 'declare interface' 'declare type'",
     "test": "web-test-runner \"test/**/*.web.spec.js\" --node-resolve --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.node.spec.js\"",
     "test:cov": "c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.node.spec.js\"",
     "test:web-cov": "web-test-runner \"test/**/*.web.spec.js\" --node-resolve --root-dir=.  --coverage",
