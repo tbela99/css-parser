@@ -1,4 +1,4 @@
-import {Location} from "./index";
+import {Location} from "./ast";
 import {EnumToken} from "../lib";
 
 interface BaseToken {
