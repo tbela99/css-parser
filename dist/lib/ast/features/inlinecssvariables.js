@@ -1,4 +1,4 @@
-import { NodeType, EnumToken } from '../types.js';
+import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
 
@@ -44,14 +44,14 @@ class InlineCssVariables extends MinifyFeature {
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
-        const isRoot = parent.typ == NodeType.StyleSheetNodeType && ast.typ == NodeType.RuleNodeType && ast.sel == ':root';
+        const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && ast.sel == ':root';
         const variableScope = context.variableScope;
         // @ts-ignore
         for (const node of ast.chi) {
-            if (node.typ == NodeType.CDOCOMMNodeType || node.typ == NodeType.CommentNodeType) {
+            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
                 continue;
             }
-            if (node.typ != NodeType.DeclarationNodeType) {
+            if (node.typ != EnumToken.DeclarationNodeType) {
                 break;
             }
             // css variable
@@ -104,7 +104,7 @@ class InlineCssVariables extends MinifyFeature {
                 for (const parent of info.parent) {
                     i = parent.chi?.length ?? 0;
                     while (i--) {
-                        if (parent.chi[i].typ == NodeType.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
+                        if (parent.chi[i].typ == EnumToken.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
                             parent.chi.splice(i, 1);
                         }
                     }

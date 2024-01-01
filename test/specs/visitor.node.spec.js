@@ -1,5 +1,5 @@
 /* generate from test/specs/block.spec.ts */
-import {transform, EnumToken, NodeType} from '../../dist/node/index.js';
+import {transform, EnumToken} from '../../dist/node/index.js';
 import {expect} from "@esm-bundle/chai";
 
 describe('node visitor', function () {
@@ -39,7 +39,7 @@ describe('node visitor', function () {
                             node,
                             {
 
-                                typ: NodeType.DeclarationNodeType,
+                                typ: EnumToken.DeclarationNodeType,
                                 nam: 'width',
                                 val: [
                                     {

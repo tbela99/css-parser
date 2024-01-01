@@ -9,7 +9,7 @@
 # shorthands
 
 - [ ] transition
-- [ ] list-style
+- [x] list-style
 - [ ] text-emphasis
 - [ ] animation
 

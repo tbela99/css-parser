@@ -14,7 +14,7 @@ import {
 } from "./utils";
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/utils";
-import {combinators, EnumToken, expand, minify, NodeType, walk, walkValues} from "../ast";
+import {combinators, EnumToken, expand, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
     AstAtRule,
@@ -36,7 +36,7 @@ import {
     DashMatchToken, DeclarationVisitorHandler,
     DelimToken,
     EndMatchToken,
-    ErrorDescription,
+    ErrorDescription, FunctionImageToken,
     FunctionToken,
     FunctionURLToken,
     GreaterThanToken,
@@ -70,7 +70,14 @@ import {
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
-const funcLike: EnumToken[] = [EnumToken.ParensTokenType, EnumToken.StartParensTokenType, EnumToken.FunctionTokenType, EnumToken.UrlFunctionTokenType, EnumToken.PseudoClassFuncTokenType];
+const funcLike: EnumToken[] = [
+    EnumToken.ParensTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType
+];
 const BadTokensTypes: EnumToken[] = [EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
     EnumToken.BadUrlTokenType,
@@ -119,7 +126,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         const src: string = <string>options.src;
         const stack: Array<AstNode | AstComment> = [];
         let ast: AstRuleStyleSheet = {
-            typ: NodeType.StyleSheetNodeType,
+            typ: EnumToken.StyleSheetNodeType,
             chi: []
         };
 
@@ -152,7 +159,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                     const position: Position = <Position>map.get(tokens[i]);
 
-                    if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != NodeType.StyleSheetNodeType) {
+                    if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
 
                         errors.push({
                             action: 'drop',
@@ -237,10 +244,10 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                         let i = context.chi.length;
                         while (i--) {
                             const type = context.chi[i].typ;
-                            if (type == NodeType.CommentNodeType) {
+                            if (type == EnumToken.CommentNodeType) {
                                 continue;
                             }
-                            if (type != NodeType.AtRuleNodeType) {
+                            if (type != EnumToken.AtRuleNodeType) {
                                 errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                                 return null;
                             }
@@ -340,7 +347,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 }, []);
 
                 const node: AstAtRule = {
-                    typ: NodeType.AtRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     nam: renderToken(atRule, {removeComments: true}),
                     val: raw.join('')
                 };
@@ -400,7 +407,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     }, uniq);
 
                     const node: AstRule = {
-                        typ: NodeType.RuleNodeType,
+                        typ: EnumToken.RuleNodeType,
                         // @ts-ignore
                         sel: [...uniq.keys()].join(','),
                         chi: []
@@ -488,7 +495,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     }
 
                     const node: AstDeclaration = {
-                        typ: NodeType.DeclarationNodeType,
+                        typ: EnumToken.DeclarationNodeType,
                         // @ts-ignore
                         nam: renderToken(name.shift(), {removeComments: true}),
                         // @ts-ignore
@@ -628,7 +635,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             for (const result of walk(ast)) {
 
                 if (
-                    result.node.typ == NodeType.DeclarationNodeType &&
+                    result.node.typ == EnumToken.DeclarationNodeType &&
 
                     // @ts-ignore
                     (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[(<AstDeclaration>result.node).nam] != null)
@@ -644,7 +651,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                     // @ts-ignore
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
-                } else if (options.visitor.Rule != null && result.node.typ == NodeType.RuleNodeType) {
+                } else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
 
                     const results: AstRule | AstRule[] | void | null = options.visitor.Rule(<AstRule>result.node);
 
@@ -656,7 +663,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     // @ts-ignore
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
                 } else if (options.visitor.AtRule != null &&
-                    result.node.typ == NodeType.AtRuleNodeType &&
+                    result.node.typ == EnumToken.AtRuleNodeType &&
                     // @ts-ignore
                     (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[(<AstAtRule>result.node).nam] != null)) {
 
@@ -818,8 +825,26 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (isFunction(val)) {
         val = val.slice(0, -1);
-        return <FunctionURLToken | FunctionToken>{
-            typ: val == 'url' ? EnumToken.UrlFunctionTokenType : EnumToken.FunctionTokenType,
+
+        if (val == 'url') {
+
+            return <FunctionURLToken>{
+                typ: EnumToken.UrlFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+            return <FunctionImageToken>{
+                typ: EnumToken.ImageFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        return <FunctionToken>{
+            typ: EnumToken.FunctionTokenType,
             val,
             chi: <Token[]>[]
         };

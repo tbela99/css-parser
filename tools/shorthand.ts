@@ -8,7 +8,7 @@ import {
 
 function createProperties(data: ShorthandPropertyType) {
 
-    const map = <string> data.map;
+    const map: string = <string> data.map;
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
@@ -19,7 +19,7 @@ function createProperties(data: ShorthandPropertyType) {
                     shorthand: data.shorthand
                 }
             });
-        }, <PropertySetType>{}),
+        }, <PropertySetType>{})
     }
 }
 
@@ -67,6 +67,42 @@ export const map: ShorthandMapType = [
             {
                 shorthand: 'border-width',
                 properties: {}
+            }
+        ]
+    ],
+
+    [
+        {
+            shorthand: 'list-style',
+            pattern: 'list-style-type list-style-position list-style-image',
+            keywords: ['none'],
+            default: ['none']
+        },
+        [
+            {
+                shorthand: 'list-style-position',
+                properties: {
+                    types: [],
+                    default: ['outside'],
+                    keywords: ['inside', 'outside'],
+                }
+            },
+            {
+                shorthand: 'list-style-image',
+                properties: {
+                    default: ['none'],
+                    keywords: ['node'],
+                    types: ['UrlFunc', 'ImageFunc']
+                }
+            },
+            {
+                shorthand: 'list-style-type',
+                properties:
+                    {
+                        types: ['String', 'Iden', 'Symbols'],
+                        default: ['disc'],
+                        keywords: ['disc', 'circle', 'square', 'decimal', 'decimal-leading-zero', 'lower-roman', 'upper-roman', 'lower-greek', 'lower-latin', 'upper-latin', 'none']
+                    }
             }
         ]
     ],
@@ -287,7 +323,7 @@ export const map: ShorthandMapType = [
             {
                 shorthand: 'background-image',
                 properties: {
-                    types: ['UrlFunc'],
+                    types: ['UrlFunc', 'ImageFunc'],
                     default: ['none'],
                     keywords: ['none']
                 }

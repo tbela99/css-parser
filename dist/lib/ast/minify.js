@@ -1,6 +1,6 @@
 import { parseString } from '../parser/parse.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../parser/utils/syntax.js';
-import { NodeType, EnumToken } from './types.js';
+import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';
 import { eq } from '../parser/utils/eq.js';
@@ -47,7 +47,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 curr.splice(0, 1);
             }
         }
-        else if (ast.typ == NodeType.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
+        else if (ast.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
             curr.unshift('&', ' ');
         }
         acc.push(curr.join(''));
@@ -56,7 +56,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     // @ts-ignore
     if ('chi' in ast && ast.chi.length > 0) {
         if (!nestingContent) {
-            nestingContent = options.nestingRules && ast.typ == NodeType.RuleNodeType;
+            nestingContent = options.nestingRules && ast.typ == EnumToken.RuleNodeType;
         }
         let i = 0;
         let previous;
@@ -65,7 +65,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         // @ts-ignore
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
-            if (ast.chi[i].typ == NodeType.CommentNodeType) {
+            if (ast.chi[i].typ == EnumToken.CommentNodeType) {
                 continue;
             }
             // @ts-ignore
@@ -77,10 +77,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 i--;
                 continue;
             }
-            if (node.typ == NodeType.AtRuleNodeType && node.nam == 'font-face') {
+            if (node.typ == EnumToken.AtRuleNodeType && node.nam == 'font-face') {
                 continue;
             }
-            if (node.typ == NodeType.AtRuleNodeType) {
+            if (node.typ == EnumToken.AtRuleNodeType) {
                 if (node.nam == 'media' && node.val == 'all') {
                     // @ts-ignore
                     ast.chi?.splice(i, 1, ...node.chi);
@@ -88,7 +88,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     continue;
                 }
                 // @ts-ignore
-                if (previous?.typ == NodeType.AtRuleNodeType &&
+                if (previous?.typ == EnumToken.AtRuleNodeType &&
                     previous.nam == node.nam &&
                     previous.val == node.val) {
                     if ('chi' in node) {
@@ -107,14 +107,14 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 continue;
             }
             // @ts-ignore
-            if (node.typ == NodeType.RuleNodeType) {
+            if (node.typ == EnumToken.RuleNodeType) {
                 reduceRuleSelector(node);
                 let wrapper;
                 let match;
                 // @ts-ignore
                 if (options.nestingRules) {
                     // @ts-ignore
-                    if (previous?.typ == NodeType.RuleNodeType) {
+                    if (previous?.typ == EnumToken.RuleNodeType) {
                         // @ts-ignore
                         reduceRuleSelector(previous);
                         // @ts-ignore
@@ -135,7 +135,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                             // @ts-ignore
                             const nextNode = ast.chi[i];
                             // @ts-ignore
-                            if (nextNode.typ != NodeType.RuleNodeType) {
+                            if (nextNode.typ != EnumToken.RuleNodeType) {
                                 break;
                             }
                             reduceRuleSelector(nextNode);
@@ -189,7 +189,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                                 curr.splice(0, 2);
                             }
                             else {
-                                if (ast.typ != NodeType.RuleNodeType && combinators.includes(curr[1])) {
+                                if (ast.typ != EnumToken.RuleNodeType && combinators.includes(curr[1])) {
                                     wrap = false;
                                 }
                                 else {
@@ -237,18 +237,18 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                         let k = previous.chi.length;
                         while (k-- > 0) {
                             // @ts-ignore
-                            if (previous.chi[k].typ == NodeType.CommentNodeType) {
+                            if (previous.chi[k].typ == EnumToken.CommentNodeType) {
                                 continue;
                             }
                             // @ts-ignore
-                            shouldMerge = previous.chi[k].typ == NodeType.DeclarationNodeType;
+                            shouldMerge = previous.chi[k].typ == EnumToken.DeclarationNodeType;
                             break;
                         }
                         if (shouldMerge) {
                             // @ts-ignore
-                            if ((node.typ == NodeType.RuleNodeType && node.sel == previous.sel) ||
+                            if ((node.typ == EnumToken.RuleNodeType && node.sel == previous.sel) ||
                                 // @ts-ignore
-                                (node.typ == NodeType.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
+                                (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
                                 // @ts-ignore
                                 node.chi.unshift(...previous.chi);
                                 // @ts-ignore
@@ -265,7 +265,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                                 nodeIndex = i;
                                 continue;
                             }
-                            else if (node.typ == NodeType.RuleNodeType && previous?.typ == NodeType.RuleNodeType) {
+                            else if (node.typ == EnumToken.RuleNodeType && previous?.typ == EnumToken.RuleNodeType) {
                                 const intersect = diff(previous, node, reducer, options);
                                 if (intersect != null) {
                                     if (intersect.node1.chi.length == 0) {
@@ -322,7 +322,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 // @ts-ignore
                 previous != null &&
                 // previous.optimized != null &&
-                previous.typ == NodeType.RuleNodeType &&
+                previous.typ == EnumToken.RuleNodeType &&
                 previous.sel.includes('&')) {
                 fixSelector(previous);
             }
@@ -332,9 +332,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
-            if (!node.chi.some(n => n.typ == NodeType.DeclarationNodeType)) {
+            if (!node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
                 // @ts-ignore
-                if (!(node.typ == NodeType.AtRuleNodeType && node.nam != 'font-face')) {
+                if (!(node.typ == EnumToken.AtRuleNodeType && node.nam != 'font-face')) {
                     minify(node, options, recursive, errors, nestingContent, context);
                 }
             }
@@ -343,12 +343,12 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             // @ts-ignore
             node != null &&
             // previous.optimized != null &&
-            node.typ == NodeType.RuleNodeType &&
+            node.typ == EnumToken.RuleNodeType &&
             node.sel.includes('&')) {
             fixSelector(node);
         }
     }
-    if (ast.typ == NodeType.StyleSheetNodeType) {
+    if (ast.typ == EnumToken.StyleSheetNodeType) {
         let parent;
         let parents = [ast];
         while (parents.length > 0) {
@@ -357,7 +357,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             for (let k = 0; k < parent.chi.length; k++) {
                 // @ts-ignore
                 const node = parent.chi[k];
-                if (!('chi' in node) || node.typ == NodeType.StyleSheetNodeType || (node.typ == NodeType.AtRuleNodeType && node.nam == 'font-face')) {
+                if (!('chi' in node) || node.typ == EnumToken.StyleSheetNodeType || (node.typ == EnumToken.AtRuleNodeType && node.nam == 'font-face')) {
                     continue;
                 }
                 // @ts-ignore
@@ -468,11 +468,11 @@ function hasDeclaration(node) {
     // @ts-ignore
     for (let i = 0; i < node.chi?.length; i++) {
         // @ts-ignore
-        if (node.chi[i].typ == NodeType.CommentNodeType) {
+        if (node.chi[i].typ == EnumToken.CommentNodeType) {
             continue;
         }
         // @ts-ignore
-        return node.chi[i].typ == NodeType.DeclarationNodeType;
+        return node.chi[i].typ == EnumToken.DeclarationNodeType;
     }
     return true;
 }
@@ -618,7 +618,7 @@ function matchSelectors(selector1, selector2, parentType, errors) {
     if (matchFunction != 0 || inAttr != 0) {
         return null;
     }
-    if (parentType != NodeType.RuleNodeType) {
+    if (parentType != EnumToken.RuleNodeType) {
         for (const part of match) {
             if (part.length > 0 && combinators.includes(part[0].charAt(0))) {
                 return null;
@@ -824,7 +824,7 @@ function diff(n1, n2, reducer, options = {}) {
     }
     const intersect = [];
     while (i--) {
-        if (node1.chi[i].typ == NodeType.CommentNodeType) {
+        if (node1.chi[i].typ == EnumToken.CommentNodeType) {
             continue;
         }
         j = node2.chi.length;
@@ -832,7 +832,7 @@ function diff(n1, n2, reducer, options = {}) {
             break;
         }
         while (j--) {
-            if (node2.chi[j].typ == NodeType.CommentNodeType) {
+            if (node2.chi[j].typ == EnumToken.CommentNodeType) {
                 continue;
             }
             if (node1.chi[i].nam == node2.chi[j].nam) {

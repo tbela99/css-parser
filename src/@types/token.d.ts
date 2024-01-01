@@ -66,6 +66,13 @@ export declare interface FunctionURLToken extends BaseToken {
     chi: Array<UrlToken | CommentToken>;
 }
 
+export declare interface FunctionImageToken extends BaseToken {
+
+    typ: EnumToken.ImageFunctionTokenType,
+    val: 'linear-gradient' | 'radial-gradient' | 'repeating-linear-gradient' | 'repeating-radial-gradient' | 'conic-gradient' | 'image' | 'image-set' | 'element' | 'cross-fade';
+    chi: Array<UrlToken | CommentToken>;
+}
+
 export declare interface StringToken extends BaseToken {
 
     typ: EnumToken.StringTokenType;
@@ -395,6 +402,7 @@ export declare type Token =
     | AtRuleToken
     | PercentageToken
     | FunctionURLToken
+    | FunctionImageToken
     | FunctionToken
     | DimensionToken
     | LengthToken

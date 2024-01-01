@@ -95,6 +95,17 @@ describe('calc expression', function () {
         return transform(`
 
 .foo {
+        height: calc(100px * 2/ 15 - 5% - 1px/3);
+}
+`).then(result => f(result.code).equals(`.foo{height:calc(13px - 5%)}`));
+    });
+
+    it('calc #9', function () {
+        const css = `
+`;
+        return transform(`
+
+.foo {
         height: calc(100px * 2/ 15);
 }
 `).then(result => f(result.code).equals(`.foo{height:calc(40px/3)}`));

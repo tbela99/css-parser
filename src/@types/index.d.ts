@@ -8,6 +8,7 @@ export * from './shorthand';
 export * from './config';
 export * from './visitor';
 export * from './walker';
+export * from './parse';
 
 export declare interface ErrorDescription {
 
@@ -20,12 +21,6 @@ export declare interface ErrorDescription {
         col: number;
     };
     error?: Error;
-}
-
-export declare interface PropertyListOptions {
-
-    removeDuplicateDeclarations?: boolean;
-    computeShorthand?: boolean;
 }
 
 export declare interface MinifyFeature {

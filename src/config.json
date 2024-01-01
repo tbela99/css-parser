@@ -292,6 +292,72 @@
   "border-width": {
    "shorthand": "border"
   },
+  "list-style": {
+   "shorthand": "list-style",
+   "pattern": "list-style-type list-style-position list-style-image",
+   "keywords": [
+    "none"
+   ],
+   "default": [
+    "none"
+   ],
+   "properties": {
+    "list-style-position": {
+     "types": [],
+     "default": [
+      "outside"
+     ],
+     "keywords": [
+      "inside",
+      "outside"
+     ]
+    },
+    "list-style-image": {
+     "default": [
+      "none"
+     ],
+     "keywords": [
+      "node"
+     ],
+     "types": [
+      "UrlFunc",
+      "ImageFunc"
+     ]
+    },
+    "list-style-type": {
+     "types": [
+      "String",
+      "Iden",
+      "Symbols"
+     ],
+     "default": [
+      "disc"
+     ],
+     "keywords": [
+      "disc",
+      "circle",
+      "square",
+      "decimal",
+      "decimal-leading-zero",
+      "lower-roman",
+      "upper-roman",
+      "lower-greek",
+      "lower-latin",
+      "upper-latin",
+      "none"
+     ]
+    }
+   }
+  },
+  "list-style-position": {
+   "shorthand": "list-style"
+  },
+  "list-style-image": {
+   "shorthand": "list-style"
+  },
+  "list-style-type": {
+   "shorthand": "list-style"
+  },
   "overflow": {
    "shorthand": "overflow",
    "pattern": "overflow-x overflow-y",
@@ -693,7 +759,8 @@
     },
     "background-image": {
      "types": [
-      "UrlFunc"
+      "UrlFunc",
+      "ImageFunc"
      ],
      "default": [
       "none"

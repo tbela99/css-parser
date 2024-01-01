@@ -1,7 +1,7 @@
 import { eq } from '../utils/eq.js';
 import { renderToken } from '../../renderer/render.js';
 import '../../renderer/utils/color.js';
-import { EnumToken, NodeType } from '../../ast/types.js';
+import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { parseString } from '../parse.js';
 import { getConfig } from '../utils/config.js';
@@ -128,7 +128,7 @@ class PropertyMap {
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                         acc.set(curr[0], {
-                            typ: NodeType.DeclarationNodeType,
+                            typ: EnumToken.DeclarationNodeType,
                             nam: curr[0],
                             val: curr[1].reduce((acc, curr) => {
                                 if (acc.length > 0) {
@@ -192,6 +192,37 @@ class PropertyMap {
             requiredCount = this.declarations.size;
         }
         if (!isShorthand || requiredCount < this.requiredCount) {
+            if (isShorthand && this.declarations.has(this.config.shorthand)) {
+                const removeDefaults = (declaration) => {
+                    const dec = { ...declaration };
+                    dec.val = declaration.val.filter((val) => {
+                        if (val.typ != EnumToken.Iden) {
+                            return true;
+                        }
+                        return !this.pattern.some((property) => {
+                            if (matchType(val, this.config.properties[property]) && this.config.properties[property].keywords.includes(val.val)) {
+                                return this.config.properties[property].default.includes(val.val);
+                            }
+                            return false;
+                        });
+                    });
+                    if (dec.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                        dec.val.pop();
+                    }
+                    return dec;
+                };
+                const values = [...this.declarations.values()].reduce((acc, curr) => {
+                    if (curr instanceof PropertySet) {
+                        acc.push(...curr);
+                    }
+                    else {
+                        acc.push(curr);
+                    }
+                    return acc;
+                }, []);
+                const filtered = values.map(removeDefaults).filter(x => x.val.length > 0);
+                return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
+            }
             // @ts-ignore
             iterable = this.declarations.values();
         }
@@ -370,7 +401,7 @@ class PropertyMap {
                     }
                 }
                 iterable = [{
-                        typ: NodeType.DeclarationNodeType,
+                        typ: EnumToken.DeclarationNodeType,
                         nam: this.config.shorthand,
                         val: values
                     }][Symbol.iterator]();

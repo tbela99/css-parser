@@ -8,9 +8,7 @@ import {
     AstRuleList,
     AstRuleStyleSheet,
     AttrToken,
-    BinaryExpressionToken,
-    ColorToken, DimensionToken,
-    ErrorDescription, FractionToken,
+    ColorToken, ErrorDescription, FractionToken,
     Location, NumberToken,
     Position,
     RenderOptions,
@@ -18,7 +16,7 @@ import {
     Token
 } from "../../@types";
 import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2Hex} from "./utils";
-import {EnumToken, expand, NodeType} from "../ast";
+import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isNewLine} from "../parser";
 
@@ -135,7 +133,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
-    if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType].includes(node.typ)) {
 
         let src: string = (<Location>node.loc)?.src ?? '';
         let output: string = <string>options.output ?? '';
@@ -186,12 +184,12 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
     switch (data.typ) {
 
-        case NodeType.DeclarationNodeType:
+        case EnumToken.DeclarationNodeType:
 
             return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce(reducer, '')}`;
 
-        case NodeType.CommentNodeType:
-        case NodeType.CDOCOMMNodeType:
+        case EnumToken.CommentNodeType:
+        case EnumToken.CDOCOMMNodeType:
 
             if ((<AstComment>data).val.startsWith('# sourceMappingURL=')) {
 
@@ -201,7 +199,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
             return !options.removeComments || (options.preserveLicense && (<AstComment>data).val.startsWith('/*!')) ? (<AstComment>data).val : '';
 
-        case NodeType.StyleSheetNodeType:
+        case EnumToken.StyleSheetNodeType:
 
             return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
 
@@ -232,10 +230,10 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
             }, '');
 
-        case NodeType.AtRuleNodeType:
-        case NodeType.RuleNodeType:
+        case EnumToken.AtRuleNodeType:
+        case EnumToken.RuleNodeType:
 
-            if (data.typ == NodeType.AtRuleNodeType && !('chi' in data)) {
+            if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
 
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
             }
@@ -245,10 +243,10 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
                 let str: string;
 
-                if (node.typ == NodeType.CommentNodeType) {
+                if (node.typ == EnumToken.CommentNodeType) {
 
                     str = options.removeComments && (!options.preserveLicense || !(<AstComment>node).val.startsWith('/*!')) ? '' : (<AstComment>node).val;
-                } else if (node.typ == NodeType.DeclarationNodeType) {
+                } else if (node.typ == EnumToken.DeclarationNodeType) {
 
                     if ((<AstDeclaration>node).val.length == 0) {
 
@@ -262,7 +260,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     }
 
                     str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '').trimEnd()};`;
-                } else if (node.typ == NodeType.AtRuleNodeType && !('chi' in node)) {
+                } else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
 
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
                 } else {
@@ -288,7 +286,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 children = children.slice(0, -1);
             }
 
-            if (data.typ == NodeType.AtRuleNodeType) {
+            if (data.typ == EnumToken.AtRuleNodeType) {
 
                 return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
@@ -450,6 +448,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
+        case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
 
             if (

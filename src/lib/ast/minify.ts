@@ -18,7 +18,7 @@ import {
     OptimizedSelector,
     ParserOptions, RawSelectorTokens
 } from "../../@types";
-import {EnumToken, NodeType} from "./types";
+import {EnumToken} from "./types";
 
 export const combinators: string[] = ['+', '>', '~', '||'];
 const notEndingWith: string[] = ['(', '['].concat(combinators);
@@ -77,7 +77,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                 curr.splice(0, 1);
             }
-        } else if (ast.typ == NodeType.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
+        } else if (ast.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
 
             curr.unshift('&', ' ');
         }
@@ -91,7 +91,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
         if (!nestingContent) {
 
-            nestingContent = options.nestingRules && ast.typ == NodeType.RuleNodeType;
+            nestingContent = options.nestingRules && ast.typ == EnumToken.RuleNodeType;
         }
 
         let i: number = 0;
@@ -102,7 +102,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
         for (; i < ast.chi.length; i++) {
 
             // @ts-ignore
-            if (ast.chi[i].typ == NodeType.CommentNodeType) {
+            if (ast.chi[i].typ == EnumToken.CommentNodeType) {
                 continue;
             }
             // @ts-ignore
@@ -117,10 +117,10 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                 continue;
             }
 
-            if (node.typ == NodeType.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face') {
+            if (node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face') {
                 continue;
             }
-            if (node.typ == NodeType.AtRuleNodeType) {
+            if (node.typ == EnumToken.AtRuleNodeType) {
 
                 if ((<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
 
@@ -131,7 +131,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                 }
 
                 // @ts-ignore
-                if (previous?.typ == NodeType.AtRuleNodeType &&
+                if (previous?.typ == EnumToken.AtRuleNodeType &&
                     (<AstAtRule>previous).nam == (<AstAtRule>node).nam &&
                     (<AstAtRule>previous).val == (<AstAtRule>node).val) {
 
@@ -157,7 +157,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             }
 
             // @ts-ignore
-            if (node.typ == NodeType.RuleNodeType) {
+            if (node.typ == EnumToken.RuleNodeType) {
 
                 reduceRuleSelector(<AstRule>node);
                 let wrapper: AstRule;
@@ -167,7 +167,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                 if (options.nestingRules) {
 
                     // @ts-ignore
-                    if (previous?.typ == NodeType.RuleNodeType) {
+                    if (previous?.typ == EnumToken.RuleNodeType) {
 
                         // @ts-ignore
                         reduceRuleSelector(<AstRule>previous);
@@ -195,7 +195,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                             const nextNode: AstRule = <AstRule>ast.chi[i];
 
                             // @ts-ignore
-                            if (nextNode.typ != NodeType.RuleNodeType) {
+                            if (nextNode.typ != EnumToken.RuleNodeType) {
 
                                 break;
                             }
@@ -262,7 +262,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                 curr.splice(0, 2);
                             } else {
 
-                                if (ast.typ != NodeType.RuleNodeType && combinators.includes(curr[1])) {
+                                if (ast.typ != EnumToken.RuleNodeType && combinators.includes(curr[1])) {
 
                                     wrap = false;
                                 } else {
@@ -330,19 +330,19 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                         while (k-- > 0) {
                             // @ts-ignore
-                            if (previous.chi[k].typ == NodeType.CommentNodeType) {
+                            if (previous.chi[k].typ == EnumToken.CommentNodeType) {
                                 continue;
                             }
                             // @ts-ignore
-                            shouldMerge = previous.chi[k].typ == NodeType.DeclarationNodeType;
+                            shouldMerge = previous.chi[k].typ == EnumToken.DeclarationNodeType;
                             break;
                         }
 
                         if (shouldMerge) {
                             // @ts-ignore
-                            if ((node.typ == NodeType.RuleNodeType && node.sel == previous.sel) ||
+                            if ((node.typ == EnumToken.RuleNodeType && node.sel == previous.sel) ||
                                 // @ts-ignore
-                                (node.typ == NodeType.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
+                                (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
 
                                 // @ts-ignore
                                 node.chi.unshift(...previous.chi);
@@ -360,7 +360,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                 previous = node;
                                 nodeIndex = i;
                                 continue;
-                            } else if (node.typ == NodeType.RuleNodeType && previous?.typ == NodeType.RuleNodeType) {
+                            } else if (node.typ == EnumToken.RuleNodeType && previous?.typ == EnumToken.RuleNodeType) {
 
                                 const intersect = diff(<AstRule>previous, <AstRule>node, reducer, options);
 
@@ -426,7 +426,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                 // @ts-ignore
                 previous != null &&
                 // previous.optimized != null &&
-                previous.typ == NodeType.RuleNodeType &&
+                previous.typ == EnumToken.RuleNodeType &&
                 (<AstRule>previous).sel.includes('&')) {
 
                 fixSelector((<AstRule>previous));
@@ -439,10 +439,10 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
         // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
-            if (!node.chi.some(n => n.typ == NodeType.DeclarationNodeType)) {
+            if (!node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
 
                 // @ts-ignore
-                if (!(node.typ == NodeType.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
+                if (!(node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
 
                     minify(node, options, recursive, errors, nestingContent, context);
                 }
@@ -453,14 +453,14 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             // @ts-ignore
             node != null &&
             // previous.optimized != null &&
-            node.typ == NodeType.RuleNodeType &&
+            node.typ == EnumToken.RuleNodeType &&
             (<AstRule>node).sel.includes('&')) {
 
             fixSelector((<AstRule>node));
         }
     }
 
-    if (ast.typ == NodeType.StyleSheetNodeType) {
+    if (ast.typ == EnumToken.StyleSheetNodeType) {
 
         let parent: AstRule | AstAtRule | AstRuleStyleSheet;
 
@@ -476,7 +476,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                 // @ts-ignore
                 const node = parent.chi[k];
 
-                if (!('chi' in node) || node.typ == NodeType.StyleSheetNodeType || (node.typ == NodeType.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face')) {
+                if (!('chi' in node) || node.typ == EnumToken.StyleSheetNodeType || (node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face')) {
 
                     continue;
                 }
@@ -626,12 +626,12 @@ export function hasDeclaration(node: AstRule): boolean {
     for (let i = 0; i < node.chi?.length; i++) {
 
         // @ts-ignore
-        if (node.chi[i].typ == NodeType.CommentNodeType) {
+        if (node.chi[i].typ == EnumToken.CommentNodeType) {
 
             continue;
         }
         // @ts-ignore
-        return node.chi[i].typ == NodeType.DeclarationNodeType;
+        return node.chi[i].typ == EnumToken.DeclarationNodeType;
     }
 
     return true;
@@ -744,7 +744,7 @@ export function splitRule(buffer: string): string[][] {
     return result;
 }
 
-function matchSelectors(selector1: string[][], selector2: string[][], parentType: NodeType, errors: ErrorDescription[]): null | MatchedSelector {
+function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
 
     let match: string[][] = [[]];
     const j: number = Math.min(
@@ -823,7 +823,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
         return null;
     }
 
-    if (parentType != NodeType.RuleNodeType) {
+    if (parentType != EnumToken.RuleNodeType) {
 
         for (const part of match) {
 
@@ -1109,7 +1109,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 
     while (i--) {
 
-        if (node1.chi[i].typ == NodeType.CommentNodeType) {
+        if (node1.chi[i].typ == EnumToken.CommentNodeType) {
 
             continue;
         }
@@ -1123,7 +1123,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 
         while (j--) {
 
-            if (node2.chi[j].typ == NodeType.CommentNodeType) {
+            if (node2.chi[j].typ == EnumToken.CommentNodeType) {
 
                 continue;
             }

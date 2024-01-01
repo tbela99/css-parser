@@ -7,9 +7,9 @@ import {
     ParserOptions,
     VariableScopeInfo
 } from "../../../@types";
-import {EnumToken, NodeType} from "../types";
+import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utils/minifyfeature";
+import {MinifyFeature} from "../utils";
 import {renderToken} from "../../renderer";
 import * as repl from "repl";
 
@@ -79,19 +79,19 @@ export class InlineCssVariables extends MinifyFeature {
             context.variableScope = <Map<string, VariableScopeInfo>>new Map;
         }
 
-        const isRoot: boolean = parent.typ == NodeType.StyleSheetNodeType && ast.typ == NodeType.RuleNodeType && (<AstRule>ast).sel == ':root';
+        const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && (<AstRule>ast).sel == ':root';
 
         const variableScope = context.variableScope;
 
         // @ts-ignore
         for (const node of ast.chi) {
 
-            if (node.typ == NodeType.CDOCOMMNodeType || node.typ == NodeType.CommentNodeType) {
+            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
 
                 continue;
             }
 
-            if (node.typ != NodeType.DeclarationNodeType) {
+            if (node.typ != EnumToken.DeclarationNodeType) {
 
                 break;
             }
@@ -173,7 +173,7 @@ export class InlineCssVariables extends MinifyFeature {
 
                     while (i--) {
 
-                        if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == NodeType.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
+                        if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == EnumToken.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
 
                             (<AstDeclaration[]>parent.chi).splice(i, 1);
                         }

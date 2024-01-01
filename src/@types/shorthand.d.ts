@@ -1,4 +1,4 @@
-import {NodeType} from "../lib";
+import {EnumToken} from "../lib";
 
 export interface PropertyType {
 
@@ -62,7 +62,7 @@ export interface ShorthandMapType {
 }
 
 export interface ShorthandProperties {
-    types: NodeType[];
+    types: EnumToken[];
     default: string[];
     keywords: string[];
     required?: boolean;

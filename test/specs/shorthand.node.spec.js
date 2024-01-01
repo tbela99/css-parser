@@ -326,4 +326,14 @@ overflow-y: hidden;
  overflow: hidden
 }`));
     });
+
+    it('shorthand parsing #21', function () {
+        return transform(`
+
+    .foo {
+        
+    list-style: lower-roman url("img/shape.png") outside;
+    }
+`).then(result => f(result.code).equals(`.foo{list-style:lower-roman url(img/shape.png)}`));
+    });
 });

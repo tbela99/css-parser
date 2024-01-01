@@ -1,5 +1,5 @@
 import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
-import { EnumToken, NodeType } from '../ast/types.js';
+import { EnumToken } from '../ast/types.js';
 import { minify, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -9,7 +9,14 @@ import { tokenize } from './tokenize.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
-const funcLike = [EnumToken.ParensTokenType, EnumToken.StartParensTokenType, EnumToken.FunctionTokenType, EnumToken.UrlFunctionTokenType, EnumToken.PseudoClassFuncTokenType];
+const funcLike = [
+    EnumToken.ParensTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType
+];
 const BadTokensTypes = [EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
     EnumToken.BadUrlTokenType,
@@ -48,7 +55,7 @@ async function doParse(iterator, options = {}) {
         const src = options.src;
         const stack = [];
         let ast = {
-            typ: NodeType.StyleSheetNodeType,
+            typ: EnumToken.StyleSheetNodeType,
             chi: []
         };
         let tokens = [];
@@ -72,7 +79,7 @@ async function doParse(iterator, options = {}) {
             for (i = 0; i < tokens.length; i++) {
                 if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
                     const position = map.get(tokens[i]);
-                    if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != NodeType.StyleSheetNodeType) {
+                    if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
                         errors.push({
                             action: 'drop',
                             message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
@@ -138,10 +145,10 @@ async function doParse(iterator, options = {}) {
                         let i = context.chi.length;
                         while (i--) {
                             const type = context.chi[i].typ;
-                            if (type == NodeType.CommentNodeType) {
+                            if (type == EnumToken.CommentNodeType) {
                                 continue;
                             }
-                            if (type != NodeType.AtRuleNodeType) {
+                            if (type != EnumToken.AtRuleNodeType) {
                                 errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
                                 return null;
                             }
@@ -219,7 +226,7 @@ async function doParse(iterator, options = {}) {
                     return acc;
                 }, []);
                 const node = {
-                    typ: NodeType.AtRuleNodeType,
+                    typ: EnumToken.AtRuleNodeType,
                     nam: renderToken(atRule, { removeComments: true }),
                     val: raw.join('')
                 };
@@ -265,7 +272,7 @@ async function doParse(iterator, options = {}) {
                         return acc;
                     }, uniq);
                     const node = {
-                        typ: NodeType.RuleNodeType,
+                        typ: EnumToken.RuleNodeType,
                         // @ts-ignore
                         sel: [...uniq.keys()].join(','),
                         chi: []
@@ -334,7 +341,7 @@ async function doParse(iterator, options = {}) {
                         return null;
                     }
                     const node = {
-                        typ: NodeType.DeclarationNodeType,
+                        typ: EnumToken.DeclarationNodeType,
                         // @ts-ignore
                         nam: renderToken(name.shift(), { removeComments: true }),
                         // @ts-ignore
@@ -432,7 +439,7 @@ async function doParse(iterator, options = {}) {
         }
         if (options.visitor != null) {
             for (const result of walk(ast)) {
-                if (result.node.typ == NodeType.DeclarationNodeType &&
+                if (result.node.typ == EnumToken.DeclarationNodeType &&
                     // @ts-ignore
                     (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[result.node.nam] != null)) {
                     const callable = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[result.node.nam];
@@ -443,7 +450,7 @@ async function doParse(iterator, options = {}) {
                     // @ts-ignore
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
                 }
-                else if (options.visitor.Rule != null && result.node.typ == NodeType.RuleNodeType) {
+                else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
                     const results = options.visitor.Rule(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
@@ -452,7 +459,7 @@ async function doParse(iterator, options = {}) {
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
                 }
                 else if (options.visitor.AtRule != null &&
-                    result.node.typ == NodeType.AtRuleNodeType &&
+                    result.node.typ == EnumToken.AtRuleNodeType &&
                     // @ts-ignore
                     (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[result.node.nam] != null)) {
                     const callable = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[result.node.nam];
@@ -569,8 +576,22 @@ function getTokenType(val, hint) {
     }
     if (isFunction(val)) {
         val = val.slice(0, -1);
+        if (val == 'url') {
+            return {
+                typ: EnumToken.UrlFunctionTokenType,
+                val,
+                chi: []
+            };
+        }
+        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+            return {
+                typ: EnumToken.ImageFunctionTokenType,
+                val,
+                chi: []
+            };
+        }
         return {
-            typ: val == 'url' ? EnumToken.UrlFunctionTokenType : EnumToken.FunctionTokenType,
+            typ: EnumToken.FunctionTokenType,
             val,
             chi: []
         };

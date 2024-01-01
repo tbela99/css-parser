@@ -10,7 +10,7 @@ import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";
 import {parseString} from "../parse";
-import {NodeType} from "../../ast";
+import {EnumToken} from "../../ast";
 
 const config = getConfig();
 
@@ -34,12 +34,12 @@ export class PropertyList {
 
     set(nam: string, value: string | Token[]) {
 
-        return this.add({typ: NodeType.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value))});
+        return this.add({typ: EnumToken.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value))});
     }
 
     add(declaration: AstNode) {
 
-        if (declaration.typ != NodeType.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
+        if (declaration.typ != EnumToken.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
 
             this.declarations.set(Number(Math.random().toString().slice(2)).toString(36), declaration);
             return this;

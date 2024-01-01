@@ -1,4 +1,4 @@
-import { NodeType, EnumToken } from '../types.js';
+import { EnumToken } from '../types.js';
 import { reduceNumber } from '../../renderer/render.js';
 import { walkValues } from '../walk.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
@@ -25,7 +25,7 @@ class ComputeCalcExpression extends MinifyFeature {
         }
         // @ts-ignore
         for (const node of ast.chi) {
-            if (node.typ != NodeType.DeclarationNodeType) {
+            if (node.typ != EnumToken.DeclarationNodeType) {
                 continue;
             }
             const set = new Set;

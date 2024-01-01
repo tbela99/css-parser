@@ -1,17 +1,10 @@
-import {MatchExpressionToken} from "../../@types";
-
-export enum NodeType {
-    CommentNodeType,
-    CDOCOMMNodeType,
-    StyleSheetNodeType,
-    AtRuleNodeType,
-    RuleNodeType,
-    DeclarationNodeType
-}
-
 export enum EnumToken {
     CommentTokenType,
     CDOCOMMTokenType,
+    StyleSheetNodeType,
+    AtRuleNodeType,
+    RuleNodeType,
+    DeclarationNodeType,
     LiteralTokenType,
     IdenTokenType,
     CommaTokenType,
@@ -22,6 +15,7 @@ export enum EnumToken {
     PercentageTokenType,
     FunctionTokenType,
     UrlFunctionTokenType,
+    ImageFunctionTokenType,
     StringTokenType,
     UnclosedStringTokenType,
     DimensionTokenType,
@@ -91,6 +85,9 @@ export enum EnumToken {
     Dimension = DimensionTokenType,
     Frequency = FrequencyTokenType,
     Resolution = ResolutionTokenType,
-    Whitespace = WhitespaceTokenType
+    Whitespace = WhitespaceTokenType,
+    ImageFunc = ImageFunctionTokenType,
+    CommentNodeType = CommentTokenType,
+    CDOCOMMNodeType = CDOCOMMTokenType,
 }
 

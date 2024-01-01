@@ -1,5 +1,5 @@
 import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
-import { EnumToken, NodeType } from '../ast/types.js';
+import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
@@ -80,7 +80,7 @@ function doRender(data, options = {}) {
     return result;
 }
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
-    if ([NodeType.RuleNodeType, NodeType.AtRuleNodeType].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
         // if (src !== '') {
@@ -113,16 +113,16 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
-        case NodeType.DeclarationNodeType:
+        case EnumToken.DeclarationNodeType:
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
-        case NodeType.CommentNodeType:
-        case NodeType.CDOCOMMNodeType:
+        case EnumToken.CommentNodeType:
+        case EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith('# sourceMappingURL=')) {
                 // ignore sourcemap
                 return '';
             }
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
-        case NodeType.StyleSheetNodeType:
+        case EnumToken.StyleSheetNodeType:
             return data.chi.reduce((css, node) => {
                 const str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level, indents);
                 if (str === '') {
@@ -140,18 +140,18 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 }
                 return `${css}${options.newLine}${str}`;
             }, '');
-        case NodeType.AtRuleNodeType:
-        case NodeType.RuleNodeType:
-            if (data.typ == NodeType.AtRuleNodeType && !('chi' in data)) {
+        case EnumToken.AtRuleNodeType:
+        case EnumToken.RuleNodeType:
+            if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
                 return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
             let children = data.chi.reduce((css, node) => {
                 let str;
-                if (node.typ == NodeType.CommentNodeType) {
+                if (node.typ == EnumToken.CommentNodeType) {
                     str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                 }
-                else if (node.typ == NodeType.DeclarationNodeType) {
+                else if (node.typ == EnumToken.DeclarationNodeType) {
                     if (node.val.length == 0) {
                         // @ts-ignore
                         errors.push({
@@ -163,7 +163,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     }
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
-                else if (node.typ == NodeType.AtRuleNodeType && !('chi' in node)) {
+                else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
@@ -180,7 +180,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
-            if (data.typ == NodeType.AtRuleNodeType) {
+            if (data.typ == EnumToken.AtRuleNodeType) {
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
@@ -284,6 +284,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
+        case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&

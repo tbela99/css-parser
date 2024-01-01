@@ -11,7 +11,7 @@ import {
     ParensToken,
     Token
 } from "../../../@types";
-import {EnumToken, NodeType} from "../types";
+import {EnumToken} from "../types";
 import {reduceNumber} from "../../renderer";
 import {walkValues} from "../walk";
 import {MinifyFeature} from "../utils";
@@ -50,7 +50,7 @@ export class ComputeCalcExpression extends MinifyFeature {
         // @ts-ignore
         for (const node of ast.chi) {
 
-            if (node.typ != NodeType.DeclarationNodeType) {
+            if (node.typ != EnumToken.DeclarationNodeType) {
 
                 continue;
             }

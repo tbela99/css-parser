@@ -13,7 +13,7 @@ import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
-import {EnumToken, NodeType} from "../../ast";
+import {EnumToken} from "../../ast";
 
 const propertiesConfig = getConfig();
 
@@ -185,7 +185,7 @@ export class PropertyMap {
 
                         acc.set(curr[0], <AstDeclaration>{
 
-                            typ: NodeType.DeclarationNodeType,
+                            typ: EnumToken.DeclarationNodeType,
                             nam: curr[0],
                             val: curr[1].reduce((acc, curr) => {
 
@@ -276,9 +276,64 @@ export class PropertyMap {
 
         if (!isShorthand || requiredCount < this.requiredCount) {
 
+            if (isShorthand && this.declarations.has(this.config.shorthand)) {
+
+                const removeDefaults = (declaration: AstDeclaration): AstDeclaration => {
+
+                    const dec: AstDeclaration = {...declaration};
+
+                   dec.val  = declaration.val.filter((val: Token): boolean => {
+
+                       if (val.typ != EnumToken.Iden) {
+
+                           return true;
+                       }
+
+                        return !this.pattern.some((property: string): boolean => {
+
+                            if (matchType(val, this.config.properties[property]) && this.config.properties[property].keywords.includes(val.val)) {
+
+                                return this.config.properties[property].default.includes(val.val);
+                            }
+
+                            return false;
+                        });
+                    });
+
+                    if (dec.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+
+                        dec.val.pop();
+                    }
+
+                    return dec;
+                }
+
+                const values: AstDeclaration[] = [...this.declarations.values()].reduce((acc: AstDeclaration[], curr: AstDeclaration | PropertySet) => {
+
+                    if (curr instanceof PropertySet) {
+
+                        acc.push(...curr);
+                    }
+
+                    else {
+
+                        acc.push(curr);
+                    }
+
+                    return acc;
+
+                }, <AstDeclaration[]>[]);
+
+                const filtered: AstDeclaration[] = values.map(removeDefaults).filter(x => x.val.length > 0);
+
+                return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
+            }
+
             // @ts-ignore
             iterable = this.declarations.values();
-        } else {
+
+        }
+        else {
 
             let count = 0;
             let match: boolean;
@@ -304,7 +359,7 @@ export class PropertyMap {
 
                 let current = 0;
 
-                const props = this.config.properties[curr[0]];
+                const props: PropertyMapType = this.config.properties[curr[0]];
                 const properties = this.declarations.get(curr[0]);
 
                 for (const declaration of <AstDeclaration[]>[(properties instanceof PropertySet ? [...properties][0] : properties)]) {
@@ -536,7 +591,7 @@ export class PropertyMap {
                 }
 
                 iterable = [<AstDeclaration>{
-                    typ: NodeType.DeclarationNodeType,
+                    typ: EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,
                     val: values
                 }][Symbol.iterator]();
@@ -582,7 +637,6 @@ export class PropertyMap {
                 }
 
                 return v;
-
             }
         };
     }

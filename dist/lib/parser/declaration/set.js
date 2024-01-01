@@ -1,6 +1,6 @@
 import { eq } from '../utils/eq.js';
 import { isLength } from '../utils/syntax.js';
-import { EnumToken, NodeType } from '../../ast/types.js';
+import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
 import '../../renderer/utils/color.js';
@@ -60,7 +60,7 @@ class PropertySet {
                         this.config.properties.forEach((property, index) => {
                             if (!this.declarations.has(property)) {
                                 this.declarations.set(property, {
-                                    typ: NodeType.DeclarationNodeType,
+                                    typ: EnumToken.DeclarationNodeType,
                                     nam: property,
                                     val: []
                                 });
@@ -139,7 +139,7 @@ class PropertySet {
                 }
             }
             iterator = [{
-                    typ: NodeType.DeclarationNodeType,
+                    typ: EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,
                     val: values.reduce((acc, curr) => {
                         if (curr.length > 1) {

@@ -18,8 +18,6 @@ export function* tokenize(stream: string): Generator<TokenizeResult> {
     let value;
     let buffer: string = '';
 
-    // let input: string = '';
-
     function consumeWhiteSpace(): number {
 
         let count: number = 0;
@@ -389,15 +387,6 @@ export function* tokenize(stream: string): Generator<TokenizeResult> {
 
                 yield pushToken(buffer);
                 buffer = '';
-
-                // yield pushToken(buffer);
-                //
-                // while (isWhiteSpace(value.charCodeAt(0))) {
-                //
-                //     value = next();
-                // }
-
-                // buffer = value;
                 break;
 
             case '>':

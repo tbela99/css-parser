@@ -1,4 +1,4 @@
-import {NodeType} from "../lib";
+import {EnumToken} from "../lib";
 import {Token} from "./token";
 
 
@@ -18,13 +18,13 @@ export declare interface Location {
 
 export declare interface Node {
 
-    typ: NodeType;
+    typ: EnumToken;
     loc?: Location;
 }
 
 export declare interface AstComment extends Node {
 
-    typ: NodeType.CommentNodeType | NodeType.CDOCOMMNodeType,
+    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
     val: string;
 }
 
@@ -32,12 +32,12 @@ export declare interface AstDeclaration extends Node {
 
     nam: string,
     val: Token[];
-    typ: NodeType.DeclarationNodeType
+    typ: EnumToken.DeclarationNodeType
 }
 
 export declare interface AstRule extends Node {
 
-    typ: NodeType.RuleNodeType;
+    typ: EnumToken.RuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
     optimized?: OptimizedSelector;
