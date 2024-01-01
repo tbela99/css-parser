@@ -1,7 +1,7 @@
 
 // generated from config.json at https://app.quicktype.io/?l=ts
 
-export interface PropertiesConfig {
+export declare interface PropertiesConfig {
     properties: PropertiesConfigProperties;
     map:        Map;
 }

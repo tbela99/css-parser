@@ -16,7 +16,6 @@ function* tokenize(stream) {
     };
     let value;
     let buffer = '';
-    // let input: string = '';
     function consumeWhiteSpace() {
         let count = 0;
         while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
@@ -280,13 +279,6 @@ function* tokenize(stream) {
                 }
                 yield pushToken(buffer);
                 buffer = '';
-                // yield pushToken(buffer);
-                //
-                // while (isWhiteSpace(value.charCodeAt(0))) {
-                //
-                //     value = next();
-                // }
-                // buffer = value;
                 break;
             case '>':
                 if (buffer !== '') {

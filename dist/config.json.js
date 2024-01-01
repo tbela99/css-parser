@@ -232,6 +232,48 @@ var properties = {
 	}
 };
 var map = {
+	"text-emphasis": {
+		shorthand: "text-emphasis",
+		pattern: "text-emphasis-color text-emphasis-style",
+		"default": [
+			"none",
+			"currentcolor"
+		],
+		properties: {
+			"text-emphasis-style": {
+				keywords: [
+					"none",
+					"filled",
+					"open",
+					"dot",
+					"circle",
+					"double-circle",
+					"triangle",
+					"sesame"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"String"
+				]
+			},
+			"text-emphasis-color": {
+				"default": [
+					"currentcolor"
+				],
+				types: [
+					"Color"
+				]
+			}
+		}
+	},
+	"text-emphasis-style": {
+		shorthand: "text-emphasis"
+	},
+	"text-emphasis-color": {
+		shorthand: "text-emphasis"
+	},
 	border: {
 		shorthand: "border",
 		pattern: "border-color border-style border-width",
@@ -421,7 +463,8 @@ var map = {
 		],
 		"default": [
 			"0",
-			"none"
+			"none",
+			"currentcolor"
 		],
 		properties: {
 			"outline-color": {
@@ -429,10 +472,10 @@ var map = {
 					"Color"
 				],
 				"default": [
-					"currentColor"
+					"currentcolor"
 				],
 				keywords: [
-					"currentColor"
+					"currentcolor"
 				]
 			},
 			"outline-style": {

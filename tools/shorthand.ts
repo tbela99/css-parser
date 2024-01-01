@@ -45,9 +45,33 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
     })
 }
 
-// @ts-ignore
-export const map: ShorthandMapType = [
+export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
+    [
+        {
+            shorthand: 'text-emphasis',
+            pattern: 'text-emphasis-color text-emphasis-style',
+            default: ['none', 'currentcolor']
+        },
+        [
+            {
+                shorthand: 'text-emphasis-style',
+                properties: {
+
+                    keywords: ['none', 'filled', 'open', 'dot', 'circle', 'double-circle', 'triangle', 'sesame'],
+                    default: ['none'],
+                    types: ['String']
+                }
+            },
+            {
+                shorthand: 'text-emphasis-color',
+                properties: {
+                    default: ['currentcolor'],
+                    types: ['Color']
+                }
+            }
+        ]
+    ],
     [
         {
             shorthand: 'border',
@@ -70,7 +94,6 @@ export const map: ShorthandMapType = [
             }
         ]
     ],
-
     [
         {
             shorthand: 'list-style',
@@ -143,15 +166,15 @@ export const map: ShorthandMapType = [
             shorthand: 'outline',
             pattern: 'outline-color outline-style outline-width',
             keywords: ['none'],
-            default: ['0', 'none']
+            default: ['0', 'none', 'currentcolor']
         },
         [
             {
                 shorthand: 'outline-color',
                 properties: {
                     types: ['Color'],
-                    default: ['currentColor'],
-                    keywords: ['currentColor'],
+                    default: ['currentcolor'],
+                    keywords: ['currentcolor'],
                 }
             },
             {
@@ -393,7 +416,7 @@ export const map: ShorthandMapType = [
         ]
     ]
     // @ts-ignore
-].reduce((acc: ShorthandMapType, data) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
+]).reduce((acc: ShorthandMapType, data) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
 
 /*
 

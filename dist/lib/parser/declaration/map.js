@@ -235,7 +235,6 @@ class PropertyMap {
             } : null;
             const tokens = {};
             // @ts-ignore
-            /* const valid: string[] =*/
             Object.entries(this.config.properties).reduce((acc, curr) => {
                 if (!this.declarations.has(curr[0])) {
                     if (curr[1].required) {
@@ -301,7 +300,7 @@ class PropertyMap {
                 iterable = this.declarations.values();
             }
             else {
-                const values = Object.entries(tokens).reduce((acc, curr) => {
+                let values = Object.entries(tokens).reduce((acc, curr) => {
                     const props = this.config.properties[curr[0]];
                     for (let i = 0; i < curr[1].length; i++) {
                         if (acc.length == i) {
@@ -318,6 +317,7 @@ class PropertyMap {
                         if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
                             continue;
                         }
+                        // remove default values
                         let doFilterDefault = true;
                         if (curr[0] in propertiesConfig.properties) {
                             for (let v of values) {
@@ -373,7 +373,8 @@ class PropertyMap {
                         }
                     }
                     return acc;
-                }, []).reduce((acc, curr) => {
+                }, []).
+                    reduce((acc, curr) => {
                     if (acc.length > 0) {
                         acc.push({ ...separator });
                     }
@@ -399,6 +400,14 @@ class PropertyMap {
                             val: this.config.mapping[val]
                         });
                     }
+                }
+                // @ts-ignore
+                if (values.length == 1 &&
+                    typeof values[0].val == 'string' &&
+                    this.config.default.includes(values[0].val.toLowerCase()) &&
+                    this.config.default[0] != values[0].val.toLowerCase()) {
+                    // @ts-ignore/
+                    values = parseString(this.config.default[0]);
                 }
                 iterable = [{
                         typ: EnumToken.DeclarationNodeType,

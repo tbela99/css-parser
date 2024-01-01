@@ -1654,6 +1654,48 @@
     	}
     };
     var map = {
+    	"text-emphasis": {
+    		shorthand: "text-emphasis",
+    		pattern: "text-emphasis-color text-emphasis-style",
+    		"default": [
+    			"none",
+    			"currentcolor"
+    		],
+    		properties: {
+    			"text-emphasis-style": {
+    				keywords: [
+    					"none",
+    					"filled",
+    					"open",
+    					"dot",
+    					"circle",
+    					"double-circle",
+    					"triangle",
+    					"sesame"
+    				],
+    				"default": [
+    					"none"
+    				],
+    				types: [
+    					"String"
+    				]
+    			},
+    			"text-emphasis-color": {
+    				"default": [
+    					"currentcolor"
+    				],
+    				types: [
+    					"Color"
+    				]
+    			}
+    		}
+    	},
+    	"text-emphasis-style": {
+    		shorthand: "text-emphasis"
+    	},
+    	"text-emphasis-color": {
+    		shorthand: "text-emphasis"
+    	},
     	border: {
     		shorthand: "border",
     		pattern: "border-color border-style border-width",
@@ -1843,7 +1885,8 @@
     		],
     		"default": [
     			"0",
-    			"none"
+    			"none",
+    			"currentcolor"
     		],
     		properties: {
     			"outline-color": {
@@ -1851,10 +1894,10 @@
     					"Color"
     				],
     				"default": [
-    					"currentColor"
+    					"currentcolor"
     				],
     				keywords: [
-    					"currentColor"
+    					"currentcolor"
     				]
     			},
     			"outline-style": {
@@ -2374,7 +2417,6 @@
         };
         let value;
         let buffer = '';
-        // let input: string = '';
         function consumeWhiteSpace() {
             let count = 0;
             while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
@@ -2638,13 +2680,6 @@
                     }
                     yield pushToken(buffer);
                     buffer = '';
-                    // yield pushToken(buffer);
-                    //
-                    // while (isWhiteSpace(value.charCodeAt(0))) {
-                    //
-                    //     value = next();
-                    // }
-                    // buffer = value;
                     break;
                 case '>':
                     if (buffer !== '') {
@@ -4613,7 +4648,6 @@
                 } : null;
                 const tokens = {};
                 // @ts-ignore
-                /* const valid: string[] =*/
                 Object.entries(this.config.properties).reduce((acc, curr) => {
                     if (!this.declarations.has(curr[0])) {
                         if (curr[1].required) {
@@ -4679,7 +4713,7 @@
                     iterable = this.declarations.values();
                 }
                 else {
-                    const values = Object.entries(tokens).reduce((acc, curr) => {
+                    let values = Object.entries(tokens).reduce((acc, curr) => {
                         const props = this.config.properties[curr[0]];
                         for (let i = 0; i < curr[1].length; i++) {
                             if (acc.length == i) {
@@ -4696,6 +4730,7 @@
                             if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
                                 continue;
                             }
+                            // remove default values
                             let doFilterDefault = true;
                             if (curr[0] in propertiesConfig.properties) {
                                 for (let v of values) {
@@ -4751,7 +4786,8 @@
                             }
                         }
                         return acc;
-                    }, []).reduce((acc, curr) => {
+                    }, []).
+                        reduce((acc, curr) => {
                         if (acc.length > 0) {
                             acc.push({ ...separator });
                         }
@@ -4777,6 +4813,14 @@
                                 val: this.config.mapping[val]
                             });
                         }
+                    }
+                    // @ts-ignore
+                    if (values.length == 1 &&
+                        typeof values[0].val == 'string' &&
+                        this.config.default.includes(values[0].val.toLowerCase()) &&
+                        this.config.default[0] != values[0].val.toLowerCase()) {
+                        // @ts-ignore/
+                        values = parseString(this.config.default[0]);
                     }
                     iterable = [{
                             typ: exports.EnumToken.DeclarationNodeType,
