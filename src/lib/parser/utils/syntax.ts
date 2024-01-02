@@ -360,7 +360,7 @@ export function isHexColor(name: string): boolean {
 
     for (let chr of name.slice(1)) {
 
-        let codepoint = <number>chr.charCodeAt(0);
+        let codepoint: number = <number>chr.charCodeAt(0);
 
         if (!isDigit(codepoint) &&
             // A-F

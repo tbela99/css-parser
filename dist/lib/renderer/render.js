@@ -286,6 +286,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
+        case EnumToken.AnimationTimingFunctionTokenType:
+        case EnumToken.AnimationTimelineFunctionTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
                 token.chi.length == 1 &&
@@ -355,23 +357,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            // if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
-            //     const result: string = renderToken(<FractionToken>token.val, options, cache);
-            //
-            //     if (!('unit' in token)) {
-            //
-            //         return result;
-            //     }
-            //
-            //     return result.includes('/') ? result.replace('/', token.unit + '/') : result + token.unit;
-            //
-            //     // if (!result.includes(' ')) {
-            //     //
-            //     //     return result + token.unit;
-            //     // }
-            //
-            //     // return `(${result})*1${token.unit}`;
-            // }
             let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
             let unit = token.unit;
             if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
@@ -469,12 +454,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     token.val = cache[token.original];
                 }
             }
-        case EnumToken.AtRuleTokenType:
         case EnumToken.HashTokenType:
-        case EnumToken.LiteralTokenType:
-        case EnumToken.StringTokenType:
         case EnumToken.IdenTokenType:
         case EnumToken.DelimTokenType:
+        case EnumToken.AtRuleTokenType:
+        case EnumToken.StringTokenType:
+        case EnumToken.LiteralTokenType:
+        case EnumToken.DashedIdenTokenType:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });

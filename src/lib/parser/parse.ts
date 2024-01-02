@@ -17,6 +17,8 @@ import {COLORS_NAMES} from "../renderer/utils";
 import {combinators, EnumToken, expand, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
+    AnimationTimelineFunctionToken,
+    AnimationTimingFunctionToken,
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -24,7 +26,8 @@ import {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
-    AtRuleToken, AtRuleVisitorHandler,
+    AtRuleToken,
+    AtRuleVisitorHandler,
     AttrEndToken,
     AttrStartToken,
     BlockEndToken,
@@ -33,10 +36,12 @@ import {
     ColorToken,
     CommaToken,
     ContainMatchToken,
-    DashMatchToken, DeclarationVisitorHandler,
+    DashMatchToken,
+    DeclarationVisitorHandler,
     DelimToken,
     EndMatchToken,
-    ErrorDescription, FunctionImageToken,
+    ErrorDescription,
+    FunctionImageToken,
     FunctionToken,
     FunctionURLToken,
     GreaterThanToken,
@@ -46,7 +51,8 @@ import {
     LessThanToken,
     LiteralToken,
     Location,
-    MatchExpressionToken, NameSpaceAttributeToken,
+    MatchExpressionToken,
+    NameSpaceAttributeToken,
     NumberToken,
     ParensEndToken,
     ParensStartToken,
@@ -72,16 +78,21 @@ export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
 const funcLike: EnumToken[] = [
     EnumToken.ParensTokenType,
-    EnumToken.StartParensTokenType,
     EnumToken.FunctionTokenType,
     EnumToken.UrlFunctionTokenType,
+    EnumToken.StartParensTokenType,
     EnumToken.ImageFunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType
+    EnumToken.PseudoClassFuncTokenType,
+    EnumToken.AnimationTimingFunctionTokenType,
+    EnumToken.AnimationTimingFunctionTokenType
 ];
-const BadTokensTypes: EnumToken[] = [EnumToken.BadCommentTokenType,
+
+const BadTokensTypes: EnumToken[] = [
+    EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
     EnumToken.BadUrlTokenType,
-    EnumToken.BadStringTokenType];
+    EnumToken.BadStringTokenType
+];
 
 const webkitPseudoAliasMap: Record<string, string> = {
     '-webkit-autofill': 'autofill'
@@ -843,6 +854,22 @@ function getTokenType(val: string, hint?: EnumToken): Token {
             };
         }
 
+        if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
+            return <AnimationTimingFunctionToken>{
+                typ: EnumToken.AnimationTimingFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        if (['view', 'scroll'].includes(val)) {
+            return <AnimationTimelineFunctionToken>{
+                typ: EnumToken.AnimationTimelineFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
         return <FunctionToken>{
             typ: EnumToken.FunctionTokenType,
             val,
@@ -881,7 +908,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     if (isIdent(val)) {
 
         return <IdentToken>{
-            typ: EnumToken.IdenTokenType,
+            typ: val.startsWith('--') ? EnumToken.DashedIdenTokenType : EnumToken.IdenTokenType,
             val
         };
     }

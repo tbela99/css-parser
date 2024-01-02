@@ -3,6 +3,7 @@ import { reduceNumber } from '../../renderer/render.js';
 import { walkValues } from '../walk.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
 import { compute } from './utils/math.js';
+import { IterableWeakSet } from '../../iterable/set.js';
 
 class ComputeCalcExpression extends MinifyFeature {
     static get ordering() {
@@ -28,7 +29,7 @@ class ComputeCalcExpression extends MinifyFeature {
             if (node.typ != EnumToken.DeclarationNodeType) {
                 continue;
             }
-            const set = new Set;
+            const set = new IterableWeakSet;
             for (const { parent } of walkValues(node.val)) {
                 if (parent != null && parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') {
                     if (!set.has(parent)) {

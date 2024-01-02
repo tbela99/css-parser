@@ -10,8 +10,7 @@ import {
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
 import {MinifyFeature} from "../utils";
-import {renderToken} from "../../renderer";
-import * as repl from "repl";
+import {IterableWeakSet} from "../../iterable";
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
 
@@ -19,9 +18,9 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
         if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
 
-            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
+            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {
 
-                const info = <VariableScopeInfo>variableScope.get(value.chi[0].val);
+                const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get(value.chi[0].val);
 
                 if (info?.replaceable) {
 
@@ -104,7 +103,7 @@ export class InlineCssVariables extends MinifyFeature {
                     const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: <Set<AstRule | AstAtRule>>new Set(),
+                        parent: <IterableWeakSet<AstRule | AstAtRule>>new IterableWeakSet(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: (<AstDeclaration>node)
@@ -167,6 +166,7 @@ export class InlineCssVariables extends MinifyFeature {
 
                 let i: number;
 
+                // drop declarations from :root{}
                 for (const parent of info.parent) {
 
                     i = parent.chi?.length ?? 0;

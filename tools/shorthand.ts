@@ -8,7 +8,7 @@ import {
 
 function createProperties(data: ShorthandPropertyType) {
 
-    const map: string = <string> data.map;
+    const map: string = <string>data.map;
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
@@ -47,6 +47,100 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
 
 export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
+    [
+        {
+            shorthand: 'animation',
+            pattern: 'animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline',
+            default: ['1', '0s', '0ms', 'none', 'ease', 'normal', 'running', 'auto']
+        },
+        [
+            {
+                shorthand: 'animation-name',
+                properties: {
+
+                    keywords: ['none'],
+                    default: ['none'],
+                    types: ['Iden']
+                }
+            },
+            {
+                shorthand: 'animation-duration',
+                properties: {
+                    keywords: ['auto'],
+                    default: ['0s', '0ms', 'auto'],
+                    types: ['Time'],
+                    mapping: {
+                        'auto': '0s'
+                    }
+                }
+            },
+            {
+                shorthand: 'animation-timing-function',
+                properties: {
+                    keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
+                    default: ['ease'],
+                    types: ['AnimationTimingFunction'],
+                    mapping: {
+                        'cubic-bezier(.25,.1,.25,1)': 'ease',
+                        'cubic-bezier(0,0,1,1)': 'linear',
+                        'cubic-bezier(.42,0,1,1)': 'ease-in',
+                        'cubic-bezier(0,0,.58,1)': 'ease-out',
+                        'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
+
+
+                    }
+                }
+            },
+            {
+                shorthand: 'animation-delay',
+                properties: {
+                    keywords: [],
+                    default: ['0s', '0ms'],
+                    types: ['Time']
+                }
+            },
+            {
+                shorthand: 'animation-iteration-count',
+                properties: {
+                    keywords: ['infinite'],
+                    default: ['1'],
+                    types: ['Number']
+                }
+            },
+            {
+                shorthand: 'animation-direction',
+                properties: {
+                    keywords: ['normal', 'reverse', 'alternate', 'alternate-reverse'],
+                    default: ['normal'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'animation-fill-mode',
+                properties: {
+                    keywords: ['none', 'forwards', 'backwards', 'both'],
+                    default: ['none'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'animation-play-state',
+                properties: {
+                    keywords: ['running', 'paused'],
+                    default: ['running'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'animation-timeline',
+                properties: {
+                    keywords: ['none', 'auto'],
+                    default: ['auto'],
+                    types: ['DashedIden', 'AnimationTimelineFunction']
+                }
+            }
+        ]
+    ],
     [
         {
             shorthand: 'text-emphasis',
@@ -98,8 +192,8 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
         {
             shorthand: 'list-style',
             pattern: 'list-style-type list-style-position list-style-image',
-            keywords: ['none'],
-            default: ['none']
+            keywords: ['none', 'outside'],
+            default: ['none', 'outside']
         },
         [
             {

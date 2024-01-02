@@ -1,11 +1,12 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
+import { IterableWeakSet } from '../../iterable/set.js';
 
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
         if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
-            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
+            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {
                 const info = variableScope.get(value.chi[0].val);
                 if (info?.replaceable) {
                     if (parentValue != null) {
@@ -60,7 +61,7 @@ class InlineCssVariables extends MinifyFeature {
                     const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: new Set(),
+                        parent: new IterableWeakSet(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: node
@@ -101,6 +102,7 @@ class InlineCssVariables extends MinifyFeature {
         for (const info of variableScope.values()) {
             if (info.replaceable) {
                 let i;
+                // drop declarations from :root{}
                 for (const parent of info.parent) {
                     i = parent.chi?.length ?? 0;
                     while (i--) {

@@ -7,6 +7,7 @@ export enum EnumToken {
     DeclarationNodeType,
     LiteralTokenType,
     IdenTokenType,
+    DashedIdenTokenType,
     CommaTokenType,
     ColonTokenType,
     SemiColonTokenType,
@@ -14,6 +15,8 @@ export enum EnumToken {
     AtRuleTokenType,
     PercentageTokenType,
     FunctionTokenType,
+    AnimationTimelineFunctionTokenType,
+    AnimationTimingFunctionTokenType,
     UrlFunctionTokenType,
     ImageFunctionTokenType,
     StringTokenType,
@@ -86,8 +89,11 @@ export enum EnumToken {
     Frequency = FrequencyTokenType,
     Resolution = ResolutionTokenType,
     Whitespace = WhitespaceTokenType,
+    DashedIden = DashedIdenTokenType,
     ImageFunc = ImageFunctionTokenType,
     CommentNodeType = CommentTokenType,
     CDOCOMMNodeType = CDOCOMMTokenType,
+    AnimationTimingFunction = AnimationTimingFunctionTokenType,
+    AnimationTimelineFunction = AnimationTimelineFunctionTokenType
 }
 

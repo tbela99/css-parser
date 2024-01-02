@@ -7,84 +7,90 @@ declare enum EnumToken {
     DeclarationNodeType = 5,
     LiteralTokenType = 6,
     IdenTokenType = 7,
-    CommaTokenType = 8,
-    ColonTokenType = 9,
-    SemiColonTokenType = 10,
-    NumberTokenType = 11,
-    AtRuleTokenType = 12,
-    PercentageTokenType = 13,
-    FunctionTokenType = 14,
-    UrlFunctionTokenType = 15,
-    ImageFunctionTokenType = 16,
-    StringTokenType = 17,
-    UnclosedStringTokenType = 18,
-    DimensionTokenType = 19,
-    LengthTokenType = 20,
-    AngleTokenType = 21,
-    TimeTokenType = 22,
-    FrequencyTokenType = 23,
-    ResolutionTokenType = 24,
-    HashTokenType = 25,
-    BlockStartTokenType = 26,
-    BlockEndTokenType = 27,
-    AttrStartTokenType = 28,
-    AttrEndTokenType = 29,
-    StartParensTokenType = 30,
-    EndParensTokenType = 31,
-    ParensTokenType = 32,
-    WhitespaceTokenType = 33,
-    IncludeMatchTokenType = 34,
-    DashMatchTokenType = 35,
-    LtTokenType = 36,
-    LteTokenType = 37,
-    GtTokenType = 38,
-    GteTokenType = 39,
-    PseudoClassTokenType = 40,
-    PseudoClassFuncTokenType = 41,
-    DelimTokenType = 42,
-    UrlTokenTokenType = 43,
-    EOFTokenType = 44,
-    ImportantTokenType = 45,
-    ColorTokenType = 46,
-    AttrTokenType = 47,
-    BadCommentTokenType = 48,
-    BadCdoTokenType = 49,
-    BadUrlTokenType = 50,
-    BadStringTokenType = 51,
-    BinaryExpressionTokenType = 52,
-    UnaryExpressionTokenType = 53,
-    ListToken = 54,
-    Add = 55,
-    Mul = 56,
-    Div = 57,
-    Sub = 58,
-    ColumnCombinatorTokenType = 59,
-    ContainMatchTokenType = 60,
-    StartMatchTokenType = 61,
-    EndMatchTokenType = 62,
-    MatchExpressionTokenType = 63,
-    NameSpaceAttributeTokenType = 64,
-    FractionTokenType = 65,
-    Time = 22,
+    DashedIdenTokenType = 8,
+    CommaTokenType = 9,
+    ColonTokenType = 10,
+    SemiColonTokenType = 11,
+    NumberTokenType = 12,
+    AtRuleTokenType = 13,
+    PercentageTokenType = 14,
+    FunctionTokenType = 15,
+    AnimationTimelineFunctionTokenType = 16,
+    AnimationTimingFunctionTokenType = 17,
+    UrlFunctionTokenType = 18,
+    ImageFunctionTokenType = 19,
+    StringTokenType = 20,
+    UnclosedStringTokenType = 21,
+    DimensionTokenType = 22,
+    LengthTokenType = 23,
+    AngleTokenType = 24,
+    TimeTokenType = 25,
+    FrequencyTokenType = 26,
+    ResolutionTokenType = 27,
+    HashTokenType = 28,
+    BlockStartTokenType = 29,
+    BlockEndTokenType = 30,
+    AttrStartTokenType = 31,
+    AttrEndTokenType = 32,
+    StartParensTokenType = 33,
+    EndParensTokenType = 34,
+    ParensTokenType = 35,
+    WhitespaceTokenType = 36,
+    IncludeMatchTokenType = 37,
+    DashMatchTokenType = 38,
+    LtTokenType = 39,
+    LteTokenType = 40,
+    GtTokenType = 41,
+    GteTokenType = 42,
+    PseudoClassTokenType = 43,
+    PseudoClassFuncTokenType = 44,
+    DelimTokenType = 45,
+    UrlTokenTokenType = 46,
+    EOFTokenType = 47,
+    ImportantTokenType = 48,
+    ColorTokenType = 49,
+    AttrTokenType = 50,
+    BadCommentTokenType = 51,
+    BadCdoTokenType = 52,
+    BadUrlTokenType = 53,
+    BadStringTokenType = 54,
+    BinaryExpressionTokenType = 55,
+    UnaryExpressionTokenType = 56,
+    ListToken = 57,
+    Add = 58,
+    Mul = 59,
+    Div = 60,
+    Sub = 61,
+    ColumnCombinatorTokenType = 62,
+    ContainMatchTokenType = 63,
+    StartMatchTokenType = 64,
+    EndMatchTokenType = 65,
+    MatchExpressionTokenType = 66,
+    NameSpaceAttributeTokenType = 67,
+    FractionTokenType = 68,
+    Time = 25,
     Iden = 7,
-    Hash = 25,
-    Angle = 21,
-    Color = 46,
-    Comma = 8,
-    String = 17,
-    Length = 20,
-    Number = 11,
-    Perc = 13,
+    Hash = 28,
+    Angle = 24,
+    Color = 49,
+    Comma = 9,
+    String = 20,
+    Length = 23,
+    Number = 12,
+    Perc = 14,
     Literal = 6,
     Comment = 0,
-    UrlFunc = 15,
-    Dimension = 19,
-    Frequency = 23,
-    Resolution = 24,
-    Whitespace = 33,
-    ImageFunc = 16,
+    UrlFunc = 18,
+    Dimension = 22,
+    Frequency = 26,
+    Resolution = 27,
+    Whitespace = 36,
+    DashedIden = 8,
+    ImageFunc = 19,
     CommentNodeType = 0,
-    CDOCOMMNodeType = 1
+    CDOCOMMNodeType = 1,
+    AnimationTimingFunction = 17,
+    AnimationTimelineFunction = 16
 }
 
 declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
@@ -105,84 +111,6 @@ declare function parseString(src: string, options?: {
 }): Token[];
 declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
 
-export declare interface Position {
-
-    ind: number;
-    lin: number;
-    col: number;
-}
-
-export declare interface Location {
-
-    sta: Position;
-    // end: Position;
-    src: string;
-}
-
-export declare interface Node {
-
-    typ: EnumToken;
-    loc?: Location;
-}
-
-export declare interface AstComment extends Node {
-
-    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
-    val: string;
-}
-
-export declare interface AstDeclaration extends Node {
-
-    nam: string,
-    val: Token[];
-    typ: EnumToken.DeclarationNodeType
-}
-
-export declare interface AstRule$1 extends Node {
-
-    typ: EnumToken.RuleNodeType;
-    sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
-    optimized?: OptimizedSelector;
-    raw?: RawSelectorTokens;
-}
-
-export declare type RawSelectorTokens = string[][];
-
-export declare interface OptimizedSelector {
-    match: boolean;
-    optimized: string[];
-    selector: string[][],
-    reducible: boolean;
-}
-
-export declare interface AstAtRule$1 extends Node {
-
-    typ: AtRuleNodeType,
-    nam: string;
-    val: string;
-    chi?: Array<AstDeclaration | AstComment> | Array<AstRule$1 | AstComment>
-}
-
-export declare interface AstRuleList extends Node {
-
-    typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
-    chi: Array<Node | AstComment>
-}
-
-export declare interface AstRuleStyleSheet$1 extends AstRuleList {
-    typ: StyleSheetNodeType,
-    chi: Array<AstRuleList | AstComment>
-}
-
-export declare type AstNode =
-    AstRuleStyleSheet$1
-    | AstRuleList
-    | AstComment
-    | AstAtRule$1
-    | AstRule$1
-    | AstDeclaration;
-
 export declare interface BaseToken {
 
     typ: EnumToken;
@@ -198,6 +126,12 @@ export declare interface LiteralToken extends BaseToken {
 export declare interface IdentToken extends BaseToken {
 
     typ: EnumToken.IdenTokenType,
+    val: string;
+}
+
+export declare interface DashedIdentToken extends BaseToken {
+
+    typ: EnumToken.DashedIdenTokenType,
     val: string;
 }
 
@@ -253,6 +187,20 @@ export declare interface FunctionImageToken extends BaseToken {
     typ: EnumToken.ImageFunctionTokenType,
     val: 'linear-gradient' | 'radial-gradient' | 'repeating-linear-gradient' | 'repeating-radial-gradient' | 'conic-gradient' | 'image' | 'image-set' | 'element' | 'cross-fade';
     chi: Array<UrlToken | CommentToken>;
+}
+
+export declare interface AnimationTimingFunctionToken extends BaseToken {
+
+    typ: EnumToken.AnimationTimingFunctionTokenType;
+    val: string;
+    chi: Token[];
+}
+
+export declare interface AnimationTimelineFunctionToken extends BaseToken {
+
+    typ: EnumToken.AnimationTimelineFunctionTokenType;
+    val: string;
+    chi: Token[];
 }
 
 export declare interface StringToken extends BaseToken {
@@ -530,6 +478,7 @@ export declare interface FractionToken extends BaseToken {
     l: NumberToken;
     r: NumberToken;
 }
+
 export declare interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
@@ -550,7 +499,7 @@ export declare interface MatchExpressionToken extends BaseToken {
 export declare interface NameSpaceAttributeToken extends BaseToken {
 
     typ: EnumToken.NameSpaceAttributeTokenType
-   l?: Token;
+    l?: Token;
     r: Token;
 }
 
@@ -574,6 +523,7 @@ export declare type BinaryExpressionNode = NumberToken | DimensionToken | Percen
 export declare type Token =
     LiteralToken
     | IdentToken
+    | DashedIdentToken
     | CommaToken
     | ColonToken
     | SemiColonToken
@@ -583,6 +533,8 @@ export declare type Token =
     | PercentageToken
     | FunctionURLToken
     | FunctionImageToken
+    | AnimationTimingFunctionToken
+    | AnimationTimelineFunctionToken
     | FunctionToken
     | DimensionToken
     | LengthToken
@@ -641,6 +593,84 @@ export declare type Token =
     | ColorToken
     | AttrToken
     | EOFToken;
+
+export declare interface Position {
+
+    ind: number;
+    lin: number;
+    col: number;
+}
+
+export declare interface Location {
+
+    sta: Position;
+    // end: Position;
+    src: string;
+}
+
+export declare interface Node {
+
+    typ: EnumToken;
+    loc?: Location;
+}
+
+export declare interface AstComment extends Node {
+
+    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
+    val: string;
+}
+
+export declare interface AstDeclaration extends Node {
+
+    nam: string,
+    val: Token[];
+    typ: EnumToken.DeclarationNodeType
+}
+
+export declare interface AstRule$1 extends Node {
+
+    typ: EnumToken.RuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare type RawSelectorTokens = string[][];
+
+export declare interface OptimizedSelector {
+    match: boolean;
+    optimized: string[];
+    selector: string[][],
+    reducible: boolean;
+}
+
+export declare interface AstAtRule$1 extends Node {
+
+    typ: AtRuleNodeType,
+    nam: string;
+    val: string;
+    chi?: Array<AstDeclaration | AstComment> | Array<AstRule$1 | AstComment>
+}
+
+export declare interface AstRuleList extends Node {
+
+    typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
+    chi: Array<Node | AstComment>
+}
+
+export declare interface AstRuleStyleSheet$1 extends AstRuleList {
+    typ: StyleSheetNodeType,
+    chi: Array<AstRuleList | AstComment>
+}
+
+export declare type AstNode =
+    AstRuleStyleSheet$1
+    | AstRuleList
+    | AstComment
+    | AstAtRule$1
+    | AstRule$1
+    | AstDeclaration;
 
 /**
  * Declaration visitor handler

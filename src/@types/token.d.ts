@@ -19,6 +19,12 @@ export declare interface IdentToken extends BaseToken {
     val: string;
 }
 
+export declare interface DashedIdentToken extends BaseToken {
+
+    typ: EnumToken.DashedIdenTokenType,
+    val: string;
+}
+
 export declare interface CommaToken extends BaseToken {
 
     typ: EnumToken.CommaTokenType
@@ -71,6 +77,20 @@ export declare interface FunctionImageToken extends BaseToken {
     typ: EnumToken.ImageFunctionTokenType,
     val: 'linear-gradient' | 'radial-gradient' | 'repeating-linear-gradient' | 'repeating-radial-gradient' | 'conic-gradient' | 'image' | 'image-set' | 'element' | 'cross-fade';
     chi: Array<UrlToken | CommentToken>;
+}
+
+export declare interface AnimationTimingFunctionToken extends BaseToken {
+
+    typ: EnumToken.AnimationTimingFunctionTokenType;
+    val: string;
+    chi: Token[];
+}
+
+export declare interface AnimationTimelineFunctionToken extends BaseToken {
+
+    typ: EnumToken.AnimationTimelineFunctionTokenType;
+    val: string;
+    chi: Token[];
 }
 
 export declare interface StringToken extends BaseToken {
@@ -348,6 +368,7 @@ export declare interface FractionToken extends BaseToken {
     l: NumberToken;
     r: NumberToken;
 }
+
 export declare interface BinaryExpressionToken extends BaseToken {
 
     typ: EnumToken.BinaryExpressionTokenType
@@ -368,7 +389,7 @@ export declare interface MatchExpressionToken extends BaseToken {
 export declare interface NameSpaceAttributeToken extends BaseToken {
 
     typ: EnumToken.NameSpaceAttributeTokenType
-   l?: Token;
+    l?: Token;
     r: Token;
 }
 
@@ -394,6 +415,7 @@ export declare type TokenType = EnumToken;
 export declare type Token =
     LiteralToken
     | IdentToken
+    | DashedIdentToken
     | CommaToken
     | ColonToken
     | SemiColonToken
@@ -403,6 +425,8 @@ export declare type Token =
     | PercentageToken
     | FunctionURLToken
     | FunctionImageToken
+    | AnimationTimingFunctionToken
+    | AnimationTimelineFunctionToken
     | FunctionToken
     | DimensionToken
     | LengthToken

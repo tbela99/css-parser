@@ -7,7 +7,9 @@ import { parseString } from '../parse.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
 import { PropertySet } from './set.js';
+import { IterableWeakMap } from '../../iterable/weakmap.js';
 
+const cache = new IterableWeakMap();
 const propertiesConfig = getConfig();
 class PropertyMap {
     config;
@@ -193,23 +195,23 @@ class PropertyMap {
         }
         if (!isShorthand || requiredCount < this.requiredCount) {
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
+                // console.debug(...this.declarations.values());
                 const removeDefaults = (declaration) => {
-                    const dec = { ...declaration };
-                    dec.val = declaration.val.filter((val) => {
-                        if (val.typ != EnumToken.Iden) {
-                            return true;
+                    // const dec: AstDeclaration = {...declaration};
+                    const config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                    declaration.val = declaration.val.filter((val) => {
+                        if (!cache.has(val)) {
+                            cache.set(val, renderToken(val, { minify: true }));
                         }
-                        return !this.pattern.some((property) => {
-                            if (matchType(val, this.config.properties[property]) && this.config.properties[property].keywords.includes(val.val)) {
-                                return this.config.properties[property].default.includes(val.val);
-                            }
-                            return false;
-                        });
-                    });
-                    if (dec.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-                        dec.val.pop();
+                        return !config.default.includes(cache.get(val));
+                    })
+                        .filter((val, index, array) => !(index > 0 &&
+                        val.typ == EnumToken.WhitespaceTokenType &&
+                        array[index - 1].typ == EnumToken.WhitespaceTokenType));
+                    if (declaration.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                        declaration.val.pop();
                     }
-                    return dec;
+                    return declaration;
                 };
                 const values = [...this.declarations.values()].reduce((acc, curr) => {
                     if (curr instanceof PropertySet) {
@@ -220,7 +222,14 @@ class PropertyMap {
                     }
                     return acc;
                 }, []);
-                const filtered = values.map(removeDefaults).filter(x => x.val.length > 0);
+                const filtered = values.map(removeDefaults).filter((x) => x.val.length > 0);
+                if (filtered.length == 0 && this.config.default.length > 0) {
+                    filtered.push({
+                        typ: EnumToken.DeclarationNodeType,
+                        nam: this.config.shorthand,
+                        val: parseString(this.config.default[0])
+                    });
+                }
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
             }
             // @ts-ignore
@@ -373,8 +382,7 @@ class PropertyMap {
                         }
                     }
                     return acc;
-                }, []).
-                    reduce((acc, curr) => {
+                }, []).reduce((acc, curr) => {
                     if (acc.length > 0) {
                         acc.push({ ...separator });
                     }

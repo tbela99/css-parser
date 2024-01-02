@@ -16,6 +16,7 @@ import {reduceNumber} from "../../renderer";
 import {walkValues} from "../walk";
 import {MinifyFeature} from "../utils";
 import {compute} from "./utils";
+import {IterableWeakSet} from "../../iterable";
 
 export class ComputeCalcExpression extends MinifyFeature {
 
@@ -55,7 +56,7 @@ export class ComputeCalcExpression extends MinifyFeature {
                 continue;
             }
 
-            const set: Set<Token> = new Set;
+            const set: IterableWeakSet<Token> = new IterableWeakSet;
 
             for (const {parent} of walkValues((<AstDeclaration>node).val)) {
 
@@ -65,6 +66,7 @@ export class ComputeCalcExpression extends MinifyFeature {
 
                         set.add(parent);
                         parent.chi = evaluate(parent.chi);
+
                     }
                 }
             }

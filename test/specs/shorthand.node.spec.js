@@ -305,7 +305,7 @@ button.jetpack-instant-search__overlay-close {
  justify-content: center;
  line-height: 1;
  margin: 0;
- outline: none;
+ outline: 0;
  padding: 0;
  text-decoration: none;
  text-shadow: none;

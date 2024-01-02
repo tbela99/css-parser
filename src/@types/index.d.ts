@@ -1,5 +1,3 @@
-import {NodeType} from "../lib";
-import {FunctionToken, ParensToken, Token} from "./token";
 import {VisitorNodeMap} from "./visitor";
 
 export * from './ast';

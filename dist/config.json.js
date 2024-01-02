@@ -232,6 +232,172 @@ var properties = {
 	}
 };
 var map = {
+	animation: {
+		shorthand: "animation",
+		pattern: "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
+		"default": [
+			"1",
+			"0s",
+			"0ms",
+			"none",
+			"ease",
+			"normal",
+			"running",
+			"auto"
+		],
+		properties: {
+			"animation-name": {
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Iden"
+				]
+			},
+			"animation-duration": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"0s",
+					"0ms",
+					"auto"
+				],
+				types: [
+					"Time"
+				],
+				mapping: {
+					auto: "0s"
+				}
+			},
+			"animation-timing-function": {
+				keywords: [
+					"ease",
+					"ease-in",
+					"ease-out",
+					"ease-in-out",
+					"linear",
+					"step-start",
+					"step-end"
+				],
+				"default": [
+					"ease"
+				],
+				types: [
+					"AnimationTimingFunction"
+				],
+				mapping: {
+					"cubic-bezier(.25,.1,.25,1)": "ease",
+					"cubic-bezier(0,0,1,1)": "linear",
+					"cubic-bezier(.42,0,1,1)": "ease-in",
+					"cubic-bezier(0,0,.58,1)": "ease-out",
+					"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+				}
+			},
+			"animation-delay": {
+				keywords: [
+				],
+				"default": [
+					"0s",
+					"0ms"
+				],
+				types: [
+					"Time"
+				]
+			},
+			"animation-iteration-count": {
+				keywords: [
+					"infinite"
+				],
+				"default": [
+					"1"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"animation-direction": {
+				keywords: [
+					"normal",
+					"reverse",
+					"alternate",
+					"alternate-reverse"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			},
+			"animation-fill-mode": {
+				keywords: [
+					"none",
+					"forwards",
+					"backwards",
+					"both"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+				]
+			},
+			"animation-play-state": {
+				keywords: [
+					"running",
+					"paused"
+				],
+				"default": [
+					"running"
+				],
+				types: [
+				]
+			},
+			"animation-timeline": {
+				keywords: [
+					"none",
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"DashedIden",
+					"AnimationTimelineFunction"
+				]
+			}
+		}
+	},
+	"animation-name": {
+		shorthand: "animation"
+	},
+	"animation-duration": {
+		shorthand: "animation"
+	},
+	"animation-timing-function": {
+		shorthand: "animation"
+	},
+	"animation-delay": {
+		shorthand: "animation"
+	},
+	"animation-iteration-count": {
+		shorthand: "animation"
+	},
+	"animation-direction": {
+		shorthand: "animation"
+	},
+	"animation-fill-mode": {
+		shorthand: "animation"
+	},
+	"animation-play-state": {
+		shorthand: "animation"
+	},
+	"animation-timeline": {
+		shorthand: "animation"
+	},
 	"text-emphasis": {
 		shorthand: "text-emphasis",
 		pattern: "text-emphasis-color text-emphasis-style",
@@ -343,10 +509,12 @@ var map = {
 		shorthand: "list-style",
 		pattern: "list-style-type list-style-position list-style-image",
 		keywords: [
-			"none"
+			"none",
+			"outside"
 		],
 		"default": [
-			"none"
+			"none",
+			"outside"
 		],
 		properties: {
 			"list-style-position": {

@@ -35,7 +35,7 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
 
         const rendered: RenderResult = render(parseResult.ast, options);
 
-        return {
+        return <TransformResult> {
             ...parseResult,
             ...rendered,
             errors: parseResult.errors.concat(rendered.errors),

@@ -14,88 +14,94 @@
         EnumToken[EnumToken["DeclarationNodeType"] = 5] = "DeclarationNodeType";
         EnumToken[EnumToken["LiteralTokenType"] = 6] = "LiteralTokenType";
         EnumToken[EnumToken["IdenTokenType"] = 7] = "IdenTokenType";
-        EnumToken[EnumToken["CommaTokenType"] = 8] = "CommaTokenType";
-        EnumToken[EnumToken["ColonTokenType"] = 9] = "ColonTokenType";
-        EnumToken[EnumToken["SemiColonTokenType"] = 10] = "SemiColonTokenType";
-        EnumToken[EnumToken["NumberTokenType"] = 11] = "NumberTokenType";
-        EnumToken[EnumToken["AtRuleTokenType"] = 12] = "AtRuleTokenType";
-        EnumToken[EnumToken["PercentageTokenType"] = 13] = "PercentageTokenType";
-        EnumToken[EnumToken["FunctionTokenType"] = 14] = "FunctionTokenType";
-        EnumToken[EnumToken["UrlFunctionTokenType"] = 15] = "UrlFunctionTokenType";
-        EnumToken[EnumToken["ImageFunctionTokenType"] = 16] = "ImageFunctionTokenType";
-        EnumToken[EnumToken["StringTokenType"] = 17] = "StringTokenType";
-        EnumToken[EnumToken["UnclosedStringTokenType"] = 18] = "UnclosedStringTokenType";
-        EnumToken[EnumToken["DimensionTokenType"] = 19] = "DimensionTokenType";
-        EnumToken[EnumToken["LengthTokenType"] = 20] = "LengthTokenType";
-        EnumToken[EnumToken["AngleTokenType"] = 21] = "AngleTokenType";
-        EnumToken[EnumToken["TimeTokenType"] = 22] = "TimeTokenType";
-        EnumToken[EnumToken["FrequencyTokenType"] = 23] = "FrequencyTokenType";
-        EnumToken[EnumToken["ResolutionTokenType"] = 24] = "ResolutionTokenType";
-        EnumToken[EnumToken["HashTokenType"] = 25] = "HashTokenType";
-        EnumToken[EnumToken["BlockStartTokenType"] = 26] = "BlockStartTokenType";
-        EnumToken[EnumToken["BlockEndTokenType"] = 27] = "BlockEndTokenType";
-        EnumToken[EnumToken["AttrStartTokenType"] = 28] = "AttrStartTokenType";
-        EnumToken[EnumToken["AttrEndTokenType"] = 29] = "AttrEndTokenType";
-        EnumToken[EnumToken["StartParensTokenType"] = 30] = "StartParensTokenType";
-        EnumToken[EnumToken["EndParensTokenType"] = 31] = "EndParensTokenType";
-        EnumToken[EnumToken["ParensTokenType"] = 32] = "ParensTokenType";
-        EnumToken[EnumToken["WhitespaceTokenType"] = 33] = "WhitespaceTokenType";
-        EnumToken[EnumToken["IncludeMatchTokenType"] = 34] = "IncludeMatchTokenType";
-        EnumToken[EnumToken["DashMatchTokenType"] = 35] = "DashMatchTokenType";
-        EnumToken[EnumToken["LtTokenType"] = 36] = "LtTokenType";
-        EnumToken[EnumToken["LteTokenType"] = 37] = "LteTokenType";
-        EnumToken[EnumToken["GtTokenType"] = 38] = "GtTokenType";
-        EnumToken[EnumToken["GteTokenType"] = 39] = "GteTokenType";
-        EnumToken[EnumToken["PseudoClassTokenType"] = 40] = "PseudoClassTokenType";
-        EnumToken[EnumToken["PseudoClassFuncTokenType"] = 41] = "PseudoClassFuncTokenType";
-        EnumToken[EnumToken["DelimTokenType"] = 42] = "DelimTokenType";
-        EnumToken[EnumToken["UrlTokenTokenType"] = 43] = "UrlTokenTokenType";
-        EnumToken[EnumToken["EOFTokenType"] = 44] = "EOFTokenType";
-        EnumToken[EnumToken["ImportantTokenType"] = 45] = "ImportantTokenType";
-        EnumToken[EnumToken["ColorTokenType"] = 46] = "ColorTokenType";
-        EnumToken[EnumToken["AttrTokenType"] = 47] = "AttrTokenType";
-        EnumToken[EnumToken["BadCommentTokenType"] = 48] = "BadCommentTokenType";
-        EnumToken[EnumToken["BadCdoTokenType"] = 49] = "BadCdoTokenType";
-        EnumToken[EnumToken["BadUrlTokenType"] = 50] = "BadUrlTokenType";
-        EnumToken[EnumToken["BadStringTokenType"] = 51] = "BadStringTokenType";
-        EnumToken[EnumToken["BinaryExpressionTokenType"] = 52] = "BinaryExpressionTokenType";
-        EnumToken[EnumToken["UnaryExpressionTokenType"] = 53] = "UnaryExpressionTokenType";
+        EnumToken[EnumToken["DashedIdenTokenType"] = 8] = "DashedIdenTokenType";
+        EnumToken[EnumToken["CommaTokenType"] = 9] = "CommaTokenType";
+        EnumToken[EnumToken["ColonTokenType"] = 10] = "ColonTokenType";
+        EnumToken[EnumToken["SemiColonTokenType"] = 11] = "SemiColonTokenType";
+        EnumToken[EnumToken["NumberTokenType"] = 12] = "NumberTokenType";
+        EnumToken[EnumToken["AtRuleTokenType"] = 13] = "AtRuleTokenType";
+        EnumToken[EnumToken["PercentageTokenType"] = 14] = "PercentageTokenType";
+        EnumToken[EnumToken["FunctionTokenType"] = 15] = "FunctionTokenType";
+        EnumToken[EnumToken["AnimationTimelineFunctionTokenType"] = 16] = "AnimationTimelineFunctionTokenType";
+        EnumToken[EnumToken["AnimationTimingFunctionTokenType"] = 17] = "AnimationTimingFunctionTokenType";
+        EnumToken[EnumToken["UrlFunctionTokenType"] = 18] = "UrlFunctionTokenType";
+        EnumToken[EnumToken["ImageFunctionTokenType"] = 19] = "ImageFunctionTokenType";
+        EnumToken[EnumToken["StringTokenType"] = 20] = "StringTokenType";
+        EnumToken[EnumToken["UnclosedStringTokenType"] = 21] = "UnclosedStringTokenType";
+        EnumToken[EnumToken["DimensionTokenType"] = 22] = "DimensionTokenType";
+        EnumToken[EnumToken["LengthTokenType"] = 23] = "LengthTokenType";
+        EnumToken[EnumToken["AngleTokenType"] = 24] = "AngleTokenType";
+        EnumToken[EnumToken["TimeTokenType"] = 25] = "TimeTokenType";
+        EnumToken[EnumToken["FrequencyTokenType"] = 26] = "FrequencyTokenType";
+        EnumToken[EnumToken["ResolutionTokenType"] = 27] = "ResolutionTokenType";
+        EnumToken[EnumToken["HashTokenType"] = 28] = "HashTokenType";
+        EnumToken[EnumToken["BlockStartTokenType"] = 29] = "BlockStartTokenType";
+        EnumToken[EnumToken["BlockEndTokenType"] = 30] = "BlockEndTokenType";
+        EnumToken[EnumToken["AttrStartTokenType"] = 31] = "AttrStartTokenType";
+        EnumToken[EnumToken["AttrEndTokenType"] = 32] = "AttrEndTokenType";
+        EnumToken[EnumToken["StartParensTokenType"] = 33] = "StartParensTokenType";
+        EnumToken[EnumToken["EndParensTokenType"] = 34] = "EndParensTokenType";
+        EnumToken[EnumToken["ParensTokenType"] = 35] = "ParensTokenType";
+        EnumToken[EnumToken["WhitespaceTokenType"] = 36] = "WhitespaceTokenType";
+        EnumToken[EnumToken["IncludeMatchTokenType"] = 37] = "IncludeMatchTokenType";
+        EnumToken[EnumToken["DashMatchTokenType"] = 38] = "DashMatchTokenType";
+        EnumToken[EnumToken["LtTokenType"] = 39] = "LtTokenType";
+        EnumToken[EnumToken["LteTokenType"] = 40] = "LteTokenType";
+        EnumToken[EnumToken["GtTokenType"] = 41] = "GtTokenType";
+        EnumToken[EnumToken["GteTokenType"] = 42] = "GteTokenType";
+        EnumToken[EnumToken["PseudoClassTokenType"] = 43] = "PseudoClassTokenType";
+        EnumToken[EnumToken["PseudoClassFuncTokenType"] = 44] = "PseudoClassFuncTokenType";
+        EnumToken[EnumToken["DelimTokenType"] = 45] = "DelimTokenType";
+        EnumToken[EnumToken["UrlTokenTokenType"] = 46] = "UrlTokenTokenType";
+        EnumToken[EnumToken["EOFTokenType"] = 47] = "EOFTokenType";
+        EnumToken[EnumToken["ImportantTokenType"] = 48] = "ImportantTokenType";
+        EnumToken[EnumToken["ColorTokenType"] = 49] = "ColorTokenType";
+        EnumToken[EnumToken["AttrTokenType"] = 50] = "AttrTokenType";
+        EnumToken[EnumToken["BadCommentTokenType"] = 51] = "BadCommentTokenType";
+        EnumToken[EnumToken["BadCdoTokenType"] = 52] = "BadCdoTokenType";
+        EnumToken[EnumToken["BadUrlTokenType"] = 53] = "BadUrlTokenType";
+        EnumToken[EnumToken["BadStringTokenType"] = 54] = "BadStringTokenType";
+        EnumToken[EnumToken["BinaryExpressionTokenType"] = 55] = "BinaryExpressionTokenType";
+        EnumToken[EnumToken["UnaryExpressionTokenType"] = 56] = "UnaryExpressionTokenType";
         /* catch all */
-        EnumToken[EnumToken["ListToken"] = 54] = "ListToken";
+        EnumToken[EnumToken["ListToken"] = 57] = "ListToken";
         /* arithmetic tokens */
-        EnumToken[EnumToken["Add"] = 55] = "Add";
-        EnumToken[EnumToken["Mul"] = 56] = "Mul";
-        EnumToken[EnumToken["Div"] = 57] = "Div";
-        EnumToken[EnumToken["Sub"] = 58] = "Sub";
+        EnumToken[EnumToken["Add"] = 58] = "Add";
+        EnumToken[EnumToken["Mul"] = 59] = "Mul";
+        EnumToken[EnumToken["Div"] = 60] = "Div";
+        EnumToken[EnumToken["Sub"] = 61] = "Sub";
         /* new tokens */
-        EnumToken[EnumToken["ColumnCombinatorTokenType"] = 59] = "ColumnCombinatorTokenType";
-        EnumToken[EnumToken["ContainMatchTokenType"] = 60] = "ContainMatchTokenType";
-        EnumToken[EnumToken["StartMatchTokenType"] = 61] = "StartMatchTokenType";
-        EnumToken[EnumToken["EndMatchTokenType"] = 62] = "EndMatchTokenType";
-        EnumToken[EnumToken["MatchExpressionTokenType"] = 63] = "MatchExpressionTokenType";
-        EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 64] = "NameSpaceAttributeTokenType";
-        EnumToken[EnumToken["FractionTokenType"] = 65] = "FractionTokenType";
+        EnumToken[EnumToken["ColumnCombinatorTokenType"] = 62] = "ColumnCombinatorTokenType";
+        EnumToken[EnumToken["ContainMatchTokenType"] = 63] = "ContainMatchTokenType";
+        EnumToken[EnumToken["StartMatchTokenType"] = 64] = "StartMatchTokenType";
+        EnumToken[EnumToken["EndMatchTokenType"] = 65] = "EndMatchTokenType";
+        EnumToken[EnumToken["MatchExpressionTokenType"] = 66] = "MatchExpressionTokenType";
+        EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 67] = "NameSpaceAttributeTokenType";
+        EnumToken[EnumToken["FractionTokenType"] = 68] = "FractionTokenType";
         /* aliases */
-        EnumToken[EnumToken["Time"] = 22] = "Time";
+        EnumToken[EnumToken["Time"] = 25] = "Time";
         EnumToken[EnumToken["Iden"] = 7] = "Iden";
-        EnumToken[EnumToken["Hash"] = 25] = "Hash";
-        EnumToken[EnumToken["Angle"] = 21] = "Angle";
-        EnumToken[EnumToken["Color"] = 46] = "Color";
-        EnumToken[EnumToken["Comma"] = 8] = "Comma";
-        EnumToken[EnumToken["String"] = 17] = "String";
-        EnumToken[EnumToken["Length"] = 20] = "Length";
-        EnumToken[EnumToken["Number"] = 11] = "Number";
-        EnumToken[EnumToken["Perc"] = 13] = "Perc";
+        EnumToken[EnumToken["Hash"] = 28] = "Hash";
+        EnumToken[EnumToken["Angle"] = 24] = "Angle";
+        EnumToken[EnumToken["Color"] = 49] = "Color";
+        EnumToken[EnumToken["Comma"] = 9] = "Comma";
+        EnumToken[EnumToken["String"] = 20] = "String";
+        EnumToken[EnumToken["Length"] = 23] = "Length";
+        EnumToken[EnumToken["Number"] = 12] = "Number";
+        EnumToken[EnumToken["Perc"] = 14] = "Perc";
         EnumToken[EnumToken["Literal"] = 6] = "Literal";
         EnumToken[EnumToken["Comment"] = 0] = "Comment";
-        EnumToken[EnumToken["UrlFunc"] = 15] = "UrlFunc";
-        EnumToken[EnumToken["Dimension"] = 19] = "Dimension";
-        EnumToken[EnumToken["Frequency"] = 23] = "Frequency";
-        EnumToken[EnumToken["Resolution"] = 24] = "Resolution";
-        EnumToken[EnumToken["Whitespace"] = 33] = "Whitespace";
-        EnumToken[EnumToken["ImageFunc"] = 16] = "ImageFunc";
+        EnumToken[EnumToken["UrlFunc"] = 18] = "UrlFunc";
+        EnumToken[EnumToken["Dimension"] = 22] = "Dimension";
+        EnumToken[EnumToken["Frequency"] = 26] = "Frequency";
+        EnumToken[EnumToken["Resolution"] = 27] = "Resolution";
+        EnumToken[EnumToken["Whitespace"] = 36] = "Whitespace";
+        EnumToken[EnumToken["DashedIden"] = 8] = "DashedIden";
+        EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
         EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
         EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
+        EnumToken[EnumToken["AnimationTimingFunction"] = 17] = "AnimationTimingFunction";
+        EnumToken[EnumToken["AnimationTimelineFunction"] = 16] = "AnimationTimelineFunction";
     })(exports.EnumToken || (exports.EnumToken = {}));
 
     // name to color
@@ -962,6 +968,8 @@
             case exports.EnumToken.UrlFunctionTokenType:
             case exports.EnumToken.ImageFunctionTokenType:
             case exports.EnumToken.PseudoClassFuncTokenType:
+            case exports.EnumToken.AnimationTimingFunctionTokenType:
+            case exports.EnumToken.AnimationTimelineFunctionTokenType:
                 if (token.typ == exports.EnumToken.FunctionTokenType &&
                     token.val == 'calc' &&
                     token.chi.length == 1 &&
@@ -1031,23 +1039,6 @@
             case exports.EnumToken.DimensionTokenType:
             case exports.EnumToken.FrequencyTokenType:
             case exports.EnumToken.ResolutionTokenType:
-                // if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
-                //     const result: string = renderToken(<FractionToken>token.val, options, cache);
-                //
-                //     if (!('unit' in token)) {
-                //
-                //         return result;
-                //     }
-                //
-                //     return result.includes('/') ? result.replace('/', token.unit + '/') : result + token.unit;
-                //
-                //     // if (!result.includes(' ')) {
-                //     //
-                //     //     return result + token.unit;
-                //     // }
-                //
-                //     // return `(${result})*1${token.unit}`;
-                // }
                 let val = token.val.typ == exports.EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
                 let unit = token.unit;
                 if (token.typ == exports.EnumToken.AngleTokenType && !val.includes('/')) {
@@ -1145,12 +1136,13 @@
                         token.val = cache[token.original];
                     }
                 }
-            case exports.EnumToken.AtRuleTokenType:
             case exports.EnumToken.HashTokenType:
-            case exports.EnumToken.LiteralTokenType:
-            case exports.EnumToken.StringTokenType:
             case exports.EnumToken.IdenTokenType:
             case exports.EnumToken.DelimTokenType:
+            case exports.EnumToken.AtRuleTokenType:
+            case exports.EnumToken.StringTokenType:
+            case exports.EnumToken.LiteralTokenType:
+            case exports.EnumToken.DashedIdenTokenType:
                 return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
         }
         errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
@@ -1654,6 +1646,172 @@
     	}
     };
     var map = {
+    	animation: {
+    		shorthand: "animation",
+    		pattern: "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
+    		"default": [
+    			"1",
+    			"0s",
+    			"0ms",
+    			"none",
+    			"ease",
+    			"normal",
+    			"running",
+    			"auto"
+    		],
+    		properties: {
+    			"animation-name": {
+    				keywords: [
+    					"none"
+    				],
+    				"default": [
+    					"none"
+    				],
+    				types: [
+    					"Iden"
+    				]
+    			},
+    			"animation-duration": {
+    				keywords: [
+    					"auto"
+    				],
+    				"default": [
+    					"0s",
+    					"0ms",
+    					"auto"
+    				],
+    				types: [
+    					"Time"
+    				],
+    				mapping: {
+    					auto: "0s"
+    				}
+    			},
+    			"animation-timing-function": {
+    				keywords: [
+    					"ease",
+    					"ease-in",
+    					"ease-out",
+    					"ease-in-out",
+    					"linear",
+    					"step-start",
+    					"step-end"
+    				],
+    				"default": [
+    					"ease"
+    				],
+    				types: [
+    					"AnimationTimingFunction"
+    				],
+    				mapping: {
+    					"cubic-bezier(.25,.1,.25,1)": "ease",
+    					"cubic-bezier(0,0,1,1)": "linear",
+    					"cubic-bezier(.42,0,1,1)": "ease-in",
+    					"cubic-bezier(0,0,.58,1)": "ease-out",
+    					"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+    				}
+    			},
+    			"animation-delay": {
+    				keywords: [
+    				],
+    				"default": [
+    					"0s",
+    					"0ms"
+    				],
+    				types: [
+    					"Time"
+    				]
+    			},
+    			"animation-iteration-count": {
+    				keywords: [
+    					"infinite"
+    				],
+    				"default": [
+    					"1"
+    				],
+    				types: [
+    					"Number"
+    				]
+    			},
+    			"animation-direction": {
+    				keywords: [
+    					"normal",
+    					"reverse",
+    					"alternate",
+    					"alternate-reverse"
+    				],
+    				"default": [
+    					"normal"
+    				],
+    				types: [
+    				]
+    			},
+    			"animation-fill-mode": {
+    				keywords: [
+    					"none",
+    					"forwards",
+    					"backwards",
+    					"both"
+    				],
+    				"default": [
+    					"none"
+    				],
+    				types: [
+    				]
+    			},
+    			"animation-play-state": {
+    				keywords: [
+    					"running",
+    					"paused"
+    				],
+    				"default": [
+    					"running"
+    				],
+    				types: [
+    				]
+    			},
+    			"animation-timeline": {
+    				keywords: [
+    					"none",
+    					"auto"
+    				],
+    				"default": [
+    					"auto"
+    				],
+    				types: [
+    					"DashedIden",
+    					"AnimationTimelineFunction"
+    				]
+    			}
+    		}
+    	},
+    	"animation-name": {
+    		shorthand: "animation"
+    	},
+    	"animation-duration": {
+    		shorthand: "animation"
+    	},
+    	"animation-timing-function": {
+    		shorthand: "animation"
+    	},
+    	"animation-delay": {
+    		shorthand: "animation"
+    	},
+    	"animation-iteration-count": {
+    		shorthand: "animation"
+    	},
+    	"animation-direction": {
+    		shorthand: "animation"
+    	},
+    	"animation-fill-mode": {
+    		shorthand: "animation"
+    	},
+    	"animation-play-state": {
+    		shorthand: "animation"
+    	},
+    	"animation-timeline": {
+    		shorthand: "animation"
+    	},
     	"text-emphasis": {
     		shorthand: "text-emphasis",
     		pattern: "text-emphasis-color text-emphasis-style",
@@ -1765,10 +1923,12 @@
     		shorthand: "list-style",
     		pattern: "list-style-type list-style-position list-style-image",
     		keywords: [
-    			"none"
+    			"none",
+    			"outside"
     		],
     		"default": [
-    			"none"
+    			"none",
+    			"outside"
     		],
     		properties: {
     			"list-style-position": {
@@ -2938,16 +3098,20 @@
     const trimWhiteSpace = [exports.EnumToken.CommentTokenType, exports.EnumToken.GtTokenType, exports.EnumToken.GteTokenType, exports.EnumToken.LtTokenType, exports.EnumToken.LteTokenType, exports.EnumToken.ColumnCombinatorTokenType];
     const funcLike = [
         exports.EnumToken.ParensTokenType,
-        exports.EnumToken.StartParensTokenType,
         exports.EnumToken.FunctionTokenType,
         exports.EnumToken.UrlFunctionTokenType,
+        exports.EnumToken.StartParensTokenType,
         exports.EnumToken.ImageFunctionTokenType,
-        exports.EnumToken.PseudoClassFuncTokenType
+        exports.EnumToken.PseudoClassFuncTokenType,
+        exports.EnumToken.AnimationTimingFunctionTokenType,
+        exports.EnumToken.AnimationTimingFunctionTokenType
     ];
-    const BadTokensTypes = [exports.EnumToken.BadCommentTokenType,
+    const BadTokensTypes = [
+        exports.EnumToken.BadCommentTokenType,
         exports.EnumToken.BadCdoTokenType,
         exports.EnumToken.BadUrlTokenType,
-        exports.EnumToken.BadStringTokenType];
+        exports.EnumToken.BadStringTokenType
+    ];
     const webkitPseudoAliasMap = {
         '-webkit-autofill': 'autofill'
     };
@@ -3517,6 +3681,20 @@
                     chi: []
                 };
             }
+            if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
+                return {
+                    typ: exports.EnumToken.AnimationTimingFunctionTokenType,
+                    val,
+                    chi: []
+                };
+            }
+            if (['view', 'scroll'].includes(val)) {
+                return {
+                    typ: exports.EnumToken.AnimationTimelineFunctionTokenType,
+                    val,
+                    chi: []
+                };
+            }
             return {
                 typ: exports.EnumToken.FunctionTokenType,
                 val,
@@ -3548,7 +3726,7 @@
         }
         if (isIdent(val)) {
             return {
-                typ: exports.EnumToken.IdenTokenType,
+                typ: val.startsWith('--') ? exports.EnumToken.DashedIdenTokenType : exports.EnumToken.IdenTokenType,
                 val
             };
         }
@@ -4130,10 +4308,109 @@
         }
     }
 
+    class IterableWeakSet {
+        #weakset = new WeakSet;
+        #set = new Set;
+        constructor(iterable) {
+            if (iterable) {
+                for (const value of iterable) {
+                    const ref = new WeakRef(value);
+                    this.#weakset.add(value);
+                    this.#set.add(ref);
+                }
+            }
+        }
+        has(value) {
+            return this.#weakset.has(value);
+        }
+        delete(value) {
+            if (this.#weakset.has(value)) {
+                for (const ref of this.#set) {
+                    if (ref.deref() === value) {
+                        this.#set.delete(ref);
+                        break;
+                    }
+                }
+                return this.#weakset.delete(value);
+            }
+            return false;
+        }
+        add(value) {
+            if (!this.#weakset.has(value)) {
+                this.#weakset.add(value);
+                this.#set.add(new WeakRef(value));
+            }
+            return this;
+        }
+        *[Symbol.iterator]() {
+            for (const ref of new Set(this.#set)) {
+                const key = ref.deref();
+                if (key != null) {
+                    yield key;
+                }
+                else {
+                    this.#set.delete(ref);
+                }
+            }
+        }
+    }
+
+    class IterableWeakMap {
+        #map;
+        #set;
+        constructor(iterable) {
+            this.#map = new WeakMap;
+            this.#set = new Set;
+            if (iterable) {
+                for (const [key, value] of iterable) {
+                    const ref = new WeakRef(key);
+                    this.#set.add(ref);
+                    this.#map.set(key, value);
+                }
+            }
+        }
+        has(key) {
+            return this.#map.has(key);
+        }
+        set(key, value) {
+            if (!this.#map.has(key)) {
+                this.#set.add(new WeakRef(key));
+            }
+            this.#map.set(key, value);
+            return this;
+        }
+        get(key) {
+            return this.#map.get(key);
+        }
+        delete(key) {
+            if (this.#map.has(key)) {
+                for (const ref of this.#set) {
+                    if (ref.deref() === key) {
+                        this.#set.delete(ref);
+                        break;
+                    }
+                }
+                return this.#map.delete(key);
+            }
+            return false;
+        }
+        *[Symbol.iterator]() {
+            for (const ref of new Set(this.#set)) {
+                const key = ref.deref();
+                if (key == null) {
+                    this.#set.delete(ref);
+                    continue;
+                }
+                // @ts-ignore
+                yield [key, this.#map.get(key)];
+            }
+        }
+    }
+
     function replace(node, variableScope) {
         for (const { value, parent: parentValue } of walkValues(node.val)) {
             if (value?.typ == exports.EnumToken.FunctionTokenType && value.val == 'var') {
-                if (value.chi.length == 1 && value.chi[0].typ == exports.EnumToken.IdenTokenType) {
+                if (value.chi.length == 1 && value.chi[0].typ == exports.EnumToken.DashedIdenTokenType) {
                     const info = variableScope.get(value.chi[0].val);
                     if (info?.replaceable) {
                         if (parentValue != null) {
@@ -4188,7 +4465,7 @@
                         const info = {
                             globalScope: isRoot,
                             // @ts-ignore
-                            parent: new Set(),
+                            parent: new IterableWeakSet(),
                             declarationCount: 1,
                             replaceable: isRoot,
                             node: node
@@ -4229,6 +4506,7 @@
             for (const info of variableScope.values()) {
                 if (info.replaceable) {
                     let i;
+                    // drop declarations from :root{}
                     for (const parent of info.parent) {
                         i = parent.chi?.length ?? 0;
                         while (i--) {
@@ -4421,6 +4699,7 @@
         }
     }
 
+    const cache = new IterableWeakMap();
     const propertiesConfig = getConfig();
     class PropertyMap {
         config;
@@ -4606,23 +4885,23 @@
             }
             if (!isShorthand || requiredCount < this.requiredCount) {
                 if (isShorthand && this.declarations.has(this.config.shorthand)) {
+                    // console.debug(...this.declarations.values());
                     const removeDefaults = (declaration) => {
-                        const dec = { ...declaration };
-                        dec.val = declaration.val.filter((val) => {
-                            if (val.typ != exports.EnumToken.Iden) {
-                                return true;
+                        // const dec: AstDeclaration = {...declaration};
+                        const config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                        declaration.val = declaration.val.filter((val) => {
+                            if (!cache.has(val)) {
+                                cache.set(val, renderToken(val, { minify: true }));
                             }
-                            return !this.pattern.some((property) => {
-                                if (matchType(val, this.config.properties[property]) && this.config.properties[property].keywords.includes(val.val)) {
-                                    return this.config.properties[property].default.includes(val.val);
-                                }
-                                return false;
-                            });
-                        });
-                        if (dec.val.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
-                            dec.val.pop();
+                            return !config.default.includes(cache.get(val));
+                        })
+                            .filter((val, index, array) => !(index > 0 &&
+                            val.typ == exports.EnumToken.WhitespaceTokenType &&
+                            array[index - 1].typ == exports.EnumToken.WhitespaceTokenType));
+                        if (declaration.val.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
+                            declaration.val.pop();
                         }
-                        return dec;
+                        return declaration;
                     };
                     const values = [...this.declarations.values()].reduce((acc, curr) => {
                         if (curr instanceof PropertySet) {
@@ -4633,7 +4912,14 @@
                         }
                         return acc;
                     }, []);
-                    const filtered = values.map(removeDefaults).filter(x => x.val.length > 0);
+                    const filtered = values.map(removeDefaults).filter((x) => x.val.length > 0);
+                    if (filtered.length == 0 && this.config.default.length > 0) {
+                        filtered.push({
+                            typ: exports.EnumToken.DeclarationNodeType,
+                            nam: this.config.shorthand,
+                            val: parseString(this.config.default[0])
+                        });
+                    }
                     return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
                 }
                 // @ts-ignore
@@ -4786,8 +5072,7 @@
                             }
                         }
                         return acc;
-                    }, []).
-                        reduce((acc, curr) => {
+                    }, []).reduce((acc, curr) => {
                         if (acc.length > 0) {
                             acc.push({ ...separator });
                         }
@@ -5109,7 +5394,7 @@
                 if (node.typ != exports.EnumToken.DeclarationNodeType) {
                     continue;
                 }
-                const set = new Set;
+                const set = new IterableWeakSet;
                 for (const { parent } of walkValues(node.val)) {
                     if (parent != null && parent.typ == exports.EnumToken.FunctionTokenType && parent.val == 'calc') {
                         if (!set.has(parent)) {

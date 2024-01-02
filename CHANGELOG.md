@@ -11,7 +11,7 @@
 - [ ] transition
 - [x] list-style
 - [x] text-emphasis
-- [ ] animation
+- [x] animation
 
 ### Minification
 

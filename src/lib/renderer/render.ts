@@ -54,7 +54,7 @@ export function reduceNumber(val: string | number) {
 
 function update(position: Position, str: string) {
 
-    let i = 0;
+    let i: number = 0;
 
     for (; i < str.length; i++) {
 
@@ -450,6 +450,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
+        case EnumToken.AnimationTimingFunctionTokenType:
+        case EnumToken.AnimationTimelineFunctionTokenType:
 
             if (
                 token.typ == EnumToken.FunctionTokenType &&
@@ -460,7 +462,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 (<FractionToken>(<NumberToken>token.chi[0]).val)?.typ != EnumToken.FractionTokenType) {
 
                 // calc(200px) => 200px
-                return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '')
+                return token.chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
             }
 
             // @ts-ignore
@@ -549,24 +551,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-
-            // if ((<FractionToken>token.val).typ == EnumToken.FractionTokenType) {
-            //     const result: string = renderToken(<FractionToken>token.val, options, cache);
-            //
-            //     if (!('unit' in token)) {
-            //
-            //         return result;
-            //     }
-            //
-            //     return result.includes('/') ? result.replace('/', token.unit + '/') : result + token.unit;
-            //
-            //     // if (!result.includes(' ')) {
-            //     //
-            //     //     return result + token.unit;
-            //     // }
-            //
-            //     // return `(${result})*1${token.unit}`;
-            // }
 
             let val: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string | number>token.val);
             let unit: string = token.unit;
@@ -723,12 +707,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 }
             }
 
-        case EnumToken.AtRuleTokenType:
         case EnumToken.HashTokenType:
-        case EnumToken.LiteralTokenType:
-        case EnumToken.StringTokenType:
         case EnumToken.IdenTokenType:
         case EnumToken.DelimTokenType:
+        case EnumToken.AtRuleTokenType:
+        case EnumToken.StringTokenType:
+        case EnumToken.LiteralTokenType:
+        case EnumToken.DashedIdenTokenType:
 
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
