@@ -79,16 +79,15 @@ export declare interface FunctionImageToken extends BaseToken {
     chi: Array<UrlToken | CommentToken>;
 }
 
-export declare interface AnimationTimingFunctionToken extends BaseToken {
+export declare interface TimingFunctionToken extends BaseToken {
 
-    typ: EnumToken.AnimationTimingFunctionTokenType;
+    typ: EnumToken.TimingFunctionTokenType;
     val: string;
     chi: Token[];
 }
+export declare interface TimelineFunctionToken extends BaseToken {
 
-export declare interface AnimationTimelineFunctionToken extends BaseToken {
-
-    typ: EnumToken.AnimationTimelineFunctionTokenType;
+    typ: EnumToken.TimelineFunctionTokenType;
     val: string;
     chi: Token[];
 }
@@ -425,8 +424,8 @@ export declare type Token =
     | PercentageToken
     | FunctionURLToken
     | FunctionImageToken
-    | AnimationTimingFunctionToken
-    | AnimationTimelineFunctionToken
+    | TimingFunctionToken
+    | TimelineFunctionToken
     | FunctionToken
     | DimensionToken
     | LengthToken

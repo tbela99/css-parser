@@ -229,6 +229,105 @@
   }
  },
  "map": {
+  "transition": {
+   "shorthand": "transition",
+   "multiple": true,
+   "separator": ",",
+   "pattern": "transition-property transition-duration transition-timing-function transition-delay transition-behavior",
+   "keywords": [
+    "none",
+    "all"
+   ],
+   "default": [
+    "0s",
+    "0ms",
+    "all",
+    "ease",
+    "none",
+    "normal"
+   ],
+   "properties": {
+    "transition-property": {
+     "keywords": [
+      "none",
+      "all"
+     ],
+     "default": [],
+     "types": [
+      "Iden"
+     ]
+    },
+    "transition-duration": {
+     "keywords": [],
+     "default": [
+      "0s",
+      "0ms",
+      "normal"
+     ],
+     "types": [
+      "Time"
+     ]
+    },
+    "transition-timing-function": {
+     "keywords": [
+      "ease",
+      "ease-in",
+      "ease-out",
+      "ease-in-out",
+      "linear",
+      "step-start",
+      "step-end"
+     ],
+     "default": [
+      "ease"
+     ],
+     "types": [
+      "TimingFunction"
+     ],
+     "mapping": {
+      "cubic-bezier(.25,.1,.25,1)": "ease",
+      "cubic-bezier(0,0,1,1)": "linear",
+      "cubic-bezier(.42,0,1,1)": "ease-in",
+      "cubic-bezier(0,0,.58,1)": "ease-out",
+      "cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+     }
+    },
+    "transition-delay": {
+     "keywords": [],
+     "default": [
+      "0s"
+     ],
+     "types": [
+      "Time"
+     ]
+    },
+    "transition-behavior": {
+     "keywords": [
+      "normal",
+      "allow-discrete"
+     ],
+     "default": [
+      "normal"
+     ],
+     "types": []
+    }
+   }
+  },
+  "transition-property": {
+   "shorthand": "transition"
+  },
+  "transition-duration": {
+   "shorthand": "transition"
+  },
+  "transition-timing-function": {
+   "shorthand": "transition"
+  },
+  "transition-delay": {
+   "shorthand": "transition"
+  },
+  "transition-behavior": {
+   "shorthand": "transition"
+  },
   "animation": {
    "shorthand": "animation",
    "pattern": "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
@@ -284,7 +383,7 @@
       "ease"
      ],
      "types": [
-      "AnimationTimingFunction"
+      "TimingFunction"
      ],
      "mapping": {
       "cubic-bezier(.25,.1,.25,1)": "ease",
@@ -359,7 +458,7 @@
      ],
      "types": [
       "DashedIden",
-      "AnimationTimelineFunction"
+      "TimelineFunction"
      ]
     }
    }

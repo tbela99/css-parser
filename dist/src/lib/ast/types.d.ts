@@ -15,8 +15,8 @@ export declare enum EnumToken {
     AtRuleTokenType = 13,
     PercentageTokenType = 14,
     FunctionTokenType = 15,
-    AnimationTimelineFunctionTokenType = 16,
-    AnimationTimingFunctionTokenType = 17,
+    TimelineFunctionTokenType = 16,
+    TimingFunctionTokenType = 17,
     UrlFunctionTokenType = 18,
     ImageFunctionTokenType = 19,
     StringTokenType = 20,
@@ -89,6 +89,6 @@ export declare enum EnumToken {
     ImageFunc = 19,
     CommentNodeType = 0,
     CDOCOMMNodeType = 1,
-    AnimationTimingFunction = 17,
-    AnimationTimelineFunction = 16
+    TimingFunction = 17,
+    TimelineFunction = 16
 }

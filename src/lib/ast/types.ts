@@ -15,8 +15,8 @@ export enum EnumToken {
     AtRuleTokenType,
     PercentageTokenType,
     FunctionTokenType,
-    AnimationTimelineFunctionTokenType,
-    AnimationTimingFunctionTokenType,
+    TimelineFunctionTokenType,
+    TimingFunctionTokenType,
     UrlFunctionTokenType,
     ImageFunctionTokenType,
     StringTokenType,
@@ -93,7 +93,7 @@ export enum EnumToken {
     ImageFunc = ImageFunctionTokenType,
     CommentNodeType = CommentTokenType,
     CDOCOMMNodeType = CDOCOMMTokenType,
-    AnimationTimingFunction = AnimationTimingFunctionTokenType,
-    AnimationTimelineFunction = AnimationTimelineFunctionTokenType
+    TimingFunction = TimingFunctionTokenType,
+    TimelineFunction = TimelineFunctionTokenType
 }
 

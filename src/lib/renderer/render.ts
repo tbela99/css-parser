@@ -450,8 +450,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
-        case EnumToken.AnimationTimingFunctionTokenType:
-        case EnumToken.AnimationTimelineFunctionTokenType:
+        case EnumToken.TimingFunctionTokenType:
+        case EnumToken.TimelineFunctionTokenType:
 
             if (
                 token.typ == EnumToken.FunctionTokenType &&

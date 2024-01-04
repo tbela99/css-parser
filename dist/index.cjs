@@ -20,8 +20,8 @@ exports.EnumToken = void 0;
     EnumToken[EnumToken["AtRuleTokenType"] = 13] = "AtRuleTokenType";
     EnumToken[EnumToken["PercentageTokenType"] = 14] = "PercentageTokenType";
     EnumToken[EnumToken["FunctionTokenType"] = 15] = "FunctionTokenType";
-    EnumToken[EnumToken["AnimationTimelineFunctionTokenType"] = 16] = "AnimationTimelineFunctionTokenType";
-    EnumToken[EnumToken["AnimationTimingFunctionTokenType"] = 17] = "AnimationTimingFunctionTokenType";
+    EnumToken[EnumToken["TimelineFunctionTokenType"] = 16] = "TimelineFunctionTokenType";
+    EnumToken[EnumToken["TimingFunctionTokenType"] = 17] = "TimingFunctionTokenType";
     EnumToken[EnumToken["UrlFunctionTokenType"] = 18] = "UrlFunctionTokenType";
     EnumToken[EnumToken["ImageFunctionTokenType"] = 19] = "ImageFunctionTokenType";
     EnumToken[EnumToken["StringTokenType"] = 20] = "StringTokenType";
@@ -98,8 +98,8 @@ exports.EnumToken = void 0;
     EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
     EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
     EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
-    EnumToken[EnumToken["AnimationTimingFunction"] = 17] = "AnimationTimingFunction";
-    EnumToken[EnumToken["AnimationTimelineFunction"] = 16] = "AnimationTimelineFunction";
+    EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
+    EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(exports.EnumToken || (exports.EnumToken = {}));
 
 // name to color
@@ -966,8 +966,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.UrlFunctionTokenType:
         case exports.EnumToken.ImageFunctionTokenType:
         case exports.EnumToken.PseudoClassFuncTokenType:
-        case exports.EnumToken.AnimationTimingFunctionTokenType:
-        case exports.EnumToken.AnimationTimelineFunctionTokenType:
+        case exports.EnumToken.TimingFunctionTokenType:
+        case exports.EnumToken.TimelineFunctionTokenType:
             if (token.typ == exports.EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
                 token.chi.length == 1 &&
@@ -1644,6 +1644,109 @@ var properties = {
 	}
 };
 var map = {
+	transition: {
+		shorthand: "transition",
+		multiple: true,
+		separator: ",",
+		pattern: "transition-property transition-duration transition-timing-function transition-delay transition-behavior",
+		keywords: [
+			"none",
+			"all"
+		],
+		"default": [
+			"0s",
+			"0ms",
+			"all",
+			"ease",
+			"none",
+			"normal"
+		],
+		properties: {
+			"transition-property": {
+				keywords: [
+					"none",
+					"all"
+				],
+				"default": [
+				],
+				types: [
+					"Iden"
+				]
+			},
+			"transition-duration": {
+				keywords: [
+				],
+				"default": [
+					"0s",
+					"0ms",
+					"normal"
+				],
+				types: [
+					"Time"
+				]
+			},
+			"transition-timing-function": {
+				keywords: [
+					"ease",
+					"ease-in",
+					"ease-out",
+					"ease-in-out",
+					"linear",
+					"step-start",
+					"step-end"
+				],
+				"default": [
+					"ease"
+				],
+				types: [
+					"TimingFunction"
+				],
+				mapping: {
+					"cubic-bezier(.25,.1,.25,1)": "ease",
+					"cubic-bezier(0,0,1,1)": "linear",
+					"cubic-bezier(.42,0,1,1)": "ease-in",
+					"cubic-bezier(0,0,.58,1)": "ease-out",
+					"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+				}
+			},
+			"transition-delay": {
+				keywords: [
+				],
+				"default": [
+					"0s"
+				],
+				types: [
+					"Time"
+				]
+			},
+			"transition-behavior": {
+				keywords: [
+					"normal",
+					"allow-discrete"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"transition-property": {
+		shorthand: "transition"
+	},
+	"transition-duration": {
+		shorthand: "transition"
+	},
+	"transition-timing-function": {
+		shorthand: "transition"
+	},
+	"transition-delay": {
+		shorthand: "transition"
+	},
+	"transition-behavior": {
+		shorthand: "transition"
+	},
 	animation: {
 		shorthand: "animation",
 		pattern: "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
@@ -1699,7 +1802,7 @@ var map = {
 					"ease"
 				],
 				types: [
-					"AnimationTimingFunction"
+					"TimingFunction"
 				],
 				mapping: {
 					"cubic-bezier(.25,.1,.25,1)": "ease",
@@ -1778,7 +1881,7 @@ var map = {
 				],
 				types: [
 					"DashedIden",
-					"AnimationTimelineFunction"
+					"TimelineFunction"
 				]
 			}
 		}
@@ -3101,8 +3204,8 @@ const funcLike = [
     exports.EnumToken.StartParensTokenType,
     exports.EnumToken.ImageFunctionTokenType,
     exports.EnumToken.PseudoClassFuncTokenType,
-    exports.EnumToken.AnimationTimingFunctionTokenType,
-    exports.EnumToken.AnimationTimingFunctionTokenType
+    exports.EnumToken.TimingFunctionTokenType,
+    exports.EnumToken.TimingFunctionTokenType
 ];
 const BadTokensTypes = [
     exports.EnumToken.BadCommentTokenType,
@@ -3681,14 +3784,14 @@ function getTokenType(val, hint) {
         }
         if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
             return {
-                typ: exports.EnumToken.AnimationTimingFunctionTokenType,
+                typ: exports.EnumToken.TimingFunctionTokenType,
                 val,
                 chi: []
             };
         }
         if (['view', 'scroll'].includes(val)) {
             return {
-                typ: exports.EnumToken.AnimationTimelineFunctionTokenType,
+                typ: exports.EnumToken.TimelineFunctionTokenType,
                 val,
                 chi: []
             };
@@ -5087,7 +5190,7 @@ class PropertyMap {
                     return acc;
                 }, []);
                 if (this.config.mapping != null) {
-                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '');
+                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true, minify: true }), '');
                     if (val in this.config.mapping) {
                         values.length = 0;
                         values.push({

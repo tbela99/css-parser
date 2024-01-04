@@ -137,7 +137,7 @@ content: '\\21 now\\21';
 `;
         return transform(file, {
             minify: true
-        }).then(result => f(result.code).equals(`@media (max-width:575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:none}}`));
+        }).then(result => f(result.code).equals(`@media (max-width:575.98px) and (prefers-reduced-motion:reduce){.offcanvas-sm{transition:0s}}`));
     });
 
     it('merge selectors #8', function () {
@@ -436,7 +436,7 @@ transition: all 0s ease 0s; flex: 0 1 0%; position: relative; align-self: stretc
             removeComments: true,
             preserveLicense: true
         }).code).equals(`.site-header .logo {
- transition: all 0s ease 0s;
+ transition: 0s;
  flex: 0 1 0%;
  position: relative;
  align-self: stretch;

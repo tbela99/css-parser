@@ -3,12 +3,15 @@
 ## v0.2.0
 
 - [x] cancellable parser promise using abortSignal
-- [x] node visitor (callback)
+- [x] node visitor (callback) :
+    - [x] Declaration visitor
+    - [x] selector visitor
+    - [x] at-rule visitor
 - [x] support mixing units with calc()
 
 # shorthands
 
-- [ ] transition
+- [x] transition
 - [x] list-style
 - [x] text-emphasis
 - [x] animation

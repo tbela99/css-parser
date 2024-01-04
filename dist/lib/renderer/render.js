@@ -286,8 +286,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
-        case EnumToken.AnimationTimingFunctionTokenType:
-        case EnumToken.AnimationTimelineFunctionTokenType:
+        case EnumToken.TimingFunctionTokenType:
+        case EnumToken.TimelineFunctionTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
                 token.chi.length == 1 &&

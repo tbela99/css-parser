@@ -585,7 +585,7 @@ export class PropertyMap {
 
                 if (this.config.mapping != null) {
 
-                    const val: string = values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {removeComments: true}), '');
+                    const val: string = values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {removeComments: true, minify: true}), '');
 
                     if (val in this.config.mapping) {
 

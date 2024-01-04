@@ -15,8 +15,8 @@ declare enum EnumToken {
     AtRuleTokenType = 13,
     PercentageTokenType = 14,
     FunctionTokenType = 15,
-    AnimationTimelineFunctionTokenType = 16,
-    AnimationTimingFunctionTokenType = 17,
+    TimelineFunctionTokenType = 16,
+    TimingFunctionTokenType = 17,
     UrlFunctionTokenType = 18,
     ImageFunctionTokenType = 19,
     StringTokenType = 20,
@@ -89,8 +89,8 @@ declare enum EnumToken {
     ImageFunc = 19,
     CommentNodeType = 0,
     CDOCOMMNodeType = 1,
-    AnimationTimingFunction = 17,
-    AnimationTimelineFunction = 16
+    TimingFunction = 17,
+    TimelineFunction = 16
 }
 
 declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
@@ -189,16 +189,15 @@ export declare interface FunctionImageToken extends BaseToken {
     chi: Array<UrlToken | CommentToken>;
 }
 
-export declare interface AnimationTimingFunctionToken extends BaseToken {
+export declare interface TimingFunctionToken extends BaseToken {
 
-    typ: EnumToken.AnimationTimingFunctionTokenType;
+    typ: EnumToken.TimingFunctionTokenType;
     val: string;
     chi: Token[];
 }
+export declare interface TimelineFunctionToken extends BaseToken {
 
-export declare interface AnimationTimelineFunctionToken extends BaseToken {
-
-    typ: EnumToken.AnimationTimelineFunctionTokenType;
+    typ: EnumToken.TimelineFunctionTokenType;
     val: string;
     chi: Token[];
 }
@@ -533,8 +532,8 @@ export declare type Token =
     | PercentageToken
     | FunctionURLToken
     | FunctionImageToken
-    | AnimationTimingFunctionToken
-    | AnimationTimelineFunctionToken
+    | TimingFunctionToken
+    | TimelineFunctionToken
     | FunctionToken
     | DimensionToken
     | LengthToken

@@ -17,8 +17,8 @@ import {COLORS_NAMES} from "../renderer/utils";
 import {combinators, EnumToken, expand, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
-    AnimationTimelineFunctionToken,
-    AnimationTimingFunctionToken,
+    TimelineFunctionToken,
+    TimingFunctionToken,
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -83,8 +83,8 @@ const funcLike: EnumToken[] = [
     EnumToken.StartParensTokenType,
     EnumToken.ImageFunctionTokenType,
     EnumToken.PseudoClassFuncTokenType,
-    EnumToken.AnimationTimingFunctionTokenType,
-    EnumToken.AnimationTimingFunctionTokenType
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType
 ];
 
 const BadTokensTypes: EnumToken[] = [
@@ -855,16 +855,16 @@ function getTokenType(val: string, hint?: EnumToken): Token {
         }
 
         if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
-            return <AnimationTimingFunctionToken>{
-                typ: EnumToken.AnimationTimingFunctionTokenType,
+            return <TimingFunctionToken>{
+                typ: EnumToken.TimingFunctionTokenType,
                 val,
                 chi: <Token[]>[]
             };
         }
 
         if (['view', 'scroll'].includes(val)) {
-            return <AnimationTimelineFunctionToken>{
-                typ: EnumToken.AnimationTimelineFunctionTokenType,
+            return <TimelineFunctionToken>{
+                typ: EnumToken.TimelineFunctionTokenType,
                 val,
                 chi: <Token[]>[]
             };

@@ -16,8 +16,8 @@ const funcLike = [
     EnumToken.StartParensTokenType,
     EnumToken.ImageFunctionTokenType,
     EnumToken.PseudoClassFuncTokenType,
-    EnumToken.AnimationTimingFunctionTokenType,
-    EnumToken.AnimationTimingFunctionTokenType
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType
 ];
 const BadTokensTypes = [
     EnumToken.BadCommentTokenType,
@@ -596,14 +596,14 @@ function getTokenType(val, hint) {
         }
         if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
             return {
-                typ: EnumToken.AnimationTimingFunctionTokenType,
+                typ: EnumToken.TimingFunctionTokenType,
                 val,
                 chi: []
             };
         }
         if (['view', 'scroll'].includes(val)) {
             return {
-                typ: EnumToken.AnimationTimelineFunctionTokenType,
+                typ: EnumToken.TimelineFunctionTokenType,
                 val,
                 chi: []
             };

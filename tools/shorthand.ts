@@ -49,6 +49,70 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
     [
         {
+            shorthand: 'transition',
+            multiple: true,
+            separator: ',',
+            pattern: 'transition-property transition-duration transition-timing-function transition-delay transition-behavior',
+            keywords: ['none', 'all'],
+            default: ['0s', '0ms', 'all', 'ease', 'none', 'normal'],
+        },
+        [
+            {
+                shorthand: 'transition-property',
+                properties: {
+
+                    keywords: ['none', 'all'],
+                    default: [],
+                    types: ['Iden']
+                }
+            },
+            {
+                shorthand: 'transition-duration',
+                properties: {
+
+                    keywords: [],
+                    default: ['0s', '0ms', 'normal'],
+                    types: ['Time']
+                }
+            },
+            {
+                shorthand: 'transition-timing-function',
+                properties: {
+
+                    keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
+                    default: ['ease'],
+                    types: ['TimingFunction'],
+                    mapping: {
+                        'cubic-bezier(.25,.1,.25,1)': 'ease',
+                        'cubic-bezier(0,0,1,1)': 'linear',
+                        'cubic-bezier(.42,0,1,1)': 'ease-in',
+                        'cubic-bezier(0,0,.58,1)': 'ease-out',
+                        'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
+                    }
+                }
+            },
+            {
+                shorthand: 'transition-delay',
+                properties: {
+
+                    keywords: [],
+                    default: ['0s'],
+                    types: ['Time']
+                }
+            },
+            {
+                shorthand: 'transition-behavior',
+                properties: {
+
+                    keywords: ['normal', 'allow-discrete'],
+                    default: ['normal'],
+                    types: []
+                }
+            }
+        ]
+    ],
+    [
+        {
             shorthand: 'animation',
             pattern: 'animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline',
             default: ['1', '0s', '0ms', 'none', 'ease', 'normal', 'running', 'auto']
@@ -79,15 +143,13 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
                     keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
                     default: ['ease'],
-                    types: ['AnimationTimingFunction'],
+                    types: ['TimingFunction'],
                     mapping: {
                         'cubic-bezier(.25,.1,.25,1)': 'ease',
                         'cubic-bezier(0,0,1,1)': 'linear',
                         'cubic-bezier(.42,0,1,1)': 'ease-in',
                         'cubic-bezier(0,0,.58,1)': 'ease-out',
                         'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
-
-
                     }
                 }
             },
@@ -136,7 +198,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
                     keywords: ['none', 'auto'],
                     default: ['auto'],
-                    types: ['DashedIden', 'AnimationTimelineFunction']
+                    types: ['DashedIden', 'TimelineFunction']
                 }
             }
         ]
