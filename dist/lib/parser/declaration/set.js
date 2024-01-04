@@ -60,7 +60,7 @@ class PropertySet {
                         this.config.properties.forEach((property, index) => {
                             if (!this.declarations.has(property)) {
                                 this.declarations.set(property, {
-                                    typ: 5 /* NodeType.DeclarationNodeType */,
+                                    typ: EnumToken.DeclarationNodeType,
                                     nam: property,
                                     val: []
                                 });
@@ -139,7 +139,7 @@ class PropertySet {
                 }
             }
             iterator = [{
-                    typ: 5 /* NodeType.DeclarationNodeType */,
+                    typ: EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,
                     val: values.reduce((acc, curr) => {
                         if (curr.length > 1) {

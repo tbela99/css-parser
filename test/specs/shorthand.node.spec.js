@@ -305,7 +305,7 @@ button.jetpack-instant-search__overlay-close {
  justify-content: center;
  line-height: 1;
  margin: 0;
- outline: none;
+ outline: 0;
  padding: 0;
  text-decoration: none;
  text-shadow: none;
@@ -325,5 +325,15 @@ overflow-y: hidden;
 `, options).then(result => f(render(result.ast, {minify: false}).code).equals(`a {
  overflow: hidden
 }`));
+    });
+
+    it('shorthand parsing #21', function () {
+        return transform(`
+
+    .foo {
+        
+    list-style: lower-roman url("img/shape.png") outside;
+    }
+`).then(result => f(result.code).equals(`.foo{list-style:lower-roman url(img/shape.png)}`));
     });
 });

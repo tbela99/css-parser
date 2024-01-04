@@ -1,7 +1,7 @@
 import {PropertyList} from "../../parser/declaration";
-import {NodeType} from "../types";
+import {EnumToken} from "../types";
 import {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types";
-import {MinifyFeature} from "../utiles/minifyfeature";
+import {MinifyFeature} from "../utils";
 
 export class ComputeShorthand extends MinifyFeature {
 
@@ -39,7 +39,7 @@ export class ComputeShorthand extends MinifyFeature {
             // @ts-ignore
             const node = ast.chi[k];
 
-            if (node.typ == NodeType.CommentNodeType || node.typ == NodeType.DeclarationNodeType) {
+            if (node.typ == EnumToken.CommentNodeType || node.typ == EnumToken.DeclarationNodeType) {
 
                 properties.add(node);
                 continue;

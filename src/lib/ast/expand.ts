@@ -3,19 +3,19 @@ import {parseString} from "../parser";
 import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
 import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
-import {EnumToken, NodeType} from "./types";
+import {EnumToken} from "./types";
 
 export function expand(ast: AstNode): AstNode {
     //
-    if (![NodeType.RuleNodeType, NodeType.StyleSheetNodeType, NodeType.AtRuleNodeType].includes(ast.typ)) {
+    if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
 
         return ast;
     }
 
-    if (NodeType.RuleNodeType == ast.typ) {
+    if (EnumToken.RuleNodeType == ast.typ) {
 
         return <AstRuleStyleSheet>{
-            typ: NodeType.StyleSheetNodeType,
+            typ: EnumToken.StyleSheetNodeType,
             chi: expandRule(<AstRule>ast)
         }
     }
@@ -33,19 +33,19 @@ export function expand(ast: AstNode): AstNode {
         // @ts-ignore
         const node = ast.chi[i];
 
-        if (node.typ == NodeType.RuleNodeType) {
+        if (node.typ == EnumToken.RuleNodeType) {
 
             // @ts-ignore
             result.chi.push(...expandRule(<AstRule>node));
             // i += expanded.length - 1;
-        } else if (node.typ == NodeType.AtRuleNodeType && 'chi' in node) {
+        } else if (node.typ == EnumToken.AtRuleNodeType && 'chi' in node) {
 
             let hasRule = false;
             let j = node.chi.length;
 
             while (j--) {
 
-                if (node.chi[j].typ == NodeType.RuleNodeType || node.chi[j].typ == NodeType.AtRuleNodeType) {
+                if (node.chi[j].typ == EnumToken.RuleNodeType || node.chi[j].typ == EnumToken.AtRuleNodeType) {
 
                     hasRule = true;
                     break;
@@ -69,13 +69,13 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
     const ast: AstRule = <AstRule>{...node, chi: node.chi.slice()};
     const result: Array<AstRule | AstAtRule> = [];
 
-    if (ast.typ == NodeType.RuleNodeType) {
+    if (ast.typ == EnumToken.RuleNodeType) {
 
         let i: number = 0;
 
         for (; i < ast.chi.length; i++) {
 
-            if (ast.chi[i].typ == NodeType.RuleNodeType) {
+            if (ast.chi[i].typ == EnumToken.RuleNodeType) {
 
                 const rule: AstRule = <AstRule>(<AstRule>ast).chi[i];
 
@@ -98,7 +98,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                 ast.chi.splice(i--, 1);
 
                 result.push(...<AstRule[]>expandRule(rule));
-            } else if (ast.chi[i].typ == NodeType.AtRuleNodeType) {
+            } else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
 
 
                 let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
@@ -122,7 +122,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     for (const r of (<Array<AstRule | AstAtRule>>expandRule(clone))) {
 
-                        if (r.typ == NodeType.AtRuleNodeType && 'chi' in r) {
+                        if (r.typ == EnumToken.AtRuleNodeType && 'chi' in r) {
 
                             if (astAtRule.val !== '' && (<AstAtRule>r).val !== '') {
 
@@ -137,7 +137,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                             // @ts-ignore
                             values.push(r);
-                        } else if (r.typ == NodeType.RuleNodeType) {
+                        } else if (r.typ == EnumToken.RuleNodeType) {
 
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));

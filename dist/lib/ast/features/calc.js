@@ -1,7 +1,9 @@
 import { EnumToken } from '../types.js';
-import { reduceNumber, renderToken } from '../../renderer/render.js';
+import { reduceNumber } from '../../renderer/render.js';
 import { walkValues } from '../walk.js';
-import { MinifyFeature } from '../utiles/minifyfeature.js';
+import { MinifyFeature } from '../utils/minifyfeature.js';
+import { compute } from './utils/math.js';
+import { IterableWeakSet } from '../../iterable/set.js';
 
 class ComputeCalcExpression extends MinifyFeature {
     static get ordering() {
@@ -24,10 +26,10 @@ class ComputeCalcExpression extends MinifyFeature {
         }
         // @ts-ignore
         for (const node of ast.chi) {
-            if (node.typ != 5 /* NodeType.DeclarationNodeType */) {
+            if (node.typ != EnumToken.DeclarationNodeType) {
                 continue;
             }
-            const set = new Set;
+            const set = new IterableWeakSet;
             for (const { parent } of walkValues(node.val)) {
                 if (parent != null && parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') {
                     if (!set.has(parent)) {
@@ -58,39 +60,14 @@ function doEvaluate(l, r, op) {
     }
     if ((op == EnumToken.Add || op == EnumToken.Sub)) {
         // @ts-ignore
-        if (l.typ != r.typ || Number.isNaN(+l.val) || Number.isNaN(r.val)) {
+        if (l.typ != r.typ) {
             return defaultReturn;
         }
-        // @ts-ignore
-        return { ...l, val: reduceNumber(+l.val + (op == EnumToken.Add ? +r.val : -1 * r.val)) };
     }
-    else {
-        // @ts-ignore
-        let val;
-        if (op == EnumToken.Div) {
-            if (r.typ != EnumToken.NumberTokenType || r.val == '0') {
-                return defaultReturn;
-            }
-            // @ts-ignore
-            val = reduceNumber(l.val / r.val);
-        }
-        else {
-            // @ts-ignore
-            val = reduceNumber(r.val * l.val);
-        }
-        let result;
-        if (r.typ == EnumToken.NumberTokenType || op == EnumToken.Div) {
-            result = { ...l, val };
-        }
-        else {
-            // @ts-ignore
-            result = { ...r, val };
-        }
-        if (renderToken(result).length <= renderToken(defaultReturn).length) {
-            return result;
-        }
-    }
-    return defaultReturn;
+    const typ = l.typ == EnumToken.NumberTokenType ? r.typ : l.typ;
+    // @ts-ignore
+    const val = compute(typeof l.val == 'string' ? +l.val : l.val, typeof r.val == 'string' ? +r.val : r.val, op);
+    return { ...(l.typ == EnumToken.NumberTokenType ? r : l), typ, val: typeof val == 'number' ? reduceNumber(val) : val };
 }
 /**
  * evaluate an array of tokens
@@ -146,7 +123,10 @@ function evaluate(tokens) {
  */
 function inlineExpression(token) {
     const result = [];
-    if (token.typ == EnumToken.BinaryExpressionTokenType) {
+    if (token.typ == EnumToken.ParensTokenType && token.chi.length == 1) {
+        result.push(token.chi[0]);
+    }
+    else if (token.typ == EnumToken.BinaryExpressionTokenType) {
         if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
             result.push(token);
         }
@@ -173,18 +153,7 @@ function evaluateExpression(token) {
     if (token.l.typ == EnumToken.BinaryExpressionTokenType) {
         token.l = evaluateExpression(token.l);
     }
-    const result = doEvaluate(token.l, token.r, token.op);
-    if (result.typ == EnumToken.BinaryExpressionTokenType &&
-        [EnumToken.Mul, EnumToken.Div].includes(result.op)) {
-        // wrap expression
-        if (result.l.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.l.op)) {
-            result.l = { typ: EnumToken.ParensTokenType, chi: [result.l] };
-        }
-        else if (result.r.typ == EnumToken.BinaryExpressionTokenType && [EnumToken.Sub, EnumToken.Add].includes(result.r.op)) {
-            result.r = { typ: EnumToken.ParensTokenType, chi: [result.r] };
-        }
-    }
-    return result;
+    return doEvaluate(token.l, token.r, token.op);
 }
 function isScalarToken(token) {
     return token.typ != EnumToken.BinaryExpressionTokenType && token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
@@ -232,7 +201,7 @@ function factorToken(token) {
  */
 function factor(tokens, ops) {
     let isOp;
-    const opList = [EnumToken.Add, EnumToken.Sub, EnumToken.Div, EnumToken.Mul];
+    const opList = ops.map(x => getArithmeticOperation(x));
     if (tokens.length == 1) {
         return [factorToken(tokens[0])];
     }

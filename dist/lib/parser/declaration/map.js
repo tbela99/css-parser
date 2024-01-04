@@ -7,7 +7,9 @@ import { parseString } from '../parse.js';
 import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
 import { PropertySet } from './set.js';
+import { IterableWeakMap } from '../../iterable/weakmap.js';
 
+const cache = new IterableWeakMap();
 const propertiesConfig = getConfig();
 class PropertyMap {
     config;
@@ -128,7 +130,7 @@ class PropertyMap {
                 if (values.length == 0) {
                     this.declarations = Object.entries(tokens).reduce((acc, curr) => {
                         acc.set(curr[0], {
-                            typ: 5 /* NodeType.DeclarationNodeType */,
+                            typ: EnumToken.DeclarationNodeType,
                             nam: curr[0],
                             val: curr[1].reduce((acc, curr) => {
                                 if (acc.length > 0) {
@@ -192,6 +194,44 @@ class PropertyMap {
             requiredCount = this.declarations.size;
         }
         if (!isShorthand || requiredCount < this.requiredCount) {
+            if (isShorthand && this.declarations.has(this.config.shorthand)) {
+                // console.debug(...this.declarations.values());
+                const removeDefaults = (declaration) => {
+                    // const dec: AstDeclaration = {...declaration};
+                    const config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                    declaration.val = declaration.val.filter((val) => {
+                        if (!cache.has(val)) {
+                            cache.set(val, renderToken(val, { minify: true }));
+                        }
+                        return !config.default.includes(cache.get(val));
+                    })
+                        .filter((val, index, array) => !(index > 0 &&
+                        val.typ == EnumToken.WhitespaceTokenType &&
+                        array[index - 1].typ == EnumToken.WhitespaceTokenType));
+                    if (declaration.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                        declaration.val.pop();
+                    }
+                    return declaration;
+                };
+                const values = [...this.declarations.values()].reduce((acc, curr) => {
+                    if (curr instanceof PropertySet) {
+                        acc.push(...curr);
+                    }
+                    else {
+                        acc.push(curr);
+                    }
+                    return acc;
+                }, []);
+                const filtered = values.map(removeDefaults).filter((x) => x.val.length > 0);
+                if (filtered.length == 0 && this.config.default.length > 0) {
+                    filtered.push({
+                        typ: EnumToken.DeclarationNodeType,
+                        nam: this.config.shorthand,
+                        val: parseString(this.config.default[0])
+                    });
+                }
+                return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
+            }
             // @ts-ignore
             iterable = this.declarations.values();
         }
@@ -204,7 +244,6 @@ class PropertyMap {
             } : null;
             const tokens = {};
             // @ts-ignore
-            /* const valid: string[] =*/
             Object.entries(this.config.properties).reduce((acc, curr) => {
                 if (!this.declarations.has(curr[0])) {
                     if (curr[1].required) {
@@ -270,7 +309,7 @@ class PropertyMap {
                 iterable = this.declarations.values();
             }
             else {
-                const values = Object.entries(tokens).reduce((acc, curr) => {
+                let values = Object.entries(tokens).reduce((acc, curr) => {
                     const props = this.config.properties[curr[0]];
                     for (let i = 0; i < curr[1].length; i++) {
                         if (acc.length == i) {
@@ -287,6 +326,7 @@ class PropertyMap {
                         if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
                             continue;
                         }
+                        // remove default values
                         let doFilterDefault = true;
                         if (curr[0] in propertiesConfig.properties) {
                             for (let v of values) {
@@ -359,7 +399,7 @@ class PropertyMap {
                     return acc;
                 }, []);
                 if (this.config.mapping != null) {
-                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true }), '');
+                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true, minify: true }), '');
                     if (val in this.config.mapping) {
                         values.length = 0;
                         values.push({
@@ -369,8 +409,16 @@ class PropertyMap {
                         });
                     }
                 }
+                // @ts-ignore
+                if (values.length == 1 &&
+                    typeof values[0].val == 'string' &&
+                    this.config.default.includes(values[0].val.toLowerCase()) &&
+                    this.config.default[0] != values[0].val.toLowerCase()) {
+                    // @ts-ignore/
+                    values = parseString(this.config.default[0]);
+                }
                 iterable = [{
-                        typ: 5 /* NodeType.DeclarationNodeType */,
+                        typ: EnumToken.DeclarationNodeType,
                         nam: this.config.shorthand,
                         val: values
                     }][Symbol.iterator]();

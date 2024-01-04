@@ -1,7 +1,6 @@
 import {
     AstDeclaration,
-    IdentToken,
-
+    IdentToken, PropertiesConfig,
     PropertyMapType,
     ShorthandMapType,
     ShorthandPropertyType, StringToken,
@@ -13,9 +12,12 @@ import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
-import {EnumToken, NodeType} from "../../ast";
+import {EnumToken} from "../../ast";
+import {IterableWeakMap} from "../../iterable";
 
-const propertiesConfig = getConfig();
+
+const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
+const propertiesConfig: PropertiesConfig = getConfig();
 
 export class PropertyMap {
 
@@ -27,7 +29,7 @@ export class PropertyMap {
     constructor(config: ShorthandMapType) {
 
         const values: PropertyMapType[] = Object.values(config.properties);
-        this.requiredCount = values.reduce((acc: number, curr: PropertyMapType) => curr.required ? ++acc : acc, 0) || values.length;
+        this.requiredCount = values.reduce((acc: number, curr: PropertyMapType): number => curr.required ? ++acc : acc, 0) || values.length;
         this.config = config;
         this.declarations = new Map<string, AstDeclaration>;
         this.pattern = config.pattern.split(/\s/);
@@ -151,7 +153,7 @@ export class PropertyMap {
                             // default
                             if (props.default.length > 0) {
 
-                                const defaults = parseString(props.default[0]);
+                                const defaults: Token[] = parseString(props.default[0]);
 
                                 if (!(property in tokens)) {
 
@@ -181,11 +183,11 @@ export class PropertyMap {
 
                 if (values.length == 0) {
 
-                    this.declarations = Object.entries(tokens).reduce((acc, curr) => {
+                    this.declarations = Object.entries(tokens).reduce((acc: Map<string, AstDeclaration>, curr: [string, Token[][]]) => {
 
                         acc.set(curr[0], <AstDeclaration>{
 
-                            typ: NodeType.DeclarationNodeType,
+                            typ: EnumToken.DeclarationNodeType,
                             nam: curr[0],
                             val: curr[1].reduce((acc, curr) => {
 
@@ -255,7 +257,7 @@ export class PropertyMap {
                     break;
                 } else {
 
-                    const val = this.declarations.get(property);
+                    const val: AstDeclaration | PropertySet = <AstDeclaration | PropertySet>this.declarations.get(property);
 
                     if (val instanceof PropertySet && !val.isShortHand()) {
 
@@ -276,21 +278,81 @@ export class PropertyMap {
 
         if (!isShorthand || requiredCount < this.requiredCount) {
 
+            if (isShorthand && this.declarations.has(this.config.shorthand)) {
+
+                // console.debug(...this.declarations.values());
+
+                const removeDefaults = (declaration: AstDeclaration): AstDeclaration => {
+
+                    // const dec: AstDeclaration = {...declaration};
+
+                    const config: ShorthandMapType | PropertyMapType = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+
+                    declaration.val = declaration.val.filter((val: Token): boolean => {
+
+                        if (!cache.has(val)) {
+
+                            cache.set(val, renderToken(val, {minify: true}));
+                        }
+
+                        return !config.default.includes(<string>cache.get(val));
+                    })
+                        .filter((val: Token, index: number, array: Token[]): boolean => !(
+                                index > 0 &&
+                                val.typ == EnumToken.WhitespaceTokenType &&
+                                array[index - 1].typ == EnumToken.WhitespaceTokenType
+                            ))
+                    ;
+
+                    if (declaration.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+
+                        declaration.val.pop();
+                    }
+
+                    return declaration;
+                }
+
+                const values: AstDeclaration[] = [...this.declarations.values()].reduce((acc: AstDeclaration[], curr: AstDeclaration | PropertySet) => {
+
+                    if (curr instanceof PropertySet) {
+
+                        acc.push(...curr);
+                    } else {
+
+                        acc.push(curr);
+                    }
+
+                    return acc;
+
+                }, <AstDeclaration[]>[]);
+                const filtered: AstDeclaration[] = values.map(removeDefaults).filter((x: AstDeclaration): boolean => x.val.length > 0);
+
+                if (filtered.length == 0 && this.config.default.length > 0) {
+                    filtered.push(<AstDeclaration>{
+                        typ: EnumToken.DeclarationNodeType,
+                        nam: this.config.shorthand,
+                        val: parseString(this.config.default[0])
+                    });
+                }
+
+                return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
+            }
+
             // @ts-ignore
             iterable = this.declarations.values();
+
         } else {
 
-            let count = 0;
+            let count: number = 0;
             let match: boolean;
             const separator = this.config.separator != null ? {
                 ...this.config.separator,
                 typ: EnumToken[this.config.separator.typ]
             } : null;
-            const tokens = <{ [key: string]: Token[][] }>{};
+            const tokens: { [key: string]: Token[][] } = <{ [key: string]: Token[][] }>{};
 
             // @ts-ignore
-            /* const valid: string[] =*/
-            Object.entries(this.config.properties).reduce((acc, curr) => {
+            Object.entries(this.config.properties).reduce((acc: string[], curr: [string, PropertyMapType]): string[] => {
 
                 if (!this.declarations.has(curr[0])) {
 
@@ -302,10 +364,10 @@ export class PropertyMap {
                     return acc;
                 }
 
-                let current = 0;
+                let current: number = 0;
 
-                const props = this.config.properties[curr[0]];
-                const properties = this.declarations.get(curr[0]);
+                const props: PropertyMapType = this.config.properties[curr[0]];
+                const properties: AstDeclaration | PropertySet = <AstDeclaration | PropertySet>this.declarations.get(curr[0]);
 
                 for (const declaration of <AstDeclaration[]>[(properties instanceof PropertySet ? [...properties][0] : properties)]) {
 
@@ -387,9 +449,9 @@ export class PropertyMap {
                 iterable = this.declarations.values();
             } else {
 
-                const values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
+                let values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
 
-                    const props = this.config.properties[curr[0]];
+                    const props: PropertyMapType = this.config.properties[curr[0]];
 
                     for (let i = 0; i < curr[1].length; i++) {
 
@@ -412,11 +474,12 @@ export class PropertyMap {
                         }, <Token[]>[]);
 
                         // @todo remove renderToken call
-                        if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
+                        if (props.default.includes(curr[1][i].reduce((acc: string, curr: Token): string => acc + renderToken(curr) + ' ', '').trimEnd())) {
 
                             continue;
                         }
 
+                        // remove default values
                         let doFilterDefault: boolean = true;
 
                         if (curr[0] in propertiesConfig.properties) {
@@ -433,7 +496,7 @@ export class PropertyMap {
                         }
 
                         // remove default values
-                        values = values.filter((val: Token) => {
+                        values = values.filter((val: Token): boolean => {
 
                             if (val.typ == EnumToken.WhitespaceTokenType || val.typ == EnumToken.CommentTokenType) {
 
@@ -450,7 +513,7 @@ export class PropertyMap {
                                 // @ts-ignore
                                 if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
 
-                                    let i = values.length;
+                                    let i: number = values.length;
                                     while (i--) {
 
                                         // @ts-ignore
@@ -493,7 +556,7 @@ export class PropertyMap {
                     }
 
                     return acc;
-                }, <Token[][]>[]).reduce((acc, curr) => {
+                }, <Token[][]>[]).reduce((acc: Token[], curr: Token[]) => {
 
                     if (acc.length > 0) {
 
@@ -522,7 +585,7 @@ export class PropertyMap {
 
                 if (this.config.mapping != null) {
 
-                    const val = values.reduce((acc, curr) => acc + renderToken(curr, {removeComments: true}), '');
+                    const val: string = values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {removeComments: true, minify: true}), '');
 
                     if (val in this.config.mapping) {
 
@@ -535,8 +598,18 @@ export class PropertyMap {
                     }
                 }
 
+                // @ts-ignore
+                if (values.length == 1 &&
+                    typeof (<IdentToken>values[0]).val == 'string' &&
+                    this.config.default.includes((<IdentToken>values[0]).val.toLowerCase()) &&
+                    this.config.default[0] != (<IdentToken>values[0]).val.toLowerCase()) {
+
+                    // @ts-ignore/
+                    values = parseString(this.config.default[0]);
+                }
+
                 iterable = [<AstDeclaration>{
-                    typ: NodeType.DeclarationNodeType,
+                    typ: EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,
                     val: values
                 }][Symbol.iterator]();
@@ -582,7 +655,6 @@ export class PropertyMap {
                 }
 
                 return v;
-
             }
         };
     }

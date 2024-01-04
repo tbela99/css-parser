@@ -10,7 +10,7 @@ import {
 } from "../../../@types";
 import {eq} from "../utils/eq";
 import {isLength} from "../utils";
-import {EnumToken, NodeType} from "../../ast";
+import {EnumToken} from "../../ast";
 
 export class PropertySet {
 
@@ -93,7 +93,7 @@ export class PropertySet {
                             if (!this.declarations.has(property)) {
 
                                 this.declarations.set(property, <AstDeclaration>{
-                                    typ: NodeType.DeclarationNodeType,
+                                    typ: EnumToken.DeclarationNodeType,
                                     nam: property,
                                     val: []
                                 });
@@ -209,7 +209,7 @@ export class PropertySet {
             }
 
             iterator = [<AstDeclaration>{
-                typ: NodeType.DeclarationNodeType,
+                typ: EnumToken.DeclarationNodeType,
                 nam: this.config.shorthand,
                 val: values.reduce((acc: Token[], curr: Token[]) => {
 

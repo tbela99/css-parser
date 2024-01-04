@@ -14,9 +14,11 @@ import {
 } from "./utils";
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/utils";
-import {combinators, EnumToken, expand, minify, NodeType, walkValues} from "../ast";
+import {combinators, EnumToken, expand, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
+    TimelineFunctionToken,
+    TimingFunctionToken,
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -25,6 +27,7 @@ import {
     AstRuleList,
     AstRuleStyleSheet,
     AtRuleToken,
+    AtRuleVisitorHandler,
     AttrEndToken,
     AttrStartToken,
     BlockEndToken,
@@ -32,16 +35,24 @@ import {
     ColonToken,
     ColorToken,
     CommaToken,
+    ContainMatchToken,
+    DashMatchToken,
+    DeclarationVisitorHandler,
     DelimToken,
+    EndMatchToken,
     ErrorDescription,
+    FunctionImageToken,
     FunctionToken,
     FunctionURLToken,
     GreaterThanToken,
     HashToken,
     IdentToken,
+    IncludeMatchToken,
     LessThanToken,
     LiteralToken,
     Location,
+    MatchExpressionToken,
+    NameSpaceAttributeToken,
     NumberToken,
     ParensEndToken,
     ParensStartToken,
@@ -54,6 +65,7 @@ import {
     PseudoClassFunctionToken,
     PseudoClassToken,
     SemiColonToken,
+    StartMatchToken,
     Token,
     TokenizeResult,
     UnclosedStringToken,
@@ -63,322 +75,300 @@ import {
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 
-const trimWhiteSpace: EnumToken[] = [EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType];
-const funcLike: EnumToken[] = [EnumToken.ParensTokenType, EnumToken.StartParensTokenType, EnumToken.FunctionTokenType, EnumToken.UrlFunctionTokenType, EnumToken.PseudoClassFuncTokenType];
-const BadTokensTypes: EnumToken[] = [EnumToken.BadCommentTokenType,
+const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
+const funcLike: EnumToken[] = [
+    EnumToken.ParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType
+];
+
+const BadTokensTypes: EnumToken[] = [
+    EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
     EnumToken.BadUrlTokenType,
-    EnumToken.BadStringTokenType];
+    EnumToken.BadStringTokenType
+];
+
+const webkitPseudoAliasMap: Record<string, string> = {
+    '-webkit-autofill': 'autofill'
+}
 
 export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
 
-    options = {
-        src: '',
-        sourcemap: false,
-        minify: true,
-        nestingRules: false,
-        resolveImport: false,
-        resolveUrls: false,
-        removeCharset: false,
-        removeEmpty: true,
-        removeDuplicateDeclarations: true,
-        computeShorthand: true,
-        computeCalcExpression: true,
-        inlineCssVariables: false,
-        ...options
-    };
+    return new Promise(async (resolve, reject) => {
 
-    if (options.expandNestingRules) {
+        if (options.signal != null) {
 
-        options.nestingRules = false;
-    }
+            options.signal.addEventListener('abort', reject);
+        }
 
-    if (options.resolveImport) {
-        options.resolveUrls = true;
-    }
-
-    const startTime: number = performance.now();
-    const errors: ErrorDescription[] = [];
-    const src: string = <string>options.src;
-    const stack: Array<AstNode | AstComment> = [];
-    let ast: AstRuleStyleSheet = {
-        typ: NodeType.StyleSheetNodeType,
-        chi: []
-    };
-
-    let tokens: TokenizeResult[] = [];
-    let map: Map<Token, Position> = new Map<Token, Position>;
-    let bytesIn: number = 0;
-    let context: AstRuleList = ast;
-
-    if (options.sourcemap) {
-        ast.loc = {
-            sta: {
-                ind: 0,
-                lin: 1,
-                col: 1
-            },
-            src: ''
+        options = {
+            src: '',
+            sourcemap: false,
+            minify: true,
+            nestingRules: false,
+            resolveImport: false,
+            resolveUrls: false,
+            removeCharset: false,
+            removeEmpty: true,
+            removeDuplicateDeclarations: true,
+            computeShorthand: true,
+            computeCalcExpression: true,
+            inlineCssVariables: false,
+            ...options
         };
-    }
 
-    async function parseNode(results: TokenizeResult[]) {
+        if (options.expandNestingRules) {
 
-        let tokens: Token[] = results.map(mapToken);
+            options.nestingRules = false;
+        }
 
-        let i: number;
-        let loc: Location;
+        if (options.resolveImport) {
+            options.resolveUrls = true;
+        }
 
-        for (i = 0; i < tokens.length; i++) {
+        const startTime: number = performance.now();
+        const errors: ErrorDescription[] = [];
+        const src: string = <string>options.src;
+        const stack: Array<AstNode | AstComment> = [];
+        let ast: AstRuleStyleSheet = {
+            typ: EnumToken.StyleSheetNodeType,
+            chi: []
+        };
 
-            if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
+        let tokens: TokenizeResult[] = [];
+        let map: Map<Token, Position> = new Map<Token, Position>;
+        let bytesIn: number = 0;
+        let context: AstRuleList = ast;
 
-                const position: Position = <Position>map.get(tokens[i]);
+        if (options.sourcemap) {
+            ast.loc = {
+                sta: {
+                    ind: 0,
+                    lin: 1,
+                    col: 1
+                },
+                src: ''
+            };
+        }
 
-                if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != NodeType.StyleSheetNodeType) {
+        async function parseNode(results: TokenizeResult[]): Promise<AstRule | AstAtRule | null> {
 
-                    errors.push({
-                        action: 'drop',
-                        message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
-                        location: {src, ...position}
-                    });
-                    continue;
+            let tokens: Token[] = results.map(mapToken);
+
+            let i: number;
+            let loc: Location;
+
+            for (i = 0; i < tokens.length; i++) {
+
+                if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
+
+                    const position: Position = <Position>map.get(tokens[i]);
+
+                    if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
+
+                        errors.push({
+                            action: 'drop',
+                            message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                            location: {src, ...position}
+                        });
+                        continue;
+                    }
+
+                    loc = <Location>{
+                        sta: position,
+                        src
+                    };
+
+                    // @ts-ignore
+                    context.chi.push(tokens[i]);
+
+                    if (options.sourcemap) {
+
+                        tokens[i].loc = loc
+                    }
+
+                } else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
+                    break;
                 }
-
-                loc = <Location>{
-                    sta: position,
-                    src
-                };
-
-                // @ts-ignore
-                context.chi.push(tokens[i]);
-
-                if (options.sourcemap) {
-
-                    tokens[i].loc = loc
-                }
-
-            } else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
-                break;
             }
-        }
 
-        tokens = tokens.slice(i);
-        if (tokens.length == 0) {
-            return null;
-        }
+            tokens = tokens.slice(i);
+            if (tokens.length == 0) {
+                return null;
+            }
 
-        let delim: Token = <Token>tokens.at(-1);
+            let delim: Token = <Token>tokens.at(-1);
 
-        if (delim.typ == EnumToken.SemiColonTokenType || delim.typ == EnumToken.BlockStartTokenType || delim.typ == EnumToken.BlockEndTokenType) {
-            tokens.pop();
-        } else {
-            delim = <SemiColonToken>{typ: EnumToken.SemiColonTokenType};
-        }
-
-        // @ts-ignore
-        while ([EnumToken.WhitespaceTokenType, EnumToken.BadStringTokenType, EnumToken.BadCommentTokenType].includes(tokens.at(-1)?.typ)) {
-            tokens.pop();
-        }
-
-        if (tokens.length == 0) {
-            return null;
-        }
-
-        if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
-
-            const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
-            const position: Position = <Position>map.get(atRule);
-
-            if (atRule.val == 'charset') {
-
-                if (position.ind > 0) {
-
-                    errors.push({action: 'drop', message: 'doParse: invalid @charset', location: {src, ...position}});
-                    return null;
-                }
-
-                if (options.removeCharset) {
-
-                    return null;
-                }
+            if (delim.typ == EnumToken.SemiColonTokenType || delim.typ == EnumToken.BlockStartTokenType || delim.typ == EnumToken.BlockEndTokenType) {
+                tokens.pop();
+            } else {
+                delim = <SemiColonToken>{typ: EnumToken.SemiColonTokenType};
             }
 
             // @ts-ignore
-            while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
-                tokens.shift();
+            while ([EnumToken.WhitespaceTokenType, EnumToken.BadStringTokenType, EnumToken.BadCommentTokenType].includes(tokens.at(-1)?.typ)) {
+                tokens.pop();
             }
 
-            if (atRule.val == 'import') {
+            if (tokens.length == 0) {
+                return null;
+            }
 
-                // only @charset and @layer are accepted before @import
-                if (context.chi.length > 0) {
-                    let i = context.chi.length;
-                    while (i--) {
-                        const type = context.chi[i].typ;
-                        if (type == NodeType.CommentNodeType) {
-                            continue;
-                        }
-                        if (type != NodeType.AtRuleNodeType) {
-                            errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
-                            return null;
-                        }
+            if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
 
-                        const name = (<AstAtRule>context.chi[i]).nam;
+                const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
+                const position: Position = <Position>map.get(atRule);
 
-                        if (name != 'charset' && name != 'import' && name != 'layer') {
-                            errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
-                            return null;
-                        }
+                if (atRule.val == 'charset') {
 
-                        break;
+                    if (position.ind > 0) {
+
+                        errors.push({
+                            action: 'drop',
+                            message: 'doParse: invalid @charset',
+                            location: {src, ...position}
+                        });
+                        return null;
+                    }
+
+                    if (options.removeCharset) {
+
+                        return null;
                     }
                 }
 
                 // @ts-ignore
-                if (tokens[0]?.typ != EnumToken.StringTokenType && tokens[0]?.typ != EnumToken.UrlFunctionTokenType) {
-
-                    errors.push({action: 'drop', message: 'doParse: invalid @import', location: {src, ...position}});
-                    return null;
-                }
-                // @ts-ignore
-                if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1]?.typ != EnumToken.UrlTokenTokenType && tokens[1]?.typ != EnumToken.StringTokenType) {
-
-                    errors.push({action: 'drop', message: 'doParse: invalid @import', location: {src, ...position}});
-                    return null;
-                }
-            }
-
-            if (atRule.val == 'import') {
-
-                // @ts-ignore
-                if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1].typ == EnumToken.UrlTokenTokenType) {
+                while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
                     tokens.shift();
-                    // @ts-ignore
-                    tokens[0].typ = EnumToken.StringTokenType;
-                    // @ts-ignore
-                    tokens[0].val = `"${tokens[0].val}"`;
                 }
-                // @ts-ignore
-                if (tokens[0].typ == EnumToken.StringTokenType) {
 
-                    if (options.resolveImport) {
+                if (atRule.val == 'import') {
 
-                        const url: string = (<UrlToken>tokens[0]).val.slice(1, -1);
-
-                        try {
-
-                            // @ts-ignore
-                            const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
-
-                                return doParse(src, Object.assign({}, options, {
-                                    minify: false,
-                                    // @ts-ignore
-                                    src: options.resolve(url, options.src).absolute
-                                }))
-                            });
-
-                            bytesIn += root.stats.bytesIn;
-
-                            if (root.ast.chi.length > 0) {
-
-                                // @todo - filter charset, layer and scope
-                                context.chi.push(...root.ast.chi);
+                    // only @charset and @layer are accepted before @import
+                    if (context.chi.length > 0) {
+                        let i = context.chi.length;
+                        while (i--) {
+                            const type = context.chi[i].typ;
+                            if (type == EnumToken.CommentNodeType) {
+                                continue;
+                            }
+                            if (type != EnumToken.AtRuleNodeType) {
+                                errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                                return null;
                             }
 
-                            if (root.errors.length > 0) {
-                                errors.push(...root.errors);
+                            const name = (<AstAtRule>context.chi[i]).nam;
+
+                            if (name != 'charset' && name != 'import' && name != 'layer') {
+                                errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                                return null;
                             }
 
-                            return null;
-                        } catch (error) {
-
-                            // @ts-ignore
-                            errors.push({action: 'ignore', message: 'doParse: ' + error.message, error});
-                        }
-                    }
-                }
-            }
-            // https://www.w3.org/TR/css-nesting-1/#conditionals
-            // allowed nesting at-rules
-            // there must be a top level rule in the stack
-
-            const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
-
-                acc.push(renderToken(curr, {removeComments: true}));
-
-                return acc
-            }, []);
-
-            const node: AstAtRule = {
-                typ: NodeType.AtRuleNodeType,
-                nam: renderToken(atRule, {removeComments: true}),
-                val: raw.join('')
-            };
-
-            Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
-
-            if (delim.typ == EnumToken.BlockStartTokenType) {
-
-                node.chi = [];
-            }
-
-            loc = <Location>{
-                sta: position,
-                src
-            };
-
-            if (options.sourcemap) {
-                node.loc = loc;
-            }
-
-            // @ts-ignore
-            context.chi.push(node);
-            return delim.typ == EnumToken.BlockStartTokenType ? node : null;
-        } else {
-            // rule
-            if (delim.typ == EnumToken.BlockStartTokenType) {
-
-                const position: Position = <Position>map.get(tokens[0]);
-
-                const uniq = new Map<string, string[]>;
-                parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
-
-                    if (curr.typ == EnumToken.WhitespaceTokenType) {
-
-                        if (
-                            trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                            trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                            combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                            combinators.includes((<LiteralToken>array[index + 1])?.val)) {
-
-                            return acc;
+                            break;
                         }
                     }
 
-                    let t = renderToken(curr, {minify: false});
-                    if (t == ',') {
-                        acc.push([]);
-                    } else {
-                        acc[acc.length - 1].push(t);
-                    }
-                    return acc;
-                }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
-
-                    acc.set(curr.join(''), curr);
-                    return acc;
-                }, uniq);
-
-                const node: AstRule = {
-                    typ: NodeType.RuleNodeType,
                     // @ts-ignore
-                    sel: [...uniq.keys()].join(','),
-                    chi: []
+                    if (tokens[0]?.typ != EnumToken.StringTokenType && tokens[0]?.typ != EnumToken.UrlFunctionTokenType) {
+
+                        errors.push({
+                            action: 'drop',
+                            message: 'doParse: invalid @import',
+                            location: {src, ...position}
+                        });
+                        return null;
+                    }
+                    // @ts-ignore
+                    if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1]?.typ != EnumToken.UrlTokenTokenType && tokens[1]?.typ != EnumToken.StringTokenType) {
+
+                        errors.push({
+                            action: 'drop',
+                            message: 'doParse: invalid @import',
+                            location: {src, ...position}
+                        });
+                        return null;
+                    }
+                }
+
+                if (atRule.val == 'import') {
+
+                    // @ts-ignore
+                    if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1].typ == EnumToken.UrlTokenTokenType) {
+                        tokens.shift();
+                        // @ts-ignore
+                        tokens[0].typ = EnumToken.StringTokenType;
+                        // @ts-ignore
+                        tokens[0].val = `"${tokens[0].val}"`;
+                    }
+                    // @ts-ignore
+                    if (tokens[0].typ == EnumToken.StringTokenType) {
+
+                        if (options.resolveImport) {
+
+                            const url: string = (<UrlToken>tokens[0]).val.slice(1, -1);
+
+                            try {
+
+                                // @ts-ignore
+                                const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
+
+                                    return doParse(src, Object.assign({}, options, {
+                                        minify: false,
+                                        // @ts-ignore
+                                        src: options.resolve(url, options.src).absolute
+                                    }))
+                                });
+
+                                bytesIn += root.stats.bytesIn;
+
+                                if (root.ast.chi.length > 0) {
+
+                                    // @todo - filter charset, layer and scope
+                                    context.chi.push(...root.ast.chi);
+                                }
+
+                                if (root.errors.length > 0) {
+                                    errors.push(...root.errors);
+                                }
+
+                                return null;
+                            } catch (error) {
+
+                                // @ts-ignore
+                                errors.push({action: 'ignore', message: 'doParse: ' + error.message, error});
+                            }
+                        }
+                    }
+                }
+                // https://www.w3.org/TR/css-nesting-1/#conditionals
+                // allowed nesting at-rules
+                // there must be a top level rule in the stack
+
+                const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
+
+                    acc.push(renderToken(curr, {removeComments: true}));
+
+                    return acc
+                }, []);
+
+                const node: AstAtRule = {
+                    typ: EnumToken.AtRuleNodeType,
+                    nam: renderToken(atRule, {removeComments: true}),
+                    val: raw.join('')
                 };
-
-                let raw = [...uniq.values()];
 
                 Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
+
+                if (delim.typ == EnumToken.BlockStartTokenType) {
+
+                    node.chi = [];
+                }
 
                 loc = <Location>{
                     sta: position,
@@ -391,162 +381,246 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                 // @ts-ignore
                 context.chi.push(node);
-                return node;
+                return delim.typ == EnumToken.BlockStartTokenType ? node : null;
             } else {
+                // rule
+                if (delim.typ == EnumToken.BlockStartTokenType) {
 
-                // declaration
-                // @ts-ignore
-                let name = null;
-                // @ts-ignore
-                let value = null;
+                    const position: Position = <Position>map.get(tokens[0]);
 
-                for (let i = 0; i < tokens.length; i++) {
+                    const uniq = new Map<string, string[]>;
+                    parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
 
-                    if (tokens[i].typ == EnumToken.CommentTokenType) {
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
 
-                        continue;
+                            if (
+                                trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                                combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                                combinators.includes((<LiteralToken>array[index + 1])?.val)) {
+
+                                return acc;
+                            }
+                        }
+
+                        let t: string = renderToken(curr, {minify: false});
+
+                        if (t == ',') {
+                            acc.push([]);
+                        } else {
+                            acc[acc.length - 1].push(t);
+                        }
+                        return acc;
+                    }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
+
+                        acc.set(curr.join(''), curr);
+                        return acc;
+                    }, uniq);
+
+                    const node: AstRule = {
+                        typ: EnumToken.RuleNodeType,
+                        // @ts-ignore
+                        sel: [...uniq.keys()].join(','),
+                        chi: []
+                    };
+
+                    let raw = [...uniq.values()];
+
+                    Object.defineProperty(node, 'raw', {
+                        enumerable: false,
+                        configurable: true,
+                        writable: true,
+                        value: raw
+                    });
+
+                    loc = <Location>{
+                        sta: position,
+                        src
+                    };
+
+                    if (options.sourcemap) {
+                        node.loc = loc;
                     }
 
-                    if (tokens[i].typ == EnumToken.ColonTokenType) {
+                    // @ts-ignore
+                    context.chi.push(node);
+                    return node;
+                } else {
 
-                        name = tokens.slice(0, i);
-                        value = parseTokens(tokens.slice(i + 1), {
-                            parseColor: true,
-                            src: options.src,
-                            resolveUrls: options.resolveUrls,
-                            resolve: options.resolve,
-                            cwd: options.cwd
-                        });
-                    }
-                }
+                    // declaration
+                    // @ts-ignore
+                    let name = null;
+                    // @ts-ignore
+                    let value = null;
 
-                if (name == null) {
+                    for (let i = 0; i < tokens.length; i++) {
 
-                    name = tokens;
-                }
-                const position = map.get(name[0]);
+                        if (tokens[i].typ == EnumToken.CommentTokenType) {
 
-                if (name.length > 0) {
+                            continue;
+                        }
 
-                    for (let i = 1; i < name.length; i++) {
-                        if (name[i].typ != EnumToken.WhitespaceTokenType && name[i].typ != EnumToken.CommentTokenType) {
+                        if (tokens[i].typ == EnumToken.ColonTokenType) {
 
-                            errors.push(<ErrorDescription>{
-                                action: 'drop',
-                                message: 'doParse: invalid declaration',
-                                location: {src, ...position}
+                            name = tokens.slice(0, i);
+                            value = parseTokens(tokens.slice(i + 1), {
+                                parseColor: true,
+                                src: options.src,
+                                resolveUrls: options.resolveUrls,
+                                resolve: options.resolve,
+                                cwd: options.cwd
                             });
-
-                            return null;
                         }
                     }
-                }
 
-                if (value == null || value.length == 0) {
+                    if (name == null) {
 
-                    errors.push(<ErrorDescription>{
-                        action: 'drop',
-                        message: 'doParse: invalid declaration',
-                        location: {src, ...position}
-                    });
-                    return null;
-                }
+                        name = tokens;
+                    }
+                    const position: Position = <Position>map.get(name[0]);
 
-                const node: AstDeclaration = {
-                    typ: NodeType.DeclarationNodeType,
-                    // @ts-ignore
-                    nam: renderToken(name.shift(), {removeComments: true}),
-                    // @ts-ignore
-                    val: value
-                }
+                    if (name.length > 0) {
 
-                while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
-                    node.val.shift();
-                }
+                        for (let i = 1; i < name.length; i++) {
+                            if (name[i].typ != EnumToken.WhitespaceTokenType && name[i].typ != EnumToken.CommentTokenType) {
 
-                if (node.val.length == 0) {
+                                errors.push(<ErrorDescription>{
+                                    action: 'drop',
+                                    message: 'doParse: invalid declaration',
+                                    location: {src, ...position}
+                                });
 
-                    errors.push(<ErrorDescription>{
-                        action: 'drop',
-                        message: 'doParse: invalid declaration',
-                        location: {src, ...position}
-                    });
-
-                    return null;
-                }
-
-                // @ts-ignore
-                context.chi.push(node);
-                return null;
-            }
-        }
-    }
-
-    function mapToken(token: TokenizeResult): Token {
-
-        const node = getTokenType(token.token, token.hint);
-
-        map.set(node, token.position);
-        return node;
-    }
-
-    const iter = tokenize(iterator);
-    let item: TokenizeResult;
-
-    while (item = iter.next().value) {
-
-        bytesIn = item.bytesIn;
-
-        // doParse error
-        if (item.hint != null && BadTokensTypes.includes(item.hint)) {
-
-            // bad token
-            continue;
-        }
-
-        tokens.push(item);
-
-        if (item.token == ';' || item.token == '{') {
-
-            let node = await parseNode(tokens);
-
-            if (node != null) {
-
-                stack.push(node);
-                // @ts-ignore
-                context = node;
-            } else if (item.token == '{') {
-                // node == null
-                // consume and throw away until the closing '}' or EOF
-
-                let inBlock = 1;
-
-                do {
-
-                    item = iter.next().value;
-
-                    if (item == null) {
-
-                        break;
+                                return null;
+                            }
+                        }
                     }
 
-                    if (item.token == '{') {
+                    if (value == null || value.length == 0) {
 
-                        inBlock++;
-                    } else if (item.token == '}') {
-
-                        inBlock--;
+                        errors.push(<ErrorDescription>{
+                            action: 'drop',
+                            message: 'doParse: invalid declaration',
+                            location: {src, ...position}
+                        });
+                        return null;
                     }
-                }
 
-                while (inBlock != 0);
+                    const node: AstDeclaration = {
+                        typ: EnumToken.DeclarationNodeType,
+                        // @ts-ignore
+                        nam: renderToken(name.shift(), {removeComments: true}),
+                        // @ts-ignore
+                        val: value
+                    }
+
+                    while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
+                        node.val.shift();
+                    }
+
+                    if (node.val.length == 0) {
+
+                        errors.push(<ErrorDescription>{
+                            action: 'drop',
+                            message: 'doParse: invalid declaration',
+                            location: {src, ...position}
+                        });
+
+                        return null;
+                    }
+
+                    // @ts-ignore
+                    context.chi.push(node);
+                    return null;
+                }
+            }
+        }
+
+        function mapToken(token: TokenizeResult): Token {
+
+            const node = getTokenType(token.token, token.hint);
+
+            map.set(node, token.position);
+            return node;
+        }
+
+        const iter: Generator<TokenizeResult> = tokenize(iterator);
+        let item: TokenizeResult;
+
+        while (item = iter.next().value) {
+
+            bytesIn = item.bytesIn;
+
+            // doParse error
+            if (item.hint != null && BadTokensTypes.includes(item.hint)) {
+
+                // bad token
+                continue;
             }
 
-            tokens = [];
-            map = new Map;
-        } else if (item.token == '}') {
+            tokens.push(item);
+
+            if (item.token == ';' || item.token == '{') {
+
+                let node: AstAtRule | AstRule | null = await parseNode(tokens);
+
+                if (node != null) {
+
+                    stack.push(node);
+                    // @ts-ignore
+                    context = node;
+                } else if (item.token == '{') {
+                    // node == null
+                    // consume and throw away until the closing '}' or EOF
+
+                    let inBlock = 1;
+
+                    do {
+
+                        item = iter.next().value;
+
+                        if (item == null) {
+
+                            break;
+                        }
+
+                        if (item.token == '{') {
+
+                            inBlock++;
+                        } else if (item.token == '}') {
+
+                            inBlock--;
+                        }
+                    }
+
+                    while (inBlock != 0);
+                }
+
+                tokens = [];
+                map = new Map;
+            } else if (item.token == '}') {
+
+                await parseNode(tokens);
+                const previousNode = stack.pop();
+
+                // @ts-ignore
+                context = stack[stack.length - 1] || ast;
+                // @ts-ignore
+                if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+                    context.chi.pop();
+                }
+
+                tokens = [];
+                map = new Map;
+            }
+        }
+
+        if (tokens.length > 0) {
 
             await parseNode(tokens);
+        }
+
+        while (stack.length > 0 && context != ast) {
+
             const previousNode = stack.pop();
 
             // @ts-ignore
@@ -554,63 +628,99 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
+                continue;
             }
 
-            tokens = [];
-            map = new Map;
-        }
-    }
-
-    if (tokens.length > 0) {
-
-        await parseNode(tokens);
-    }
-
-    while (stack.length > 0 && context != ast) {
-
-        const previousNode = stack.pop();
-
-        // @ts-ignore
-        context = stack[stack.length - 1] || ast;
-        // @ts-ignore
-        if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
-            context.chi.pop();
-            continue;
+            break;
         }
 
-        break;
-    }
+        const endParseTime: number = performance.now();
 
-    const endParseTime: number = performance.now();
+        if (options.expandNestingRules) {
 
-    if (options.expandNestingRules) {
-
-        ast = <AstRuleStyleSheet>expand(ast);
-    }
-
-    if (options.minify) {
-
-        if (ast.chi.length > 0) {
-
-            minify(ast, options, true, errors, false);
+            ast = <AstRuleStyleSheet>expand(ast);
         }
-    }
 
-    const endTime: number = performance.now();
+        if (options.visitor != null) {
 
-    return {
-        ast,
-        errors,
-        stats: {
-            bytesIn,
-            parse: `${(endParseTime - startTime).toFixed(2)}ms`,
-            minify: `${(endTime - endParseTime).toFixed(2)}ms`,
-            total: `${(endTime - startTime).toFixed(2)}ms`
+            for (const result of walk(ast)) {
+
+                if (
+                    result.node.typ == EnumToken.DeclarationNodeType &&
+
+                    // @ts-ignore
+                    (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[(<AstDeclaration>result.node).nam] != null)
+                ) {
+
+                    const callable: DeclarationVisitorHandler = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[(<AstDeclaration>result.node).nam];
+                    const results: AstDeclaration | AstDeclaration[] | void | null = callable(<AstDeclaration>result.node);
+
+                    if (results == null || (Array.isArray(results) && results.length == 0)) {
+
+                        continue;
+                    }
+
+                    // @ts-ignore
+                    result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
+                } else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
+
+                    const results: AstRule | AstRule[] | void | null = options.visitor.Rule(<AstRule>result.node);
+
+                    if (results == null || (Array.isArray(results) && results.length == 0)) {
+
+                        continue;
+                    }
+
+                    // @ts-ignore
+                    result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
+                } else if (options.visitor.AtRule != null &&
+                    result.node.typ == EnumToken.AtRuleNodeType &&
+                    // @ts-ignore
+                    (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[(<AstAtRule>result.node).nam] != null)) {
+
+                    const callable: AtRuleVisitorHandler = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[(<AstAtRule>result.node).nam];
+                    const results: AstAtRule | AstAtRule[] | void | null = callable(<AstAtRule>result.node);
+
+                    if (results == null || (Array.isArray(results) && results.length == 0)) {
+
+                        continue;
+                    }
+
+                    // @ts-ignore
+                    result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
+                }
+            }
         }
-    }
+
+        if (options.minify) {
+
+            if (ast.chi.length > 0) {
+
+                minify(ast, options, true, errors, false);
+            }
+        }
+
+        const endTime: number = performance.now();
+
+        if (options.signal != null) {
+
+            options.signal.removeEventListener('abort', reject);
+        }
+
+        resolve(<ParseResult>{
+            ast,
+            errors,
+            stats: {
+                bytesIn,
+                parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+                minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+                total: `${(endTime - startTime).toFixed(2)}ms`
+            }
+        });
+    });
 }
 
-export function parseString(src: string, options: {location: boolean} = {location: false}): Token[] {
+export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
     return parseTokens([...tokenize(src)].map(t => {
 
@@ -636,7 +746,9 @@ function getTokenType(val: string, hint?: EnumToken): Token {
         return <Token>([
             EnumToken.WhitespaceTokenType, EnumToken.SemiColonTokenType, EnumToken.ColonTokenType, EnumToken.BlockStartTokenType,
             EnumToken.BlockStartTokenType, EnumToken.AttrStartTokenType, EnumToken.AttrEndTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType,
-            EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.EOFTokenType
+            EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.CommaTokenType,
+            EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
+            EnumToken.EOFTokenType
         ].includes(hint) ? {typ: hint} : {typ: hint, val});
     }
 
@@ -724,8 +836,42 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (isFunction(val)) {
         val = val.slice(0, -1);
-        return <FunctionURLToken | FunctionToken>{
-            typ: val == 'url' ? EnumToken.UrlFunctionTokenType : EnumToken.FunctionTokenType,
+
+        if (val == 'url') {
+
+            return <FunctionURLToken>{
+                typ: EnumToken.UrlFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+            return <FunctionImageToken>{
+                typ: EnumToken.ImageFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
+            return <TimingFunctionToken>{
+                typ: EnumToken.TimingFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        if (['view', 'scroll'].includes(val)) {
+            return <TimelineFunctionToken>{
+                typ: EnumToken.TimelineFunctionTokenType,
+                val,
+                chi: <Token[]>[]
+            };
+        }
+
+        return <FunctionToken>{
+            typ: EnumToken.FunctionTokenType,
             val,
             chi: <Token[]>[]
         };
@@ -762,7 +908,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     if (isIdent(val)) {
 
         return <IdentToken>{
-            typ: EnumToken.IdenTokenType,
+            typ: val.startsWith('--') ? EnumToken.DashedIdenTokenType : EnumToken.IdenTokenType,
             val
         };
     }
@@ -799,11 +945,11 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
 
     for (let i = 0; i < tokens.length; i++) {
 
-        const t = tokens[i];
+        const t: Token = tokens[i];
 
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
                 i + 1 == tokens.length ||
-                [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType].includes(tokens[i + 1].typ)) ||
+                [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType].includes(tokens[i + 1].typ)) ||
             (i > 0 &&
                 // tokens[i + 1]?.typ != Literal ||
                 // funcLike.includes(tokens[i - 1].typ) &&
@@ -816,7 +962,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
 
         if (t.typ == EnumToken.ColonTokenType) {
 
-            const typ = tokens[i + 1]?.typ;
+            const typ: EnumToken = tokens[i + 1]?.typ;
             if (typ != null) {
                 if (typ == EnumToken.FunctionTokenType) {
 
@@ -824,6 +970,10 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                     tokens[i + 1].typ = EnumToken.PseudoClassFuncTokenType;
                 } else if (typ == EnumToken.IdenTokenType) {
 
+                    if ((<PseudoClassToken>tokens[i + 1]).val in webkitPseudoAliasMap) {
+
+                        (<PseudoClassToken>tokens[i + 1]).val = webkitPseudoAliasMap[(<PseudoClassToken>tokens[i + 1]).val];
+                    }
                     (<PseudoClassToken>tokens[i + 1]).val = ':' + (<PseudoClassToken>tokens[i + 1]).val;
                     tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
                 }
@@ -832,9 +982,10 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
 
                     tokens.splice(i, 1);
                     i--;
-                    continue;
                 }
             }
+
+            continue;
         }
 
         if (t.typ == EnumToken.AttrStartTokenType) {
@@ -859,21 +1010,153 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
             if (t.chi.at(-1).typ == EnumToken.AttrEndTokenType) {
                 // @ts-ignore
                 t.chi.pop();
+            }
+
+            // @ts-ignore
+            if (t.chi.length > 1) {
+                /*(<AttrToken>t).chi =*/
                 // @ts-ignore
-                if (t.chi.length > 1) {
-                    /*(<AttrToken>t).chi =*/
+                parseTokens(t.chi, t.typ, options);
+            }
+            // @ts-ignore
+            // t.chi.forEach(val => {
+            //     if (val.typ == EnumToken.StringTokenType) {
+            //         const slice = val.val.slice(1, -1);
+            //         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+            //             Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
+            //         }
+            //     }
+            // });
+
+            let m: number = (<Token[]>t.chi).length;
+            let val: Token;
+
+            for (m = 0; m < (<Token[]>t.chi).length; m++) {
+
+                val = (<Token[]>t.chi)[m];
+
+                if (val.typ == EnumToken.StringTokenType) {
+                    const slice = val.val.slice(1, -1);
+                    if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+                        Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
+                    }
+                } else if (val.typ == EnumToken.LiteralTokenType && val.val == '|') {
+
+                    let upper: number = m;
+                    let lower: number = m;
+
+                    while (++upper < (<Token[]>t.chi).length) {
+
+                        if ((<Token[]>t.chi)[upper].typ == EnumToken.CommentTokenType) {
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    while (lower-- > 0) {
+
+                        if ((<Token[]>t.chi)[lower].typ == EnumToken.CommentTokenType) {
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
                     // @ts-ignore
-                    parseTokens(t.chi, t.typ, options);
-                }
-                // @ts-ignore
-                t.chi.forEach(val => {
+                    (<Token[]>t.chi)[m] = <NameSpaceAttributeToken>{
+                        typ: EnumToken.NameSpaceAttributeTokenType,
+                        l: (<Token[]>t.chi)[lower],
+                        r: (<Token[]>t.chi)[upper]
+                    };
+
+                    (<Token[]>t.chi).splice(upper, 1);
+
+                    if (lower >= 0) {
+
+                        (<Token[]>t.chi).splice(lower, 1);
+                        m--;
+                    }
+                } else if ([
+                    EnumToken.DashMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType
+                ].includes((<Token[]>t.chi)[m].typ)) {
+
+                    let upper: number = m;
+                    let lower: number = m;
+
+                    while (++upper < (<Token[]>t.chi).length) {
+
+                        if ((<Token[]>t.chi)[upper].typ == EnumToken.CommentTokenType) {
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    while (lower-- > 0) {
+
+                        if ((<Token[]>t.chi)[lower].typ == EnumToken.CommentTokenType) {
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    val = (<Token[]>t.chi)[lower];
+
                     if (val.typ == EnumToken.StringTokenType) {
                         const slice = val.val.slice(1, -1);
                         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
                             Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
                         }
                     }
-                });
+
+                    val = (<Token[]>t.chi)[upper];
+
+                    if (val.typ == EnumToken.StringTokenType) {
+                        const slice = val.val.slice(1, -1);
+                        if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
+                            Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
+                        }
+                    }
+
+                    (<Token[]>t.chi)[m] = <MatchExpressionToken>{
+                        typ: EnumToken.MatchExpressionTokenType,
+                        op: <EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType |
+                            EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType>(<DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken>(<Token[]>t.chi)[m]).typ,
+                        l: (<Token[]>t.chi)[lower],
+                        r: (<Token[]>t.chi)[upper]
+                    };
+
+                    (<Token[]>t.chi).splice(upper, 1);
+                    (<Token[]>t.chi).splice(lower, 1);
+
+                    upper = m;
+                    m--;
+
+                    while (upper < (<Token[]>t.chi).length && (<Token[]>t.chi)[upper].typ == EnumToken.WhitespaceTokenType) {
+                        upper++;
+                    }
+
+                    if (upper < (<Token[]>t.chi).length &&
+                        (<Token[]>t.chi)[upper].typ == EnumToken.Iden &&
+                        ['i', 's'].includes((<IdentToken>(<Token[]>t.chi)[upper]).val.toLowerCase())) {
+
+                        (<MatchExpressionToken>(<Token[]>t.chi)[m]).attr = <'i' | 's'>(<IdentToken>(<Token[]>t.chi)[upper]).val;
+                        (<Token[]>t.chi).splice(upper, 1);
+                    }
+                }
+            }
+
+            m = (<Token[]>t.chi).length;
+
+            while ((<Token[]>t.chi).at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+
+                (<Token[]>t.chi).pop();
             }
 
             continue;

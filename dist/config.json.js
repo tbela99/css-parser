@@ -232,6 +232,317 @@ var properties = {
 	}
 };
 var map = {
+	transition: {
+		shorthand: "transition",
+		multiple: true,
+		separator: ",",
+		pattern: "transition-property transition-duration transition-timing-function transition-delay transition-behavior",
+		keywords: [
+			"none",
+			"all"
+		],
+		"default": [
+			"0s",
+			"0ms",
+			"all",
+			"ease",
+			"none",
+			"normal"
+		],
+		properties: {
+			"transition-property": {
+				keywords: [
+					"none",
+					"all"
+				],
+				"default": [
+				],
+				types: [
+					"Iden"
+				]
+			},
+			"transition-duration": {
+				keywords: [
+				],
+				"default": [
+					"0s",
+					"0ms",
+					"normal"
+				],
+				types: [
+					"Time"
+				]
+			},
+			"transition-timing-function": {
+				keywords: [
+					"ease",
+					"ease-in",
+					"ease-out",
+					"ease-in-out",
+					"linear",
+					"step-start",
+					"step-end"
+				],
+				"default": [
+					"ease"
+				],
+				types: [
+					"TimingFunction"
+				],
+				mapping: {
+					"cubic-bezier(.25,.1,.25,1)": "ease",
+					"cubic-bezier(0,0,1,1)": "linear",
+					"cubic-bezier(.42,0,1,1)": "ease-in",
+					"cubic-bezier(0,0,.58,1)": "ease-out",
+					"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+				}
+			},
+			"transition-delay": {
+				keywords: [
+				],
+				"default": [
+					"0s"
+				],
+				types: [
+					"Time"
+				]
+			},
+			"transition-behavior": {
+				keywords: [
+					"normal",
+					"allow-discrete"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"transition-property": {
+		shorthand: "transition"
+	},
+	"transition-duration": {
+		shorthand: "transition"
+	},
+	"transition-timing-function": {
+		shorthand: "transition"
+	},
+	"transition-delay": {
+		shorthand: "transition"
+	},
+	"transition-behavior": {
+		shorthand: "transition"
+	},
+	animation: {
+		shorthand: "animation",
+		pattern: "animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline",
+		"default": [
+			"1",
+			"0s",
+			"0ms",
+			"none",
+			"ease",
+			"normal",
+			"running",
+			"auto"
+		],
+		properties: {
+			"animation-name": {
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Iden"
+				]
+			},
+			"animation-duration": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"0s",
+					"0ms",
+					"auto"
+				],
+				types: [
+					"Time"
+				],
+				mapping: {
+					auto: "0s"
+				}
+			},
+			"animation-timing-function": {
+				keywords: [
+					"ease",
+					"ease-in",
+					"ease-out",
+					"ease-in-out",
+					"linear",
+					"step-start",
+					"step-end"
+				],
+				"default": [
+					"ease"
+				],
+				types: [
+					"TimingFunction"
+				],
+				mapping: {
+					"cubic-bezier(.25,.1,.25,1)": "ease",
+					"cubic-bezier(0,0,1,1)": "linear",
+					"cubic-bezier(.42,0,1,1)": "ease-in",
+					"cubic-bezier(0,0,.58,1)": "ease-out",
+					"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+				}
+			},
+			"animation-delay": {
+				keywords: [
+				],
+				"default": [
+					"0s",
+					"0ms"
+				],
+				types: [
+					"Time"
+				]
+			},
+			"animation-iteration-count": {
+				keywords: [
+					"infinite"
+				],
+				"default": [
+					"1"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"animation-direction": {
+				keywords: [
+					"normal",
+					"reverse",
+					"alternate",
+					"alternate-reverse"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			},
+			"animation-fill-mode": {
+				keywords: [
+					"none",
+					"forwards",
+					"backwards",
+					"both"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+				]
+			},
+			"animation-play-state": {
+				keywords: [
+					"running",
+					"paused"
+				],
+				"default": [
+					"running"
+				],
+				types: [
+				]
+			},
+			"animation-timeline": {
+				keywords: [
+					"none",
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"DashedIden",
+					"TimelineFunction"
+				]
+			}
+		}
+	},
+	"animation-name": {
+		shorthand: "animation"
+	},
+	"animation-duration": {
+		shorthand: "animation"
+	},
+	"animation-timing-function": {
+		shorthand: "animation"
+	},
+	"animation-delay": {
+		shorthand: "animation"
+	},
+	"animation-iteration-count": {
+		shorthand: "animation"
+	},
+	"animation-direction": {
+		shorthand: "animation"
+	},
+	"animation-fill-mode": {
+		shorthand: "animation"
+	},
+	"animation-play-state": {
+		shorthand: "animation"
+	},
+	"animation-timeline": {
+		shorthand: "animation"
+	},
+	"text-emphasis": {
+		shorthand: "text-emphasis",
+		pattern: "text-emphasis-color text-emphasis-style",
+		"default": [
+			"none",
+			"currentcolor"
+		],
+		properties: {
+			"text-emphasis-style": {
+				keywords: [
+					"none",
+					"filled",
+					"open",
+					"dot",
+					"circle",
+					"double-circle",
+					"triangle",
+					"sesame"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"String"
+				]
+			},
+			"text-emphasis-color": {
+				"default": [
+					"currentcolor"
+				],
+				types: [
+					"Color"
+				]
+			}
+		}
+	},
+	"text-emphasis-style": {
+		shorthand: "text-emphasis"
+	},
+	"text-emphasis-color": {
+		shorthand: "text-emphasis"
+	},
 	border: {
 		shorthand: "border",
 		pattern: "border-color border-style border-width",
@@ -297,6 +608,75 @@ var map = {
 	"border-width": {
 		shorthand: "border"
 	},
+	"list-style": {
+		shorthand: "list-style",
+		pattern: "list-style-type list-style-position list-style-image",
+		keywords: [
+			"none",
+			"outside"
+		],
+		"default": [
+			"none",
+			"outside"
+		],
+		properties: {
+			"list-style-position": {
+				types: [
+				],
+				"default": [
+					"outside"
+				],
+				keywords: [
+					"inside",
+					"outside"
+				]
+			},
+			"list-style-image": {
+				"default": [
+					"none"
+				],
+				keywords: [
+					"node"
+				],
+				types: [
+					"UrlFunc",
+					"ImageFunc"
+				]
+			},
+			"list-style-type": {
+				types: [
+					"String",
+					"Iden",
+					"Symbols"
+				],
+				"default": [
+					"disc"
+				],
+				keywords: [
+					"disc",
+					"circle",
+					"square",
+					"decimal",
+					"decimal-leading-zero",
+					"lower-roman",
+					"upper-roman",
+					"lower-greek",
+					"lower-latin",
+					"upper-latin",
+					"none"
+				]
+			}
+		}
+	},
+	"list-style-position": {
+		shorthand: "list-style"
+	},
+	"list-style-image": {
+		shorthand: "list-style"
+	},
+	"list-style-type": {
+		shorthand: "list-style"
+	},
 	overflow: {
 		shorthand: "overflow",
 		pattern: "overflow-x overflow-y",
@@ -354,7 +734,8 @@ var map = {
 		],
 		"default": [
 			"0",
-			"none"
+			"none",
+			"currentcolor"
 		],
 		properties: {
 			"outline-color": {
@@ -362,10 +743,10 @@ var map = {
 					"Color"
 				],
 				"default": [
-					"currentColor"
+					"currentcolor"
 				],
 				keywords: [
-					"currentColor"
+					"currentcolor"
 				]
 			},
 			"outline-style": {
@@ -709,7 +1090,8 @@ var map = {
 			},
 			"background-image": {
 				types: [
-					"UrlFunc"
+					"UrlFunc",
+					"ImageFunc"
 				],
 				"default": [
 					"none"

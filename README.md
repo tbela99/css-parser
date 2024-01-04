@@ -13,7 +13,7 @@ $ npm install @tbela99/css-parser
 ## Features
 
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - automatically generate nested css rules
 - generate sourcemap
 - compute css shorthands. see the list below
@@ -64,6 +64,8 @@ Include ParseOptions and RenderOptions
 - inlineCssVariables: boolean, optional. replace css variables with their current value.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} rule.
+- visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
+- signal: AbortSignal, optional. abort parsing.
 
 #### RenderOptions
 
@@ -100,7 +102,7 @@ const {ast, errors, stats} = await parse(css);
 ### Usage
 
 ```javascript
-doRender(ast, RenderOptions = {});
+render(ast, RenderOptions = {});
 ```
 
 ### Example
@@ -415,6 +417,203 @@ result
 ## Performance
 
 - [x] flatten @import
+
+## Node Transformation
+
+Ast can be transformed using node visitors
+
+### Exemple 1: Declaration
+
+```typescript
+
+import {AstDeclaration, ParserOptions} from "../src/@types";
+
+const options: ParserOptions = {
+
+    visitor: {
+
+        Declaration: (node: AstDeclaration) => {
+
+            if (node.nam == '-webkit-transform') {
+
+                node.nam = 'transform'
+            }
+        }
+    }
+}
+
+const css = `
+
+.foo {
+    -webkit-transform: scale(calc(100 * 2/ 15));
+}
+`;
+
+console.debug(await transform(css, options));
+
+// .foo{transform:scale(calc(40/3))}
+```
+
+### Exemple 2: Declaration
+
+```typescript
+
+import {AstDeclaration, LengthToken, ParserOptions} from "../src/@types";
+import {EnumToken, NodeType} from "../src/lib";
+import {transform} from "../src/node";
+
+const options: ParserOptions = {
+
+    visitor: {
+
+        Declaration: {
+
+            // called only for height declaration
+            height: (node: AstDeclaration): AstDeclaration[] => {
+
+
+                return [
+                    node,
+                    {
+
+                        typ: NodeType.DeclarationNodeType,
+                        nam: 'width',
+                        val: [
+                            <LengthToken>{
+                                typ: EnumToken.Length,
+                                val: '3',
+                                unit: 'px'
+                            }
+                        ]
+                    }
+                ];
+            }
+        }
+    }
+};
+
+const css = `
+
+.foo {
+    height: calc(100px * 2/ 15);
+}
+`;
+
+console.debug(await transform(css, options));
+
+// .foo{height:calc(40px/3);width:3px}
+
+```
+
+### Exemple 3: At-Rule
+
+```typescript
+
+import {AstAtRule, ParserOptions} from "../src/@types";
+import {transform} from "../src/node";
+
+
+const options: ParserOptions = {
+
+    visitor: {
+
+        AtRule: (node: AstAtRule): AstAtRule => {
+            
+            if (node.nam == 'media') {
+
+                return {...node, val: 'all'}
+            }
+        }
+    }
+};
+
+const css = `
+
+@media screen {
+       
+    .foo {
+
+            height: calc(100px * 2/ 15);    
+    } 
+}
+`;
+
+console.debug(await transform(css, options));
+
+// .foo{height:calc(40px/3)}
+
+```
+
+### Exemple 4: At-Rule
+
+```typescript
+
+import {AstAtRule, ParserOptions} from "../src/@types";
+import {transform} from "../src/node";
+
+const options: ParserOptions = {
+
+    visitor: {
+
+        AtRule: {
+
+            media: (node: AstAtRule): AstAtRule => {
+
+                return {...node, val: 'all'}
+            }
+        }
+    }
+};
+
+const css = `
+
+@media screen {
+       
+    .foo {
+
+            height: calc(100px * 2/ 15);    
+    } 
+}
+`;
+
+console.debug(await transform(css, options));
+
+// .foo{height:calc(40px/3)}
+
+```
+
+### Exemple 5: Rule
+
+```typescript
+
+import {AstAtRule, ParserOptions} from "../src/@types";
+import {transform} from "../src/node";
+
+const options: ParserOptions = {
+
+    visitor: {
+
+
+        Rule (node: AstRule): AstRule {
+
+            return {...node, sel: '.foo,.bar,.fubar'};
+        }
+    }
+};
+
+const css = `
+
+    .foo {
+
+            height: calc(100px * 2/ 15);    
+    } 
+`;
+
+console.debug(await transform(css, options));
+
+// .foo,.bar,.fubar{height:calc(40px/3)}
+
+```
 
 ---
 

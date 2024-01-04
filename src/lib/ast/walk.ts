@@ -1,29 +1,60 @@
-import {AstNode, AstRuleList, FunctionToken, ParensToken, Token, WalkAttributesResult, WalkResult} from "../../@types";
+import {
+    AstNode,
+    AstRuleList,
+    FunctionToken,
+    ParensToken,
+    Token,
+    WalkAttributesResult,
+    WalkResult,
+    WalkerFilter,
+    WalkerOption
+} from "../../@types";
 
-export function* walk(node: AstNode): Generator<WalkResult> {
+export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {
 
     const parents: AstNode[] = [node];
-     const root = <AstRuleList>node;
+    const root: AstRuleList = <AstRuleList>node;
 
-     const weakMap: WeakMap<AstNode, AstNode> = new WeakMap;
+    const weakMap: WeakMap<AstNode, AstNode> = new WeakMap;
 
-     while (parents.length > 0) {
+    while (parents.length > 0) {
 
-         node = <AstNode>parents.shift();
+        node = <AstNode>parents.shift();
 
-         // @ts-ignore
-         yield {node, parent: weakMap.get(node), root};
+        let option: WalkerOption = null;
 
-         if ('chi' in node) {
+        if (filter != null) {
 
-             for (const child of <AstNode[]>(<AstRuleList>node).chi) {
+             option = filter(node);
 
-                 weakMap.set(child, node);
-             }
+            if (option === 'ignore') {
 
-             parents.unshift(...<AstNode[]>(<AstRuleList>node).chi);
-         }
-     }
+                continue;
+            }
+
+            if (option === 'stop') {
+
+                break;
+            }
+        }
+
+        // @ts-ignore
+        if (option !== 'children') {
+
+            // @ts-ignore
+            yield {node, parent: <AstRuleList> weakMap.get(node), root};
+        }
+
+        if (option !== 'ignore-children' && 'chi' in node) {
+
+            parents.unshift(...<AstNode[]>(<AstRuleList>node).chi);
+
+            for (const child of <AstNode[]>(<AstRuleList>node).chi.slice()) {
+
+                weakMap.set(child, node);
+            }
+        }
+    }
 }
 
 export function* walkValues(values: Token[]): Generator<WalkAttributesResult> {
@@ -35,7 +66,7 @@ export function* walkValues(values: Token[]): Generator<WalkAttributesResult> {
 
     while (stack.length > 0) {
 
-        value = <Token> stack.shift();
+        value = <Token>stack.shift();
 
         // @ts-ignore
         yield {value, parent: <FunctionToken | ParensToken>weakMap.get(value)};

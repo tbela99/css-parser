@@ -76,21 +76,19 @@ function doRender(data, options = {}) {
     }
     if (sourcemap != null) {
         result.map = sourcemap.toJSON();
-        // @ts-ignore
-        // result.map.sources = result.map.sources?.map(s => <string>options?.resolve(s, <string>options?.cwd)?.relative)
     }
     return result;
 }
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
-    if ([4 /* NodeType.RuleNodeType */, 3 /* NodeType.AtRuleNodeType */].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
-        if (src !== '') {
-            if (!(src in cache)) {
-                // @ts-ignore
-                cache[src] = options.resolve(src, options.cwd ?? '').relative;
-            }
+        // if (src !== '') {
+        if (!(src in cache)) {
+            // @ts-ignore
+            cache[src] = options.resolve(src, options.cwd ?? '').relative;
         }
+        // }
         if (!(output in cache)) {
             // @ts-ignore
             cache[output] = options.resolve(output, options.cwd).relative;
@@ -115,16 +113,16 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indent = indents[level];
     const indentSub = indents[level + 1];
     switch (data.typ) {
-        case 5 /* NodeType.DeclarationNodeType */:
+        case EnumToken.DeclarationNodeType:
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
-        case 0 /* NodeType.CommentNodeType */:
-        case 1 /* NodeType.CDOCOMMNodeType */:
+        case EnumToken.CommentNodeType:
+        case EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith('# sourceMappingURL=')) {
                 // ignore sourcemap
                 return '';
             }
             return !options.removeComments || (options.preserveLicense && data.val.startsWith('/*!')) ? data.val : '';
-        case 2 /* NodeType.StyleSheetNodeType */:
+        case EnumToken.StyleSheetNodeType:
             return data.chi.reduce((css, node) => {
                 const str = renderAstNode(node, options, sourcemap, { ...position }, errors, reducer, cache, level, indents);
                 if (str === '') {
@@ -142,18 +140,18 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 }
                 return `${css}${options.newLine}${str}`;
             }, '');
-        case 3 /* NodeType.AtRuleNodeType */:
-        case 4 /* NodeType.RuleNodeType */:
-            if (data.typ == 3 /* NodeType.AtRuleNodeType */ && !('chi' in data)) {
+        case EnumToken.AtRuleNodeType:
+        case EnumToken.RuleNodeType:
+            if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
                 return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
             let children = data.chi.reduce((css, node) => {
                 let str;
-                if (node.typ == 0 /* NodeType.CommentNodeType */) {
+                if (node.typ == EnumToken.CommentNodeType) {
                     str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                 }
-                else if (node.typ == 5 /* NodeType.DeclarationNodeType */) {
+                else if (node.typ == EnumToken.DeclarationNodeType) {
                     if (node.val.length == 0) {
                         // @ts-ignore
                         errors.push({
@@ -165,7 +163,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     }
                     str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
                 }
-                else if (node.typ == 3 /* NodeType.AtRuleNodeType */ && !('chi' in node)) {
+                else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
                 }
                 else {
@@ -182,7 +180,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
-            if (data.typ == 3 /* NodeType.AtRuleNodeType */) {
+            if (data.typ == EnumToken.AtRuleNodeType) {
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
@@ -205,7 +203,35 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.BinaryExpressionTokenType:
+            if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
+                let result = '';
+                if (token.l.typ == EnumToken.BinaryExpressionTokenType &&
+                    [EnumToken.Add, EnumToken.Sub].includes(token.l.op)) {
+                    result = '(' + renderToken(token.l, options, cache) + ')';
+                }
+                else {
+                    result = renderToken(token.l, options, cache);
+                }
+                result += token.op == EnumToken.Mul ? '*' : '/';
+                if (token.r.typ == EnumToken.BinaryExpressionTokenType &&
+                    [EnumToken.Add, EnumToken.Sub].includes(token.r.op)) {
+                    result += '(' + renderToken(token.r, options, cache) + ')';
+                }
+                else {
+                    result += renderToken(token.r, options, cache);
+                }
+                return result;
+            }
             return renderToken(token.l, options, cache) + (token.op == EnumToken.Add ? ' + ' : (token.op == EnumToken.Sub ? ' - ' : (token.op == EnumToken.Mul ? '*' : '/'))) + renderToken(token.r, options, cache);
+        case EnumToken.FractionTokenType:
+            const fraction = renderToken(token.l) + '/' + renderToken(token.r);
+            if (+token.r.val != 0) {
+                const value = reduceNumber(+token.l.val / +token.r.val);
+                if (value.length <= fraction.length) {
+                    return value;
+                }
+            }
+            return fraction;
         case EnumToken.Add:
             return ' + ';
         case EnumToken.Sub:
@@ -258,21 +284,45 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
+        case EnumToken.ImageFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
+        case EnumToken.TimingFunctionTokenType:
+        case EnumToken.TimelineFunctionTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
-                token.chi.length == 1) {
+                token.chi.length == 1 &&
+                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
+                token.chi[0].typ != EnumToken.FractionTokenType &&
+                token.chi[0].val?.typ != EnumToken.FractionTokenType) {
                 // calc(200px) => 200px
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
+        case EnumToken.MatchExpressionTokenType:
+            return renderToken(token.l, options, cache, reducer, errors) +
+                renderToken({ typ: token.op }, options, cache, reducer, errors) +
+                renderToken(token.r, options, cache, reducer, errors) +
+                (token.attr ? ' ' + token.attr : '');
+        case EnumToken.NameSpaceAttributeTokenType:
+            return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors) + '|') +
+                renderToken(token.r, options, cache, reducer, errors);
+        case EnumToken.BlockStartTokenType:
+            return '{';
+        case EnumToken.BlockEndTokenType:
+            return '}';
         case EnumToken.StartParensTokenType:
             return '(';
-        case EnumToken.IncludesTokenType:
+        case EnumToken.IncludeMatchTokenType:
             return '~=';
         case EnumToken.DashMatchTokenType:
             return '|=';
+        case EnumToken.StartMatchTokenType:
+            return '^=';
+        case EnumToken.EndMatchTokenType:
+            return '$=';
+        case EnumToken.ContainMatchTokenType:
+            return '*=';
         case EnumToken.LtTokenType:
             return '<';
         case EnumToken.LteTokenType:
@@ -281,6 +331,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '>';
         case EnumToken.GteTokenType:
             return '>=';
+        case EnumToken.ColumnCombinatorTokenType:
+            return '||';
         case EnumToken.EndParensTokenType:
             return ')';
         case EnumToken.AttrStartTokenType:
@@ -305,19 +357,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            if (token.val.typ == EnumToken.BinaryExpressionTokenType) {
-                const result = renderToken(token.val, options, cache);
-                if (!('unit' in token)) {
-                    return result;
-                }
-                if (!result.includes(' ')) {
-                    return result + token.unit;
-                }
-                return `(${result})*1${token.unit}`;
-            }
-            let val = reduceNumber(token.val);
+            let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
             let unit = token.unit;
-            if (token.typ == EnumToken.AngleTokenType) {
+            if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
                 const angle = getAngle(token);
                 let v;
                 let value = val + unit;
@@ -374,15 +416,20 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return '0';
             }
-            return val + unit;
+            return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case EnumToken.PercentageTokenType:
-            const perc = reduceNumber(token.val);
-            return options.minify && perc == '0' ? '0' : perc + '%';
+            const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
         case EnumToken.NumberTokenType:
-            return reduceNumber(token.val);
+            return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
         case EnumToken.CommentTokenType:
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
+            }
+        case EnumToken.PseudoClassTokenType:
+            // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+            if (token.typ == EnumToken.PseudoClassTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+                return token.val.slice(1);
             }
         case EnumToken.UrlTokenTokenType:
             if (token.typ == EnumToken.UrlTokenTokenType) {
@@ -407,13 +454,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     token.val = cache[token.original];
                 }
             }
-        case EnumToken.AtRuleTokenType:
         case EnumToken.HashTokenType:
-        case EnumToken.PseudoClassTokenType:
-        case EnumToken.LiteralTokenType:
-        case EnumToken.StringTokenType:
         case EnumToken.IdenTokenType:
         case EnumToken.DelimTokenType:
+        case EnumToken.AtRuleTokenType:
+        case EnumToken.StringTokenType:
+        case EnumToken.LiteralTokenType:
+        case EnumToken.DashedIdenTokenType:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });

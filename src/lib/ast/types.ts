@@ -1,17 +1,13 @@
-export const enum NodeType {
-    CommentNodeType = 0,
-    CDOCOMMNodeType = 1,
-    StyleSheetNodeType = 2,
-    AtRuleNodeType = 3,
-    RuleNodeType = 4,
-    DeclarationNodeType = 5
-}
-
 export enum EnumToken {
     CommentTokenType,
     CDOCOMMTokenType,
+    StyleSheetNodeType,
+    AtRuleNodeType,
+    RuleNodeType,
+    DeclarationNodeType,
     LiteralTokenType,
     IdenTokenType,
+    DashedIdenTokenType,
     CommaTokenType,
     ColonTokenType,
     SemiColonTokenType,
@@ -19,7 +15,10 @@ export enum EnumToken {
     AtRuleTokenType,
     PercentageTokenType,
     FunctionTokenType,
+    TimelineFunctionTokenType,
+    TimingFunctionTokenType,
     UrlFunctionTokenType,
+    ImageFunctionTokenType,
     StringTokenType,
     UnclosedStringTokenType,
     DimensionTokenType,
@@ -37,7 +36,7 @@ export enum EnumToken {
     EndParensTokenType,
     ParensTokenType,
     WhitespaceTokenType,
-    IncludesTokenType,
+    IncludeMatchTokenType,
     DashMatchTokenType,
     LtTokenType,
     LteTokenType,
@@ -64,6 +63,14 @@ export enum EnumToken {
     Mul,
     Div,
     Sub,
+    /* new tokens */
+    ColumnCombinatorTokenType,
+    ContainMatchTokenType,
+    StartMatchTokenType,
+    EndMatchTokenType,
+    MatchExpressionTokenType,
+    NameSpaceAttributeTokenType,
+    FractionTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,
@@ -81,6 +88,12 @@ export enum EnumToken {
     Dimension = DimensionTokenType,
     Frequency = FrequencyTokenType,
     Resolution = ResolutionTokenType,
-    Whitespace = WhitespaceTokenType
+    Whitespace = WhitespaceTokenType,
+    DashedIden = DashedIdenTokenType,
+    ImageFunc = ImageFunctionTokenType,
+    CommentNodeType = CommentTokenType,
+    CDOCOMMNodeType = CDOCOMMTokenType,
+    TimingFunction = TimingFunctionTokenType,
+    TimelineFunction = TimelineFunctionTokenType
 }
 

@@ -1,6 +1,8 @@
 /happydom.ts
 /bunfig.toml
 /test
+/build.sh
+/docs
 /benchmark
 /tools
 /ROADMAP.md
@@ -14,3 +16,4 @@
 /coverage
 /.github
 /.gitattributes
+/Writerside

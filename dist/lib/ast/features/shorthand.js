@@ -1,10 +1,11 @@
 import { PropertyList } from '../../parser/declaration/list.js';
 import '../../renderer/utils/color.js';
-import '../types.js';
+import { EnumToken } from '../types.js';
 import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import { MinifyFeature } from '../utiles/minifyfeature.js';
+import '../../parser/declaration/map.js';
+import { MinifyFeature } from '../utils/minifyfeature.js';
 
 class ComputeShorthand extends MinifyFeature {
     static get ordering() {
@@ -30,7 +31,7 @@ class ComputeShorthand extends MinifyFeature {
         for (; k < j; k++) {
             // @ts-ignore
             const node = ast.chi[k];
-            if (node.typ == 0 /* NodeType.CommentNodeType */ || node.typ == 5 /* NodeType.DeclarationNodeType */) {
+            if (node.typ == EnumToken.CommentNodeType || node.typ == EnumToken.DeclarationNodeType) {
                 properties.add(node);
                 continue;
             }

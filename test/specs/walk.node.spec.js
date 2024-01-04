@@ -1,5 +1,5 @@
 /* generate from test/specs/block.spec.ts */
-import { parse, walk, NodeType } from '../../dist/node/index.js';
+import { parse, walk,  EnumToken} from '../../dist/node/index.js';
 import {expect} from "@esm-bundle/chai";
 
 describe('node walker', function () {
@@ -16,7 +16,7 @@ describe('node walker', function () {
   height: 0;
   width: 0;
 }`;
-        const values = [NodeType.StyleSheetNodeType, NodeType.RuleNodeType, NodeType.DeclarationNodeType, NodeType.DeclarationNodeType];
+        const values = [EnumToken.StyleSheetNodeType, EnumToken.RuleNodeType, EnumToken.DeclarationNodeType, EnumToken.DeclarationNodeType];
 
         return parse(css).then(result => {
 
@@ -34,7 +34,7 @@ describe('node walker', function () {
 @media all {html { font-family: Blanco, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; font-size: clamp(12px, 0.8rem + 0.25vw, 20px); font-weight: 400; line-height: 1.7; }}
 `;
 
-        const values = [NodeType.StyleSheetNodeType, NodeType.AtRuleNodeType, NodeType.RuleNodeType, NodeType.DeclarationNodeType, NodeType.DeclarationNodeType, NodeType.DeclarationNodeType, NodeType.DeclarationNodeType];
+        const values = [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType, EnumToken.DeclarationNodeType, EnumToken.DeclarationNodeType, EnumToken.DeclarationNodeType, EnumToken.DeclarationNodeType];
 
         return parse(css, {minify: false}).then(r => {
 

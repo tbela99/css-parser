@@ -8,7 +8,7 @@ import {
 
 function createProperties(data: ShorthandPropertyType) {
 
-    const map = data.map;
+    const map: string = <string>data.map;
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
@@ -19,7 +19,7 @@ function createProperties(data: ShorthandPropertyType) {
                     shorthand: data.shorthand
                 }
             });
-        }, <PropertySetType>{}),
+        }, <PropertySetType>{})
     }
 }
 
@@ -27,12 +27,9 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
 
     return fields.reduce((acc, curr: ShorthandType) => {
 
-        // if (Object.keys(curr.properties).length > 0) {
-
         Object.assign(acc[data.shorthand].properties, {
             [curr.shorthand]: {...(<ShorthandType>curr).properties}
         });
-        // }
 
         return Object.assign(acc, {
 
@@ -48,9 +45,189 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
     })
 }
 
-// @ts-ignore
-export const map: ShorthandMapType = [
+export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
+    [
+        {
+            shorthand: 'transition',
+            multiple: true,
+            separator: ',',
+            pattern: 'transition-property transition-duration transition-timing-function transition-delay transition-behavior',
+            keywords: ['none', 'all'],
+            default: ['0s', '0ms', 'all', 'ease', 'none', 'normal'],
+        },
+        [
+            {
+                shorthand: 'transition-property',
+                properties: {
+
+                    keywords: ['none', 'all'],
+                    default: [],
+                    types: ['Iden']
+                }
+            },
+            {
+                shorthand: 'transition-duration',
+                properties: {
+
+                    keywords: [],
+                    default: ['0s', '0ms', 'normal'],
+                    types: ['Time']
+                }
+            },
+            {
+                shorthand: 'transition-timing-function',
+                properties: {
+
+                    keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
+                    default: ['ease'],
+                    types: ['TimingFunction'],
+                    mapping: {
+                        'cubic-bezier(.25,.1,.25,1)': 'ease',
+                        'cubic-bezier(0,0,1,1)': 'linear',
+                        'cubic-bezier(.42,0,1,1)': 'ease-in',
+                        'cubic-bezier(0,0,.58,1)': 'ease-out',
+                        'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
+                    }
+                }
+            },
+            {
+                shorthand: 'transition-delay',
+                properties: {
+
+                    keywords: [],
+                    default: ['0s'],
+                    types: ['Time']
+                }
+            },
+            {
+                shorthand: 'transition-behavior',
+                properties: {
+
+                    keywords: ['normal', 'allow-discrete'],
+                    default: ['normal'],
+                    types: []
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'animation',
+            pattern: 'animation-name animation-duration animation-timing-function animation-delay animation-iteration-count animation-direction animation-fill-mode animation-play-state animation-timeline',
+            default: ['1', '0s', '0ms', 'none', 'ease', 'normal', 'running', 'auto']
+        },
+        [
+            {
+                shorthand: 'animation-name',
+                properties: {
+
+                    keywords: ['none'],
+                    default: ['none'],
+                    types: ['Iden']
+                }
+            },
+            {
+                shorthand: 'animation-duration',
+                properties: {
+                    keywords: ['auto'],
+                    default: ['0s', '0ms', 'auto'],
+                    types: ['Time'],
+                    mapping: {
+                        'auto': '0s'
+                    }
+                }
+            },
+            {
+                shorthand: 'animation-timing-function',
+                properties: {
+                    keywords: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end'],
+                    default: ['ease'],
+                    types: ['TimingFunction'],
+                    mapping: {
+                        'cubic-bezier(.25,.1,.25,1)': 'ease',
+                        'cubic-bezier(0,0,1,1)': 'linear',
+                        'cubic-bezier(.42,0,1,1)': 'ease-in',
+                        'cubic-bezier(0,0,.58,1)': 'ease-out',
+                        'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
+                    }
+                }
+            },
+            {
+                shorthand: 'animation-delay',
+                properties: {
+                    keywords: [],
+                    default: ['0s', '0ms'],
+                    types: ['Time']
+                }
+            },
+            {
+                shorthand: 'animation-iteration-count',
+                properties: {
+                    keywords: ['infinite'],
+                    default: ['1'],
+                    types: ['Number']
+                }
+            },
+            {
+                shorthand: 'animation-direction',
+                properties: {
+                    keywords: ['normal', 'reverse', 'alternate', 'alternate-reverse'],
+                    default: ['normal'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'animation-fill-mode',
+                properties: {
+                    keywords: ['none', 'forwards', 'backwards', 'both'],
+                    default: ['none'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'animation-play-state',
+                properties: {
+                    keywords: ['running', 'paused'],
+                    default: ['running'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'animation-timeline',
+                properties: {
+                    keywords: ['none', 'auto'],
+                    default: ['auto'],
+                    types: ['DashedIden', 'TimelineFunction']
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'text-emphasis',
+            pattern: 'text-emphasis-color text-emphasis-style',
+            default: ['none', 'currentcolor']
+        },
+        [
+            {
+                shorthand: 'text-emphasis-style',
+                properties: {
+
+                    keywords: ['none', 'filled', 'open', 'dot', 'circle', 'double-circle', 'triangle', 'sesame'],
+                    default: ['none'],
+                    types: ['String']
+                }
+            },
+            {
+                shorthand: 'text-emphasis-color',
+                properties: {
+                    default: ['currentcolor'],
+                    types: ['Color']
+                }
+            }
+        ]
+    ],
     [
         {
             shorthand: 'border',
@@ -70,6 +247,41 @@ export const map: ShorthandMapType = [
             {
                 shorthand: 'border-width',
                 properties: {}
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'list-style',
+            pattern: 'list-style-type list-style-position list-style-image',
+            keywords: ['none', 'outside'],
+            default: ['none', 'outside']
+        },
+        [
+            {
+                shorthand: 'list-style-position',
+                properties: {
+                    types: [],
+                    default: ['outside'],
+                    keywords: ['inside', 'outside'],
+                }
+            },
+            {
+                shorthand: 'list-style-image',
+                properties: {
+                    default: ['none'],
+                    keywords: ['node'],
+                    types: ['UrlFunc', 'ImageFunc']
+                }
+            },
+            {
+                shorthand: 'list-style-type',
+                properties:
+                    {
+                        types: ['String', 'Iden', 'Symbols'],
+                        default: ['disc'],
+                        keywords: ['disc', 'circle', 'square', 'decimal', 'decimal-leading-zero', 'lower-roman', 'upper-roman', 'lower-greek', 'lower-latin', 'upper-latin', 'none']
+                    }
             }
         ]
     ],
@@ -110,15 +322,15 @@ export const map: ShorthandMapType = [
             shorthand: 'outline',
             pattern: 'outline-color outline-style outline-width',
             keywords: ['none'],
-            default: ['0', 'none']
+            default: ['0', 'none', 'currentcolor']
         },
         [
             {
                 shorthand: 'outline-color',
                 properties: {
                     types: ['Color'],
-                    default: ['currentColor'],
-                    keywords: ['currentColor'],
+                    default: ['currentcolor'],
+                    keywords: ['currentcolor'],
                 }
             },
             {
@@ -290,7 +502,7 @@ export const map: ShorthandMapType = [
             {
                 shorthand: 'background-image',
                 properties: {
-                    types: ['UrlFunc'],
+                    types: ['UrlFunc', 'ImageFunc'],
                     default: ['none'],
                     keywords: ['none']
                 }
@@ -360,7 +572,7 @@ export const map: ShorthandMapType = [
         ]
     ]
     // @ts-ignore
-].reduce((acc: ShorthandMapType, data) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
+]).reduce((acc: ShorthandMapType, data) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
 
 /*
 

@@ -1,18 +1,14 @@
-export { EnumToken, NodeType } from '../lib/ast/types.js';
-export { combinators, hasDeclaration, minify, reduceSelector, splitRule } from '../lib/ast/minify.js';
+export { EnumToken } from '../lib/ast/types.js';
+export { minify } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
-export { expand, replaceCompound } from '../lib/ast/expand.js';
+export { expand } from '../lib/ast/expand.js';
 import { doRender } from '../lib/renderer/render.js';
-export { colorsFunc, reduceNumber, renderToken } from '../lib/renderer/render.js';
+export { renderToken } from '../lib/renderer/render.js';
 import { doParse } from '../lib/parser/parse.js';
-export { parseString, parseTokens, urlTokenMatcher } from '../lib/parser/parse.js';
-export { tokenize } from '../lib/parser/tokenize.js';
-export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension } from '../lib/parser/utils/syntax.js';
-export { getConfig } from '../lib/parser/utils/config.js';
-export { funcList, matchType } from '../lib/parser/utils/type.js';
-import { load } from './load.js';
+export { parseString, parseTokens } from '../lib/parser/parse.js';
+import '../lib/renderer/utils/color.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
-export { matchUrl } from '../lib/fs/resolve.js';
+import { load } from './load.js';
 
 function render(data, options = {}) {
     return doRender(data, Object.assign(options, {
@@ -49,4 +45,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { dirname, doParse, doRender, load, parse, render, resolve, transform };
+export { dirname, load, parse, render, resolve, transform };

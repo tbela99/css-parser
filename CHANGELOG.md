@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.2.0
+
+- [x] cancellable parser promise using abortSignal
+- [x] node visitor (callback) :
+    - [x] Declaration visitor
+    - [x] selector visitor
+    - [x] at-rule visitor
+- [x] support mixing units with calc()
+
+# shorthands
+
+- [x] transition
+- [x] list-style
+- [x] text-emphasis
+- [x] animation
+
+### Minification
+
+- [x] parsing column combinator
+- [x] css selector level 4 attribute modifiers
+- [x] selector-4 parsing https://www.w3.org/TR/selectors-4/
+
 ## v0.1.0
 
 - [x] sourcemap generation

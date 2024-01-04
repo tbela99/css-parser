@@ -1,15 +1,50 @@
 import {
-    AstAtRule,
+    AstAtRule, AstComment,
     AstDeclaration,
-    AstRule,
+    AstRule, AstRuleList,
     AstRuleStyleSheet,
     FunctionToken, MinifyOptions,
     ParserOptions,
     VariableScopeInfo
 } from "../../../@types";
-import {EnumToken, NodeType} from "../types";
+import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utiles/minifyfeature";
+import {MinifyFeature} from "../utils";
+import {IterableWeakSet} from "../../iterable";
+
+function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
+
+    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+
+        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+
+            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {
+
+                const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get(value.chi[0].val);
+
+                if (info?.replaceable) {
+
+                    if (parentValue != null) {
+
+                        let i: number = 0;
+
+                        for (; i < (<FunctionToken>parentValue).chi.length; i++) {
+
+                            if ((<FunctionToken>parentValue).chi[i] == value) {
+
+                                (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
+                                break;
+                            }
+                        }
+                    } else {
+
+                        (<AstDeclaration>node).val = info.node.val.slice();
+                    }
+                }
+            }
+        }
+    }
+}
 
 export class InlineCssVariables extends MinifyFeature {
 
@@ -34,26 +69,28 @@ export class InlineCssVariables extends MinifyFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {[key: string]: any}) {
+    run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) {
 
         if (!('variableScope' in context)) {
 
             context.variableScope = <Map<string, VariableScopeInfo>>new Map;
         }
 
-        const isRoot: boolean = parent.typ == NodeType.StyleSheetNodeType && ast.typ == NodeType.RuleNodeType && (<AstRule>ast).sel == ':root';
+        const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && (<AstRule>ast).sel == ':root';
 
         const variableScope = context.variableScope;
 
         // @ts-ignore
         for (const node of ast.chi) {
 
-            if (node.typ == NodeType.CDOCOMMNodeType || node.typ == NodeType.CommentNodeType) {
+            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
 
                 continue;
             }
 
-            if (node.typ != NodeType.DeclarationNodeType) {
+            if (node.typ != EnumToken.DeclarationNodeType) {
 
                 break;
             }
@@ -63,10 +100,10 @@ export class InlineCssVariables extends MinifyFeature {
 
                 if (!variableScope.has((<AstDeclaration>node).nam)) {
 
-                    const info =  {
+                    const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: <Set<AstRule | AstAtRule>> new Set(),
+                        parent: <IterableWeakSet<AstRule | AstAtRule>>new IterableWeakSet(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: (<AstDeclaration>node)
@@ -75,6 +112,25 @@ export class InlineCssVariables extends MinifyFeature {
                     info.parent.add(ast);
 
                     variableScope.set((<AstDeclaration>node).nam, info);
+
+
+                    let recursive: boolean = false;
+
+                    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+
+                        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+
+                            recursive = true;
+                            break;
+                        }
+                    }
+
+                    if (recursive) {
+
+                        replace(node, variableScope);
+                    }
+
+
                 } else {
 
                     const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
@@ -95,42 +151,12 @@ export class InlineCssVariables extends MinifyFeature {
                     info.node = (<AstDeclaration>node);
                 }
             } else {
-
-                for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
-
-                    if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
-
-                        if (value.chi.length == 1 && value.chi[0].typ == EnumToken.IdenTokenType) {
-
-                            const info = <VariableScopeInfo>variableScope.get(value.chi[0].val);
-
-                            if (info?.replaceable) {
-
-                                if (parentValue != null) {
-
-                                    let i: number = 0;
-
-                                    for (; i < (<FunctionToken>parentValue).chi.length; i++) {
-
-                                        if ((<FunctionToken>parentValue).chi[i] == value) {
-
-                                            (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
-                                            break;
-                                        }
-                                    }
-                                } else {
-
-                                    (<AstDeclaration>node).val = info.node.val.slice();
-                                }
-                            }
-                        }
-                    }
-                }
+                replace(node, variableScope);
             }
         }
     }
 
-    cleanup (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: {[key: string]: any}) {
+    cleanup(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 
@@ -140,13 +166,14 @@ export class InlineCssVariables extends MinifyFeature {
 
                 let i: number;
 
+                // drop declarations from :root{}
                 for (const parent of info.parent) {
 
                     i = parent.chi?.length ?? 0;
 
                     while (i--) {
 
-                        if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == NodeType.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
+                        if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == EnumToken.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
 
                             (<AstDeclaration[]>parent.chi).splice(i, 1);
                         }

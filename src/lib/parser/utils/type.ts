@@ -1,7 +1,8 @@
 import {EnumToken} from "../../ast";
-import {IdentToken, PropertyMapType, Token} from "../../../@types";
+import {FunctionToken, IdentToken, PropertyMapType, Token} from "../../../@types";
 
-export const funcList = ['clamp', 'calc'];
+// https://www.w3.org/TR/css-values-4/#math-function
+export const funcList: string[] = ['clamp', 'calc'];
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
 
@@ -19,13 +20,18 @@ export function matchType(val: Token, properties: PropertyMapType): boolean {
 
             // @ts-ignore
             const typ = EnumToken[type];
-           return typ  == EnumToken.LengthTokenType || typ == EnumToken.AngleTokenType
+            return typ == EnumToken.LengthTokenType || typ == EnumToken.AngleTokenType
         })
     }
 
-    if (val.typ == EnumToken.FunctionTokenType && funcList.includes(val.val)) {
+    if (val.typ == EnumToken.FunctionTokenType) {
 
-        return val.chi.every((t => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType,EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+        if (funcList.includes(val.val)) {
+            return val.chi.every((t => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+        }
+
+        // match type defined like function 'symbols()', 'url()', 'attr()' etc.
+        // return properties.types.includes((<FunctionToken>val).val + '()')
     }
 
     return false;

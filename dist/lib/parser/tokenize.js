@@ -16,7 +16,6 @@ function* tokenize(stream) {
     };
     let value;
     let buffer = '';
-    // let input: string = '';
     function consumeWhiteSpace() {
         let count = 0;
         while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
@@ -26,7 +25,7 @@ function* tokenize(stream) {
         return count;
     }
     function pushToken(token, hint) {
-        const result = { token, hint, position: { ...position }, bytesIn: ind };
+        const result = { token, hint, position: { ...position }, bytesIn: ind + 1 };
         position.ind = ind;
         position.lin = lin;
         position.col = col == 0 ? 1 : col;
@@ -223,8 +222,10 @@ function* tokenize(stream) {
                 // EOF
                 if (!(value = next())) {
                     // end of stream ignore \\
-                    yield pushToken(buffer);
-                    buffer = '';
+                    if (buffer.length > 0) {
+                        yield pushToken(buffer);
+                        buffer = '';
+                    }
                     break;
                 }
                 buffer += prev() + value;
@@ -233,29 +234,51 @@ function* tokenize(stream) {
             case "'":
                 yield* consumeString(value);
                 break;
+            case '^':
             case '~':
             case '|':
+            case '$':
+                if (value == '|' && peek() == '|') {
+                    next();
+                    yield pushToken('', EnumToken.ColumnCombinatorTokenType);
+                    buffer = '';
+                    break;
+                }
                 if (buffer.length > 0) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
                 buffer += value;
-                if (!(value = next())) {
+                if (!(value = peek())) {
                     yield pushToken(buffer);
                     buffer = '';
                     break;
                 }
-                if (value == '=') {
-                    buffer += value;
-                    yield pushToken(buffer, buffer[0] == '~' ? EnumToken.IncludesTokenType : EnumToken.DashMatchTokenType);
+                // ~=
+                // ^=
+                // $=
+                // |=
+                if (peek() == '=') {
+                    next();
+                    switch (buffer.charAt(0)) {
+                        case '~':
+                            yield pushToken(buffer, EnumToken.IncludeMatchTokenType);
+                            break;
+                        case '^':
+                            yield pushToken(buffer, EnumToken.StartMatchTokenType);
+                            break;
+                        case '$':
+                            yield pushToken(buffer, EnumToken.EndMatchTokenType);
+                            break;
+                        case '|':
+                            yield pushToken(buffer, EnumToken.DashMatchTokenType);
+                            break;
+                    }
                     buffer = '';
                     break;
                 }
                 yield pushToken(buffer);
-                while (isWhiteSpace(value.charCodeAt(0))) {
-                    value = next();
-                }
-                buffer = value;
+                buffer = '';
                 break;
             case '>':
                 if (buffer !== '') {
@@ -289,7 +312,13 @@ function* tokenize(stream) {
                     yield pushToken(buffer);
                     buffer = '';
                 }
-                if (value == ':' && ':' == peek()) {
+                const val = peek();
+                if (val == '=') {
+                    next();
+                    yield pushToken(value + val, EnumToken.ContainMatchTokenType);
+                    break;
+                }
+                if (value == ':' && ':' == val) {
                     buffer += value + next();
                     break;
                 }
