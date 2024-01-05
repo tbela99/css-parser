@@ -396,24 +396,53 @@ result
 - [x] decode and replace utf-8 escape sequence
 
 ## Computed shorthands properties
+
+- ~all~
 - [x] animation
 - [x] background
 - [x] border
+- [ ] border-block-end
+- [ ] border-block-start
 - [x] border-bottom
 - [x] border-color
+- [ ] border-image
+- [ ] border-inline-end
+- [ ] border-inline-start
 - [x] border-left
 - [x] border-radius
 - [x] border-right
 - [x] border-style
 - [x] border-top
 - [x] border-width
+- [ ] column-rule
+- [ ] columns
+- [ ] container
+- [ ] contain-intrinsic-size
+- [ ] flex
+- [ ] flex-flow
 - [x] font
+- [ ] font-synthesis
+- [ ] font-variant
+- [ ] gap
+- [ ] grid
+- [ ] grid-area
+- [ ] grid-column
+- [ ] grid-row
+- [ ] grid-template
 - [x] inset
 - [x] list-style
 - [x] margin
+- [ ] mask
+- [ ] offset
 - [x] outline
 - [x] overflow
 - [x] padding
+- [ ] place-content
+- [ ] place-items
+- [ ] place-self
+- [ ] scroll-margin
+- [ ] scroll-padding
+- [ ] scroll-timeline
 - [x] text-decoration
 - [x] text-emphasis
 - [x] transition

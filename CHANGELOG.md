@@ -9,7 +9,7 @@
     - [x] at-rule visitor
 - [x] support mixing units with calc()
 
-# shorthands
+### shorthands
 
 - [x] transition
 - [x] list-style
