@@ -396,6 +396,7 @@ result
 - [x] decode and replace utf-8 escape sequence
 
 ## Computed shorthands properties
+- [x] animation
 - [x] background
 - [x] border
 - [x] border-bottom
@@ -408,11 +409,14 @@ result
 - [x] border-width
 - [x] font
 - [x] inset
+- [x] list-style
 - [x] margin
 - [x] outline
 - [x] overflow
 - [x] padding
 - [x] text-decoration
+- [x] text-emphasis
+- [x] transition
 
 ## Performance
 
