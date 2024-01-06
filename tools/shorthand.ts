@@ -586,6 +586,14 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
  */
 export const properties: PropertySetType = [
     {
+        shorthand: 'gap',
+        properties: ['row-gap', 'column-gap'],
+        types: ['Length', 'Perc'],
+        multiple: false,
+        separator: null,
+        keywords: ['normal']
+    },
+    {
         shorthand: 'inset',
         properties: ['top', 'right', 'bottom', 'left'],
         types: ['Length', 'Perc'],

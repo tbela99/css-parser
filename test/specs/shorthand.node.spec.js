@@ -1,6 +1,6 @@
 /* generate from test/specs/shorthand.spec.ts */
-import { expect as f } from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import { transform , render} from "../../dist/node/index.js";
+import {expect as f} from '../../node_modules/@esm-bundle/chai/esm/chai.js';
+import {transform, render} from "../../dist/node/index.js";
 
 const options = {
     minify: true,
@@ -335,5 +335,12 @@ overflow-y: hidden;
     list-style: lower-roman url("img/shape.png") outside;
     }
 `).then(result => f(result.code).equals(`.foo{list-style:lower-roman url(img/shape.png)}`));
+    });
+
+    it('shorthand parsing #22', function () {
+        return transform(`
+
+._19_u :focus { outline: none !important; }
+`).then(result => f(result.code).equals(`._19_u :focus{outline:0!important}`));
     });
 });

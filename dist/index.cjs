@@ -1411,6 +1411,28 @@ function isWhiteSpace(codepoint) {
 }
 
 var properties = {
+	gap: {
+		shorthand: "gap",
+		properties: [
+			"row-gap",
+			"column-gap"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		multiple: false,
+		separator: null,
+		keywords: [
+			"normal"
+		]
+	},
+	"row-gap": {
+		shorthand: "gap"
+	},
+	"column-gap": {
+		shorthand: "gap"
+	},
 	inset: {
 		shorthand: "inset",
 		properties: [
@@ -4632,6 +4654,29 @@ class InlineCssVariables extends MinifyFeature {
     }
 }
 
+function dedup(values) {
+    for (const value of values) {
+        let i = value.length;
+        while (i-- > 1) {
+            const t = value[i];
+            const k = value[i == 1 ? 0 : i % 2];
+            if (t.val == k.val && t.val == '0') {
+                if ((t.typ == exports.EnumToken.NumberTokenType && isLength(k)) ||
+                    (k.typ == exports.EnumToken.NumberTokenType && isLength(t)) ||
+                    (isLength(k) || isLength(t))) {
+                    value.splice(i, 1);
+                    continue;
+                }
+            }
+            if (eq(t, k)) {
+                value.splice(i, 1);
+                continue;
+            }
+            break;
+        }
+    }
+    return values;
+}
 class PropertySet {
     config;
     declarations;
@@ -4726,7 +4771,23 @@ class PropertySet {
         let iterator;
         const declarations = this.declarations;
         if (declarations.size < this.config.properties.length) {
-            iterator = declarations.values();
+            const values = [...declarations.values()];
+            if (this.isShortHand()) {
+                const val = values[0].val.reduce((acc, curr) => {
+                    if (![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(curr.typ)) {
+                        acc.push(curr);
+                    }
+                    return acc;
+                }, []);
+                values[0].val = val.reduce((acc, curr) => {
+                    if (acc.length > 0) {
+                        acc.push({ typ: exports.EnumToken.WhitespaceTokenType });
+                    }
+                    acc.push(curr);
+                    return acc;
+                }, []);
+            }
+            return values[Symbol.iterator]();
         }
         else {
             const values = [];
@@ -4744,26 +4805,7 @@ class PropertySet {
                     index++;
                 }
             });
-            for (const value of values) {
-                let i = value.length;
-                while (i-- > 1) {
-                    const t = value[i];
-                    const k = value[i == 1 ? 0 : i % 2];
-                    if (t.val == k.val && t.val == '0') {
-                        if ((t.typ == exports.EnumToken.NumberTokenType && isLength(k)) ||
-                            (k.typ == exports.EnumToken.NumberTokenType && isLength(t)) ||
-                            (isLength(k) || isLength(t))) {
-                            value.splice(i, 1);
-                            continue;
-                        }
-                    }
-                    if (eq(t, k)) {
-                        value.splice(i, 1);
-                        continue;
-                    }
-                    break;
-                }
-            }
+            dedup(values);
             iterator = [{
                     typ: exports.EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,
@@ -4986,7 +5028,6 @@ class PropertyMap {
         }
         if (!isShorthand || requiredCount < this.requiredCount) {
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
-                // console.debug(...this.declarations.values());
                 const removeDefaults = (declaration) => {
                     // const dec: AstDeclaration = {...declaration};
                     const config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
@@ -5013,13 +5054,24 @@ class PropertyMap {
                     }
                     return acc;
                 }, []);
-                const filtered = values.map(removeDefaults).filter((x) => x.val.length > 0);
+                let isImportant = false;
+                const filtered = values.map(removeDefaults).filter((x) => x.val.filter((t) => {
+                    if (t.typ == exports.EnumToken.ImportantTokenType) {
+                        isImportant = true;
+                    }
+                    return ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.ImportantTokenType].includes(t.typ);
+                }).length > 0);
                 if (filtered.length == 0 && this.config.default.length > 0) {
                     filtered.push({
                         typ: exports.EnumToken.DeclarationNodeType,
                         nam: this.config.shorthand,
                         val: parseString(this.config.default[0])
                     });
+                    if (isImportant) {
+                        filtered[0].val.push({
+                            typ: exports.EnumToken.ImportantTokenType
+                        });
+                    }
                 }
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
             }
@@ -5190,7 +5242,10 @@ class PropertyMap {
                     return acc;
                 }, []);
                 if (this.config.mapping != null) {
-                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true, minify: true }), '');
+                    const val = values.reduce((acc, curr) => acc + renderToken(curr, {
+                        removeComments: true,
+                        minify: true
+                    }), '');
                     if (val in this.config.mapping) {
                         values.length = 0;
                         values.push({

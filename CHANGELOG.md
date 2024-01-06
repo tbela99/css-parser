@@ -1,5 +1,33 @@
 # Changelog
 
+### V0.3.0
+
+### shorthands
+
+- [ ] column-rule
+- [ ] columns
+- [ ] contain-intrinsic-size
+- [ ] flex
+- [ ] flex-flow
+- [x] gap
+- [ ] grid
+- [ ] grid-area
+- [ ] grid-column
+- [ ] grid-row
+- [ ] grid-template
+
+### Other
+- [ ] implement forgiving selector list https://www.w3.org/TR/selectors-4/#forgiving-selector
+- [ ] css modules
+  - [ ] parse
+  - [ ] export as javascript objects, no rendering
+  - [ ] multiple expositions
+  - [ ] :global and :local switches
+  - [ ] naming pattern
+    - [ ] [name] - The base name of the file, without the extension.
+    - [ ] [hash] - A hash of the full file path.
+    - [ ] [local] - The original class name or identifier.
+
 ## v0.2.0
 
 - [x] cancellable parser promise using abortSignal

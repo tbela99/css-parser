@@ -195,7 +195,6 @@ class PropertyMap {
         }
         if (!isShorthand || requiredCount < this.requiredCount) {
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
-                // console.debug(...this.declarations.values());
                 const removeDefaults = (declaration) => {
                     // const dec: AstDeclaration = {...declaration};
                     const config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
@@ -222,13 +221,24 @@ class PropertyMap {
                     }
                     return acc;
                 }, []);
-                const filtered = values.map(removeDefaults).filter((x) => x.val.length > 0);
+                let isImportant = false;
+                const filtered = values.map(removeDefaults).filter((x) => x.val.filter((t) => {
+                    if (t.typ == EnumToken.ImportantTokenType) {
+                        isImportant = true;
+                    }
+                    return ![EnumToken.WhitespaceTokenType, EnumToken.ImportantTokenType].includes(t.typ);
+                }).length > 0);
                 if (filtered.length == 0 && this.config.default.length > 0) {
                     filtered.push({
                         typ: EnumToken.DeclarationNodeType,
                         nam: this.config.shorthand,
                         val: parseString(this.config.default[0])
                     });
+                    if (isImportant) {
+                        filtered[0].val.push({
+                            typ: EnumToken.ImportantTokenType
+                        });
+                    }
                 }
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
             }
@@ -399,7 +409,10 @@ class PropertyMap {
                     return acc;
                 }, []);
                 if (this.config.mapping != null) {
-                    const val = values.reduce((acc, curr) => acc + renderToken(curr, { removeComments: true, minify: true }), '');
+                    const val = values.reduce((acc, curr) => acc + renderToken(curr, {
+                        removeComments: true,
+                        minify: true
+                    }), '');
                     if (val in this.config.mapping) {
                         values.length = 0;
                         values.push({

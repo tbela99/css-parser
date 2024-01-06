@@ -6,6 +6,29 @@ import '../parse.js';
 import '../../renderer/utils/color.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
+function dedup(values) {
+    for (const value of values) {
+        let i = value.length;
+        while (i-- > 1) {
+            const t = value[i];
+            const k = value[i == 1 ? 0 : i % 2];
+            if (t.val == k.val && t.val == '0') {
+                if ((t.typ == EnumToken.NumberTokenType && isLength(k)) ||
+                    (k.typ == EnumToken.NumberTokenType && isLength(t)) ||
+                    (isLength(k) || isLength(t))) {
+                    value.splice(i, 1);
+                    continue;
+                }
+            }
+            if (eq(t, k)) {
+                value.splice(i, 1);
+                continue;
+            }
+            break;
+        }
+    }
+    return values;
+}
 class PropertySet {
     config;
     declarations;
@@ -100,7 +123,23 @@ class PropertySet {
         let iterator;
         const declarations = this.declarations;
         if (declarations.size < this.config.properties.length) {
-            iterator = declarations.values();
+            const values = [...declarations.values()];
+            if (this.isShortHand()) {
+                const val = values[0].val.reduce((acc, curr) => {
+                    if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
+                        acc.push(curr);
+                    }
+                    return acc;
+                }, []);
+                values[0].val = val.reduce((acc, curr) => {
+                    if (acc.length > 0) {
+                        acc.push({ typ: EnumToken.WhitespaceTokenType });
+                    }
+                    acc.push(curr);
+                    return acc;
+                }, []);
+            }
+            return values[Symbol.iterator]();
         }
         else {
             const values = [];
@@ -118,26 +157,7 @@ class PropertySet {
                     index++;
                 }
             });
-            for (const value of values) {
-                let i = value.length;
-                while (i-- > 1) {
-                    const t = value[i];
-                    const k = value[i == 1 ? 0 : i % 2];
-                    if (t.val == k.val && t.val == '0') {
-                        if ((t.typ == EnumToken.NumberTokenType && isLength(k)) ||
-                            (k.typ == EnumToken.NumberTokenType && isLength(t)) ||
-                            (isLength(k) || isLength(t))) {
-                            value.splice(i, 1);
-                            continue;
-                        }
-                    }
-                    if (eq(t, k)) {
-                        value.splice(i, 1);
-                        continue;
-                    }
-                    break;
-                }
-            }
+            dedup(values);
             iterator = [{
                     typ: EnumToken.DeclarationNodeType,
                     nam: this.config.shorthand,

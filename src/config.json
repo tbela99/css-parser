@@ -1,5 +1,27 @@
 {
  "properties": {
+  "gap": {
+   "shorthand": "gap",
+   "properties": [
+    "row-gap",
+    "column-gap"
+   ],
+   "types": [
+    "Length",
+    "Perc"
+   ],
+   "multiple": false,
+   "separator": null,
+   "keywords": [
+    "normal"
+   ]
+  },
+  "row-gap": {
+   "shorthand": "gap"
+  },
+  "column-gap": {
+   "shorthand": "gap"
+  },
   "inset": {
    "shorthand": "inset",
    "properties": [
