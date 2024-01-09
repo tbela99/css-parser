@@ -21,7 +21,11 @@ class PropertyList {
         this.declarations = new Map;
     }
     set(nam, value) {
-        return this.add({ typ: EnumToken.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
+        return this.add({
+            typ: EnumToken.DeclarationNodeType,
+            nam,
+            val: Array.isArray(value) ? value : parseString(String(value))
+        });
     }
     add(declaration) {
         if (declaration.typ != EnumToken.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {

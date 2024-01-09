@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser for node and the browser",
-  "version": "0.2.0",
+  "version": "0.3.0-dev",
   "exports": {
     ".": "./dist/node/index.js",
     "./umd": "./dist/index-umd-web.js",
@@ -12,11 +12,11 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c;./build.sh dist/index.d.ts 'declare interface' 'declare type'",
-    "test": "web-test-runner \"test/**/*.web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.node.spec.js\"",
-    "test:cov": "c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/*.node.spec.js\"",
+    "test": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
+    "test:cov": "c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
     "test:web-cov": "web-test-runner --playwright --browsers chromium firefox webkit \"test/**/*.web.spec.js\" --node-resolve --root-dir=.  --coverage",
     "profile": "node --inspect-brk test/inspect.mjs",
-    "debug": "web-test-runner \"test/**/*.web.spec.js\" --manual --open --node-resolve --root-dir=."
+    "debug": "web-test-runner \"test/**/web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
   "repository": {
     "type": "git",

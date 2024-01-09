@@ -1,24 +1,15 @@
 import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
-import { EnumToken } from '../ast/types.js';
+import { EnumToken, funcLike } from '../ast/types.js';
 import { minify, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
+import { parseDeclaration } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/utils/color.js';
 import { tokenize } from './tokenize.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
-const funcLike = [
-    EnumToken.ParensTokenType,
-    EnumToken.FunctionTokenType,
-    EnumToken.UrlFunctionTokenType,
-    EnumToken.StartParensTokenType,
-    EnumToken.ImageFunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.TimingFunctionTokenType
-];
 const BadTokensTypes = [
     EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
@@ -351,19 +342,11 @@ async function doParse(iterator, options = {}) {
                         // @ts-ignore
                         val: value
                     };
-                    while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
-                        node.val.shift();
+                    const result = parseDeclaration(node, errors, src, position);
+                    if (result != null) {
+                        // @ts-ignore
+                        context.chi.push(node);
                     }
-                    if (node.val.length == 0) {
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid declaration',
-                            location: { src, ...position }
-                        });
-                        return null;
-                    }
-                    // @ts-ignore
-                    context.chi.push(node);
                     return null;
                 }
             }
@@ -892,6 +875,10 @@ function parseTokens(tokens, options = {}) {
                         delete value.val;
                     }
                 }
+            }
+            else if (t.typ == EnumToken.FunctionTokenType && ['minmax', 'fit-content', 'repeat'].includes(t.val)) {
+                // @ts-ignore
+                t.typ = EnumToken.GridTemplateFuncTokenType;
             }
             else if (t.typ == EnumToken.StartParensTokenType) {
                 // @ts-ignore

@@ -35,13 +35,14 @@ function splitPath(result) {
             parts[parts.length - 1] += chr;
         }
     }
-    let k = parts.length;
-    while (k--) {
+    let k = -1;
+    while (++k < parts.length) {
         if (parts[k] == '.') {
-            parts.splice(k, 1);
+            parts.splice(k--, 1);
         }
         else if (parts[k] == '..') {
             parts.splice(k - 1, 2);
+            k -= 2;
         }
     }
     return { parts, i };

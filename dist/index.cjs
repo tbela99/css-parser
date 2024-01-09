@@ -76,6 +76,8 @@ exports.EnumToken = void 0;
     EnumToken[EnumToken["MatchExpressionTokenType"] = 66] = "MatchExpressionTokenType";
     EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 67] = "NameSpaceAttributeTokenType";
     EnumToken[EnumToken["FractionTokenType"] = 68] = "FractionTokenType";
+    EnumToken[EnumToken["IdenListTokenType"] = 69] = "IdenListTokenType";
+    EnumToken[EnumToken["GridTemplateFuncTokenType"] = 70] = "GridTemplateFuncTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -94,13 +96,26 @@ exports.EnumToken = void 0;
     EnumToken[EnumToken["Frequency"] = 26] = "Frequency";
     EnumToken[EnumToken["Resolution"] = 27] = "Resolution";
     EnumToken[EnumToken["Whitespace"] = 36] = "Whitespace";
+    EnumToken[EnumToken["IdenList"] = 69] = "IdenList";
     EnumToken[EnumToken["DashedIden"] = 8] = "DashedIden";
+    EnumToken[EnumToken["GridTemplateFunc"] = 70] = "GridTemplateFunc";
     EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
     EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
     EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(exports.EnumToken || (exports.EnumToken = {}));
+const funcLike = [
+    exports.EnumToken.ParensTokenType,
+    exports.EnumToken.FunctionTokenType,
+    exports.EnumToken.UrlFunctionTokenType,
+    exports.EnumToken.StartParensTokenType,
+    exports.EnumToken.ImageFunctionTokenType,
+    exports.EnumToken.TimingFunctionTokenType,
+    exports.EnumToken.TimingFunctionTokenType,
+    exports.EnumToken.PseudoClassFuncTokenType,
+    exports.EnumToken.GridTemplateFuncTokenType
+];
 
 // name to color
 const COLORS_NAMES = Object.seal({
@@ -965,9 +980,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.FunctionTokenType:
         case exports.EnumToken.UrlFunctionTokenType:
         case exports.EnumToken.ImageFunctionTokenType:
-        case exports.EnumToken.PseudoClassFuncTokenType:
         case exports.EnumToken.TimingFunctionTokenType:
+        case exports.EnumToken.PseudoClassFuncTokenType:
         case exports.EnumToken.TimelineFunctionTokenType:
+        case exports.EnumToken.GridTemplateFuncTokenType:
             if (token.typ == exports.EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
                 token.chi.length == 1 &&
@@ -1030,6 +1046,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.ImportantTokenType:
             return '!important';
         case exports.EnumToken.AttrTokenType:
+        case exports.EnumToken.IdenListTokenType:
             return '[' + token.chi.reduce(reducer, '') + ']';
         case exports.EnumToken.TimeTokenType:
         case exports.EnumToken.AngleTokenType:
@@ -1095,6 +1112,17 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return '0x';
                 }
                 return '0';
+            }
+            if (token.typ == exports.EnumToken.TimeTokenType) {
+                if (unit == 'ms') {
+                    // @ts-ignore
+                    const v = reduceNumber(val / 1000);
+                    if (v.length + 1 <= val.length) {
+                        return v + 's';
+                    }
+                    return val + 'ms';
+                }
+                return val + 's';
             }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case exports.EnumToken.PercentageTokenType:
@@ -1666,6 +1694,241 @@ var properties = {
 	}
 };
 var map = {
+	grid: {
+		shorthand: "grid",
+		pattern: "grid-auto-columns grid-auto-flow grid-auto-rows grid-template-areas grid-template-columns grid-template-rows",
+		keywords: [
+			"0",
+			"row",
+			"none",
+			"auto",
+			"normal"
+		],
+		"default": [
+		],
+		properties: {
+			"grid-template-rows": {
+				keywords: [
+					"none",
+					"auto",
+					"masonry",
+					"subgrid",
+					"min-content",
+					"max-content"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Length",
+					"Perc",
+					"IdenList",
+					"GridTemplateFunc"
+				]
+			},
+			"grid-template-columns": {
+				keywords: [
+					"none",
+					"auto",
+					"masonry",
+					"subgrid",
+					"min-content",
+					"max-content"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Length",
+					"Perc",
+					"IdenList",
+					"GridTemplateFunc"
+				]
+			},
+			"grid-template-areas": {
+				keywords: [
+					"none"
+				],
+				"default": [
+				],
+				types: [
+					"String"
+				]
+			}
+		}
+	},
+	"grid-template-rows": {
+		shorthand: "grid"
+	},
+	"grid-template-columns": {
+		shorthand: "grid"
+	},
+	"grid-template-areas": {
+		shorthand: "grid"
+	},
+	container: {
+		shorthand: "container",
+		pattern: "container-name container-type",
+		keywords: [
+		],
+		"default": [
+		],
+		properties: {
+			"container-name": {
+				required: true,
+				multiple: true,
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Iden",
+					"DashedIden"
+				]
+			},
+			"container-type": {
+				previous: "container-name",
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				keywords: [
+					"size",
+					"inline-size",
+					"normal"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"container-name": {
+		shorthand: "container"
+	},
+	"container-type": {
+		shorthand: "container"
+	},
+	"column-rule": {
+		shorthand: "column-rule",
+		pattern: "column-rule-color column-rule-style column-rule-width",
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"none",
+			"medium",
+			"currentcolor"
+		],
+		mapping: {
+			none: "0",
+			hidden: "0"
+		},
+		properties: {
+			"column-rule-color": {
+				keywords: [
+					"transparent",
+					"currentcolor"
+				],
+				"default": [
+					"currentcolor"
+				],
+				types: [
+					"Color"
+				]
+			},
+			"column-rule-style": {
+				keywords: [
+					"none",
+					"hidden",
+					"dotted",
+					"dashed",
+					"solid",
+					"double",
+					"groove",
+					"ridge",
+					"inset",
+					"outset"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+				]
+			},
+			"column-rule-width": {
+				keywords: [
+					"thin",
+					"medium",
+					"thick"
+				],
+				"default": [
+					"medium"
+				],
+				types: [
+					"Length"
+				],
+				mapping: {
+					none: "0",
+					hidden: "0"
+				}
+			}
+		}
+	},
+	"column-rule-color": {
+		shorthand: "column-rule"
+	},
+	"column-rule-style": {
+		shorthand: "column-rule"
+	},
+	"column-rule-width": {
+		shorthand: "column-rule"
+	},
+	columns: {
+		shorthand: "columns",
+		pattern: "column-count column-width",
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"auto",
+			"auto auto"
+		],
+		properties: {
+			"column-count": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"column-width": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Length"
+				]
+			}
+		}
+	},
+	"column-count": {
+		shorthand: "columns"
+	},
+	"column-width": {
+		shorthand: "columns"
+	},
 	transition: {
 		shorthand: "transition",
 		multiple: true,
@@ -2689,6 +2952,64 @@ function matchType(val, properties) {
     return false;
 }
 
+function parseDeclaration(node, errors, src, position) {
+    while (node.val[0]?.typ == exports.EnumToken.WhitespaceTokenType) {
+        node.val.shift();
+    }
+    if (node.val.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
+        errors.push({
+            action: 'drop',
+            message: 'doParse: invalid declaration',
+            location: { src, ...position }
+        });
+        return null;
+    }
+    for (const { value: val, parent } of walkValues(node.val, node)) {
+        if (val.typ == exports.EnumToken.AttrTokenType && val.chi.every((t) => [exports.EnumToken.IdenTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ))) {
+            // @ts-ignore
+            val.typ = exports.EnumToken.IdenListTokenType;
+        }
+        else if (val.typ == exports.EnumToken.StringTokenType && (node.nam == 'grid' || node.nam == 'grid-template-areas' || node.nam == 'grid-template-rows' || node.nam == 'grid-template-columns')) {
+            val.val = val.val.at(0) + parseGridTemplate(val.val.slice(1, -1)) + val.val.at(-1);
+            // @ts-ignore
+            const array = parent?.chi ?? node.val;
+            const index = array.indexOf(val);
+            if (index > 0 && array[index - 1].typ == exports.EnumToken.WhitespaceTokenType) {
+                array.splice(index - 1, 1);
+            }
+        }
+    }
+    return node;
+}
+function parseGridTemplate(template) {
+    let result = '';
+    let buffer = '';
+    for (let i = 0; i < template.length; i++) {
+        const char = template[i];
+        if (isWhiteSpace(char.codePointAt(0))) {
+            while (i + 1 < template.length && isWhiteSpace(template[i + 1].codePointAt(0))) {
+                i++;
+            }
+            result += buffer + ' ';
+            buffer = '';
+        }
+        else if (char == '.') {
+            while (i + 1 < template.length && template[i + 1] == '.') {
+                i++;
+            }
+            if (isWhiteSpace((result.at(-1)?.codePointAt(0)))) {
+                result = result.slice(0, -1);
+            }
+            result += buffer + char;
+            buffer = '';
+        }
+        else {
+            buffer += char;
+        }
+    }
+    return buffer.length > 0 ? result + buffer : result;
+}
+
 function* tokenize(stream) {
     let ind = -1;
     let lin = 1;
@@ -3219,16 +3540,6 @@ function* tokenize(stream) {
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [exports.EnumToken.CommentTokenType, exports.EnumToken.GtTokenType, exports.EnumToken.GteTokenType, exports.EnumToken.LtTokenType, exports.EnumToken.LteTokenType, exports.EnumToken.ColumnCombinatorTokenType];
-const funcLike = [
-    exports.EnumToken.ParensTokenType,
-    exports.EnumToken.FunctionTokenType,
-    exports.EnumToken.UrlFunctionTokenType,
-    exports.EnumToken.StartParensTokenType,
-    exports.EnumToken.ImageFunctionTokenType,
-    exports.EnumToken.PseudoClassFuncTokenType,
-    exports.EnumToken.TimingFunctionTokenType,
-    exports.EnumToken.TimingFunctionTokenType
-];
 const BadTokensTypes = [
     exports.EnumToken.BadCommentTokenType,
     exports.EnumToken.BadCdoTokenType,
@@ -3561,19 +3872,11 @@ async function doParse(iterator, options = {}) {
                         // @ts-ignore
                         val: value
                     };
-                    while (node.val[0]?.typ == exports.EnumToken.WhitespaceTokenType) {
-                        node.val.shift();
+                    const result = parseDeclaration(node, errors, src, position);
+                    if (result != null) {
+                        // @ts-ignore
+                        context.chi.push(node);
                     }
-                    if (node.val.length == 0) {
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid declaration',
-                            location: { src, ...position }
-                        });
-                        return null;
-                    }
-                    // @ts-ignore
-                    context.chi.push(node);
                     return null;
                 }
             }
@@ -4103,6 +4406,10 @@ function parseTokens(tokens, options = {}) {
                     }
                 }
             }
+            else if (t.typ == exports.EnumToken.FunctionTokenType && ['minmax', 'fit-content', 'repeat'].includes(t.val)) {
+                // @ts-ignore
+                t.typ = exports.EnumToken.GridTemplateFuncTokenType;
+            }
             else if (t.typ == exports.EnumToken.StartParensTokenType) {
                 // @ts-ignore
                 t.typ = exports.EnumToken.ParensTokenType;
@@ -4262,16 +4569,29 @@ function* walk(node, filter) {
         }
     }
 }
-function* walkValues(values) {
+function* walkValues(values, root = null, filter) {
     const stack = values.slice();
     const weakMap = new WeakMap;
     let value;
     while (stack.length > 0) {
         value = stack.shift();
+        let option = null;
+        if (filter != null) {
+            option = filter(value);
+            if (option === 'ignore') {
+                continue;
+            }
+            if (option === 'stop') {
+                break;
+            }
+        }
         // @ts-ignore
-        yield { value, parent: weakMap.get(value) };
-        if ('chi' in value) {
-            for (const child of value.chi) {
+        if (option !== 'children') {
+            // @ts-ignore
+            yield { value, parent: weakMap.get(value), root };
+        }
+        if (option !== 'ignore-children' && 'chi' in value) {
+            for (const child of value.chi.slice()) {
                 weakMap.set(child, value);
             }
             stack.unshift(...value.chi);
@@ -4474,58 +4794,6 @@ class IterableWeakSet {
             else {
                 this.#set.delete(ref);
             }
-        }
-    }
-}
-
-class IterableWeakMap {
-    #map;
-    #set;
-    constructor(iterable) {
-        this.#map = new WeakMap;
-        this.#set = new Set;
-        if (iterable) {
-            for (const [key, value] of iterable) {
-                const ref = new WeakRef(key);
-                this.#set.add(ref);
-                this.#map.set(key, value);
-            }
-        }
-    }
-    has(key) {
-        return this.#map.has(key);
-    }
-    set(key, value) {
-        if (!this.#map.has(key)) {
-            this.#set.add(new WeakRef(key));
-        }
-        this.#map.set(key, value);
-        return this;
-    }
-    get(key) {
-        return this.#map.get(key);
-    }
-    delete(key) {
-        if (this.#map.has(key)) {
-            for (const ref of this.#set) {
-                if (ref.deref() === key) {
-                    this.#set.delete(ref);
-                    break;
-                }
-            }
-            return this.#map.delete(key);
-        }
-        return false;
-    }
-    *[Symbol.iterator]() {
-        for (const ref of new Set(this.#set)) {
-            const key = ref.deref();
-            if (key == null) {
-                this.#set.delete(ref);
-                continue;
-            }
-            // @ts-ignore
-            yield [key, this.#map.get(key)];
         }
     }
 }
@@ -4842,7 +5110,7 @@ class PropertySet {
     }
 }
 
-const cache = new IterableWeakMap();
+// const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
 const propertiesConfig = getConfig();
 class PropertyMap {
     config;
@@ -5030,12 +5298,19 @@ class PropertyMap {
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
                 const removeDefaults = (declaration) => {
                     // const dec: AstDeclaration = {...declaration};
-                    const config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                    let config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                    if (config == null && declaration.nam in propertiesConfig.properties) {
+                        // @ts-ignore
+                        const shorthand = propertiesConfig.properties[declaration.nam].shorthand;
+                        // @ts-ignore
+                        config = propertiesConfig.properties[shorthand];
+                    }
+                    const cache = new Map();
                     declaration.val = declaration.val.filter((val) => {
                         if (!cache.has(val)) {
                             cache.set(val, renderToken(val, { minify: true }));
                         }
-                        return !config.default.includes(cache.get(val));
+                        return !config?.default?.includes(cache.get(val));
                     })
                         .filter((val, index, array) => !(index > 0 &&
                         val.typ == exports.EnumToken.WhitespaceTokenType &&
@@ -5152,6 +5427,7 @@ class PropertyMap {
                 iterable = this.declarations.values();
             }
             else {
+                // let hasRequired: boolean = Object.entries(tokens).some(v => v.filter(t => t.typ != EnumToken.CommentTokenType).length > 0);
                 let values = Object.entries(tokens).reduce((acc, curr) => {
                     const props = this.config.properties[curr[0]];
                     for (let i = 0; i < curr[1].length; i++) {
@@ -5167,7 +5443,9 @@ class PropertyMap {
                         }, []);
                         // @todo remove renderToken call
                         if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
-                            continue;
+                            if (!this.config.properties[curr[0]].required) {
+                                continue;
+                            }
                         }
                         // remove default values
                         let doFilterDefault = true;
@@ -5181,13 +5459,36 @@ class PropertyMap {
                             }
                         }
                         // remove default values
-                        values = values.filter((val) => {
+                        const filtered = values.filter((val) => {
                             if (val.typ == exports.EnumToken.WhitespaceTokenType || val.typ == exports.EnumToken.CommentTokenType) {
                                 return false;
                             }
                             return !doFilterDefault || !(val.typ == exports.EnumToken.IdenTokenType && props.default.includes(val.val));
                         });
+                        if (filtered.length > 0 || !(this.requiredCount == requiredCount && this.config.properties[curr[0]].required)) {
+                            values = filtered;
+                        }
                         if (values.length > 0) {
+                            // if (this.requiredCount == requiredCount) {
+                            //
+                            //     // @ts-ignore
+                            //     if (values.filter((val: Token) => this.config.properties[curr[0]].required).length == 0) {
+                            //
+                            //         for (const [propertyName, properties] of Object.entries(this.config.properties)) {
+                            //
+                            //             if (this.declarations.has(propertyName) && properties.required) {
+                            //
+                            //                 const value = (<AstDeclaration>this.declarations.get(propertyName)).val;
+                            //
+                            //                 acc[i].push(...value);
+                            //
+                            //                 // const values: Token[] = [];
+                            //                 // @ts-ignore
+                            //                 // values.push(<Token>{typ: EnumToken.IdenTokenType, val,  propertyName});
+                            //             }
+                            //         }
+                            //     }
+                            // }
                             if ('mapping' in props) {
                                 // @ts-ignore
                                 if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
@@ -5313,7 +5614,11 @@ class PropertyList {
         this.declarations = new Map;
     }
     set(nam, value) {
-        return this.add({ typ: exports.EnumToken.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value)) });
+        return this.add({
+            typ: exports.EnumToken.DeclarationNodeType,
+            nam,
+            val: Array.isArray(value) ? value : parseString(String(value))
+        });
     }
     add(declaration) {
         if (declaration.typ != exports.EnumToken.DeclarationNodeType || !this.options.removeDuplicateDeclarations) {
@@ -6673,13 +6978,14 @@ function splitPath(result) {
             parts[parts.length - 1] += chr;
         }
     }
-    let k = parts.length;
-    while (k--) {
+    let k = -1;
+    while (++k < parts.length) {
         if (parts[k] == '.') {
-            parts.splice(k, 1);
+            parts.splice(k--, 1);
         }
         else if (parts[k] == '..') {
             parts.splice(k - 1, 2);
+            k -= 2;
         }
     }
     return { parts, i };

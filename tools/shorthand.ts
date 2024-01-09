@@ -49,6 +49,151 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
     [
         {
+            shorthand: 'grid',
+            pattern: `grid-auto-columns grid-auto-flow grid-auto-rows grid-template-areas grid-template-columns grid-template-rows`,
+            keywords: ['0', 'row', 'none', 'auto', 'normal'],
+            default: []
+        },
+        [
+            {
+                shorthand: 'grid-template-rows',
+                properties: {
+
+                    keywords: ['none', 'auto', 'masonry', 'subgrid', 'min-content', 'max-content'],
+                    default: ['none'],
+                    types: ['Length', 'Perc', 'IdenList', 'GridTemplateFunc']
+                }
+            },
+            {
+                shorthand: 'grid-template-columns',
+                properties: {
+
+                    keywords: ['none', 'auto', 'masonry', 'subgrid', 'min-content', 'max-content'],
+                    default: ['none'],
+                    types: ['Length', 'Perc', 'IdenList', 'GridTemplateFunc']
+                }
+            },
+            {
+                shorthand: 'grid-template-areas',
+                properties: {
+
+                    keywords: ['none'],
+                    default: [],
+                    types: ['String']
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'container',
+            pattern: 'container-name container-type',
+            keywords: [],
+            default: []
+        },
+        [
+            {
+                shorthand: 'container-name',
+                properties: {
+
+                    required: true,
+                    multiple: true,
+                    keywords: ['none'],
+                    default: ['none'],
+                    types: ['Iden', 'DashedIden']
+                }
+            },
+            {
+                shorthand: 'container-type',
+                properties: {
+
+                    previous: 'container-name',
+                    prefix: {
+                        typ: 'Literal',
+                        val: '/'
+                    },
+                    keywords: ['size', 'inline-size', 'normal'],
+                    default: ['normal'],
+                    types: []
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'column-rule',
+            pattern: 'column-rule-color column-rule-style column-rule-width',
+            keywords: ['auto'],
+            default: ['none', 'medium', 'currentcolor'],
+            mapping: {
+                none: '0',
+                hidden: '0'
+            }
+        },
+        [
+            {
+                shorthand: 'column-rule-color',
+                properties: {
+
+                    keywords: ['transparent', 'currentcolor'],
+                    default: ['currentcolor'],
+                    types: ['Color']
+                }
+            },
+            {
+                shorthand: 'column-rule-style',
+                properties: {
+
+                    keywords: ['none', 'hidden', 'dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset'],
+                    default: ['none'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'column-rule-width',
+                properties: {
+
+                    keywords: ['thin', 'medium', 'thick'],
+                    default: ['medium'],
+                    types: ['Length'],
+                    mapping: {
+                        none: '0',
+                        hidden: '0'
+                    }
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'columns',
+            pattern: 'column-count column-width',
+            keywords: ['auto'],
+            default: ['auto', 'auto auto'],
+        },
+        [
+            {
+                shorthand: 'column-count',
+                properties: {
+
+                    keywords: ['auto'],
+                    default: ['auto'],
+                    types: ['Number']
+                }
+            },
+            {
+                shorthand: 'column-width',
+                properties: {
+
+                    keywords: ['auto'],
+                    default: ['auto'],
+                    types: ['Length']
+                }
+            }
+        ]
+    ],
+    [
+        {
             shorthand: 'transition',
             multiple: true,
             separator: ',',
@@ -572,7 +717,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
         ]
     ]
     // @ts-ignore
-]).reduce((acc: ShorthandMapType, data) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
+]).reduce((acc: ShorthandMapType, data: ShorthandMapType[]) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
 
 /*
 

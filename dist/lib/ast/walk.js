@@ -27,16 +27,29 @@ function* walk(node, filter) {
         }
     }
 }
-function* walkValues(values) {
+function* walkValues(values, root = null, filter) {
     const stack = values.slice();
     const weakMap = new WeakMap;
     let value;
     while (stack.length > 0) {
         value = stack.shift();
+        let option = null;
+        if (filter != null) {
+            option = filter(value);
+            if (option === 'ignore') {
+                continue;
+            }
+            if (option === 'stop') {
+                break;
+            }
+        }
         // @ts-ignore
-        yield { value, parent: weakMap.get(value) };
-        if ('chi' in value) {
-            for (const child of value.chi) {
+        if (option !== 'children') {
+            // @ts-ignore
+            yield { value, parent: weakMap.get(value), root };
+        }
+        if (option !== 'ignore-children' && 'chi' in value) {
+            for (const child of value.chi.slice()) {
                 weakMap.set(child, value);
             }
             stack.unshift(...value.chi);

@@ -8,7 +8,7 @@ import {EnumToken} from "../../ast";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits = [
+const dimensionUnits: string[] = [
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
     'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',

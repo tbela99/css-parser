@@ -4,8 +4,9 @@
 
 ### shorthands
 
-- [ ] column-rule
-- [ ] columns
+- [x] column-rule
+- [x] columns
+- [x] container
 - [ ] contain-intrinsic-size
 - [ ] flex
 - [ ] flex-flow

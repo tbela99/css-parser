@@ -1,11 +1,9 @@
-/* generate from test/specs/block.spec.ts */
-import {expect as f} from '../../node_modules/@esm-bundle/chai/esm/chai.js';
-import {transform, render} from '../../dist/node/index.js';
+export function run(describe, expect, transform, parse, render, dirname, readFile) {
 
-describe('Inline css variable', function () {
+    describe('Inline css variable', function () {
 
-    it('inline variable #1', function () {
-        return transform(`
+        it('inline variable #1', function () {
+            return transform(`
 :root {
     --animate-duration: 1s;
     --animate-delay: 1s;
@@ -54,7 +52,7 @@ describe('Inline css variable', function () {
     animation-delay: calc(var(--animate-delay)*4)
 }
 
-`, {inlineCssVariables: true}).then(result => f(render(result.ast, {minify: false}).code).equals(`.animate__animated.animate__repeat-1 {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.animate__animated.animate__repeat-1 {
  -webkit-animation-iteration-count: 1;
  animation-iteration-count: 1
 }
@@ -78,5 +76,7 @@ describe('Inline css variable', function () {
  -webkit-animation-delay: 4s;
  animation-delay: 4s
 }`));
+        });
+
     });
-});
+}

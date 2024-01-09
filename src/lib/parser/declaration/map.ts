@@ -15,8 +15,7 @@ import {PropertySet} from "./set";
 import {EnumToken} from "../../ast";
 import {IterableWeakMap} from "../../iterable";
 
-
-const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
+// const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
 const propertiesConfig: PropertiesConfig = getConfig();
 
 export class PropertyMap {
@@ -285,7 +284,18 @@ export class PropertyMap {
 
                     // const dec: AstDeclaration = {...declaration};
 
-                    const config: ShorthandMapType | PropertyMapType = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                    let config: ShorthandMapType | PropertyMapType = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+
+                    if (config == null && declaration.nam in propertiesConfig.properties) {
+
+                        // @ts-ignore
+                        const shorthand: string = <string>propertiesConfig.properties[declaration.nam].shorthand;
+
+                        // @ts-ignore
+                        config = <ShorthandMapType | PropertyMapType> propertiesConfig.properties[shorthand];
+                    }
+
+                    const cache: Map<Token, string> = new Map();
 
                     declaration.val = declaration.val.filter((val: Token): boolean => {
 
@@ -294,7 +304,7 @@ export class PropertyMap {
                             cache.set(val, renderToken(val, {minify: true}));
                         }
 
-                        return !config.default.includes(<string>cache.get(val));
+                        return !config?.default?.includes(<string>cache.get(val));
                     })
                         .filter((val: Token, index: number, array: Token[]): boolean => !(
                             index > 0 &&
@@ -465,9 +475,13 @@ export class PropertyMap {
                 iterable = this.declarations.values();
             } else {
 
+                // let hasRequired: boolean = Object.entries(tokens).some(v => v.filter(t => t.typ != EnumToken.CommentTokenType).length > 0);
+
                 let values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
 
                     const props: PropertyMapType = this.config.properties[curr[0]];
+
+
 
                     for (let i = 0; i < curr[1].length; i++) {
 
@@ -492,7 +506,10 @@ export class PropertyMap {
                         // @todo remove renderToken call
                         if (props.default.includes(curr[1][i].reduce((acc: string, curr: Token): string => acc + renderToken(curr) + ' ', '').trimEnd())) {
 
-                            continue;
+                            if (!this.config.properties[curr[0]].required) {
+
+                                continue;
+                            }
                         }
 
                         // remove default values
@@ -512,7 +529,7 @@ export class PropertyMap {
                         }
 
                         // remove default values
-                        values = values.filter((val: Token): boolean => {
+                        const filtered = values.filter((val: Token): boolean => {
 
                             if (val.typ == EnumToken.WhitespaceTokenType || val.typ == EnumToken.CommentTokenType) {
 
@@ -522,7 +539,34 @@ export class PropertyMap {
                             return !doFilterDefault || !(val.typ == EnumToken.IdenTokenType && props.default.includes(val.val));
                         });
 
+                        if (filtered.length > 0 || !(this.requiredCount == requiredCount && this.config.properties[curr[0]].required)) {
+
+                            values = filtered;
+                        }
+
+
                         if (values.length > 0) {
+
+                            // if (this.requiredCount == requiredCount) {
+                            //
+                            //     // @ts-ignore
+                            //     if (values.filter((val: Token) => this.config.properties[curr[0]].required).length == 0) {
+                            //
+                            //         for (const [propertyName, properties] of Object.entries(this.config.properties)) {
+                            //
+                            //             if (this.declarations.has(propertyName) && properties.required) {
+                            //
+                            //                 const value = (<AstDeclaration>this.declarations.get(propertyName)).val;
+                            //
+                            //                 acc[i].push(...value);
+                            //
+                            //                 // const values: Token[] = [];
+                            //                 // @ts-ignore
+                            //                 // values.push(<Token>{typ: EnumToken.IdenTokenType, val,  propertyName});
+                            //             }
+                            //         }
+                            //     }
+                            // }
 
                             if ('mapping' in props) {
 

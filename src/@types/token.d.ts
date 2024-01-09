@@ -13,9 +13,16 @@ export declare interface LiteralToken extends BaseToken {
     val: string;
 }
 
+
 export declare interface IdentToken extends BaseToken {
 
     typ: EnumToken.IdenTokenType,
+    val: string;
+}
+
+export declare interface IdentListToken extends BaseToken {
+
+    typ: EnumToken.IdenListTokenType,
     val: string;
 }
 
@@ -65,6 +72,13 @@ export declare interface FunctionToken extends BaseToken {
     chi: Token[];
 }
 
+export declare interface GridTemplateFuncToken extends BaseToken {
+
+    typ: EnumToken.GridTemplateFuncTokenType,
+    val: string;
+    chi: Token[];
+}
+
 export declare interface FunctionURLToken extends BaseToken {
 
     typ: EnumToken.UrlFunctionTokenType,
@@ -85,6 +99,7 @@ export declare interface TimingFunctionToken extends BaseToken {
     val: string;
     chi: Token[];
 }
+
 export declare interface TimelineFunctionToken extends BaseToken {
 
     typ: EnumToken.TimelineFunctionTokenType;
@@ -414,6 +429,7 @@ export declare type TokenType = EnumToken;
 export declare type Token =
     LiteralToken
     | IdentToken
+    | IdentListToken
     | DashedIdentToken
     | CommaToken
     | ColonToken
@@ -427,6 +443,7 @@ export declare type Token =
     | TimingFunctionToken
     | TimelineFunctionToken
     | FunctionToken
+    | GridTemplateFuncToken
     | DimensionToken
     | LengthToken
     |

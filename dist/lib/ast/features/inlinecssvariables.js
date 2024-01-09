@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
-import { IterableWeakSet } from '../../iterable/set.js';
+import { IterableWeakSet } from '../../iterable/weakset.js';
 
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {

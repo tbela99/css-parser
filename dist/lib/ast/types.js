@@ -72,6 +72,8 @@ var EnumToken;
     EnumToken[EnumToken["MatchExpressionTokenType"] = 66] = "MatchExpressionTokenType";
     EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 67] = "NameSpaceAttributeTokenType";
     EnumToken[EnumToken["FractionTokenType"] = 68] = "FractionTokenType";
+    EnumToken[EnumToken["IdenListTokenType"] = 69] = "IdenListTokenType";
+    EnumToken[EnumToken["GridTemplateFuncTokenType"] = 70] = "GridTemplateFuncTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -90,12 +92,25 @@ var EnumToken;
     EnumToken[EnumToken["Frequency"] = 26] = "Frequency";
     EnumToken[EnumToken["Resolution"] = 27] = "Resolution";
     EnumToken[EnumToken["Whitespace"] = 36] = "Whitespace";
+    EnumToken[EnumToken["IdenList"] = 69] = "IdenList";
     EnumToken[EnumToken["DashedIden"] = 8] = "DashedIden";
+    EnumToken[EnumToken["GridTemplateFunc"] = 70] = "GridTemplateFunc";
     EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
     EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
     EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
+const funcLike = [
+    EnumToken.ParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType,
+    EnumToken.GridTemplateFuncTokenType
+];
 
-export { EnumToken };
+export { EnumToken, funcLike };

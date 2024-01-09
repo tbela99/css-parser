@@ -3,7 +3,7 @@ import { reduceNumber } from '../../renderer/render.js';
 import { walkValues } from '../walk.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
 import { compute } from './utils/math.js';
-import { IterableWeakSet } from '../../iterable/set.js';
+import { IterableWeakSet } from '../../iterable/weakset.js';
 
 class ComputeCalcExpression extends MinifyFeature {
     static get ordering() {

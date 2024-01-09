@@ -254,6 +254,241 @@ var properties = {
 	}
 };
 var map = {
+	grid: {
+		shorthand: "grid",
+		pattern: "grid-auto-columns grid-auto-flow grid-auto-rows grid-template-areas grid-template-columns grid-template-rows",
+		keywords: [
+			"0",
+			"row",
+			"none",
+			"auto",
+			"normal"
+		],
+		"default": [
+		],
+		properties: {
+			"grid-template-rows": {
+				keywords: [
+					"none",
+					"auto",
+					"masonry",
+					"subgrid",
+					"min-content",
+					"max-content"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Length",
+					"Perc",
+					"IdenList",
+					"GridTemplateFunc"
+				]
+			},
+			"grid-template-columns": {
+				keywords: [
+					"none",
+					"auto",
+					"masonry",
+					"subgrid",
+					"min-content",
+					"max-content"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Length",
+					"Perc",
+					"IdenList",
+					"GridTemplateFunc"
+				]
+			},
+			"grid-template-areas": {
+				keywords: [
+					"none"
+				],
+				"default": [
+				],
+				types: [
+					"String"
+				]
+			}
+		}
+	},
+	"grid-template-rows": {
+		shorthand: "grid"
+	},
+	"grid-template-columns": {
+		shorthand: "grid"
+	},
+	"grid-template-areas": {
+		shorthand: "grid"
+	},
+	container: {
+		shorthand: "container",
+		pattern: "container-name container-type",
+		keywords: [
+		],
+		"default": [
+		],
+		properties: {
+			"container-name": {
+				required: true,
+				multiple: true,
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Iden",
+					"DashedIden"
+				]
+			},
+			"container-type": {
+				previous: "container-name",
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				keywords: [
+					"size",
+					"inline-size",
+					"normal"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"container-name": {
+		shorthand: "container"
+	},
+	"container-type": {
+		shorthand: "container"
+	},
+	"column-rule": {
+		shorthand: "column-rule",
+		pattern: "column-rule-color column-rule-style column-rule-width",
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"none",
+			"medium",
+			"currentcolor"
+		],
+		mapping: {
+			none: "0",
+			hidden: "0"
+		},
+		properties: {
+			"column-rule-color": {
+				keywords: [
+					"transparent",
+					"currentcolor"
+				],
+				"default": [
+					"currentcolor"
+				],
+				types: [
+					"Color"
+				]
+			},
+			"column-rule-style": {
+				keywords: [
+					"none",
+					"hidden",
+					"dotted",
+					"dashed",
+					"solid",
+					"double",
+					"groove",
+					"ridge",
+					"inset",
+					"outset"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+				]
+			},
+			"column-rule-width": {
+				keywords: [
+					"thin",
+					"medium",
+					"thick"
+				],
+				"default": [
+					"medium"
+				],
+				types: [
+					"Length"
+				],
+				mapping: {
+					none: "0",
+					hidden: "0"
+				}
+			}
+		}
+	},
+	"column-rule-color": {
+		shorthand: "column-rule"
+	},
+	"column-rule-style": {
+		shorthand: "column-rule"
+	},
+	"column-rule-width": {
+		shorthand: "column-rule"
+	},
+	columns: {
+		shorthand: "columns",
+		pattern: "column-count column-width",
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"auto",
+			"auto auto"
+		],
+		properties: {
+			"column-count": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"column-width": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Length"
+				]
+			}
+		}
+	},
+	"column-count": {
+		shorthand: "columns"
+	},
+	"column-width": {
+		shorthand: "columns"
+	},
 	transition: {
 		shorthand: "transition",
 		multiple: true,

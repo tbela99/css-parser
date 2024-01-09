@@ -449,9 +449,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
-        case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.TimingFunctionTokenType:
+        case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.TimelineFunctionTokenType:
+        case EnumToken.GridTemplateFuncTokenType:
 
             if (
                 token.typ == EnumToken.FunctionTokenType &&
@@ -542,6 +543,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return '!important';
 
         case EnumToken.AttrTokenType:
+        case EnumToken.IdenListTokenType:
 
             return '[' + (<AttrToken>token).chi.reduce(reducer, '') + ']';
 
@@ -645,6 +647,24 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 }
 
                 return '0';
+            }
+
+            if (token.typ == EnumToken.TimeTokenType) {
+
+                if (unit == 'ms') {
+
+                    // @ts-ignore
+                    const v: string = reduceNumber(val / 1000);
+
+                    if (v.length + 1 <= val.length) {
+
+                        return v + 's';
+                    }
+
+                    return val + 'ms';
+                }
+
+                return val + 's';
             }
 
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;

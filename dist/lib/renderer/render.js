@@ -285,9 +285,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
-        case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.TimingFunctionTokenType:
+        case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.TimelineFunctionTokenType:
+        case EnumToken.GridTemplateFuncTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
                 token.chi.length == 1 &&
@@ -350,6 +351,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ImportantTokenType:
             return '!important';
         case EnumToken.AttrTokenType:
+        case EnumToken.IdenListTokenType:
             return '[' + token.chi.reduce(reducer, '') + ']';
         case EnumToken.TimeTokenType:
         case EnumToken.AngleTokenType:
@@ -415,6 +417,17 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return '0x';
                 }
                 return '0';
+            }
+            if (token.typ == EnumToken.TimeTokenType) {
+                if (unit == 'ms') {
+                    // @ts-ignore
+                    const v = reduceNumber(val / 1000);
+                    if (v.length + 1 <= val.length) {
+                        return v + 's';
+                    }
+                    return val + 'ms';
+                }
+                return val + 's';
             }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case EnumToken.PercentageTokenType:

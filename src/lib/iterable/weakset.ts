@@ -8,7 +8,7 @@ export class IterableWeakSet<T> {
 
             for (const value of iterable) {
 
-                const ref = new WeakRef(value);
+                const ref: WeakRef<any> = new WeakRef(value);
 
                 this.#weakset.add(value);
                 this.#set.add(ref);

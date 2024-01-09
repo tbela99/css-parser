@@ -4,7 +4,6 @@ import { EnumToken } from '../types.js';
 import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/declaration/map.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
 
 class ComputeShorthand extends MinifyFeature {

@@ -1,3 +1,3 @@
 
-export * from './set';
+export * from './weakset';
 export * from './weakmap';
