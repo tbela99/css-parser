@@ -156,7 +156,7 @@ function evaluateExpression(token) {
     return doEvaluate(token.l, token.r, token.op);
 }
 function isScalarToken(token) {
-    return token.typ != EnumToken.BinaryExpressionTokenType && token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
+    return 'unit' in token || [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ);
 }
 /**
  *

@@ -1,13 +1,11 @@
-
-import * as tests from './code/index.js';
-import {transform, parse, render, dirname, resolve}from '../../dist/web/index.js';
-
+import {transform, parse, render, dirname, resolve} from '../../dist/web/index.js';
 import {expect} from "@esm-bundle/chai";
+import * as tests from './code/index.js';
+
 
 async function readFile(path) {
 
-    return fetch(path).
-    then(response => response.text())
+    return fetch(path).then(response => response.text())
 }
 
 //

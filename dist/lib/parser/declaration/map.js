@@ -8,7 +8,6 @@ import { getConfig } from '../utils/config.js';
 import { matchType } from '../utils/type.js';
 import { PropertySet } from './set.js';
 
-// const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
 const propertiesConfig = getConfig();
 class PropertyMap {
     config;
@@ -194,8 +193,8 @@ class PropertyMap {
         }
         if (!isShorthand || requiredCount < this.requiredCount) {
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
+                const cache = new Map();
                 const removeDefaults = (declaration) => {
-                    // const dec: AstDeclaration = {...declaration};
                     let config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
                     if (config == null && declaration.nam in propertiesConfig.properties) {
                         // @ts-ignore
@@ -203,11 +202,19 @@ class PropertyMap {
                         // @ts-ignore
                         config = propertiesConfig.properties[shorthand];
                     }
-                    const cache = new Map();
-                    declaration.val = declaration.val.filter((val) => {
-                        if (!cache.has(val)) {
-                            cache.set(val, renderToken(val, { minify: true }));
+                    declaration.val = declaration.val.map((t) => {
+                        if (!cache.has(t)) {
+                            cache.set(t, renderToken(t, { minify: true }));
                         }
+                        const value = cache.get(t);
+                        // @ts-ignore
+                        if (config?.mapping?.[value] != null) {
+                            // @ts-ignore
+                            t = parseString(config.mapping[value])[0];
+                            cache.set(t, renderToken(t, { minify: true }));
+                        }
+                        return t;
+                    }).filter((val) => {
                         return !config?.default?.includes(cache.get(val));
                     })
                         .filter((val, index, array) => !(index > 0 &&
@@ -325,7 +332,6 @@ class PropertyMap {
                 iterable = this.declarations.values();
             }
             else {
-                // let hasRequired: boolean = Object.entries(tokens).some(v => v.filter(t => t.typ != EnumToken.CommentTokenType).length > 0);
                 let values = Object.entries(tokens).reduce((acc, curr) => {
                     const props = this.config.properties[curr[0]];
                     for (let i = 0; i < curr[1].length; i++) {
@@ -367,26 +373,6 @@ class PropertyMap {
                             values = filtered;
                         }
                         if (values.length > 0) {
-                            // if (this.requiredCount == requiredCount) {
-                            //
-                            //     // @ts-ignore
-                            //     if (values.filter((val: Token) => this.config.properties[curr[0]].required).length == 0) {
-                            //
-                            //         for (const [propertyName, properties] of Object.entries(this.config.properties)) {
-                            //
-                            //             if (this.declarations.has(propertyName) && properties.required) {
-                            //
-                            //                 const value = (<AstDeclaration>this.declarations.get(propertyName)).val;
-                            //
-                            //                 acc[i].push(...value);
-                            //
-                            //                 // const values: Token[] = [];
-                            //                 // @ts-ignore
-                            //                 // values.push(<Token>{typ: EnumToken.IdenTokenType, val,  propertyName});
-                            //             }
-                            //         }
-                            //     }
-                            // }
                             if ('mapping' in props) {
                                 // @ts-ignore
                                 if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {

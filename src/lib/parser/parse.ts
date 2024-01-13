@@ -1,7 +1,7 @@
 import {
     isAtKeyword,
     isColor,
-    isDimension,
+    isDimension, isFlex,
     isFunction,
     isHash,
     isHexColor,
@@ -70,7 +70,7 @@ import {
     TokenizeResult,
     UnclosedStringToken,
     UrlToken,
-    WhitespaceToken
+    WhitespaceToken, FlexToken
 } from "../../@types";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -865,16 +865,23 @@ function getTokenType(val: string, hint?: EnumToken): Token {
         };
     }
 
-    if (isDimension(val)) {
-
-        return parseDimension(val);
-    }
-
     if (isPercentage(val)) {
         return <PercentageToken>{
             typ: EnumToken.PercentageTokenType,
             val: val.slice(0, -1)
         };
+    }
+
+    if (isFlex(val)) {
+        return <FlexToken>{
+            typ: EnumToken.FlexTokenType,
+            val: val.slice(0, -2)
+        };
+    }
+
+    if (isDimension(val)) {
+
+        return parseDimension(val);
     }
 
     const v = val.toLowerCase();
@@ -1238,27 +1245,31 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                 t.typ = EnumToken.ColorTokenType;
                 // @ts-ignore
                 t.kin = t.val;
+
+                t.chi = t.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ) && !(t.typ == EnumToken.LiteralTokenType && t.val == '/'));
+
+                // t.chi.length = 0;
                 // @ts-ignore
-                let m = t.chi.length;
+                // let m = t.chi.length;
 
-                while (m-- > 0) {
-                    // @ts-ignore
-                    if ([EnumToken.LiteralTokenType].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
-                        // @ts-ignore
-                        if (t.chi[m + 1]?.typ == EnumToken.WhitespaceTokenType) {
-
-                            // @ts-ignore
-                            t.chi.splice(m + 1, 1);
-                        }
-                        // @ts-ignore
-                        if (t.chi[m - 1]?.typ == EnumToken.WhitespaceTokenType) {
-
-                            // @ts-ignore
-                            t.chi.splice(m - 1, 1);
-                            m--;
-                        }
-                    }
-                }
+                // while (m-- > 0) {
+                //     // @ts-ignore
+                //     if ([EnumToken.IdenTokenType].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
+                //         // @ts-ignore
+                //         if (t.chi[m + 1]?.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //             // @ts-ignore
+                //             t.chi.splice(m + 1, 1);
+                //         }
+                //         // @ts-ignore
+                //         if (t.chi[m - 1]?.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //             // @ts-ignore
+                //             t.chi.splice(m - 1, 1);
+                //             m--;
+                //         }
+                //     }
+                // }
 
                 continue;
             }

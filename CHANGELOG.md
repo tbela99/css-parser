@@ -7,27 +7,16 @@
 - [x] column-rule
 - [x] columns
 - [x] container
-- [ ] contain-intrinsic-size
-- [ ] flex
-- [ ] flex-flow
+- [x] flex
+- [x] flex-flow
 - [x] gap
-- [ ] grid
-- [ ] grid-area
-- [ ] grid-column
-- [ ] grid-row
-- [ ] grid-template
 
 ### Other
 - [ ] implement forgiving selector list https://www.w3.org/TR/selectors-4/#forgiving-selector
-- [ ] css modules
-  - [ ] parse
-  - [ ] export as javascript objects, no rendering
-  - [ ] multiple expositions
-  - [ ] :global and :local switches
-  - [ ] naming pattern
-    - [ ] [name] - The base name of the file, without the extension.
-    - [ ] [hash] - A hash of the full file path.
-    - [ ] [local] - The original class name or identifier.
+- [ ] css relative color syntax https://www.w3.org/TR/css-color-5/#relative-colors
+  - [ ] rgb
+  - [ ] hsl
+  - [ ] hwb
 
 ## v0.2.0
 

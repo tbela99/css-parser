@@ -13,9 +13,7 @@ import {renderToken} from "../../renderer";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
 import {EnumToken} from "../../ast";
-import {IterableWeakMap} from "../../iterable";
 
-// const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
 const propertiesConfig: PropertiesConfig = getConfig();
 
 export class PropertyMap {
@@ -279,10 +277,9 @@ export class PropertyMap {
 
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
 
+                const cache: Map<Token, string> = new Map();
 
                 const removeDefaults = (declaration: AstDeclaration): AstDeclaration => {
-
-                    // const dec: AstDeclaration = {...declaration};
 
                     let config: ShorthandMapType | PropertyMapType = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
 
@@ -295,23 +292,34 @@ export class PropertyMap {
                         config = <ShorthandMapType | PropertyMapType> propertiesConfig.properties[shorthand];
                     }
 
-                    const cache: Map<Token, string> = new Map();
+                    declaration.val = declaration.val.map((t: Token): Token => {
 
-                    declaration.val = declaration.val.filter((val: Token): boolean => {
+                        if (!cache.has(t)) {
 
-                        if (!cache.has(val)) {
-
-                            cache.set(val, renderToken(val, {minify: true}));
+                            cache.set(t, renderToken(t, {minify: true}));
                         }
 
-                        return !config?.default?.includes(<string>cache.get(val));
+                        const value: string = <string> cache.get(t);
+
+                        // @ts-ignore
+                        if (config?.mapping?.[value] != null) {
+
+                            // @ts-ignore
+                            t = parseString(<string> config.mapping[value])[0];
+                            cache.set(t, renderToken(t, {minify: true}));
+                        }
+
+                        return t;
+
+                    }).filter((val: Token): boolean => {
+
+                        return !config?.default?.includes(<string> cache.get(val));
                     })
                         .filter((val: Token, index: number, array: Token[]): boolean => !(
                             index > 0 &&
                             val.typ == EnumToken.WhitespaceTokenType &&
                             array[index - 1].typ == EnumToken.WhitespaceTokenType
-                        ))
-                    ;
+                        ));
 
                     if (declaration.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
 
@@ -475,13 +483,9 @@ export class PropertyMap {
                 iterable = this.declarations.values();
             } else {
 
-                // let hasRequired: boolean = Object.entries(tokens).some(v => v.filter(t => t.typ != EnumToken.CommentTokenType).length > 0);
-
                 let values: Token[] = Object.entries(tokens).reduce((acc, curr) => {
 
                     const props: PropertyMapType = this.config.properties[curr[0]];
-
-
 
                     for (let i = 0; i < curr[1].length; i++) {
 
@@ -546,27 +550,6 @@ export class PropertyMap {
 
 
                         if (values.length > 0) {
-
-                            // if (this.requiredCount == requiredCount) {
-                            //
-                            //     // @ts-ignore
-                            //     if (values.filter((val: Token) => this.config.properties[curr[0]].required).length == 0) {
-                            //
-                            //         for (const [propertyName, properties] of Object.entries(this.config.properties)) {
-                            //
-                            //             if (this.declarations.has(propertyName) && properties.required) {
-                            //
-                            //                 const value = (<AstDeclaration>this.declarations.get(propertyName)).val;
-                            //
-                            //                 acc[i].push(...value);
-                            //
-                            //                 // const values: Token[] = [];
-                            //                 // @ts-ignore
-                            //                 // values.push(<Token>{typ: EnumToken.IdenTokenType, val,  propertyName});
-                            //             }
-                            //         }
-                            //     }
-                            // }
 
                             if ('mapping' in props) {
 

@@ -65,6 +65,12 @@ export declare interface PercentageToken extends BaseToken {
     val: string | FractionToken;
 }
 
+export declare interface FlexToken extends BaseToken {
+
+    typ: EnumToken.FlexTokenType,
+    val: string | FractionToken;
+}
+
 export declare interface FunctionToken extends BaseToken {
 
     typ: EnumToken.FunctionTokenType,
@@ -335,11 +341,13 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
+export declare type ColorType = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+
 export declare interface ColorToken extends BaseToken {
 
     typ: EnumToken.ColorTokenType;
     val: string;
-    kin: 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+    kin: ColorType;
     chi?: Token[];
 }
 
@@ -422,7 +430,7 @@ export declare type UnaryExpressionNode =
     | AngleToken
     | FrequencyToken;
 
-export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FractionToken |
+export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FlexToken | FractionToken |
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
 export declare type TokenType = EnumToken;
@@ -438,6 +446,7 @@ export declare type Token =
     NumberToken
     | AtRuleToken
     | PercentageToken
+    | FlexToken
     | FunctionURLToken
     | FunctionImageToken
     | TimingFunctionToken

@@ -50,6 +50,43 @@ color: hwb(3.1416rad 0% 0% / 100%)
  color: cyan
 }`));
         });
-    });
 
+        it('rgb none #8', function () {
+            return parse(`
+a {
+color: rgb(255 255 0 / none);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #ff0
+}`));
+        });
+
+        it('rgb none #9', function () {
+            return parse(`
+a {
+color: rgb(255 255 none / none);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #ff0
+}`));
+        });
+
+        it('hsl none #10', function () {
+            return parse(`
+a {
+color: hsl(300deg 100% 50% / none);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #f0f
+}`));
+        });
+
+        it('rgb none #11', function () {
+            return parse(`
+a {
+color: hsl(none 100% 50% / none);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: red
+}`));
+        });
+
+    });
+    //
 }

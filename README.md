@@ -414,16 +414,16 @@ result
 - [x] border-style
 - [x] border-top
 - [x] border-width
-- [ ] column-rule
-- [ ] columns
-- [ ] container
+- [x] column-rule
+- [x] columns
+- [x] container
 - [ ] contain-intrinsic-size
-- [ ] flex
-- [ ] flex-flow
+- [x] flex
+- [x] flex-flow
 - [x] font
 - [ ] font-synthesis
 - [ ] font-variant
-- [ ] gap
+- [x] gap
 - [ ] grid
 - [ ] grid-area
 - [ ] grid-column

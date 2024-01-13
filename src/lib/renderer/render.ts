@@ -8,8 +8,11 @@ import {
     AstRuleList,
     AstRuleStyleSheet,
     AttrToken,
-    ColorToken, ErrorDescription, FractionToken,
-    Location, NumberToken,
+    ColorToken,
+    ErrorDescription,
+    FractionToken,
+    Location,
+    NumberToken,
     Position,
     RenderOptions,
     RenderResult,
@@ -392,7 +395,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.colorConvert) {
 
-                if (token.kin == 'lit' && token.val.toLowerCase() == 'currentcolor') {
+                if (token.kin == 'lit' && token.val.localeCompare('currentcolor') == 0) {
 
                     return 'currentcolor';
                 }
@@ -669,10 +672,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
 
-        case EnumToken.PercentageTokenType:
+            case EnumToken.FlexTokenType:
+            case EnumToken.PercentageTokenType:
+
+                const uni: string = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
 
             const perc: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string>token.val);
-            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
+            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
 
         case EnumToken.NumberTokenType:
 

@@ -17,6 +17,7 @@ import {walkValues} from "../walk";
 import {MinifyFeature} from "../utils";
 import {compute} from "./utils";
 import {IterableWeakSet} from "../../iterable";
+import {isDimension} from "../../parser";
 
 export class ComputeCalcExpression extends MinifyFeature {
 
@@ -241,7 +242,7 @@ function evaluateExpression(token: Token): Token {
 
 function isScalarToken(token: Token): boolean {
 
-    return token.typ != EnumToken.BinaryExpressionTokenType && token.typ != EnumToken.ParensTokenType && token.typ != EnumToken.FunctionTokenType;
+    return 'unit' in token || [EnumToken.NumberTokenType, EnumToken.FractionTokenType, EnumToken.PercentageTokenType].includes(token.typ);
 }
 
 /**

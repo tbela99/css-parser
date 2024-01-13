@@ -311,16 +311,16 @@ function rgb2Hex(token) {
     let value = '#';
     let t;
     // @ts-ignore
-    for (let i = 0; i < 6; i += 2) {
+    for (let i = 0; i < 3; i++) {
         // @ts-ignore
         t = token.chi[i];
         // @ts-ignore
-        value += Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0');
+        value += (t.val == 'none' ? '0' : Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val)).toString(16).padStart(2, '0');
     }
     // @ts-ignore
-    if (token.chi.length == 7) {
+    if (token.chi.length == 4) {
         // @ts-ignore
-        t = token.chi[6];
+        t = token.chi[3];
         // @ts-ignore
         if ((t.typ == EnumToken.NumberTokenType && t.val < 1) ||
             // @ts-ignore
@@ -336,17 +336,17 @@ function hsl2Hex(token) {
     // @ts-ignore
     let h = getAngle(token.chi[0]);
     // @ts-ignore
-    t = token.chi[2];
+    t = token.chi[1];
     // @ts-ignore
     let s = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = token.chi[4];
+    t = token.chi[2];
     // @ts-ignore
     let l = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     let a = null;
-    if (token.chi?.length == 7) {
+    if (token.chi?.length == 4) {
         // @ts-ignore
-        t = token.chi[6];
+        t = token.chi[3];
         // @ts-ignore
         if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
             // @ts-ignore
@@ -362,17 +362,17 @@ function hwb2hex(token) {
     // @ts-ignore
     let h = getAngle(token.chi[0]);
     // @ts-ignore
-    t = token.chi[2];
+    t = token.chi[1];
     // @ts-ignore
     let white = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = token.chi[4];
+    t = token.chi[2];
     // @ts-ignore
     let black = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     let a = null;
-    if (token.chi?.length == 7) {
+    if (token.chi?.length == 4) {
         // @ts-ignore
-        t = token.chi[6];
+        t = token.chi[3];
         // @ts-ignore
         if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
             // @ts-ignore
@@ -397,15 +397,15 @@ function cmyk2hex(token) {
     // @ts-ignore
     const c = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = token.chi[2];
+    t = token.chi[1];
     // @ts-ignore
     const m = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = token.chi[4];
+    t = token.chi[2];
     // @ts-ignore
     const y = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = token.chi[6];
+    t = token.chi[3];
     // @ts-ignore
     const k = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     const rgb = [
@@ -423,6 +423,11 @@ function cmyk2hex(token) {
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 function getAngle(token) {
+    if (token.typ == EnumToken.IdenTokenType) {
+        if (token.val == 'none') {
+            return 0;
+        }
+    }
     if (token.typ == EnumToken.AngleTokenType) {
         switch (token.unit) {
             case 'deg':

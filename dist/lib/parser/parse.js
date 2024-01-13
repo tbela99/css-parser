@@ -1,4 +1,4 @@
-import { isPseudo, isAtKeyword, isFunction, isNumber, isDimension, parseDimension, isPercentage, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
+import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
 import { EnumToken, funcLike } from '../ast/types.js';
 import { minify, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
@@ -603,14 +603,20 @@ function getTokenType(val, hint) {
             val
         };
     }
-    if (isDimension(val)) {
-        return parseDimension(val);
-    }
     if (isPercentage(val)) {
         return {
             typ: EnumToken.PercentageTokenType,
             val: val.slice(0, -1)
         };
+    }
+    if (isFlex(val)) {
+        return {
+            typ: EnumToken.FlexTokenType,
+            val: val.slice(0, -2)
+        };
+    }
+    if (isDimension(val)) {
+        return parseDimension(val);
     }
     const v = val.toLowerCase();
     if (v == 'currentcolor' || val == 'transparent' || v in COLORS_NAMES) {
@@ -891,24 +897,28 @@ function parseTokens(tokens, options = {}) {
                 t.typ = EnumToken.ColorTokenType;
                 // @ts-ignore
                 t.kin = t.val;
+                t.chi = t.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ) && !(t.typ == EnumToken.LiteralTokenType && t.val == '/'));
+                // t.chi.length = 0;
                 // @ts-ignore
-                let m = t.chi.length;
-                while (m-- > 0) {
-                    // @ts-ignore
-                    if ([EnumToken.LiteralTokenType].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
-                        // @ts-ignore
-                        if (t.chi[m + 1]?.typ == EnumToken.WhitespaceTokenType) {
-                            // @ts-ignore
-                            t.chi.splice(m + 1, 1);
-                        }
-                        // @ts-ignore
-                        if (t.chi[m - 1]?.typ == EnumToken.WhitespaceTokenType) {
-                            // @ts-ignore
-                            t.chi.splice(m - 1, 1);
-                            m--;
-                        }
-                    }
-                }
+                // let m = t.chi.length;
+                // while (m-- > 0) {
+                //     // @ts-ignore
+                //     if ([EnumToken.IdenTokenType].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
+                //         // @ts-ignore
+                //         if (t.chi[m + 1]?.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //             // @ts-ignore
+                //             t.chi.splice(m + 1, 1);
+                //         }
+                //         // @ts-ignore
+                //         if (t.chi[m - 1]?.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //             // @ts-ignore
+                //             t.chi.splice(m - 1, 1);
+                //             m--;
+                //         }
+                //     }
+                // }
                 continue;
             }
             if (t.typ == EnumToken.UrlFunctionTokenType) {

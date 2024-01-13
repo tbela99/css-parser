@@ -1,4 +1,4 @@
-import {AngleToken, ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../../@types";
+import {AngleToken, ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken} from "../../../@types";
 import {EnumToken} from "../../ast";
 
 // name to color
@@ -310,24 +310,24 @@ export const NAMES_COLORS: {[key: string]: string} = Object.seal({
 
 export function rgb2Hex(token: ColorToken) {
 
-    let value = '#';
+    let value: string = '#';
     let t: NumberToken | PercentageToken;
 
     // @ts-ignore
-    for (let i = 0; i < 6; i += 2) {
+    for (let i = 0; i < 3; i++) {
 
         // @ts-ignore
         t = token.chi[i];
 
         // @ts-ignore
-        value += Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0')
+        value += (t.val == 'none' ? '0' : Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val)).toString(16).padStart(2, '0')
     }
 
     // @ts-ignore
-    if (token.chi.length == 7) {
+    if (token.chi.length == 4) {
 
         // @ts-ignore
-        t = token.chi[6];
+        t = token.chi[3];
 
         // @ts-ignore
         if ((t.typ == EnumToken.NumberTokenType && t.val < 1) ||
@@ -350,20 +350,20 @@ export function hsl2Hex(token: ColorToken) {
     let h: number = getAngle(<NumberToken | DimensionToken>token.chi[0]);
 
     // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[2];
+    t = <NumberToken | DimensionToken>token.chi[1];
     // @ts-ignore
     let s: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[4];
+    t = <NumberToken | DimensionToken>token.chi[2];
     // @ts-ignore
     let l: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
 
     let a = null;
 
-    if (token.chi?.length == 7) {
+    if (token.chi?.length == 4) {
 
         // @ts-ignore
-        t = token.chi[6];
+        t = token.chi[3];
 
         // @ts-ignore
         if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
@@ -386,20 +386,20 @@ export function hwb2hex(token: ColorToken) {
     let h: number = getAngle(<NumberToken | DimensionToken>token.chi[0]);
 
     // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[2];
+    t = <NumberToken | DimensionToken>token.chi[1];
     // @ts-ignore
     let white: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
     // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[4];
+    t = <NumberToken | DimensionToken>token.chi[2];
     // @ts-ignore
     let black: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
 
     let a = null;
 
-    if (token.chi?.length == 7) {
+    if (token.chi?.length == 4) {
 
         // @ts-ignore
-        t = token.chi[6];
+        t = token.chi[3];
 
         // @ts-ignore
         if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
@@ -436,19 +436,19 @@ export function cmyk2hex(token: ColorToken) {
     const c: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>token.chi[2];
+    t = <NumberToken | PercentageToken>token.chi[1];
 
     // @ts-ignore
     const m: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>token.chi[4];
+    t = <NumberToken | PercentageToken>token.chi[2];
 
     // @ts-ignore
     const y: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>token.chi[6];
+    t = <NumberToken | PercentageToken>token.chi[3];
 
     // @ts-ignore
     const k: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
@@ -472,7 +472,15 @@ export function cmyk2hex(token: ColorToken) {
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 
-export function getAngle(token: NumberToken | AngleToken): number {
+export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
+
+    if (token.typ == EnumToken.IdenTokenType) {
+
+        if (token.val == 'none') {
+
+            return 0;
+        }
+    }
 
     if (token.typ == EnumToken.AngleTokenType) {
 

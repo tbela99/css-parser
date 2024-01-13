@@ -254,77 +254,48 @@ var properties = {
 	}
 };
 var map = {
-	grid: {
-		shorthand: "grid",
-		pattern: "grid-auto-columns grid-auto-flow grid-auto-rows grid-template-areas grid-template-columns grid-template-rows",
+	"flex-flow": {
+		shorthand: "flex-flow",
+		pattern: "flex-direction flex-wrap",
 		keywords: [
-			"0",
-			"row",
-			"none",
-			"auto",
-			"normal"
 		],
 		"default": [
+			"row",
+			"nowrap"
 		],
 		properties: {
-			"grid-template-rows": {
+			"flex-direction": {
 				keywords: [
-					"none",
-					"auto",
-					"masonry",
-					"subgrid",
-					"min-content",
-					"max-content"
+					"row",
+					"row-reverse",
+					"column",
+					"column-reverse"
 				],
 				"default": [
-					"none"
+					"row"
 				],
 				types: [
-					"Length",
-					"Perc",
-					"IdenList",
-					"GridTemplateFunc"
 				]
 			},
-			"grid-template-columns": {
+			"flex-wrap": {
 				keywords: [
-					"none",
-					"auto",
-					"masonry",
-					"subgrid",
-					"min-content",
-					"max-content"
+					"wrap",
+					"nowrap",
+					"wrap-reverse"
 				],
 				"default": [
-					"none"
+					"nowrap"
 				],
 				types: [
-					"Length",
-					"Perc",
-					"IdenList",
-					"GridTemplateFunc"
-				]
-			},
-			"grid-template-areas": {
-				keywords: [
-					"none"
-				],
-				"default": [
-				],
-				types: [
-					"String"
 				]
 			}
 		}
 	},
-	"grid-template-rows": {
-		shorthand: "grid"
+	"flex-direction": {
+		shorthand: "flex-flow"
 	},
-	"grid-template-columns": {
-		shorthand: "grid"
-	},
-	"grid-template-areas": {
-		shorthand: "grid"
+	"flex-wrap": {
+		shorthand: "flex-flow"
 	},
 	container: {
 		shorthand: "container",
@@ -373,80 +344,69 @@ var map = {
 	"container-type": {
 		shorthand: "container"
 	},
-	"column-rule": {
-		shorthand: "column-rule",
-		pattern: "column-rule-color column-rule-style column-rule-width",
+	flex: {
+		shorthand: "flex",
+		pattern: "flex-grow flex-shrink flex-basis",
 		keywords: [
-			"auto"
+			"auto",
+			"none",
+			"initial"
 		],
 		"default": [
-			"none",
-			"medium",
-			"currentcolor"
+			"0",
+			"0 1",
+			"0 auto",
+			"0 1 auto"
 		],
-		mapping: {
-			none: "0",
-			hidden: "0"
-		},
 		properties: {
-			"column-rule-color": {
+			"flex-grow": {
+				required: true,
 				keywords: [
-					"transparent",
-					"currentcolor"
 				],
 				"default": [
-					"currentcolor"
+					"0"
 				],
 				types: [
-					"Color"
+					"Number"
 				]
 			},
-			"column-rule-style": {
+			"flex-shrink": {
 				keywords: [
-					"none",
-					"hidden",
-					"dotted",
-					"dashed",
-					"solid",
-					"double",
-					"groove",
-					"ridge",
-					"inset",
-					"outset"
 				],
 				"default": [
-					"none"
+					"1"
 				],
 				types: [
+					"Number"
 				]
 			},
-			"column-rule-width": {
+			"flex-basis": {
 				keywords: [
-					"thin",
-					"medium",
-					"thick"
+					"max-content",
+					"min-content",
+					"fit-content",
+					"fit-content",
+					"content",
+					"auto"
 				],
 				"default": [
-					"medium"
+					"auto"
 				],
 				types: [
-					"Length"
-				],
-				mapping: {
-					none: "0",
-					hidden: "0"
-				}
+					"Length",
+					"Perc"
+				]
 			}
 		}
 	},
-	"column-rule-color": {
-		shorthand: "column-rule"
+	"flex-grow": {
+		shorthand: "flex"
 	},
-	"column-rule-style": {
-		shorthand: "column-rule"
+	"flex-shrink": {
+		shorthand: "flex"
 	},
-	"column-rule-width": {
-		shorthand: "column-rule"
+	"flex-basis": {
+		shorthand: "flex"
 	},
 	columns: {
 		shorthand: "columns",
@@ -506,6 +466,13 @@ var map = {
 			"none",
 			"normal"
 		],
+		mapping: {
+			"cubic-bezier(.25,.1,.25,1)": "ease",
+			"cubic-bezier(0,0,1,1)": "linear",
+			"cubic-bezier(.42,0,1,1)": "ease-in",
+			"cubic-bezier(0,0,.58,1)": "ease-out",
+			"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+		},
 		properties: {
 			"transition-property": {
 				keywords: [
@@ -513,6 +480,7 @@ var map = {
 					"all"
 				],
 				"default": [
+					"all"
 				],
 				types: [
 					"Iden"

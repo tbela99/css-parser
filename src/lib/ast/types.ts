@@ -58,6 +58,7 @@ export enum EnumToken {
     BadStringTokenType,
     BinaryExpressionTokenType,
     UnaryExpressionTokenType,
+    FlexTokenType,
     /* catch all */
     ListToken,
     /* arithmetic tokens */
@@ -79,6 +80,7 @@ export enum EnumToken {
     Time = TimeTokenType,
     Iden = IdenTokenType,
     Hash = HashTokenType,
+    Flex = FlexTokenType,
     Angle = AngleTokenType,
     Color = ColorTokenType,
     Comma = CommaTokenType,

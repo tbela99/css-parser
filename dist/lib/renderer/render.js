@@ -242,7 +242,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '/';
         case EnumToken.ColorTokenType:
             if (options.colorConvert) {
-                if (token.kin == 'lit' && token.val.toLowerCase() == 'currentcolor') {
+                if (token.kin == 'lit' && token.val.localeCompare('currentcolor') == 0) {
                     return 'currentcolor';
                 }
                 let value = token.kin == 'hex' ? token.val.toLowerCase() : (token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : '');
@@ -430,9 +430,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 return val + 's';
             }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
+        case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
+            const uni = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
             const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
-            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
+            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
         case EnumToken.NumberTokenType:
             return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
         case EnumToken.CommentTokenType:
