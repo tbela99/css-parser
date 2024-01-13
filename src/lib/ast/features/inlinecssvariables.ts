@@ -46,7 +46,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
     }
 }
 
-export class InlineCssVariables extends MinifyFeature {
+export class InlineCssVariablesFeature extends MinifyFeature {
 
     static get ordering() {
         return 0;
@@ -58,14 +58,14 @@ export class InlineCssVariables extends MinifyFeature {
 
             for (const feature of options.features) {
 
-                if (feature instanceof InlineCssVariables) {
+                if (feature instanceof InlineCssVariablesFeature) {
 
                     return;
                 }
             }
 
             // @ts-ignore
-            options.features.push(new InlineCssVariables());
+            options.features.push(new InlineCssVariablesFeature());
         }
     }
 

@@ -78,12 +78,30 @@ color: hsl(300deg 100% 50% / none);
 }`));
         });
 
-        it('rgb none #11', function () {
+        it('hsl none #11', function () {
             return parse(`
 a {
 color: hsl(none 100% 50% / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
  color: red
+}`));
+        });
+
+        it('relative color rgb #12', function () {
+            return parse(`
+a {
+color: rgb(from white r g 0 / none);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #ff0
+}`));
+        });
+
+        it('relative color rgb #12', function () {
+            return parse(`
+a {
+color: rgb(from rgb(255 255 none) r g 0 / none);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #ff0
 }`));
         });
 

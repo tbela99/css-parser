@@ -13,8 +13,9 @@
 
 ### Other
 - [ ] implement forgiving selector list https://www.w3.org/TR/selectors-4/#forgiving-selector
+- [x] none keyword in color
 - [ ] css relative color syntax https://www.w3.org/TR/css-color-5/#relative-colors
-  - [ ] rgb
+  - [x] rgb
   - [ ] hsl
   - [ ] hwb
 

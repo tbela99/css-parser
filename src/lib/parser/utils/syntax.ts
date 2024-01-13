@@ -58,8 +58,17 @@ export function isColor(token: Token): boolean {
 
         const keywords: string[] = ['from', 'none'];
 
+        if ([ 'rgb', 'hsl', 'hwb'].includes(token.val)) {
+
+            keywords.push('a', ...token.val.split(''));
+        }
+
+        // console.debug(JSON.stringify({token}, null, 1));
+
         // @ts-ignore
         for (const v of token.chi) {
+
+            // console.debug(JSON.stringify({v}, null, 1));
 
             if (v.typ == EnumToken.CommaTokenType) {
 
@@ -89,14 +98,16 @@ export function isColor(token: Token): boolean {
                 continue;
             }
 
-            console.debug(v);
-            if (![EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+            if (v.typ == EnumToken.FunctionTokenType && colorsFunc.includes(v.val)) {
+
+                continue;
+            }
+
+            if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
 
                 return false;
             }
         }
-
-        console.debug(JSON.stringify({token}, null, 1));
 
         return true;
     }

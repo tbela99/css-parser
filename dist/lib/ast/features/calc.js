@@ -5,19 +5,19 @@ import { MinifyFeature } from '../utils/minifyfeature.js';
 import { compute } from './utils/math.js';
 import { IterableWeakSet } from '../../iterable/weakset.js';
 
-class ComputeCalcExpression extends MinifyFeature {
+class ComputeCalcExpressionFeature extends MinifyFeature {
     static get ordering() {
         return 1;
     }
     static register(options) {
         if (options.computeCalcExpression) {
             for (const feature of options.features) {
-                if (feature instanceof ComputeCalcExpression) {
+                if (feature instanceof ComputeCalcExpressionFeature) {
                     return;
                 }
             }
             // @ts-ignore
-            options.features.push(new ComputeCalcExpression());
+            options.features.push(new ComputeCalcExpressionFeature());
         }
     }
     run(ast) {
@@ -222,4 +222,4 @@ function factor(tokens, ops) {
     return tokens;
 }
 
-export { ComputeCalcExpression };
+export { ComputeCalcExpressionFeature };

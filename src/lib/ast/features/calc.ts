@@ -19,7 +19,7 @@ import {compute} from "./utils";
 import {IterableWeakSet} from "../../iterable";
 import {isDimension} from "../../parser";
 
-export class ComputeCalcExpression extends MinifyFeature {
+export class ComputeCalcExpressionFeature extends MinifyFeature {
 
     static get ordering(): number {
         return 1;
@@ -31,14 +31,14 @@ export class ComputeCalcExpression extends MinifyFeature {
 
             for (const feature of options.features) {
 
-                if (feature instanceof ComputeCalcExpression) {
+                if (feature instanceof ComputeCalcExpressionFeature) {
 
                     return
                 }
             }
 
             // @ts-ignore
-            options.features.push(new ComputeCalcExpression());
+            options.features.push(new ComputeCalcExpressionFeature());
         }
     }
 

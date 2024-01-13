@@ -28,6 +28,7 @@ async function doParse(iterator, options = {}) {
             src: '',
             sourcemap: false,
             minify: true,
+            parseColor: true,
             nestingRules: false,
             resolveImport: false,
             resolveUrls: false,
@@ -303,7 +304,7 @@ async function doParse(iterator, options = {}) {
                         if (tokens[i].typ == EnumToken.ColonTokenType) {
                             name = tokens.slice(0, i);
                             value = parseTokens(tokens.slice(i + 1), {
-                                parseColor: true,
+                                parseColor: options.parseColor,
                                 src: options.src,
                                 resolveUrls: options.resolveUrls,
                                 resolve: options.resolve,
@@ -717,15 +718,6 @@ function parseTokens(tokens, options = {}) {
                 // @ts-ignore
                 parseTokens(t.chi, t.typ);
             }
-            // @ts-ignore
-            // t.chi.forEach(val => {
-            //     if (val.typ == EnumToken.StringTokenType) {
-            //         const slice = val.val.slice(1, -1);
-            //         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
-            //             Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
-            //         }
-            //     }
-            // });
             let m = t.chi.length;
             let val;
             for (m = 0; m < t.chi.length; m++) {
@@ -860,6 +852,11 @@ function parseTokens(tokens, options = {}) {
                 // @ts-ignore
                 t.chi.pop();
             }
+            // @ts-ignore
+            if (t.chi.length > 0) {
+                // @ts-ignore
+                parseTokens(t.chi, options);
+            }
             if (t.typ == EnumToken.FunctionTokenType && t.val == 'calc') {
                 for (const { value, parent } of walkValues(t.chi)) {
                     if (value.typ == EnumToken.WhitespaceTokenType) {
@@ -892,33 +889,15 @@ function parseTokens(tokens, options = {}) {
             }
             // @ts-ignore
             if (options.parseColor && t.typ == EnumToken.FunctionTokenType && isColor(t)) {
-                // if (isColor) {
                 // @ts-ignore
                 t.typ = EnumToken.ColorTokenType;
                 // @ts-ignore
                 t.kin = t.val;
-                t.chi = t.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ) && !(t.typ == EnumToken.LiteralTokenType && t.val == '/'));
-                // t.chi.length = 0;
-                // @ts-ignore
-                // let m = t.chi.length;
-                // while (m-- > 0) {
-                //     // @ts-ignore
-                //     if ([EnumToken.IdenTokenType].concat(trimWhiteSpace).includes(t.chi[m].typ)) {
-                //         // @ts-ignore
-                //         if (t.chi[m + 1]?.typ == EnumToken.WhitespaceTokenType) {
-                //
-                //             // @ts-ignore
-                //             t.chi.splice(m + 1, 1);
-                //         }
-                //         // @ts-ignore
-                //         if (t.chi[m - 1]?.typ == EnumToken.WhitespaceTokenType) {
-                //
-                //             // @ts-ignore
-                //             t.chi.splice(m - 1, 1);
-                //             m--;
-                //         }
-                //     }
-                // }
+                if (t.chi[0].typ == EnumToken.IdenTokenType && t.chi[0].val == 'from') {
+                    // @ts-ignore
+                    t.cal = 'rel';
+                }
+                t.chi = t.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
                 continue;
             }
             if (t.typ == EnumToken.UrlFunctionTokenType) {
@@ -943,8 +922,6 @@ function parseTokens(tokens, options = {}) {
             }
             // @ts-ignore
             if (t.chi.length > 0) {
-                // @ts-ignore
-                parseTokens(t.chi, options);
                 if (t.typ == EnumToken.PseudoClassFuncTokenType && t.val == ':is' && options.minify) {
                     //
                     const count = t.chi.filter(t => t.typ != EnumToken.CommentTokenType).length;

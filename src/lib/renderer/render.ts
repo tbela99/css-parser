@@ -22,12 +22,13 @@ import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2He
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isNewLine} from "../parser";
+import {parseRelativeColor} from "./utils/calccolor";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 
-export function reduceNumber(val: string | number) {
+export function reduceNumber(val: string | number): string {
 
-    val = (+val).toString();
+    val = String(+val);
 
     if (val === '0') {
 
@@ -395,6 +396,59 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.colorConvert) {
 
+                if (token.cal == 'rel' && ['rgb'].includes(token.val)) {
+
+                    const chi: Token[] =  (<Token[]>token.chi).filter(x => ![
+                        EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(x.typ));
+
+                    const components = parseRelativeColor(<ColorToken>chi[1], chi[2], chi[3], chi[4], chi[6]);
+
+                    if (components != null) {
+
+                        token.chi = Object.values(components);
+
+                        delete token.cal;
+                    }
+                }
+
+
+                    if (token.cal) {
+
+                    let slice: boolean = false;
+
+                    if (token.cal == 'rel') {
+
+                        const last: Token = <Token>(<Token[]>token.chi).at(-1);
+
+                        if ((last.typ == EnumToken.NumberTokenType && last.val == '1') || (last.typ == EnumToken.IdenTokenType && last.val == 'none')) {
+
+                            const prev: Token = <Token>(<Token[]>token.chi).at(-2);
+
+                            if (prev.typ == EnumToken.LiteralTokenType && prev.val == '/') {
+
+                                slice = true;
+                            }
+                        }
+                    }
+
+                    return token.val + '(' + (slice ? (<Token[]>token.chi).slice(0, -2) : <Token[]>token.chi).reduce((acc: string, curr: Token) => {
+
+                        const val: string = renderToken(curr, options, cache);
+
+                        if ([EnumToken.LiteralTokenType, EnumToken.CommaTokenType].includes(curr.typ)) {
+
+                            return acc + val;
+                        }
+
+                        if (acc.length > 0) {
+
+                            return acc + (['/', ','].includes(<string>acc.at(-1)) ? '' : ' ') + val;
+                        }
+
+                        return val;
+                    }, '') + ')';
+                }
+
                 if (token.kin == 'lit' && token.val.localeCompare('currentcolor') == 0) {
 
                     return 'currentcolor';
@@ -672,10 +726,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
 
-            case EnumToken.FlexTokenType:
-            case EnumToken.PercentageTokenType:
+        case EnumToken.FlexTokenType:
+        case EnumToken.PercentageTokenType:
 
-                const uni: string = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
+            const uni: string = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
 
             const perc: string = (<FractionToken>token.val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>token.val, options, cache) : reduceNumber(<string>token.val);
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
