@@ -11,7 +11,7 @@ function parseRelativeColor(original, rExp, gExp, bExp, aExp) {
     let a = null;
     let keys = {};
     let values = {};
-    // console.debug(original);
+    console.debug(original);
     switch (original.kin) {
         case 'lit':
         case 'hex':
@@ -41,6 +41,26 @@ function parseRelativeColor(original, rExp, gExp, bExp, aExp) {
                 a: aExp
             });
             values = (a == null ? { r, g, b } : { r, g, b, a });
+            break;
+        case 'rgb':
+        case 'rgba':
+            const children = original.chi;
+            if (children.every((t) => (t.typ == EnumToken.IdenTokenType && t.val == 'none') || t.typ == EnumToken.NumberTokenType)) {
+                r = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'none' ? 0 : +children[0].val;
+                g = children[1].typ == EnumToken.IdenTokenType && children[1].val == 'none' ? 0 : +children[1].val;
+                b = children[2].typ == EnumToken.IdenTokenType && children[2].val == 'none' ? 0 : +children[2].val;
+                a = children.length < 4 ? null : children[3].typ == EnumToken.IdenTokenType && children[3].val == 'none' ? 0 : +children[3].val;
+                keys = (a == null ? { r: rExp, g: gExp, b: bExp } : {
+                    r: rExp,
+                    g: gExp,
+                    b: bExp,
+                    a: aExp
+                });
+                values = (a == null ? { r, g, b } : { r, g, b, a });
+            }
+            else {
+                return null;
+            }
             break;
         default:
             return null;
