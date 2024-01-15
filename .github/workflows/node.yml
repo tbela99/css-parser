@@ -23,10 +23,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/cache@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npx playwright install --with-deps
+          path: ~/.npm
+          key: ${{ runner.OS }}-npm-cache-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-npm-cache-
+
+      - name: Install NPM dependencies
+        run: npm install
+      - name: Install playwright dependencies
+        run: npx playwright install --with-deps
       # - run: npm run build
       - run: npm test

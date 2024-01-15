@@ -322,14 +322,41 @@ function rgb2Hex(token) {
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        if ((t.typ == EnumToken.NumberTokenType && t.val < 1) ||
+        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ||
+            (t.typ == EnumToken.NumberTokenType && +t.val < 1) ||
+            (t.typ == EnumToken.PercentageTokenType && +t.val < 100)) {
             // @ts-ignore
-            (t.typ == EnumToken.PercentageTokenType && t.val < 100)) {
-            // @ts-ignore
-            value += Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)).toString(16).padStart(2, '0');
+            value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
         }
     }
     return value;
+}
+function rgb2hsl(r, g, b, a) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    let max = Math.max(r, g, b);
+    let min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    let l = (max + min) / 2;
+    if (max != min) {
+        let d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r:
+                h = (g - b) / d + (g < b ? 6 : 0);
+                break;
+            case g:
+                h = (b - r) / d + 2;
+                break;
+            case b:
+                h = (r - g) / d + 4;
+                break;
+        }
+        h /= 6;
+    }
+    return [h, s, l, a == 1 ? null : a ?? null];
 }
 function hsl2Hex(token) {
     let t;
@@ -338,21 +365,21 @@ function hsl2Hex(token) {
     // @ts-ignore
     t = token.chi[1];
     // @ts-ignore
-    let s = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let s = getNumber(t);
     // @ts-ignore
     t = token.chi[2];
     // @ts-ignore
-    let l = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let l = getNumber(t);
     let a = null;
     if (token.chi?.length == 4) {
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
+        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
             // @ts-ignore
             (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
             // @ts-ignore
-            a = (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
+            a = getNumber(t);
         }
     }
     return `#${hsl2rgb(h, s, l, a).reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
@@ -364,21 +391,21 @@ function hwb2hex(token) {
     // @ts-ignore
     t = token.chi[1];
     // @ts-ignore
-    let white = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let white = getNumber(t);
     // @ts-ignore
     t = token.chi[2];
     // @ts-ignore
-    let black = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let black = getNumber(t);
     let a = null;
     if (token.chi?.length == 4) {
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
+        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ||
+            (t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
+            (t.typ == EnumToken.NumberTokenType && +t.val < 1)) {
             // @ts-ignore
-            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-            // @ts-ignore
-            a = (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
+            a = getNumber(t);
         }
     }
     const rgb = hsl2rgb(h, 1, .5, a);
@@ -395,19 +422,19 @@ function cmyk2hex(token) {
     // @ts-ignore
     let t = token.chi[0];
     // @ts-ignore
-    const c = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const c = getNumber(t);
     // @ts-ignore
     t = token.chi[1];
     // @ts-ignore
-    const m = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const m = getNumber(t);
     // @ts-ignore
     t = token.chi[2];
     // @ts-ignore
-    const y = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const y = getNumber(t);
     // @ts-ignore
     t = token.chi[3];
     // @ts-ignore
-    const k = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const k = getNumber(t);
     const rgb = [
         Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
         Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
@@ -418,9 +445,16 @@ function cmyk2hex(token) {
         // @ts-ignore
         t = token.chi[8];
         // @ts-ignore
-        rgb.push(Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)));
+        rgb.push(Math.round(255 * getNumber(t)));
     }
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+}
+function getNumber(token) {
+    if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
+        return 0;
+    }
+    // @ts-ignore
+    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
 function getAngle(token) {
     if (token.typ == EnumToken.IdenTokenType) {
@@ -501,4 +535,4 @@ function hsl2rgb(h, s, l, a = null) {
     return values;
 }
 
-export { COLORS_NAMES, NAMES_COLORS, cmyk2hex, getAngle, hsl2Hex, hwb2hex, rgb2Hex };
+export { COLORS_NAMES, NAMES_COLORS, cmyk2hex, getAngle, getNumber, hsl2Hex, hsl2rgb, hwb2hex, rgb2Hex, rgb2hsl };

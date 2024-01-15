@@ -440,14 +440,41 @@
             // @ts-ignore
             t = token.chi[3];
             // @ts-ignore
-            if ((t.typ == exports.EnumToken.NumberTokenType && t.val < 1) ||
+            if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ||
+                (t.typ == exports.EnumToken.NumberTokenType && +t.val < 1) ||
+                (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100)) {
                 // @ts-ignore
-                (t.typ == exports.EnumToken.PercentageTokenType && t.val < 100)) {
-                // @ts-ignore
-                value += Math.round(255 * (t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val)).toString(16).padStart(2, '0');
+                value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
             }
         }
         return value;
+    }
+    function rgb2hsl(r, g, b, a) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        let max = Math.max(r, g, b);
+        let min = Math.min(r, g, b);
+        let h = 0;
+        let s = 0;
+        let l = (max + min) / 2;
+        if (max != min) {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+            h /= 6;
+        }
+        return [h, s, l, a == 1 ? null : a ?? null];
     }
     function hsl2Hex(token) {
         let t;
@@ -456,21 +483,21 @@
         // @ts-ignore
         t = token.chi[1];
         // @ts-ignore
-        let s = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        let s = getNumber(t);
         // @ts-ignore
         t = token.chi[2];
         // @ts-ignore
-        let l = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        let l = getNumber(t);
         let a = null;
         if (token.chi?.length == 4) {
             // @ts-ignore
             t = token.chi[3];
             // @ts-ignore
-            if ((t.typ == exports.EnumToken.PercentageTokenType && t.val < 100) ||
+            if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100) ||
                 // @ts-ignore
                 (t.typ == exports.EnumToken.NumberTokenType && t.val < 1)) {
                 // @ts-ignore
-                a = (t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val);
+                a = getNumber(t);
             }
         }
         return `#${hsl2rgb(h, s, l, a).reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
@@ -482,21 +509,21 @@
         // @ts-ignore
         t = token.chi[1];
         // @ts-ignore
-        let white = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        let white = getNumber(t);
         // @ts-ignore
         t = token.chi[2];
         // @ts-ignore
-        let black = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        let black = getNumber(t);
         let a = null;
         if (token.chi?.length == 4) {
             // @ts-ignore
             t = token.chi[3];
             // @ts-ignore
-            if ((t.typ == exports.EnumToken.PercentageTokenType && t.val < 100) ||
+            if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ||
+                (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100) ||
+                (t.typ == exports.EnumToken.NumberTokenType && +t.val < 1)) {
                 // @ts-ignore
-                (t.typ == exports.EnumToken.NumberTokenType && t.val < 1)) {
-                // @ts-ignore
-                a = (t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val);
+                a = getNumber(t);
             }
         }
         const rgb = hsl2rgb(h, 1, .5, a);
@@ -513,19 +540,19 @@
         // @ts-ignore
         let t = token.chi[0];
         // @ts-ignore
-        const c = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        const c = getNumber(t);
         // @ts-ignore
         t = token.chi[1];
         // @ts-ignore
-        const m = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        const m = getNumber(t);
         // @ts-ignore
         t = token.chi[2];
         // @ts-ignore
-        const y = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        const y = getNumber(t);
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        const k = t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+        const k = getNumber(t);
         const rgb = [
             Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
             Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
@@ -536,9 +563,16 @@
             // @ts-ignore
             t = token.chi[8];
             // @ts-ignore
-            rgb.push(Math.round(255 * (t.typ == exports.EnumToken.PercentageTokenType ? t.val / 100 : t.val)));
+            rgb.push(Math.round(255 * getNumber(t)));
         }
         return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    }
+    function getNumber(token) {
+        if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
+            return 0;
+        }
+        // @ts-ignore
+        return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
     }
     function getAngle(token) {
         if (token.typ == exports.EnumToken.IdenTokenType) {
@@ -710,14 +744,15 @@
         }
     }
 
-    function parseRelativeColor(original, rExp, gExp, bExp, aExp) {
+    function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
+        const type = relativeKeys.join('');
         let r;
         let g;
         let b;
         let a = null;
         let keys = {};
         let values = {};
-        console.debug(original);
+        let children;
         switch (original.kin) {
             case 'lit':
             case 'hex':
@@ -740,29 +775,40 @@
                 g = parseInt(value.slice(3, 5), 16);
                 b = parseInt(value.slice(5, 7), 16);
                 a = value.length == 9 ? parseInt(value.slice(7, 9), 16) : null;
-                keys = (a == null ? { r: rExp, g: gExp, b: bExp } : {
-                    r: rExp,
-                    g: gExp,
-                    b: bExp,
-                    a: aExp
-                });
-                values = (a == null ? { r, g, b } : { r, g, b, a });
+                // console.debug({
+                //     r: value.slice(1, 3),
+                //     g: value.slice(3, 5),
+                //     b: value.slice(5, 7),
+                //     a
+                // })
                 break;
             case 'rgb':
             case 'rgba':
-                const children = original.chi;
+                children = original.chi.filter((t) => t.typ == exports.EnumToken.NumberTokenType || t.typ == exports.EnumToken.IdenTokenType || t.typ == exports.EnumToken.PercentageTokenType);
                 if (children.every((t) => (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || t.typ == exports.EnumToken.NumberTokenType)) {
                     r = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'none' ? 0 : +children[0].val;
                     g = children[1].typ == exports.EnumToken.IdenTokenType && children[1].val == 'none' ? 0 : +children[1].val;
                     b = children[2].typ == exports.EnumToken.IdenTokenType && children[2].val == 'none' ? 0 : +children[2].val;
                     a = children.length < 4 ? null : children[3].typ == exports.EnumToken.IdenTokenType && children[3].val == 'none' ? 0 : +children[3].val;
-                    keys = (a == null ? { r: rExp, g: gExp, b: bExp } : {
-                        r: rExp,
-                        g: gExp,
-                        b: bExp,
-                        a: aExp
-                    });
-                    values = (a == null ? { r, g, b } : { r, g, b, a });
+                }
+                else if (children.every((t) => t.typ == exports.EnumToken.PercentageTokenType || (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || (t.typ == exports.EnumToken.NumberTokenType && t.val == '0'))) {
+                    // @ts-ignore
+                    r = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'none' ? 0 : children[0].val * 255 / 100;
+                    // @ts-ignore
+                    g = children[1].typ == exports.EnumToken.IdenTokenType && children[1].val == 'none' ? 0 : children[1].val * 255 / 100;
+                    // @ts-ignore
+                    b = children[2].typ == exports.EnumToken.IdenTokenType && children[2].val == 'none' ? 0 : children[2].val * 255 / 100;
+                    a = children.length < 4 ? null : children[3].typ == exports.EnumToken.IdenTokenType && children[3].val == 'none' ? 0 : +children[3].val / 100;
+                }
+                else {
+                    return null;
+                }
+                break;
+            case 'hsl':
+            case 'hsla':
+                children = original.chi.filter((t) => t.typ == exports.EnumToken.AngleTokenType || t.typ == exports.EnumToken.NumberTokenType || t.typ == exports.EnumToken.IdenTokenType || t.typ == exports.EnumToken.PercentageTokenType);
+                if (children.length == 3 || children.length == 4) {
+                    [r, g, b, a] = children;
                 }
                 else {
                     return null;
@@ -771,21 +817,100 @@
             default:
                 return null;
         }
+        const from = ['rgb', 'rgba', 'hex', 'lit'].includes(original.kin) ? 'rgb' : original.kin;
+        if (from != type) {
+            if (type == 'hsl') {
+                if (from == 'rgb') {
+                    [r, g, b] = rgb2hsl(r, g, b);
+                    r *= 360;
+                    g *= 100;
+                    b *= 100;
+                    values = (a == null ? {
+                        [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
+                        [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
+                        [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b }
+                    } : {
+                        [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
+                        [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
+                        [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b },
+                        a
+                    });
+                }
+                else {
+                    return null;
+                }
+            }
+            else if (type == 'rgb') {
+                if (from == 'hsl') {
+                    console.debug({ r, g, b });
+                    [r, g, b] = hsl2rgb(getAngle(r), getNumber(g), getNumber(b));
+                    console.debug({ r, g, b });
+                    values = (a == null ? {
+                        [relativeKeys[0]]: { typ: exports.EnumToken.NumberTokenType, val: r },
+                        [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
+                        [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b }
+                    } : {
+                        [relativeKeys[0]]: { typ: exports.EnumToken.NumberTokenType, val: r },
+                        [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
+                        [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b },
+                        a
+                    });
+                }
+                else {
+                    return null;
+                }
+            }
+        }
+        else {
+            values = (a == null ? {
+                [relativeKeys[0]]: r,
+                [relativeKeys[1]]: g,
+                [relativeKeys[2]]: b
+            } : {
+                [relativeKeys[0]]: r,
+                [relativeKeys[1]]: g,
+                [relativeKeys[2]]: b,
+                a
+            });
+        }
+        keys = (a == null ? {
+            [relativeKeys[0]]: rExp,
+            [relativeKeys[1]]: gExp,
+            [relativeKeys[2]]: bExp
+        } : {
+            [relativeKeys[0]]: rExp,
+            [relativeKeys[1]]: gExp,
+            [relativeKeys[2]]: bExp,
+            a: aExp
+        });
+        // console.debug({keys, values});
         return computeComponentValue(keys, values);
     }
     function computeComponentValue(expr, values) {
         for (const [key, exp] of Object.entries(expr)) {
-            // if (exp == null) {
-            //
-            //     continue;
-            // }
-            if ([exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.LengthTokenType].includes(exp.typ)) ;
+            if (exp == null) {
+                if (key in values) {
+                    if (typeof values[key] == 'number') {
+                        expr[key] = {
+                            typ: exports.EnumToken.NumberTokenType,
+                            val: reduceNumber(values[key])
+                        };
+                    }
+                    else {
+                        expr[key] = values[key];
+                    }
+                }
+            }
+            else if ([exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.LengthTokenType].includes(exp.typ)) ;
             else if (exp.typ == exports.EnumToken.IdenTokenType && exp.val in values) {
                 if (typeof values[exp.val] == 'number') {
-                    expr[exp.val] = {
+                    expr[key] = {
                         typ: exports.EnumToken.NumberTokenType,
                         val: reduceNumber(values[exp.val])
                     };
+                }
+                else {
+                    expr[key] = values[exp.val];
                 }
             }
         }
@@ -1028,11 +1153,12 @@
                 return '/';
             case exports.EnumToken.ColorTokenType:
                 if (options.colorConvert) {
-                    if (token.cal == 'rel' && ['rgb'].includes(token.val)) {
+                    if (token.cal == 'rel' && ['rgb', 'hsl'].includes(token.val)) {
                         const chi = token.chi.filter(x => ![
                             exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType
                         ].includes(x.typ));
-                        const components = parseRelativeColor(chi[1], chi[2], chi[3], chi[4], chi[6]);
+                        const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[6]);
+                        console.debug({ components });
                         if (components != null) {
                             token.chi = Object.values(components);
                             delete token.cal;

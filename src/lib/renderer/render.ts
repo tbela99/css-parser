@@ -22,7 +22,7 @@ import {cmyk2hex, COLORS_NAMES, getAngle, hsl2Hex, hwb2hex, NAMES_COLORS, rgb2He
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isNewLine} from "../parser";
-import {parseRelativeColor} from "./utils/calccolor";
+import {parseRelativeColor, RelativeColorTypes} from "./utils/calccolor";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 
@@ -396,12 +396,14 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.colorConvert) {
 
-                if (token.cal == 'rel' && ['rgb'].includes(token.val)) {
+                if (token.cal == 'rel' && ['rgb', 'hsl'].includes(token.val)) {
 
                     const chi: Token[] =  (<Token[]>token.chi).filter(x => ![
                         EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(x.typ));
 
-                    const components = parseRelativeColor(<ColorToken>chi[1], chi[2], chi[3], chi[4], chi[6]);
+                    const components = parseRelativeColor(<RelativeColorTypes[]>token.val.split(''), <ColorToken>chi[1], chi[2], chi[3], chi[4], chi[6]);
+
+                    console.debug({components});
 
                     if (components != null) {
 

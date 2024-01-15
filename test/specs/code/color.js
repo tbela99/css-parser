@@ -105,6 +105,59 @@ color: rgb(from rgb(255 255 none) r g 0 / none);
 }`));
         });
 
+        it('relative color rgb #13', function () {
+            return parse(`
+a {
+color: rgb(from #ff0 r g r);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #fff
+}`));
+        });
+
+        it('relative color rgb #14', function () {
+            return parse(`
+a {
+color: rgb(from #ff0 r b g);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #f0f
+}`));
+        });
+
+        it('relative color rgb #15', function () {
+            return parse(`
+a {
+color: hsl(from rgb(0 128 0) h s l) ; 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color rgb #16', function () {
+            return parse(`
+a {
+color: hsl(from rgb(0 128 0 / 1) h s l) ; 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color rgb #17', function () {
+            return parse(`
+a {
+color: hsl(from hsl(120deg 100% 25%) h s l) ; 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color rgb #19', function () {
+            return parse(`
+a {
+color: rgb(from hsl(120, 100%, 25%) r g b) ; 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
     });
     //
 }

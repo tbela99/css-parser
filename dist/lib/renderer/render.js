@@ -243,11 +243,12 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '/';
         case EnumToken.ColorTokenType:
             if (options.colorConvert) {
-                if (token.cal == 'rel' && ['rgb'].includes(token.val)) {
+                if (token.cal == 'rel' && ['rgb', 'hsl'].includes(token.val)) {
                     const chi = token.chi.filter(x => ![
                         EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType
                     ].includes(x.typ));
-                    const components = parseRelativeColor(chi[1], chi[2], chi[3], chi[4], chi[6]);
+                    const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[6]);
+                    console.debug({ components });
                     if (components != null) {
                         token.chi = Object.values(components);
                         delete token.cal;

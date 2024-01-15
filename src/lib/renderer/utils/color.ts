@@ -330,16 +330,44 @@ export function rgb2Hex(token: ColorToken) {
         t = token.chi[3];
 
         // @ts-ignore
-        if ((t.typ == EnumToken.NumberTokenType && t.val < 1) ||
-            // @ts-ignore
-            (t.typ == EnumToken.PercentageTokenType && t.val < 100)) {
+        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ||
+            (t.typ == EnumToken.NumberTokenType && +t.val < 1) ||
+            (t.typ == EnumToken.PercentageTokenType && +t.val < 100)) {
 
             // @ts-ignore
-            value += Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)).toString(16).padStart(2, '0')
+            value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0')
         }
     }
 
     return value;
+}
+
+export function rgb2hsl(r: number, g: number, b: number, a?: number | null): [number, number, number, number | null] {
+
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    let max: number = Math.max(r, g, b);
+    let min: number = Math.min(r, g, b);
+    let h: number = 0;
+    let s: number = 0;
+    let l: number = (max + min) / 2;
+
+    if (max != min) {
+        let d: number = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+
+        h /= 6;
+    }
+
+    return [ h, s, l, a == 1 ? null : a ?? null ];
 }
 
 export function hsl2Hex(token: ColorToken) {
@@ -352,11 +380,11 @@ export function hsl2Hex(token: ColorToken) {
     // @ts-ignore
     t = <NumberToken | DimensionToken>token.chi[1];
     // @ts-ignore
-    let s: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let s: number = getNumber(t);
     // @ts-ignore
     t = <NumberToken | DimensionToken>token.chi[2];
     // @ts-ignore
-    let l: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let l: number = getNumber(t);
 
     let a = null;
 
@@ -366,16 +394,36 @@ export function hsl2Hex(token: ColorToken) {
         t = token.chi[3];
 
         // @ts-ignore
-        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
+        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ||(
+            t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
             // @ts-ignore
             (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
 
             // @ts-ignore
-            a = <number>(t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
+            a = getNumber(t);
         }
     }
 
-    return `#${hsl2rgb(h, s, l, a).reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    return `#${hsl2rgb(h, s, l, a).reduce((acc: string, curr: number) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+}
+
+export function hwb2rgb(hue: number, white: number, black: number, alpha: number | null = null): number[]
+{
+
+    const rgb: number[] = hsl2rgb(hue, 1, .5);
+
+    for (let i = 0; i < 3; i++) {
+
+        rgb[i] *= (1 - white - black);
+        rgb[i] += white;
+    }
+
+    if (alpha != null && alpha != 1) {
+
+        rgb.push(alpha);
+    }
+
+    return rgb;
 }
 
 export function hwb2hex(token: ColorToken) {
@@ -388,11 +436,11 @@ export function hwb2hex(token: ColorToken) {
     // @ts-ignore
     t = <NumberToken | DimensionToken>token.chi[1];
     // @ts-ignore
-    let white: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let white: number = getNumber(t);
     // @ts-ignore
     t = <NumberToken | DimensionToken>token.chi[2];
     // @ts-ignore
-    let black: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    let black: number = getNumber(t);
 
     let a = null;
 
@@ -402,16 +450,16 @@ export function hwb2hex(token: ColorToken) {
         t = token.chi[3];
 
         // @ts-ignore
-        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
-            // @ts-ignore
-            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
+        if ((t.typ == EnumToken.IdenTokenType && t.val  == 'none') ||
+            (t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
+            (t.typ == EnumToken.NumberTokenType && +t.val < 1)) {
 
             // @ts-ignore
-            a = <number>(t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
+            a = getNumber(t);
         }
     }
 
-    const rgb = hsl2rgb(h, 1, .5, a);
+    const rgb: number[] = hsl2rgb(h, 1, .5, a);
 
     let value: number;
 
@@ -424,7 +472,7 @@ export function hwb2hex(token: ColorToken) {
         rgb[i] = Math.round(value * 255);
     }
 
-    return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    return `#${rgb.reduce((acc: string, curr: number) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 
 export function cmyk2hex(token: ColorToken) {
@@ -433,27 +481,27 @@ export function cmyk2hex(token: ColorToken) {
     let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>token.chi[0];
 
     // @ts-ignore
-    const c: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const c: number = getNumber(t);
 
     // @ts-ignore
     t = <NumberToken | PercentageToken>token.chi[1];
 
     // @ts-ignore
-    const m: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const m: number = getNumber(t);
 
     // @ts-ignore
     t = <NumberToken | PercentageToken>token.chi[2];
 
     // @ts-ignore
-    const y: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const y: number = getNumber(t);
 
     // @ts-ignore
     t = <NumberToken | PercentageToken>token.chi[3];
 
     // @ts-ignore
-    const k: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
+    const k: number = getNumber(t);
 
-    const rgb = [
+    const rgb: number[] = [
         Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
         Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
         Math.round(255 * (1 - Math.min(1, y * (1 - k) + k)))
@@ -466,10 +514,21 @@ export function cmyk2hex(token: ColorToken) {
         t = <NumberToken | PercentageToken>token.chi[8];
 
         // @ts-ignore
-        rgb.push(Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)));
+        rgb.push(Math.round(255 * getNumber(t)));
     }
 
-    return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    return `#${rgb.reduce((acc: string, curr: number) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+}
+
+export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {
+
+    if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
+
+        return 0;
+    }
+
+    // @ts-ignore
+    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
 
 export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
@@ -513,24 +572,24 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
     return token.val / 360;
 }
 
-function hsl2rgb(h: number, s: number, l: number, a: number | null = null) {
+export function hsl2rgb(h: number, s: number, l: number, a: number | null = null) {
 
-    let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
+    let v: number = l <= .5 ? l * (1.0 + s) : l + s - l * s;
 
-    let r = l;
-    let g = l;
-    let b = l;
+    let r: number = l;
+    let g: number = l;
+    let b: number = l;
 
     if (v > 0) {
 
-        let m = l + l - v;
-        let sv = (v - m) / v;
+        let m: number = l + l - v;
+        let sv: number = (v - m) / v;
         h *= 6.0;
-        let sextant = Math.floor(h);
-        let fract = h - sextant;
-        let vsf = v * sv * fract;
-        let mid1 = m + vsf;
-        let mid2 = v - vsf;
+        let sextant: number = Math.floor(h);
+        let fract: number = h - sextant;
+        let vsf: number = v * sv * fract;
+        let mid1: number = m + vsf;
+        let mid2: number = v - vsf;
 
         switch (sextant) {
             case 0:
@@ -566,7 +625,7 @@ function hsl2rgb(h: number, s: number, l: number, a: number | null = null) {
         }
     }
 
-    const values = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    const values: number[] = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 
     if (a != null && a != 1) {
 
