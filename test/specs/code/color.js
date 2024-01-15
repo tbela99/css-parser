@@ -87,7 +87,7 @@ color: hsl(none 100% 50% / none);
 }`));
         });
 
-        it('relative color rgb #12', function () {
+        it('relative color hex -> rgb #12', function () {
             return parse(`
 a {
 color: rgb(from white r g 0 / none);
@@ -96,7 +96,7 @@ color: rgb(from white r g 0 / none);
 }`));
         });
 
-        it('relative color rgb #12', function () {
+        it('relative color rgb ->rgb #12', function () {
             return parse(`
 a {
 color: rgb(from rgb(255 255 none) r g 0 / none);
@@ -105,7 +105,7 @@ color: rgb(from rgb(255 255 none) r g 0 / none);
 }`));
         });
 
-        it('relative color rgb #13', function () {
+        it('relative color hex -> rgb #13', function () {
             return parse(`
 a {
 color: rgb(from #ff0 r g r);
@@ -114,7 +114,7 @@ color: rgb(from #ff0 r g r);
 }`));
         });
 
-        it('relative color rgb #14', function () {
+        it('relative color hex -> rgb #14', function () {
             return parse(`
 a {
 color: rgb(from #ff0 r b g);
@@ -123,7 +123,7 @@ color: rgb(from #ff0 r b g);
 }`));
         });
 
-        it('relative color rgb #15', function () {
+        it('relative color rgb -> hsl #15', function () {
             return parse(`
 a {
 color: hsl(from rgb(0 128 0) h s l) ; 
@@ -132,7 +132,7 @@ color: hsl(from rgb(0 128 0) h s l) ;
 }`));
         });
 
-        it('relative color rgb #16', function () {
+        it('relative color rgb -> hsl #16', function () {
             return parse(`
 a {
 color: hsl(from rgb(0 128 0 / 1) h s l) ; 
@@ -141,7 +141,7 @@ color: hsl(from rgb(0 128 0 / 1) h s l) ;
 }`));
         });
 
-        it('relative color rgb #17', function () {
+        it('relative color hsl -> hsl #17', function () {
             return parse(`
 a {
 color: hsl(from hsl(120deg 100% 25%) h s l) ; 
@@ -150,10 +150,55 @@ color: hsl(from hsl(120deg 100% 25%) h s l) ;
 }`));
         });
 
-        it('relative color rgb #19', function () {
+        it('relative color hsl ->rgb #19', function () {
             return parse(`
 a {
 color: rgb(from hsl(120, 100%, 25%) r g b) ; 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color hwb ->rgb #20', function () {
+            return parse(`
+a {
+color: rgb(from hwb(120 0% 50%) r g b) 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color rgb ->hwb #21', function () {
+            return parse(`
+a {
+color: hwb(from rgb(0 128 0) h w b) ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color hwb -> hsl #21', function () {
+            return parse(`
+a {
+color: hwb(from hsl(120, 100%, 25%) h w b) 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color hsl -> hwb #22', function () {
+            return parse(`
+a {
+color: hsl(from hwb(120 0% 50%) h s l) 
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: green
+}`));
+        });
+
+        it('relative color hwb -> hwb #22', function () {
+            return parse(`
+a {
+color: hwb(from hwb(120 0% 50%) h w b) 
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
  color: green
 }`));

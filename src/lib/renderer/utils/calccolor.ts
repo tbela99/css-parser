@@ -1,13 +1,18 @@
 import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {COLORS_NAMES, getAngle, getNumber, hsl2rgb, rgb2hsl} from "./color";
+import {COLORS_NAMES, getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {reduceNumber} from "../render";
+import {hsl2hwb, rgb2hwb} from "./hwb";
+import {hwb2hsl, rgb2hsl} from "./hsl";
+import {hsl2rgb, hwb2rgb} from "./rgb";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'a';
+type HSLKeyType = 'h' | 's' | 'l' | 'a';
+type HWBKeyType = 'h' | 'w' | 'b' | 'a';
 
-export type RelativeColorTypes = RGBKeyType;
+export type RelativeColorTypes = RGBKeyType | HSLKeyType | HWBKeyType;
 
-export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorToken, rExp: Token, gExp: Token, bExp: Token, aExp: Token): Record<RGBKeyType, Token> | null {
+export function parseRelativeColor(relativeKeys: RelativeColorTypes[], original: ColorToken, rExp: Token, gExp: Token, bExp: Token, aExp: Token): Record<RelativeColorTypes, Token> | null {
 
     const type = <'rgb' | 'hsl' | 'hwb'>relativeKeys.join('');
     let r: number | Token;
@@ -15,8 +20,8 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
     let b: number | Token;
     let a: number | Token | null = null;
 
-    let keys: Record<RGBKeyType, Token> = <Record<RGBKeyType, Token>>{};
-    let values: Record<RGBKeyType, number | Token | null> = <Record<RGBKeyType, number | Token | null>>{};
+    let keys: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>{};
+    let values: Record<RelativeColorTypes, number | Token | null> = <Record<RelativeColorTypes, number | Token | null>>{};
     let children: Token[];
 
     switch (original.kin) {
@@ -62,7 +67,7 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
         case 'rgb':
         case 'rgba':
 
-             children = (<Token[]>original.chi).filter((t: Token) => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType || t.typ == EnumToken.PercentageTokenType);
+            children = (<Token[]>original.chi).filter((t: Token) => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType || t.typ == EnumToken.PercentageTokenType);
 
             if (children.every((t: Token) => (t.typ == EnumToken.IdenTokenType && t.val == 'none') || t.typ == EnumToken.NumberTokenType)) {
 
@@ -90,15 +95,14 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
 
         case 'hsl':
         case 'hsla':
+        case 'hwb':
 
-             children = (<Token[]>original.chi).filter((t: Token) => t.typ == EnumToken.AngleTokenType || t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType || t.typ == EnumToken.PercentageTokenType);
+            children = (<Token[]>original.chi).filter((t: Token) => t.typ == EnumToken.AngleTokenType || t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType || t.typ == EnumToken.PercentageTokenType);
 
             if (children.length == 3 || children.length == 4) {
 
                 [r, g, b, a] = children;
-            }
-
-            else {
+            } else {
 
                 return null;
             }
@@ -113,17 +117,20 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
 
     if (from != type) {
 
-        if (type == 'hsl' ) {
+        if (type == 'hsl' || type == 'hwb') {
 
             if (from == 'rgb') {
 
-                [r, g, b] = rgb2hsl(<number>r, <number>g, <number>b);
+                [r, g, b] = (type == 'hwb' ? rgb2hwb : rgb2hsl)(<number>r, <number>g, <number>b);
 
+                // @ts-ignore
                 r *= 360;
+                // @ts-ignore
                 g *= 100;
+                // @ts-ignore
                 b *= 100;
 
-                values = <Record<RGBKeyType, number | Token | null>>(a == null ? {
+                values = <Record<RelativeColorTypes, number | Token | null>>(a == null ? {
                     [relativeKeys[0]]: {typ: EnumToken.AngleTokenType, val: r, unit: 'deg'},
                     [relativeKeys[1]]: {typ: EnumToken.PercentageTokenType, val: g},
                     [relativeKeys[2]]: {typ: EnumToken.PercentageTokenType, val: b}
@@ -133,47 +140,104 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
                     [relativeKeys[2]]: {typ: EnumToken.PercentageTokenType, val: b},
                     a
                 });
+            } else if (from == 'hwb' || from == 'hsl') {
+
+                // console.debug({r, g, b});
+
+                if (type == 'hsl') {
+
+                    if (from == 'hwb') {
+
+                        [r, g, b] = hwb2hsl(getAngle(<NumberToken | AngleToken | IdentToken>r), getNumber(<NumberToken | IdentToken | PercentageToken>g), getNumber(<NumberToken | IdentToken | PercentageToken>b));
+
+                        // @ts-ignore
+                        r *= 360;
+                        // @ts-ignore
+                        g *= 100;
+                        // @ts-ignore
+                        b *= 100;
+
+                        values = <Record<RelativeColorTypes, number | Token | null>>(a == null ? {
+                            [relativeKeys[0]]: {typ: EnumToken.AngleTokenType, val: r, unit: 'deg'},
+                            [relativeKeys[1]]: {typ: EnumToken.PercentageTokenType, val: g},
+                            [relativeKeys[2]]: {typ: EnumToken.PercentageTokenType, val: b}
+                        } : {
+                            [relativeKeys[0]]: {typ: EnumToken.AngleTokenType, val: r, unit: 'deg'},
+                            [relativeKeys[1]]: {typ: EnumToken.PercentageTokenType, val: g},
+                            [relativeKeys[2]]: {typ: EnumToken.PercentageTokenType, val: b},
+                            a
+                        });
+                    }
+                }
+
+                else if (type == 'hwb') {
+
+                    if (from == 'hsl') {
+
+                        [r, g, b] = hsl2hwb(getAngle(<NumberToken | AngleToken | IdentToken>r), getNumber(<NumberToken | IdentToken | PercentageToken>g), getNumber(<NumberToken | IdentToken | PercentageToken>b));
+
+                        // @ts-ignore
+                        r *= 360;
+                        // @ts-ignore
+                        g *= 100;
+                        // @ts-ignore
+                        b *= 100;
+
+                        values = <Record<RelativeColorTypes, number | Token | null>>(a == null ? {
+                            [relativeKeys[0]]: {typ: EnumToken.AngleTokenType, val: r, unit: 'deg'},
+                            [relativeKeys[1]]: {typ: EnumToken.PercentageTokenType, val: g},
+                            [relativeKeys[2]]: {typ: EnumToken.PercentageTokenType, val: b}
+                        } : {
+                            [relativeKeys[0]]: {typ: EnumToken.AngleTokenType, val: r, unit: 'deg'},
+                            [relativeKeys[1]]: {typ: EnumToken.PercentageTokenType, val: g},
+                            [relativeKeys[2]]: {typ: EnumToken.PercentageTokenType, val: b},
+                            a
+                        });
+                    }
+                }
             }
 
             else {
 
                 return null;
             }
-        }
 
-        else if (type == 'rgb') {
+        } else if (type == 'rgb') {
 
-            if (from == 'hsl') {
+            if (from == 'hsl' || from == 'hwb') {
 
-                console.debug({r, g, b});
+                [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(getAngle(<NumberToken | AngleToken | IdentToken>r), getNumber(<NumberToken | IdentToken | PercentageToken>g), getNumber(<NumberToken | IdentToken | PercentageToken>b));
 
-                [r, g, b] = hsl2rgb(getAngle(<NumberToken | AngleToken | IdentToken>r), getNumber(<NumberToken | IdentToken | PercentageToken>g), getNumber(<NumberToken | IdentToken | PercentageToken>b));
+                values = from == 'hwb' ? <Record<RelativeColorTypes, number | Token | null>>(a == null ? {
+                        [relativeKeys[0]]: {typ: EnumToken.NumberTokenType, val: r},
+                        [relativeKeys[1]]: {typ: EnumToken.NumberTokenType, val: g},
+                        [relativeKeys[2]]: {typ: EnumToken.NumberTokenType, val: b}
+                    } : {
+                        [relativeKeys[0]]: {typ: EnumToken.NumberTokenType, val: r},
+                        [relativeKeys[1]]: {typ: EnumToken.NumberTokenType, val: g},
+                        [relativeKeys[2]]: {typ: EnumToken.NumberTokenType, val: b},
+                        a
+                    })
+                    :
+                    <Record<RelativeColorTypes, number | Token | null>>(a == null ? {
+                        [relativeKeys[0]]: {typ: EnumToken.NumberTokenType, val: r},
+                        [relativeKeys[1]]: {typ: EnumToken.NumberTokenType, val: g},
+                        [relativeKeys[2]]: {typ: EnumToken.NumberTokenType, val: b}
+                    } : {
+                        [relativeKeys[0]]: {typ: EnumToken.NumberTokenType, val: r},
+                        [relativeKeys[1]]: {typ: EnumToken.NumberTokenType, val: g},
+                        [relativeKeys[2]]: {typ: EnumToken.NumberTokenType, val: b},
+                        a
+                    });
 
-                console.debug({r, g, b});
-
-
-                values = <Record<RGBKeyType, number | Token | null>>(a == null ? {
-                    [relativeKeys[0]]: {typ: EnumToken.NumberTokenType, val: r},
-                    [relativeKeys[1]]: {typ: EnumToken.NumberTokenType, val: g},
-                    [relativeKeys[2]]: {typ: EnumToken.NumberTokenType, val: b}
-                } : {
-                    [relativeKeys[0]]: {typ: EnumToken.NumberTokenType, val: r},
-                    [relativeKeys[1]]: {typ: EnumToken.NumberTokenType, val: g},
-                    [relativeKeys[2]]: {typ: EnumToken.NumberTokenType, val: b},
-                    a
-                });
-            }
-
-            else {
+            } else {
 
                 return null;
             }
         }
-    }
+    } else {
 
-    else {
-
-        values = <Record<RGBKeyType, number | Token | null>>(a == null ? {
+        values = <Record<RelativeColorTypes, number | Token | null>>(a == null ? {
             [relativeKeys[0]]: r,
             [relativeKeys[1]]: g,
             [relativeKeys[2]]: b
@@ -185,7 +249,7 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
         });
     }
 
-    keys = <Record<RGBKeyType, Token>>(a == null ? {
+    keys = <Record<RelativeColorTypes, Token>>(a == null ? {
         [relativeKeys[0]]: rExp,
         [relativeKeys[1]]: gExp,
         [relativeKeys[2]]: bExp
@@ -196,13 +260,11 @@ export function parseRelativeColor(relativeKeys: RGBKeyType[], original: ColorTo
         a: aExp
     });
 
-    // console.debug({keys, values});
-
     return computeComponentValue(keys, values);
 }
 
 
-function computeComponentValue(expr: Record<RGBKeyType, Token>, values: Record<RGBKeyType, number | Token | null>): Record<RGBKeyType, Token> {
+function computeComponentValue(expr: Record<RelativeColorTypes, Token>, values: Record<RelativeColorTypes, number | Token | null>): Record<RelativeColorTypes, Token> {
 
     for (const [key, exp] of Object.entries(expr)) {
 
@@ -210,38 +272,34 @@ function computeComponentValue(expr: Record<RGBKeyType, Token>, values: Record<R
 
             if (key in values) {
 
-                if (typeof values[<RGBKeyType>key] == 'number') {
+                if (typeof values[<RelativeColorTypes>key] == 'number') {
 
-                    expr[<RGBKeyType>key] = {
+                    expr[<RelativeColorTypes>key] = {
                         typ: EnumToken.NumberTokenType,
-                        val: reduceNumber(<number>values[<RGBKeyType>key])
+                        val: reduceNumber(<number>values[<RelativeColorTypes>key])
                     };
-                }
+                } else {
 
-                else {
-
-                    expr[<RGBKeyType>key] = <Token>values[<RGBKeyType>key];
+                    expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>key];
                 }
             }
-        }
+        } else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
 
-        else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
-
-            // expr[<RGBKeyType>key] = exp;
+            // expr[<RelativeColorTypes>key] = exp;
         } else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
 
-            if (typeof values[<RGBKeyType>exp.val] == 'number') {
+            if (typeof values[<RelativeColorTypes>exp.val] == 'number') {
 
-                expr[<RGBKeyType>key] = {
+                expr[<RelativeColorTypes>key] = {
                     typ: EnumToken.NumberTokenType,
-                    val: reduceNumber(<number>values[<RGBKeyType>exp.val])
+                    val: reduceNumber(<number>values[<RelativeColorTypes>exp.val])
                 };
             } else {
 
-                expr[<RGBKeyType>key] = <Token>values[<RGBKeyType>exp.val];
+                expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
             }
         }
     }
 
-    return <Record<RGBKeyType, Token>>expr;
+    return <Record<RelativeColorTypes, Token>>expr;
 }

@@ -425,6 +425,104 @@
         '#663399': 'rebeccapurple',
         '#00000000': 'transparent'
     });
+    function getNumber(token) {
+        if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
+            return 0;
+        }
+        // @ts-ignore
+        return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
+    }
+    function getAngle(token) {
+        if (token.typ == exports.EnumToken.IdenTokenType) {
+            if (token.val == 'none') {
+                return 0;
+            }
+        }
+        if (token.typ == exports.EnumToken.AngleTokenType) {
+            switch (token.unit) {
+                case 'deg':
+                    // @ts-ignore
+                    return token.val / 360;
+                case 'rad':
+                    // @ts-ignore
+                    return token.val / (2 * Math.PI);
+                case 'grad':
+                    // @ts-ignore
+                    return token.val / 400;
+                case 'turn':
+                    // @ts-ignore
+                    return +token.val;
+            }
+        }
+        // @ts-ignore
+        return token.val / 360;
+    }
+
+    function hwb2rgb(hue, white, black, alpha = null) {
+        const rgb = hsl2rgb(hue, 1, .5);
+        for (let i = 0; i < 3; i++) {
+            rgb[i] *= (1 - white - black);
+            rgb[i] = Math.round(rgb[i] + white);
+        }
+        if (alpha != null && alpha != 1) {
+            rgb.push(alpha);
+        }
+        return rgb;
+    }
+    function hsl2rgb(h, s, l, a = null) {
+        let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
+        let r = l;
+        let g = l;
+        let b = l;
+        if (v > 0) {
+            let m = l + l - v;
+            let sv = (v - m) / v;
+            h *= 6.0;
+            let sextant = Math.floor(h);
+            let fract = h - sextant;
+            let vsf = v * sv * fract;
+            let mid1 = m + vsf;
+            let mid2 = v - vsf;
+            switch (sextant) {
+                case 0:
+                    r = v;
+                    g = mid1;
+                    b = m;
+                    break;
+                case 1:
+                    r = mid2;
+                    g = v;
+                    b = m;
+                    break;
+                case 2:
+                    r = m;
+                    g = v;
+                    b = mid1;
+                    break;
+                case 3:
+                    r = m;
+                    g = mid2;
+                    b = v;
+                    break;
+                case 4:
+                    r = mid1;
+                    g = m;
+                    b = v;
+                    break;
+                case 5:
+                    r = v;
+                    g = m;
+                    b = mid2;
+                    break;
+            }
+        }
+        const values = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        if (a != null && a != 1) {
+            values.push(Math.round(a * 255));
+        }
+        return values;
+    }
+
     function rgb2Hex(token) {
         let value = '#';
         let t;
@@ -448,33 +546,6 @@
             }
         }
         return value;
-    }
-    function rgb2hsl(r, g, b, a) {
-        r /= 255;
-        g /= 255;
-        b /= 255;
-        let max = Math.max(r, g, b);
-        let min = Math.min(r, g, b);
-        let h = 0;
-        let s = 0;
-        let l = (max + min) / 2;
-        if (max != min) {
-            let d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r:
-                    h = (g - b) / d + (g < b ? 6 : 0);
-                    break;
-                case g:
-                    h = (b - r) / d + 2;
-                    break;
-                case b:
-                    h = (r - g) / d + 4;
-                    break;
-            }
-            h /= 6;
-        }
-        return [h, s, l, a == 1 ? null : a ?? null];
     }
     function hsl2Hex(token) {
         let t;
@@ -567,90 +638,112 @@
         }
         return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
     }
-    function getNumber(token) {
-        if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
-            return 0;
-        }
-        // @ts-ignore
-        return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
+
+    function hwb2hsv(h, w, b) {
+        return [h, 1 - w / (1 - b), 1 - b];
     }
-    function getAngle(token) {
-        if (token.typ == exports.EnumToken.IdenTokenType) {
-            if (token.val == 'none') {
-                return 0;
-            }
-        }
-        if (token.typ == exports.EnumToken.AngleTokenType) {
-            switch (token.unit) {
-                case 'deg':
-                    // @ts-ignore
-                    return token.val / 360;
-                case 'rad':
-                    // @ts-ignore
-                    return token.val / (2 * Math.PI);
-                case 'grad':
-                    // @ts-ignore
-                    return token.val / 400;
-                case 'turn':
-                    // @ts-ignore
-                    return +token.val;
-            }
-        }
-        // @ts-ignore
-        return token.val / 360;
+    // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
+    function hsl2hsv(h, s, l) {
+        s *= l < .5 ? l : 1 - l;
+        return [
+            //Range should be between 0 - 1
+            h,
+            2 * s / (l + s),
+            l + s //Value
+        ];
     }
-    function hsl2rgb(h, s, l, a = null) {
-        let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
-        let r = l;
-        let g = l;
-        let b = l;
-        if (v > 0) {
-            let m = l + l - v;
-            let sv = (v - m) / v;
-            h *= 6.0;
-            let sextant = Math.floor(h);
-            let fract = h - sextant;
-            let vsf = v * sv * fract;
-            let mid1 = m + vsf;
-            let mid2 = v - vsf;
-            switch (sextant) {
-                case 0:
-                    r = v;
-                    g = mid1;
-                    b = m;
+
+    function rgb2hue(r, g, b, fallback = 0) {
+        let value = rgb2value(r, g, b);
+        let whiteness = rgb2whiteness(r, g, b);
+        let delta = value - whiteness;
+        if (delta > 0) {
+            // calculate segment
+            let segment = value === r ? (g - b) / delta : (value === g
+                ? (b - r) / delta
+                : (r - g) / delta);
+            // calculate shift
+            let shift = value === r ? segment < 0
+                ? 360 / 60
+                : 0 / 60 : (value === g
+                ? 120 / 60
+                : 240 / 60);
+            // calculate hue
+            return (segment + shift) * 60;
+        }
+        return fallback;
+    }
+    function rgb2value(r, g, b) {
+        return Math.max(r, g, b);
+    }
+    function rgb2whiteness(r, g, b) {
+        return Math.min(r, g, b);
+    }
+    function rgb2hwb(r, g, b, a = null, fallback = 0) {
+        r *= 100 / 255;
+        g *= 100 / 255;
+        b *= 100 / 255;
+        let hue = rgb2hue(r, g, b, fallback);
+        let whiteness = rgb2whiteness(r, g, b);
+        let value = Math.round(rgb2value(r, g, b));
+        let blackness = 100 - value;
+        const result = [Math.round(hue) / 360, whiteness / 100, blackness / 100];
+        if (a != null) {
+            result.push(a);
+        }
+        return result;
+    }
+    function hsv2hwb(h, s, v) {
+        return [h, (1 - s) * v, 1 - v];
+    }
+    function hsl2hwb(h, s, l) {
+        return hsv2hwb(...hsl2hsv(h, s, l));
+    }
+
+    function rgb2hsl(r, g, b, a) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        let max = Math.max(r, g, b);
+        let min = Math.min(r, g, b);
+        let h = 0;
+        let s = 0;
+        let l = (max + min) / 2;
+        if (max != min) {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
                     break;
-                case 1:
-                    r = mid2;
-                    g = v;
-                    b = m;
+                case g:
+                    h = (b - r) / d + 2;
                     break;
-                case 2:
-                    r = m;
-                    g = v;
-                    b = mid1;
-                    break;
-                case 3:
-                    r = m;
-                    g = mid2;
-                    b = v;
-                    break;
-                case 4:
-                    r = mid1;
-                    g = m;
-                    b = v;
-                    break;
-                case 5:
-                    r = v;
-                    g = m;
-                    b = mid2;
+                case b:
+                    h = (r - g) / d + 4;
                     break;
             }
+            h /= 6;
         }
-        const values = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-        if (a != null && a != 1) {
-            values.push(Math.round(a * 255));
-        }
-        return values;
+        return [h, s, l, a == 1 ? null : a ?? null];
+    }
+    // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
+    function hsv2hsl(h, s, v) {
+        return [
+            //[hue, saturation, lightness]
+            //Range should be between 0 - 1
+            h,
+            //Saturation is very different between the two color spaces
+            //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
+            //Otherwise sat*val/(2-(2-sat)*val)
+            //Conditional is not operating with hue, it is reassigned!
+            s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h),
+            h / 2 //Lightness is (2-sat)*val/2
+            //See reassignment of hue above
+        ];
+    }
+    function hwb2hsl(h, w, b) {
+        return hsv2hsl(...hwb2hsv(h, w, b));
     }
 
     // from https://github.com/Rich-Harris/vlq/tree/master
@@ -806,6 +899,7 @@
                 break;
             case 'hsl':
             case 'hsla':
+            case 'hwb':
                 children = original.chi.filter((t) => t.typ == exports.EnumToken.AngleTokenType || t.typ == exports.EnumToken.NumberTokenType || t.typ == exports.EnumToken.IdenTokenType || t.typ == exports.EnumToken.PercentageTokenType);
                 if (children.length == 3 || children.length == 4) {
                     [r, g, b, a] = children;
@@ -819,11 +913,14 @@
         }
         const from = ['rgb', 'rgba', 'hex', 'lit'].includes(original.kin) ? 'rgb' : original.kin;
         if (from != type) {
-            if (type == 'hsl') {
+            if (type == 'hsl' || type == 'hwb') {
                 if (from == 'rgb') {
-                    [r, g, b] = rgb2hsl(r, g, b);
+                    [r, g, b] = (type == 'hwb' ? rgb2hwb : rgb2hsl)(r, g, b);
+                    // @ts-ignore
                     r *= 360;
+                    // @ts-ignore
                     g *= 100;
+                    // @ts-ignore
                     b *= 100;
                     values = (a == null ? {
                         [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
@@ -836,16 +933,59 @@
                         a
                     });
                 }
+                else if (from == 'hwb' || from == 'hsl') {
+                    // console.debug({r, g, b});
+                    if (type == 'hsl') {
+                        if (from == 'hwb') {
+                            [r, g, b] = hwb2hsl(getAngle(r), getNumber(g), getNumber(b));
+                            // @ts-ignore
+                            r *= 360;
+                            // @ts-ignore
+                            g *= 100;
+                            // @ts-ignore
+                            b *= 100;
+                            values = (a == null ? {
+                                [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
+                                [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
+                                [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b }
+                            } : {
+                                [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
+                                [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
+                                [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b },
+                                a
+                            });
+                        }
+                    }
+                    else if (type == 'hwb') {
+                        if (from == 'hsl') {
+                            [r, g, b] = hsl2hwb(getAngle(r), getNumber(g), getNumber(b));
+                            // @ts-ignore
+                            r *= 360;
+                            // @ts-ignore
+                            g *= 100;
+                            // @ts-ignore
+                            b *= 100;
+                            values = (a == null ? {
+                                [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
+                                [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
+                                [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b }
+                            } : {
+                                [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
+                                [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
+                                [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b },
+                                a
+                            });
+                        }
+                    }
+                }
                 else {
                     return null;
                 }
             }
             else if (type == 'rgb') {
-                if (from == 'hsl') {
-                    console.debug({ r, g, b });
-                    [r, g, b] = hsl2rgb(getAngle(r), getNumber(g), getNumber(b));
-                    console.debug({ r, g, b });
-                    values = (a == null ? {
+                if (from == 'hsl' || from == 'hwb') {
+                    [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(getAngle(r), getNumber(g), getNumber(b));
+                    values = from == 'hwb' ? (a == null ? {
                         [relativeKeys[0]]: { typ: exports.EnumToken.NumberTokenType, val: r },
                         [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
                         [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b }
@@ -854,7 +994,18 @@
                         [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
                         [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b },
                         a
-                    });
+                    })
+                        :
+                            (a == null ? {
+                                [relativeKeys[0]]: { typ: exports.EnumToken.NumberTokenType, val: r },
+                                [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
+                                [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b }
+                            } : {
+                                [relativeKeys[0]]: { typ: exports.EnumToken.NumberTokenType, val: r },
+                                [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
+                                [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b },
+                                a
+                            });
                 }
                 else {
                     return null;
@@ -883,7 +1034,6 @@
             [relativeKeys[2]]: bExp,
             a: aExp
         });
-        // console.debug({keys, values});
         return computeComponentValue(keys, values);
     }
     function computeComponentValue(expr, values) {
@@ -1153,12 +1303,11 @@
                 return '/';
             case exports.EnumToken.ColorTokenType:
                 if (options.colorConvert) {
-                    if (token.cal == 'rel' && ['rgb', 'hsl'].includes(token.val)) {
+                    if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
                         const chi = token.chi.filter(x => ![
                             exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType
                         ].includes(x.typ));
                         const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[6]);
-                        console.debug({ components });
                         if (components != null) {
                             token.chi = Object.values(components);
                             delete token.cal;

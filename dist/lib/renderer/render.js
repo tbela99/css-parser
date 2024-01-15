@@ -1,4 +1,5 @@
-import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
+import { getAngle, COLORS_NAMES, NAMES_COLORS } from './utils/color.js';
+import { rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex } from './utils/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
@@ -243,12 +244,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '/';
         case EnumToken.ColorTokenType:
             if (options.colorConvert) {
-                if (token.cal == 'rel' && ['rgb', 'hsl'].includes(token.val)) {
+                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
                     const chi = token.chi.filter(x => ![
                         EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType
                     ].includes(x.typ));
                     const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[6]);
-                    console.debug({ components });
                     if (components != null) {
                         token.chi = Object.values(components);
                         delete token.cal;

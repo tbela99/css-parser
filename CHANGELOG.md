@@ -17,7 +17,7 @@
   - [x] rgb
   - [x] hex
   - [x] hsl
-  - [ ] hwb
+  - [x] hwb
   - [ ] calc()
 
 ## v0.2.0

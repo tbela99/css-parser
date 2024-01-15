@@ -396,14 +396,12 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.colorConvert) {
 
-                if (token.cal == 'rel' && ['rgb', 'hsl'].includes(token.val)) {
+                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
 
                     const chi: Token[] =  (<Token[]>token.chi).filter(x => ![
                         EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(x.typ));
 
                     const components = parseRelativeColor(<RelativeColorTypes[]>token.val.split(''), <ColorToken>chi[1], chi[2], chi[3], chi[4], chi[6]);
-
-                    console.debug({components});
 
                     if (components != null) {
 
