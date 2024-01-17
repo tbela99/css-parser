@@ -203,6 +203,58 @@ color: hwb(from hwb(120 0% 50%) h w b)
  color: green
 }`));
         });
+
+        it('relative color calc() #23', function () {
+            return parse(`
+a {
+color: hsl(from green calc(h * 2) s l)
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: navy
+}`));
+        });
+
+        it('relative color calc() #24', function () {
+            return parse(`
+a {
+color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #00008080
+}`));
+        });
+
+        it('relative color calc( and var() #25', function () {
+            return parse(`
+:root {
+--color: green;
+}
+._19_u :focus {
+    color:  hsl(from var(--color) calc(h * 2) s l);
+
+}
+
+`, {
+                inlineCssVariables: true
+            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`._19_u :focus {
+ color: navy
+}`));
+        });
+
+        it('relative color calc( and var() #26', function () {
+            return parse(`
+:root {
+  --color: 255 0 0;
+}
+
+.selector {
+  background-color: rgb(var(--color) / 0.5);
+}
+
+`, {
+                inlineCssVariables: true
+            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ background-color: red
+}`));
+        });
     });
     //
 }

@@ -307,6 +307,34 @@ const NAMES_COLORS = Object.seal({
     '#663399': 'rebeccapurple',
     '#00000000': 'transparent'
 });
+/**
+ * clamp color values
+ * @param token
+ */
+function clamp(token) {
+    if (token.kin == 'rgb' || token.kin == 'rgba') {
+        token.chi.filter((token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).
+            forEach((token, index) => {
+            if (index <= 2) {
+                if (token.typ == EnumToken.NumberTokenType) {
+                    token.val = String(Math.min(255, Math.max(0, +token.val)));
+                }
+                else if (token.typ == EnumToken.PercentageTokenType) {
+                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+                }
+            }
+            else {
+                if (token.typ == EnumToken.NumberTokenType) {
+                    token.val = String(Math.min(1, Math.max(0, +token.val)));
+                }
+                else if (token.typ == EnumToken.PercentageTokenType) {
+                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+                }
+            }
+        });
+    }
+    return token;
+}
 function getNumber(token) {
     if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
         return 0;
@@ -340,4 +368,4 @@ function getAngle(token) {
     return token.val / 360;
 }
 
-export { COLORS_NAMES, NAMES_COLORS, getAngle, getNumber };
+export { COLORS_NAMES, NAMES_COLORS, clamp, getAngle, getNumber };

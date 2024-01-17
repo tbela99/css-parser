@@ -78,7 +78,7 @@ export declare interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
-    colorConvert?: boolean;
+    convertColor?: boolean;
     output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;

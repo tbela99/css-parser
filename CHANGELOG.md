@@ -12,13 +12,15 @@
 - [x] gap
 
 ### Other
-- [x] none keyword in color
-- [ ] css relative color syntax https://www.w3.org/TR/css-color-5/#relative-colors
+- [x] renamed RenderOptions.colorConvert to RenderOptions.convertColor
+- [x] support none keyword in color
+- [x] css relative color syntax for rgb(), hsl() and hwb() colors https://www.w3.org/TR/css-color-5/#relative-colors
   - [x] rgb
   - [x] hex
   - [x] hsl
   - [x] hwb
-  - [ ] calc()
+  - [x] calc()
+  - [x] calc() and inline var()
 
 ## v0.2.0
 

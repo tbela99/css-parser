@@ -1,8 +1,8 @@
-import {AngleToken, IdentToken, NumberToken, PercentageToken} from "../../../@types";
+import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {EnumToken} from "../../ast";
 
 // name to color
-export const COLORS_NAMES: {[key: string]: string} = Object.seal({
+export const COLORS_NAMES: { [key: string]: string } = Object.seal({
     'aliceblue': '#f0f8ff',
     'antiquewhite': '#faebd7',
     'aqua': '#00ffff',
@@ -155,7 +155,7 @@ export const COLORS_NAMES: {[key: string]: string} = Object.seal({
 });
 
 // color to name
-export const NAMES_COLORS: {[key: string]: string} = Object.seal({
+export const NAMES_COLORS: { [key: string]: string } = Object.seal({
     '#f0f8ff': 'aliceblue',
     '#faebd7': 'antiquewhite',
     // '#00ffff': 'aqua',
@@ -306,6 +306,46 @@ export const NAMES_COLORS: {[key: string]: string} = Object.seal({
     '#663399': 'rebeccapurple',
     '#00000000': 'transparent'
 });
+
+/**
+ * clamp color values
+ * @param token
+ */
+export function clamp(token: ColorToken): ColorToken {
+
+    if (token.kin == 'rgb' || token.kin == 'rgba') {
+
+        (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).
+        forEach((token: Token, index: number) => {
+
+            if (index <= 2) {
+
+                if (token.typ == EnumToken.NumberTokenType) {
+
+                    token.val = String(Math.min(255, Math.max(0, +token.val)));
+
+                } else if (token.typ == EnumToken.PercentageTokenType) {
+
+                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+                }
+            }
+
+            else {
+
+                if (token.typ == EnumToken.NumberTokenType) {
+
+                    token.val = String(Math.min(1, Math.max(0, +token.val)));
+
+                } else if (token.typ == EnumToken.PercentageTokenType) {
+
+                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+                }
+            }
+        });
+    }
+
+    return token;
+}
 
 export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {
 

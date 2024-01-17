@@ -885,7 +885,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
         return parseDimension(val);
     }
 
-    const v = val.toLowerCase();
+    const v: string = val.toLowerCase();
     if (v == 'currentcolor' || val == 'transparent' || v in COLORS_NAMES) {
         return <ColorToken>{
             typ: EnumToken.ColorTokenType,
@@ -1249,7 +1249,6 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                     // @ts-ignore
                     t.cal = 'rel';
                 }
-
 
                 t.chi = t.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
                 continue;

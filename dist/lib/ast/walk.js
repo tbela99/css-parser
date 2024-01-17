@@ -1,3 +1,5 @@
+import { EnumToken } from './types.js';
+
 function* walk(node, filter) {
     const parents = [node];
     const root = node;
@@ -53,6 +55,11 @@ function* walkValues(values, root = null, filter) {
                 weakMap.set(child, value);
             }
             stack.unshift(...value.chi);
+        }
+        else if (value.typ == EnumToken.BinaryExpressionTokenType) {
+            weakMap.set(value.l, value);
+            weakMap.set(value.r, value);
+            stack.unshift(value.l, value.r);
         }
     }
 }

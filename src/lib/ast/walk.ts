@@ -1,14 +1,16 @@
 import {
     AstNode,
-    AstRuleList,
+    AstRuleList, BinaryExpressionToken,
     FunctionToken,
     ParensToken,
     Token,
     WalkAttributesResult,
-    WalkResult,
     WalkerFilter,
-    WalkerOption, WalkerValueFilter
+    WalkerOption,
+    WalkerValueFilter,
+    WalkResult
 } from "../../@types";
+import {EnumToken} from "./types";
 
 export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {
 
@@ -60,7 +62,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 export function* walkValues(values: Token[], root: AstNode | null = null, filter?: WalkerValueFilter): Generator<WalkAttributesResult> {
 
     const stack: Token[] = values.slice();
-    const weakMap: WeakMap<Token, FunctionToken | ParensToken> = new WeakMap;
+    const weakMap: WeakMap<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new WeakMap;
 
     let value: Token;
 
@@ -100,6 +102,13 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
             }
 
             stack.unshift(...(<FunctionToken | ParensToken>value).chi);
+        }
+
+        else if (value.typ == EnumToken.BinaryExpressionTokenType) {
+
+            weakMap.set(value.l, <FunctionToken | ParensToken | BinaryExpressionToken>value);
+            weakMap.set(value.r, <FunctionToken | ParensToken | BinaryExpressionToken>value);
+            stack.unshift(value.l, value.r);
         }
     }
 }

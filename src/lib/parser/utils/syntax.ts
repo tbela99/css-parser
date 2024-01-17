@@ -98,7 +98,7 @@ export function isColor(token: Token): boolean {
                 continue;
             }
 
-            if (v.typ == EnumToken.FunctionTokenType && colorsFunc.includes(v.val)) {
+            if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
 
                 continue;
             }

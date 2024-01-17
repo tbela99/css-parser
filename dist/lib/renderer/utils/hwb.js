@@ -34,7 +34,7 @@ function rgb2hwb(r, g, b, a = null, fallback = 0) {
     let whiteness = rgb2whiteness(r, g, b);
     let value = Math.round(rgb2value(r, g, b));
     let blackness = 100 - value;
-    const result = [Math.round(hue) / 360, whiteness / 100, blackness / 100];
+    const result = [hue / 360, whiteness / 100, blackness / 100];
     if (a != null) {
         result.push(a);
     }

@@ -48,7 +48,7 @@ export function rgb2hwb(r: number, g: number, b: number, a: number | null = null
     let value: number = Math.round(rgb2value(r, g, b));
     let blackness: number = 100 - value;
 
-    const result: number[] = [Math.round(hue) / 360, whiteness / 100, blackness / 100];
+    const result: number[] = [hue / 360, whiteness / 100, blackness / 100];
 
     if (a != null) {
         result.push(a);

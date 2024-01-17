@@ -64,7 +64,7 @@ function isColor(token) {
                 }
                 continue;
             }
-            if (v.typ == EnumToken.FunctionTokenType && colorsFunc.includes(v.val)) {
+            if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
                 continue;
             }
             if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {

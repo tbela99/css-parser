@@ -18,6 +18,8 @@ $ npm install @tbela99/css-parser
 - generate sourcemap
 - compute css shorthands. see the list below
 - compute calc() expression
+- inline css variables
+- relative css colors using rgb(), hsl() and hwb()
 - nested css expansion
 - remove duplicate properties
 - flatten @import rules
@@ -340,6 +342,37 @@ result
 .foo-bar {
     width: 12px;
     height: 25%
+}
+
+```
+
+### Example 5
+
+### CSS variable inlining and relative color
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+:root {
+--color: green;
+}
+._19_u :focus {
+    color:  hsl(from var(--color) calc(h * 2) s l);
+
+}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+result
+
+```css
+._19_u :focus {
+    color: navy
 }
 
 ```
