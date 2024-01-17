@@ -4,6 +4,7 @@ import {
     PropertyListOptions,
     ShorthandMapType,
     ShorthandPropertyType,
+    PropertiesConfig,
     Token
 } from "../../../@types";
 import {PropertySet} from "./set";
@@ -12,12 +13,13 @@ import {PropertyMap} from "./map";
 import {parseString} from "../parse";
 import {EnumToken} from "../../ast";
 
-const config = getConfig();
+const config: PropertiesConfig = getConfig();
 
 export class PropertyList {
 
     protected options: PropertyListOptions = {removeDuplicateDeclarations: true, computeShorthand: true};
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
+
     constructor(options: PropertyListOptions = {}) {
 
         for (const key of Object.keys(this.options)) {
@@ -34,7 +36,11 @@ export class PropertyList {
 
     set(nam: string, value: string | Token[]) {
 
-        return this.add({typ: EnumToken.DeclarationNodeType, nam, val: Array.isArray(value) ? value : parseString(String(value))});
+        return this.add({
+            typ: EnumToken.DeclarationNodeType,
+            nam,
+            val: Array.isArray(value) ? value : parseString(String(value))
+        });
     }
 
     add(declaration: AstNode) {
@@ -63,17 +69,13 @@ export class PropertyList {
                 shortHandType = 'map';
                 // @ts-ignore
                 shorthand = <string>config.properties[propertyName].map;
-            }
-
-            else {
+            } else {
 
                 shortHandType = 'set';
                 // @ts-ignore
                 shorthand = <string>config.properties[propertyName].shorthand;
             }
-        }
-
-        else if (propertyName in config.map) {
+        } else if (propertyName in config.map) {
 
             shortHandType = 'map';
             // @ts-ignore
@@ -148,7 +150,7 @@ export class PropertyList {
                     }
                 }
 
-                return <{value: AstNode, done: boolean}>value;
+                return <{ value: AstNode, done: boolean }>value;
             }
         }
     }

@@ -47,6 +47,209 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
 
 export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
+    // [
+    //     {
+    //         shorthand: 'grid',
+    //         pattern: `grid-auto-columns grid-auto-flow grid-auto-rows grid-template-areas grid-template-columns grid-template-rows`,
+    //         keywords: ['0', 'row', 'none', 'auto', 'normal'],
+    //         default: []
+    //     },
+    //     [
+    //         {
+    //             shorthand: 'grid-template-rows',
+    //             properties: {
+    //
+    //                 keywords: ['none', 'auto', 'masonry', 'subgrid', 'min-content', 'max-content'],
+    //                 default: ['none'],
+    //                 types: ['Length', 'Flex', 'Perc', 'IdenList', 'GridTemplateFunc']
+    //             }
+    //         },
+    //         {
+    //             shorthand: 'grid-template-columns',
+    //             properties: {
+    //
+    //                 keywords: ['none', 'auto', 'masonry', 'subgrid', 'min-content', 'max-content'],
+    //                 default: ['none'],
+    //                 types: ['Length', 'Flex', 'Perc', 'IdenList', 'GridTemplateFunc']
+    //             }
+    //         },
+    //         {
+    //             shorthand: 'grid-template-areas',
+    //             properties: {
+    //
+    //                 keywords: ['none'],
+    //                 default: [],
+    //                 types: ['String']
+    //             }
+    //         },
+    //         {
+    //             shorthand: 'grid-auto-rows',
+    //             properties: {
+    //
+    //                 keywords: ['auto', 'min-content', 'max-content'],
+    //                 default: [],
+    //                 types: ['Length', 'Flex', 'GridTemplateFunc']
+    //             }
+    //         }
+    //     ]
+    // ],
+    [
+        {
+            shorthand: 'flex-flow',
+            pattern: `flex-direction flex-wrap`,
+            keywords: [],
+            default: ['row', 'nowrap']
+        },
+        [
+            {
+                shorthand: 'flex-direction',
+                properties: {
+
+                    keywords: ['row', 'row-reverse', 'column', 'column-reverse'],
+                    default: ['row'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'flex-wrap',
+                properties: {
+
+                    keywords: ['wrap', 'nowrap', 'wrap-reverse'],
+                    default: ['nowrap'],
+                    types: []
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'flex-flow',
+            pattern: `flex-direction flex-wrap`,
+            keywords: [],
+            default: ['row', 'nowrap']
+        },
+        [
+            {
+                shorthand: 'flex-direction',
+                properties: {
+
+                    keywords: ['row', 'row-reverse', 'column', 'column-reverse'],
+                    default: ['row'],
+                    types: []
+                }
+            },
+            {
+                shorthand: 'flex-wrap',
+                properties: {
+
+                    keywords: ['wrap', 'nowrap', 'wrap-reverse'],
+                    default: ['nowrap'],
+                    types: []
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'container',
+            pattern: 'container-name container-type',
+            keywords: [],
+            default: []
+        },
+        [
+            {
+                shorthand: 'container-name',
+                properties: {
+
+                    required: true,
+                    multiple: true,
+                    keywords: ['none'],
+                    default: ['none'],
+                    types: ['Iden', 'DashedIden']
+                }
+            },
+            {
+                shorthand: 'container-type',
+                properties: {
+
+                    previous: 'container-name',
+                    prefix: {
+                        typ: 'Literal',
+                        val: '/'
+                    },
+                    keywords: ['size', 'inline-size', 'normal'],
+                    default: ['normal'],
+                    types: []
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'flex',
+            pattern: `flex-grow flex-shrink flex-basis`,
+            keywords: ['auto', 'none', 'initial'],
+            default: ['0', '0 1', '0 auto', '0 1 auto']
+        },
+        [
+            {
+                shorthand: 'flex-grow',
+                properties: {
+
+                    required: true,
+                    keywords: [],
+                    default: ['0'],
+                    types: ['Number']
+                }
+            },
+            {
+                shorthand: 'flex-shrink',
+                properties: {
+
+                    keywords: [],
+                    default: ['1'],
+                    types: ['Number']
+                }
+            },
+            {
+                shorthand: 'flex-basis',
+                properties: {
+
+                    keywords: ['max-content', 'min-content', 'fit-content', 'fit-content', 'content', 'auto'],
+                    default: ['auto'],
+                    types: ['Length', 'Perc'],
+                }
+            }
+        ]
+    ],
+    [
+        {
+            shorthand: 'columns',
+            pattern: 'column-count column-width',
+            keywords: ['auto'],
+            default: ['auto', 'auto auto'],
+        },
+        [
+            {
+                shorthand: 'column-count',
+                properties: {
+
+                    keywords: ['auto'],
+                    default: ['auto'],
+                    types: ['Number']
+                }
+            },
+            {
+                shorthand: 'column-width',
+                properties: {
+
+                    keywords: ['auto'],
+                    default: ['auto'],
+                    types: ['Length']
+                }
+            }
+        ]
+    ],
     [
         {
             shorthand: 'transition',
@@ -55,6 +258,13 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             pattern: 'transition-property transition-duration transition-timing-function transition-delay transition-behavior',
             keywords: ['none', 'all'],
             default: ['0s', '0ms', 'all', 'ease', 'none', 'normal'],
+            mapping: {
+                'cubic-bezier(.25,.1,.25,1)': 'ease',
+                'cubic-bezier(0,0,1,1)': 'linear',
+                'cubic-bezier(.42,0,1,1)': 'ease-in',
+                'cubic-bezier(0,0,.58,1)': 'ease-out',
+                'cubic-bezier(.42,0,.58,.42)': 'ease-in-out'
+            }
         },
         [
             {
@@ -62,7 +272,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
 
                     keywords: ['none', 'all'],
-                    default: [],
+                    default: ['all'],
                     types: ['Iden']
                 }
             },
@@ -572,7 +782,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
         ]
     ]
     // @ts-ignore
-]).reduce((acc: ShorthandMapType, data) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
+]).reduce((acc: ShorthandMapType, data: ShorthandMapType[]) => Object.assign(acc, createMap(...data)), <ShorthandMapType>{});
 
 /*
 
@@ -585,6 +795,14 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             keywords
  */
 export const properties: PropertySetType = [
+    {
+        shorthand: 'gap',
+        properties: ['row-gap', 'column-gap'],
+        types: ['Length', 'Perc'],
+        multiple: false,
+        separator: null,
+        keywords: ['normal']
+    },
     {
         shorthand: 'inset',
         properties: ['top', 'right', 'bottom', 'left'],

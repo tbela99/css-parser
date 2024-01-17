@@ -1,0 +1,25 @@
+
+export function run(describe, expect, transform, parse, render, dirname) {
+
+    const atRule = `
+@import '${dirname(new URL(import.meta.url).pathname) + '/../../files/css/color.css'}';
+abbr[title], abbr[data-original-title] {
+    text-decoration: underline dotted;
+    -webkit-text-decoration: underline dotted;
+    cursor: help;
+    border-bottom: 0;
+    -webkit-text-decoration-skip-ink: none;
+    text-decoration-skip-ink: none
+}
+
+`;
+    describe('process import', function () {
+        it('process import #1', function () {
+            return transform(atRule, {
+                minify: true,
+                resolveImport: true
+            }).then((result) => expect(result.code).equals(`p{color:#8133cc26}abbr[title],abbr[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
+        });
+    });
+
+}

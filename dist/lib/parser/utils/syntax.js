@@ -37,10 +37,37 @@ function isColor(token) {
         // named color
         return token.val.toLowerCase() in COLORS_NAMES;
     }
+    let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+        const keywords = ['from', 'none'];
+        if (['rgb', 'hsl', 'hwb'].includes(token.val)) {
+            keywords.push('a', ...token.val.split(''));
+        }
+        // console.debug(JSON.stringify({token}, null, 1));
         // @ts-ignore
         for (const v of token.chi) {
-            if (![EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+            // console.debug(JSON.stringify({v}, null, 1));
+            if (v.typ == EnumToken.CommaTokenType) {
+                isLegacySyntax = true;
+            }
+            if (v.typ == EnumToken.IdenTokenType) {
+                if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+                    return false;
+                }
+                if (keywords.includes(v.val)) {
+                    if (isLegacySyntax) {
+                        return false;
+                    }
+                    if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                        return false;
+                    }
+                }
+                continue;
+            }
+            if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
+                continue;
+            }
+            if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
                 return false;
             }
         }
@@ -200,6 +227,9 @@ function isDimension(name) {
 function isPercentage(name) {
     return name.endsWith('%') && isNumber(name.slice(0, -1));
 }
+function isFlex(name) {
+    return name.endsWith('fr') && isNumber(name.slice(0, -2));
+}
 function parseDimension(name) {
     let index = name.length;
     while (index--) {
@@ -267,4 +297,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };

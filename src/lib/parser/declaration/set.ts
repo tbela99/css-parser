@@ -12,6 +12,41 @@ import {eq} from "../utils/eq";
 import {isLength} from "../utils";
 import {EnumToken} from "../../ast";
 
+function dedup(values: Token[][]) {
+
+    for (const value of values) {
+
+        let i: number = value.length;
+
+        while (i-- > 1) {
+
+            const t = <DimensionToken | NumberToken>value[i];
+            const k = <DimensionToken | NumberToken>value[i == 1 ? 0 : i % 2];
+
+            if (t.val == k.val && t.val == '0') {
+
+                if ((t.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>k)) ||
+                    (k.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>t)) ||
+                    (isLength(<DimensionToken>k) || isLength(<DimensionToken>t))) {
+
+                    value.splice(i, 1);
+                    continue;
+                }
+            }
+
+            if (eq(t, k)) {
+
+                value.splice(i, 1);
+                continue;
+            }
+
+            break;
+        }
+    }
+
+    return  values;
+}
+
 export class PropertySet {
 
     protected config: ShorthandPropertyType;
@@ -150,7 +185,36 @@ export class PropertySet {
 
         if (declarations.size < this.config.properties.length) {
 
-            iterator = declarations.values();
+            const values  = [...declarations.values()];
+
+            if (this.isShortHand()) {
+
+                const val: Token[] = values[0].val.reduce((acc, curr) => {
+
+                    if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
+
+                        acc.push(curr);
+                    }
+
+                    return acc;
+                }, <Token[]> []);
+
+                values[0].val = val.reduce((acc: Token[],  curr: Token) => {
+
+                    if (acc.length > 0) {
+
+                        acc.push(<Token>{typ: EnumToken.WhitespaceTokenType});
+                    }
+
+                    acc.push(curr);
+                    return acc;
+
+                }, <Token[]> []);
+            }
+
+
+            return values[Symbol.iterator]();
+
         }
         else {
 
@@ -178,35 +242,7 @@ export class PropertySet {
                 }
             });
 
-            for (const value of values) {
-
-                let i: number = value.length;
-
-                while (i-- > 1) {
-
-                    const t = <DimensionToken | NumberToken>value[i];
-                    const k = <DimensionToken | NumberToken>value[i == 1 ? 0 : i % 2];
-
-                    if (t.val == k.val && t.val == '0') {
-
-                        if ((t.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>k)) ||
-                            (k.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>t)) ||
-                            (isLength(<DimensionToken>k) || isLength(<DimensionToken>t))) {
-
-                            value.splice(i, 1);
-                            continue;
-                        }
-                    }
-
-                    if (eq(t, k)) {
-
-                        value.splice(i, 1);
-                        continue;
-                    }
-
-                    break;
-                }
-            }
+            dedup(values);
 
             iterator = [<AstDeclaration>{
                 typ: EnumToken.DeclarationNodeType,

@@ -53,16 +53,15 @@ function splitPath(result: string): { i: number, parts: string[] } {
         }
     }
 
-    let k: number = parts.length;
+    let k: number = -1;
 
-    while (k--) {
+    while (++k < parts.length) {
 
         if (parts[k] == '.') {
-
-            parts.splice(k, 1);
+            parts.splice(k--, 1);
         } else if (parts[k] == '..') {
-
             parts.splice(k - 1, 2);
+            k -= 2;
         }
     }
 

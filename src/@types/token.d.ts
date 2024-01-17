@@ -13,9 +13,16 @@ export declare interface LiteralToken extends BaseToken {
     val: string;
 }
 
+
 export declare interface IdentToken extends BaseToken {
 
     typ: EnumToken.IdenTokenType,
+    val: string;
+}
+
+export declare interface IdentListToken extends BaseToken {
+
+    typ: EnumToken.IdenListTokenType,
     val: string;
 }
 
@@ -58,9 +65,22 @@ export declare interface PercentageToken extends BaseToken {
     val: string | FractionToken;
 }
 
+export declare interface FlexToken extends BaseToken {
+
+    typ: EnumToken.FlexTokenType,
+    val: string | FractionToken;
+}
+
 export declare interface FunctionToken extends BaseToken {
 
     typ: EnumToken.FunctionTokenType,
+    val: string;
+    chi: Token[];
+}
+
+export declare interface GridTemplateFuncToken extends BaseToken {
+
+    typ: EnumToken.GridTemplateFuncTokenType,
     val: string;
     chi: Token[];
 }
@@ -85,6 +105,7 @@ export declare interface TimingFunctionToken extends BaseToken {
     val: string;
     chi: Token[];
 }
+
 export declare interface TimelineFunctionToken extends BaseToken {
 
     typ: EnumToken.TimelineFunctionTokenType;
@@ -320,12 +341,16 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
+export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+
 export declare interface ColorToken extends BaseToken {
 
     typ: EnumToken.ColorTokenType;
     val: string;
-    kin: 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+    kin: ColorKind;
     chi?: Token[];
+    /* calculated */
+    cal?: 'rel' | 'mix';
 }
 
 export declare interface AttrToken extends BaseToken {
@@ -407,13 +432,14 @@ export declare type UnaryExpressionNode =
     | AngleToken
     | FrequencyToken;
 
-export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FractionToken |
+export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FlexToken | FractionToken |
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
 export declare type TokenType = EnumToken;
 export declare type Token =
     LiteralToken
     | IdentToken
+    | IdentListToken
     | DashedIdentToken
     | CommaToken
     | ColonToken
@@ -422,11 +448,13 @@ export declare type Token =
     NumberToken
     | AtRuleToken
     | PercentageToken
+    | FlexToken
     | FunctionURLToken
     | FunctionImageToken
     | TimingFunctionToken
     | TimelineFunctionToken
     | FunctionToken
+    | GridTemplateFuncToken
     | DimensionToken
     | LengthToken
     |

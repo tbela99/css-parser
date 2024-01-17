@@ -1,8 +1,3 @@
+import { resolve } from '../dist/lib/fs/resolve.js';
 
-
-const sourcemap = {
-    version: 3,
-    sources: [],
-    names: [],
-    mappings: []
-}
+console.debug(resolve('/test/specs/code/../../files/css/color.css', '.'));

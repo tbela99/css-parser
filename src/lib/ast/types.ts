@@ -1,3 +1,5 @@
+
+
 export enum EnumToken {
     CommentTokenType,
     CDOCOMMTokenType,
@@ -56,6 +58,7 @@ export enum EnumToken {
     BadStringTokenType,
     BinaryExpressionTokenType,
     UnaryExpressionTokenType,
+    FlexTokenType,
     /* catch all */
     ListToken,
     /* arithmetic tokens */
@@ -71,10 +74,13 @@ export enum EnumToken {
     MatchExpressionTokenType,
     NameSpaceAttributeTokenType,
     FractionTokenType,
+    IdenListTokenType,
+    GridTemplateFuncTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,
     Hash = HashTokenType,
+    Flex = FlexTokenType,
     Angle = AngleTokenType,
     Color = ColorTokenType,
     Comma = CommaTokenType,
@@ -89,7 +95,9 @@ export enum EnumToken {
     Frequency = FrequencyTokenType,
     Resolution = ResolutionTokenType,
     Whitespace = WhitespaceTokenType,
+    IdenList = IdenListTokenType,
     DashedIden = DashedIdenTokenType,
+    GridTemplateFunc = GridTemplateFuncTokenType,
     ImageFunc = ImageFunctionTokenType,
     CommentNodeType = CommentTokenType,
     CDOCOMMNodeType = CDOCOMMTokenType,
@@ -97,3 +105,14 @@ export enum EnumToken {
     TimelineFunction = TimelineFunctionTokenType
 }
 
+export const funcLike: EnumToken[] = [
+    EnumToken.ParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType,
+    EnumToken.GridTemplateFuncTokenType
+];

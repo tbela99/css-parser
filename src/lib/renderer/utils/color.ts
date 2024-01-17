@@ -1,8 +1,8 @@
-import {AngleToken, ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../../@types";
+import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {EnumToken} from "../../ast";
 
 // name to color
-export const COLORS_NAMES: {[key: string]: string} = Object.seal({
+export const COLORS_NAMES: { [key: string]: string } = Object.seal({
     'aliceblue': '#f0f8ff',
     'antiquewhite': '#faebd7',
     'aqua': '#00ffff',
@@ -155,7 +155,7 @@ export const COLORS_NAMES: {[key: string]: string} = Object.seal({
 });
 
 // color to name
-export const NAMES_COLORS: {[key: string]: string} = Object.seal({
+export const NAMES_COLORS: { [key: string]: string } = Object.seal({
     '#f0f8ff': 'aliceblue',
     '#faebd7': 'antiquewhite',
     // '#00ffff': 'aqua',
@@ -307,172 +307,66 @@ export const NAMES_COLORS: {[key: string]: string} = Object.seal({
     '#00000000': 'transparent'
 });
 
+/**
+ * clamp color values
+ * @param token
+ */
+export function clamp(token: ColorToken): ColorToken {
 
-export function rgb2Hex(token: ColorToken) {
+    if (token.kin == 'rgb' || token.kin == 'rgba') {
 
-    let value = '#';
-    let t: NumberToken | PercentageToken;
+        (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).
+        forEach((token: Token, index: number) => {
 
-    // @ts-ignore
-    for (let i = 0; i < 6; i += 2) {
+            if (index <= 2) {
 
-        // @ts-ignore
-        t = token.chi[i];
+                if (token.typ == EnumToken.NumberTokenType) {
 
-        // @ts-ignore
-        value += Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val).toString(16).padStart(2, '0')
+                    token.val = String(Math.min(255, Math.max(0, +token.val)));
+
+                } else if (token.typ == EnumToken.PercentageTokenType) {
+
+                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+                }
+            }
+
+            else {
+
+                if (token.typ == EnumToken.NumberTokenType) {
+
+                    token.val = String(Math.min(1, Math.max(0, +token.val)));
+
+                } else if (token.typ == EnumToken.PercentageTokenType) {
+
+                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+                }
+            }
+        });
+    }
+
+    return token;
+}
+
+export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {
+
+    if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
+
+        return 0;
     }
 
     // @ts-ignore
-    if (token.chi.length == 7) {
+    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
+}
 
-        // @ts-ignore
-        t = token.chi[6];
+export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
-        // @ts-ignore
-        if ((t.typ == EnumToken.NumberTokenType && t.val < 1) ||
-            // @ts-ignore
-            (t.typ == EnumToken.PercentageTokenType && t.val < 100)) {
+    if (token.typ == EnumToken.IdenTokenType) {
 
-            // @ts-ignore
-            value += Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)).toString(16).padStart(2, '0')
+        if (token.val == 'none') {
+
+            return 0;
         }
     }
-
-    return value;
-}
-
-export function hsl2Hex(token: ColorToken) {
-
-    let t: PercentageToken | NumberToken;
-
-    // @ts-ignore
-    let h: number = getAngle(<NumberToken | DimensionToken>token.chi[0]);
-
-    // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[2];
-    // @ts-ignore
-    let s: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-    // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[4];
-    // @ts-ignore
-    let l: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-
-    let a = null;
-
-    if (token.chi?.length == 7) {
-
-        // @ts-ignore
-        t = token.chi[6];
-
-        // @ts-ignore
-        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
-            // @ts-ignore
-            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-
-            // @ts-ignore
-            a = <number>(t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
-        }
-    }
-
-    return `#${hsl2rgb(h, s, l, a).reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
-}
-
-export function hwb2hex(token: ColorToken) {
-
-    let t: PercentageToken | NumberToken;
-
-    // @ts-ignore
-    let h: number = getAngle(<NumberToken | DimensionToken>token.chi[0]);
-
-    // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[2];
-    // @ts-ignore
-    let white: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-    // @ts-ignore
-    t = <NumberToken | DimensionToken>token.chi[4];
-    // @ts-ignore
-    let black: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-
-    let a = null;
-
-    if (token.chi?.length == 7) {
-
-        // @ts-ignore
-        t = token.chi[6];
-
-        // @ts-ignore
-        if ((t.typ == EnumToken.PercentageTokenType && t.val < 100) ||
-            // @ts-ignore
-            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-
-            // @ts-ignore
-            a = <number>(t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val);
-        }
-    }
-
-    const rgb = hsl2rgb(h, 1, .5, a);
-
-    let value: number;
-
-    for (let i = 0; i < 3; i++) {
-
-        value = rgb[i] / 255;
-        value *= (1 - white - black);
-        value += white;
-
-        rgb[i] = Math.round(value * 255);
-    }
-
-    return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
-}
-
-export function cmyk2hex(token: ColorToken) {
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>token.chi[0];
-
-    // @ts-ignore
-    const c: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>token.chi[2];
-
-    // @ts-ignore
-    const m: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>token.chi[4];
-
-    // @ts-ignore
-    const y: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>token.chi[6];
-
-    // @ts-ignore
-    const k: number = t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val;
-
-    const rgb = [
-        Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
-        Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
-        Math.round(255 * (1 - Math.min(1, y * (1 - k) + k)))
-    ];
-
-    // @ts-ignore
-    if (token.chi.length >= 9) {
-
-        // @ts-ignore
-        t = <NumberToken | PercentageToken>token.chi[8];
-
-        // @ts-ignore
-        rgb.push(Math.round(255 * (t.typ == EnumToken.PercentageTokenType ? t.val / 100 : t.val)));
-    }
-
-    return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
-}
-
-export function getAngle(token: NumberToken | AngleToken): number {
 
     if (token.typ == EnumToken.AngleTokenType) {
 
@@ -503,67 +397,4 @@ export function getAngle(token: NumberToken | AngleToken): number {
 
     // @ts-ignore
     return token.val / 360;
-}
-
-function hsl2rgb(h: number, s: number, l: number, a: number | null = null) {
-
-    let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
-
-    let r = l;
-    let g = l;
-    let b = l;
-
-    if (v > 0) {
-
-        let m = l + l - v;
-        let sv = (v - m) / v;
-        h *= 6.0;
-        let sextant = Math.floor(h);
-        let fract = h - sextant;
-        let vsf = v * sv * fract;
-        let mid1 = m + vsf;
-        let mid2 = v - vsf;
-
-        switch (sextant) {
-            case 0:
-                r = v;
-                g = mid1;
-                b = m;
-                break;
-            case 1:
-                r = mid2;
-                g = v;
-                b = m;
-                break;
-            case 2:
-                r = m;
-                g = v;
-                b = mid1;
-                break;
-            case 3:
-                r = m;
-                g = mid2;
-                b = v;
-                break;
-            case 4:
-                r = mid1;
-                g = m;
-                b = v;
-                break;
-            case 5:
-                r = v;
-                g = m;
-                b = mid2;
-                break;
-        }
-    }
-
-    const values = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-
-    if (a != null && a != 1) {
-
-        values.push(Math.round(a * 255));
-    }
-
-    return values;
 }

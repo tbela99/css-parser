@@ -1,3 +1,3 @@
-export { InlineCssVariables } from './inlinecssvariables.js';
-export { ComputeShorthand } from './shorthand.js';
-export { ComputeCalcExpression } from './calc.js';
+export { InlineCssVariablesFeature } from './inlinecssvariables.js';
+export { ComputeShorthandFeature } from './shorthand.js';
+export { ComputeCalcExpressionFeature } from './calc.js';

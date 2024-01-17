@@ -3,7 +3,7 @@ import {EnumToken} from "../types";
 import {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types";
 import {MinifyFeature} from "../utils";
 
-export class ComputeShorthand extends MinifyFeature {
+export class ComputeShorthandFeature extends MinifyFeature {
 
     static get ordering() {
         return 2;
@@ -15,14 +15,14 @@ export class ComputeShorthand extends MinifyFeature {
 
             for (const feature of options.features) {
 
-                if (feature instanceof ComputeShorthand) {
+                if (feature instanceof ComputeShorthandFeature) {
 
                     return;
                 }
             }
 
             // @ts-ignore
-            options.features.push(new ComputeShorthand());
+            options.features.push(new ComputeShorthandFeature());
         }
     }
 

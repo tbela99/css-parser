@@ -8,7 +8,7 @@ import {EnumToken} from "../../ast";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits = [
+const dimensionUnits: string[] = [
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
     'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
@@ -46,17 +46,64 @@ export function isColor(token: Token): boolean {
 
         return true;
     }
+
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
         return token.val.toLowerCase() in COLORS_NAMES;
     }
 
+    let isLegacySyntax: boolean = false;
+
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+
+        const keywords: string[] = ['from', 'none'];
+
+        if ([ 'rgb', 'hsl', 'hwb'].includes(token.val)) {
+
+            keywords.push('a', ...token.val.split(''));
+        }
+
+        // console.debug(JSON.stringify({token}, null, 1));
 
         // @ts-ignore
         for (const v of token.chi) {
 
-            if (![EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+            // console.debug(JSON.stringify({v}, null, 1));
+
+            if (v.typ == EnumToken.CommaTokenType) {
+
+                isLegacySyntax = true;
+            }
+
+            if (v.typ == EnumToken.IdenTokenType) {
+
+                if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+
+                    return false;
+                }
+
+                if (keywords.includes(v.val)) {
+
+                    if (isLegacySyntax) {
+
+                        return false;
+                    }
+
+                    if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+
+                        return false;
+                    }
+                }
+
+                continue;
+            }
+
+            if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
+
+                continue;
+            }
+
+            if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
 
                 return false;
             }
@@ -302,6 +349,11 @@ export function isDimension(name: string) {
 export function isPercentage(name: string) {
 
     return name.endsWith('%') && isNumber(name.slice(0, -1));
+}
+
+export function isFlex(name: string) {
+
+    return name.endsWith('fr') && isNumber(name.slice(0, -2));
 }
 
 export function parseDimension(name: string): DimensionToken | LengthToken | AngleToken {

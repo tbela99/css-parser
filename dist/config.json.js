@@ -1,4 +1,26 @@
 var properties = {
+	gap: {
+		shorthand: "gap",
+		properties: [
+			"row-gap",
+			"column-gap"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		multiple: false,
+		separator: null,
+		keywords: [
+			"normal"
+		]
+	},
+	"row-gap": {
+		shorthand: "gap"
+	},
+	"column-gap": {
+		shorthand: "gap"
+	},
 	inset: {
 		shorthand: "inset",
 		properties: [
@@ -232,6 +254,201 @@ var properties = {
 	}
 };
 var map = {
+	"flex-flow": {
+		shorthand: "flex-flow",
+		pattern: "flex-direction flex-wrap",
+		keywords: [
+		],
+		"default": [
+			"row",
+			"nowrap"
+		],
+		properties: {
+			"flex-direction": {
+				keywords: [
+					"row",
+					"row-reverse",
+					"column",
+					"column-reverse"
+				],
+				"default": [
+					"row"
+				],
+				types: [
+				]
+			},
+			"flex-wrap": {
+				keywords: [
+					"wrap",
+					"nowrap",
+					"wrap-reverse"
+				],
+				"default": [
+					"nowrap"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"flex-direction": {
+		shorthand: "flex-flow"
+	},
+	"flex-wrap": {
+		shorthand: "flex-flow"
+	},
+	container: {
+		shorthand: "container",
+		pattern: "container-name container-type",
+		keywords: [
+		],
+		"default": [
+		],
+		properties: {
+			"container-name": {
+				required: true,
+				multiple: true,
+				keywords: [
+					"none"
+				],
+				"default": [
+					"none"
+				],
+				types: [
+					"Iden",
+					"DashedIden"
+				]
+			},
+			"container-type": {
+				previous: "container-name",
+				prefix: {
+					typ: "Literal",
+					val: "/"
+				},
+				keywords: [
+					"size",
+					"inline-size",
+					"normal"
+				],
+				"default": [
+					"normal"
+				],
+				types: [
+				]
+			}
+		}
+	},
+	"container-name": {
+		shorthand: "container"
+	},
+	"container-type": {
+		shorthand: "container"
+	},
+	flex: {
+		shorthand: "flex",
+		pattern: "flex-grow flex-shrink flex-basis",
+		keywords: [
+			"auto",
+			"none",
+			"initial"
+		],
+		"default": [
+			"0",
+			"0 1",
+			"0 auto",
+			"0 1 auto"
+		],
+		properties: {
+			"flex-grow": {
+				required: true,
+				keywords: [
+				],
+				"default": [
+					"0"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"flex-shrink": {
+				keywords: [
+				],
+				"default": [
+					"1"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"flex-basis": {
+				keywords: [
+					"max-content",
+					"min-content",
+					"fit-content",
+					"fit-content",
+					"content",
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Length",
+					"Perc"
+				]
+			}
+		}
+	},
+	"flex-grow": {
+		shorthand: "flex"
+	},
+	"flex-shrink": {
+		shorthand: "flex"
+	},
+	"flex-basis": {
+		shorthand: "flex"
+	},
+	columns: {
+		shorthand: "columns",
+		pattern: "column-count column-width",
+		keywords: [
+			"auto"
+		],
+		"default": [
+			"auto",
+			"auto auto"
+		],
+		properties: {
+			"column-count": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Number"
+				]
+			},
+			"column-width": {
+				keywords: [
+					"auto"
+				],
+				"default": [
+					"auto"
+				],
+				types: [
+					"Length"
+				]
+			}
+		}
+	},
+	"column-count": {
+		shorthand: "columns"
+	},
+	"column-width": {
+		shorthand: "columns"
+	},
 	transition: {
 		shorthand: "transition",
 		multiple: true,
@@ -249,6 +466,13 @@ var map = {
 			"none",
 			"normal"
 		],
+		mapping: {
+			"cubic-bezier(.25,.1,.25,1)": "ease",
+			"cubic-bezier(0,0,1,1)": "linear",
+			"cubic-bezier(.42,0,1,1)": "ease-in",
+			"cubic-bezier(0,0,.58,1)": "ease-out",
+			"cubic-bezier(.42,0,.58,.42)": "ease-in-out"
+		},
 		properties: {
 			"transition-property": {
 				keywords: [
@@ -256,6 +480,7 @@ var map = {
 					"all"
 				],
 				"default": [
+					"all"
 				],
 				types: [
 					"Iden"

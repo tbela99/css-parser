@@ -1,14 +1,16 @@
 import {
     AstNode,
-    AstRuleList,
+    AstRuleList, BinaryExpressionToken,
     FunctionToken,
     ParensToken,
     Token,
     WalkAttributesResult,
-    WalkResult,
     WalkerFilter,
-    WalkerOption
+    WalkerOption,
+    WalkerValueFilter,
+    WalkResult
 } from "../../@types";
+import {EnumToken} from "./types";
 
 export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {
 
@@ -25,7 +27,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 
         if (filter != null) {
 
-             option = filter(node);
+            option = filter(node);
 
             if (option === 'ignore') {
 
@@ -42,7 +44,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
         if (option !== 'children') {
 
             // @ts-ignore
-            yield {node, parent: <AstRuleList> weakMap.get(node), root};
+            yield {node, parent: <AstRuleList>weakMap.get(node), root};
         }
 
         if (option !== 'ignore-children' && 'chi' in node) {
@@ -57,10 +59,10 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
     }
 }
 
-export function* walkValues(values: Token[]): Generator<WalkAttributesResult> {
+export function* walkValues(values: Token[], root: AstNode | null = null, filter?: WalkerValueFilter): Generator<WalkAttributesResult> {
 
     const stack: Token[] = values.slice();
-    const weakMap: WeakMap<Token, FunctionToken | ParensToken> = new WeakMap;
+    const weakMap: WeakMap<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new WeakMap;
 
     let value: Token;
 
@@ -68,17 +70,45 @@ export function* walkValues(values: Token[]): Generator<WalkAttributesResult> {
 
         value = <Token>stack.shift();
 
+        let option: WalkerOption = null;
+
+        if (filter != null) {
+
+            option = filter(value);
+
+            if (option === 'ignore') {
+
+                continue;
+            }
+
+            if (option === 'stop') {
+
+                break;
+            }
+        }
+
         // @ts-ignore
-        yield {value, parent: <FunctionToken | ParensToken>weakMap.get(value)};
+        if (option !== 'children') {
 
-        if ('chi' in value) {
+            // @ts-ignore
+            yield {value, parent: <FunctionToken | ParensToken>weakMap.get(value), root};
+        }
 
-            for (const child of (<FunctionToken | ParensToken>value).chi) {
+        if (option !== 'ignore-children' && 'chi' in value) {
+
+            for (const child of (<FunctionToken | ParensToken>value).chi.slice()) {
 
                 weakMap.set(child, <FunctionToken | ParensToken>value);
             }
 
             stack.unshift(...(<FunctionToken | ParensToken>value).chi);
+        }
+
+        else if (value.typ == EnumToken.BinaryExpressionTokenType) {
+
+            weakMap.set(value.l, <FunctionToken | ParensToken | BinaryExpressionToken>value);
+            weakMap.set(value.r, <FunctionToken | ParensToken | BinaryExpressionToken>value);
+            stack.unshift(value.l, value.r);
         }
     }
 }

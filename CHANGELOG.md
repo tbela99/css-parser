@@ -1,5 +1,27 @@
 # Changelog
 
+### V0.3.0
+
+### shorthands
+
+- [x] column-rule
+- [x] columns
+- [x] container
+- [x] flex
+- [x] flex-flow
+- [x] gap
+
+### Other
+- [x] renamed RenderOptions.colorConvert to RenderOptions.convertColor
+- [x] support none keyword in color
+- [x] css relative color syntax for rgb(), hsl() and hwb() colors https://www.w3.org/TR/css-color-5/#relative-colors
+  - [x] rgb
+  - [x] hex
+  - [x] hsl
+  - [x] hwb
+  - [x] calc()
+  - [x] calc() and inline var()
+
 ## v0.2.0
 
 - [x] cancellable parser promise using abortSignal
@@ -9,7 +31,7 @@
     - [x] at-rule visitor
 - [x] support mixing units with calc()
 
-# shorthands
+### shorthands
 
 - [x] transition
 - [x] list-style

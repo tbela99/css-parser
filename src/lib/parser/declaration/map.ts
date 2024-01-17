@@ -13,10 +13,7 @@ import {renderToken} from "../../renderer";
 import {parseString} from "../parse";
 import {PropertySet} from "./set";
 import {EnumToken} from "../../ast";
-import {IterableWeakMap} from "../../iterable";
 
-
-const cache: IterableWeakMap<Token, string> = new IterableWeakMap();
 const propertiesConfig: PropertiesConfig = getConfig();
 
 export class PropertyMap {
@@ -280,29 +277,49 @@ export class PropertyMap {
 
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
 
-                // console.debug(...this.declarations.values());
+                const cache: Map<Token, string> = new Map();
 
                 const removeDefaults = (declaration: AstDeclaration): AstDeclaration => {
 
-                    // const dec: AstDeclaration = {...declaration};
+                    let config: ShorthandMapType | PropertyMapType = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
 
-                    const config: ShorthandMapType | PropertyMapType = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
+                    if (config == null && declaration.nam in propertiesConfig.properties) {
 
-                    declaration.val = declaration.val.filter((val: Token): boolean => {
+                        // @ts-ignore
+                        const shorthand: string = <string>propertiesConfig.properties[declaration.nam].shorthand;
 
-                        if (!cache.has(val)) {
+                        // @ts-ignore
+                        config = <ShorthandMapType | PropertyMapType> propertiesConfig.properties[shorthand];
+                    }
 
-                            cache.set(val, renderToken(val, {minify: true}));
+                    declaration.val = declaration.val.map((t: Token): Token => {
+
+                        if (!cache.has(t)) {
+
+                            cache.set(t, renderToken(t, {minify: true}));
                         }
 
-                        return !config.default.includes(<string>cache.get(val));
+                        const value: string = <string> cache.get(t);
+
+                        // @ts-ignore
+                        if (config?.mapping?.[value] != null) {
+
+                            // @ts-ignore
+                            t = parseString(<string> config.mapping[value])[0];
+                            cache.set(t, renderToken(t, {minify: true}));
+                        }
+
+                        return t;
+
+                    }).filter((val: Token): boolean => {
+
+                        return !config?.default?.includes(<string> cache.get(val));
                     })
                         .filter((val: Token, index: number, array: Token[]): boolean => !(
-                                index > 0 &&
-                                val.typ == EnumToken.WhitespaceTokenType &&
-                                array[index - 1].typ == EnumToken.WhitespaceTokenType
-                            ))
-                    ;
+                            index > 0 &&
+                            val.typ == EnumToken.WhitespaceTokenType &&
+                            array[index - 1].typ == EnumToken.WhitespaceTokenType
+                        ));
 
                     if (declaration.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
 
@@ -325,7 +342,17 @@ export class PropertyMap {
                     return acc;
 
                 }, <AstDeclaration[]>[]);
-                const filtered: AstDeclaration[] = values.map(removeDefaults).filter((x: AstDeclaration): boolean => x.val.length > 0);
+
+                let isImportant: boolean = false;
+                const filtered: AstDeclaration[] = values.map(removeDefaults).filter((x: AstDeclaration): boolean => x.val.filter((t: Token) => {
+
+                    if (t.typ == EnumToken.ImportantTokenType) {
+
+                        isImportant = true;
+                    }
+
+                    return ![EnumToken.WhitespaceTokenType, EnumToken.ImportantTokenType].includes(t.typ)
+                }).length > 0);
 
                 if (filtered.length == 0 && this.config.default.length > 0) {
                     filtered.push(<AstDeclaration>{
@@ -333,6 +360,13 @@ export class PropertyMap {
                         nam: this.config.shorthand,
                         val: parseString(this.config.default[0])
                     });
+
+                    if (isImportant) {
+
+                        filtered[0].val.push(<Token>{
+                            typ: EnumToken.ImportantTokenType
+                        });
+                    }
                 }
 
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
@@ -476,7 +510,10 @@ export class PropertyMap {
                         // @todo remove renderToken call
                         if (props.default.includes(curr[1][i].reduce((acc: string, curr: Token): string => acc + renderToken(curr) + ' ', '').trimEnd())) {
 
-                            continue;
+                            if (!this.config.properties[curr[0]].required) {
+
+                                continue;
+                            }
                         }
 
                         // remove default values
@@ -496,7 +533,7 @@ export class PropertyMap {
                         }
 
                         // remove default values
-                        values = values.filter((val: Token): boolean => {
+                        const filtered = values.filter((val: Token): boolean => {
 
                             if (val.typ == EnumToken.WhitespaceTokenType || val.typ == EnumToken.CommentTokenType) {
 
@@ -505,6 +542,12 @@ export class PropertyMap {
 
                             return !doFilterDefault || !(val.typ == EnumToken.IdenTokenType && props.default.includes(val.val));
                         });
+
+                        if (filtered.length > 0 || !(this.requiredCount == requiredCount && this.config.properties[curr[0]].required)) {
+
+                            values = filtered;
+                        }
+
 
                         if (values.length > 0) {
 
@@ -585,7 +628,10 @@ export class PropertyMap {
 
                 if (this.config.mapping != null) {
 
-                    const val: string = values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {removeComments: true, minify: true}), '');
+                    const val: string = values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {
+                        removeComments: true,
+                        minify: true
+                    }), '');
 
                     if (val in this.config.mapping) {
 

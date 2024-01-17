@@ -7,7 +7,7 @@
 /tools
 /ROADMAP.md
 /CHANGELOG.md
-/rollup.config.mjs
+/rollup.config.js
 /tsconfig.json
 /src
 /.idea
@@ -17,3 +17,4 @@
 /.github
 /.gitattributes
 /Writerside
+/validator

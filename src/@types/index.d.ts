@@ -44,6 +44,7 @@ export declare interface ParserOptions extends PropertyListOptions {
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
+    parseColor?: boolean;
     removeDuplicateDeclarations?: boolean;
     computeShorthand?: boolean;
     inlineCssVariables?: boolean;
@@ -77,7 +78,7 @@ export declare interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
-    colorConvert?: boolean;
+    convertColor?: boolean;
     output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
@@ -122,7 +123,6 @@ export declare interface TransformResult extends ParseResult, RenderResult {
 }
 
 export declare interface ParseTokenOptions extends ParserOptions {
-    parseColor?: boolean;
 }
 
 export declare interface TokenizeResult {

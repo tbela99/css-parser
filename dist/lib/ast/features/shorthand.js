@@ -4,22 +4,21 @@ import { EnumToken } from '../types.js';
 import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/declaration/map.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
 
-class ComputeShorthand extends MinifyFeature {
+class ComputeShorthandFeature extends MinifyFeature {
     static get ordering() {
         return 2;
     }
     static register(options) {
         if (options.computeShorthand) {
             for (const feature of options.features) {
-                if (feature instanceof ComputeShorthand) {
+                if (feature instanceof ComputeShorthandFeature) {
                     return;
                 }
             }
             // @ts-ignore
-            options.features.push(new ComputeShorthand());
+            options.features.push(new ComputeShorthandFeature());
         }
     }
     run(ast, options = {}, parent, context) {
@@ -43,4 +42,4 @@ class ComputeShorthand extends MinifyFeature {
     }
 }
 
-export { ComputeShorthand };
+export { ComputeShorthandFeature };

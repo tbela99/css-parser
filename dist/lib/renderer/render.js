@@ -1,14 +1,16 @@
-import { getAngle, COLORS_NAMES, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex, NAMES_COLORS } from './utils/color.js';
+import { getAngle, clamp, COLORS_NAMES, NAMES_COLORS } from './utils/color.js';
+import { rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex } from './utils/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
-import { isNewLine } from '../parser/utils/syntax.js';
+import { isColor, isNewLine } from '../parser/utils/syntax.js';
+import { parseRelativeColor } from './utils/calccolor.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
 function reduceNumber(val) {
-    val = (+val).toString();
+    val = String(+val);
     if (val === '0') {
         return '0';
     }
@@ -47,7 +49,7 @@ function doRender(data, options = {}) {
             newLine: '\n',
             compress: false,
             removeComments: false,
-        }), sourcemap: false, colorConvert: true, expandNestingRules: false, preserveLicense: false, ...options
+        }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options
     };
     const startTime = performance.now();
     const errors = [];
@@ -199,6 +201,19 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return acc + renderToken(curr, options, cache, reducer, errors);
         };
     }
+    if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
+        if (isColor(token)) {
+            // @ts-ignore
+            token.typ = EnumToken.ColorTokenType;
+            if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
+                // @ts-ignore
+                token.cal = 'rel';
+            }
+            else {
+                token.chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            }
+        }
+    }
     switch (token.typ) {
         case EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
@@ -241,9 +256,45 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.Div:
             return '/';
         case EnumToken.ColorTokenType:
-            if (options.colorConvert) {
-                if (token.kin == 'lit' && token.val.toLowerCase() == 'currentcolor') {
+            if (options.convertColor) {
+                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
+                    const chi = token.chi.filter(x => ![
+                        EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType
+                    ].includes(x.typ));
+                    const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[5]);
+                    if (components != null) {
+                        token.chi = Object.values(components);
+                        delete token.cal;
+                    }
+                }
+                if (token.cal) {
+                    let slice = false;
+                    if (token.cal == 'rel') {
+                        const last = token.chi.at(-1);
+                        if ((last.typ == EnumToken.NumberTokenType && last.val == '1') || (last.typ == EnumToken.IdenTokenType && last.val == 'none')) {
+                            const prev = token.chi.at(-2);
+                            if (prev.typ == EnumToken.LiteralTokenType && prev.val == '/') {
+                                slice = true;
+                            }
+                        }
+                    }
+                    return clamp(token).val + '(' + (slice ? token.chi.slice(0, -2) : token.chi).reduce((acc, curr) => {
+                        const val = renderToken(curr, options, cache);
+                        if ([EnumToken.LiteralTokenType, EnumToken.CommaTokenType].includes(curr.typ)) {
+                            return acc + val;
+                        }
+                        if (acc.length > 0) {
+                            return acc + (['/', ','].includes(acc.at(-1)) ? '' : ' ') + val;
+                        }
+                        return val;
+                    }, '') + ')';
+                }
+                if (token.kin == 'lit' && token.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
                     return 'currentcolor';
+                }
+                clamp(token);
+                if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
+                    return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
                 }
                 let value = token.kin == 'hex' ? token.val.toLowerCase() : (token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : '');
                 if (token.val == 'rgb' || token.val == 'rgba') {
@@ -281,13 +332,17 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             if (token.kin == 'hex' || token.kin == 'lit') {
                 return token.val;
             }
+            if (Array.isArray(token.chi)) {
+                return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
+            }
         case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
         case EnumToken.UrlFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
-        case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.TimingFunctionTokenType:
+        case EnumToken.PseudoClassFuncTokenType:
         case EnumToken.TimelineFunctionTokenType:
+        case EnumToken.GridTemplateFuncTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
                 token.val == 'calc' &&
                 token.chi.length == 1 &&
@@ -350,6 +405,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ImportantTokenType:
             return '!important';
         case EnumToken.AttrTokenType:
+        case EnumToken.IdenListTokenType:
             return '[' + token.chi.reduce(reducer, '') + ']';
         case EnumToken.TimeTokenType:
         case EnumToken.AngleTokenType:
@@ -416,10 +472,23 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return '0';
             }
+            if (token.typ == EnumToken.TimeTokenType) {
+                if (unit == 'ms') {
+                    // @ts-ignore
+                    const v = reduceNumber(val / 1000);
+                    if (v.length + 1 <= val.length) {
+                        return v + 's';
+                    }
+                    return val + 'ms';
+                }
+                return val + 's';
+            }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
+        case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
+            const uni = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
             const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
-            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', '%/') : perc + '%');
+            return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
         case EnumToken.NumberTokenType:
             return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
         case EnumToken.CommentTokenType:
