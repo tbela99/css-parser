@@ -1,6 +1,6 @@
 # Changelog
 
-### V0.3.0
+## V0.3.0
 
 ### shorthands
 

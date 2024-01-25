@@ -3452,13 +3452,27 @@
     	},
     	background: {
     		shorthand: "background",
-    		pattern: "background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size",
+    		pattern: "background-attachment background-origin background-clip background-color background-image background-repeat background-position background-size",
     		keywords: [
     			"none"
     		],
     		"default": [
+    			"0 0",
+    			"none",
+    			"auto",
+    			"repeat",
+    			"transparent",
+    			"#0000",
+    			"scroll",
+    			"padding-box",
+    			"border-box"
     		],
     		multiple: true,
+    		set: {
+    			"background-origin": [
+    				"background-clip"
+    			]
+    		},
     		separator: {
     			typ: "Comma"
     		},
@@ -3492,6 +3506,7 @@
     					"Color"
     				],
     				"default": [
+    					"#0000",
     					"transparent"
     				],
     				multiple: true,
@@ -5829,12 +5844,10 @@
             this.pattern = config.pattern.split(/\s/);
         }
         add(declaration) {
-            for (const val of declaration.val) {
-                Object.defineProperty(val, 'propertyName', { enumerable: false, writable: true, value: declaration.nam });
-            }
             if (declaration.nam == this.config.shorthand) {
                 this.declarations = new Map;
                 this.declarations.set(declaration.nam, declaration);
+                this.matchTypes(declaration);
             }
             else {
                 const separator = this.config.separator != null ? {
@@ -5972,6 +5985,55 @@
             }
             return this;
         }
+        matchTypes(declaration) {
+            const patterns = this.pattern.slice();
+            const values = [...declaration.val];
+            let i;
+            let j;
+            const map = new Map;
+            for (i = 0; i < patterns.length; i++) {
+                for (j = 0; j < values.length; j++) {
+                    if (!map.has(patterns[i])) {
+                        // @ts-ignore
+                        map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
+                    }
+                    let count = map.get(patterns[i]);
+                    if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
+                        Object.defineProperty(values[j], 'propertyName', {
+                            enumerable: false,
+                            writable: true,
+                            value: patterns[i]
+                        });
+                        map.set(patterns[i], --count);
+                        values.splice(j--, 1);
+                    }
+                }
+            }
+            if (this.config.set != null) {
+                for (const [key, val] of Object.entries(this.config.set)) {
+                    if (map.has(key)) {
+                        for (const v of val) {
+                            // missing
+                            if (map.get(v) == 1) {
+                                let i = declaration.val.length;
+                                while (i--) {
+                                    // @ts-ignore
+                                    if (declaration.val[i].propertyName == key) {
+                                        const val = { ...declaration.val[i] };
+                                        Object.defineProperty(val, 'propertyName', {
+                                            enumerable: false,
+                                            writable: true,
+                                            value: v
+                                        });
+                                        declaration.val.splice(i, 0, val, { typ: exports.EnumToken.WhitespaceTokenType });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         [Symbol.iterator]() {
             let iterable;
             let requiredCount = 0;
@@ -6002,33 +6064,59 @@
                 if (isShorthand && this.declarations.has(this.config.shorthand)) {
                     const cache = new Map();
                     const removeDefaults = (declaration) => {
-                        let config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
-                        if (config == null && declaration.nam in propertiesConfig.properties) {
-                            // @ts-ignore
-                            const shorthand = propertiesConfig.properties[declaration.nam].shorthand;
-                            // @ts-ignore
-                            config = propertiesConfig.properties[shorthand];
-                        }
-                        declaration.val = declaration.val.map((t) => {
+                        let i;
+                        let t;
+                        let map = new Map();
+                        let value = [];
+                        let values = [];
+                        // @ts-ignore
+                        let typ = (exports.EnumToken[this.config.separator?.typ] ?? exports.EnumToken.CommaTokenType);
+                        let separator = this.config.separator ? renderToken(this.config.separator) : ',';
+                        this.matchTypes(declaration);
+                        values.push(value);
+                        for (i = 0; i < declaration.val.length; i++) {
+                            t = declaration.val[i];
                             if (!cache.has(t)) {
                                 cache.set(t, renderToken(t, { minify: true }));
                             }
-                            const value = cache.get(t);
-                            // @ts-ignore
-                            if (config?.mapping?.[value] != null) {
-                                // @ts-ignore
-                                t = parseString(config.mapping[value])[0];
-                                cache.set(t, renderToken(t, { minify: true }));
+                            if (t.typ == typ && separator == cache.get(t)) {
+                                this.removeDefaults(map, value);
+                                value = [];
+                                values.push(value);
+                                map.clear();
+                                continue;
                             }
-                            return t;
-                        }).filter((val) => {
-                            return !config?.default?.includes(cache.get(val));
-                        })
-                            .filter((val, index, array) => !(index > 0 &&
-                            val.typ == exports.EnumToken.WhitespaceTokenType &&
-                            array[index - 1].typ == exports.EnumToken.WhitespaceTokenType));
-                        if (declaration.val.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
+                            value.push(t);
+                            // @ts-ignore
+                            if ('propertyName' in t) {
+                                // @ts-ignore
+                                if (!map.has(t.propertyName)) {
+                                    // @ts-ignore
+                                    map.set(t.propertyName, { t: [t], value: [cache.get(t)] });
+                                }
+                                else {
+                                    // @ts-ignore
+                                    const v = map.get(t.propertyName);
+                                    v.t.push(t);
+                                    v.value.push(cache.get(t));
+                                }
+                            }
+                        }
+                        this.removeDefaults(map, value);
+                        declaration.val = values.reduce((acc, curr) => {
+                            for (const cr of curr) {
+                                if (cr.typ == exports.EnumToken.WhitespaceTokenType && acc.at(-1)?.typ == cr.typ) {
+                                    continue;
+                                }
+                                acc.push(cr);
+                            }
+                            return acc;
+                        }, []);
+                        while (declaration.val.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
                             declaration.val.pop();
+                        }
+                        while (declaration.val.at(0)?.typ == exports.EnumToken.WhitespaceTokenType) {
+                            declaration.val.shift();
                         }
                         return declaration;
                     };
@@ -6129,12 +6217,12 @@
                     return acc;
                 }, []);
                 count++;
-                if (!isShorthand || Object.entries(this.config.properties).some(entry => {
+                if (!isShorthand || Object.entries(this.config.properties).some((entry) => {
                     // missing required property
                     return entry[1].required && !(entry[0] in tokens);
                 }) ||
                     // @ts-ignore
-                    !Object.values(tokens).every(v => v.filter(t => t.typ != exports.EnumToken.CommentTokenType).length == count)) {
+                    !Object.values(tokens).every((v) => v.filter((t) => t.typ != exports.EnumToken.CommentTokenType).length == count)) {
                     // @ts-ignore
                     iterable = this.declarations.values();
                 }
@@ -6288,6 +6376,36 @@
                     return v;
                 }
             };
+        }
+        removeDefaults(map, value) {
+            for (const [key, val] of map) {
+                const config = this.config.properties[key];
+                if (config == null) {
+                    continue;
+                }
+                const v = val.value.join(' ');
+                if (config.default.includes(v) || (value.length == 1 && this.config.default.includes(v))) {
+                    for (const token of value) {
+                        if (val.t.includes(token)) {
+                            let index = value.indexOf(token);
+                            value.splice(index, 1);
+                            if (config.prefix != null) {
+                                while (index-- > 0) {
+                                    if (value[index].typ == exports.EnumToken.WhitespaceTokenType) {
+                                        continue;
+                                    }
+                                    if (value[index].typ == exports.EnumToken[config.prefix.typ] &&
+                                        // @ts-ignore
+                                        value[index].val == config.prefix.val) {
+                                        value.splice(index, 1);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
