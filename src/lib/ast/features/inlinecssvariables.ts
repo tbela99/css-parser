@@ -52,7 +52,7 @@ export class InlineCssVariablesFeature extends MinifyFeature {
         return 0;
     }
 
-    static register(options: MinifyOptions) {
+    static register(options: MinifyOptions): void {
 
         if (options.inlineCssVariables) {
 
@@ -71,7 +71,7 @@ export class InlineCssVariablesFeature extends MinifyFeature {
 
     run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) {
+    }): void {
 
         if (!('variableScope' in context)) {
 

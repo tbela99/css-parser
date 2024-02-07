@@ -1,7 +1,49 @@
 import {ColorToken, DimensionToken, NumberToken, PercentageToken} from "../../../@types";
 import {EnumToken} from "../../ast";
-import {getAngle, getNumber} from "./color";
+import {getAngle, getNumber, NAMES_COLORS} from "./color";
 import {hsl2rgb} from "./rgb";
+
+export function reduceHexValue(value: string): string {
+
+    const named_color: string = NAMES_COLORS[expandHexValue(value)];
+
+    if (value.length == 7) {
+
+        if (value[1] == value[2] &&
+            value[3] == value[4] &&
+            value[5] == value[6]) {
+
+            value = `#${value[1]}${value[3]}${value[5]}`;
+        }
+    } else if (value.length == 9) {
+
+        if (value[1] == value[2] &&
+            value[3] == value[4] &&
+            value[5] == value[6] &&
+            value[7] == value[8]) {
+
+            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
+        }
+    }
+
+    return named_color != null && named_color.length <= value.length ? named_color : value;
+}
+
+export function expandHexValue(value: string): string {
+
+    if (value.length == 4) {
+
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+    }
+
+    if (value.length == 5) {
+
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}${value[4]}${value[4]}`;
+    }
+
+    return value;
+}
+
 
 export function rgb2Hex(token: ColorToken) {
 

@@ -1,14 +1,16 @@
-import { getAngle, clamp, COLORS_NAMES, NAMES_COLORS } from './utils/color.js';
-import { rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex } from './utils/hex.js';
+import { getAngle, getNumber, clampValues, clamp, COLORS_NAMES } from './utils/color.js';
+import { reduceHexValue, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex } from './utils/hex.js';
+import { colorMix } from './utils/colormix.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
-import { parseRelativeColor } from './utils/calccolor.js';
+import { parseRelativeColor } from './utils/relativecolor.js';
+import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './utils/colorspace/rgb.js';
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -85,12 +87,10 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
     if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
-        // if (src !== '') {
         if (!(src in cache)) {
             // @ts-ignore
             cache[src] = options.resolve(src, options.cwd ?? '').relative;
         }
-        // }
         if (!(output in cache)) {
             // @ts-ignore
             cache[output] = options.resolve(output, options.cwd).relative;
@@ -209,7 +209,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 // @ts-ignore
                 token.cal = 'rel';
             }
+            else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
+                // @ts-ignore
+                token.cal = 'mix';
+            }
             else {
+                if (token.val == 'color') {
+                    // @ts-ignore
+                    token.cal = 'col';
+                }
                 token.chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
             }
         }
@@ -257,8 +265,53 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '/';
         case EnumToken.ColorTokenType:
             if (options.convertColor) {
-                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
-                    const chi = token.chi.filter(x => ![
+                if (token.val == 'color') {
+                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020'];
+                    if (token.chi[0].typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
+                        let values = token.chi.slice(1, 4).map((t) => {
+                            if (t.typ == EnumToken.IdenTokenType && t.val == 'none') {
+                                return 0;
+                            }
+                            return getNumber(t);
+                        });
+                        const colorSpace = token.chi[0].val.toLowerCase();
+                        switch (colorSpace) {
+                            case 'srgb-linear':
+                                // @ts-ignore
+                                values = gam_sRGB(...values);
+                                break;
+                            case 'prophoto-rgb':
+                                // @ts-ignore
+                                values = gam_sRGB(...lin_ProPhoto(...values));
+                                break;
+                            case 'a98-rgb':
+                                // @ts-ignore
+                                values = gam_sRGB(...lin_a98rgb(...values));
+                                break;
+                            case 'rec2020':
+                                // @ts-ignore
+                                values = gam_sRGB(...lin_2020(...values));
+                                break;
+                        }
+                        clampValues(values, colorSpace);
+                        let value = `#${values.reduce((acc, curr) => {
+                            // @ts-ignore
+                            return acc + Math.round(255 * curr).toString(16).padStart(2, '0');
+                        }, '')}`;
+                        if (token.chi.length == 6) {
+                            if (token.chi[5].typ == EnumToken.NumberTokenType || token.chi[5].typ == EnumToken.PercentageTokenType) {
+                                let c = 255 * +token.chi[5].val;
+                                if (token.chi[5].typ == EnumToken.PercentageTokenType) {
+                                    c /= 100;
+                                }
+                                value += Math.round(c).toString(16).padStart(2, '0');
+                            }
+                        }
+                        return reduceHexValue(value);
+                    }
+                }
+                else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
+                    const chi = token.chi.filter((x) => ![
                         EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType
                     ].includes(x.typ));
                     const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[5]);
@@ -267,7 +320,26 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         delete token.cal;
                     }
                 }
-                if (token.cal) {
+                else if (token.cal == 'mix' && token.val == 'color-mix') {
+                    // console.debug(JSON.stringify({token}, null, 1));
+                    const children = token.chi.reduce((acc, t) => {
+                        if (t.typ == EnumToken.ColorTokenType) {
+                            acc.push([t]);
+                        }
+                        else {
+                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                                acc[acc.length - 1].push(t);
+                            }
+                        }
+                        return acc;
+                    }, [[]]);
+                    const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
+                    if (value != null) {
+                        // console.debug(JSON.stringify(value, null, 1));
+                        token = value;
+                    }
+                }
+                if (token.cal != null) {
                     let slice = false;
                     if (token.cal == 'rel') {
                         const last = token.chi.at(-1);
@@ -309,24 +381,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 else if (token.val == 'device-cmyk') {
                     value = cmyk2hex(token);
                 }
-                const named_color = NAMES_COLORS[value];
                 if (value !== '') {
-                    if (value.length == 7) {
-                        if (value[1] == value[2] &&
-                            value[3] == value[4] &&
-                            value[5] == value[6]) {
-                            value = `#${value[1]}${value[3]}${value[5]}`;
-                        }
-                    }
-                    else if (value.length == 9) {
-                        if (value[1] == value[2] &&
-                            value[3] == value[4] &&
-                            value[5] == value[6] &&
-                            value[7] == value[8]) {
-                            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
-                        }
-                    }
-                    return named_color != null && named_color.length <= value.length ? named_color : value;
+                    return reduceHexValue(value);
                 }
             }
             if (token.kin == 'hex' || token.kin == 'lit') {

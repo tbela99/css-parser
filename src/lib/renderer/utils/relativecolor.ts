@@ -15,7 +15,7 @@ export type RelativeColorTypes = RGBKeyType | HSLKeyType | HWBKeyType;
 
 export function parseRelativeColor(relativeKeys: RelativeColorTypes[], original: ColorToken, rExp: Token, gExp: Token, bExp: Token, aExp: Token | null): Record<RelativeColorTypes, Token> | null {
 
-    const type = <'rgb' | 'hsl' | 'hwb'>relativeKeys.join('');
+    const type: 'rgb' | 'hsl' | 'hwb' = <'rgb' | 'hsl' | 'hwb'>relativeKeys.join('');
     let r: number | Token;
     let g: number | Token;
     let b: number | Token;
@@ -215,6 +215,14 @@ export function parseRelativeColor(relativeKeys: RelativeColorTypes[], original:
         [relativeKeys[2]]: bExp,
         alpha: aExp ?? {typ: EnumToken.IdenTokenType, val: 'alpha'}
     };
+
+    for (const [key, value] of Object.entries(values)) {
+
+        if (typeof value == 'number') {
+
+            values[<RelativeColorTypes>key] = {typ: EnumToken.NumberTokenType, val: reduceNumber(value)};
+        }
+    }
 
     // @ts-ignore
     values.alpha = alpha != null && typeof alpha == 'object' ? alpha : <Token> (<Token>b).typ == EnumToken.PercentageTokenType ? {typ: EnumToken.PercentageTokenType, val: String(alpha ?? 100)} : {typ: EnumToken.NumberTokenType, val: String(alpha ?? 1)};

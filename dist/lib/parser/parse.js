@@ -893,9 +893,21 @@ function parseTokens(tokens, options = {}) {
                 t.typ = EnumToken.ColorTokenType;
                 // @ts-ignore
                 t.kin = t.val;
-                if (t.chi[0].typ == EnumToken.IdenTokenType && t.chi[0].val == 'from') {
+                if (t.chi[0].typ == EnumToken.IdenTokenType) {
+                    if (t.chi[0].val == 'from') {
+                        // @ts-ignore
+                        t.cal = 'rel';
+                    }
                     // @ts-ignore
-                    t.cal = 'rel';
+                    else if (t.val == 'color-mix' && t.chi[0].val == 'in') {
+                        // @ts-ignore
+                        t.cal = 'mix';
+                    }
+                    else if (t.val == 'color') {
+                        // @ts-ignore
+                        t.cal = 'col';
+                        t.chi = t.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType].includes(t.typ));
+                    }
                 }
                 t.chi = t.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
                 continue;

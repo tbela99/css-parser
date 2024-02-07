@@ -1,10 +1,38 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { getNumber, getAngle } from './color.js';
+import { NAMES_COLORS, getNumber, getAngle } from './color.js';
 import { hsl2rgb } from './rgb.js';
 import '../sourcemap/lib/encode.js';
 
+function reduceHexValue(value) {
+    const named_color = NAMES_COLORS[expandHexValue(value)];
+    if (value.length == 7) {
+        if (value[1] == value[2] &&
+            value[3] == value[4] &&
+            value[5] == value[6]) {
+            value = `#${value[1]}${value[3]}${value[5]}`;
+        }
+    }
+    else if (value.length == 9) {
+        if (value[1] == value[2] &&
+            value[3] == value[4] &&
+            value[5] == value[6] &&
+            value[7] == value[8]) {
+            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
+        }
+    }
+    return named_color != null && named_color.length <= value.length ? named_color : value;
+}
+function expandHexValue(value) {
+    if (value.length == 4) {
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+    }
+    if (value.length == 5) {
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}${value[4]}${value[4]}`;
+    }
+    return value;
+}
 function rgb2Hex(token) {
     let value = '#';
     let t;
@@ -121,4 +149,4 @@ function cmyk2hex(token) {
     return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
 }
 
-export { cmyk2hex, hsl2Hex, hwb2hex, rgb2Hex };
+export { cmyk2hex, expandHexValue, hsl2Hex, hwb2hex, reduceHexValue, rgb2Hex };

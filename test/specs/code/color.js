@@ -257,4 +257,91 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
         });
     });
     //
+
+    it('relative color hex -> rgb #27', function () {
+        return parse(`
+a {
+color: rgb(from rebeccapurple r calc(g * 2) b);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #669
+}`));
+    });
+    //
+
+    it('color(srgb 0.41587 0.503670 0.36664 / .5) #28', function () {
+        return parse(`
+.selector {
+color: color(sRGB 0.41587 0.503670 0.36664 / calc(1 - 1/2));
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #6a805d80
+}`));
+    });
+
+    it('color(srgb .5 .5 .5) #29', function () {
+        return parse(`
+.selector {
+color: color(srgb .5 .5 .5);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('color-mix(in srgb , white , black ) #30', function () {
+        return parse(`
+.selector {
+color: color-mix(in srgb , white , black );
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('color( srgb-linear  0.21404 0.21404 0.21404 ) #31', function () {
+        return parse(`
+.selector {
+color: color( srgb-linear  0.21404 0.21404 0.21404 )
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('color(display-p3 0.5 .5 .5) #32', function () {
+        return parse(`
+.selector {
+color: color(display-p3 0.5 .5 .5);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('color(prophoto-rgb 0.42467 0.42467 0.42467) #33', function () {
+        return parse(`
+.selector {
+color: color(prophoto-rgb 0.42467 0.42467 0.42467);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+
+    it('color(a98-rgb 0.4961 0.4961 0.4961) #34', function () {
+        return parse(`
+.selector {
+color: color(a98-rgb 0.4961 0.4961 0.4961);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+
+
+    it('color(rec2020 0.45004 0.45004 0.45004) #35', function () {
+        return parse(`
+.selector {
+color: color(rec2020 0.45004 0.45004 0.45004);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    //
 }

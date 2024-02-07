@@ -342,6 +342,21 @@ export declare interface ImportantToken extends BaseToken {
 }
 
 export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+export declare type ColorSpace =
+    'srgb' | "prophoto-rgb" | "a98-rgb" | 'rec2020'
+    | 'display-p3'
+    | 'srgb-linear'
+    | 'lab'
+    | 'oklab'
+    | 'xyz'
+    | 'xyz-d50'
+    | 'xyz-d65'
+    | 'hsl'
+    | 'hwb'
+    | 'lch'
+    | 'oklch';
+
+// export declare type HueInterpolationMethod = 'shorter' | 'longer' | 'increasing' | 'decreasing';
 
 export declare interface ColorToken extends BaseToken {
 

@@ -63,6 +63,9 @@ function doEvaluate(l, r, op) {
         l,
         r
     };
+    if (typeof l != 'object') {
+        throw new Error('foo');
+    }
     if (!isScalarToken(l) || !isScalarToken(r)) {
         return defaultReturn;
     }
@@ -75,6 +78,10 @@ function doEvaluate(l, r, op) {
     const typ = l.typ == EnumToken.NumberTokenType ? r.typ : l.typ;
     // @ts-ignore
     const val = compute(typeof l.val == 'string' ? +l.val : l.val, typeof r.val == 'string' ? +r.val : r.val, op);
+    // if (typeof val == 'number') {
+    //
+    //     return {typ: EnumToken.NumberTokenType, val: String(val)};
+    // }
     return { ...(l.typ == EnumToken.NumberTokenType ? r : l), typ, val: typeof val == 'number' ? reduceNumber(val) : val };
 }
 /**

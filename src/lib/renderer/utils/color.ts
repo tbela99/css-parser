@@ -1,5 +1,7 @@
-import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {AngleToken, ColorSpace, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {EnumToken} from "../../ast";
+import {hsl2rgb} from "./rgb";
+import {expandHexValue} from "./hex";
 
 // name to color
 export const COLORS_NAMES: { [key: string]: string } = Object.seal({
@@ -155,157 +157,70 @@ export const COLORS_NAMES: { [key: string]: string } = Object.seal({
 });
 
 // color to name
-export const NAMES_COLORS: { [key: string]: string } = Object.seal({
-    '#f0f8ff': 'aliceblue',
-    '#faebd7': 'antiquewhite',
-    // '#00ffff': 'aqua',
-    '#7fffd4': 'aquamarine',
-    '#f0ffff': 'azure',
-    '#f5f5dc': 'beige',
-    '#ffe4c4': 'bisque',
-    '#000000': 'black',
-    '#ffebcd': 'blanchedalmond',
-    '#0000ff': 'blue',
-    '#8a2be2': 'blueviolet',
-    '#a52a2a': 'brown',
-    '#deb887': 'burlywood',
-    '#5f9ea0': 'cadetblue',
-    '#7fff00': 'chartreuse',
-    '#d2691e': 'chocolate',
-    '#ff7f50': 'coral',
-    '#6495ed': 'cornflowerblue',
-    '#fff8dc': 'cornsilk',
-    '#dc143c': 'crimson',
-    '#00ffff': 'cyan',
-    '#00008b': 'darkblue',
-    '#008b8b': 'darkcyan',
-    '#b8860b': 'darkgoldenrod',
-    // '#a9a9a9': 'darkgray',
-    '#a9a9a9': 'darkgrey',
-    '#006400': 'darkgreen',
-    '#bdb76b': 'darkkhaki',
-    '#8b008b': 'darkmagenta',
-    '#556b2f': 'darkolivegreen',
-    '#ff8c00': 'darkorange',
-    '#9932cc': 'darkorchid',
-    '#8b0000': 'darkred',
-    '#e9967a': 'darksalmon',
-    '#8fbc8f': 'darkseagreen',
-    '#483d8b': 'darkslateblue',
-    // '#2f4f4f': 'darkslategray',
-    '#2f4f4f': 'darkslategrey',
-    '#00ced1': 'darkturquoise',
-    '#9400d3': 'darkviolet',
-    '#ff1493': 'deeppink',
-    '#00bfff': 'deepskyblue',
-    // '#696969': 'dimgray',
-    '#696969': 'dimgrey',
-    '#1e90ff': 'dodgerblue',
-    '#b22222': 'firebrick',
-    '#fffaf0': 'floralwhite',
-    '#228b22': 'forestgreen',
-    // '#ff00ff': 'fuchsia',
-    '#dcdcdc': 'gainsboro',
-    '#f8f8ff': 'ghostwhite',
-    '#ffd700': 'gold',
-    '#daa520': 'goldenrod',
-    //    '#808080': 'gray',
-    '#808080': 'grey',
-    '#008000': 'green',
-    '#adff2f': 'greenyellow',
-    '#f0fff0': 'honeydew',
-    '#ff69b4': 'hotpink',
-    '#cd5c5c': 'indianred',
-    '#4b0082': 'indigo',
-    '#fffff0': 'ivory',
-    '#f0e68c': 'khaki',
-    '#e6e6fa': 'lavender',
-    '#fff0f5': 'lavenderblush',
-    '#7cfc00': 'lawngreen',
-    '#fffacd': 'lemonchiffon',
-    '#add8e6': 'lightblue',
-    '#f08080': 'lightcoral',
-    '#e0ffff': 'lightcyan',
-    '#fafad2': 'lightgoldenrodyellow',
-    // '#d3d3d3': 'lightgray',
-    '#d3d3d3': 'lightgrey',
-    '#90ee90': 'lightgreen',
-    '#ffb6c1': 'lightpink',
-    '#ffa07a': 'lightsalmon',
-    '#20b2aa': 'lightseagreen',
-    '#87cefa': 'lightskyblue',
-    // '#778899': 'lightslategray',
-    '#778899': 'lightslategrey',
-    '#b0c4de': 'lightsteelblue',
-    '#ffffe0': 'lightyellow',
-    '#00ff00': 'lime',
-    '#32cd32': 'limegreen',
-    '#faf0e6': 'linen',
-    '#ff00ff': 'magenta',
-    '#800000': 'maroon',
-    '#66cdaa': 'mediumaquamarine',
-    '#0000cd': 'mediumblue',
-    '#ba55d3': 'mediumorchid',
-    '#9370d8': 'mediumpurple',
-    '#3cb371': 'mediumseagreen',
-    '#7b68ee': 'mediumslateblue',
-    '#00fa9a': 'mediumspringgreen',
-    '#48d1cc': 'mediumturquoise',
-    '#c71585': 'mediumvioletred',
-    '#191970': 'midnightblue',
-    '#f5fffa': 'mintcream',
-    '#ffe4e1': 'mistyrose',
-    '#ffe4b5': 'moccasin',
-    '#ffdead': 'navajowhite',
-    '#000080': 'navy',
-    '#fdf5e6': 'oldlace',
-    '#808000': 'olive',
-    '#6b8e23': 'olivedrab',
-    '#ffa500': 'orange',
-    '#ff4500': 'orangered',
-    '#da70d6': 'orchid',
-    '#eee8aa': 'palegoldenrod',
-    '#98fb98': 'palegreen',
-    '#afeeee': 'paleturquoise',
-    '#d87093': 'palevioletred',
-    '#ffefd5': 'papayawhip',
-    '#ffdab9': 'peachpuff',
-    '#cd853f': 'peru',
-    '#ffc0cb': 'pink',
-    '#dda0dd': 'plum',
-    '#b0e0e6': 'powderblue',
-    '#800080': 'purple',
-    '#ff0000': 'red',
-    '#bc8f8f': 'rosybrown',
-    '#4169e1': 'royalblue',
-    '#8b4513': 'saddlebrown',
-    '#fa8072': 'salmon',
-    '#f4a460': 'sandybrown',
-    '#2e8b57': 'seagreen',
-    '#fff5ee': 'seashell',
-    '#a0522d': 'sienna',
-    '#c0c0c0': 'silver',
-    '#87ceeb': 'skyblue',
-    '#6a5acd': 'slateblue',
-    // '#708090': 'slategray',
-    '#708090': 'slategrey',
-    '#fffafa': 'snow',
-    '#00ff7f': 'springgreen',
-    '#4682b4': 'steelblue',
-    '#d2b48c': 'tan',
-    '#008080': 'teal',
-    '#d8bfd8': 'thistle',
-    '#ff6347': 'tomato',
-    '#40e0d0': 'turquoise',
-    '#ee82ee': 'violet',
-    '#f5deb3': 'wheat',
-    '#ffffff': 'white',
-    '#f5f5f5': 'whitesmoke',
-    '#ffff00': 'yellow',
-    '#9acd32': 'yellowgreen',
-    '#663399': 'rebeccapurple',
-    '#00000000': 'transparent'
-});
+export const NAMES_COLORS: { [key: string]: string } = Object.seal(Object.entries(COLORS_NAMES).reduce((acc: {
+    [key: string]: string
+}, [key, value]) => {
+
+    acc[value] = key;
+    return acc;
+
+}, Object.create(null)));
+
+export function convert(token: ColorToken, to: 'rgb'): ColorToken | null {
+
+    if (to == 'rgb') {
+
+        switch (token.kin) {
+
+            case 'rgb':
+            case 'rgba':
+                return token;
+
+            case 'hsl':
+            case 'hsla':
+
+                const children: Token[] = (<Token[]>token.chi).filter(c => [EnumToken.PercentageTokenType, EnumToken.NumberTokenType, EnumToken.IdenTokenType].includes(c.typ));
+
+                let values: number[] = children.slice(0, 3).map((c: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>c));
+
+                if (children.length == 4) {
+
+                    values.push(children[3].typ == EnumToken.IdenTokenType && (<IdentToken>children[3]).val == 'none' ? 1 : getNumber(<IdentToken>children[3]));
+                }
+
+                return <ColorToken>{
+
+                    typ: EnumToken.ColorTokenType,
+                    kin: 'rgb',
+                    val: 'rgb',
+                    // @ts-ignore
+                    chi: hsl2rgb(...values).map((v: number) => (<NumberToken>{
+                        typ: EnumToken.NumberTokenType,
+                        val: String(v)
+                    }))
+                }
+
+            case 'hex':
+            case 'lit':
+
+                const value: string = token.kin == 'hex' ? expandHexValue(token.val) : COLORS_NAMES[token.val];
+
+                return <ColorToken>{
+
+                    typ: EnumToken.ColorTokenType,
+                    kin: 'rgb',
+                    val: 'rgb',
+                    chi: (<string[]>value.slice(1).match(/([a-fA-F0-9]{2})/g)).map((v: string) => (<NumberToken>{
+
+                        typ: EnumToken.NumberTokenType,
+                        val: String(parseInt(v, 16))
+                    }))
+                }
+        }
+    }
+
+    return null;
+}
 
 /**
  * clamp color values
@@ -315,8 +230,7 @@ export function clamp(token: ColorToken): ColorToken {
 
     if (token.kin == 'rgb' || token.kin == 'rgba') {
 
-        (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).
-        forEach((token: Token, index: number) => {
+        (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token: Token, index: number) => {
 
             if (index <= 2) {
 
@@ -328,9 +242,7 @@ export function clamp(token: ColorToken): ColorToken {
 
                     token.val = String(Math.min(100, Math.max(0, +token.val)));
                 }
-            }
-
-            else {
+            } else {
 
                 if (token.typ == EnumToken.NumberTokenType) {
 
@@ -345,6 +257,27 @@ export function clamp(token: ColorToken): ColorToken {
     }
 
     return token;
+}
+
+export function clampValues(values: number[], colorSpace: ColorSpace): number[] {
+
+    switch (colorSpace) {
+
+        case 'srgb':
+        case 'srgb-linear':
+        case 'display-p3':
+        // case 'prophoto-rgb':
+        // case 'a98-rgb':
+        // case 'rec2020':
+
+            for (let i = 0; i < values.length; i++) {
+
+                values[i] = Math.min(1, Math.max(0, values[i]));
+            }
+    }
+
+
+    return values;
 }
 
 export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {

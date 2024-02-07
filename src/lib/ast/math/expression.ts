@@ -9,6 +9,7 @@ import {
 import {EnumToken} from "../types";
 import {compute} from "./math";
 import {reduceNumber} from "../../renderer";
+import {formatWithOptions} from "node:util";
 
 /**
  * evaluate an array of tokens
@@ -97,6 +98,11 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
         r
     };
 
+    if (typeof l != 'object') {
+
+        throw new Error('foo');
+    }
+
     if (!isScalarToken(l) || !isScalarToken(r)) {
 
         return defaultReturn;
@@ -115,6 +121,11 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
     // @ts-ignore
     const val: number | FractionToken = compute(typeof l.val == 'string' ? +l.val :  l.val, typeof r.val == 'string' ? +r.val : r.val, op);
+
+    // if (typeof val == 'number') {
+    //
+    //     return {typ: EnumToken.NumberTokenType, val: String(val)};
+    // }
 
     return <Token>{...(l.typ == EnumToken.NumberTokenType ? r : l), typ, val : typeof val == 'number' ? reduceNumber(val) : val};
 }
