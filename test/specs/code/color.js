@@ -332,8 +332,6 @@ color: color(a98-rgb 0.4961 0.4961 0.4961);
 }`));
     });
 
-
-
     it('color(rec2020 0.45004 0.45004 0.45004) #35', function () {
         return parse(`
 .selector {
@@ -342,6 +340,56 @@ color: color(rec2020 0.45004 0.45004 0.45004);
  color: grey
 }`));
     });
+
+    it('color(xyz-d50 0.43607, 0.22249, 0.01392) #36', function () {
+        return parse(`
+.selector {
+color: color(xyz-d50 0.43607 0.22249 0.01392);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: red
+}`));
+    });
+
+    it('color(xyz-d50 0.58098 0.49223 0.05045) #37', function () {
+        return parse(`
+.selector {
+color: color(xyz-d50 0.58098 0.49223 0.05045);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: orange
+}`));
+    });
+
+    it('color(xyz 0.20344 0.21404 0.2331) #38', function () {
+        return parse(`
+.selector {
+color: color(xyz 0.20344 0.21404 0.2331);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('color(xyz 0.41239 0.21264 0.01933) #39', function () {
+        return parse(`
+.selector {
+color: color(xyz 0.41239 0.21264 0.01933);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: red
+}`));
+    });
+
+    it('color(xyz 0.54694 0.48173 0.06418) #40', function () {
+        return parse(`
+.selector {
+color: color(xyz 0.54694 0.48173 0.06418);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: orange
+}`));
+    });
+
+
+
+
+
 
     //
 }

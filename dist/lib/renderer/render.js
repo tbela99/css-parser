@@ -9,6 +9,7 @@ import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
 import { parseRelativeColor } from './utils/relativecolor.js';
 import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './utils/colorspace/rgb.js';
+import { XYZ_D50_to_sRGB, XYZ_to_sRGB } from './utils/colorspace/xyz.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color'];
 function reduceNumber(val) {
@@ -266,7 +267,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.ColorTokenType:
             if (options.convertColor) {
                 if (token.val == 'color') {
-                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020'];
+                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
                     if (token.chi[0].typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
                         let values = token.chi.slice(1, 4).map((t) => {
                             if (t.typ == EnumToken.IdenTokenType && t.val == 'none') {
@@ -291,6 +292,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             case 'rec2020':
                                 // @ts-ignore
                                 values = gam_sRGB(...lin_2020(...values));
+                                break;
+                            case 'xyz':
+                            case 'xyz-d65':
+                                // @ts-ignore
+                                values = XYZ_to_sRGB(...values);
+                                break;
+                            case 'xyz-d50':
+                                // @ts-ignore
+                                values = XYZ_D50_to_sRGB(...values);
                                 break;
                         }
                         clampValues(values, colorSpace);

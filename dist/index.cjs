@@ -1373,9 +1373,44 @@ function computeComponentValue(expr, values) {
     return expr;
 }
 
+// from https://www.w3.org/TR/css-color-4/multiply-matrices.js
+/**
+ * Simple matrix (and vector) multiplication
+ * Warning: No error handling for incompatible dimensions!
+ * @author Lea Verou 2020 MIT License
+ */
+// A is m x n. B is n x p. product is m x p.
+function multiplyMatrices(A, B) {
+    let m = A.length;
+    if (!Array.isArray(A[0])) {
+        // A is vector, convert to [[a, b, c, ...]]
+        A = [A];
+    }
+    if (!Array.isArray(B[0])) {
+        // B is vector, convert to [[a], [b], [c], ...]]
+        B = B.map((x) => [x]);
+    }
+    let p = B[0].length;
+    let B_cols = B[0].map((_, i) => B.map((x) => x[i])); // transpose B
+    let product = A.map((row) => B_cols.map((col) => {
+        if (!Array.isArray(row)) {
+            return col.reduce((a, c) => a + c * row, 0);
+        }
+        return row.reduce((a, c, i) => a + c * (col[i] || 0), 0);
+    }));
+    if (m === 1) {
+        product = product[0]; // Avoid [[a, b, c, ...]]
+    }
+    if (p === 1) {
+        return product.map((x) => x[0]); // Avoid [[a], [b], [c], ...]]
+    }
+    return product;
+}
+
 function roundWithPrecision(value, original) {
     return +value.toFixed(original.toString().split('.')[1]?.length ?? 0);
 }
+
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
@@ -1446,6 +1481,35 @@ function lin_2020(r, g, b) {
         }
         return roundWithPrecision(sign * (Math.pow((abs + α - 1) / α, 1 / 0.45)), val);
     });
+}
+
+function XYZ_to_sRGB(x, y, z) {
+    // @ts-ignore
+    return gam_sRGB(...XYZ_to_lin_sRGB(x, y, z));
+}
+function XYZ_to_lin_sRGB(x, y, z) {
+    // convert XYZ to linear-light sRGB
+    const M = [
+        [12831 / 3959, -329 / 214, -1974 / 3959],
+        [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+        [705 / 12673, -2585 / 12673, 705 / 667],
+    ];
+    const XYZ = [x, y, z]; // convert to XYZ
+    return multiplyMatrices(M, XYZ).map((v, index) => roundWithPrecision(v, XYZ[index]));
+}
+function XYZ_D50_to_sRGB(x, y, z) {
+    // @ts-ignore
+    return gam_sRGB(...XYZ_to_lin_sRGB(...D50_to_D65(x, y, z)));
+}
+function D50_to_D65(x, y, z) {
+    // Bradford chromatic adaptation from D50 to D65
+    const M = [
+        [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
+        [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
+        [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
+    ];
+    const XYZ = [x, y, z];
+    return multiplyMatrices(M, XYZ).map((v, index) => roundWithPrecision(v, XYZ[index]));
 }
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color'];
@@ -1704,7 +1768,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.ColorTokenType:
             if (options.convertColor) {
                 if (token.val == 'color') {
-                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020'];
+                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
                     if (token.chi[0].typ == exports.EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
                         let values = token.chi.slice(1, 4).map((t) => {
                             if (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') {
@@ -1729,6 +1793,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             case 'rec2020':
                                 // @ts-ignore
                                 values = gam_sRGB(...lin_2020(...values));
+                                break;
+                            case 'xyz':
+                            case 'xyz-d65':
+                                // @ts-ignore
+                                values = XYZ_to_sRGB(...values);
+                                break;
+                            case 'xyz-d50':
+                                // @ts-ignore
+                                values = XYZ_D50_to_sRGB(...values);
                                 break;
                         }
                         clampValues(values, colorSpace);

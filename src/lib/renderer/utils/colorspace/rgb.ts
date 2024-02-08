@@ -1,11 +1,10 @@
-function roundWithPrecision(value: number, original: number): number {
 
-    return +value.toFixed(original.toString().split('.')[1]?.length ?? 0);
-}
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
+import {roundWithPrecision} from "./utils";
+
 export function gam_sRGB(r: number, g: number, b: number): number[] {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form

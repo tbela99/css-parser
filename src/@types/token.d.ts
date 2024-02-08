@@ -342,6 +342,8 @@ export declare interface ImportantToken extends BaseToken {
 }
 
 export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk';
+// xyz-d65 is an alias for xyz
+// display-p3 is an alias for srgb
 export declare type ColorSpace =
     'srgb' | "prophoto-rgb" | "a98-rgb" | 'rec2020'
     | 'display-p3'

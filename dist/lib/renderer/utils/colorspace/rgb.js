@@ -1,6 +1,5 @@
-function roundWithPrecision(value, original) {
-    return +value.toFixed(original.toString().split('.')[1]?.length ?? 0);
-}
+import { roundWithPrecision } from './utils/round.js';
+
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1

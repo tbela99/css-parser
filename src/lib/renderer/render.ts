@@ -34,6 +34,7 @@ import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
 import {parseRelativeColor, RelativeColorTypes} from "./utils/relativecolor";
 import {gam_ProPhoto, gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto} from "./utils/colorspace";
+import {XYZ_D50_to_sRGB, XYZ_to_sRGB} from "./utils/colorspace/xyz";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color'];
 
@@ -433,7 +434,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 if (token.val == 'color') {
 
-                    const supportedColorSpaces: ColorSpace[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020'];
+                    const supportedColorSpaces: ColorSpace[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 
                     if ((<IdentToken>(<Token[]>token.chi)[0]).typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(<ColorSpace>(<IdentToken>(<Token[]>token.chi)[0]).val.toLowerCase())) {
 
@@ -467,6 +468,15 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                             case 'rec2020':
                                 // @ts-ignore
                                 values = gam_sRGB(...lin_2020(...values));
+                                break;
+                            case 'xyz':
+                            case 'xyz-d65':
+                                // @ts-ignore
+                                values = XYZ_to_sRGB(...values);
+                                break;
+                            case 'xyz-d50':
+                                // @ts-ignore
+                                values = XYZ_D50_to_sRGB(...values);
                                 break;
                         }
 

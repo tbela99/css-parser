@@ -3,7 +3,7 @@
 ## V0.4.0
 
 - [x] color-mix(srgb)
-- [x] color(srgb, srgb-linear, display-p3, prophoto-rgb, a98-rgb, rec2020)
+- [x] color(srgb, srgb-linear, display-p3, prophoto-rgb, a98-rgb, rec2020, xyz, xyz-d50)
 
 ## V0.3.0
 
