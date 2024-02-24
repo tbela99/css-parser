@@ -32,7 +32,7 @@ function hsv2hsl(h, s, v) {
     return [
         //[hue, saturation, lightness]
         //Range should be between 0 - 1
-        h,
+        h, //Hue stays the same
         //Saturation is very different between the two color spaces
         //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
         //Otherwise sat*val/(2-(2-sat)*val)

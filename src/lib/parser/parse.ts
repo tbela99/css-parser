@@ -13,7 +13,7 @@ import {
     parseDimension
 } from "./utils";
 import {renderToken} from "../renderer";
-import {COLORS_NAMES} from "../renderer/utils";
+import {COLORS_NAMES} from "../renderer/color";
 import {combinators, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
@@ -127,6 +127,13 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         const errors: ErrorDescription[] = [];
         const src: string = <string>options.src;
         const stack: Array<AstNode | AstComment> = [];
+        const stats = {
+            bytesIn: 0,
+            parse: `0ms`,
+            minify: `0ms`,
+            total: `0ms`
+        };
+
         let ast: AstRuleStyleSheet = {
             typ: EnumToken.StyleSheetNodeType,
             chi: []
@@ -134,7 +141,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         let tokens: TokenizeResult[] = [];
         let map: Map<Token, Position> = new Map<Token, Position>;
-        let bytesIn: number = 0;
+        // let bytesIn: number = 0;
         let context: AstRuleList = ast;
 
         if (options.sourcemap) {
@@ -148,389 +155,13 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             };
         }
 
-        async function parseNode(results: TokenizeResult[]): Promise<AstRule | AstAtRule | null> {
-
-            let tokens: Token[] = results.map(mapToken);
-
-            let i: number;
-            let loc: Location;
-
-            for (i = 0; i < tokens.length; i++) {
-
-                if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
-
-                    const position: Position = <Position>map.get(tokens[i]);
-
-                    if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
-
-                        errors.push({
-                            action: 'drop',
-                            message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
-                            location: {src, ...position}
-                        });
-                        continue;
-                    }
-
-                    loc = <Location>{
-                        sta: position,
-                        src
-                    };
-
-                    // @ts-ignore
-                    context.chi.push(tokens[i]);
-
-                    if (options.sourcemap) {
-
-                        tokens[i].loc = loc
-                    }
-
-                } else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
-                    break;
-                }
-            }
-
-            tokens = tokens.slice(i);
-            if (tokens.length == 0) {
-                return null;
-            }
-
-            let delim: Token = <Token>tokens.at(-1);
-
-            if (delim.typ == EnumToken.SemiColonTokenType || delim.typ == EnumToken.BlockStartTokenType || delim.typ == EnumToken.BlockEndTokenType) {
-                tokens.pop();
-            } else {
-                delim = <SemiColonToken>{typ: EnumToken.SemiColonTokenType};
-            }
-
-            // @ts-ignore
-            while ([EnumToken.WhitespaceTokenType, EnumToken.BadStringTokenType, EnumToken.BadCommentTokenType].includes(tokens.at(-1)?.typ)) {
-                tokens.pop();
-            }
-
-            if (tokens.length == 0) {
-                return null;
-            }
-
-            if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
-
-                const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
-                const position: Position = <Position>map.get(atRule);
-
-                if (atRule.val == 'charset') {
-
-                    if (position.ind > 0) {
-
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid @charset',
-                            location: {src, ...position}
-                        });
-                        return null;
-                    }
-
-                    if (options.removeCharset) {
-
-                        return null;
-                    }
-                }
-
-                // @ts-ignore
-                while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
-                    tokens.shift();
-                }
-
-                if (atRule.val == 'import') {
-
-                    // only @charset and @layer are accepted before @import
-                    if (context.chi.length > 0) {
-                        let i = context.chi.length;
-                        while (i--) {
-                            const type = context.chi[i].typ;
-                            if (type == EnumToken.CommentNodeType) {
-                                continue;
-                            }
-                            if (type != EnumToken.AtRuleNodeType) {
-                                errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
-                                return null;
-                            }
-
-                            const name = (<AstAtRule>context.chi[i]).nam;
-
-                            if (name != 'charset' && name != 'import' && name != 'layer') {
-                                errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
-                                return null;
-                            }
-
-                            break;
-                        }
-                    }
-
-                    // @ts-ignore
-                    if (tokens[0]?.typ != EnumToken.StringTokenType && tokens[0]?.typ != EnumToken.UrlFunctionTokenType) {
-
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid @import',
-                            location: {src, ...position}
-                        });
-                        return null;
-                    }
-                    // @ts-ignore
-                    if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1]?.typ != EnumToken.UrlTokenTokenType && tokens[1]?.typ != EnumToken.StringTokenType) {
-
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid @import',
-                            location: {src, ...position}
-                        });
-                        return null;
-                    }
-                }
-
-                if (atRule.val == 'import') {
-
-                    // @ts-ignore
-                    if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1].typ == EnumToken.UrlTokenTokenType) {
-                        tokens.shift();
-                        // @ts-ignore
-                        tokens[0].typ = EnumToken.StringTokenType;
-                        // @ts-ignore
-                        tokens[0].val = `"${tokens[0].val}"`;
-                    }
-                    // @ts-ignore
-                    if (tokens[0].typ == EnumToken.StringTokenType) {
-
-                        if (options.resolveImport) {
-
-                            const url: string = (<UrlToken>tokens[0]).val.slice(1, -1);
-
-                            try {
-
-                                // @ts-ignore
-                                const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
-
-                                    return doParse(src, Object.assign({}, options, {
-                                        minify: false,
-                                        // @ts-ignore
-                                        src: options.resolve(url, options.src).absolute
-                                    }))
-                                });
-
-                                bytesIn += root.stats.bytesIn;
-
-                                if (root.ast.chi.length > 0) {
-
-                                    // @todo - filter charset, layer and scope
-                                    context.chi.push(...root.ast.chi);
-                                }
-
-                                if (root.errors.length > 0) {
-                                    errors.push(...root.errors);
-                                }
-
-                                return null;
-                            } catch (error) {
-
-                                // @ts-ignore
-                                errors.push({action: 'ignore', message: 'doParse: ' + error.message, error});
-                            }
-                        }
-                    }
-                }
-                // https://www.w3.org/TR/css-nesting-1/#conditionals
-                // allowed nesting at-rules
-                // there must be a top level rule in the stack
-
-                const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
-
-                    acc.push(renderToken(curr, {removeComments: true}));
-
-                    return acc
-                }, []);
-
-                const node: AstAtRule = {
-                    typ: EnumToken.AtRuleNodeType,
-                    nam: renderToken(atRule, {removeComments: true}),
-                    val: raw.join('')
-                };
-
-                Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
-
-                if (delim.typ == EnumToken.BlockStartTokenType) {
-
-                    node.chi = [];
-                }
-
-                loc = <Location>{
-                    sta: position,
-                    src
-                };
-
-                if (options.sourcemap) {
-                    node.loc = loc;
-                }
-
-                // @ts-ignore
-                context.chi.push(node);
-                return delim.typ == EnumToken.BlockStartTokenType ? node : null;
-            } else {
-                // rule
-                if (delim.typ == EnumToken.BlockStartTokenType) {
-
-                    const position: Position = <Position>map.get(tokens[0]);
-
-                    const uniq = new Map<string, string[]>;
-                    parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
-
-                        if (curr.typ == EnumToken.WhitespaceTokenType) {
-
-                            if (
-                                trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                                combinators.includes((<LiteralToken>array[index + 1])?.val)) {
-
-                                return acc;
-                            }
-                        }
-
-                        let t: string = renderToken(curr, {minify: false});
-
-                        if (t == ',') {
-                            acc.push([]);
-                        } else {
-                            acc[acc.length - 1].push(t);
-                        }
-                        return acc;
-                    }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
-
-                        acc.set(curr.join(''), curr);
-                        return acc;
-                    }, uniq);
-
-                    const node: AstRule = {
-                        typ: EnumToken.RuleNodeType,
-                        // @ts-ignore
-                        sel: [...uniq.keys()].join(','),
-                        chi: []
-                    };
-
-                    let raw = [...uniq.values()];
-
-                    Object.defineProperty(node, 'raw', {
-                        enumerable: false,
-                        configurable: true,
-                        writable: true,
-                        value: raw
-                    });
-
-                    loc = <Location>{
-                        sta: position,
-                        src
-                    };
-
-                    if (options.sourcemap) {
-                        node.loc = loc;
-                    }
-
-                    // @ts-ignore
-                    context.chi.push(node);
-                    return node;
-                } else {
-
-                    // declaration
-                    // @ts-ignore
-                    let name = null;
-                    // @ts-ignore
-                    let value = null;
-
-                    for (let i = 0; i < tokens.length; i++) {
-
-                        if (tokens[i].typ == EnumToken.CommentTokenType) {
-
-                            continue;
-                        }
-
-                        if (tokens[i].typ == EnumToken.ColonTokenType) {
-
-                            name = tokens.slice(0, i);
-                            value = parseTokens(tokens.slice(i + 1), {
-                                parseColor: options.parseColor,
-                                src: options.src,
-                                resolveUrls: options.resolveUrls,
-                                resolve: options.resolve,
-                                cwd: options.cwd
-                            });
-                        }
-                    }
-
-                    if (name == null) {
-
-                        name = tokens;
-                    }
-                    const position: Position = <Position>map.get(name[0]);
-
-                    if (name.length > 0) {
-
-                        for (let i = 1; i < name.length; i++) {
-                            if (name[i].typ != EnumToken.WhitespaceTokenType && name[i].typ != EnumToken.CommentTokenType) {
-
-                                errors.push(<ErrorDescription>{
-                                    action: 'drop',
-                                    message: 'doParse: invalid declaration',
-                                    location: {src, ...position}
-                                });
-
-                                return null;
-                            }
-                        }
-                    }
-
-                    if (value == null || value.length == 0) {
-
-                        errors.push(<ErrorDescription>{
-                            action: 'drop',
-                            message: 'doParse: invalid declaration',
-                            location: {src, ...position}
-                        });
-                        return null;
-                    }
-
-                    const node: AstDeclaration = {
-                        typ: EnumToken.DeclarationNodeType,
-                        // @ts-ignore
-                        nam: renderToken(name.shift(), {removeComments: true}),
-                        // @ts-ignore
-                        val: value
-                    }
-
-                    const result: AstDeclaration | null = parseDeclaration(node, errors, src, position);
-
-                    if (result != null) {
-
-                        // @ts-ignore
-                        context.chi.push(node);
-                    }
-
-                    return null;
-                }
-            }
-        }
-
-        function mapToken(token: TokenizeResult): Token {
-
-            const node: Token = getTokenType(token.token, token.hint);
-
-            map.set(node, token.position);
-            return node;
-        }
 
         const iter: Generator<TokenizeResult> = tokenize(iterator);
         let item: TokenizeResult;
 
         while (item = iter.next().value) {
 
-            bytesIn = item.bytesIn;
+            stats.bytesIn += item.bytesIn;
 
             // doParse error
             if (item.hint != null && BadTokensTypes.includes(item.hint)) {
@@ -543,7 +174,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
             if (item.token == ';' || item.token == '{') {
 
-                let node: AstAtRule | AstRule | null = await parseNode(tokens);
+                let node: AstAtRule | AstRule | null = await parseNode(tokens, context, stats, options, errors, src, map);
 
                 if (node != null) {
 
@@ -581,7 +212,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 map = new Map;
             } else if (item.token == '}') {
 
-                await parseNode(tokens);
+                await parseNode(tokens, context, stats, options, errors, src, map);
                 const previousNode = stack.pop();
 
                 // @ts-ignore
@@ -598,7 +229,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (tokens.length > 0) {
 
-            await parseNode(tokens);
+            await parseNode(tokens, context, stats, options, errors, src, map);
         }
 
         while (stack.length > 0 && context != ast) {
@@ -693,13 +324,393 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             ast,
             errors,
             stats: {
-                bytesIn,
+                ...stats,
                 parse: `${(endParseTime - startTime).toFixed(2)}ms`,
                 minify: `${(endTime - endParseTime).toFixed(2)}ms`,
                 total: `${(endTime - startTime).toFixed(2)}ms`
             }
         });
     });
+}
+
+
+async function parseNode(results: TokenizeResult[], context: AstRuleList, stats: {
+    bytesIn: number
+}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | null> {
+
+    let tokens: Token[] = results.map((t: TokenizeResult) => mapToken(t, map));
+
+    let i: number;
+    let loc: Location;
+
+    for (i = 0; i < tokens.length; i++) {
+
+        if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
+
+            const position: Position = <Position>map.get(tokens[i]);
+
+            if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
+
+                errors.push({
+                    action: 'drop',
+                    message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                    location: {src, ...position}
+                });
+                continue;
+            }
+
+            loc = <Location>{
+                sta: position,
+                src
+            };
+
+            // @ts-ignore
+            context.chi.push(tokens[i]);
+
+            if (options.sourcemap) {
+
+                tokens[i].loc = loc
+            }
+
+        } else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
+            break;
+        }
+    }
+
+    tokens = tokens.slice(i);
+    if (tokens.length == 0) {
+        return null;
+    }
+
+    let delim: Token = <Token>tokens.at(-1);
+
+    if (delim.typ == EnumToken.SemiColonTokenType || delim.typ == EnumToken.BlockStartTokenType || delim.typ == EnumToken.BlockEndTokenType) {
+        tokens.pop();
+    } else {
+        delim = <SemiColonToken>{typ: EnumToken.SemiColonTokenType};
+    }
+
+    // @ts-ignore
+    while ([EnumToken.WhitespaceTokenType, EnumToken.BadStringTokenType, EnumToken.BadCommentTokenType].includes(tokens.at(-1)?.typ)) {
+        tokens.pop();
+    }
+
+    if (tokens.length == 0) {
+        return null;
+    }
+
+    if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
+
+        const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
+        const position: Position = <Position>map.get(atRule);
+
+        if (atRule.val == 'charset') {
+
+            if (position.ind > 0) {
+
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid @charset',
+                    location: {src, ...position}
+                });
+                return null;
+            }
+
+            if (options.removeCharset) {
+
+                return null;
+            }
+        }
+
+        // @ts-ignore
+        while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
+            tokens.shift();
+        }
+
+        if (atRule.val == 'import') {
+
+            // only @charset and @layer are accepted before @import
+            if (context.chi.length > 0) {
+                let i = context.chi.length;
+                while (i--) {
+                    const type = context.chi[i].typ;
+                    if (type == EnumToken.CommentNodeType) {
+                        continue;
+                    }
+                    if (type != EnumToken.AtRuleNodeType) {
+                        errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                        return null;
+                    }
+
+                    const name = (<AstAtRule>context.chi[i]).nam;
+
+                    if (name != 'charset' && name != 'import' && name != 'layer') {
+                        errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
+                        return null;
+                    }
+
+                    break;
+                }
+            }
+
+            // @ts-ignore
+            if (tokens[0]?.typ != EnumToken.StringTokenType && tokens[0]?.typ != EnumToken.UrlFunctionTokenType) {
+
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid @import',
+                    location: {src, ...position}
+                });
+                return null;
+            }
+            // @ts-ignore
+            if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1]?.typ != EnumToken.UrlTokenTokenType && tokens[1]?.typ != EnumToken.StringTokenType) {
+
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid @import',
+                    location: {src, ...position}
+                });
+                return null;
+            }
+        }
+
+        if (atRule.val == 'import') {
+
+            // @ts-ignore
+            if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1].typ == EnumToken.UrlTokenTokenType) {
+                tokens.shift();
+                // @ts-ignore
+                tokens[0].typ = EnumToken.StringTokenType;
+                // @ts-ignore
+                tokens[0].val = `"${tokens[0].val}"`;
+            }
+            // @ts-ignore
+            if (tokens[0].typ == EnumToken.StringTokenType) {
+
+                if (options.resolveImport) {
+
+                    const url: string = (<UrlToken>tokens[0]).val.slice(1, -1);
+
+                    try {
+
+                        // @ts-ignore
+                        const root: ParseResult = await options.load(url, <string>options.src).then((src: string) => {
+
+                            return doParse(src, Object.assign({}, options, {
+                                minify: false,
+                                // @ts-ignore
+                                src: options.resolve(url, options.src).absolute
+                            }))
+                        });
+
+                        stats.bytesIn += root.stats.bytesIn;
+
+                        if (root.ast.chi.length > 0) {
+
+                            // @todo - filter charset, layer and scope
+                            context.chi.push(...root.ast.chi);
+                        }
+
+                        if (root.errors.length > 0) {
+                            errors.push(...root.errors);
+                        }
+
+                        return null;
+                    } catch (error) {
+
+                        // @ts-ignore
+                        errors.push({action: 'ignore', message: 'doParse: ' + error.message, error});
+                    }
+                }
+            }
+        }
+        // https://www.w3.org/TR/css-nesting-1/#conditionals
+        // allowed nesting at-rules
+        // there must be a top level rule in the stack
+
+        const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
+
+            acc.push(renderToken(curr, {removeComments: true}));
+
+            return acc
+        }, []);
+
+        const node: AstAtRule = {
+            typ: EnumToken.AtRuleNodeType,
+            nam: renderToken(atRule, {removeComments: true}),
+            val: raw.join('')
+        };
+
+        Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
+
+        if (delim.typ == EnumToken.BlockStartTokenType) {
+
+            node.chi = [];
+        }
+
+        loc = <Location>{
+            sta: position,
+            src
+        };
+
+        if (options.sourcemap) {
+            node.loc = loc;
+        }
+
+        // @ts-ignore
+        context.chi.push(node);
+        return delim.typ == EnumToken.BlockStartTokenType ? node : null;
+    } else {
+        // rule
+        if (delim.typ == EnumToken.BlockStartTokenType) {
+
+            const position: Position = <Position>map.get(tokens[0]);
+
+            const uniq = new Map<string, string[]>;
+            parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
+
+                if (curr.typ == EnumToken.WhitespaceTokenType) {
+
+                    if (
+                        trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                        combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                        combinators.includes((<LiteralToken>array[index + 1])?.val)) {
+
+                        return acc;
+                    }
+                }
+
+                let t: string = renderToken(curr, {minify: false});
+
+                if (t == ',') {
+                    acc.push([]);
+                } else {
+                    acc[acc.length - 1].push(t);
+                }
+                return acc;
+            }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
+
+                acc.set(curr.join(''), curr);
+                return acc;
+            }, uniq);
+
+            const node: AstRule = {
+                typ: EnumToken.RuleNodeType,
+                // @ts-ignore
+                sel: [...uniq.keys()].join(','),
+                chi: []
+            };
+
+            let raw = [...uniq.values()];
+
+            Object.defineProperty(node, 'raw', {
+                enumerable: false,
+                configurable: true,
+                writable: true,
+                value: raw
+            });
+
+            loc = <Location>{
+                sta: position,
+                src
+            };
+
+            if (options.sourcemap) {
+                node.loc = loc;
+            }
+
+            // @ts-ignore
+            context.chi.push(node);
+            return node;
+        } else {
+
+            // declaration
+            // @ts-ignore
+            let name = null;
+            // @ts-ignore
+            let value = null;
+
+            for (let i = 0; i < tokens.length; i++) {
+
+                if (tokens[i].typ == EnumToken.CommentTokenType) {
+
+                    continue;
+                }
+
+                if (tokens[i].typ == EnumToken.ColonTokenType) {
+
+                    name = tokens.slice(0, i);
+                    value = parseTokens(tokens.slice(i + 1), {
+                        parseColor: options.parseColor,
+                        src: options.src,
+                        resolveUrls: options.resolveUrls,
+                        resolve: options.resolve,
+                        cwd: options.cwd
+                    });
+                }
+            }
+
+            if (name == null) {
+
+                name = tokens;
+            }
+            const position: Position = <Position>map.get(name[0]);
+
+            if (name.length > 0) {
+
+                for (let i = 1; i < name.length; i++) {
+                    if (name[i].typ != EnumToken.WhitespaceTokenType && name[i].typ != EnumToken.CommentTokenType) {
+
+                        errors.push(<ErrorDescription>{
+                            action: 'drop',
+                            message: 'doParse: invalid declaration',
+                            location: {src, ...position}
+                        });
+
+                        return null;
+                    }
+                }
+            }
+
+            if (value == null || value.length == 0) {
+
+                errors.push(<ErrorDescription>{
+                    action: 'drop',
+                    message: 'doParse: invalid declaration',
+                    location: {src, ...position}
+                });
+                return null;
+            }
+
+            const node: AstDeclaration = {
+                typ: EnumToken.DeclarationNodeType,
+                // @ts-ignore
+                nam: renderToken(name.shift(), {removeComments: true}),
+                // @ts-ignore
+                val: value
+            }
+
+            const result: AstDeclaration | null = parseDeclaration(node, errors, src, position);
+
+            if (result != null) {
+
+                // @ts-ignore
+                context.chi.push(node);
+            }
+
+            return null;
+        }
+    }
+}
+
+function mapToken(token: TokenizeResult, map: Map<Token, Position>): Token {
+
+    const node: Token = getTokenType(token.token, token.hint);
+
+    map.set(node, token.position);
+    return node;
 }
 
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
@@ -1257,9 +1268,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
 
                         // @ts-ignore
                         t.cal = 'mix';
-                    }
-
-                    else if (t.val == 'color') {
+                    } else if (t.val == 'color') {
                         // @ts-ignore
                         t.cal = 'col';
                         t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType].includes(t.typ));

@@ -1,5 +1,5 @@
 import { colorsFunc } from '../../renderer/render.js';
-import { COLORS_NAMES } from '../../renderer/utils/color.js';
+import { COLORS_NAMES } from '../../renderer/color/color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
@@ -33,7 +33,7 @@ function isColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
     }
-    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
+    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
 }
 function isRectangularOrthogonalColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
@@ -58,7 +58,7 @@ function isColor(token) {
     let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
         if (token.val == 'color') {
-            const children = token.chi.filter(t => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType].includes(t.typ));
+            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType].includes(t.typ));
             if (children.length != 4 && children.length != 6) {
                 return false;
             }

@@ -1,6 +1,6 @@
 import { multiplyMatrices } from './utils/matrix.js';
 import { roundWithPrecision } from './utils/round.js';
-import { gam_sRGB } from './rgb.js';
+import { gam_sRGB } from './srgb.js';
 
 function XYZ_to_sRGB(x, y, z) {
     // @ts-ignore

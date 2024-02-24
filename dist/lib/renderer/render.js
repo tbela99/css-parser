@@ -1,17 +1,17 @@
-import { getAngle, getNumber, clampValues, clamp, COLORS_NAMES } from './utils/color.js';
-import { reduceHexValue, rgb2Hex, hsl2Hex, hwb2hex, cmyk2hex } from './utils/hex.js';
-import { colorMix } from './utils/colormix.js';
+import { getAngle, getNumber, clampValues, clamp, COLORS_NAMES } from './color/color.js';
+import { XYZ_D50_to_sRGB, XYZ_to_sRGB } from './color/xyz.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
+import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
+import { colorMix } from './color/colormix.js';
+import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './color/srgb.js';
+import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
-import { parseRelativeColor } from './utils/relativecolor.js';
-import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './utils/colorspace/rgb.js';
-import { XYZ_D50_to_sRGB, XYZ_to_sRGB } from './utils/colorspace/xyz.js';
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color'];
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -380,16 +380,28 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 let value = token.kin == 'hex' ? token.val.toLowerCase() : (token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : '');
                 if (token.val == 'rgb' || token.val == 'rgba') {
-                    value = rgb2Hex(token);
+                    value = rgb2hex(token);
                 }
                 else if (token.val == 'hsl' || token.val == 'hsla') {
-                    value = hsl2Hex(token);
+                    value = hsl2hex(token);
                 }
                 else if (token.val == 'hwb') {
                     value = hwb2hex(token);
                 }
                 else if (token.val == 'device-cmyk') {
                     value = cmyk2hex(token);
+                }
+                else if (token.val == 'oklab') {
+                    value = oklab2hex(token);
+                }
+                else if (token.val == 'oklch') {
+                    value = oklch2hex(token);
+                }
+                else if (token.val == 'lab') {
+                    value = lab2hex(token);
+                }
+                else if (token.val == 'lch') {
+                    value = lch2hex(token);
                 }
                 if (value !== '') {
                     return reduceHexValue(value);

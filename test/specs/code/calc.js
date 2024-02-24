@@ -110,6 +110,18 @@ export function run(describe, expect, transform) {
 }
 `).then(result => expect(result.code).equals(`.foo{height:calc(40px/3)}`));
         });
+
+        it('calc #10', function () {
+            const css = `
+`;
+            return transform(`
+
+.foo {
+width: calc(2px * 50%);
+height: calc(80% * 50%);
+}
+`).then(result => expect(result.code).equals(`.foo{width:1px;height:40%}`));
+        });
     });
 
 }

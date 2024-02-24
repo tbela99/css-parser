@@ -2,7 +2,7 @@ import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from './utils/syntax
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import './parse.js';
-import '../renderer/utils/color.js';
+import '../renderer/color/color.js';
 import '../renderer/sourcemap/lib/encode.js';
 
 function* tokenize(stream) {

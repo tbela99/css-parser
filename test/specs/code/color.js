@@ -386,6 +386,77 @@ color: color(xyz 0.54694 0.48173 0.06418);
 }`));
     });
 
+    it('oklab(0.59988 -0 0) #41', function () {
+        return parse(`
+.selector {
+color: oklab(0.59988 -0 0);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('oklab(0.59988 -0 0) #42', function () {
+        return parse(`
+.selector {
+color: oklab(0.9960 -0.0057 0.0188);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: ivory
+}`));
+    });
+
+    it('oklch(0.59988 0.00001 145.16718) #43', function () {
+        return parse(`
+.selector {
+color: oklch(0.59988 0.00001 145.16718);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('oklch(0.62796 0.25768 29.234) #44', function () {
+        return parse(`
+.selector {
+color: oklch(0.62796 0.25768 29.234);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: red
+}`));
+    });
+
+    it('oklch(0.79269 0.17103 70.67) #45', function () {
+        return parse(`
+.selector {
+color: oklch(0.79269 0.17103 70.67);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: orange
+}`));
+    });
+
+    it('oklch(0.51975 0.17686 142.5) #46', function () {
+        return parse(`
+.selector {
+color: oklch(0.51975 0.17686 142.5);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: green
+}`));
+    });
+
+    it('lab(54.291, 80.805, 69.891) #47', function () {
+        return parse(`
+.selector {
+color: lab(54.291, 80.805, 69.891);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: red
+}`));
+    });
+
+    it('lab(97.83 -12.04 62.08) #48', function () {
+        return parse(`
+.selector {
+color: lab(97.83 -12.04 62.08);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #fffb60
+}`)); // should be #fffe7a
+    });
 
 
 

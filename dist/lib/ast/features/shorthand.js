@@ -1,5 +1,5 @@
 import { PropertyList } from '../../parser/declaration/list.js';
-import '../../renderer/utils/color.js';
+import '../../renderer/color/color.js';
 import { EnumToken } from '../types.js';
 import '../minify.js';
 import '../../parser/parse.js';

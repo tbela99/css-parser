@@ -1,5 +1,5 @@
 import {multiplyMatrices, roundWithPrecision} from "./utils";
-import {gam_sRGB} from "./rgb";
+import {gam_sRGB} from "./srgb";
 
 export function XYZ_to_sRGB(x: number, y: number, z: number): number[] {
 

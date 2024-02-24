@@ -1,12 +1,10 @@
-import { EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
-import '../../parser/parse.js';
-import { hsl2rgb } from './rgb.js';
-import { expandHexValue } from './hex.js';
-import '../sourcemap/lib/encode.js';
+import {AngleToken, ColorSpace, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {EnumToken} from "../../ast";
+import {hsl2rgb} from "./rgb";
+import {expandHexValue} from "./hex";
 
 // name to color
-const COLORS_NAMES = Object.seal({
+export const COLORS_NAMES: { [key: string]: string } = Object.seal({
     'aliceblue': '#f0f8ff',
     'antiquewhite': '#faebd7',
     'aqua': '#00ffff',
@@ -157,122 +155,185 @@ const COLORS_NAMES = Object.seal({
     'rebeccapurple': '#663399',
     'transparent': '#00000000'
 });
+
 // color to name
-const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key, value]) => {
+export const NAMES_COLORS: { [key: string]: string } = Object.seal(Object.entries(COLORS_NAMES).reduce((acc: {
+    [key: string]: string
+}, [key, value]) => {
+
     acc[value] = key;
     return acc;
+
 }, Object.create(null)));
-function convert(token, to) {
+
+export function convert(token: ColorToken, to: 'rgb'): ColorToken | null {
+
     if (to == 'rgb') {
+
         switch (token.kin) {
+
             case 'rgb':
             case 'rgba':
                 return token;
+
             case 'hsl':
             case 'hsla':
-                const children = token.chi.filter(c => [EnumToken.PercentageTokenType, EnumToken.NumberTokenType, EnumToken.IdenTokenType].includes(c.typ));
-                let values = children.slice(0, 3).map((c) => getNumber(c));
+
+                const children: Token[] = (<Token[]>token.chi).filter(c => [EnumToken.PercentageTokenType, EnumToken.NumberTokenType, EnumToken.IdenTokenType].includes(c.typ));
+
+                let values: number[] = children.slice(0, 3).map((c: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>c));
+
                 if (children.length == 4) {
-                    values.push(children[3].typ == EnumToken.IdenTokenType && children[3].val == 'none' ? 1 : getNumber(children[3]));
+
+                    values.push(children[3].typ == EnumToken.IdenTokenType && (<IdentToken>children[3]).val == 'none' ? 1 : getNumber(<IdentToken>children[3]));
                 }
-                return {
+
+                return <ColorToken>{
+
                     typ: EnumToken.ColorTokenType,
                     kin: 'rgb',
                     val: 'rgb',
                     // @ts-ignore
-                    chi: hsl2rgb(...values).map((v) => ({
+                    chi: hsl2rgb(...values).map((v: number) => (<NumberToken>{
                         typ: EnumToken.NumberTokenType,
                         val: String(v)
                     }))
-                };
+                }
+
             case 'hex':
             case 'lit':
-                const value = token.kin == 'hex' ? expandHexValue(token.val) : COLORS_NAMES[token.val];
-                return {
+
+                const value: string = token.kin == 'hex' ? expandHexValue(token.val) : COLORS_NAMES[token.val];
+
+                return <ColorToken>{
+
                     typ: EnumToken.ColorTokenType,
                     kin: 'rgb',
                     val: 'rgb',
-                    chi: value.slice(1).match(/([a-fA-F0-9]{2})/g).map((v) => ({
+                    chi: (<string[]>value.slice(1).match(/([a-fA-F0-9]{2})/g)).map((v: string) => (<NumberToken>{
+
                         typ: EnumToken.NumberTokenType,
                         val: String(parseInt(v, 16))
                     }))
-                };
+                }
         }
     }
+
     return null;
 }
+
+export function minmax(value: number, min: number, max: number): number {
+
+    return Math.min(Math.max(value, min), max);
+}
+
 /**
  * clamp color values
  * @param token
  */
-function clamp(token) {
+export function clamp(token: ColorToken): ColorToken {
+
     if (token.kin == 'rgb' || token.kin == 'rgba') {
-        token.chi.filter((token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token, index) => {
+
+        (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token: Token, index: number) => {
+
             if (index <= 2) {
+
                 if (token.typ == EnumToken.NumberTokenType) {
-                    token.val = String(Math.min(255, Math.max(0, +token.val)));
+
+                    token.val = String(minmax(+token.val, 0, 255)); // String(Math.min(255, Math.max(0, +token.val)));
+
+                } else if (token.typ == EnumToken.PercentageTokenType) {
+
+                    token.val = String(minmax(+token.val, 0, 100)) // String(Math.min(100, Math.max(0, +token.val)));
                 }
-                else if (token.typ == EnumToken.PercentageTokenType) {
-                    token.val = String(Math.min(100, Math.max(0, +token.val)));
-                }
-            }
-            else {
+            } else {
+
                 if (token.typ == EnumToken.NumberTokenType) {
-                    token.val = String(Math.min(1, Math.max(0, +token.val)));
-                }
-                else if (token.typ == EnumToken.PercentageTokenType) {
-                    token.val = String(Math.min(100, Math.max(0, +token.val)));
+
+                    token.val = String(minmax(+token.val, 0, 1)) // String(Math.min(1, Math.max(0, +token.val)));
+
+                } else if (token.typ == EnumToken.PercentageTokenType) {
+
+                    token.val =  String(minmax(+token.val, 0, 100))// String(Math.min(100, Math.max(0, +token.val)));
                 }
             }
         });
     }
+
     return token;
 }
-function clampValues(values, colorSpace) {
+
+export function clampValues(values: number[], colorSpace: ColorSpace): number[] {
+
     switch (colorSpace) {
+
         case 'srgb':
-        case 'srgb-linear':
+        case 'oklab':
         case 'display-p3':
+        case 'srgb-linear':
             // case 'prophoto-rgb':
             // case 'a98-rgb':
             // case 'rec2020':
+
             for (let i = 0; i < values.length; i++) {
+
                 values[i] = Math.min(1, Math.max(0, values[i]));
             }
     }
+
+
     return values;
 }
-function getNumber(token) {
+
+export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {
+
     if (token.typ == EnumToken.IdenTokenType && token.val == 'none') {
+
         return 0;
     }
+
     // @ts-ignore
     return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
-function getAngle(token) {
+
+export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
+
     if (token.typ == EnumToken.IdenTokenType) {
+
         if (token.val == 'none') {
+
             return 0;
         }
     }
+
     if (token.typ == EnumToken.AngleTokenType) {
+
         switch (token.unit) {
+
             case 'deg':
+
                 // @ts-ignore
                 return token.val / 360;
+
             case 'rad':
+
                 // @ts-ignore
                 return token.val / (2 * Math.PI);
+
             case 'grad':
+
                 // @ts-ignore
                 return token.val / 400;
+
             case 'turn':
+
                 // @ts-ignore
                 return +token.val;
+
         }
     }
+
     // @ts-ignore
     return token.val / 360;
 }
-
-export { COLORS_NAMES, NAMES_COLORS, clamp, clampValues, convert, getAngle, getNumber };

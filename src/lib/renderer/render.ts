@@ -24,19 +24,17 @@ import {
     colorMix,
     COLORS_NAMES,
     getAngle, getNumber,
-    hsl2Hex,
-    hwb2hex,
+    hsl2hex,
+    hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex,
     reduceHexValue,
-    rgb2Hex
-} from "./utils";
+    rgb2hex
+} from "./color";
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
-import {parseRelativeColor, RelativeColorTypes} from "./utils/relativecolor";
-import {gam_ProPhoto, gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto} from "./utils/colorspace";
-import {XYZ_D50_to_sRGB, XYZ_to_sRGB} from "./utils/colorspace/xyz";
+import {parseRelativeColor, RelativeColorTypes,gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto,XYZ_D50_to_sRGB, XYZ_to_sRGB} from "./color";
 
-export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color'];
+export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 
 export function reduceNumber(val: string | number): string {
 
@@ -600,16 +598,36 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 if (token.val == 'rgb' || token.val == 'rgba') {
 
-                    value = rgb2Hex(token);
+                    value = rgb2hex(token);
                 } else if (token.val == 'hsl' || token.val == 'hsla') {
 
-                    value = hsl2Hex(token);
+                    value = hsl2hex(token);
                 } else if (token.val == 'hwb') {
 
                     value = hwb2hex(token);
                 } else if (token.val == 'device-cmyk') {
 
                     value = cmyk2hex(token);
+                }
+
+                else if (token.val == 'oklab') {
+
+                    value = oklab2hex(token);
+                }
+
+                else if (token.val == 'oklch') {
+
+                    value = oklch2hex(token);
+                }
+
+                else if (token.val == 'lab') {
+
+                    value = lab2hex(token);
+                }
+
+                else if (token.val == 'lch') {
+
+                    value = lch2hex(token);
                 }
 
                 if (value !== '') {

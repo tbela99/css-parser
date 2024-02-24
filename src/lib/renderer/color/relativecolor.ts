@@ -12,7 +12,6 @@ type HSLKeyType = 'h' | 's' | 'l' | 'alpha';
 type HWBKeyType = 'h' | 'w' | 'b' | 'alpha';
 
 export type RelativeColorTypes = RGBKeyType | HSLKeyType | HWBKeyType;
-
 export function parseRelativeColor(relativeKeys: RelativeColorTypes[], original: ColorToken, rExp: Token, gExp: Token, bExp: Token, aExp: Token | null): Record<RelativeColorTypes, Token> | null {
 
     const type: 'rgb' | 'hsl' | 'hwb' = <'rgb' | 'hsl' | 'hwb'>relativeKeys.join('');
@@ -180,7 +179,7 @@ export function parseRelativeColor(relativeKeys: RelativeColorTypes[], original:
 
             if (from == 'hsl' || from == 'hwb') {
 
-                [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(getAngle(<NumberToken | AngleToken | IdentToken>r), getNumber(<NumberToken | IdentToken | PercentageToken>g), getNumber(<NumberToken | IdentToken | PercentageToken>b));
+                [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(original);
 
                 // @ts-ignore
                 values = <Record<RelativeColorTypes, number | Token>>{

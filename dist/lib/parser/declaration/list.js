@@ -1,5 +1,5 @@
 import { PropertySet } from './set.js';
-import '../../renderer/utils/color.js';
+import '../../renderer/color/color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { parseString } from '../parse.js';

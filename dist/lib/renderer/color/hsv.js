@@ -6,8 +6,8 @@ function hsl2hsv(h, s, l) {
     s *= l < .5 ? l : 1 - l;
     return [
         //Range should be between 0 - 1
-        h,
-        2 * s / (l + s),
+        h, //Hue stays the same
+        2 * s / (l + s), //Saturation
         l + s //Value
     ];
 }

@@ -136,7 +136,7 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         }
         else if (type == 'rgb') {
             if (from == 'hsl' || from == 'hwb') {
-                [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(getAngle(r), getNumber(g), getNumber(b));
+                [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(original);
                 // @ts-ignore
                 values = {
                     [relativeKeys[0]]: { typ: EnumToken.NumberTokenType, val: r },

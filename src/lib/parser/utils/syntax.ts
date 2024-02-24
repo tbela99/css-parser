@@ -2,7 +2,7 @@
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
 import {colorsFunc} from "../../renderer";
-import {COLORS_NAMES} from "../../renderer/utils";
+import {COLORS_NAMES} from "../../renderer/color";
 import {
     AngleToken,
     DimensionToken,
@@ -56,7 +56,7 @@ export function isColorspace(token: Token): boolean {
         return false;
     }
 
-    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
+    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
 }
 
 export function isRectangularOrthogonalColorspace(token: Token): boolean {
@@ -107,7 +107,7 @@ export function isColor(token: Token): boolean {
 
         if (token.val == 'color') {
 
-            const children: Token[] = (<Token[]>token.chi).filter(t => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType].includes(t.typ));
+            const children: Token[] = (<Token[]>token.chi).filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType].includes(t.typ));
 
             if (children.length != 4 && children.length != 6) {
 

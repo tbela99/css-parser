@@ -2,14 +2,14 @@ import {
     BinaryExpressionNode,
     BinaryExpressionToken,
     FractionToken,
-    FunctionToken, LiteralToken,
+    FunctionToken,
+    LiteralToken,
     ParensToken,
     Token
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {compute} from "./math";
 import {reduceNumber} from "../../renderer";
-import {formatWithOptions} from "node:util";
 
 /**
  * evaluate an array of tokens
@@ -117,10 +117,39 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
         }
     }
 
-    const typ: EnumToken = l.typ == EnumToken.NumberTokenType ? r.typ : l.typ;
+    else if (
+        op == EnumToken.Mul &&
+        ![EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(l.typ) &&
+        ![EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(r.typ)) {
+
+        return defaultReturn;
+    }
+
+    const typ: EnumToken = l.typ == EnumToken.NumberTokenType ? r.typ : (r.typ == EnumToken.NumberTokenType ? l.typ : (l.typ == EnumToken.PercentageTokenType ? r.typ : l.typ));
 
     // @ts-ignore
-    const val: number | FractionToken = compute(typeof l.val == 'string' ? +l.val :  l.val, typeof r.val == 'string' ? +r.val : r.val, op);
+    let v1 = typeof l.val == 'string' ? +l.val :  l.val;
+    // @ts-ignore
+    let v2 = typeof r.val == 'string' ? +r.val : r.val;
+
+    if (op == EnumToken.Mul) {
+
+        if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {
+
+            if (typeof v1 == 'number' && l.typ == EnumToken.PercentageTokenType) {
+
+                v1 = {typ: EnumToken.FractionTokenType, l: {typ: EnumToken.NumberTokenType, val: String(v1)}, r: {typ: EnumToken.NumberTokenType, val: '100'}};
+            }
+
+            else if (typeof v2 == 'number' && r.typ == EnumToken.PercentageTokenType) {
+
+                v2 = {typ: EnumToken.FractionTokenType, l: {typ: EnumToken.NumberTokenType, val: String(v2)}, r: {typ: EnumToken.NumberTokenType, val: '100'}};
+            }
+        }
+    }
+
+    // @ts-ignore
+    const val: number | FractionToken = compute(v1, v2, op);
 
     // if (typeof val == 'number') {
     //
