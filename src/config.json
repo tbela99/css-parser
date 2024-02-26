@@ -901,6 +901,7 @@
    "properties": {
     "overflow-x": {
      "default": [],
+     "types": [],
      "keywords": [
       "auto",
       "visible",
@@ -911,6 +912,7 @@
     },
     "overflow-y": {
      "default": [],
+     "types": [],
      "keywords": [
       "auto",
       "visible",

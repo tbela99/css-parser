@@ -27,7 +27,7 @@ import {
     hsl2hex,
     hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex,
     reduceHexValue,
-    rgb2hex
+    rgb2hex, XYZ_D65_to_sRGB
 } from "./color";
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
@@ -469,12 +469,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                                 break;
                             case 'xyz':
                             case 'xyz-d65':
+
                                 // @ts-ignore
-                                values = XYZ_to_sRGB(...values);
+                                values = XYZ_D65_to_sRGB(...values);
                                 break;
                             case 'xyz-d50':
                                 // @ts-ignore
-                                values = XYZ_D50_to_sRGB(...values);
+                                values = XYZ_to_sRGB(...values);
                                 break;
                         }
 
@@ -518,8 +519,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     }
                 } else if (token.cal == 'mix' && token.val == 'color-mix') {
 
-                    // console.debug(JSON.stringify({token}, null, 1));
-
                     const children: Token[][] = (<Token[]>token.chi).reduce((acc: Token[][], t: Token) => {
 
                         if (t.typ == EnumToken.ColorTokenType) {
@@ -540,7 +539,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                     if (value != null) {
 
-                        // console.debug(JSON.stringify(value, null, 1));
                         token = value;
                     }
                 }

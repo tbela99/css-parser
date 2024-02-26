@@ -4,7 +4,19 @@ import {gam_sRGB} from "./srgb";
 export function XYZ_to_sRGB(x: number, y: number, z: number): number[] {
 
     // @ts-ignore
-    return gam_sRGB(...XYZ_to_lin_sRGB(x, y, z));
+    return gam_sRGB(
+       /* r: */
+    x * 3.1341359569958707 -
+    y * 1.6173863321612538 -
+    0.4906619460083532 * z,
+      /*  g: */
+    x * -0.978795502912089 +
+    y * 1.916254567259524 +
+    0.03344273116131949 * z,
+    /*    b: */
+    x * 0.07195537988411677 -
+    y * 0.2289768264158322 +
+    1.405386058324125 * z);
 }
 
 export function XYZ_to_lin_sRGB(x: number, y: number, z: number): number[] {

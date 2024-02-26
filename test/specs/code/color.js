@@ -300,7 +300,7 @@ color: color-mix(in srgb , white , black );
 .selector {
 color: color( srgb-linear  0.21404 0.21404 0.21404 )
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: grey
+ color: #7f7f7f
 }`));
     });
 
@@ -318,7 +318,7 @@ color: color(display-p3 0.5 .5 .5);
 .selector {
 color: color(prophoto-rgb 0.42467 0.42467 0.42467);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: grey
+ color: #7f7f7f
 }`));
     });
 
@@ -328,7 +328,7 @@ color: color(prophoto-rgb 0.42467 0.42467 0.42467);
 .selector {
 color: color(a98-rgb 0.4961 0.4961 0.4961);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: grey
+ color: #7f7f7f
 }`));
     });
 
@@ -337,7 +337,7 @@ color: color(a98-rgb 0.4961 0.4961 0.4961);
 .selector {
 color: color(rec2020 0.45004 0.45004 0.45004);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: grey
+ color: #7f7f7f
 }`));
     });
 
@@ -364,7 +364,7 @@ color: color(xyz-d50 0.58098 0.49223 0.05045);
 .selector {
 color: color(xyz 0.20344 0.21404 0.2331);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: grey
+ color: #807f7f
 }`));
     });
 
@@ -454,7 +454,7 @@ color: lab(54.291, 80.805, 69.891);
 .selector {
 color: lab(97.83 -12.04 62.08);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: #fffb60
+ color: #fffe7a
 }`)); // should be #fffe7a
     });
 

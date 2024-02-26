@@ -1,4 +1,9 @@
 import { roundWithPrecision } from './utils/round.js';
+import '../../ast/types.js';
+import '../../ast/minify.js';
+import '../../parser/parse.js';
+import './color.js';
+import '../sourcemap/lib/encode.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
@@ -10,13 +15,12 @@ function gam_sRGB(r, g, b) {
     // Extended transfer function:
     // For negative values, linear portion extends on reflection
     // of axis, then uses reflected pow below that
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
+    return [r, g, b].map((val) => {
         let abs = Math.abs(val);
-        if (abs > 0.0031308) {
-            return roundWithPrecision(sign * (1.055 * Math.pow(abs, 1 / 2.4) - 0.055), val);
+        if (Math.abs(val) > 0.0031308) {
+            return (Math.sign(val) || 1) * (1.055 * Math.pow(abs, 1 / 2.4) - 0.055);
         }
-        return roundWithPrecision(12.92 * val, val);
+        return 12.92 * val;
     });
 }
 // export function gam_a98rgb(r: number, g: number, b: number): number[] {
@@ -41,9 +45,9 @@ function lin_ProPhoto(r, g, b) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         if (abs <= Et2) {
-            return roundWithPrecision(val / 16, val);
+            return roundWithPrecision(val / 16);
         }
-        return roundWithPrecision(sign * Math.pow(abs, 1.8), val);
+        return roundWithPrecision(sign * Math.pow(abs, 1.8));
     });
 }
 function lin_a98rgb(r, g, b) {
@@ -53,7 +57,7 @@ function lin_a98rgb(r, g, b) {
     return [r, g, b].map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
-        return roundWithPrecision(sign * Math.pow(abs, 563 / 256), val);
+        return roundWithPrecision(sign * Math.pow(abs, 563 / 256));
     });
 }
 function lin_2020(r, g, b) {
@@ -66,9 +70,9 @@ function lin_2020(r, g, b) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         if (abs < β * 4.5) {
-            return roundWithPrecision(val / 4.5, val);
+            return roundWithPrecision(val / 4.5);
         }
-        return roundWithPrecision(sign * (Math.pow((abs + α - 1) / α, 1 / 0.45)), val);
+        return roundWithPrecision(sign * (Math.pow((abs + α - 1) / α, 1 / 0.45)));
     });
 }
 

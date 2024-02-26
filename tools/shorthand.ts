@@ -515,6 +515,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
 
                     default: [],
+                    types: [],
                     keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
                 }
             },
@@ -522,6 +523,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 shorthand: 'overflow-y',
                 properties: {
                     default: [],
+                    types: [],
                     keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
                 }
             }

@@ -1,9 +1,10 @@
 import { getNumber, minmax, getAngle } from './color.js';
+import { getComponents } from './utils/components.js';
 import { OKLab_to_sRGB } from './oklab.js';
-import { Lab_to_sRGB } from './lab.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
+import { Lab_to_sRGB } from './lab.js';
 import '../sourcemap/lib/encode.js';
 
 function hwb2rgb(token) {
@@ -23,20 +24,21 @@ function hsl2rgb(token) {
     return hsl2rgbvalues(h, s, l, a);
 }
 function cmyk2rgb(token) {
+    const components = getComponents(token);
     // @ts-ignore
-    let t = token.chi[0];
+    let t = components[0];
     // @ts-ignore
     const c = getNumber(t);
     // @ts-ignore
-    t = token.chi[1];
+    t = components[1];
     // @ts-ignore
     const m = getNumber(t);
     // @ts-ignore
-    t = token.chi[2];
+    t = components[2];
     // @ts-ignore
     const y = getNumber(t);
     // @ts-ignore
-    t = token.chi[3];
+    t = components[3];
     // @ts-ignore
     const k = getNumber(t);
     const rgb = [
@@ -54,20 +56,21 @@ function cmyk2rgb(token) {
     return rgb;
 }
 function oklab2rgb(token) {
+    const components = getComponents(token);
     // @ts-ignore
-    let t = token.chi[0];
+    let t = components[0];
     // @ts-ignore
     const l = getNumber(t);
     // @ts-ignore
-    t = token.chi[1];
+    t = components[1];
     // @ts-ignore
     const a = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
     // @ts-ignore
-    t = token.chi[2];
+    t = components[2];
     // @ts-ignore
     const b = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
     // @ts-ignore
-    t = token.chi[3];
+    t = components[3];
     // @ts-ignore
     const alpha = t == null ? 1 : getNumber(t);
     const rgb = OKLab_to_sRGB(l, a, b).map(v => {
@@ -79,90 +82,94 @@ function oklab2rgb(token) {
     return rgb.map(((value) => minmax(value, 0, 255)));
 }
 function oklch2rgb(token) {
+    const components = getComponents(token);
     // @ts-ignore
-    let t = token.chi[0];
+    let t = components[0];
     // @ts-ignore
     const l = getNumber(t);
     // @ts-ignore
-    t = token.chi[1];
+    t = components[1];
     // @ts-ignore
     const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
     // @ts-ignore
-    t = token.chi[2];
+    t = components[2];
     // @ts-ignore
     const h = getAngle(t);
     // @ts-ignore
-    t = token.chi[3];
+    t = components[3];
     // @ts-ignore
     const alpha = t == null ? 1 : getNumber(t);
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const rgb = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180)).map((v) => Math.round(255 * v));
+    const rgb = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180));
     if (alpha != 1) {
-        rgb.push(Math.round(255 * alpha));
+        rgb.push(alpha);
     }
-    return rgb.map(((value) => minmax(value, 0, 255)));
+    return rgb.map(((value) => minmax(Math.round(255 * value), 0, 255)));
 }
 function lab2rgb(token) {
+    const components = getComponents(token);
     // @ts-ignore
-    let t = token.chi[0];
+    let t = components[0];
     // @ts-ignore
     const l = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
-    t = token.chi[1];
+    t = components[1];
     // @ts-ignore
     const a = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
     // @ts-ignore
-    t = token.chi[2];
+    t = components[2];
     // @ts-ignore
     const b = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
     // @ts-ignore
-    t = token.chi[3];
+    t = components[3];
     // @ts-ignore
     const alpha = t == null ? 1 : getNumber(t);
-    const rgb = Lab_to_sRGB(l, a, b).map((v) => Math.round(255 * v));
+    const rgb = Lab_to_sRGB(l, a, b);
     //
     if (alpha != 1) {
-        rgb.push(Math.round(255 * alpha));
+        rgb.push(alpha);
     }
-    return rgb.map(((value) => minmax(value, 0, 255)));
+    return rgb.map(((value) => minmax(Math.round(value * 255), 0, 255)));
 }
 function lch2rgb(token) {
+    const components = getComponents(token);
     // @ts-ignore
-    let t = token.chi[0];
+    let t = components[0];
     // @ts-ignore
     const l = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
-    t = token.chi[1];
+    t = components[1];
     // @ts-ignore
     const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 150 : 1);
     // @ts-ignore
-    t = token.chi[2];
+    t = components[2];
     // @ts-ignore
     const h = getAngle(t);
     // @ts-ignore
-    t = token.chi[3];
+    t = components[3];
     // @ts-ignore
     const alpha = t == null ? 1 : getNumber(t);
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
     const a = c * Math.cos(360 * h * Math.PI / 180);
     const b = c * Math.sin(360 * h * Math.PI / 180);
-    const rgb = Lab_to_sRGB(l, a, b).map((v) => Math.round(255 * v));
+    const rgb = Lab_to_sRGB(l, a, b);
     //
     if (alpha != 1) {
-        rgb.push(Math.round(255 * alpha));
+        rgb.push(alpha);
     }
-    return rgb.map(((value) => minmax(value, 0, 255)));
+    return rgb.map(((value) => minmax(value * 255, 0, 255)));
 }
 function hslvalues(token) {
+    const components = getComponents(token);
     let t;
     // @ts-ignore
-    let h = getAngle(token.chi[0]);
+    let h = getAngle(components[0]);
     // @ts-ignore
-    t = token.chi[1];
+    t = components[1];
     // @ts-ignore
     let s = getNumber(t);
     // @ts-ignore
-    t = token.chi[2];
+    t = components[2];
     // @ts-ignore
     let l = getNumber(t);
     let a = null;
@@ -177,7 +184,7 @@ function hslvalues(token) {
             a = getNumber(t);
         }
     }
-    return { h, s, l, a };
+    return a == null ? { h, s, l } : { h, s, l, a };
 }
 function hsl2rgbvalues(h, s, l, a = null) {
     let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;

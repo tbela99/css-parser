@@ -1,12 +1,13 @@
 import { getAngle, getNumber, clampValues, clamp, COLORS_NAMES } from './color/color.js';
-import { XYZ_D50_to_sRGB, XYZ_to_sRGB } from './color/xyz.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
-import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { colorMix } from './color/colormix.js';
 import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './color/srgb.js';
+import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
+import { XYZ_to_sRGB } from './color/xyz.js';
+import { colorMix } from './color/colormix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
+import { XYZ_D65_to_sRGB } from './color/xyzd65.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
@@ -296,11 +297,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             case 'xyz':
                             case 'xyz-d65':
                                 // @ts-ignore
-                                values = XYZ_to_sRGB(...values);
+                                values = XYZ_D65_to_sRGB(...values);
                                 break;
                             case 'xyz-d50':
                                 // @ts-ignore
-                                values = XYZ_D50_to_sRGB(...values);
+                                values = XYZ_to_sRGB(...values);
                                 break;
                         }
                         clampValues(values, colorSpace);
@@ -331,7 +332,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     }
                 }
                 else if (token.cal == 'mix' && token.val == 'color-mix') {
-                    // console.debug(JSON.stringify({token}, null, 1));
                     const children = token.chi.reduce((acc, t) => {
                         if (t.typ == EnumToken.ColorTokenType) {
                             acc.push([t]);
@@ -345,7 +345,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     }, [[]]);
                     const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
                     if (value != null) {
-                        // console.debug(JSON.stringify(value, null, 1));
                         token = value;
                     }
                 }

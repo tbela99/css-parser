@@ -1,5 +1,6 @@
-function hwb2hsv(h, w, b) {
-    return [h, 1 - w / (1 - b), 1 - b];
+function hwb2hsv(h, w, b, a) {
+    // @ts-ignore
+    return [h, 1 - w / (1 - b), 1 - b, a];
 }
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
 function hsl2hsv(h, s, l) {

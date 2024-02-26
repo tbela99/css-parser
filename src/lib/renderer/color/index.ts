@@ -12,3 +12,4 @@ export * from './xyz';
 export * from './lab';
 // export * from './lch';
 export * from './relativecolor';
+export * from './xyzd65';

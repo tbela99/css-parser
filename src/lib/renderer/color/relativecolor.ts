@@ -202,7 +202,6 @@ export function parseRelativeColor(relativeKeys: RelativeColorTypes[], original:
         };
     }
 
-
     if (aExp != null && aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') {
 
         aExp = null;

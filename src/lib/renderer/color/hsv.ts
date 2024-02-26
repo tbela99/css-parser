@@ -1,8 +1,9 @@
 
 
-export function hwb2hsv(h: number, w: number, b: number): [number, number, number]{
+export function hwb2hsv(h: number, w: number, b: number, a?: number): [number, number, number, number | null] {
 
-    return [h, 1 - w/(1 - b), 1 -b];
+    // @ts-ignore
+    return [h, 1 - w/(1 - b), 1 -b, a];
 }
 
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js

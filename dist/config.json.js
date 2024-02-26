@@ -924,6 +924,8 @@ var map = {
 			"overflow-x": {
 				"default": [
 				],
+				types: [
+				],
 				keywords: [
 					"auto",
 					"visible",
@@ -934,6 +936,8 @@ var map = {
 			},
 			"overflow-y": {
 				"default": [
+				],
+				types: [
 				],
 				keywords: [
 					"auto",

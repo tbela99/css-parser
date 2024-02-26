@@ -128,7 +128,6 @@ function isColor(token) {
                 }
                 return true;
             }
-            console.debug(JSON.stringify({ children }, null, 1));
             return false;
         }
         else {
