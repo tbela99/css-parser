@@ -1,11 +1,279 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import {getComponents, roundWithPrecision} from "./utils";
+import {COLORS_NAMES, getComponents, roundWithPrecision} from "./utils";
 import {ColorToken, DimensionToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {Lab_to_sRGB} from "./lab";
+import {expandHexValue} from "./hex";
+import {OKLab_to_sRGB} from "./oklab";
+
+export function hex2srgb(token: ColorToken): number[] {
+
+    const value: string = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const rgb: number[] = [];
+
+    for (let i = 1; i < value.length; i += 2) {
+
+        rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
+    }
+
+    return rgb;
+}
+
+export function hwb2srgb(token: ColorToken): number[] {
+
+    const {h: hue, s: white, l: black, a: alpha} = hslvalues(token);
+
+    const rgb: number[] = hsl2srgbvalues(hue, 1, .5);
+
+    for (let i = 0; i < 3; i++) {
+
+        rgb[i] *= (1 - white - black);
+        rgb[i] = rgb[i] + white;
+    }
+
+    if (alpha != null && alpha != 1) {
+
+        rgb.push(alpha);
+    }
+
+    return rgb;
+}
+
+export function hsl2srgb(token: ColorToken): number[] {
+
+    let {h, s, l, a} = hslvalues(token);
+
+    return hsl2srgbvalues(h, s, l, a);
+}
+
+
+export function cmyk2srgb(token: ColorToken): number[] {
+
+    const components: Token[] = getComponents(token);
+
+    // @ts-ignore
+    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
+
+    // @ts-ignore
+    const c: number = getNumber(t);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[1];
+
+    // @ts-ignore
+    const m: number = getNumber(t);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[2];
+
+    // @ts-ignore
+    const y: number = getNumber(t);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[3];
+
+    // @ts-ignore
+    const k: number = getNumber(t);
+
+    const rgb: number[] = [
+        1 - Math.min(1, c * (1 - k) + k),
+        1 - Math.min(1, m * (1 - k) + k),
+        1 - Math.min(1, y * (1 - k) + k)
+    ];
+
+    // @ts-ignore
+    if (token.chi.length >= 9) {
+
+        // @ts-ignore
+        t = <NumberToken | PercentageToken>token.chi[8];
+
+        // @ts-ignore
+        rgb.push(getNumber(t));
+    }
+
+    return rgb;
+}
+
+export function oklab2srgb(token: ColorToken): number[] {
+
+    const components: Token[] = getComponents(token);
+
+    // @ts-ignore
+    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
+
+    // @ts-ignore
+    const l: number = getNumber(t);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[1];
+
+    // @ts-ignore
+    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[2];
+
+    // @ts-ignore
+    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[3];
+
+    // @ts-ignore
+    const alpha: number = t == null ? 1 : getNumber(t);
+    const rgb: number[] = OKLab_to_sRGB(l, a, b);
+
+    if (alpha != 1 && alpha != null) {
+
+        rgb.push(alpha);
+    }
+
+    return rgb; //.map(((value: number) => minmax(value, 0, 255)));
+}
+
+export function oklch2srgb(token: ColorToken): number[] {
+
+    const components: Token[] = getComponents(token);
+
+    // @ts-ignore
+    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
+
+    // @ts-ignore
+    const l: number = getNumber(t);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[1];
+
+    // @ts-ignore
+    const c: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[2];
+
+    // @ts-ignore
+    const h: number = getAngle(t);
+
+    // @ts-ignore
+    t = <NumberToken | PercentageToken>components[3];
+
+    // @ts-ignore
+    const alpha: number = t == null ? 1 : getNumber(t);
+
+    // https://www.w3.org/TR/css-color-4/#lab-to-lch
+    const rgb: number[] = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180));
+
+    if (alpha != 1) {
+
+        rgb.push(alpha);
+    }
+
+    return rgb; //.map(((value: number): number => minmax(Math.round(255 * value), 0, 255)));
+}
+
+export function hslvalues(token: ColorToken): { h: number, s: number, l: number, a?: number | null } {
+
+    const components: Token[] = getComponents(token);
+
+    let t: PercentageToken | NumberToken;
+
+    // @ts-ignore
+    let h: number = getAngle(<NumberToken | DimensionToken>components[0]);
+
+    // @ts-ignore
+    t = <NumberToken | DimensionToken>components[1];
+    // @ts-ignore
+    let s: number = getNumber(t);
+    // @ts-ignore
+    t = <NumberToken | DimensionToken>components[2];
+    // @ts-ignore
+    let l: number = getNumber(t);
+
+    let a = null;
+
+    if (token.chi?.length == 4) {
+
+        // @ts-ignore
+        t = token.chi[3];
+
+        // @ts-ignore
+        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
+                t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
+            // @ts-ignore
+            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
+
+            // @ts-ignore
+            a = getNumber(t);
+        }
+    }
+
+    return a == null ? {h, s, l} : {h, s, l, a};
+}
+
+export function hsl2srgbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
+
+    let v: number = l <= .5 ? l * (1.0 + s) : l + s - l * s;
+
+    let r: number = l;
+    let g: number = l;
+    let b: number = l;
+
+    if (v > 0) {
+
+        let m: number = l + l - v;
+        let sv: number = (v - m) / v;
+        h *= 6.0;
+        let sextant: number = Math.floor(h);
+        let fract: number = h - sextant;
+        let vsf: number = v * sv * fract;
+        let mid1: number = m + vsf;
+        let mid2: number = v - vsf;
+
+        switch (sextant) {
+            case 0:
+                r = v;
+                g = mid1;
+                b = m;
+                break;
+            case 1:
+                r = mid2;
+                g = v;
+                b = m;
+                break;
+            case 2:
+                r = m;
+                g = v;
+                b = mid1;
+                break;
+            case 3:
+                r = m;
+                g = mid2;
+                b = v;
+                break;
+            case 4:
+                r = mid1;
+                g = m;
+                b = v;
+                break;
+            case 5:
+                r = v;
+                g = m;
+                b = mid2;
+                break;
+        }
+    }
+
+    const values: number[] = [r, g, b];
+
+    if (a != null && a != 1) {
+
+        values.push(a);
+    }
+
+    return values;
+}
 
 export function lab2srgb(token: ColorToken): number[] {
 
@@ -95,7 +363,7 @@ export function gam_sRGB(r: number, g: number, b: number): number[] {
     // Extended transfer function:
     // For negative values, linear portion extends on reflection
     // of axis, then uses reflected pow below that
-    return [r, g, b].map( (val: number): number => {
+    return [r, g, b].map((val: number): number => {
 
         let abs: number = Math.abs(val);
 

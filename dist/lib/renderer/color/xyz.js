@@ -1,7 +1,7 @@
+import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import './color.js';
 import { gam_sRGB } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 

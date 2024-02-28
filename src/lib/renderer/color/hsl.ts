@@ -1,16 +1,18 @@
 import {hwb2hsv} from "./hsv";
 import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getNumber} from "./color";
-import {hex2rgb, hslvalues, lab2rgb, lch2rgb, oklab2rgb} from "./rgb";
+import {hex2rgb, hslvalues, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
 import {getComponents} from "./utils";
+import {eq} from "../../parser/utils/eq";
+import {EnumToken} from "../../ast";
 
-export function hex2hsl(token: ColorToken): [number, number, number, number | null] {
+export function hex2hsl(token: ColorToken):  number[] {
 
     // @ts-ignore
     return rgb2hslvalues(...hex2rgb(token));
 }
 
-export function rgb2hsl(token: ColorToken): [number, number, number, number | null] {
+export function rgb2hsl(token: ColorToken): number[] {
 
     const chi: Token[] = getComponents(token);
 
@@ -35,18 +37,28 @@ export function rgb2hsl(token: ColorToken): [number, number, number, number | nu
     // @ts-ignore
     let a: number = null;
 
-    if (t != null) {
+    if (t != null && !eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
 
         // @ts-ignore
         a = getNumber(t) / 255;
     }
 
-    return rgb2hslvalues(r, g, b, a);
+    const values:   number[] = [r, g, b];
+
+    if (a != null && a != 1) {
+
+        values.push(a);
+    }
+
+
+    // @ts-ignore
+    return rgb2hslvalues(...values);
 }
 
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-export function hsv2hsl(h: number, s: number, v: number, a?: number): [number, number, number, number | null] {
-    return [
+export function hsv2hsl(h: number, s: number, v: number, a?: number): number[] {
+
+    const result = [
         //[hue, saturation, lightness]
         //Range should be between 0 - 1
         h, //Hue stays the same
@@ -58,10 +70,13 @@ export function hsv2hsl(h: number, s: number, v: number, a?: number): [number, n
         s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h),
 
         h / 2, //Lightness is (2-sat)*val/2
-        //See reassignment of hue above,
-        // @ts-ignore
-        a
-    ]
+    ];
+
+    if (a != null) {
+        result.push(a);
+    }
+
+    return result;
 }
 
 
@@ -71,25 +86,31 @@ export function hwb2hsl(token: ColorToken): [number, number, number, number] {
     return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
 }
 
-export function lab2hsl(token: ColorToken): [number, number, number, number | null] {
+export function lab2hsl(token: ColorToken): number[] {
 
     // @ts-ignore
     return rgb2hslvalues(...lab2rgb(token));
 }
 
-export function lch2hsl(token: ColorToken): [number, number, number, number | null] {
+export function lch2hsl(token: ColorToken): number[] {
 
     // @ts-ignore
     return rgb2hslvalues(...lch2rgb(token));
 }
 
-export function oklab2hsl(token: ColorToken): [number, number, number, number | null] {
+export function oklab2hsl(token: ColorToken): number[] {
 
     // @ts-ignore
     return rgb2hslvalues(...oklab2rgb(token));
 }
 
-export function rgb2hslvalues(r: number, g: number, b: number, a: number | null = null): [number, number, number, number | null] {
+export function oklch2hsl(token: ColorToken): number[] {
+
+    // @ts-ignore
+    return rgb2hslvalues(...oklch2rgb(token));
+}
+
+export function rgb2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {
 
     r /= 255;
     g /= 255;

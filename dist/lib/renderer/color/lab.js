@@ -2,7 +2,6 @@ import { D50 } from './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import './color.js';
 import { XYZ_to_sRGB } from './xyz.js';
 import '../sourcemap/lib/encode.js';
 

@@ -3,6 +3,7 @@ import { isRectangularOrthogonalColorspace } from '../../parser/utils/syntax.js'
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { convert } from './color.js';
+import './utils/constants.js';
 import '../sourcemap/lib/encode.js';
 
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {

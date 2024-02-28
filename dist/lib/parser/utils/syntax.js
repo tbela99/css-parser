@@ -1,8 +1,8 @@
 import { colorsFunc } from '../../renderer/render.js';
-import { COLORS_NAMES } from '../../renderer/color/color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
+import { COLORS_NAMES } from '../../renderer/color/utils/constants.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token

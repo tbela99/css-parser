@@ -1,11 +1,13 @@
-import { getAngle, getNumber, clampValues, clamp, COLORS_NAMES } from './color/color.js';
+import { getAngle, getNumber, clampValues, clamp } from './color/color.js';
+import { COLORS_NAMES } from './color/utils/constants.js';
+import { getComponents } from './color/utils/components.js';
+import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './color/srgb.js';
-import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { XYZ_to_sRGB } from './color/xyz.js';
 import { colorMix } from './color/colormix.js';
+import { XYZ_to_sRGB } from './color/xyz.js';
 import { parseRelativeColor } from './color/relativecolor.js';
 import { XYZ_D65_to_sRGB } from './color/xyzd65.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
@@ -321,11 +323,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         return reduceHexValue(value);
                     }
                 }
-                else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
-                    const chi = token.chi.filter((x) => ![
-                        EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType
-                    ].includes(x.typ));
-                    const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[5]);
+                else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                    const chi = getComponents(token);
+                    const components = parseRelativeColor(token.val, chi[1], chi[2], chi[3], chi[4], chi[5]);
                     if (components != null) {
                         token.chi = Object.values(components);
                         delete token.cal;
@@ -374,6 +374,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return 'currentcolor';
                 }
                 clamp(token);
+                // console.error({token});
                 if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
                     return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
                 }

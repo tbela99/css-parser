@@ -1,10 +1,14 @@
 import {ColorToken, DimensionToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {COLORS_NAMES, getAngle, getNumber, minmax} from "./color";
-import {getComponents} from "./utils";
-import {OKLab_to_sRGB} from "./oklab";
+import {getAngle, getNumber, minmax} from "./color";
+import {COLORS_NAMES, getComponents} from "./utils";
 import {expandHexValue} from "./hex";
 import {EnumToken} from "../../ast";
-import {Lab_to_sRGB} from "./lab";
+import {cmyk2srgb, hwb2srgb, lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb";
+
+function srgb2rgb(value: number): number {
+
+    return minmax(Math.round(value * 255), 0, 255);
+}
 
 export function hex2rgb(token: ColorToken): number[] {
 
@@ -21,22 +25,7 @@ export function hex2rgb(token: ColorToken): number[] {
 
 export function hwb2rgb(token: ColorToken): number[] {
 
-    const {h: hue, s: white, l: black, a: alpha} = hslvalues(token);
-
-    const rgb: number[] = hsl2rgbvalues(hue, 1, .5);
-
-    for (let i = 0; i < 3; i++) {
-
-        rgb[i] *= (1 - white - black);
-        rgb[i] = Math.round(rgb[i] + white);
-    }
-
-    if (alpha != null && alpha != 1) {
-
-        rgb.push(Math.round(255 * alpha));
-    }
-
-    return rgb;
+    return hwb2srgb(token).map(srgb2rgb);
 }
 
 export function hsl2rgb(token: ColorToken): number[] {
@@ -49,211 +38,28 @@ export function hsl2rgb(token: ColorToken): number[] {
 
 export function cmyk2rgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const c: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const m: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const y: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const k: number = getNumber(t);
-
-    const rgb: number[] = [
-        Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
-        Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
-        Math.round(255 * (1 - Math.min(1, y * (1 - k) + k)))
-    ];
-
-    // @ts-ignore
-    if (token.chi.length >= 9) {
-
-        // @ts-ignore
-        t = <NumberToken | PercentageToken>token.chi[8];
-
-        // @ts-ignore
-        rgb.push(Math.round(255 * getNumber(t)));
-    }
-
-    return rgb;
+    return cmyk2srgb(token).map(srgb2rgb);
 }
 
 
 export function oklab2rgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
-
-    const rgb: number[] = OKLab_to_sRGB(l, a, b).map(v => {
-
-        return Math.round(255 * v)
-    });
-
-    if (alpha != 1) {
-
-        rgb.push(Math.round(255 * alpha));
-    }
-
-    return rgb.map(((value: number) => minmax(value, 0, 255)));
+    return oklab2srgb(token).map(srgb2rgb);
 }
 
 export function oklch2rgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const c: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const h: number = getAngle(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
-
-    // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const rgb: number[] = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180));
-
-    if (alpha != 1) {
-
-        rgb.push(alpha);
-    }
-
-    return rgb.map(((value: number): number => minmax(Math.round(255 * value), 0, 255)));
+    return oklch2srgb(token).map(srgb2rgb);
 }
 
 export function lab2rgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
-    const rgb: number[] = Lab_to_sRGB(l, a, b);
-
-    //
-    if (alpha != 1) {
-
-        rgb.push( alpha);
-    }
-
-    return rgb.map(((value: number): number => minmax(Math.round(value * 255), 0, 255)));
+    return lab2srgb(token).map(srgb2rgb);
 }
 
 export function lch2rgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const c: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 150 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const h: number = getAngle(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
-
-    // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const a: number = c * Math.cos(360 * h * Math.PI / 180);
-    const b: number = c * Math.sin(360 * h * Math.PI / 180);
-
-    const rgb: number[] = Lab_to_sRGB(l, a, b);
-
-    //
-    if (alpha != 1) {
-
-        rgb.push(alpha);
-    }
-
-    return rgb.map(((value: number): number => minmax(value * 255, 0, 255)));
+    return lch2srgb(token).map(srgb2rgb);
 }
 
 export function hslvalues(token: ColorToken): {h: number, s: number, l: number, a?: number | null} {

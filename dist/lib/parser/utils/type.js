@@ -1,7 +1,7 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
-import '../../renderer/color/color.js';
+import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 // https://www.w3.org/TR/css-values-4/#math-function

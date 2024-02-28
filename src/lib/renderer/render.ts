@@ -33,6 +33,7 @@ import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
 import {parseRelativeColor, RelativeColorTypes,gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto,XYZ_D50_to_sRGB, XYZ_to_sRGB} from "./color";
+import {getComponents} from "./color/utils";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 
@@ -505,12 +506,11 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                         return reduceHexValue(value);
                     }
 
-                } else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
+                } else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
 
-                    const chi: Token[] = (<Token[]>token.chi).filter((x: Token) => ![
-                        EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(x.typ));
+                    const chi: Token[] = getComponents(token);
 
-                    const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(<RelativeColorTypes[]>token.val.split(''), <ColorToken>chi[1], chi[2], chi[3], chi[4], chi[5]);
+                    const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(<string>token.val, <ColorToken>chi[1], chi[2], chi[3], chi[4], chi[5]);
 
                     if (components != null) {
 
@@ -587,6 +587,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 clamp(token);
 
+                // console.error({token});
                 if (Array.isArray(token.chi) && token.chi.some((t: Token): boolean => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
 
                     return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc: string, curr: Token) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';

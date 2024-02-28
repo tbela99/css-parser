@@ -1,7 +1,8 @@
 import {ColorToken, NumberToken, PercentageToken} from "../../../@types";
 import {EnumToken} from "../../ast";
-import {getNumber, NAMES_COLORS} from "./color";
+import {getNumber} from "./color";
 import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
+import {NAMES_COLORS} from "./utils";
 
 function toHexString(acc: string, value: number): string {
 
@@ -90,6 +91,8 @@ export function hsl2hex(token: ColorToken) {
 }
 
 export function hwb2hex(token: ColorToken): string {
+
+    // console.error(hwb2rgb(token));
 
     return `${hwb2rgb(token).reduce(toHexString, '#')}`;
 }

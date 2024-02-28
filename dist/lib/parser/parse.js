@@ -5,7 +5,7 @@ import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclaration } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { COLORS_NAMES } from '../renderer/color/color.js';
+import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
 import { tokenize } from './tokenize.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;

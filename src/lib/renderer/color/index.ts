@@ -13,3 +13,5 @@ export * from './lab';
 // export * from './lch';
 export * from './relativecolor';
 export * from './xyzd65';
+export {NAMES_COLORS} from "./utils";
+export {COLORS_NAMES} from "./utils";

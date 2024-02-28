@@ -1,8 +1,9 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { NAMES_COLORS, getNumber } from './color.js';
+import { getNumber } from './color.js';
 import { hsl2rgb, hwb2rgb, cmyk2rgb, oklab2rgb, oklch2rgb, lab2rgb, lch2rgb } from './rgb.js';
+import { NAMES_COLORS } from './utils/constants.js';
 import '../sourcemap/lib/encode.js';
 
 function toHexString(acc, value) {
@@ -64,6 +65,7 @@ function hsl2hex(token) {
     return `${hsl2rgb(token).reduce(toHexString, '#')}`;
 }
 function hwb2hex(token) {
+    // console.error(hwb2rgb(token));
     return `${hwb2rgb(token).reduce(toHexString, '#')}`;
 }
 function cmyk2hex(token) {

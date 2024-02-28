@@ -1,5 +1,51 @@
 import { hsl2hsv } from './hsv.js';
+import './utils/constants.js';
+import { getComponents } from './utils/components.js';
+import { getNumber, getAngle } from './color.js';
+import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
+import '../../parser/parse.js';
+import { lab2srgb, lch2srgb, oklab2srgb, oklch2srgb } from './srgb.js';
+import { eq } from '../../parser/utils/eq.js';
+import '../sourcemap/lib/encode.js';
 
+function rgb2hwb(token) {
+    // @ts-ignore
+    return srgb2hwbvalues(...getComponents(token).map((t, index) => {
+        if (index == 3 && eq(t, { typ: EnumToken.IdenTokenType, val: 'none' })) {
+            return 1;
+        }
+        return getNumber(t) / 255;
+    }));
+}
+function hsl2hwb(token) {
+    // @ts-ignore
+    return hsl2hwbvalues(...getComponents(token).map((t, index) => {
+        if (index == 3 && eq(t, { typ: EnumToken.IdenTokenType, val: 'none' })) {
+            return 1;
+        }
+        if (index == 0) {
+            return getAngle(t);
+        }
+        return getNumber(t);
+    }));
+}
+function lab2hwb(token) {
+    // @ts-ignore
+    return srgb2hwbvalues(...lab2srgb(token));
+}
+function lch2hwb(token) {
+    // @ts-ignore
+    return srgb2hwbvalues(...lch2srgb(token));
+}
+function oklab2hwb(token) {
+    // @ts-ignore
+    return srgb2hwbvalues(...oklab2srgb(token));
+}
+function oklch2hwb(token) {
+    // @ts-ignore
+    return srgb2hwbvalues(...oklch2srgb(token));
+}
 function rgb2hue(r, g, b, fallback = 0) {
     let value = rgb2value(r, g, b);
     let whiteness = rgb2whiteness(r, g, b);
@@ -26,10 +72,10 @@ function rgb2value(r, g, b) {
 function rgb2whiteness(r, g, b) {
     return Math.min(r, g, b);
 }
-function rgb2hwb(r, g, b, a = null, fallback = 0) {
-    r *= 100 / 255;
-    g *= 100 / 255;
-    b *= 100 / 255;
+function srgb2hwbvalues(r, g, b, a = null, fallback = 0) {
+    r *= 100;
+    g *= 100;
+    b *= 100;
     let hue = rgb2hue(r, g, b, fallback);
     let whiteness = rgb2whiteness(r, g, b);
     let value = Math.round(rgb2value(r, g, b));
@@ -40,11 +86,16 @@ function rgb2hwb(r, g, b, a = null, fallback = 0) {
     }
     return result;
 }
-function hsv2hwb(h, s, v) {
-    return [h, (1 - s) * v, 1 - v];
+function hsv2hwb(h, s, v, a = null) {
+    const result = [h, (1 - s) * v, 1 - v];
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
 }
-function hsl2hwb(h, s, l) {
-    return hsv2hwb(...hsl2hsv(h, s, l));
+function hsl2hwbvalues(h, s, l, a = null) {
+    // @ts-ignore
+    return hsv2hwb(...hsl2hsv(h, s, l, a));
 }
 
-export { hsl2hwb, hsv2hwb, rgb2hwb };
+export { hsl2hwb, hsl2hwbvalues, hsv2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb, srgb2hwbvalues };
