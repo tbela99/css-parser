@@ -42,5 +42,5 @@ jobs:
                  - run: npx playwright install-deps
                    if: steps.playwright-cache.outputs.cache-hit != 'true'
 
-      #    run: npx playwright install --with-deps
-      - run: npm test
+          #    run: npx playwright install --with-deps
+          - run: npm test
