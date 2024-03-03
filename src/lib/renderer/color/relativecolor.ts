@@ -32,6 +32,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     let keys: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>{};
     let values: Record<RelativeColorTypes, number | Token | null> = <Record<RelativeColorTypes, number | Token | null>>{};
 
+    const names: string = relativeKeys.slice(-3);
     const converted: ColorToken = <ColorToken>convert(original, relativeKeys);
 
     if (converted == null) {
@@ -42,9 +43,9 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     [r, g, b, alpha] = <Token[]>converted.chi;
 
     values = <Record<RelativeColorTypes, number | Token | null>>{
-        [relativeKeys[0]]: r,
-        [relativeKeys[1]]: g,
-        [relativeKeys[2]]: b,
+        [names[0]]: r,
+        [names[1]]: g,
+        [names[2]]: b,
         // @ts-ignore
         alpha: alpha == null || eq(alpha, {
             typ: EnumToken.IdenTokenType,
@@ -53,9 +54,9 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     };
 
     keys = <Record<RelativeColorTypes, Token>>{
-        [relativeKeys[0]]: rExp,
-        [relativeKeys[1]]: gExp,
-        [relativeKeys[2]]: bExp,
+        [names[0]]: rExp,
+        [names[1]]: gExp,
+        [names[2]]: bExp,
         // @ts-ignore
         alpha: aExp == null || eq(aExp, {typ: EnumToken.IdenTokenType, val: 'none'}) ? {
             typ: EnumToken.NumberTokenType,

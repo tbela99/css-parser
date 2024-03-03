@@ -15,15 +15,16 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let alpha = null;
     let keys = {};
     let values = {};
+    const names = relativeKeys.slice(-3);
     const converted = convert(original, relativeKeys);
     if (converted == null) {
         return null;
     }
     [r, g, b, alpha] = converted.chi;
     values = {
-        [relativeKeys[0]]: r,
-        [relativeKeys[1]]: g,
-        [relativeKeys[2]]: b,
+        [names[0]]: r,
+        [names[1]]: g,
+        [names[2]]: b,
         // @ts-ignore
         alpha: alpha == null || eq(alpha, {
             typ: EnumToken.IdenTokenType,
@@ -31,9 +32,9 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         }) ? { typ: EnumToken.NumberTokenType, val: '1' } : alpha
     };
     keys = {
-        [relativeKeys[0]]: rExp,
-        [relativeKeys[1]]: gExp,
-        [relativeKeys[2]]: bExp,
+        [names[0]]: rExp,
+        [names[1]]: gExp,
+        [names[2]]: bExp,
         // @ts-ignore
         alpha: aExp == null || eq(aExp, { typ: EnumToken.IdenTokenType, val: 'none' }) ? {
             typ: EnumToken.NumberTokenType,

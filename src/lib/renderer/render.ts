@@ -32,7 +32,7 @@ import {
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
-import {parseRelativeColor, RelativeColorTypes,gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto,XYZ_D50_to_sRGB, XYZ_to_sRGB} from "./color";
+import {parseRelativeColor, RelativeColorTypes,sRGB_gam, lin_2020, lin_a98rgb, lin_ProPhoto,XYZ_D50_to_sRGB, XYZ_to_sRGB} from "./color";
 import {getComponents} from "./color/utils";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
@@ -352,8 +352,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     token.cal = 'col';
                 }
 
-                token.chi = token.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
-            }
+                token.chi = token.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));            }
         }
     }
 
@@ -453,20 +452,20 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                             case  'srgb-linear':
                                 // @ts-ignore
-                                values = gam_sRGB(...values);
+                                values = sRGB_gam(...values);
                                 break;
                             case 'prophoto-rgb':
 
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_ProPhoto(...values));
+                                values = sRGB_gam(...lin_ProPhoto(...values));
                                 break;
                             case 'a98-rgb':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_a98rgb(...values));
+                                values = sRGB_gam(...lin_a98rgb(...values));
                                 break;
                             case 'rec2020':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_2020(...values));
+                                values = sRGB_gam(...lin_2020(...values));
                                 break;
                             case 'xyz':
                             case 'xyz-d65':
@@ -517,6 +516,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                         token.chi = Object.values(components);
                         delete token.cal;
                     }
+
                 } else if (token.cal == 'mix' && token.val == 'color-mix') {
 
                     const children: Token[][] = (<Token[]>token.chi).reduce((acc: Token[][], t: Token) => {
@@ -587,7 +587,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 clamp(token);
 
-                // console.error({token});
                 if (Array.isArray(token.chi) && token.chi.some((t: Token): boolean => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
 
                     return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc: string, curr: Token) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';

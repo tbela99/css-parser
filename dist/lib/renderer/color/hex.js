@@ -65,7 +65,6 @@ function hsl2hex(token) {
     return `${hsl2rgb(token).reduce(toHexString, '#')}`;
 }
 function hwb2hex(token) {
-    // console.error(hwb2rgb(token));
     return `${hwb2rgb(token).reduce(toHexString, '#')}`;
 }
 function cmyk2hex(token) {

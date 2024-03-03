@@ -5,7 +5,7 @@ import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2h
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
-import { gam_sRGB, lin_2020, lin_a98rgb, lin_ProPhoto } from './color/srgb.js';
+import { sRGB_gam, lin_2020, lin_a98rgb, lin_ProPhoto } from './color/srgb.js';
 import { colorMix } from './color/colormix.js';
 import { XYZ_to_sRGB } from './color/xyz.js';
 import { parseRelativeColor } from './color/relativecolor.js';
@@ -282,19 +282,19 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         switch (colorSpace) {
                             case 'srgb-linear':
                                 // @ts-ignore
-                                values = gam_sRGB(...values);
+                                values = sRGB_gam(...values);
                                 break;
                             case 'prophoto-rgb':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_ProPhoto(...values));
+                                values = sRGB_gam(...lin_ProPhoto(...values));
                                 break;
                             case 'a98-rgb':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_a98rgb(...values));
+                                values = sRGB_gam(...lin_a98rgb(...values));
                                 break;
                             case 'rec2020':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_2020(...values));
+                                values = sRGB_gam(...lin_2020(...values));
                                 break;
                             case 'xyz':
                             case 'xyz-d65':
@@ -374,7 +374,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return 'currentcolor';
                 }
                 clamp(token);
-                // console.error({token});
                 if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
                     return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
                 }

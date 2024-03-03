@@ -163,6 +163,8 @@ function roundWithPrecision(value, original) {
 }
 
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
+const k = Math.pow(29, 3) / Math.pow(3, 3);
+const e = Math.pow(6, 3) / Math.pow(29, 3);
 // name to color
 const COLORS_NAMES = Object.seal({
     'aliceblue': '#f0f8ff',
@@ -385,7 +387,6 @@ function hsl2hex(token) {
     return `${hsl2rgb(token).reduce(toHexString, '#')}`;
 }
 function hwb2hex(token) {
-    // console.error(hwb2rgb(token));
     return `${hwb2rgb(token).reduce(toHexString, '#')}`;
 }
 function cmyk2hex(token) {
@@ -404,9 +405,23 @@ function lch2hex(token) {
     return `${lch2rgb(token).reduce(toHexString, '#')}`;
 }
 
+function srgb2xyz(r, g, b) {
+    [r, g, b] = gam_sRGB(r, g, b);
+    return [
+        0.436065742824811 * r +
+            0.3851514688337912 * g +
+            0.14307845442264197 * b,
+        0.22249319175623702 * r +
+            0.7168870538238823 * g +
+            0.06061979053616537 * b,
+        0.013923904500943465 * r +
+            0.09708128566574634 * g +
+            0.7140993584005155 * b
+    ];
+}
 function XYZ_to_sRGB(x, y, z) {
     // @ts-ignore
-    return gam_sRGB(
+    return sRGB_gam(
     /* r: */
     x * 3.1341359569958707 -
         y * 1.6173863321612538 -
@@ -421,8 +436,306 @@ function XYZ_to_sRGB(x, y, z) {
         1.405386058324125 * z);
 }
 
+function hex2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hex2lab(token));
+}
+function rgb2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...rgb2lab(token));
+}
+function hsl2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hsl2lab(token));
+}
+function hwb2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hwb2lab(token));
+}
+function lab2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...getLABComponents(token));
+}
+function oklab2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...oklab2lab(token));
+}
+function oklch2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...oklch2lab(token));
+}
+function lab2lchvalues(l, a, b, alpha = null) {
+    const c = Math.sqrt(a * a + b * b);
+    const h = Math.atan2(b, a) * 180 / Math.PI;
+    return alpha == null ? [l, c, h] : [l, c, h, alpha];
+}
+function getLCHComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 100 : 1);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const c = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 150 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const h = getAngle(t);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null ? 1 : getNumber(t);
+    return alpha == null ? [l, c, h] : [l, c, h, alpha];
+}
+
+function hex2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hex2oklab(token));
+}
+function rgb2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...rgb2oklab(token));
+}
+function hsl2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hsl2oklab(token));
+}
+function hwb2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hwb2oklab(token));
+}
+function lab2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...lab2oklab(token));
+}
+function lch2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...lch2oklab(token));
+}
+function oklab2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...getOKLABComponents(token));
+}
+function getOKLCHComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const c = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const h = getAngle(t);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null ? 1 : getNumber(t);
+    return [l, c, h, alpha];
+}
+
+function hex2oklab(token) {
+    // @ts-ignore
+    return srgb2oklabvalues(...hex2srgb(token));
+}
+function rgb2oklab(token) {
+    // @ts-ignore
+    return srgb2oklabvalues(...rgb2srgb(token));
+}
+function hsl2oklab(token) {
+    // @ts-ignore
+    return srgb2oklabvalues(...hsl2srgb(token));
+}
+function hwb2oklab(token) {
+    // @ts-ignore
+    return srgb2oklabvalues(...hwb2srgb(token));
+}
+function lab2oklab(token) {
+    // @ts-ignore
+    return srgb2oklabvalues(...lab2srgb(token));
+}
+function lch2oklab(token) {
+    // @ts-ignore
+    return srgb2oklabvalues(...lch2srgb(token));
+}
+function oklch2oklab(token) {
+    // @ts-ignore
+    return lch2labvalues(...getOKLCHComponents(token));
+}
+function srgb2oklabvalues(r, g, blue, alpha) {
+    [r, g, blue] = gam_sRGB(r, g, blue);
+    let L = Math.cbrt(0.41222147079999993 * r + 0.5363325363 * g + 0.0514459929 * blue);
+    let M = Math.cbrt(0.2119034981999999 * r + 0.6806995450999999 * g + 0.1073969566 * blue);
+    let S = Math.cbrt(0.08830246189999998 * r + 0.2817188376 * g + 0.6299787005000002 * blue);
+    const l = 0.2104542553 * L + 0.793617785 * M - 0.0040720468 * S;
+    const a = 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
+    const b = 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
+    return alpha == null ? [l, a, b] : [l, a, b, alpha];
+}
+function getOKLABComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const a = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const b = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null ? 1 : getNumber(t);
+    const rgb = [l, a, b];
+    if (alpha != 1 && alpha != null) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
+function OKLab_to_XYZ(l, a, b, alpha = null) {
+    // Given OKLab, convert to XYZ relative to D65
+    const LMStoXYZ = [
+        [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+        [-0.0405757452148008, 1.1122868032803170, -0.0717110580655164],
+        [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816]
+    ];
+    const OKLabtoLMS = [
+        [1.0000000000000000, 0.3963377773761749, 0.2158037573099136],
+        [1.0000000000000000, -0.1055613458156586, -0.0638541728258133],
+        [1.0000000000000000, -0.0894841775298119, -1.2914855480194092]
+    ];
+    const LMSnl = multiplyMatrices(OKLabtoLMS, [l, a, b]);
+    const xyz = multiplyMatrices(LMStoXYZ, LMSnl.map((c) => c ** 3));
+    if (alpha != null) {
+        xyz.push(alpha);
+    }
+    return xyz;
+}
+// from https://www.w3.org/TR/css-color-4/#color-conversion-code
+function OKLab_to_sRGB(l, a, b) {
+    let L = Math.pow(l * 0.99999999845051981432 +
+        0.39633779217376785678 * a +
+        0.21580375806075880339 * b, 3);
+    let M = Math.pow(l * 1.0000000088817607767 -
+        0.1055613423236563494 * a -
+        0.063854174771705903402 * b, 3);
+    let S = Math.pow(l * 1.0000000546724109177 -
+        0.089484182094965759684 * a -
+        1.2914855378640917399 * b, 3);
+    return sRGB_gam(
+    /* r: */
+    +4.076741661347994 * L -
+        3.307711590408193 * M +
+        0.230969928729428 * S, 
+    /*  g: */
+    -1.2684380040921763 * L +
+        2.6097574006633715 * M -
+        0.3413193963102197 * S, 
+    /*  b: */
+    -0.004196086541837188 * L -
+        0.7034186144594493 * M +
+        1.7076147009309444 * S);
+}
+
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
+function hex2lab(token) {
+    //  @ts-ignore
+    return srgb2lab(...hex2srgb(token));
+}
+function rgb2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...rgb2srgb(token));
+}
+function hsl2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...hsl2srgb(token));
+}
+function hwb2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...hwb2srgb(token));
+}
+function lch2lab(token) {
+    // @ts-ignore
+    return lch2labvalues(...getLCHComponents(token));
+}
+function oklab2lab(token) {
+    // @ts-ignore
+    return xyz2lab(...OKLab_to_XYZ(...getOKLABComponents(token)));
+}
+function oklch2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...oklch2srgb(token));
+}
+function srgb2lab(r, g, b, a) {
+    // @ts-ignore */
+    const result = xyz2lab(...srgb2xyz(r, g, b));
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
+}
+function xyz2lab(x, y, z, a = null) {
+    // Assuming XYZ is relative to D50, convert to CIE Lab
+    // from CIE standard, which now defines these as a rational fraction
+    // var e = 216/24389;  // 6^3/29^3
+    // var k = 24389/27;   // 29^3/3^3
+    // compute xyz, which is XYZ scaled relative to reference white
+    const xyz = [x, y, z].map((value, i) => value / D50[i]);
+    // now compute f
+    const f = xyz.map((value) => value > e ? Math.cbrt(value) : (k * value + 16) / 116);
+    const result = [
+        (116 * f[1]) - 16, // L
+        500 * (f[0] - f[1]), // a
+        200 * (f[1] - f[2]) // b
+    ];
+    // L in range [0,100]. For use in CSS, add a percent
+    if (a != null && a != 1) {
+        result.push(a);
+    }
+    return result;
+}
+function lch2labvalues(l, c, h, a = null) {
+    // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
+    const result = [l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180)];
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
+}
+function getLABComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 100 : 1);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const a = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 125 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const b = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 125 : 1);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null ? 1 : getNumber(t);
+    const result = [l, a, b];
+    if (alpha != null && alpha != 1) {
+        result.push(alpha);
+    }
+    return result;
+}
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // D50 LAB
 function Lab_to_sRGB(l, a, b) {
@@ -451,38 +764,19 @@ function Lab_to_XYZ(l, a, b) {
 }
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
-function OKLab_to_sRGB(l, a, b) {
-    // console.error({l, a, b});
-    // console.error({l, a, b});
-    // @ts-ignore
-    // return  XYZ_to_sRGB(...OKLab_to_XYZ(l, a, b));
-    let L = Math.pow(l * 0.99999999845051981432 +
-        0.39633779217376785678 * a +
-        0.21580375806075880339 * b, 3);
-    let M = Math.pow(l * 1.0000000088817607767 -
-        0.1055613423236563494 * a -
-        0.063854174771705903402 * b, 3);
-    let S = Math.pow(l * 1.0000000546724109177 -
-        0.089484182094965759684 * a -
-        1.2914855378640917399 * b, 3);
-    return gam_sRGB(
-    /* r: */
-    +4.076741661347994 * L -
-        3.307711590408193 * M +
-        0.230969928729428 * S, 
-    /*  g: */
-    -1.2684380040921763 * L +
-        2.6097574006633715 * M -
-        0.3413193963102197 * S, 
-    /*  b: */
-    -0.004196086541837188 * L -
-        0.7034186144594493 * M +
-        1.7076147009309444 * S);
-}
-
-// from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
+function rgb2srgb(token) {
+    return getComponents(token).map((t) => getNumber(t) / 255);
+}
+function hex2srgb(token) {
+    const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const rgb = [];
+    for (let i = 1; i < value.length; i += 2) {
+        rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
+    }
+    return rgb;
+}
 function hwb2srgb(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues$1(token);
     const rgb = hsl2srgbvalues(hue, 1, .5);
@@ -494,6 +788,10 @@ function hwb2srgb(token) {
         rgb.push(alpha);
     }
     return rgb;
+}
+function hsl2srgb(token) {
+    let { h, s, l, a } = hslvalues$1(token);
+    return hsl2srgbvalues(h, s, l, a);
 }
 function cmyk2srgb(token) {
     const components = getComponents(token);
@@ -528,49 +826,17 @@ function cmyk2srgb(token) {
     return rgb;
 }
 function oklab2srgb(token) {
-    const components = getComponents(token);
-    // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const a = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const b = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = getOKLABComponents(token);
     const rgb = OKLab_to_sRGB(l, a, b);
-    if (alpha != 1 && alpha != null) {
+    if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
     return rgb; //.map(((value: number) => minmax(value, 0, 255)));
 }
 function oklch2srgb(token) {
-    const components = getComponents(token);
+    const [l, c, h, alpha] = getOKLCHComponents(token);
     // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const c = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const h = getAngle(t);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
-    // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const rgb = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180));
+    const rgb = OKLab_to_sRGB(...lch2labvalues(l, c, h));
     if (alpha != 1) {
         rgb.push(alpha);
     }
@@ -657,51 +923,18 @@ function hsl2srgbvalues(h, s, l, a = null) {
     return values;
 }
 function lab2srgb(token) {
-    const components = getComponents(token);
-    // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 100 : 1);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const a = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 125 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const b = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 125 : 1);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = getLABComponents(token);
     const rgb = Lab_to_sRGB(l, a, b);
     //
-    if (alpha != 1) {
+    if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
     return rgb;
 }
 function lch2srgb(token) {
-    const components = getComponents(token);
     // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 100 : 1);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const c = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 150 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const h = getAngle(t);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const a = c * Math.cos(360 * h * Math.PI / 180);
-    const b = c * Math.sin(360 * h * Math.PI / 180);
     const rgb = Lab_to_sRGB(l, a, b);
     //
     if (alpha != 1) {
@@ -709,7 +942,27 @@ function lch2srgb(token) {
     }
     return rgb;
 }
-function gam_sRGB(r, g, b) {
+// sRGB -> lRGB
+function gam_sRGB(r, g, b, a = null) {
+    // convert an array of linear-light sRGB values in the range 0.0-1.0
+    // to gamma corrected form
+    // https://en.wikipedia.org/wiki/SRGB
+    // Extended transfer function:
+    // For negative values, linear portion extends on reflection
+    // of axis, then uses reflected pow below that
+    const rgb = [r, g, b].map((val) => {
+        const abs = Math.abs(val);
+        if (abs <= 0.04045) {
+            return val / 12.92;
+        }
+        return (Math.sign(val) || 1) * Math.pow((abs + 0.055) / 1.055, 2.4);
+    });
+    if (a != 1 && a != null) {
+        rgb.push(a);
+    }
+    return rgb;
+}
+function sRGB_gam(r, g, b) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
@@ -1144,7 +1397,6 @@ function convert(token, to) {
     if (token.kin == to) {
         return token;
     }
-    // console.error({token, to});
     let values = [];
     let chi;
     if (to == 'hsl') {
@@ -1184,9 +1436,9 @@ function convert(token, to) {
             }
             return {
                 typ: exports.EnumToken.ColorTokenType,
-                val: 'hsl',
+                val: to,
                 chi,
-                kin: 'hsl'
+                kin: to
             };
         }
     }
@@ -1228,9 +1480,9 @@ function convert(token, to) {
             }
             return {
                 typ: exports.EnumToken.ColorTokenType,
-                val: 'hsl',
+                val: to,
                 chi,
-                kin: 'hsl'
+                kin: to
             };
         }
     }
@@ -1270,9 +1522,185 @@ function convert(token, to) {
             }
             return {
                 typ: exports.EnumToken.ColorTokenType,
-                val: 'rgb',
+                val: to,
                 chi,
-                kin: 'rgb'
+                kin: to
+            };
+        }
+    }
+    else if (to == 'lab') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2lab(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2lab(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2lab(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2lab(token));
+                break;
+            case 'lch':
+                values.push(...lch2lab(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2lab(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2lab(token));
+                break;
+        }
+        if (values.length > 0) {
+            chi = [
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+            ];
+            if (values.length == 4) {
+                chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+            }
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
+            };
+        }
+    }
+    else if (to == 'lch') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2lch(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2lch(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2lch(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2lch(token));
+                break;
+            case 'lab':
+                values.push(...lab2lch(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2lch(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2lch(token));
+                break;
+        }
+        if (values.length > 0) {
+            chi = [
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+            ];
+            if (values.length == 4) {
+                chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+            }
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
+            };
+        }
+    }
+    else if (to == 'oklab') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2oklab(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2oklab(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2oklab(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2oklab(token));
+                break;
+            case 'lab':
+                values.push(...lab2oklab(token));
+                break;
+            case 'lch':
+                values.push(...lch2oklab(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2oklab(token));
+                break;
+        }
+        if (values.length > 0) {
+            chi = [
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+            ];
+            if (values.length == 4) {
+                chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+            }
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
+            };
+        }
+    }
+    else if (to == 'oklch') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2oklch(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2oklch(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2oklch(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2oklch(token));
+                break;
+            case 'lab':
+                values.push(...lab2oklch(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2oklch(token));
+                break;
+            case 'lch':
+                values.push(...lch2oklch(token));
+                break;
+        }
+        if (values.length > 0) {
+            chi = [
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+                { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+            ];
+            if (values.length == 4) {
+                chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+            }
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
             };
         }
     }
@@ -1728,15 +2156,16 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let alpha = null;
     let keys = {};
     let values = {};
+    const names = relativeKeys.slice(-3);
     const converted = convert(original, relativeKeys);
     if (converted == null) {
         return null;
     }
     [r, g, b, alpha] = converted.chi;
     values = {
-        [relativeKeys[0]]: r,
-        [relativeKeys[1]]: g,
-        [relativeKeys[2]]: b,
+        [names[0]]: r,
+        [names[1]]: g,
+        [names[2]]: b,
         // @ts-ignore
         alpha: alpha == null || eq(alpha, {
             typ: exports.EnumToken.IdenTokenType,
@@ -1744,9 +2173,9 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         }) ? { typ: exports.EnumToken.NumberTokenType, val: '1' } : alpha
     };
     keys = {
-        [relativeKeys[0]]: rExp,
-        [relativeKeys[1]]: gExp,
-        [relativeKeys[2]]: bExp,
+        [names[0]]: rExp,
+        [names[1]]: gExp,
+        [names[2]]: bExp,
         // @ts-ignore
         alpha: aExp == null || eq(aExp, { typ: exports.EnumToken.IdenTokenType, val: 'none' }) ? {
             typ: exports.EnumToken.NumberTokenType,
@@ -2199,19 +2628,19 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         switch (colorSpace) {
                             case 'srgb-linear':
                                 // @ts-ignore
-                                values = gam_sRGB(...values);
+                                values = sRGB_gam(...values);
                                 break;
                             case 'prophoto-rgb':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_ProPhoto(...values));
+                                values = sRGB_gam(...lin_ProPhoto(...values));
                                 break;
                             case 'a98-rgb':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_a98rgb(...values));
+                                values = sRGB_gam(...lin_a98rgb(...values));
                                 break;
                             case 'rec2020':
                                 // @ts-ignore
-                                values = gam_sRGB(...lin_2020(...values));
+                                values = sRGB_gam(...lin_2020(...values));
                                 break;
                             case 'xyz':
                             case 'xyz-d65':
@@ -2291,7 +2720,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return 'currentcolor';
                 }
                 clamp(token);
-                // console.error({token});
                 if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == exports.EnumToken.FunctionTokenType || (t.typ == exports.EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
                     return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == exports.EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
                 }
@@ -2659,8 +3087,8 @@ function isColor(token) {
         }
         else {
             const keywords = ['from', 'none'];
-            if (['rgb', 'hsl', 'hwb'].includes(token.val)) {
-                keywords.push('alpha', ...token.val.split(''));
+            if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                keywords.push('alpha', ...token.val.slice(-3).split(''));
             }
             // @ts-ignore
             for (const v of token.chi) {

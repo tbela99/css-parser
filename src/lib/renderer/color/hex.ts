@@ -92,8 +92,6 @@ export function hsl2hex(token: ColorToken) {
 
 export function hwb2hex(token: ColorToken): string {
 
-    // console.error(hwb2rgb(token));
-
     return `${hwb2rgb(token).reduce(toHexString, '#')}`;
 }
 

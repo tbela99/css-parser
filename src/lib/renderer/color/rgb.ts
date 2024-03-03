@@ -41,7 +41,6 @@ export function cmyk2rgb(token: ColorToken): number[] {
     return cmyk2srgb(token).map(srgb2rgb);
 }
 
-
 export function oklab2rgb(token: ColorToken): number[] {
 
     return oklab2srgb(token).map(srgb2rgb);

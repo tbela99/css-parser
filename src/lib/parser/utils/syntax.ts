@@ -212,9 +212,9 @@ export function isColor(token: Token): boolean {
 
             const keywords: string[] = ['from', 'none'];
 
-            if (['rgb', 'hsl', 'hwb'].includes(token.val)) {
+            if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
 
-                keywords.push('alpha', ...token.val.split(''));
+                keywords.push('alpha', ...token.val.slice(-3).split(''));
             }
 
             // @ts-ignore

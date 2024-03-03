@@ -132,8 +132,8 @@ function isColor(token) {
         }
         else {
             const keywords = ['from', 'none'];
-            if (['rgb', 'hsl', 'hwb'].includes(token.val)) {
-                keywords.push('alpha', ...token.val.split(''));
+            if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                keywords.push('alpha', ...token.val.slice(-3).split(''));
             }
             // @ts-ignore
             for (const v of token.chi) {

@@ -14,13 +14,13 @@ $ npm install @tbela99/css-parser
 
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- CSS color level 4 & 5
 - automatically generate nested css rules
-- generate sourcemap
-- compute css shorthands. see the list below
-- compute calc() expression
-- inline css variables
-- relative css colors using rgb(), hsl() and hwb()
 - nested css expansion
+- sourcemap generation
+- CSS shorthands computation. see the list below
+- calc() expression computation
+- automatically inline css variables
 - remove duplicate properties
 - flatten @import rules
 - works the same way in node and web browser

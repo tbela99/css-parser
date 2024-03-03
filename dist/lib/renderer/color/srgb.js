@@ -1,17 +1,31 @@
 import { roundWithPrecision } from './utils/round.js';
-import './utils/constants.js';
+import { COLORS_NAMES } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { Lab_to_sRGB } from './lab.js';
-import { OKLab_to_sRGB } from './oklab.js';
+import { expandHexValue } from './hex.js';
+import { getLABComponents, Lab_to_sRGB, lch2labvalues } from './lab.js';
+import { getOKLABComponents, OKLab_to_sRGB } from './oklab.js';
+import { getLCHComponents } from './lch.js';
+import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
+function rgb2srgb(token) {
+    return getComponents(token).map((t) => getNumber(t) / 255);
+}
+function hex2srgb(token) {
+    const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const rgb = [];
+    for (let i = 1; i < value.length; i += 2) {
+        rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
+    }
+    return rgb;
+}
 function hwb2srgb(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
     const rgb = hsl2srgbvalues(hue, 1, .5);
@@ -23,6 +37,10 @@ function hwb2srgb(token) {
         rgb.push(alpha);
     }
     return rgb;
+}
+function hsl2srgb(token) {
+    let { h, s, l, a } = hslvalues(token);
+    return hsl2srgbvalues(h, s, l, a);
 }
 function cmyk2srgb(token) {
     const components = getComponents(token);
@@ -57,49 +75,17 @@ function cmyk2srgb(token) {
     return rgb;
 }
 function oklab2srgb(token) {
-    const components = getComponents(token);
-    // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const a = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const b = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = getOKLABComponents(token);
     const rgb = OKLab_to_sRGB(l, a, b);
-    if (alpha != 1 && alpha != null) {
+    if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
     return rgb; //.map(((value: number) => minmax(value, 0, 255)));
 }
 function oklch2srgb(token) {
-    const components = getComponents(token);
+    const [l, c, h, alpha] = getOKLCHComponents(token);
     // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const h = getAngle(t);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
-    // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const rgb = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180));
+    const rgb = OKLab_to_sRGB(...lch2labvalues(l, c, h));
     if (alpha != 1) {
         rgb.push(alpha);
     }
@@ -186,51 +172,18 @@ function hsl2srgbvalues(h, s, l, a = null) {
     return values;
 }
 function lab2srgb(token) {
-    const components = getComponents(token);
-    // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const a = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const b = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = getLABComponents(token);
     const rgb = Lab_to_sRGB(l, a, b);
     //
-    if (alpha != 1) {
+    if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
     return rgb;
 }
 function lch2srgb(token) {
-    const components = getComponents(token);
     // @ts-ignore
-    let t = components[0];
-    // @ts-ignore
-    const l = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
-    // @ts-ignore
-    t = components[1];
-    // @ts-ignore
-    const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 150 : 1);
-    // @ts-ignore
-    t = components[2];
-    // @ts-ignore
-    const h = getAngle(t);
-    // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const a = c * Math.cos(360 * h * Math.PI / 180);
-    const b = c * Math.sin(360 * h * Math.PI / 180);
     const rgb = Lab_to_sRGB(l, a, b);
     //
     if (alpha != 1) {
@@ -238,7 +191,27 @@ function lch2srgb(token) {
     }
     return rgb;
 }
-function gam_sRGB(r, g, b) {
+// sRGB -> lRGB
+function gam_sRGB(r, g, b, a = null) {
+    // convert an array of linear-light sRGB values in the range 0.0-1.0
+    // to gamma corrected form
+    // https://en.wikipedia.org/wiki/SRGB
+    // Extended transfer function:
+    // For negative values, linear portion extends on reflection
+    // of axis, then uses reflected pow below that
+    const rgb = [r, g, b].map((val) => {
+        const abs = Math.abs(val);
+        if (abs <= 0.04045) {
+            return val / 12.92;
+        }
+        return (Math.sign(val) || 1) * Math.pow((abs + 0.055) / 1.055, 2.4);
+    });
+    if (a != 1 && a != null) {
+        rgb.push(a);
+    }
+    return rgb;
+}
+function sRGB_gam(r, g, b) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
@@ -306,4 +279,4 @@ function lin_2020(r, g, b) {
     });
 }
 
-export { cmyk2srgb, gam_sRGB, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lin_2020, lin_ProPhoto, lin_a98rgb, oklab2srgb, oklch2srgb };
+export { cmyk2srgb, gam_sRGB, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lin_2020, lin_ProPhoto, lin_a98rgb, oklab2srgb, oklch2srgb, rgb2srgb, sRGB_gam };

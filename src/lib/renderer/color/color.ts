@@ -3,6 +3,10 @@ import {EnumToken} from "../../ast";
 import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
 import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl} from "./hsl";
 import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb} from "./hwb";
+import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab} from "./lab";
+import {getLCHComponents, hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch} from "./lch";
+import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab} from "./oklab";
+import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch} from "./oklch";
 
 export function convert(token: ColorToken, to: string): ColorToken | null {
 
@@ -10,8 +14,6 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
 
         return token;
     }
-
-    // console.error({token, to});
 
     let values: number[] = [];
     let chi: Token[];
@@ -73,14 +75,12 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
 
             return {
                 typ: EnumToken.ColorTokenType,
-                val: 'hsl',
+                val: to,
                 chi,
-                kin: 'hsl'
+                kin: to
             }
         }
-    }
-
-    else if (to == 'hwb') {
+    } else if (to == 'hwb') {
 
         switch (token.kin) {
 
@@ -97,7 +97,7 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
             case 'hsl':
             case 'hsla':
 
-                 values.push(...hsl2hwb(token));
+                values.push(...hsl2hwb(token));
                 break;
 
             case 'oklab':
@@ -137,14 +137,12 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
 
             return {
                 typ: EnumToken.ColorTokenType,
-                val: 'hsl',
+                val: to,
                 chi,
-                kin: 'hsl'
+                kin: to
             }
         }
-    }
-
-    else if (to == 'rgb') {
+    } else if (to == 'rgb') {
 
         switch (token.kin) {
 
@@ -187,7 +185,7 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
 
             chi = [
 
-                {typ: EnumToken.NumberTokenType, val: String(values[0] )},
+                {typ: EnumToken.NumberTokenType, val: String(values[0])},
                 {typ: EnumToken.NumberTokenType, val: String(values[1])},
                 {typ: EnumToken.NumberTokenType, val: String(values[2])},
             ];
@@ -199,9 +197,242 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
 
             return {
                 typ: EnumToken.ColorTokenType,
-                val: 'rgb',
+                val: to,
                 chi,
-                kin: 'rgb'
+                kin: to
+            }
+        }
+    } else if (to == 'lab') {
+
+        switch (token.kin) {
+
+            case 'hex':
+            case 'lit':
+
+                values.push(...hex2lab(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+
+                values.push(...rgb2lab(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+
+                values.push(...hsl2lab(token));
+                break;
+
+            case 'hwb':
+                values.push(...hwb2lab(token));
+                break;
+
+            case 'lch':
+                values.push(...lch2lab(token));
+                break;
+
+            case 'oklab':
+                values.push(...oklab2lab(token));
+                break;
+
+            case 'oklch':
+                values.push(...oklch2lab(token));
+                break;
+        }
+
+        if (values.length > 0) {
+
+            chi = [
+
+                {typ: EnumToken.NumberTokenType, val: String(values[0])},
+                {typ: EnumToken.NumberTokenType, val: String(values[1])},
+                {typ: EnumToken.NumberTokenType, val: String(values[2])},
+            ];
+
+            if (values.length == 4) {
+
+                chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
+            }
+
+            return {
+                typ: EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
+            }
+        }
+    } else if (to == 'lch') {
+
+        switch (token.kin) {
+
+            case 'hex':
+            case 'lit':
+
+                values.push(...hex2lch(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+
+                values.push(...rgb2lch(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+
+                values.push(...hsl2lch(token));
+                break;
+
+            case 'hwb':
+                values.push(...hwb2lch(token));
+                break;
+
+            case 'lab':
+                values.push(...lab2lch(token));
+                break;
+
+            case 'oklab':
+                values.push(...oklab2lch(token));
+                break;
+
+            case 'oklch':
+                values.push(...oklch2lch(token));
+                break;
+        }
+
+        if (values.length > 0) {
+
+            chi = [
+
+                {typ: EnumToken.NumberTokenType, val: String(values[0])},
+                {typ: EnumToken.NumberTokenType, val: String(values[1])},
+                {typ: EnumToken.NumberTokenType, val: String(values[2])},
+            ];
+
+            if (values.length == 4) {
+
+                chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
+            }
+
+            return {
+                typ: EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
+            }
+        }
+    } else if (to == 'oklab') {
+
+        switch (token.kin) {
+
+            case 'hex':
+            case 'lit':
+
+                values.push(...hex2oklab(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+
+                values.push(...rgb2oklab(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+
+                values.push(...hsl2oklab(token));
+                break;
+
+            case 'hwb':
+                values.push(...hwb2oklab(token));
+                break;
+
+            case 'lab':
+                values.push(...lab2oklab(token));
+                break;
+
+            case 'lch':
+                values.push(...lch2oklab(token));
+                break;
+
+            case 'oklch':
+                values.push(...oklch2oklab(token));
+                break;
+        }
+
+        if (values.length > 0) {
+
+            chi = [
+
+                {typ: EnumToken.NumberTokenType, val: String(values[0])},
+                {typ: EnumToken.NumberTokenType, val: String(values[1])},
+                {typ: EnumToken.NumberTokenType, val: String(values[2])},
+            ];
+
+            if (values.length == 4) {
+
+                chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
+            }
+
+            return {
+                typ: EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
+            }
+        }
+
+    } else if (to == 'oklch') {
+
+        switch (token.kin) {
+
+            case 'hex':
+            case 'lit':
+
+                values.push(...hex2oklch(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+
+                values.push(...rgb2oklch(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+
+                values.push(...hsl2oklch(token));
+                break;
+
+            case 'hwb':
+                values.push(...hwb2oklch(token));
+                break;
+
+            case 'lab':
+                values.push(...lab2oklch(token));
+                break;
+
+            case 'oklab':
+                values.push(...oklab2oklch(token));
+                break;
+
+            case 'lch':
+                values.push(...lch2oklch(token));
+                break;
+        }
+
+        if (values.length > 0) {
+
+            chi = [
+
+                {typ: EnumToken.NumberTokenType, val: String(values[0])},
+                {typ: EnumToken.NumberTokenType, val: String(values[1])},
+                {typ: EnumToken.NumberTokenType, val: String(values[2])},
+            ];
+
+            if (values.length == 4) {
+
+                chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
+            }
+
+            return {
+                typ: EnumToken.ColorTokenType,
+                val: to,
+                chi,
+                kin: to
             }
         }
     }

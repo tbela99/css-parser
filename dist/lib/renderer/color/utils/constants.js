@@ -1,4 +1,6 @@
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
+const k = Math.pow(29, 3) / Math.pow(3, 3);
+const e = Math.pow(6, 3) / Math.pow(29, 3);
 // name to color
 const COLORS_NAMES = Object.seal({
     'aliceblue': '#f0f8ff',
@@ -157,4 +159,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, D50, NAMES_COLORS };
+export { COLORS_NAMES, D50, NAMES_COLORS, e, k };

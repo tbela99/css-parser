@@ -2,12 +2,19 @@
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
 import {COLORS_NAMES, getComponents, roundWithPrecision} from "./utils";
-import {ColorToken, DimensionToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
-import {Lab_to_sRGB} from "./lab";
+import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab";
 import {expandHexValue} from "./hex";
-import {OKLab_to_sRGB} from "./oklab";
+import {getOKLABComponents, OKLab_to_sRGB} from "./oklab";
+import {getLCHComponents} from "./lch";
+import {getOKLCHComponents} from "./oklch";
+
+export function rgb2srgb(token: ColorToken): number[] {
+
+    return getComponents(token).map((t: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
+}
 
 export function hex2srgb(token: ColorToken): number[] {
 
@@ -99,34 +106,11 @@ export function cmyk2srgb(token: ColorToken): number[] {
 
 export function oklab2srgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
+    const [l, a, b, alpha] = getOKLABComponents(token);
 
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
     const rgb: number[] = OKLab_to_sRGB(l, a, b);
 
-    if (alpha != 1 && alpha != null) {
+    if (alpha != null && alpha != 1) {
 
         rgb.push(alpha);
     }
@@ -136,34 +120,10 @@ export function oklab2srgb(token: ColorToken): number[] {
 
 export function oklch2srgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
+    const [l, c, h, alpha] = getOKLCHComponents(token);
 
     // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const c: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const h: number = getAngle(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
-
-    // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const rgb: number[] = OKLab_to_sRGB(l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180));
+    const rgb: number[] = OKLab_to_sRGB(...lch2labvalues(l, c, h));
 
     if (alpha != 1) {
 
@@ -277,35 +237,11 @@ export function hsl2srgbvalues(h: number, s: number, l: number, a: number | null
 
 export function lab2srgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
-    // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = getLABComponents(token);
     const rgb: number[] = Lab_to_sRGB(l, a, b);
 
     //
-    if (alpha != 1) {
+    if (alpha != null && alpha != 1) {
 
         rgb.push(alpha);
     }
@@ -315,35 +251,10 @@ export function lab2srgb(token: ColorToken): number[] {
 
 export function lch2srgb(token: ColorToken): number[] {
 
-    const components: Token[] = getComponents(token);
-
     // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
-
-    // @ts-ignore
-    const l: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
-
-    // @ts-ignore
-    const c: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 150 : 1);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
-
-    // @ts-ignore
-    const h: number = getAngle(t);
-
-    // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
-
-    // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
+    const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
 
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
-    const a: number = c * Math.cos(360 * h * Math.PI / 180);
-    const b: number = c * Math.sin(360 * h * Math.PI / 180);
 
     const rgb: number[] = Lab_to_sRGB(l, a, b);
     //
@@ -355,7 +266,32 @@ export function lch2srgb(token: ColorToken): number[] {
     return rgb;
 }
 
-export function gam_sRGB(r: number, g: number, b: number): number[] {
+// sRGB -> lRGB
+export function gam_sRGB(r: number, g: number, b: number, a:    number | null = null): number[] {
+
+    // convert an array of linear-light sRGB values in the range 0.0-1.0
+    // to gamma corrected form
+    // https://en.wikipedia.org/wiki/SRGB
+    // Extended transfer function:
+    // For negative values, linear portion extends on reflection
+    // of axis, then uses reflected pow below that
+    const rgb: number[] = [r, g, b].map((val: number): number => {
+
+        const abs: number = Math.abs(val);
+        if (abs <= 0.04045) {
+            return val / 12.92;
+        }
+        return (Math.sign(val) || 1) * Math.pow((abs + 0.055) / 1.055, 2.4);
+    });
+
+    if (a != 1 && a != null) {
+        rgb.push(a);
+    }
+
+    return rgb;
+}
+
+export function sRGB_gam(r: number, g: number, b: number): number[] {
 
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
