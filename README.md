@@ -2,6 +2,8 @@
 
 # css-parser
 
+![Logo](./logo.png)
+
 CSS parser and minifier for node and the browser
 
 ## Installation

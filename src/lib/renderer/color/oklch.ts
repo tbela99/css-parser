@@ -3,7 +3,16 @@ import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {lab2lchvalues} from "./lch";
-import {getOKLABComponents, hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, rgb2oklab} from "./oklab";
+import {
+    getOKLABComponents,
+    hex2oklab,
+    hsl2oklab,
+    hwb2oklab,
+    lab2oklab,
+    lch2oklab,
+    rgb2oklab,
+    srgb2oklab
+} from "./oklab";
 
 export function hex2oklch(token: ColorToken): number[] {
 
@@ -45,6 +54,12 @@ export function oklab2oklch(token: ColorToken): number[] {
 
     // @ts-ignore
     return lab2lchvalues(...getOKLABComponents(token));
+}
+
+export function srgb2oklch(r: number, g: number, blue: number, alpha: number | null): number[] {
+
+    // @ts-ignore
+    return lab2lchvalues(...srgb2oklab(r, g, blue, alpha));
 }
 
 export function getOKLCHComponents(token: ColorToken): number[] {

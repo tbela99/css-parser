@@ -1,6 +1,6 @@
-import { D50, e, k } from './utils/constants.js';
+import { e, k, D50 } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2xyz, XYZ_to_sRGB } from './xyz.js';
+import { xyzd502srgb } from './xyz.js';
 import { hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, oklch2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
 import { OKLab_to_XYZ, getOKLABComponents } from './oklab.js';
@@ -8,6 +8,7 @@ import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
+import { srgb2xyz } from './xyzd65.js';
 import '../sourcemap/lib/encode.js';
 
 // L: 0% = 0.0, 100% = 100.0
@@ -104,7 +105,7 @@ function getLABComponents(token) {
 // D50 LAB
 function Lab_to_sRGB(l, a, b) {
     // @ts-ignore
-    return XYZ_to_sRGB(...Lab_to_XYZ(l, a, b));
+    return xyzd502srgb(...Lab_to_XYZ(l, a, b));
 }
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 function Lab_to_XYZ(l, a, b) {

@@ -1,30 +1,10 @@
-import {multiplyMatrices, roundWithPrecision} from "./utils";
-import {gam_sRGB, sRGB_gam} from "./srgb";
+import {multiplyMatrices} from "./utils";
+import {lsrgb2srgb} from "./srgb";
 
-export function srgb2xyz(r: number, g: number, b: number): number[] {
-
-    [r, g, b] = gam_sRGB(r, g, b);
-
-    return [
-
-        0.436065742824811 * r +
-        0.3851514688337912 * g +
-        0.14307845442264197 * b,
-
-        0.22249319175623702 * r +
-        0.7168870538238823 * g +
-        0.06061979053616537 * b,
-
-        0.013923904500943465 * r +
-        0.09708128566574634 * g +
-        0.7140993584005155 * b
-    ]
-}
-
-export function XYZ_to_sRGB(x: number, y: number, z: number): number[] {
+export function xyzd502srgb(x: number, y: number, z: number): number[] {
 
     // @ts-ignore
-    return sRGB_gam(
+    return lsrgb2srgb(
         /* r: */
         x * 3.1341359569958707 -
         y * 1.6173863321612538 -
@@ -50,13 +30,13 @@ export function XYZ_to_lin_sRGB(x: number, y: number, z: number): number[] {
 
     const XYZ: number[] = [x, y, z]; // convert to XYZ
 
-    return multiplyMatrices(M, XYZ).map((v: number, index: number) => roundWithPrecision(v, XYZ[index]));
+    return multiplyMatrices(M, XYZ).map((v: number) => v);
 }
 
 export function XYZ_D50_to_sRGB(x: number, y: number, z: number): number[] {
 
     // @ts-ignore
-    return sRGB_gam(...XYZ_to_lin_sRGB(...D50_to_D65(x, y, z)));
+    return lsrgb2srgb(...XYZ_to_lin_sRGB(...D50_to_D65(x, y, z)));
 }
 
 export function D50_to_D65(x: number, y: number, z: number): number[] {
@@ -68,7 +48,7 @@ export function D50_to_D65(x: number, y: number, z: number): number[] {
     ];
     const XYZ: number[] = [x, y, z];
 
-    return multiplyMatrices(M, XYZ).map((v: number, index: number) => roundWithPrecision(v, XYZ[index]));
+    return multiplyMatrices(M, XYZ).map((v: number) => v);
 }
 
 export function linear_sRGB_to_XYZ_D50(r: number, g: number, b: number): number[] {

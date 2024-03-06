@@ -33,13 +33,7 @@ function isColorspace(token) {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
     }
-    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
-}
-function isRectangularOrthogonalColorspace(token) {
-    if (token.typ != EnumToken.IdenTokenType) {
-        return false;
-    }
-    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb', 'hsl', 'hwb'].includes(token.val.toLowerCase());
 }
 function isHueInterpolationMethod(token) {
     if (token.typ != EnumToken.IdenTokenType) {
@@ -110,9 +104,9 @@ function isColor(token) {
                     children[0][0].val != 'in' ||
                     !isColorspace(children[0][1]) ||
                     (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
-                    children[1].length >= 2 ||
+                    children[1].length > 2 ||
                     children[1][0].typ != EnumToken.ColorTokenType ||
-                    children[2].length >= 2 ||
+                    children[2].length > 2 ||
                     children[2][0].typ != EnumToken.ColorTokenType) {
                     return false;
                 }
@@ -392,4 +386,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };

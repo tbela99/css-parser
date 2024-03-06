@@ -1,19 +1,61 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import {COLORS_NAMES, getComponents, roundWithPrecision} from "./utils";
+import {COLORS_NAMES, getComponents} from "./utils";
 import {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {getAngle, getNumber} from "./color";
+import {color2srgb, convert, getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab";
 import {expandHexValue} from "./hex";
 import {getOKLABComponents, OKLab_to_sRGB} from "./oklab";
 import {getLCHComponents} from "./lch";
 import {getOKLCHComponents} from "./oklch";
+import {xyzd502srgb} from "./xyz";
+import {XYZ_D65_to_D50} from "./xyzd65";
+import {eq} from "../../parser/utils/eq";
+
+export function srgbvalues(token: ColorToken): number[] | null {
+
+    switch (token.kin) {
+
+        case 'lit':
+        case 'hex':
+            return hex2srgb(token);
+
+        case 'rgb':
+        case 'rgba':
+            return rgb2srgb(token);
+
+        case 'hsl':
+        case 'hsla':
+            return hsl2srgb(token);
+
+        case 'hwb':
+
+            return hwb2srgb(token);
+
+        case 'lab':
+            return lab2srgb(token);
+
+        case 'lch':
+            return lch2srgb(token);
+
+        case 'oklab':
+            return oklab2srgb(token);
+
+        case 'oklch':
+            return oklch2srgb(token);
+
+            case 'color':
+                return color2srgb(token);
+    }
+
+    return null;
+}
 
 export function rgb2srgb(token: ColorToken): number[] {
 
-    return getComponents(token).map((t: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
+    return getComponents(token).map((t: Token, index: number) => index == 3 ? (eq(t, {typ: EnumToken.IdenTokenType, val: 'none'}) ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
 }
 
 export function hex2srgb(token: ColorToken): number[] {
@@ -27,6 +69,11 @@ export function hex2srgb(token: ColorToken): number[] {
     }
 
     return rgb;
+}
+
+export function xyz2srgb(x: number, y: number, z: number): number[] {
+    // @ts-ignore
+    return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
 }
 
 export function hwb2srgb(token: ColorToken): number[] {
@@ -159,14 +206,14 @@ export function hslvalues(token: ColorToken): { h: number, s: number, l: number,
         t = token.chi[3];
 
         // @ts-ignore
-        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
-                t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
-            // @ts-ignore
-            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
+        // if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
+        //         t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
+        //     // @ts-ignore
+        //     (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
 
             // @ts-ignore
             a = getNumber(t);
-        }
+        // }
     }
 
     return a == null ? {h, s, l} : {h, s, l, a};
@@ -267,7 +314,7 @@ export function lch2srgb(token: ColorToken): number[] {
 }
 
 // sRGB -> lRGB
-export function gam_sRGB(r: number, g: number, b: number, a:    number | null = null): number[] {
+export function srgb2lsrgb(r: number, g: number, b: number, a: number | null = null): number[] {
 
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
@@ -291,7 +338,7 @@ export function gam_sRGB(r: number, g: number, b: number, a:    number | null = 
     return rgb;
 }
 
-export function sRGB_gam(r: number, g: number, b: number): number[] {
+export function lsrgb2srgb(r: number, g: number, b: number, alpha?: number): number[] {
 
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
@@ -299,7 +346,7 @@ export function sRGB_gam(r: number, g: number, b: number): number[] {
     // Extended transfer function:
     // For negative values, linear portion extends on reflection
     // of axis, then uses reflected pow below that
-    return [r, g, b].map((val: number): number => {
+    const rgb: number[] = [r, g, b].map((val: number): number => {
 
         let abs: number = Math.abs(val);
 
@@ -310,6 +357,12 @@ export function sRGB_gam(r: number, g: number, b: number): number[] {
 
         return 12.92 * val;
     });
+
+    if (alpha != 1 && alpha != null) {
+        rgb.push(alpha);
+    }
+
+    return rgb;
 }
 
 export function gam_ProPhoto(r: number, g: number, b: number): number[] {
@@ -323,10 +376,10 @@ export function gam_ProPhoto(r: number, g: number, b: number): number[] {
         let abs: number = Math.abs(val);
 
         if (abs >= Et) {
-            return roundWithPrecision(sign * Math.pow(abs, 1 / 1.8), val);
+            return sign * Math.pow(abs, 1 / 1.8);
         }
 
-        return roundWithPrecision(16 * val, val);
+        return 16 * val;
     });
 }
 
@@ -342,7 +395,7 @@ export function gam_ProPhoto(r: number, g: number, b: number): number[] {
 //     });
 // }
 
-export function lin_ProPhoto(r: number, g: number, b: number): number[] {
+export function prophotoRgb2lsrgb(r: number, g: number, b: number): number[] {
     // convert an array of prophoto-rgb values
     // where in-gamut colors are in the range [0.0 - 1.0]
     // to linear light (un-companded) form.
@@ -354,14 +407,14 @@ export function lin_ProPhoto(r: number, g: number, b: number): number[] {
         let abs: number = Math.abs(val);
 
         if (abs <= Et2) {
-            return roundWithPrecision(val / 16, val);
+            return val / 16;
         }
 
-        return roundWithPrecision(sign * Math.pow(abs, 1.8), val);
+        return sign * Math.pow(abs, 1.8);
     });
 }
 
-export function lin_a98rgb(r: number, g: number, b: number): number[] {
+export function a982lrgb(r: number, g: number, b: number): number[] {
     // convert an array of a98-rgb values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // negative values are also now accepted
@@ -369,11 +422,11 @@ export function lin_a98rgb(r: number, g: number, b: number): number[] {
         let sign: number = val < 0 ? -1 : 1;
         let abs: number = Math.abs(val);
 
-        return roundWithPrecision(sign * Math.pow(abs, 563 / 256), val);
+        return sign * Math.pow(abs, 563 / 256);
     });
 }
 
-export function lin_2020(r: number, g: number, b: number): number[] {
+export function rec20202lsrgb(r: number, g: number, b: number): number[] {
     // convert an array of rec2020 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // ITU-R BT.2020-2 p.4
@@ -386,9 +439,9 @@ export function lin_2020(r: number, g: number, b: number): number[] {
         let abs: number = Math.abs(val);
 
         if (abs < β * 4.5) {
-            return roundWithPrecision(val / 4.5, val);
+            return val / 4.5;
         }
 
-        return roundWithPrecision(sign * (Math.pow((abs + α - 1) / α, 1 / 0.45)), val);
+        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
     });
 }

@@ -11,7 +11,7 @@ import '../sourcemap/lib/encode.js';
 
 function rgb2hwb(token) {
     // @ts-ignore
-    return srgb2hwbvalues(...getComponents(token).map((t, index) => {
+    return srgb2hwb(...getComponents(token).map((t, index) => {
         if (index == 3 && eq(t, { typ: EnumToken.IdenTokenType, val: 'none' })) {
             return 1;
         }
@@ -32,19 +32,19 @@ function hsl2hwb(token) {
 }
 function lab2hwb(token) {
     // @ts-ignore
-    return srgb2hwbvalues(...lab2srgb(token));
+    return srgb2hwb(...lab2srgb(token));
 }
 function lch2hwb(token) {
     // @ts-ignore
-    return srgb2hwbvalues(...lch2srgb(token));
+    return srgb2hwb(...lch2srgb(token));
 }
 function oklab2hwb(token) {
     // @ts-ignore
-    return srgb2hwbvalues(...oklab2srgb(token));
+    return srgb2hwb(...oklab2srgb(token));
 }
 function oklch2hwb(token) {
     // @ts-ignore
-    return srgb2hwbvalues(...oklch2srgb(token));
+    return srgb2hwb(...oklch2srgb(token));
 }
 function rgb2hue(r, g, b, fallback = 0) {
     let value = rgb2value(r, g, b);
@@ -72,7 +72,7 @@ function rgb2value(r, g, b) {
 function rgb2whiteness(r, g, b) {
     return Math.min(r, g, b);
 }
-function srgb2hwbvalues(r, g, b, a = null, fallback = 0) {
+function srgb2hwb(r, g, b, a = null, fallback = 0) {
     r *= 100;
     g *= 100;
     b *= 100;
@@ -98,4 +98,4 @@ function hsl2hwbvalues(h, s, l, a = null) {
     return hsv2hwb(...hsl2hsv(h, s, l, a));
 }
 
-export { hsl2hwb, hsl2hwbvalues, hsv2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb, srgb2hwbvalues };
+export { hsl2hwb, hsl2hwbvalues, hsv2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb, srgb2hwb };

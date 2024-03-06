@@ -1,12 +1,13 @@
 import { hwb2hsv } from './hsv.js';
 import { getNumber } from './color.js';
-import { hex2rgb, hslvalues, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb } from './rgb.js';
+import { hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb } from './rgb.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { eq } from '../../parser/utils/eq.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
+import { hslvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 
 function hex2hsl(token) {
@@ -81,9 +82,9 @@ function oklch2hsl(token) {
     return rgb2hslvalues(...oklch2rgb(token));
 }
 function rgb2hslvalues(r, g, b, a = null) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
+    return srgb2hsl(r / 255, g / 255, b / 255, a);
+}
+function srgb2hsl(r, g, b, a = null) {
     let max = Math.max(r, g, b);
     let min = Math.min(r, g, b);
     let h = 0;
@@ -114,4 +115,4 @@ function rgb2hslvalues(r, g, b, a = null) {
     return hsl;
 }
 
-export { hex2hsl, hsv2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, rgb2hslvalues };
+export { hex2hsl, hsv2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, rgb2hslvalues, srgb2hsl };

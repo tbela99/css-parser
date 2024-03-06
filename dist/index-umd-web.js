@@ -84,6 +84,7 @@
         /* aliases */
         EnumToken[EnumToken["Time"] = 25] = "Time";
         EnumToken[EnumToken["Iden"] = 7] = "Iden";
+        EnumToken[EnumToken["EOF"] = 47] = "EOF";
         EnumToken[EnumToken["Hash"] = 28] = "Hash";
         EnumToken[EnumToken["Flex"] = 57] = "Flex";
         EnumToken[EnumToken["Angle"] = 24] = "Angle";
@@ -153,15 +154,6 @@
             return product.map((x) => x[0]); // Avoid [[a], [b], [c], ...]]
         }
         return product;
-    }
-
-    function roundWithPrecision(value, original) {
-        // const length: number = original.toString().split('.')[1]?.length ?? 0;
-        // if (length == 0) {
-        return value;
-        // }
-        //
-        // return +value.toFixed(length);
     }
 
     const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
@@ -365,20 +357,22 @@
         let value = '#';
         let t;
         // @ts-ignore
+        const components = getComponents(token);
+        // @ts-ignore
         for (let i = 0; i < 3; i++) {
             // @ts-ignore
-            t = token.chi[i];
+            t = components[i];
             // @ts-ignore
-            value += (t.val == 'none' ? '0' : Math.round(t.typ == exports.EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val)).toString(16).padStart(2, '0');
+            value += (t.typ == exports.EnumToken.Iden && t.val == 'none' ? '0' : Math.round(getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1))).toString(16).padStart(2, '0');
         }
         // @ts-ignore
-        if (token.chi.length == 4) {
+        if (components.length == 4) {
             // @ts-ignore
-            t = token.chi[3];
+            t = components[3];
             // @ts-ignore
-            if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ||
-                (t.typ == exports.EnumToken.NumberTokenType && +t.val < 1) ||
-                (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100)) {
+            const v = (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
+            // @ts-ignore
+            if (v < 1) {
                 // @ts-ignore
                 value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
             }
@@ -406,24 +400,13 @@
     function lch2hex(token) {
         return `${lch2rgb(token).reduce(toHexString, '#')}`;
     }
-
-    function srgb2xyz(r, g, b) {
-        [r, g, b] = gam_sRGB(r, g, b);
-        return [
-            0.436065742824811 * r +
-                0.3851514688337912 * g +
-                0.14307845442264197 * b,
-            0.22249319175623702 * r +
-                0.7168870538238823 * g +
-                0.06061979053616537 * b,
-            0.013923904500943465 * r +
-                0.09708128566574634 * g +
-                0.7140993584005155 * b
-        ];
+    function srgb2hexvalues(r, g, b, alpha) {
+        return [r, g, b].concat(alpha == null || alpha == 1 ? [] : [alpha]).reduce((acc, value) => acc + minmax(Math.round(255 * value), 0, 255).toString(16).padStart(2, '0'), '#');
     }
-    function XYZ_to_sRGB(x, y, z) {
+
+    function xyzd502srgb(x, y, z) {
         // @ts-ignore
-        return sRGB_gam(
+        return lsrgb2srgb(
         /* r: */
         x * 3.1341359569958707 -
             y * 1.6173863321612538 -
@@ -457,6 +440,10 @@
     function lab2lch(token) {
         // @ts-ignore
         return lab2lchvalues(...getLABComponents(token));
+    }
+    function srgb2lch(r, g, blue, alpha) {
+        // @ts-ignore
+        return lab2lchvalues(...srgb2lab(r, g, blue, alpha));
     }
     function oklab2lch(token) {
         // @ts-ignore
@@ -520,6 +507,10 @@
         // @ts-ignore
         return lab2lchvalues(...getOKLABComponents(token));
     }
+    function srgb2oklch(r, g, blue, alpha) {
+        // @ts-ignore
+        return lab2lchvalues(...srgb2oklab(r, g, blue, alpha));
+    }
     function getOKLCHComponents(token) {
         const components = getComponents(token);
         // @ts-ignore
@@ -543,34 +534,34 @@
 
     function hex2oklab(token) {
         // @ts-ignore
-        return srgb2oklabvalues(...hex2srgb(token));
+        return srgb2oklab(...hex2srgb(token));
     }
     function rgb2oklab(token) {
         // @ts-ignore
-        return srgb2oklabvalues(...rgb2srgb(token));
+        return srgb2oklab(...rgb2srgb(token));
     }
     function hsl2oklab(token) {
         // @ts-ignore
-        return srgb2oklabvalues(...hsl2srgb(token));
+        return srgb2oklab(...hsl2srgb(token));
     }
     function hwb2oklab(token) {
         // @ts-ignore
-        return srgb2oklabvalues(...hwb2srgb(token));
+        return srgb2oklab(...hwb2srgb(token));
     }
     function lab2oklab(token) {
         // @ts-ignore
-        return srgb2oklabvalues(...lab2srgb(token));
+        return srgb2oklab(...lab2srgb(token));
     }
     function lch2oklab(token) {
         // @ts-ignore
-        return srgb2oklabvalues(...lch2srgb(token));
+        return srgb2oklab(...lch2srgb(token));
     }
     function oklch2oklab(token) {
         // @ts-ignore
         return lch2labvalues(...getOKLCHComponents(token));
     }
-    function srgb2oklabvalues(r, g, blue, alpha) {
-        [r, g, blue] = gam_sRGB(r, g, blue);
+    function srgb2oklab(r, g, blue, alpha) {
+        [r, g, blue] = srgb2lsrgb(r, g, blue);
         let L = Math.cbrt(0.41222147079999993 * r + 0.5363325363 * g + 0.0514459929 * blue);
         let M = Math.cbrt(0.2119034981999999 * r + 0.6806995450999999 * g + 0.1073969566 * blue);
         let S = Math.cbrt(0.08830246189999998 * r + 0.2817188376 * g + 0.6299787005000002 * blue);
@@ -633,7 +624,7 @@
         let S = Math.pow(l * 1.0000000546724109177 -
             0.089484182094965759684 * a -
             1.2914855378640917399 * b, 3);
-        return sRGB_gam(
+        return lsrgb2srgb(
         /* r: */
         +4.076741661347994 * L -
             3.307711590408193 * M +
@@ -646,6 +637,35 @@
         -0.004196086541837188 * L -
             0.7034186144594493 * M +
             1.7076147009309444 * S);
+    }
+
+    function srgb2xyz(r, g, b) {
+        [r, g, b] = srgb2lsrgb(r, g, b);
+        return [
+            0.436065742824811 * r +
+                0.3851514688337912 * g +
+                0.14307845442264197 * b,
+            0.22249319175623702 * r +
+                0.7168870538238823 * g +
+                0.06061979053616537 * b,
+            0.013923904500943465 * r +
+                0.09708128566574634 * g +
+                0.7140993584005155 * b
+        ];
+    }
+    function XYZ_D65_to_D50(x, y, z) {
+        // Bradford chromatic adaptation from D65 to D50
+        // The matrix below is the result of three operations:
+        // - convert from XYZ to retinal cone domain
+        // - scale components from one reference white to another
+        // - convert back to XYZ
+        // see https://github.com/LeaVerou/color.js/pull/354/files
+        var M = [
+            [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
+            [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
+            [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
+        ];
+        return multiplyMatrices(M, [x, y, z]);
     }
 
     // L: 0% = 0.0, 100% = 100.0
@@ -742,7 +762,7 @@
     // D50 LAB
     function Lab_to_sRGB(l, a, b) {
         // @ts-ignore
-        return XYZ_to_sRGB(...Lab_to_XYZ(l, a, b));
+        return xyzd502srgb(...Lab_to_XYZ(l, a, b));
     }
     // from https://www.w3.org/TR/css-color-4/#color-conversion-code
     function Lab_to_XYZ(l, a, b) {
@@ -765,11 +785,73 @@
         return xyz.map((value, i) => value * D50[i]);
     }
 
+    function eq(a, b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
+        if (typeof a != 'object' || typeof b != 'object') {
+            return a === b;
+        }
+        if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
+            return false;
+        }
+        if (Array.isArray(a)) {
+            if (a.length != b.length) {
+                return false;
+            }
+            let i = 0;
+            for (; i < a.length; i++) {
+                if (!eq(a[i], b[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        const k1 = Object.keys(a);
+        const k2 = Object.keys(b);
+        if (k1.length != k2.length) {
+            return false;
+        }
+        let key;
+        for (key of k1) {
+            if (!(key in b) || !eq(a[key], b[key])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // from https://www.w3.org/TR/css-color-4/#color-conversion-code
     // srgb-linear -> srgb
     // 0 <= r, g, b <= 1
+    function srgbvalues(token) {
+        switch (token.kin) {
+            case 'lit':
+            case 'hex':
+                return hex2srgb(token);
+            case 'rgb':
+            case 'rgba':
+                return rgb2srgb(token);
+            case 'hsl':
+            case 'hsla':
+                return hsl2srgb(token);
+            case 'hwb':
+                return hwb2srgb(token);
+            case 'lab':
+                return lab2srgb(token);
+            case 'lch':
+                return lch2srgb(token);
+            case 'oklab':
+                return oklab2srgb(token);
+            case 'oklch':
+                return oklch2srgb(token);
+            case 'color':
+                return color2srgb(token);
+        }
+        return null;
+    }
     function rgb2srgb(token) {
-        return getComponents(token).map((t) => getNumber(t) / 255);
+        return getComponents(token).map((t, index) => index == 3 ? (eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' }) ? 1 : getNumber(t)) : (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
     }
     function hex2srgb(token) {
         const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -779,8 +861,12 @@
         }
         return rgb;
     }
+    function xyz2srgb(x, y, z) {
+        // @ts-ignore
+        return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
+    }
     function hwb2srgb(token) {
-        const { h: hue, s: white, l: black, a: alpha } = hslvalues$1(token);
+        const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
         const rgb = hsl2srgbvalues(hue, 1, .5);
         for (let i = 0; i < 3; i++) {
             rgb[i] *= (1 - white - black);
@@ -792,7 +878,7 @@
         return rgb;
     }
     function hsl2srgb(token) {
-        let { h, s, l, a } = hslvalues$1(token);
+        let { h, s, l, a } = hslvalues(token);
         return hsl2srgbvalues(h, s, l, a);
     }
     function cmyk2srgb(token) {
@@ -844,7 +930,7 @@
         }
         return rgb; //.map(((value: number): number => minmax(Math.round(255 * value), 0, 255)));
     }
-    function hslvalues$1(token) {
+    function hslvalues(token) {
         const components = getComponents(token);
         let t;
         // @ts-ignore
@@ -862,12 +948,13 @@
             // @ts-ignore
             t = token.chi[3];
             // @ts-ignore
-            if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100) ||
-                // @ts-ignore
-                (t.typ == exports.EnumToken.NumberTokenType && t.val < 1)) {
-                // @ts-ignore
-                a = getNumber(t);
-            }
+            // if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
+            //         t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
+            //     // @ts-ignore
+            //     (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
+            // @ts-ignore
+            a = getNumber(t);
+            // }
         }
         return a == null ? { h, s, l } : { h, s, l, a };
     }
@@ -945,7 +1032,7 @@
         return rgb;
     }
     // sRGB -> lRGB
-    function gam_sRGB(r, g, b, a = null) {
+    function srgb2lsrgb(r, g, b, a = null) {
         // convert an array of linear-light sRGB values in the range 0.0-1.0
         // to gamma corrected form
         // https://en.wikipedia.org/wiki/SRGB
@@ -964,20 +1051,24 @@
         }
         return rgb;
     }
-    function sRGB_gam(r, g, b) {
+    function lsrgb2srgb(r, g, b, alpha) {
         // convert an array of linear-light sRGB values in the range 0.0-1.0
         // to gamma corrected form
         // https://en.wikipedia.org/wiki/SRGB
         // Extended transfer function:
         // For negative values, linear portion extends on reflection
         // of axis, then uses reflected pow below that
-        return [r, g, b].map((val) => {
+        const rgb = [r, g, b].map((val) => {
             let abs = Math.abs(val);
             if (Math.abs(val) > 0.0031308) {
                 return (Math.sign(val) || 1) * (1.055 * Math.pow(abs, 1 / 2.4) - 0.055);
             }
             return 12.92 * val;
         });
+        if (alpha != 1 && alpha != null) {
+            rgb.push(alpha);
+        }
+        return rgb;
     }
     // export function gam_a98rgb(r: number, g: number, b: number): number[] {
     //     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
@@ -990,7 +1081,7 @@
     //         return roundWithPrecision(sign * Math.pow(abs, 256/563), val);
     //     });
     // }
-    function lin_ProPhoto(r, g, b) {
+    function prophotoRgb2lsrgb(r, g, b) {
         // convert an array of prophoto-rgb values
         // where in-gamut colors are in the range [0.0 - 1.0]
         // to linear light (un-companded) form.
@@ -1001,22 +1092,22 @@
             let sign = val < 0 ? -1 : 1;
             let abs = Math.abs(val);
             if (abs <= Et2) {
-                return roundWithPrecision(val / 16);
+                return val / 16;
             }
-            return roundWithPrecision(sign * Math.pow(abs, 1.8));
+            return sign * Math.pow(abs, 1.8);
         });
     }
-    function lin_a98rgb(r, g, b) {
+    function a982lrgb(r, g, b) {
         // convert an array of a98-rgb values in the range 0.0 - 1.0
         // to linear light (un-companded) form.
         // negative values are also now accepted
         return [r, g, b].map(function (val) {
             let sign = val < 0 ? -1 : 1;
             let abs = Math.abs(val);
-            return roundWithPrecision(sign * Math.pow(abs, 563 / 256));
+            return sign * Math.pow(abs, 563 / 256);
         });
     }
-    function lin_2020(r, g, b) {
+    function rec20202lsrgb(r, g, b) {
         // convert an array of rec2020 RGB values in the range 0.0 - 1.0
         // to linear light (un-companded) form.
         // ITU-R BT.2020-2 p.4
@@ -1026,9 +1117,9 @@
             let sign = val < 0 ? -1 : 1;
             let abs = Math.abs(val);
             if (abs < β * 4.5) {
-                return roundWithPrecision(val / 4.5);
+                return val / 4.5;
             }
-            return roundWithPrecision(sign * (Math.pow((abs + α - 1) / α, 1 / 0.45)));
+            return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
         });
     }
 
@@ -1048,7 +1139,7 @@
     }
     function hsl2rgb(token) {
         let { h, s, l, a } = hslvalues(token);
-        return hsl2rgbvalues(h, s, l, a);
+        return hsl2srgbvalues(h, s, l, a).map((t) => minmax(Math.round(t * 255), 0, 255));
     }
     function cmyk2rgb(token) {
         return cmyk2srgb(token).map(srgb2rgb);
@@ -1064,86 +1155,6 @@
     }
     function lch2rgb(token) {
         return lch2srgb(token).map(srgb2rgb);
-    }
-    function hslvalues(token) {
-        const components = getComponents(token);
-        let t;
-        // @ts-ignore
-        let h = getAngle(components[0]);
-        // @ts-ignore
-        t = components[1];
-        // @ts-ignore
-        let s = getNumber(t);
-        // @ts-ignore
-        t = components[2];
-        // @ts-ignore
-        let l = getNumber(t);
-        let a = null;
-        if (token.chi?.length == 4) {
-            // @ts-ignore
-            t = token.chi[3];
-            // @ts-ignore
-            if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100) ||
-                // @ts-ignore
-                (t.typ == exports.EnumToken.NumberTokenType && t.val < 1)) {
-                // @ts-ignore
-                a = getNumber(t);
-            }
-        }
-        return a == null ? { h, s, l } : { h, s, l, a };
-    }
-    function hsl2rgbvalues(h, s, l, a = null) {
-        let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
-        let r = l;
-        let g = l;
-        let b = l;
-        if (v > 0) {
-            let m = l + l - v;
-            let sv = (v - m) / v;
-            h *= 6.0;
-            let sextant = Math.floor(h);
-            let fract = h - sextant;
-            let vsf = v * sv * fract;
-            let mid1 = m + vsf;
-            let mid2 = v - vsf;
-            switch (sextant) {
-                case 0:
-                    r = v;
-                    g = mid1;
-                    b = m;
-                    break;
-                case 1:
-                    r = mid2;
-                    g = v;
-                    b = m;
-                    break;
-                case 2:
-                    r = m;
-                    g = v;
-                    b = mid1;
-                    break;
-                case 3:
-                    r = m;
-                    g = mid2;
-                    b = v;
-                    break;
-                case 4:
-                    r = mid1;
-                    g = m;
-                    b = v;
-                    break;
-                case 5:
-                    r = v;
-                    g = m;
-                    b = mid2;
-                    break;
-            }
-        }
-        const values = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-        if (a != null && a != 1) {
-            values.push(Math.round(a * 255));
-        }
-        return values;
     }
 
     function hwb2hsv(h, w, b, a) {
@@ -1163,42 +1174,6 @@
             result.push(a);
         }
         return result;
-    }
-
-    function eq(a, b) {
-        if (a == null || b == null) {
-            return a == b;
-        }
-        if (typeof a != 'object' || typeof b != 'object') {
-            return a === b;
-        }
-        if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
-            return false;
-        }
-        if (Array.isArray(a)) {
-            if (a.length != b.length) {
-                return false;
-            }
-            let i = 0;
-            for (; i < a.length; i++) {
-                if (!eq(a[i], b[i])) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        const k1 = Object.keys(a);
-        const k2 = Object.keys(b);
-        if (k1.length != k2.length) {
-            return false;
-        }
-        let key;
-        for (key of k1) {
-            if (!(key in b) || !eq(a[key], b[key])) {
-                return false;
-            }
-        }
-        return true;
     }
 
     function hex2hsl(token) {
@@ -1273,9 +1248,9 @@
         return rgb2hslvalues(...oklch2rgb(token));
     }
     function rgb2hslvalues(r, g, b, a = null) {
-        r /= 255;
-        g /= 255;
-        b /= 255;
+        return srgb2hsl(r / 255, g / 255, b / 255, a);
+    }
+    function srgb2hsl(r, g, b, a = null) {
         let max = Math.max(r, g, b);
         let min = Math.min(r, g, b);
         let h = 0;
@@ -1308,7 +1283,7 @@
 
     function rgb2hwb(token) {
         // @ts-ignore
-        return srgb2hwbvalues(...getComponents(token).map((t, index) => {
+        return srgb2hwb(...getComponents(token).map((t, index) => {
             if (index == 3 && eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
                 return 1;
             }
@@ -1329,19 +1304,19 @@
     }
     function lab2hwb(token) {
         // @ts-ignore
-        return srgb2hwbvalues(...lab2srgb(token));
+        return srgb2hwb(...lab2srgb(token));
     }
     function lch2hwb(token) {
         // @ts-ignore
-        return srgb2hwbvalues(...lch2srgb(token));
+        return srgb2hwb(...lch2srgb(token));
     }
     function oklab2hwb(token) {
         // @ts-ignore
-        return srgb2hwbvalues(...oklab2srgb(token));
+        return srgb2hwb(...oklab2srgb(token));
     }
     function oklch2hwb(token) {
         // @ts-ignore
-        return srgb2hwbvalues(...oklch2srgb(token));
+        return srgb2hwb(...oklch2srgb(token));
     }
     function rgb2hue(r, g, b, fallback = 0) {
         let value = rgb2value(r, g, b);
@@ -1369,7 +1344,7 @@
     function rgb2whiteness(r, g, b) {
         return Math.min(r, g, b);
     }
-    function srgb2hwbvalues(r, g, b, a = null, fallback = 0) {
+    function srgb2hwb(r, g, b, a = null, fallback = 0) {
         r *= 100;
         g *= 100;
         b *= 100;
@@ -1395,12 +1370,184 @@
         return hsv2hwb(...hsl2hsv(h, s, l, a));
     }
 
+    function prophotoRgb2srgbvalues(r, g, b, a = null) {
+        // @ts-ignore
+        return lsrgb2srgb(...prophotoRgb2lsrgb(r, g, b));
+    }
+
+    function a98rgb2srgbvalues(r, g, b, a = null) {
+        //  @ts-ignore
+        return lsrgb2srgb(...a982lrgb(r, g, b));
+    }
+
+    function rec20202srgb(r, g, b, a = null) {
+        // @ts-ignore
+        return lsrgb2srgb(...rec20202lsrgb(r, g, b));
+    }
+
+    function p32srgb(r, g, b, alpha) {
+        // @ts-ignore
+        return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
+    }
+    function p32lp3(r, g, b, alpha) {
+        // convert an array of display-p3 RGB values in the range 0.0 - 1.0
+        // to linear light (un-companded) form.
+        return srgb2lsrgb(r, g, b, alpha); // same as sRGB
+    }
+    function lp32xyz(r, g, b, alpha) {
+        // convert an array of linear-light display-p3 values to CIE XYZ
+        // using  D65 (no chromatic adaptation)
+        // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+        const M = [
+            [608311 / 1250200, 189793 / 714400, 198249 / 1000160],
+            [35783 / 156275, 247089 / 357200, 198249 / 2500400],
+            [0 / 1, 32229 / 714400, 5220557 / 5000800],
+        ];
+        const result = multiplyMatrices(M, [r, g, b]);
+        if (alpha != null && alpha != 1) {
+            result.push(alpha);
+        }
+        return result;
+    }
+
+    function color2srgb(token) {
+        const components = getComponents(token);
+        const colorSpace = components.shift();
+        let values = components.map((val) => getNumber(val));
+        switch (colorSpace.val) {
+            case 'display-p3':
+                // @ts-ignore
+                values = p32srgb(...values);
+                break;
+            case 'srgb-linear':
+                // @ts-ignore
+                values = lsrgb2srgb(...values);
+                break;
+            case 'prophoto-rgb':
+                // @ts-ignore
+                values = prophotoRgb2srgbvalues(...values);
+                break;
+            case 'a98-rgb':
+                // @ts-ignore
+                values = a98rgb2srgbvalues(...values);
+                break;
+            case 'rec2020':
+                // @ts-ignore
+                values = rec20202srgb(...values);
+                break;
+            case 'xyz':
+            case 'xyz-d65':
+                // @ts-ignore
+                values = xyz2srgb(...values);
+                break;
+            case 'xyz-d50':
+                // @ts-ignore
+                values = xyzd502srgb(...values);
+                break;
+            // case srgb:
+        }
+        return values;
+    }
+    function values2hsltoken(values) {
+        const to = 'hsl';
+        const chi = [
+            { typ: exports.EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg' },
+            { typ: exports.EnumToken.PercentageTokenType, val: String(values[1] * 100) },
+            { typ: exports.EnumToken.PercentageTokenType, val: String(values[2] * 100) },
+        ];
+        if (values.length == 4) {
+            chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+        }
+        return {
+            typ: exports.EnumToken.ColorTokenType,
+            val: to,
+            chi,
+            kin: to
+        };
+    }
+    function values2rgbtoken(values) {
+        const to = 'rgb';
+        const chi = [
+            { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+            { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+            { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+        ];
+        if (values.length == 4) {
+            chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+        }
+        return {
+            typ: exports.EnumToken.ColorTokenType,
+            val: to,
+            chi,
+            kin: to
+        };
+    }
+    function values2hwbtoken(values) {
+        const to = 'hwb';
+        const chi = [
+            { typ: exports.EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg' },
+            { typ: exports.EnumToken.PercentageTokenType, val: String(values[1] * 100) },
+            { typ: exports.EnumToken.PercentageTokenType, val: String(values[2] * 100) },
+        ];
+        if (values.length == 4) {
+            chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+        }
+        return {
+            typ: exports.EnumToken.ColorTokenType,
+            val: to,
+            chi,
+            kin: to
+        };
+    }
+    function values2colortoken(values, to) {
+        const chi = [
+            { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+            { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+            { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+        ];
+        if (values.length == 4) {
+            chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+        }
+        return {
+            typ: exports.EnumToken.ColorTokenType,
+            val: to,
+            chi,
+            kin: to
+        };
+    }
     function convert(token, to) {
         if (token.kin == to) {
             return token;
         }
         let values = [];
-        let chi;
+        if (token.kin == 'color') {
+            values = color2srgb(token);
+            switch (to) {
+                case 'hsl':
+                    // @ts-ignore
+                    return values2hsltoken(srgb2hsl(...values));
+                case 'rgb':
+                case 'rgba':
+                    // @ts-ignore
+                    return values2rgbtoken(srgb2rgb(...values));
+                case 'hwb':
+                    // @ts-ignore
+                    return values2hwbtoken(srgb2hwb(...values));
+                case 'oklab':
+                    // @ts-ignore
+                    return values2colortoken(srgb2oklab(...values), 'oklab');
+                case 'oklch':
+                    // @ts-ignore
+                    return values2colortoken(srgb2oklch(...values), 'oklch');
+                case 'lab':
+                    // @ts-ignore
+                    return values2colortoken(srgb2lab(...values), 'oklab');
+                case 'lch':
+                    values.push(...lch2hsl(token));
+                    break;
+            }
+            return null;
+        }
         if (to == 'hsl') {
             switch (token.kin) {
                 case 'rgb':
@@ -1428,20 +1575,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg' },
-                    { typ: exports.EnumToken.PercentageTokenType, val: String(values[1] * 100) },
-                    { typ: exports.EnumToken.PercentageTokenType, val: String(values[2] * 100) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2hsltoken(values);
             }
         }
         else if (to == 'hwb') {
@@ -1472,20 +1606,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg' },
-                    { typ: exports.EnumToken.PercentageTokenType, val: String(values[1] * 100) },
-                    { typ: exports.EnumToken.PercentageTokenType, val: String(values[2] * 100) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2hwbtoken(values);
             }
         }
         else if (to == 'rgb') {
@@ -1514,20 +1635,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2rgbtoken(values);
             }
         }
         else if (to == 'lab') {
@@ -1558,20 +1666,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2colortoken(values, to);
             }
         }
         else if (to == 'lch') {
@@ -1602,20 +1697,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2colortoken(values, to);
             }
         }
         else if (to == 'oklab') {
@@ -1646,20 +1728,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2colortoken(values, to);
             }
         }
         else if (to == 'oklch') {
@@ -1690,20 +1759,7 @@
                     break;
             }
             if (values.length > 0) {
-                chi = [
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
-                    { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
-                ];
-                if (values.length == 4) {
-                    chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
-                }
-                return {
-                    typ: exports.EnumToken.ColorTokenType,
-                    val: to,
-                    chi,
-                    kin: to
-                };
+                return values2colortoken(values, to);
             }
         }
         return null;
@@ -1737,21 +1793,6 @@
             });
         }
         return token;
-    }
-    function clampValues(values, colorSpace) {
-        switch (colorSpace) {
-            case 'srgb':
-            // case 'oklab':
-            case 'display-p3':
-            case 'srgb-linear':
-                // case 'prophoto-rgb':
-                // case 'a98-rgb':
-                // case 'rec2020':
-                for (let i = 0; i < values.length; i++) {
-                    values[i] = Math.min(1, Math.max(0, values[i]));
-                }
-        }
-        return values;
     }
     function getNumber(token) {
         if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
@@ -1787,13 +1828,6 @@
     }
 
     function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
-        if (!isRectangularOrthogonalColorspace(colorSpace)) {
-            return null;
-        }
-        const supported = ['srgb', 'display-p3'];
-        if (!supported.includes(colorSpace.val.toLowerCase())) {
-            return null;
-        }
         if (percentage1 == null) {
             if (percentage2 == null) {
                 // @ts-ignore
@@ -1834,23 +1868,131 @@
                 }
             }
         }
-        if (colorSpace.val.localeCompare('srgb', undefined, { sensitivity: 'base' }) == 0) {
-            const c1 = convert(color1, 'rgb');
-            const c2 = convert(color2, 'rgb');
-            if (c1 == null || c2 == null) {
-                return null;
-            }
-            // @ts-ignore
-            return { ...c1, chi: c1.chi.reduce((acc, curr, i) => {
-                    // @ts-ignore
-                    acc.push({ ...curr, val: String(percentage1.val * curr.val + percentage2.val * c2.chi[i].val) });
-                    return acc;
-                    // @ts-ignore
-                }, [])
-                // .concat({...percentage1, val: String((+percentage1.val + +percentage2.val) / 2)})
-            };
+        let values1 = srgbvalues(color1) ?? null;
+        let values2 = srgbvalues(color2) ?? null;
+        if (values1 == null || values2 == null) {
+            return null;
         }
-        // normalize percentages
+        const p1 = getNumber(percentage1);
+        const p2 = getNumber(percentage2);
+        const mul1 = values1.length == 4 ? values1.pop() : 1;
+        const mul2 = values2.length == 4 ? values2.pop() : 1;
+        const mul = mul1 * p1 + mul2 * p2;
+        // @ts-ignore
+        const calculate = () => [colorSpace].concat(values1.map((v1, i) => {
+            return {
+                // @ts-ignore
+                typ: exports.EnumToken.NumberTokenType, val: String((mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+            };
+        }).concat(mul == 1 ? [] : [{
+                typ: exports.EnumToken.NumberTokenType, val: String(mul)
+            }]));
+        // ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65']
+        switch (colorSpace.val) {
+            case 'srgb':
+                break;
+            case 'display-p3':
+                // @ts-ignore
+                values1 = p32srgb(...values1);
+                // @ts-ignore
+                values2 = p32srgb(...values2);
+                break;
+            case 'srgb-linear':
+                // @ts-ignore
+                values1 = srgb2lsrgb(...values1);
+                // @ts-ignore
+                values2 = srgb2lsrgb(...values2);
+                break;
+            case 'xyz':
+            case 'xyz-d65':
+                // @ts-ignore
+                values1 = srgb2xyz(...values1);
+                // @ts-ignore
+                values2 = srgb2xyz(...values2);
+                break;
+            case 'rgb':
+                // @ts-ignore
+                values1 = srgb2rgb(...values1);
+                // @ts-ignore
+                values2 = srgb2rgb(...values2);
+                break;
+            case 'hsl':
+                // @ts-ignore
+                values1 = srgb2hsl(...values1);
+                // @ts-ignore
+                values2 = srgb2hsl(...values2);
+                break;
+            case 'hwb':
+                // @ts-ignore
+                values1 = srgb2hwb(...values1);
+                // @ts-ignore
+                values2 = srgb2hwb(...values2);
+                break;
+            case 'lab':
+                // @ts-ignore
+                values1 = srgb2lab(...values1);
+                // @ts-ignore
+                values2 = srgb2lab(...values2);
+                break;
+            case 'lch':
+                // @ts-ignore
+                values1 = srgb2lch(...values1);
+                // @ts-ignore
+                values2 = srgb2lch(...values2);
+                break;
+            case 'oklab':
+                // @ts-ignore
+                values1 = srgb2lch(...values1);
+                // @ts-ignore
+                values2 = srgb2lch(...values2);
+                break;
+            case 'oklch':
+                // @ts-ignore
+                values1 = srgb2lch(...values1);
+                // @ts-ignore
+                values2 = srgb2lch(...values2);
+                break;
+            default:
+                return null;
+        }
+        switch (colorSpace.val) {
+            case 'srgb':
+            case 'srgb-linear':
+            case 'xyz':
+            case 'xyz-d65':
+                // @ts-ignore
+                return {
+                    typ: exports.EnumToken.ColorTokenType,
+                    val: 'color',
+                    chi: calculate(),
+                    kin: 'color',
+                    cal: 'col'
+                };
+            case 'rgb':
+            case 'hsl':
+            case 'hwb':
+            case 'lab':
+            case 'lch':
+            case 'oklab':
+            case 'oklch':
+                // @ts-ignore
+                const result = {
+                    typ: exports.EnumToken.ColorTokenType,
+                    val: colorSpace.val,
+                    chi: calculate().slice(1),
+                    kin: colorSpace.val
+                };
+                if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
+                    // @ts-ignore
+                    result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: String(result.chi[0].val * 360), unit: 'deg' };
+                    // @ts-ignore
+                    result.chi[1] = { typ: exports.EnumToken.PercentageTokenType, val: String(result.chi[1].val * 100) };
+                    // @ts-ignore
+                    result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
+                }
+                // console.error(JSON.stringify(result, null, 1));
+                return result;
+        }
         return null;
     }
 
@@ -2252,25 +2394,6 @@
         return expr;
     }
 
-    function XYZ_D65_to_sRGB(x, y, z) {
-        // @ts-ignore
-        return XYZ_to_sRGB(...XYZ_D65_to_D50(x, y, z));
-    }
-    function XYZ_D65_to_D50(x, y, z) {
-        // Bradford chromatic adaptation from D65 to D50
-        // The matrix below is the result of three operations:
-        // - convert from XYZ to retinal cone domain
-        // - scale components from one reference white to another
-        // - convert back to XYZ
-        // see https://github.com/LeaVerou/color.js/pull/354/files
-        var M = [
-            [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
-            [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
-            [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
-        ];
-        return multiplyMatrices(M, [x, y, z]);
-    }
-
     // from https://github.com/Rich-Harris/vlq/tree/master
     // credit: Rich Harris
     const integer_to_char = {};
@@ -2617,69 +2740,7 @@
                 return '/';
             case exports.EnumToken.ColorTokenType:
                 if (options.convertColor) {
-                    if (token.val == 'color') {
-                        const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-                        if (token.chi[0].typ == exports.EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
-                            let values = token.chi.slice(1, 4).map((t) => {
-                                if (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') {
-                                    return 0;
-                                }
-                                return getNumber(t);
-                            });
-                            const colorSpace = token.chi[0].val.toLowerCase();
-                            switch (colorSpace) {
-                                case 'srgb-linear':
-                                    // @ts-ignore
-                                    values = sRGB_gam(...values);
-                                    break;
-                                case 'prophoto-rgb':
-                                    // @ts-ignore
-                                    values = sRGB_gam(...lin_ProPhoto(...values));
-                                    break;
-                                case 'a98-rgb':
-                                    // @ts-ignore
-                                    values = sRGB_gam(...lin_a98rgb(...values));
-                                    break;
-                                case 'rec2020':
-                                    // @ts-ignore
-                                    values = sRGB_gam(...lin_2020(...values));
-                                    break;
-                                case 'xyz':
-                                case 'xyz-d65':
-                                    // @ts-ignore
-                                    values = XYZ_D65_to_sRGB(...values);
-                                    break;
-                                case 'xyz-d50':
-                                    // @ts-ignore
-                                    values = XYZ_to_sRGB(...values);
-                                    break;
-                            }
-                            clampValues(values, colorSpace);
-                            let value = `#${values.reduce((acc, curr) => {
-                            // @ts-ignore
-                            return acc + Math.round(255 * curr).toString(16).padStart(2, '0');
-                        }, '')}`;
-                            if (token.chi.length == 6) {
-                                if (token.chi[5].typ == exports.EnumToken.NumberTokenType || token.chi[5].typ == exports.EnumToken.PercentageTokenType) {
-                                    let c = 255 * +token.chi[5].val;
-                                    if (token.chi[5].typ == exports.EnumToken.PercentageTokenType) {
-                                        c /= 100;
-                                    }
-                                    value += Math.round(c).toString(16).padStart(2, '0');
-                                }
-                            }
-                            return reduceHexValue(value);
-                        }
-                    }
-                    else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
-                        const chi = getComponents(token);
-                        const components = parseRelativeColor(token.val, chi[1], chi[2], chi[3], chi[4], chi[5]);
-                        if (components != null) {
-                            token.chi = Object.values(components);
-                            delete token.cal;
-                        }
-                    }
-                    else if (token.cal == 'mix' && token.val == 'color-mix') {
+                    if (token.cal == 'mix' && token.val == 'color-mix') {
                         const children = token.chi.reduce((acc, t) => {
                             if (t.typ == exports.EnumToken.ColorTokenType) {
                                 acc.push([t]);
@@ -2694,6 +2755,79 @@
                         const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
                         if (value != null) {
                             token = value;
+                        }
+                    }
+                    if (token.val == 'color') {
+                        const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
+                        if (token.chi[0].typ == exports.EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
+                            let values = getComponents(token).slice(1).map((t) => {
+                                if (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') {
+                                    return 0;
+                                }
+                                return getNumber(t);
+                            });
+                            const colorSpace = token.chi[0].val.toLowerCase();
+                            switch (colorSpace) {
+                                case 'display-p3':
+                                    // @ts-ignore
+                                    values = p32srgb(...values);
+                                    break;
+                                case 'srgb-linear':
+                                    // @ts-ignore
+                                    values = lsrgb2srgb(...values);
+                                    break;
+                                case 'prophoto-rgb':
+                                    // @ts-ignore
+                                    values = prophotoRgb2srgbvalues(...values);
+                                    break;
+                                case 'a98-rgb':
+                                    // @ts-ignore
+                                    values = a98rgb2srgbvalues(...values);
+                                    break;
+                                case 'rec2020':
+                                    // @ts-ignore
+                                    values = rec20202srgb(...values);
+                                    break;
+                                case 'xyz':
+                                case 'xyz-d65':
+                                    // @ts-ignore
+                                    values = xyz2srgb(...values);
+                                    break;
+                                case 'xyz-d50':
+                                    // @ts-ignore
+                                    values = xyzd502srgb(...values);
+                                    break;
+                            }
+                            // clampValues(values, colorSpace);
+                            // if (values.length == 4 && values[3] == 1) {
+                            //
+                            //     values.pop();
+                            // }
+                            // @ts-ignore
+                            let value = srgb2hexvalues(...values);
+                            // if ((<Token[]>token.chi).length == 6) {
+                            //
+                            //     if ((<Token[]>token.chi)[5].typ == EnumToken.NumberTokenType || (<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
+                            //
+                            //         let c: number = 255 * +(<NumberToken>(<Token[]>token.chi)[5]).val;
+                            //
+                            //         if ((<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
+                            //
+                            //             c /= 100;
+                            //         }
+                            //
+                            //         value += Math.round(c).toString(16).padStart(2, '0');
+                            //     }
+                            // }
+                            return reduceHexValue(value);
+                        }
+                    }
+                    else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                        const chi = getComponents(token);
+                        const components = parseRelativeColor(token.val, chi[1], chi[2], chi[3], chi[4], chi[5]);
+                        if (components != null) {
+                            token.chi = Object.values(components);
+                            delete token.cal;
                         }
                     }
                     if (token.cal != null) {
@@ -2990,13 +3124,7 @@
         if (token.typ != exports.EnumToken.IdenTokenType) {
             return false;
         }
-        return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
-    }
-    function isRectangularOrthogonalColorspace(token) {
-        if (token.typ != exports.EnumToken.IdenTokenType) {
-            return false;
-        }
-        return ['srgb', 'srgb-linear', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+        return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb', 'hsl', 'hwb'].includes(token.val.toLowerCase());
     }
     function isHueInterpolationMethod(token) {
         if (token.typ != exports.EnumToken.IdenTokenType) {
@@ -3067,9 +3195,9 @@
                         children[0][0].val != 'in' ||
                         !isColorspace(children[0][1]) ||
                         (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
-                        children[1].length >= 2 ||
+                        children[1].length > 2 ||
                         children[1][0].typ != exports.EnumToken.ColorTokenType ||
-                        children[2].length >= 2 ||
+                        children[2].length > 2 ||
                         children[2][0].typ != exports.EnumToken.ColorTokenType) {
                         return false;
                     }
@@ -4908,179 +5036,175 @@
         return buffer.length > 0 ? result + buffer : result;
     }
 
+    function consumeWhiteSpace(parseInfo) {
+        let count = 0;
+        while (isWhiteSpace(parseInfo.stream.charAt(count + parseInfo.currentPosition.ind + 1).charCodeAt(0))) {
+            count++;
+        }
+        next(parseInfo, count);
+        return count;
+    }
+    function pushToken(token, parseInfo, hint) {
+        const result = { token, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
+        parseInfo.position.ind = parseInfo.currentPosition.ind;
+        parseInfo.position.lin = parseInfo.currentPosition.lin;
+        parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
+        return result;
+    }
+    function* consumeString(quoteStr, buffer, parseInfo) {
+        const quote = quoteStr;
+        let value;
+        let hasNewLine = false;
+        if (buffer.length > 0) {
+            yield pushToken(buffer, parseInfo);
+            buffer = '';
+        }
+        buffer += quoteStr;
+        while (value = peek(parseInfo)) {
+            if (value == '\\') {
+                const sequence = peek(parseInfo, 6);
+                let escapeSequence = '';
+                let codepoint;
+                let i;
+                for (i = 1; i < sequence.length; i++) {
+                    codepoint = sequence.charCodeAt(i);
+                    if (codepoint == 0x20 ||
+                        (codepoint >= 0x61 && codepoint <= 0x66) ||
+                        (codepoint >= 0x41 && codepoint <= 0x46) ||
+                        (codepoint >= 0x30 && codepoint <= 0x39)) {
+                        escapeSequence += sequence[i];
+                        if (codepoint == 0x20) {
+                            break;
+                        }
+                        continue;
+                    }
+                    break;
+                }
+                if (i == 1) {
+                    buffer += value + sequence[i];
+                    next(parseInfo, 2);
+                    continue;
+                }
+                if (escapeSequence.trimEnd().length > 0) {
+                    const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
+                    if (codepoint == 0 ||
+                        // leading surrogate
+                        (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
+                        // trailing surrogate
+                        (0xDC00 <= codepoint && codepoint <= 0xDFFF)) {
+                        buffer += String.fromCodePoint(0xFFFD);
+                    }
+                    else {
+                        buffer += String.fromCodePoint(codepoint);
+                    }
+                    next(parseInfo, escapeSequence.length + 1 + (isWhiteSpace(peek(parseInfo)?.charCodeAt(0)) ? 1 : 0));
+                    continue;
+                }
+                buffer += next(parseInfo, 2);
+                continue;
+            }
+            if (value == quote) {
+                buffer += value;
+                yield pushToken(buffer, parseInfo, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
+                next(parseInfo);
+                // i += value.length;
+                buffer = '';
+                return;
+            }
+            if (isNewLine(value.charCodeAt(0))) {
+                hasNewLine = true;
+            }
+            if (hasNewLine && value == ';') {
+                yield pushToken(buffer + value, parseInfo, exports.EnumToken.BadStringTokenType);
+                buffer = '';
+                next(parseInfo);
+                break;
+            }
+            buffer += value;
+            next(parseInfo);
+        }
+        if (hasNewLine) {
+            yield pushToken(buffer, parseInfo, exports.EnumToken.BadStringTokenType);
+        }
+        else {
+            // EOF - 'Unclosed-string' fixed
+            yield pushToken(buffer + quote, parseInfo, exports.EnumToken.StringTokenType);
+        }
+    }
+    function peek(parseInfo, count = 1) {
+        if (count == 1) {
+            return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
+        }
+        return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
+    }
+    function prev(parseInfo, count = 1) {
+        if (count == 1) {
+            return parseInfo.currentPosition.ind == 0 ? '' : parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
+        }
+        return parseInfo.stream.slice(parseInfo.currentPosition.ind - 1 - count, parseInfo.currentPosition.ind - 1);
+    }
+    function next(parseInfo, count = 1) {
+        let char = '';
+        let chr = '';
+        if (count < 0) {
+            return '';
+        }
+        while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
+            char += chr;
+            const codepoint = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
+            if (isNaN(codepoint)) {
+                return char;
+            }
+            if (isNewLine(codepoint)) {
+                parseInfo.currentPosition.lin++;
+                parseInfo.currentPosition.col = 0;
+            }
+            else {
+                parseInfo.currentPosition.col++;
+            }
+        }
+        return char;
+    }
     function* tokenize(stream) {
-        let ind = -1;
-        let lin = 1;
-        let col = 0;
-        const position = {
-            ind: Math.max(ind, 0),
-            lin: lin,
-            col: Math.max(col, 1)
+        const parseInfo = {
+            stream,
+            position: { ind: 0, lin: 1, col: 1 },
+            currentPosition: { ind: -1, lin: 1, col: 0 }
         };
         let value;
         let buffer = '';
-        function consumeWhiteSpace() {
-            let count = 0;
-            while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
-                count++;
-            }
-            next(count);
-            return count;
-        }
-        function pushToken(token, hint) {
-            const result = { token, hint, position: { ...position }, bytesIn: ind + 1 };
-            position.ind = ind;
-            position.lin = lin;
-            position.col = col == 0 ? 1 : col;
-            return result;
-        }
-        function* consumeString(quoteStr) {
-            const quote = quoteStr;
-            let value;
-            let hasNewLine = false;
-            if (buffer.length > 0) {
-                yield pushToken(buffer);
-                buffer = '';
-            }
-            buffer += quoteStr;
-            while (value = peek()) {
-                if (value == '\\') {
-                    const sequence = peek(6);
-                    let escapeSequence = '';
-                    let codepoint;
-                    let i;
-                    for (i = 1; i < sequence.length; i++) {
-                        codepoint = sequence.charCodeAt(i);
-                        if (codepoint == 0x20 ||
-                            (codepoint >= 0x61 && codepoint <= 0x66) ||
-                            (codepoint >= 0x41 && codepoint <= 0x46) ||
-                            (codepoint >= 0x30 && codepoint <= 0x39)) {
-                            escapeSequence += sequence[i];
-                            if (codepoint == 0x20) {
-                                break;
-                            }
-                            continue;
-                        }
-                        break;
-                    }
-                    if (i == 1) {
-                        buffer += value + sequence[i];
-                        next(2);
-                        continue;
-                    }
-                    if (escapeSequence.trimEnd().length > 0) {
-                        const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
-                        if (codepoint == 0 ||
-                            // leading surrogate
-                            (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
-                            // trailing surrogate
-                            (0xDC00 <= codepoint && codepoint <= 0xDFFF)) {
-                            buffer += String.fromCodePoint(0xFFFD);
-                        }
-                        else {
-                            buffer += String.fromCodePoint(codepoint);
-                        }
-                        next(escapeSequence.length + 1 + (isWhiteSpace(peek()?.charCodeAt(0)) ? 1 : 0));
-                        continue;
-                    }
-                    buffer += next(2);
-                    continue;
-                }
-                if (value == quote) {
-                    buffer += value;
-                    yield pushToken(buffer, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
-                    next();
-                    // i += value.length;
-                    buffer = '';
-                    return;
-                }
-                if (isNewLine(value.charCodeAt(0))) {
-                    hasNewLine = true;
-                }
-                if (hasNewLine && value == ';') {
-                    yield pushToken(buffer + value, exports.EnumToken.BadStringTokenType);
-                    buffer = '';
-                    next();
-                    break;
-                }
-                buffer += value;
-                next();
-            }
-            if (hasNewLine) {
-                yield pushToken(buffer, exports.EnumToken.BadStringTokenType);
-            }
-            else {
-                // EOF - 'Unclosed-string' fixed
-                yield pushToken(buffer + quote, exports.EnumToken.StringTokenType);
-            }
-            buffer = '';
-        }
-        function peek(count = 1) {
-            if (count == 1) {
-                return stream.charAt(ind + 1);
-            }
-            return stream.slice(ind + 1, ind + count + 1);
-        }
-        function prev(count = 1) {
-            if (count == 1) {
-                return ind == 0 ? '' : stream.charAt(ind - 1);
-            }
-            return stream.slice(ind - 1 - count, ind - 1);
-        }
-        function next(count = 1) {
-            let char = '';
-            let chr = '';
-            if (count < 0) {
-                return '';
-            }
-            while (count-- && (chr = stream.charAt(ind + 1))) {
-                char += chr;
-                const codepoint = stream.charCodeAt(++ind);
-                if (isNaN(codepoint)) {
-                    return char;
-                }
-                if (isNewLine(codepoint)) {
-                    lin++;
-                    col = 0;
-                }
-                else {
-                    col++;
-                }
-            }
-            return char;
-        }
-        while (value = next()) {
+        while (value = next(parseInfo)) {
             if (isWhiteSpace(value.charCodeAt(0))) {
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                while (value = next()) {
+                while (value = next(parseInfo)) {
                     if (!isWhiteSpace(value.charCodeAt(0))) {
                         break;
                     }
                 }
-                yield pushToken('', exports.EnumToken.WhitespaceTokenType);
+                yield pushToken('', parseInfo, exports.EnumToken.WhitespaceTokenType);
                 buffer = '';
             }
             switch (value) {
                 case '/':
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
-                        if (peek() != '*') {
-                            yield pushToken(value);
+                        if (peek(parseInfo) != '*') {
+                            yield pushToken(value, parseInfo);
                             break;
                         }
                     }
                     buffer += value;
-                    if (peek() == '*') {
-                        buffer += next();
-                        while (value = next()) {
+                    if (peek(parseInfo) == '*') {
+                        buffer += next(parseInfo);
+                        while (value = next(parseInfo)) {
                             if (value == '*') {
                                 buffer += value;
-                                if (peek() == '/') {
-                                    yield pushToken(buffer + next(), exports.EnumToken.CommentTokenType);
+                                if (peek(parseInfo) == '/') {
+                                    yield pushToken(buffer + next(parseInfo), parseInfo, exports.EnumToken.CommentTokenType);
                                     buffer = '';
                                     break;
                                 }
@@ -5089,71 +5213,72 @@
                                 buffer += value;
                             }
                         }
-                        yield pushToken(buffer, exports.EnumToken.BadCommentTokenType);
+                        yield pushToken(buffer, parseInfo, exports.EnumToken.BadCommentTokenType);
                         buffer = '';
                     }
                     break;
                 case '<':
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
-                    if (peek() == '=') {
-                        yield pushToken('', exports.EnumToken.LteTokenType);
-                        next();
+                    if (peek(parseInfo) == '=') {
+                        yield pushToken('', parseInfo, exports.EnumToken.LteTokenType);
+                        next(parseInfo);
                         break;
                     }
                     buffer += value;
-                    if (peek(3) == '!--') {
-                        buffer += next(3);
-                        while (value = next()) {
+                    if (peek(parseInfo, 3) == '!--') {
+                        buffer += next(parseInfo, 3);
+                        while (value = next(parseInfo)) {
                             buffer += value;
-                            if (value == '-' && peek(2) == '->') {
+                            if (value == '-' && peek(parseInfo, 2) == '->') {
                                 break;
                             }
                         }
                         if (value === '') {
-                            yield pushToken(buffer, exports.EnumToken.BadCdoTokenType);
+                            yield pushToken(buffer, parseInfo, exports.EnumToken.BadCdoTokenType);
                         }
                         else {
-                            yield pushToken(buffer + next(2), exports.EnumToken.CDOCOMMTokenType);
+                            yield pushToken(buffer + next(parseInfo, 2), parseInfo, exports.EnumToken.CDOCOMMTokenType);
                         }
                         buffer = '';
                     }
                     break;
                 case '\\':
                     // EOF
-                    if (!(value = next())) {
+                    if (!(value = next(parseInfo))) {
                         // end of stream ignore \\
                         if (buffer.length > 0) {
-                            yield pushToken(buffer);
+                            yield pushToken(buffer, parseInfo);
                             buffer = '';
                         }
                         break;
                     }
-                    buffer += prev() + value;
+                    buffer += prev(parseInfo) + value;
                     break;
                 case '"':
                 case "'":
-                    yield* consumeString(value);
+                    yield* consumeString(value, buffer, parseInfo);
+                    buffer = '';
                     break;
                 case '^':
                 case '~':
                 case '|':
                 case '$':
-                    if (value == '|' && peek() == '|') {
-                        next();
-                        yield pushToken('', exports.EnumToken.ColumnCombinatorTokenType);
+                    if (value == '|' && peek(parseInfo) == '|') {
+                        next(parseInfo);
+                        yield pushToken('', parseInfo, exports.EnumToken.ColumnCombinatorTokenType);
                         buffer = '';
                         break;
                     }
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
                     buffer += value;
-                    if (!(value = peek())) {
-                        yield pushToken(buffer);
+                    if (!(value = peek(parseInfo))) {
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                         break;
                     }
@@ -5161,46 +5286,46 @@
                     // ^=
                     // $=
                     // |=
-                    if (peek() == '=') {
-                        next();
+                    if (peek(parseInfo) == '=') {
+                        next(parseInfo);
                         switch (buffer.charAt(0)) {
                             case '~':
-                                yield pushToken(buffer, exports.EnumToken.IncludeMatchTokenType);
+                                yield pushToken(buffer, parseInfo, exports.EnumToken.IncludeMatchTokenType);
                                 break;
                             case '^':
-                                yield pushToken(buffer, exports.EnumToken.StartMatchTokenType);
+                                yield pushToken(buffer, parseInfo, exports.EnumToken.StartMatchTokenType);
                                 break;
                             case '$':
-                                yield pushToken(buffer, exports.EnumToken.EndMatchTokenType);
+                                yield pushToken(buffer, parseInfo, exports.EnumToken.EndMatchTokenType);
                                 break;
                             case '|':
-                                yield pushToken(buffer, exports.EnumToken.DashMatchTokenType);
+                                yield pushToken(buffer, parseInfo, exports.EnumToken.DashMatchTokenType);
                                 break;
                         }
                         buffer = '';
                         break;
                     }
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                     break;
                 case '>':
                     if (buffer !== '') {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
-                    if (peek() == '=') {
-                        yield pushToken('', exports.EnumToken.GteTokenType);
-                        next();
+                    if (peek(parseInfo) == '=') {
+                        yield pushToken('', parseInfo, exports.EnumToken.GteTokenType);
+                        next(parseInfo);
                     }
                     else {
-                        yield pushToken('', exports.EnumToken.GtTokenType);
+                        yield pushToken('', parseInfo, exports.EnumToken.GtTokenType);
                     }
-                    consumeWhiteSpace();
+                    consumeWhiteSpace(parseInfo);
                     break;
                 case '.':
-                    const codepoint = peek().charCodeAt(0);
+                    const codepoint = peek(parseInfo).charCodeAt(0);
                     if (!isDigit(codepoint) && buffer !== '') {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = value;
                         break;
                     }
@@ -5212,47 +5337,47 @@
                 case ',':
                 case '=':
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
-                    const val = peek();
+                    const val = peek(parseInfo);
                     if (val == '=') {
-                        next();
-                        yield pushToken(value + val, exports.EnumToken.ContainMatchTokenType);
+                        next(parseInfo);
+                        yield pushToken(value + val, parseInfo, exports.EnumToken.ContainMatchTokenType);
                         break;
                     }
                     if (value == ':' && ':' == val) {
-                        buffer += value + next();
+                        buffer += value + next(parseInfo);
                         break;
                     }
-                    yield pushToken(value);
+                    yield pushToken(value, parseInfo);
                     buffer = '';
-                    if (['+', '*', '/'].includes(value) && isWhiteSpace(peek().charCodeAt(0))) {
-                        yield pushToken(next());
+                    if (['+', '*', '/'].includes(value) && isWhiteSpace(peek(parseInfo).charCodeAt(0))) {
+                        yield pushToken(next(parseInfo), parseInfo);
                     }
-                    while (isWhiteSpace(peek().charCodeAt(0))) {
-                        next();
+                    while (isWhiteSpace(peek(parseInfo).charCodeAt(0))) {
+                        next(parseInfo);
                     }
                     break;
                 case ')':
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
-                    yield pushToken('', exports.EnumToken.EndParensTokenType);
+                    yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                     break;
                 case '(':
                     if (buffer.length == 0) {
-                        yield pushToken(value);
+                        yield pushToken(value, parseInfo);
                         break;
                     }
                     buffer += value;
                     // @ts-ignore
                     if (buffer == 'url(') {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
-                        consumeWhiteSpace();
-                        value = peek();
+                        consumeWhiteSpace(parseInfo);
+                        value = peek(parseInfo);
                         let cp;
                         let whitespace = '';
                         let hasWhiteSpace = false;
@@ -5261,15 +5386,15 @@
                             const quote = value;
                             let inquote = true;
                             let hasNewLine = false;
-                            buffer = next();
-                            while (value = next()) {
+                            buffer = next(parseInfo);
+                            while (value = next(parseInfo)) {
                                 cp = value.charCodeAt(0);
                                 // consume an invalid string
                                 if (inquote) {
                                     buffer += value;
                                     if (isNewLine(cp)) {
                                         hasNewLine = true;
-                                        while (value = next()) {
+                                        while (value = next(parseInfo)) {
                                             buffer += value;
                                             if (value == ';') {
                                                 inquote = false;
@@ -5277,7 +5402,7 @@
                                             }
                                         }
                                         if (value === '') {
-                                            yield pushToken(buffer, exports.EnumToken.BadUrlTokenType);
+                                            yield pushToken(buffer, parseInfo, exports.EnumToken.BadUrlTokenType);
                                             buffer = '';
                                             break;
                                         }
@@ -5285,7 +5410,7 @@
                                     }
                                     // '\\'
                                     if (cp == 0x5c) {
-                                        buffer += next();
+                                        buffer += next(parseInfo);
                                     }
                                     else if (value == quote) {
                                         inquote = false;
@@ -5295,16 +5420,16 @@
                                 if (!inquote) {
                                     if (isWhiteSpace(cp)) {
                                         whitespace += value;
-                                        while (value = peek()) {
+                                        while (value = peek(parseInfo)) {
                                             hasWhiteSpace = true;
                                             if (isWhiteSpace(value?.charCodeAt(0))) {
-                                                whitespace += next();
+                                                whitespace += next(parseInfo);
                                                 continue;
                                             }
                                             break;
                                         }
-                                        if (!(value = next())) {
-                                            yield pushToken(buffer, hasNewLine ? exports.EnumToken.BadUrlTokenType : exports.EnumToken.UrlTokenTokenType);
+                                        if (!(value = next(parseInfo))) {
+                                            yield pushToken(buffer, parseInfo, hasNewLine ? exports.EnumToken.BadUrlTokenType : exports.EnumToken.UrlTokenTokenType);
                                             buffer = '';
                                             break;
                                         }
@@ -5312,27 +5437,27 @@
                                     cp = value.charCodeAt(0);
                                     // ')'
                                     if (cp == 0x29) {
-                                        yield pushToken(buffer, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
-                                        yield pushToken('', exports.EnumToken.EndParensTokenType);
+                                        yield pushToken(buffer, parseInfo, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
+                                        yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                                         buffer = '';
                                         break;
                                     }
-                                    while (value = next()) {
+                                    while (value = next(parseInfo)) {
                                         cp = value.charCodeAt(0);
                                         if (cp == 0x5c) {
-                                            buffer += value + next();
+                                            buffer += value + next(parseInfo);
                                             continue;
                                         }
                                         if (cp == 0x29) {
-                                            yield pushToken(buffer, exports.EnumToken.BadStringTokenType);
-                                            yield pushToken('', exports.EnumToken.EndParensTokenType);
+                                            yield pushToken(buffer, parseInfo, exports.EnumToken.BadStringTokenType);
+                                            yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                                             buffer = '';
                                             break;
                                         }
                                         buffer += value;
                                     }
                                     if (hasNewLine) {
-                                        yield pushToken(buffer, exports.EnumToken.BadStringTokenType);
+                                        yield pushToken(buffer, parseInfo, exports.EnumToken.BadStringTokenType);
                                         buffer = '';
                                     }
                                     break;
@@ -5343,20 +5468,20 @@
                         }
                         else {
                             buffer = '';
-                            while (value = next()) {
+                            while (value = next(parseInfo)) {
                                 cp = value.charCodeAt(0);
                                 // ')'
                                 if (cp == 0x29) {
-                                    yield pushToken(buffer, exports.EnumToken.UrlTokenTokenType);
-                                    yield pushToken('', exports.EnumToken.EndParensTokenType);
+                                    yield pushToken(buffer, parseInfo, exports.EnumToken.UrlTokenTokenType);
+                                    yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                                     buffer = '';
                                     break;
                                 }
                                 if (isWhiteSpace(cp)) {
                                     hasWhiteSpace = true;
                                     whitespace = value;
-                                    while (isWhiteSpace(peek()?.charCodeAt(0))) {
-                                        whitespace += next();
+                                    while (isWhiteSpace(peek(parseInfo)?.charCodeAt(0))) {
+                                        whitespace += next(parseInfo);
                                     }
                                     continue;
                                 }
@@ -5372,19 +5497,19 @@
                                 }
                                 if (errorState) {
                                     buffer += whitespace + value;
-                                    while (value = peek()) {
+                                    while (value = peek(parseInfo)) {
                                         cp = value.charCodeAt(0);
                                         if (cp == 0x5c) {
-                                            buffer += next(2);
+                                            buffer += next(parseInfo, 2);
                                             continue;
                                         }
                                         // ')'
                                         if (cp == 0x29) {
                                             break;
                                         }
-                                        buffer += next();
+                                        buffer += next(parseInfo);
                                     }
-                                    yield pushToken(buffer, exports.EnumToken.BadUrlTokenType);
+                                    yield pushToken(buffer, parseInfo, exports.EnumToken.BadUrlTokenType);
                                     buffer = '';
                                     break;
                                 }
@@ -5392,13 +5517,13 @@
                             }
                         }
                         if (buffer !== '') {
-                            yield pushToken(buffer, exports.EnumToken.UrlTokenTokenType);
+                            yield pushToken(buffer, parseInfo, exports.EnumToken.UrlTokenTokenType);
                             buffer = '';
                             break;
                         }
                         break;
                     }
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                     break;
                 case '[':
@@ -5407,19 +5532,19 @@
                 case '}':
                 case ';':
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
-                    yield pushToken(value);
+                    yield pushToken(value, parseInfo);
                     break;
                 case '!':
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
-                    if (peek(9) == 'important') {
-                        yield pushToken('', exports.EnumToken.ImportantTokenType);
-                        next(9);
+                    if (peek(parseInfo, 9) == 'important') {
+                        yield pushToken('', parseInfo, exports.EnumToken.ImportantTokenType);
+                        next(parseInfo, 9);
                         buffer = '';
                         break;
                     }
@@ -5431,9 +5556,9 @@
             }
         }
         if (buffer.length > 0) {
-            yield pushToken(buffer);
+            yield pushToken(buffer, parseInfo);
         }
-        // yield pushToken('', 'EOF');
+        // yield pushToken('', EnumToken.EOFTokenType);
     }
 
     const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -5480,6 +5605,7 @@
             const stack = [];
             const stats = {
                 bytesIn: 0,
+                importedBytesIn: 0,
                 parse: `0ms`,
                 minify: `0ms`,
                 total: `0ms`
@@ -5490,7 +5616,6 @@
             };
             let tokens = [];
             let map = new Map;
-            // let bytesIn: number = 0;
             let context = ast;
             if (options.sourcemap) {
                 ast.loc = {
@@ -5505,13 +5630,21 @@
             const iter = tokenize(iterator);
             let item;
             while (item = iter.next().value) {
-                stats.bytesIn += item.bytesIn;
+                // if (item.hint == EnumToken.EOFTokenType) {
+                //
+                //     stats.bytesIn += item.bytesIn;
+                //     break;
+                // }
+                stats.bytesIn = item.bytesIn;
+                //
                 // doParse error
                 if (item.hint != null && BadTokensTypes.includes(item.hint)) {
                     // bad token
                     continue;
                 }
-                tokens.push(item);
+                if (item.hint != exports.EnumToken.EOFTokenType) {
+                    tokens.push(item);
+                }
                 if (item.token == ';' || item.token == '{') {
                     let node = await parseNode(tokens, context, stats, options, errors, src, map);
                     if (node != null) {
@@ -5558,7 +5691,7 @@
             while (stack.length > 0 && context != ast) {
                 const previousNode = stack.pop();
                 // @ts-ignore
-                context = stack[stack.length - 1] || ast;
+                context = stack[stack.length - 1] ?? ast;
                 // @ts-ignore
                 if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                     context.chi.pop();
@@ -5614,6 +5747,7 @@
             if (options.signal != null) {
                 options.signal.removeEventListener('abort', reject);
             }
+            stats.bytesIn += stats.importedBytesIn;
             resolve({
                 ast,
                 errors,
@@ -5755,7 +5889,7 @@
                                     src: options.resolve(url, options.src).absolute
                                 }));
                             });
-                            stats.bytesIn += root.stats.bytesIn;
+                            stats.importedBytesIn += root.stats.bytesIn;
                             if (root.ast.chi.length > 0) {
                                 // @todo - filter charset, layer and scope
                                 context.chi.push(...root.ast.chi);

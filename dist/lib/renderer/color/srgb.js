@@ -1,22 +1,50 @@
-import { roundWithPrecision } from './utils/round.js';
 import { COLORS_NAMES } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { getNumber, getAngle } from './color.js';
+import { color2srgb, getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { expandHexValue } from './hex.js';
-import { getLABComponents, Lab_to_sRGB, lch2labvalues } from './lab.js';
+import { lch2labvalues, getLABComponents, Lab_to_sRGB } from './lab.js';
 import { getOKLABComponents, OKLab_to_sRGB } from './oklab.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
+import { xyzd502srgb } from './xyz.js';
+import { XYZ_D65_to_D50 } from './xyzd65.js';
+import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
+function srgbvalues(token) {
+    switch (token.kin) {
+        case 'lit':
+        case 'hex':
+            return hex2srgb(token);
+        case 'rgb':
+        case 'rgba':
+            return rgb2srgb(token);
+        case 'hsl':
+        case 'hsla':
+            return hsl2srgb(token);
+        case 'hwb':
+            return hwb2srgb(token);
+        case 'lab':
+            return lab2srgb(token);
+        case 'lch':
+            return lch2srgb(token);
+        case 'oklab':
+            return oklab2srgb(token);
+        case 'oklch':
+            return oklch2srgb(token);
+        case 'color':
+            return color2srgb(token);
+    }
+    return null;
+}
 function rgb2srgb(token) {
-    return getComponents(token).map((t) => getNumber(t) / 255);
+    return getComponents(token).map((t, index) => index == 3 ? (eq(t, { typ: EnumToken.IdenTokenType, val: 'none' }) ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
 }
 function hex2srgb(token) {
     const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -25,6 +53,10 @@ function hex2srgb(token) {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
     }
     return rgb;
+}
+function xyz2srgb(x, y, z) {
+    // @ts-ignore
+    return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
 }
 function hwb2srgb(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
@@ -109,12 +141,13 @@ function hslvalues(token) {
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
-            // @ts-ignore
-            (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-            // @ts-ignore
-            a = getNumber(t);
-        }
+        // if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
+        //         t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
+        //     // @ts-ignore
+        //     (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
+        // @ts-ignore
+        a = getNumber(t);
+        // }
     }
     return a == null ? { h, s, l } : { h, s, l, a };
 }
@@ -192,7 +225,7 @@ function lch2srgb(token) {
     return rgb;
 }
 // sRGB -> lRGB
-function gam_sRGB(r, g, b, a = null) {
+function srgb2lsrgb(r, g, b, a = null) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
@@ -211,20 +244,24 @@ function gam_sRGB(r, g, b, a = null) {
     }
     return rgb;
 }
-function sRGB_gam(r, g, b) {
+function lsrgb2srgb(r, g, b, alpha) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
     // Extended transfer function:
     // For negative values, linear portion extends on reflection
     // of axis, then uses reflected pow below that
-    return [r, g, b].map((val) => {
+    const rgb = [r, g, b].map((val) => {
         let abs = Math.abs(val);
         if (Math.abs(val) > 0.0031308) {
             return (Math.sign(val) || 1) * (1.055 * Math.pow(abs, 1 / 2.4) - 0.055);
         }
         return 12.92 * val;
     });
+    if (alpha != 1 && alpha != null) {
+        rgb.push(alpha);
+    }
+    return rgb;
 }
 // export function gam_a98rgb(r: number, g: number, b: number): number[] {
 //     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
@@ -237,7 +274,7 @@ function sRGB_gam(r, g, b) {
 //         return roundWithPrecision(sign * Math.pow(abs, 256/563), val);
 //     });
 // }
-function lin_ProPhoto(r, g, b) {
+function prophotoRgb2lsrgb(r, g, b) {
     // convert an array of prophoto-rgb values
     // where in-gamut colors are in the range [0.0 - 1.0]
     // to linear light (un-companded) form.
@@ -248,22 +285,22 @@ function lin_ProPhoto(r, g, b) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         if (abs <= Et2) {
-            return roundWithPrecision(val / 16);
+            return val / 16;
         }
-        return roundWithPrecision(sign * Math.pow(abs, 1.8));
+        return sign * Math.pow(abs, 1.8);
     });
 }
-function lin_a98rgb(r, g, b) {
+function a982lrgb(r, g, b) {
     // convert an array of a98-rgb values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // negative values are also now accepted
     return [r, g, b].map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
-        return roundWithPrecision(sign * Math.pow(abs, 563 / 256));
+        return sign * Math.pow(abs, 563 / 256);
     });
 }
-function lin_2020(r, g, b) {
+function rec20202lsrgb(r, g, b) {
     // convert an array of rec2020 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // ITU-R BT.2020-2 p.4
@@ -273,10 +310,10 @@ function lin_2020(r, g, b) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         if (abs < β * 4.5) {
-            return roundWithPrecision(val / 4.5);
+            return val / 4.5;
         }
-        return roundWithPrecision(sign * (Math.pow((abs + α - 1) / α, 1 / 0.45)));
+        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
     });
 }
 
-export { cmyk2srgb, gam_sRGB, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lin_2020, lin_ProPhoto, lin_a98rgb, oklab2srgb, oklch2srgb, rgb2srgb, sRGB_gam };
+export { a982lrgb, cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgb, oklab2srgb, oklch2srgb, prophotoRgb2lsrgb, rec20202lsrgb, rgb2srgb, srgb2lsrgb, srgbvalues, xyz2srgb };

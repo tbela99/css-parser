@@ -1,11 +1,12 @@
 import {D50, e, getComponents, k} from "./utils";
-import {srgb2xyz, XYZ_to_sRGB} from "./xyz";
+import { xyzd502srgb} from "./xyz";
 import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb";
 import {getLCHComponents} from "./lch";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
+import {srgb2xyz} from "./xyzd65";
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
@@ -143,7 +144,7 @@ export function getLABComponents(token: ColorToken) {
 export function Lab_to_sRGB(l: number, a: number, b: number): number[] {
 
     // @ts-ignore
-    return XYZ_to_sRGB(...Lab_to_XYZ(l, a, b));
+    return xyzd502srgb(...Lab_to_XYZ(l, a, b));
 }
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code

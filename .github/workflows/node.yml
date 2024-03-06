@@ -28,19 +28,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install NPM dependencies
         run: npm install
-  #    - name: Install playwright dependencies
-      - name: Cache playwright binaries
-        uses: actions/cache@v3
-        id: playwright-cache
-        with:
-          path: |
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
-                 - run: npm ci
-                 - run: npx playwright install --with-deps
-                   if: steps.playwright-cache.outputs.cache-hit != 'true'
-                 - run: npx playwright install-deps
-                   if: steps.playwright-cache.outputs.cache-hit != 'true'
-
-          #    run: npx playwright install --with-deps
-          - run: npm test
+      - name: Install playwright dependencies
+        run: npx playwright install --with-deps
+      - run: npm test

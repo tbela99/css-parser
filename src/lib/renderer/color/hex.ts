@@ -1,8 +1,8 @@
-import {ColorToken, NumberToken, PercentageToken} from "../../../@types";
+import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {EnumToken} from "../../ast";
-import {getNumber} from "./color";
+import {getNumber, minmax} from "./color";
 import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
-import {NAMES_COLORS} from "./utils";
+import {getComponents, NAMES_COLORS} from "./utils";
 
 function toHexString(acc: string, value: number): string {
 
@@ -57,25 +57,29 @@ export function rgb2hex(token: ColorToken) {
     let t: NumberToken | PercentageToken;
 
     // @ts-ignore
+    const components: number[] = getComponents(token);
+
+    // @ts-ignore
     for (let i = 0; i < 3; i++) {
 
         // @ts-ignore
-        t = token.chi[i];
+        t = components[i];
 
         // @ts-ignore
-        value += (t.val == 'none' ? '0' : Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val)).toString(16).padStart(2, '0')
+        value += (t.typ == EnumToken.Iden && t.val == 'none' ? '0' : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1))).toString(16).padStart(2, '0')
     }
 
     // @ts-ignore
-    if (token.chi.length == 4) {
+    if (components.length == 4) {
 
         // @ts-ignore
-        t = token.chi[3];
+        t = components[3];
 
         // @ts-ignore
-        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ||
-            (t.typ == EnumToken.NumberTokenType && +t.val < 1) ||
-            (t.typ == EnumToken.PercentageTokenType && +t.val < 100)) {
+        const v: number = ((<IdentToken>t).typ == EnumToken.IdenTokenType && (<IdentToken>t).val == 'none') ? 1 : getNumber(t);
+
+        // @ts-ignore
+        if (v < 1) {
 
             // @ts-ignore
             value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0')
@@ -118,4 +122,9 @@ export function lab2hex(token: ColorToken): string {
 export function lch2hex(token: ColorToken): string {
 
     return `${lch2rgb(token).reduce(toHexString, '#')}`;
+}
+
+export function srgb2hexvalues(r: number, g: number, b: number, alpha?: number | null): string {
+
+    return [r, g, b].concat(alpha == null || alpha == 1 ? [] : [alpha]).reduce((acc: string, value: number): string => acc + minmax(Math.round(255 * value), 0, 255).toString(16).padStart(2, '0'), '#');
 }

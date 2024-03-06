@@ -341,7 +341,7 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
-export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch';
+export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch' | 'color';
 // xyz-d65 is an alias for xyz
 // display-p3 is an alias for srgb
 export declare type ColorSpace =
@@ -452,7 +452,6 @@ export declare type UnaryExpressionNode =
 export declare type BinaryExpressionNode = NumberToken | DimensionToken | PercentageToken | FlexToken | FractionToken |
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
-export declare type TokenType = EnumToken;
 export declare type Token =
     LiteralToken
     | IdentToken

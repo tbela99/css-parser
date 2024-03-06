@@ -9,7 +9,7 @@ import {lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb";
 export function rgb2hwb(token: ColorToken): number[] {
 
     // @ts-ignore
-    return srgb2hwbvalues(...getComponents(token).map((t: Token, index: number): number => {
+    return srgb2hwb(...getComponents(token).map((t: Token, index: number): number => {
 
         if (index == 3 && eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
             return 1;
@@ -40,25 +40,25 @@ export function hsl2hwb(token: ColorToken): number[] {
 export function lab2hwb(token: ColorToken): number[] {
 
     // @ts-ignore
-    return srgb2hwbvalues(...lab2srgb(token));
+    return srgb2hwb(...lab2srgb(token));
 }
 
 export function lch2hwb(token: ColorToken): number[] {
 
     // @ts-ignore
-    return srgb2hwbvalues(...lch2srgb(token));
+    return srgb2hwb(...lch2srgb(token));
 }
 
 export function oklab2hwb(token: ColorToken): number[] {
 
     // @ts-ignore
-    return srgb2hwbvalues(...oklab2srgb(token));
+    return srgb2hwb(...oklab2srgb(token));
 }
 
 export function oklch2hwb(token: ColorToken): number[] {
 
     // @ts-ignore
-    return srgb2hwbvalues(...oklch2srgb(token));
+    return srgb2hwb(...oklch2srgb(token));
 }
 
 function rgb2hue(r: number, g: number, b: number, fallback: number = 0) {
@@ -98,7 +98,7 @@ function rgb2whiteness(r: number, g: number, b: number): number {
     return Math.min(r, g, b);
 }
 
-export function srgb2hwbvalues(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
+export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
 
     r *= 100;
     g *= 100;

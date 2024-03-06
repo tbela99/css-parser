@@ -5,7 +5,7 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { lab2lchvalues } from './lch.js';
-import { hex2oklab, rgb2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, getOKLABComponents } from './oklab.js';
+import { hex2oklab, rgb2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, getOKLABComponents, srgb2oklab } from './oklab.js';
 import '../sourcemap/lib/encode.js';
 
 function hex2oklch(token) {
@@ -36,6 +36,10 @@ function oklab2oklch(token) {
     // @ts-ignore
     return lab2lchvalues(...getOKLABComponents(token));
 }
+function srgb2oklch(r, g, blue, alpha) {
+    // @ts-ignore
+    return lab2lchvalues(...srgb2oklab(r, g, blue, alpha));
+}
 function getOKLCHComponents(token) {
     const components = getComponents(token);
     // @ts-ignore
@@ -57,4 +61,4 @@ function getOKLCHComponents(token) {
     return [l, c, h, alpha];
 }
 
-export { getOKLCHComponents, hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch };
+export { getOKLCHComponents, hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch };

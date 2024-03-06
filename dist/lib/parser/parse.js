@@ -52,6 +52,7 @@ async function doParse(iterator, options = {}) {
         const stack = [];
         const stats = {
             bytesIn: 0,
+            importedBytesIn: 0,
             parse: `0ms`,
             minify: `0ms`,
             total: `0ms`
@@ -62,7 +63,6 @@ async function doParse(iterator, options = {}) {
         };
         let tokens = [];
         let map = new Map;
-        // let bytesIn: number = 0;
         let context = ast;
         if (options.sourcemap) {
             ast.loc = {
@@ -77,13 +77,21 @@ async function doParse(iterator, options = {}) {
         const iter = tokenize(iterator);
         let item;
         while (item = iter.next().value) {
-            stats.bytesIn += item.bytesIn;
+            // if (item.hint == EnumToken.EOFTokenType) {
+            //
+            //     stats.bytesIn += item.bytesIn;
+            //     break;
+            // }
+            stats.bytesIn = item.bytesIn;
+            //
             // doParse error
             if (item.hint != null && BadTokensTypes.includes(item.hint)) {
                 // bad token
                 continue;
             }
-            tokens.push(item);
+            if (item.hint != EnumToken.EOFTokenType) {
+                tokens.push(item);
+            }
             if (item.token == ';' || item.token == '{') {
                 let node = await parseNode(tokens, context, stats, options, errors, src, map);
                 if (node != null) {
@@ -130,7 +138,7 @@ async function doParse(iterator, options = {}) {
         while (stack.length > 0 && context != ast) {
             const previousNode = stack.pop();
             // @ts-ignore
-            context = stack[stack.length - 1] || ast;
+            context = stack[stack.length - 1] ?? ast;
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
@@ -186,6 +194,7 @@ async function doParse(iterator, options = {}) {
         if (options.signal != null) {
             options.signal.removeEventListener('abort', reject);
         }
+        stats.bytesIn += stats.importedBytesIn;
         resolve({
             ast,
             errors,
@@ -327,7 +336,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                                 src: options.resolve(url, options.src).absolute
                             }));
                         });
-                        stats.bytesIn += root.stats.bytesIn;
+                        stats.importedBytesIn += root.stats.bytesIn;
                         if (root.ast.chi.length > 0) {
                             // @todo - filter charset, layer and scope
                             context.chi.push(...root.ast.chi);

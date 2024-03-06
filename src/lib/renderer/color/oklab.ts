@@ -1,5 +1,5 @@
 import {getComponents, multiplyMatrices} from "./utils";
-import {gam_sRGB, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, sRGB_gam} from "./srgb";
+import {srgb2lsrgb, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgb} from "./srgb";
 import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
@@ -9,37 +9,37 @@ import {lch2labvalues} from "./lab";
 export function hex2oklab(token: ColorToken) {
 
     // @ts-ignore
-    return srgb2oklabvalues(...hex2srgb(token));
+    return srgb2oklab(...hex2srgb(token));
 }
 
 export function rgb2oklab(token: ColorToken) {
 
     // @ts-ignore
-    return srgb2oklabvalues(...rgb2srgb(token));
+    return srgb2oklab(...rgb2srgb(token));
 }
 
 export function hsl2oklab(token: ColorToken) {
 
     // @ts-ignore
-    return srgb2oklabvalues(...hsl2srgb(token));
+    return srgb2oklab(...hsl2srgb(token));
 }
 
 export function hwb2oklab(token: ColorToken): number[] {
 
     // @ts-ignore
-    return srgb2oklabvalues(...hwb2srgb(token));
+    return srgb2oklab(...hwb2srgb(token));
 }
 
 export function lab2oklab(token: ColorToken) {
 
     // @ts-ignore
-    return srgb2oklabvalues(...lab2srgb(token));
+    return srgb2oklab(...lab2srgb(token));
 }
 
 export function lch2oklab(token: ColorToken) {
 
     // @ts-ignore
-    return srgb2oklabvalues(...lch2srgb(token));
+    return srgb2oklab(...lch2srgb(token));
 }
 
 export function oklch2oklab(token: ColorToken): number[] {
@@ -48,9 +48,9 @@ export function oklch2oklab(token: ColorToken): number[] {
     return lch2labvalues(...getOKLCHComponents(token));
 }
 
-export function srgb2oklabvalues(r: number, g: number, blue: number, alpha: number | null): number[] {
+export function srgb2oklab(r: number, g: number, blue: number, alpha: number | null): number[] {
 
-    [r, g, blue] = gam_sRGB(r, g, blue);
+    [r, g, blue] = srgb2lsrgb(r, g, blue);
 
     let L: number = Math.cbrt(
         0.41222147079999993 * r + 0.5363325363 * g + 0.0514459929 * blue
@@ -157,7 +157,7 @@ export function OKLab_to_sRGB(l: number, a: number, b: number): number[] {
         3
     );
 
-    return sRGB_gam(
+    return lsrgb2srgb(
         /* r: */
         +4.076741661347994 * L -
         3.307711590408193 * M +

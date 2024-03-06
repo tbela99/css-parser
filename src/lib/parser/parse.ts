@@ -129,6 +129,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         const stack: Array<AstNode | AstComment> = [];
         const stats = {
             bytesIn: 0,
+            importedBytesIn: 0,
             parse: `0ms`,
             minify: `0ms`,
             total: `0ms`
@@ -141,7 +142,6 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         let tokens: TokenizeResult[] = [];
         let map: Map<Token, Position> = new Map<Token, Position>;
-        // let bytesIn: number = 0;
         let context: AstRuleList = ast;
 
         if (options.sourcemap) {
@@ -161,8 +161,15 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         while (item = iter.next().value) {
 
-            stats.bytesIn += item.bytesIn;
+            // if (item.hint == EnumToken.EOFTokenType) {
+            //
+            //     stats.bytesIn += item.bytesIn;
+            //     break;
+            // }
 
+            stats.bytesIn = item.bytesIn;
+
+            //
             // doParse error
             if (item.hint != null && BadTokensTypes.includes(item.hint)) {
 
@@ -170,7 +177,10 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 continue;
             }
 
-            tokens.push(item);
+            if (item.hint != EnumToken.EOFTokenType) {
+
+                tokens.push(item);
+            }
 
             if (item.token == ';' || item.token == '{') {
 
@@ -234,10 +244,10 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         while (stack.length > 0 && context != ast) {
 
-            const previousNode = stack.pop();
+            const previousNode: AstAtRule | AstRule = <AstAtRule | AstRule> stack.pop();
 
             // @ts-ignore
-            context = stack[stack.length - 1] || ast;
+            context = stack[stack.length - 1] ?? ast;
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
@@ -320,6 +330,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             options.signal.removeEventListener('abort', reject);
         }
 
+        stats.bytesIn += stats.importedBytesIn;
+
         resolve(<ParseResult>{
             ast,
             errors,
@@ -335,7 +347,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
 
 async function parseNode(results: TokenizeResult[], context: AstRuleList, stats: {
-    bytesIn: number
+    bytesIn: number;
+    importedBytesIn: number;
 }, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | null> {
 
     let tokens: Token[] = results.map((t: TokenizeResult) => mapToken(t, map));
@@ -504,7 +517,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                             }))
                         });
 
-                        stats.bytesIn += root.stats.bytesIn;
+                        stats.importedBytesIn += root.stats.bytesIn;
 
                         if (root.ast.chi.length > 0) {
 

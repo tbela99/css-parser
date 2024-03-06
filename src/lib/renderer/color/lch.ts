@@ -2,7 +2,7 @@ import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
-import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab} from "./lab";
+import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab";
 
 export function hex2lch(token: ColorToken): number[] {
 
@@ -32,6 +32,12 @@ export function lab2lch(token: ColorToken): number[] {
 
     // @ts-ignore
     return lab2lchvalues(...getLABComponents(token));
+}
+
+export function srgb2lch(r: number, g: number, blue: number, alpha: number | null): number[] {
+
+    // @ts-ignore
+    return lab2lchvalues(...srgb2lab(r, g, blue, alpha));
 }
 
 export function oklab2lch(token: ColorToken): number[] {

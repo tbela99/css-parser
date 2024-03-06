@@ -1,45 +1,45 @@
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, gam_sRGB, sRGB_gam } from './srgb.js';
+import { hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, srgb2lsrgb, lsrgb2srgb } from './srgb.js';
 import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { getOKLCHComponents } from './oklch.js';
 import { lch2labvalues } from './lab.js';
+import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
 
 function hex2oklab(token) {
     // @ts-ignore
-    return srgb2oklabvalues(...hex2srgb(token));
+    return srgb2oklab(...hex2srgb(token));
 }
 function rgb2oklab(token) {
     // @ts-ignore
-    return srgb2oklabvalues(...rgb2srgb(token));
+    return srgb2oklab(...rgb2srgb(token));
 }
 function hsl2oklab(token) {
     // @ts-ignore
-    return srgb2oklabvalues(...hsl2srgb(token));
+    return srgb2oklab(...hsl2srgb(token));
 }
 function hwb2oklab(token) {
     // @ts-ignore
-    return srgb2oklabvalues(...hwb2srgb(token));
+    return srgb2oklab(...hwb2srgb(token));
 }
 function lab2oklab(token) {
     // @ts-ignore
-    return srgb2oklabvalues(...lab2srgb(token));
+    return srgb2oklab(...lab2srgb(token));
 }
 function lch2oklab(token) {
     // @ts-ignore
-    return srgb2oklabvalues(...lch2srgb(token));
+    return srgb2oklab(...lch2srgb(token));
 }
 function oklch2oklab(token) {
     // @ts-ignore
     return lch2labvalues(...getOKLCHComponents(token));
 }
-function srgb2oklabvalues(r, g, blue, alpha) {
-    [r, g, blue] = gam_sRGB(r, g, blue);
+function srgb2oklab(r, g, blue, alpha) {
+    [r, g, blue] = srgb2lsrgb(r, g, blue);
     let L = Math.cbrt(0.41222147079999993 * r + 0.5363325363 * g + 0.0514459929 * blue);
     let M = Math.cbrt(0.2119034981999999 * r + 0.6806995450999999 * g + 0.1073969566 * blue);
     let S = Math.cbrt(0.08830246189999998 * r + 0.2817188376 * g + 0.6299787005000002 * blue);
@@ -102,7 +102,7 @@ function OKLab_to_sRGB(l, a, b) {
     let S = Math.pow(l * 1.0000000546724109177 -
         0.089484182094965759684 * a -
         1.2914855378640917399 * b, 3);
-    return sRGB_gam(
+    return lsrgb2srgb(
     /* r: */
     +4.076741661347994 * L -
         3.307711590408193 * M +
@@ -117,4 +117,4 @@ function OKLab_to_sRGB(l, a, b) {
         1.7076147009309444 * S);
 }
 
-export { OKLab_to_XYZ, OKLab_to_sRGB, getOKLABComponents, hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklabvalues };
+export { OKLab_to_XYZ, OKLab_to_sRGB, getOKLABComponents, hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab };

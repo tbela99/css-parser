@@ -79,6 +79,7 @@ export enum EnumToken {
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,
+    EOF = EOFTokenType,
     Hash = HashTokenType,
     Flex = FlexTokenType,
     Angle = AngleTokenType,

@@ -56,7 +56,7 @@ export function isColorspace(token: Token): boolean {
         return false;
     }
 
-    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020'].includes(token.val.toLowerCase());
+    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb', 'hsl', 'hwb'].includes(token.val.toLowerCase());
 }
 
 export function isRectangularOrthogonalColorspace(token: Token): boolean {
@@ -66,7 +66,7 @@ export function isRectangularOrthogonalColorspace(token: Token): boolean {
         return false;
     }
 
-    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+    return ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
 }
 
 export function isPolarColorspace(token: Token): boolean {
@@ -180,9 +180,9 @@ export function isColor(token: Token): boolean {
                     children[0][0].val != 'in' ||
                     !isColorspace(children[0][1]) ||
                     (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
-                    children[1].length >= 2 ||
+                    children[1].length > 2 ||
                     children[1][0].typ != EnumToken.ColorTokenType ||
-                    children[2].length >= 2 ||
+                    children[2].length > 2 ||
                     children[2][0].typ != EnumToken.ColorTokenType) {
 
                     return false;

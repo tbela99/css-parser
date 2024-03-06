@@ -1,18 +1,21 @@
-import { getAngle, getNumber, clampValues, clamp } from './color/color.js';
+import { getAngle, getNumber, clamp } from './color/color.js';
 import { COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
-import { reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
+import { srgb2hexvalues, reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
+import { xyz2srgb, lsrgb2srgb } from './color/srgb.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
-import { sRGB_gam, lin_2020, lin_a98rgb, lin_ProPhoto } from './color/srgb.js';
 import { colorMix } from './color/colormix.js';
-import { XYZ_to_sRGB } from './color/xyz.js';
+import { xyzd502srgb } from './color/xyz.js';
 import { parseRelativeColor } from './color/relativecolor.js';
-import { XYZ_D65_to_sRGB } from './color/xyzd65.js';
+import { prophotoRgb2srgbvalues } from './color/prophotorgb.js';
+import { a98rgb2srgbvalues } from './color/a98rgb.js';
+import { rec20202srgb } from './color/rec2020.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
+import { p32srgb } from './color/displayp3.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {
@@ -269,69 +272,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '/';
         case EnumToken.ColorTokenType:
             if (options.convertColor) {
-                if (token.val == 'color') {
-                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-                    if (token.chi[0].typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
-                        let values = token.chi.slice(1, 4).map((t) => {
-                            if (t.typ == EnumToken.IdenTokenType && t.val == 'none') {
-                                return 0;
-                            }
-                            return getNumber(t);
-                        });
-                        const colorSpace = token.chi[0].val.toLowerCase();
-                        switch (colorSpace) {
-                            case 'srgb-linear':
-                                // @ts-ignore
-                                values = sRGB_gam(...values);
-                                break;
-                            case 'prophoto-rgb':
-                                // @ts-ignore
-                                values = sRGB_gam(...lin_ProPhoto(...values));
-                                break;
-                            case 'a98-rgb':
-                                // @ts-ignore
-                                values = sRGB_gam(...lin_a98rgb(...values));
-                                break;
-                            case 'rec2020':
-                                // @ts-ignore
-                                values = sRGB_gam(...lin_2020(...values));
-                                break;
-                            case 'xyz':
-                            case 'xyz-d65':
-                                // @ts-ignore
-                                values = XYZ_D65_to_sRGB(...values);
-                                break;
-                            case 'xyz-d50':
-                                // @ts-ignore
-                                values = XYZ_to_sRGB(...values);
-                                break;
-                        }
-                        clampValues(values, colorSpace);
-                        let value = `#${values.reduce((acc, curr) => {
-                            // @ts-ignore
-                            return acc + Math.round(255 * curr).toString(16).padStart(2, '0');
-                        }, '')}`;
-                        if (token.chi.length == 6) {
-                            if (token.chi[5].typ == EnumToken.NumberTokenType || token.chi[5].typ == EnumToken.PercentageTokenType) {
-                                let c = 255 * +token.chi[5].val;
-                                if (token.chi[5].typ == EnumToken.PercentageTokenType) {
-                                    c /= 100;
-                                }
-                                value += Math.round(c).toString(16).padStart(2, '0');
-                            }
-                        }
-                        return reduceHexValue(value);
-                    }
-                }
-                else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
-                    const chi = getComponents(token);
-                    const components = parseRelativeColor(token.val, chi[1], chi[2], chi[3], chi[4], chi[5]);
-                    if (components != null) {
-                        token.chi = Object.values(components);
-                        delete token.cal;
-                    }
-                }
-                else if (token.cal == 'mix' && token.val == 'color-mix') {
+                if (token.cal == 'mix' && token.val == 'color-mix') {
                     const children = token.chi.reduce((acc, t) => {
                         if (t.typ == EnumToken.ColorTokenType) {
                             acc.push([t]);
@@ -346,6 +287,79 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
                     if (value != null) {
                         token = value;
+                    }
+                }
+                if (token.val == 'color') {
+                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
+                    if (token.chi[0].typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
+                        let values = getComponents(token).slice(1).map((t) => {
+                            if (t.typ == EnumToken.IdenTokenType && t.val == 'none') {
+                                return 0;
+                            }
+                            return getNumber(t);
+                        });
+                        const colorSpace = token.chi[0].val.toLowerCase();
+                        switch (colorSpace) {
+                            case 'display-p3':
+                                // @ts-ignore
+                                values = p32srgb(...values);
+                                break;
+                            case 'srgb-linear':
+                                // @ts-ignore
+                                values = lsrgb2srgb(...values);
+                                break;
+                            case 'prophoto-rgb':
+                                // @ts-ignore
+                                values = prophotoRgb2srgbvalues(...values);
+                                break;
+                            case 'a98-rgb':
+                                // @ts-ignore
+                                values = a98rgb2srgbvalues(...values);
+                                break;
+                            case 'rec2020':
+                                // @ts-ignore
+                                values = rec20202srgb(...values);
+                                break;
+                            case 'xyz':
+                            case 'xyz-d65':
+                                // @ts-ignore
+                                values = xyz2srgb(...values);
+                                break;
+                            case 'xyz-d50':
+                                // @ts-ignore
+                                values = xyzd502srgb(...values);
+                                break;
+                        }
+                        // clampValues(values, colorSpace);
+                        // if (values.length == 4 && values[3] == 1) {
+                        //
+                        //     values.pop();
+                        // }
+                        // @ts-ignore
+                        let value = srgb2hexvalues(...values);
+                        // if ((<Token[]>token.chi).length == 6) {
+                        //
+                        //     if ((<Token[]>token.chi)[5].typ == EnumToken.NumberTokenType || (<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
+                        //
+                        //         let c: number = 255 * +(<NumberToken>(<Token[]>token.chi)[5]).val;
+                        //
+                        //         if ((<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
+                        //
+                        //             c /= 100;
+                        //         }
+                        //
+                        //         value += Math.round(c).toString(16).padStart(2, '0');
+                        //     }
+                        // }
+                        return reduceHexValue(value);
+                    }
+                }
+                else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                    const chi = getComponents(token);
+                    const components = parseRelativeColor(token.val, chi[1], chi[2], chi[3], chi[4], chi[5]);
+                    if (components != null) {
+                        token.chi = Object.values(components);
+                        delete token.cal;
                     }
                 }
                 if (token.cal != null) {

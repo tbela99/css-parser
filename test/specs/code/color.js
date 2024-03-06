@@ -252,7 +252,7 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 `, {
                 inlineCssVariables: true
             }).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- background-color: red
+ background-color: #ff000080
 }`));
         });
     });
@@ -309,7 +309,7 @@ color: color( srgb-linear  0.21404 0.21404 0.21404 )
 .selector {
 color: color(display-p3 0.5 .5 .5);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: grey
+ color: #7f807f
 }`));
     });
 
@@ -826,6 +826,69 @@ color: oklch(from lch(50% 130 20) l c h)  ;
 color: oklch(from oklab(100% 0.4 0.4) l c h)  ;
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: red
+}`));
+    });
+
+    it('color-mix(in srgb, rgb(100% 0% 0% / 0.7) 25%, rgb(0% 100% 0% / 0.2)) #82', function () {
+        return parse(`
+.selector {
+color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 25%, rgb(0% 100% 0% / 0.2))  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #89760053
+}`));
+    });
+
+    it('color-mix(in srgb, white, blue) #83', function () {
+        return parse(`
+.selector {
+color: color-mix(in srgb, white, blue)  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #8080ff
+}`));
+    });
+
+    it('color-mix(in srgb, rgb(100% 0% 0% / 0.7) 20%, rgb(0% 100% 0% / 0.2) 60%) #84', function () {
+        return parse(`
+.selector {
+color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 20%, rgb(0% 100% 0% / 0.2) 60%)  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #89760042
+}`));
+    });
+
+    it('color-mix(in lch, purple 50%, plum 50%) #85', function () {
+        return parse(`
+.selector {
+color: color-mix(in lch, purple 50%, plum 50%)  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #af5cae
+}`));
+    });
+
+    it('color-mix(in lch, peru 40%, palegoldenrod) #86', function () {
+        return parse(`
+.selector {
+color: color-mix(in lch, peru 40%, palegoldenrod) ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #dfc279
+}`));
+    });
+
+    it('color-mix(in lch, purple 30%, plum 30%) #86', function () {
+        return parse(`
+.selector {
+color: color-mix(in lch, purple 30%, plum 30%)  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #af5cae99
+}`));
+    });
+
+    it('color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow) #87', function () {
+        return parse(`
+.selector {
+color: color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow)  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: lime
 }`));
     });
 

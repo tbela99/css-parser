@@ -1,9 +1,10 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { getNumber } from './color.js';
+import { getNumber, minmax } from './color.js';
 import { hsl2rgb, hwb2rgb, cmyk2rgb, oklab2rgb, oklch2rgb, lab2rgb, lch2rgb } from './rgb.js';
 import { NAMES_COLORS } from './utils/constants.js';
+import { getComponents } from './utils/components.js';
 import '../sourcemap/lib/encode.js';
 
 function toHexString(acc, value) {
@@ -41,20 +42,22 @@ function rgb2hex(token) {
     let value = '#';
     let t;
     // @ts-ignore
+    const components = getComponents(token);
+    // @ts-ignore
     for (let i = 0; i < 3; i++) {
         // @ts-ignore
-        t = token.chi[i];
+        t = components[i];
         // @ts-ignore
-        value += (t.val == 'none' ? '0' : Math.round(t.typ == EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val)).toString(16).padStart(2, '0');
+        value += (t.typ == EnumToken.Iden && t.val == 'none' ? '0' : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1))).toString(16).padStart(2, '0');
     }
     // @ts-ignore
-    if (token.chi.length == 4) {
+    if (components.length == 4) {
         // @ts-ignore
-        t = token.chi[3];
+        t = components[3];
         // @ts-ignore
-        if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ||
-            (t.typ == EnumToken.NumberTokenType && +t.val < 1) ||
-            (t.typ == EnumToken.PercentageTokenType && +t.val < 100)) {
+        const v = (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
+        // @ts-ignore
+        if (v < 1) {
             // @ts-ignore
             value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
         }
@@ -82,5 +85,8 @@ function lab2hex(token) {
 function lch2hex(token) {
     return `${lch2rgb(token).reduce(toHexString, '#')}`;
 }
+function srgb2hexvalues(r, g, b, alpha) {
+    return [r, g, b].concat(alpha == null || alpha == 1 ? [] : [alpha]).reduce((acc, value) => acc + minmax(Math.round(255 * value), 0, 255).toString(16).padStart(2, '0'), '#');
+}
 
-export { cmyk2hex, expandHexValue, hsl2hex, hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex, reduceHexValue, rgb2hex };
+export { cmyk2hex, expandHexValue, hsl2hex, hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex, reduceHexValue, rgb2hex, srgb2hexvalues };

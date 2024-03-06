@@ -1,10 +1,11 @@
 import {hwb2hsv} from "./hsv";
 import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getNumber} from "./color";
-import {hex2rgb, hslvalues, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
+import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
 import {getComponents} from "./utils";
 import {eq} from "../../parser/utils/eq";
 import {EnumToken} from "../../ast";
+import {hslvalues} from './srgb';
 
 export function hex2hsl(token: ColorToken):  number[] {
 
@@ -112,9 +113,11 @@ export function oklch2hsl(token: ColorToken): number[] {
 
 export function rgb2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {
 
-    r /= 255;
-    g /= 255;
-    b /= 255;
+    return srgb2hsl(r / 255, g / 255, b / 255, a);
+}
+
+
+export function srgb2hsl(r: number, g: number, b: number, a: number | null = null): number[] {
 
     let max: number = Math.max(r, g, b);
     let min: number = Math.min(r, g, b);
