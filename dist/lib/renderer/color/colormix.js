@@ -1,9 +1,11 @@
+import '../../parser/parse.js';
+import { isRectangularOrthogonalColorspace } from '../../parser/utils/syntax.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
-import '../../parser/parse.js';
 import { getNumber } from './color.js';
 import { srgb2rgb } from './rgb.js';
-import './utils/constants.js';
+import { powerlessColorComponent } from './utils/constants.js';
+import { getComponents } from './utils/components.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
 import { srgbvalues, srgb2lsrgb } from './srgb.js';
@@ -11,9 +13,15 @@ import { srgb2xyz } from './xyzd65.js';
 import { srgb2lch } from './lch.js';
 import { srgb2lab } from './lab.js';
 import { p32srgb } from './displayp3.js';
+import { eq } from '../../parser/utils/eq.js';
+import { srgb2oklch } from './oklch.js';
+import { srgb2oklab } from './oklab.js';
 import '../sourcemap/lib/encode.js';
 
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
+    if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
+        return null;
+    }
     if (percentage1 == null) {
         if (percentage2 == null) {
             // @ts-ignore
@@ -54,10 +62,18 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             }
         }
     }
-    let values1 = srgbvalues(color1) ?? null;
-    let values2 = srgbvalues(color2) ?? null;
+    let values1 = srgbvalues(color1);
+    let values2 = srgbvalues(color2);
     if (values1 == null || values2 == null) {
         return null;
+    }
+    const components1 = getComponents(color1);
+    const components2 = getComponents(color2);
+    if (eq(components1[3], powerlessColorComponent) && values2.length == 4) {
+        values1[3] = values2[3];
+    }
+    if (eq(components2[3], powerlessColorComponent) && values1.length == 4) {
+        values2[3] = values1[3];
     }
     const p1 = getNumber(percentage1);
     const p2 = getNumber(percentage2);
@@ -128,19 +144,79 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             break;
         case 'oklab':
             // @ts-ignore
-            values1 = srgb2lch(...values1);
+            values1 = srgb2oklab(...values1);
             // @ts-ignore
-            values2 = srgb2lch(...values2);
+            values2 = srgb2oklab(...values2);
             break;
         case 'oklch':
             // @ts-ignore
-            values1 = srgb2lch(...values1);
+            values1 = srgb2oklch(...values1);
             // @ts-ignore
-            values2 = srgb2lch(...values2);
+            values2 = srgb2oklch(...values2);
             break;
         default:
             return null;
     }
+    //
+    // let space1: string[] = ['srgb', 'rgb', 'xyz', 'xyz-d65', 'xyz-d50'];
+    // let space2: string[] = ['lch', 'oklch'];
+    // let space3: string[] = ['lab', 'oklab'];
+    //
+    // let match: boolean = false;
+    //
+    // for (const space of [space1, space2, space3]) {
+    //
+    //     // rectify
+    //     // if (space.includes(colorSpace.val)) {
+    //
+    //     for (let i = 0; i < 3; i++) {
+    //
+    //         if (space.includes(color1.kin) && space.includes(color2.kin)) {
+    //
+    //             if (eq(components1[i], powerless)) {
+    //
+    //                 values2[i] = values1[i];
+    //             } else if (eq(components2[i], powerless)) {
+    //
+    //                 values1[i] = values2[i];
+    //             }
+    //
+    //             match = true;
+    //         }
+    //     }
+    //
+    //     //     break;
+    //     // }
+    //
+    //     if (match) {
+    //
+    //         break;
+    //     }
+    // }
+    // carry over
+    // for (let i = 0; i < Math.min(components1.length, components2.length); i++) {
+    //
+    //     if (eq(pow))
+    // }
+    // console.error({colorSpace, values1, values2})
+    const lchSpaces = ['lch', 'oklch'];
+    // powerless
+    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+        if (eq(components1[2], powerlessColorComponent) || values1[2] == 0) {
+            values1[2] = values2[2];
+        }
+    }
+    // powerless
+    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+        if (eq(components2[2], powerlessColorComponent) || values2[2] == 0) {
+            values2[2] = values1[2];
+        }
+    }
+    // console.error({values1, values2});
+    // if (isPolarColorspace(colorSpace)) {
+    //
+    //     interpolateHue(hueInterpolationMethod ?? {typ: EnumToken.IdenTokenType, val: 'shorter'}, values1, values2[]);
+    // }
     switch (colorSpace.val) {
         case 'srgb':
         case 'srgb-linear':
@@ -161,6 +237,31 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case 'lch':
         case 'oklab':
         case 'oklch':
+            if (['hsl', 'hwb'].includes(colorSpace.val)) {
+                // console.error({values1, values2});
+                // @ts-ignore
+                if (values1[2] < 0) {
+                    // @ts-ignore
+                    values1[2] += 1;
+                }
+                // @ts-ignore
+                if (values2[2] < 0) {
+                    // @ts-ignore
+                    values2[2] += 1;
+                }
+            }
+            else if (['lch', 'oklch'].includes(colorSpace.val)) {
+                // @ts-ignore
+                if (values1[2] < 0) {
+                    // @ts-ignore
+                    values1[2] += 360;
+                }
+                // @ts-ignore
+                if (values2[2] < 0) {
+                    // @ts-ignore
+                    values2[2] += 360;
+                }
+            }
             // @ts-ignore
             const result = {
                 typ: EnumToken.ColorTokenType,
@@ -177,6 +278,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 result.chi[2] = { typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
             }
             // console.error(JSON.stringify(result, null, 1));
+            // console.error({mul, p1, p2, mul1, mul2, values1, values2});
             return result;
     }
     return null;

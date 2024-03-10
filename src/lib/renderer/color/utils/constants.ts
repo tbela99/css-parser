@@ -1,4 +1,7 @@
+import {IdentToken} from "../../../../@types";
+import {EnumToken} from "../../../ast";
 
+export const powerlessColorComponent: IdentToken = {typ: EnumToken.IdenTokenType, val: 'none'};
 
 export const D50: number[] = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
 export const D65: number[] = [0.3127 / 0.3290, 1.00000, (1.0 - 0.3127 - 0.3290) / 0.3290];

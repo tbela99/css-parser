@@ -55,7 +55,11 @@ export function oklch2lch(token: ColorToken): number[] {
 export function lab2lchvalues(l: number, a: number, b: number, alpha: number | null = null): number[] {
 
     const c: number = Math.sqrt(a * a + b * b);
-    const h: number = Math.atan2(b, a) * 180 / Math.PI;
+    let h: number = Math.atan2(b, a) * 180 / Math.PI;
+
+    if (h < 0) {
+        h += 360;
+    }
 
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }

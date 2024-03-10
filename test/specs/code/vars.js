@@ -79,4 +79,17 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         });
 
     });
+
+    it('inline variable #2', function () {
+        return parse(`
+html { --color: green; }
+.foo {
+  --darker-accent: lch(from var(--color) calc(l / 2) c h);
+}
+
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+ --darker-accent: #004500
+}`));
+    });
+
 }

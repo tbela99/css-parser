@@ -290,7 +290,7 @@ function prophotoRgb2lsrgb(r, g, b) {
         return sign * Math.pow(abs, 1.8);
     });
 }
-function a982lrgb(r, g, b) {
+function a982lrgb(r, g, b, alpha) {
     // convert an array of a98-rgb values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // negative values are also now accepted
@@ -298,9 +298,9 @@ function a982lrgb(r, g, b) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
         return sign * Math.pow(abs, 563 / 256);
-    });
+    }).concat(alpha == null ? [] : [alpha]);
 }
-function rec20202lsrgb(r, g, b) {
+function rec20202lsrgb(r, g, b, alpha) {
     // convert an array of rec2020 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // ITU-R BT.2020-2 p.4
@@ -313,7 +313,7 @@ function rec20202lsrgb(r, g, b) {
             return val / 4.5;
         }
         return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-    });
+    }).concat(alpha == null ? [] : [alpha]);
 }
 
 export { a982lrgb, cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgb, oklab2srgb, oklch2srgb, prophotoRgb2lsrgb, rec20202lsrgb, rgb2srgb, srgb2lsrgb, srgbvalues, xyz2srgb };

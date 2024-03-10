@@ -41,7 +41,10 @@ function oklch2lch(token) {
 }
 function lab2lchvalues(l, a, b, alpha = null) {
     const c = Math.sqrt(a * a + b * b);
-    const h = Math.atan2(b, a) * 180 / Math.PI;
+    let h = Math.atan2(b, a) * 180 / Math.PI;
+    if (h < 0) {
+        h += 360;
+    }
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 function getLCHComponents(token) {

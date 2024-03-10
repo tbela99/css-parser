@@ -1,11 +1,12 @@
 import { multiplyMatrices } from './utils/matrix.js';
-import './utils/constants.js';
+import { powerlessColorComponent } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, srgb2lsrgb, lsrgb2srgb } from './srgb.js';
+import { srgb2lsrgb, hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgb } from './srgb.js';
 import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
+import { eq } from '../../parser/utils/eq.js';
 import { lch2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
@@ -44,8 +45,8 @@ function srgb2oklab(r, g, blue, alpha) {
     let M = Math.cbrt(0.2119034981999999 * r + 0.6806995450999999 * g + 0.1073969566 * blue);
     let S = Math.cbrt(0.08830246189999998 * r + 0.2817188376 * g + 0.6299787005000002 * blue);
     const l = 0.2104542553 * L + 0.793617785 * M - 0.0040720468 * S;
-    const a = 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
-    const b = 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
+    const a = r == g && g == blue ? 0 : 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
+    const b = r == g && g == blue ? 0 : 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
     return alpha == null ? [l, a, b] : [l, a, b, alpha];
 }
 function getOKLABComponents(token) {
@@ -65,7 +66,7 @@ function getOKLABComponents(token) {
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
     const rgb = [l, a, b];
     if (alpha != 1 && alpha != null) {
         rgb.push(alpha);

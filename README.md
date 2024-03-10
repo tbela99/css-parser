@@ -2,8 +2,6 @@
 
 # css-parser
 
-![Logo](./logo.png)
-
 CSS parser and minifier for node and the browser
 
 ## Installation
@@ -16,11 +14,11 @@ $ npm install @tbela99/css-parser
 
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- CSS color level 4 & 5
+- CSS color level 4 & 5: lab(), lch(), oklab(), oklch(), color-mix() and relative color
 - automatically generate nested css rules
 - nested css expansion
 - sourcemap generation
-- CSS shorthands computation. see the list below
+- CSS shorthands computation. see supported properties list below
 - calc() expression computation
 - automatically inline css variables
 - remove duplicate properties
@@ -67,7 +65,7 @@ Include ParseOptions and RenderOptions
 - computeShorthand: boolean, optional. compute shorthand properties.
 - inlineCssVariables: boolean, optional. replace css variables with their current value.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
-- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} rule.
+- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
 - visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
@@ -565,11 +563,14 @@ const css = `
 .foo {
     height: calc(100px * 2/ 15);
 }
+.selector {
+color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180)) 
+}
 `;
 
 console.debug(await transform(css, options));
 
-// .foo{height:calc(40px/3);width:3px}
+// .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}
 
 ```
 

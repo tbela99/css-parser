@@ -1,13 +1,4 @@
-import {
-    AngleToken,
-    ColorKind,
-    ColorSpace,
-    ColorToken,
-    IdentToken,
-    NumberToken,
-    PercentageToken,
-    Token
-} from "../../../@types";
+import {AngleToken, ColorKind, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {EnumToken} from "../../ast";
 import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb";
 import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl";
@@ -15,16 +6,7 @@ import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb, srgb2hwb} from
 import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab";
 import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch} from "./lch";
 import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab";
-import {
-    hex2oklch,
-    hsl2oklch,
-    hwb2oklch,
-    lab2oklch,
-    lch2oklch,
-    oklab2oklch,
-    rgb2oklch,
-    srgb2oklch,
-} from "./oklch";
+import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch";
 import {getComponents} from "./utils";
 import {lsrgb2srgb, xyz2srgb} from "./srgb";
 import {prophotoRgb2srgbvalues} from "./prophotorgb";
@@ -172,7 +154,7 @@ function values2colortoken(values: number[], to: ColorKind): ColorToken {
     }
 }
 
-export function convert(token: ColorToken, to: string): ColorToken | null {
+export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
 
     if (token.kin == to) {
 
@@ -217,7 +199,6 @@ export function convert(token: ColorToken, to: string): ColorToken | null {
 
                 // @ts-ignore
                 return values2colortoken(srgb2lab(...values), 'oklab');
-
 
             case 'lch':
 
@@ -573,28 +554,6 @@ export function clamp(token: ColorToken): ColorToken {
     }
 
     return token;
-}
-
-export function clampValues(values: number[], colorSpace: ColorSpace): number[] {
-
-    switch (colorSpace) {
-
-        case 'srgb':
-        // case 'oklab':
-        case 'display-p3':
-        case 'srgb-linear':
-            // case 'prophoto-rgb':
-            // case 'a98-rgb':
-            // case 'rec2020':
-
-            for (let i = 0; i < values.length; i++) {
-
-                values[i] = Math.min(1, Math.max(0, values[i]));
-            }
-    }
-
-
-    return values;
 }
 
 export function getNumber(token: NumberToken | PercentageToken | IdentToken): number {

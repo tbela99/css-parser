@@ -302,7 +302,6 @@ export function lch2srgb(token: ColorToken): number[] {
     const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
 
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
-
     const rgb: number[] = Lab_to_sRGB(l, a, b);
     //
     if (alpha != 1) {
@@ -414,7 +413,7 @@ export function prophotoRgb2lsrgb(r: number, g: number, b: number): number[] {
     });
 }
 
-export function a982lrgb(r: number, g: number, b: number): number[] {
+export function a982lrgb(r: number, g: number, b: number, alpha?: number): number[] {
     // convert an array of a98-rgb values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // negative values are also now accepted
@@ -423,10 +422,10 @@ export function a982lrgb(r: number, g: number, b: number): number[] {
         let abs: number = Math.abs(val);
 
         return sign * Math.pow(abs, 563 / 256);
-    });
+    }).concat(alpha == null ? [] : [alpha]);
 }
 
-export function rec20202lsrgb(r: number, g: number, b: number): number[] {
+export function rec20202lsrgb(r: number, g: number, b: number, alpha?: number): number[] {
     // convert an array of rec2020 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // ITU-R BT.2020-2 p.4
@@ -443,5 +442,5 @@ export function rec20202lsrgb(r: number, g: number, b: number): number[] {
         }
 
         return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-    });
+    }).concat(alpha == null ? [] : [alpha]);
 }

@@ -35,6 +35,12 @@ function isColorspace(token) {
     }
     return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb', 'hsl', 'hwb'].includes(token.val.toLowerCase());
 }
+function isRectangularOrthogonalColorspace(token) {
+    if (token.typ != EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+}
 function isHueInterpolationMethod(token) {
     if (token.typ != EnumToken.IdenTokenType) {
         return false;
@@ -386,4 +392,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseDimension };

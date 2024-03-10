@@ -892,5 +892,59 @@ color: color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow)  ;
 }`));
     });
 
+    it('color-mix(in lch, teal 65%, olive) #88', function () {
+        return parse(`
+.selector {
+color: color-mix(in lch, teal 65%, olive)  ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #14865f
+}`));
+    });
+
+    it('lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180)) #89', function () {
+        return parse(`
+.selector {
+color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180))   ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #0880b0
+}`));
+    });
+
+    it('color-mix(in lch, white, blue) #90', function () {
+        return parse(`
+.selector {
+color: color-mix(in lch, white, blue)   ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #af89ff
+}`));
+    });
+
+    it('color-mix(in oklch, white, blue) #91', function () {
+        return parse(`
+.selector {
+color: color-mix(in oklch, white, blue)   ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #74a3ff
+}`));
+    });
+
+    it('color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) #92', function () {
+        return parse(`
+.selector {
+color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none))   ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #c322c9
+}`));
+    });
+
+    it('color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / none)) #93', function () {
+        return parse(`
+.selector {
+color: color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / none));
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #c322c980
+}`));
+    });
+
     //
 }

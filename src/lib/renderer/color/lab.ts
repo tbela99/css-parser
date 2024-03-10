@@ -56,6 +56,13 @@ export function srgb2lab(r: number, g: number, b: number, a: number | null): num
     // @ts-ignore */
     const result: number[] = xyz2lab(...srgb2xyz(r, g, b));
 
+    // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
+    // and approximated computations in sRGB <-> CIELab.
+    // See: https://github.com/d3/d3-color/pull/46
+    if (r === b && b === g) {
+        result[1] = result[2] = 0;
+    }
+
     if (a != null) {
 
         result.push(a);
