@@ -1842,9 +1842,45 @@ function getAngle(token) {
     return token.val / 360;
 }
 
+function interpolateHue(interpolationMethod, h1, h2) {
+    switch (interpolationMethod.val) {
+        case 'longer':
+            if (h2 - h1 < 180 && h2 - h1 > 0) {
+                h1 += 360;
+            }
+            else if (h2 - h1 <= 0 && h2 - h1 > -180) {
+                h2 += 360;
+            }
+            break;
+        case 'increasing':
+            if (h2 < h1) {
+                h2 += 360;
+            }
+            break;
+        case 'decreasing':
+            if (h2 > h1) {
+                h1 += 360;
+            }
+            break;
+        case 'shorter':
+        default:
+            // shorter
+            if (h2 - h1 > 180) {
+                h1 += 360;
+            }
+            else if (h2 - h1 < -180) {
+                h2 += 360;
+            }
+            break;
+    }
+    return [h1, h2];
+}
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
         return null;
+    }
+    if (isPolarColorspace(colorSpace) && hueInterpolationMethod == null) {
+        hueInterpolationMethod = { typ: exports.EnumToken.IdenTokenType, val: 'shorter' };
     }
     if (percentage1 == null) {
         if (percentage2 == null) {
@@ -1981,48 +2017,6 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         default:
             return null;
     }
-    //
-    // let space1: string[] = ['srgb', 'rgb', 'xyz', 'xyz-d65', 'xyz-d50'];
-    // let space2: string[] = ['lch', 'oklch'];
-    // let space3: string[] = ['lab', 'oklab'];
-    //
-    // let match: boolean = false;
-    //
-    // for (const space of [space1, space2, space3]) {
-    //
-    //     // rectify
-    //     // if (space.includes(colorSpace.val)) {
-    //
-    //     for (let i = 0; i < 3; i++) {
-    //
-    //         if (space.includes(color1.kin) && space.includes(color2.kin)) {
-    //
-    //             if (eq(components1[i], powerless)) {
-    //
-    //                 values2[i] = values1[i];
-    //             } else if (eq(components2[i], powerless)) {
-    //
-    //                 values1[i] = values2[i];
-    //             }
-    //
-    //             match = true;
-    //         }
-    //     }
-    //
-    //     //     break;
-    //     // }
-    //
-    //     if (match) {
-    //
-    //         break;
-    //     }
-    // }
-    // carry over
-    // for (let i = 0; i < Math.min(components1.length, components2.length); i++) {
-    //
-    //     if (eq(pow))
-    // }
-    // console.error({colorSpace, values1, values2})
     const lchSpaces = ['lch', 'oklch'];
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
@@ -2036,11 +2030,16 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             values2[2] = values1[2];
         }
     }
-    // console.error({values1, values2});
-    // if (isPolarColorspace(colorSpace)) {
-    //
-    //     interpolateHue(hueInterpolationMethod ?? {typ: EnumToken.IdenTokenType, val: 'shorter'}, values1, values2[]);
-    // }
+    if (hueInterpolationMethod != null) {
+        let hueIndex = 2;
+        if (['hwb', 'hsl'].includes(colorSpace.val)) {
+            hueIndex = 0;
+        }
+        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex], values2[hueIndex]);
+        values1[hueIndex] = h1;
+        values2[hueIndex] = h2;
+        console.error({ hueInterpolationMethod, h1, h2 });
+    }
     switch (colorSpace.val) {
         case 'srgb':
         case 'srgb-linear':
@@ -3243,6 +3242,12 @@ function isRectangularOrthogonalColorspace(token) {
         return false;
     }
     return ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+}
+function isPolarColorspace(token) {
+    if (token.typ != exports.EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['hsl', 'hwb', 'lch', 'oklch'].includes(token.val);
 }
 function isHueInterpolationMethod(token) {
     if (token.typ != exports.EnumToken.IdenTokenType) {

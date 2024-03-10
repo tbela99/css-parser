@@ -1,7 +1,7 @@
 import {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
 import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser";
 import {EnumToken} from "../../ast";
-import {getNumber, values2hsltoken} from "./color";
+import {getNumber} from "./color";
 import {srgb2lsrgb, srgbvalues} from "./srgb";
 import {srgb2xyz} from "./xyzd65";
 import {srgb2lch} from "./lch";
@@ -15,22 +15,17 @@ import {eq} from "../../parser/utils/eq";
 import {srgb2oklch} from "./oklch";
 import {srgb2oklab} from "./oklab";
 
-function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number {
+function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
 
     switch (interpolationMethod.val) {
 
         case 'longer':
 
-            if (h2 - h1 > 180) {
+            if (h2 - h1 < 180 && h2 - h1 > 0) {
                 h1 += 360;
-            } else if (h2 - h1 < -180) {
+            } else if (h2 - h1 <= 0 && h2 - h1 > -180) {
 
-                if (h2 - h1 > 0 && h2 - h1 < 180) {
-                    h1 += 360;
-                } else if (h2 - h1 <= 0 && h2 - h1 > -180) {
-
-                    h2 += 360;
-                }
+                h2 += 360;
             }
 
             break;
@@ -67,7 +62,7 @@ function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number)
     }
 
 
-    return (h1 + h2) / 2;
+    return [h1, h2];
 }
 
 export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentToken | null, color1: ColorToken, percentage1: PercentageToken | null, color2: ColorToken, percentage2: PercentageToken | null): ColorToken | null {
@@ -75,6 +70,11 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
 
         return null;
+    }
+
+    if (isPolarColorspace(colorSpace) && hueInterpolationMethod == null) {
+
+        hueInterpolationMethod = {typ: EnumToken.IdenTokenType, val: 'shorter'};
     }
 
     if (percentage1 == null) {
@@ -264,52 +264,6 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
             return null;
     }
 
-   //
-    // let space1: string[] = ['srgb', 'rgb', 'xyz', 'xyz-d65', 'xyz-d50'];
-    // let space2: string[] = ['lch', 'oklch'];
-    // let space3: string[] = ['lab', 'oklab'];
-    //
-    // let match: boolean = false;
-    //
-    // for (const space of [space1, space2, space3]) {
-    //
-    //     // rectify
-    //     // if (space.includes(colorSpace.val)) {
-    //
-    //     for (let i = 0; i < 3; i++) {
-    //
-    //         if (space.includes(color1.kin) && space.includes(color2.kin)) {
-    //
-    //             if (eq(components1[i], powerless)) {
-    //
-    //                 values2[i] = values1[i];
-    //             } else if (eq(components2[i], powerless)) {
-    //
-    //                 values1[i] = values2[i];
-    //             }
-    //
-    //             match = true;
-    //         }
-    //     }
-    //
-    //     //     break;
-    //     // }
-    //
-    //     if (match) {
-    //
-    //         break;
-    //     }
-    // }
-
-
-    // carry over
-    // for (let i = 0; i < Math.min(components1.length, components2.length); i++) {
-    //
-    //     if (eq(pow))
-    // }
-
-    // console.error({colorSpace, values1, values2})
-
     const lchSpaces: string[] = ['lch', 'oklch'];
 
     // powerless
@@ -330,14 +284,20 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         }
     }
 
+    if (hueInterpolationMethod != null) {
 
-    // console.error({values1, values2});
+        let hueIndex : number = 2;
 
+        if (['hwb', 'hsl'].includes(colorSpace.val)) {
 
-    // if (isPolarColorspace(colorSpace)) {
-    //
-    //     interpolateHue(hueInterpolationMethod ?? {typ: EnumToken.IdenTokenType, val: 'shorter'}, values1, values2[]);
-    // }
+            hueIndex = 0;
+        }
+
+        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex], values2[hueIndex]);
+
+        values1[hueIndex] = h1;
+        values2[hueIndex] = h2;
+    }
 
     switch (colorSpace.val) {
 
@@ -415,9 +375,6 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 result.chi[2] = {typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100)};
 
             }
-
-            // console.error(JSON.stringify(result, null, 1));
-            // console.error({mul, p1, p2, mul1, mul2, values1, values2});
 
             return result;
     }
