@@ -5878,11 +5878,6 @@ async function doParse(iterator, options = {}) {
         const iter = tokenize(iterator);
         let item;
         while (item = iter.next().value) {
-            // if (item.hint == EnumToken.EOFTokenType) {
-            //
-            //     stats.bytesIn += item.bytesIn;
-            //     break;
-            // }
             stats.bytesIn = item.bytesIn;
             //
             // doParse error
@@ -5957,7 +5952,7 @@ async function doParse(iterator, options = {}) {
                     // @ts-ignore
                     (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[result.node.nam] != null)) {
                     const callable = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[result.node.nam];
-                    const results = callable(result.node);
+                    const results = await callable(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
                     }
@@ -5965,7 +5960,7 @@ async function doParse(iterator, options = {}) {
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
                 }
                 else if (options.visitor.Rule != null && result.node.typ == exports.EnumToken.RuleNodeType) {
-                    const results = options.visitor.Rule(result.node);
+                    const results = await options.visitor.Rule(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
                     }
@@ -5977,7 +5972,7 @@ async function doParse(iterator, options = {}) {
                     // @ts-ignore
                     (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[result.node.nam] != null)) {
                     const callable = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[result.node.nam];
-                    const results = callable(result.node);
+                    const results = await callable(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
                     }

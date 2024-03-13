@@ -155,17 +155,10 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             };
         }
 
-
         const iter: Generator<TokenizeResult> = tokenize(iterator);
         let item: TokenizeResult;
 
         while (item = iter.next().value) {
-
-            // if (item.hint == EnumToken.EOFTokenType) {
-            //
-            //     stats.bytesIn += item.bytesIn;
-            //     break;
-            // }
 
             stats.bytesIn = item.bytesIn;
 
@@ -276,7 +269,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 ) {
 
                     const callable: DeclarationVisitorHandler = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[(<AstDeclaration>result.node).nam];
-                    const results: AstDeclaration | AstDeclaration[] | void | null = callable(<AstDeclaration>result.node);
+                    const results: AstDeclaration | AstDeclaration[] | void | null = await callable(<AstDeclaration>result.node);
 
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
 
@@ -287,7 +280,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
                 } else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
 
-                    const results: AstRule | AstRule[] | void | null = options.visitor.Rule(<AstRule>result.node);
+                    const results: AstRule | AstRule[] | void | null = await options.visitor.Rule(<AstRule>result.node);
 
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
 
@@ -302,7 +295,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[(<AstAtRule>result.node).nam] != null)) {
 
                     const callable: AtRuleVisitorHandler = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[(<AstAtRule>result.node).nam];
-                    const results: AstAtRule | AstAtRule[] | void | null = callable(<AstAtRule>result.node);
+                    const results: AstAtRule | AstAtRule[] | void | null = await callable(<AstAtRule>result.node);
 
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
 
@@ -616,7 +609,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                 chi: []
             };
 
-            let raw = [...uniq.values()];
+            let raw: string[][] = [...uniq.values()];
 
             Object.defineProperty(node, 'raw', {
                 enumerable: false,
@@ -724,6 +717,11 @@ function mapToken(token: TokenizeResult, map: Map<Token, Position>): Token {
 
     map.set(node, token.position);
     return node;
+}
+
+export async function parseDeclarations(src: string, options: ParserOptions = {}): Promise<AstDeclaration[]> {
+
+    return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi);
 }
 
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {

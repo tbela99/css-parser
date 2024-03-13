@@ -524,7 +524,7 @@ console.debug(await transform(css, options));
 ```typescript
 
 import {AstDeclaration, LengthToken, ParserOptions} from "../src/@types";
-import {EnumToken, NodeType} from "../src/lib";
+import {EnumToken, EnumToken} from "../src/lib";
 import {transform} from "../src/node";
 
 const options: ParserOptions = {
@@ -541,7 +541,7 @@ const options: ParserOptions = {
                     node,
                     {
 
-                        typ: NodeType.DeclarationNodeType,
+                        typ: EnumToken.DeclarationNodeType,
                         nam: 'width',
                         val: [
                             <LengthToken>{
@@ -680,6 +680,44 @@ const css = `
 console.debug(await transform(css, options));
 
 // .foo,.bar,.fubar{height:calc(40px/3)}
+
+```
+### Exemple 6: Rule
+
+Adding declarations
+
+```typescript
+import {transform} from "../src/node";
+import {AstRule, ParserOptions} from "../src/@types";
+import {parseDeclarations} from "../src/lib";
+
+const options: ParserOptions = {
+
+    removeEmpty: false,
+    visitor: {
+
+        Rule: async (node: AstRule): Promise<AstRule | null> => {
+
+            if (node.sel == '.foo') {
+
+                node.chi.push(...await parseDeclarations('width: 3px'));
+                return node;
+            }
+
+            return null;
+        }
+    }
+};
+
+const css = `
+
+.foo {
+}
+`;
+
+console.debug(await transform(css, options));
+
+// .foo{width:3px}
 
 ```
 
