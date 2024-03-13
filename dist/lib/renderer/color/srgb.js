@@ -10,7 +10,7 @@ import { getOKLABComponents, OKLab_to_sRGB } from './oklab.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
 import { xyzd502srgb } from './xyz.js';
-import { XYZ_D65_to_D50 } from './xyzd65.js';
+import { XYZ_D65_to_D50 } from './xyzd50.js';
 import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
 
@@ -141,13 +141,7 @@ function hslvalues(token) {
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        // if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
-        //         t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
-        //     // @ts-ignore
-        //     (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-        // @ts-ignore
         a = getNumber(t);
-        // }
     }
     return a == null ? { h, s, l } : { h, s, l, a };
 }
@@ -263,57 +257,5 @@ function lsrgb2srgb(r, g, b, alpha) {
     }
     return rgb;
 }
-// export function gam_a98rgb(r: number, g: number, b: number): number[] {
-//     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
-//     // to gamma corrected form
-//     // negative values are also now accepted
-//     return [r, g, b].map(function (val: number): number {
-//         let sign: number = val < 0? -1 : 1;
-//         let abs: number = Math.abs(val);
-//
-//         return roundWithPrecision(sign * Math.pow(abs, 256/563), val);
-//     });
-// }
-function prophotoRgb2lsrgb(r, g, b) {
-    // convert an array of prophoto-rgb values
-    // where in-gamut colors are in the range [0.0 - 1.0]
-    // to linear light (un-companded) form.
-    // Transfer curve is gamma 1.8 with a small linear portion
-    // Extended transfer function
-    const Et2 = 16 / 512;
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
-        if (abs <= Et2) {
-            return val / 16;
-        }
-        return sign * Math.pow(abs, 1.8);
-    });
-}
-function a982lrgb(r, g, b, alpha) {
-    // convert an array of a98-rgb values in the range 0.0 - 1.0
-    // to linear light (un-companded) form.
-    // negative values are also now accepted
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
-        return sign * Math.pow(abs, 563 / 256);
-    }).concat(alpha == null ? [] : [alpha]);
-}
-function rec20202lsrgb(r, g, b, alpha) {
-    // convert an array of rec2020 RGB values in the range 0.0 - 1.0
-    // to linear light (un-companded) form.
-    // ITU-R BT.2020-2 p.4
-    const α = 1.09929682680944;
-    const β = 0.018053968510807;
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
-        if (abs < β * 4.5) {
-            return val / 4.5;
-        }
-        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-    }).concat(alpha == null ? [] : [alpha]);
-}
 
-export { a982lrgb, cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgb, oklab2srgb, oklch2srgb, prophotoRgb2lsrgb, rec20202lsrgb, rgb2srgb, srgb2lsrgb, srgbvalues, xyz2srgb };
+export { cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgb, oklab2srgb, oklch2srgb, rgb2srgb, srgb2lsrgb, srgbvalues, xyz2srgb };

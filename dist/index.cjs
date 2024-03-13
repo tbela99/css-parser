@@ -426,6 +426,24 @@ function xyzd502srgb(x, y, z) {
         y * 0.2289768264158322 +
         1.405386058324125 * z);
 }
+function srgb2xyz(r, g, b, alpha) {
+    [r, g, b] = srgb2lsrgb(r, g, b);
+    const rgb = [
+        0.436065742824811 * r +
+            0.3851514688337912 * g +
+            0.14307845442264197 * b,
+        0.22249319175623702 * r +
+            0.7168870538238823 * g +
+            0.06061979053616537 * b,
+        0.013923904500943465 * r +
+            0.09708128566574634 * g +
+            0.7140993584005155 * b
+    ];
+    if (alpha != null && alpha != 1) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
 
 function hex2lch(token) {
     // @ts-ignore
@@ -684,35 +702,6 @@ function OKLab_to_sRGB(l, a, b) {
         1.7076147009309444 * S);
 }
 
-function srgb2xyz(r, g, b) {
-    [r, g, b] = srgb2lsrgb(r, g, b);
-    return [
-        0.436065742824811 * r +
-            0.3851514688337912 * g +
-            0.14307845442264197 * b,
-        0.22249319175623702 * r +
-            0.7168870538238823 * g +
-            0.06061979053616537 * b,
-        0.013923904500943465 * r +
-            0.09708128566574634 * g +
-            0.7140993584005155 * b
-    ];
-}
-function XYZ_D65_to_D50(x, y, z) {
-    // Bradford chromatic adaptation from D65 to D50
-    // The matrix below is the result of three operations:
-    // - convert from XYZ to retinal cone domain
-    // - scale components from one reference white to another
-    // - convert back to XYZ
-    // see https://github.com/LeaVerou/color.js/pull/354/files
-    var M = [
-        [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
-        [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
-        [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
-    ];
-    return multiplyMatrices(M, [x, y, z]);
-}
-
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
 function hex2lab(token) {
@@ -834,6 +823,21 @@ function Lab_to_XYZ(l, a, b) {
     ];
     // Compute XYZ by scaling xyz by reference white
     return xyz.map((value, i) => value * D50[i]);
+}
+
+function XYZ_D65_to_D50(x, y, z) {
+    // Bradford chromatic adaptation from D65 to D50
+    // The matrix below is the result of three operations:
+    // - convert from XYZ to retinal cone domain
+    // - scale components from one reference white to another
+    // - convert back to XYZ
+    // see https://github.com/LeaVerou/color.js/pull/354/files
+    var M = [
+        [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
+        [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
+        [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
+    ];
+    return multiplyMatrices(M, [x, y, z]);
 }
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
@@ -963,13 +967,7 @@ function hslvalues(token) {
         // @ts-ignore
         t = token.chi[3];
         // @ts-ignore
-        // if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
-        //         t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
-        //     // @ts-ignore
-        //     (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-        // @ts-ignore
         a = getNumber(t);
-        // }
     }
     return a == null ? { h, s, l } : { h, s, l, a };
 }
@@ -1084,58 +1082,6 @@ function lsrgb2srgb(r, g, b, alpha) {
         rgb.push(alpha);
     }
     return rgb;
-}
-// export function gam_a98rgb(r: number, g: number, b: number): number[] {
-//     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
-//     // to gamma corrected form
-//     // negative values are also now accepted
-//     return [r, g, b].map(function (val: number): number {
-//         let sign: number = val < 0? -1 : 1;
-//         let abs: number = Math.abs(val);
-//
-//         return roundWithPrecision(sign * Math.pow(abs, 256/563), val);
-//     });
-// }
-function prophotoRgb2lsrgb(r, g, b) {
-    // convert an array of prophoto-rgb values
-    // where in-gamut colors are in the range [0.0 - 1.0]
-    // to linear light (un-companded) form.
-    // Transfer curve is gamma 1.8 with a small linear portion
-    // Extended transfer function
-    const Et2 = 16 / 512;
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
-        if (abs <= Et2) {
-            return val / 16;
-        }
-        return sign * Math.pow(abs, 1.8);
-    });
-}
-function a982lrgb(r, g, b, alpha) {
-    // convert an array of a98-rgb values in the range 0.0 - 1.0
-    // to linear light (un-companded) form.
-    // negative values are also now accepted
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
-        return sign * Math.pow(abs, 563 / 256);
-    }).concat(alpha == null ? [] : [alpha]);
-}
-function rec20202lsrgb(r, g, b, alpha) {
-    // convert an array of rec2020 RGB values in the range 0.0 - 1.0
-    // to linear light (un-companded) form.
-    // ITU-R BT.2020-2 p.4
-    const α = 1.09929682680944;
-    const β = 0.018053968510807;
-    return [r, g, b].map(function (val) {
-        let sign = val < 0 ? -1 : 1;
-        let abs = Math.abs(val);
-        if (abs < β * 4.5) {
-            return val / 4.5;
-        }
-        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-    }).concat(alpha == null ? [] : [alpha]);
 }
 
 function srgb2rgb(value) {
@@ -1385,29 +1331,191 @@ function hsl2hwbvalues(h, s, l, a = null) {
     return hsv2hwb(...hsl2hsv(h, s, l, a));
 }
 
-function prophotoRgb2srgbvalues(r, g, b, a = null) {
+function prophotorgb2srgbvalues(r, g, b, a = null) {
     // @ts-ignore
-    return lsrgb2srgb(...prophotoRgb2lsrgb(r, g, b));
+    return xyzd502srgb(...prophotorgb2xyz50(r, g, b, a));
+}
+function srgb2prophotorgbvalues(r, g, b, a) {
+    // @ts-ignore
+    return xyz50_to_prophotorgb(...XYZ_D65_to_D50(...srgb2xyz(r, g, b, a)));
+}
+function prophotorgb2lin_ProPhoto(r, g, b, a = null) {
+    return [r, g, b].map(v => {
+        let abs = Math.abs(v);
+        if (abs >= 16 / 512) {
+            return Math.sign(v) * Math.pow(abs, 1.8);
+        }
+        return v / 16;
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function prophotorgb2xyz50(r, g, b, a = null) {
+    [r, g, b, a] = prophotorgb2lin_ProPhoto(r, g, b, a);
+    const xyz = [
+        0.7977666449006423 * r +
+            0.1351812974005331 * g +
+            0.0313477341283922 * b,
+        0.2880748288194013 * r +
+            0.7118352342418731 * g +
+            0.0000899369387256 * b,
+        0.8251046025104602 * b
+    ];
+    return xyz.concat(a == null || a == 1 ? [] : [a]);
+}
+function xyz50_to_prophotorgb(x, y, z, a) {
+    // @ts-ignore
+    return gam_prophotorgb(...[
+        x * 1.3457868816471585 -
+            y * 0.2555720873797946 -
+            0.0511018649755453 * z,
+        x * -0.5446307051249019 +
+            y * 1.5082477428451466 +
+            0.0205274474364214 * z,
+        1.2119675456389452 * z
+    ].concat(a == null || a == 1 ? [] : [a]));
+}
+function gam_prophotorgb(r, g, b, a) {
+    return [r, g, b].map(v => {
+        let abs = Math.abs(v);
+        if (abs >= 1 / 512) {
+            return Math.sign(v) * Math.pow(abs, 1 / 1.8);
+        }
+        return 16 * v;
+    }).concat(a == null || a == 1 ? [] : [a]);
 }
 
+// a98rgb -> la98rgb -> xyz -> srgb
+// srgb -> xyz -> la98rgb -> a98rgb
 function a98rgb2srgbvalues(r, g, b, a = null) {
     //  @ts-ignore
-    return lsrgb2srgb(...a982lrgb(r, g, b, a));
+    return xyz2srgb(...la98rgb2xyz(...a98rgb2la98(r, g, b, a)));
+}
+function srgb2a98values(r, g, b, a = null) {
+    // @ts-ignore
+    return la98rgb2a98rgb(xyz2la98rgb(...srgb2xyz(r, g, b, a)));
+}
+// a98-rgb functions
+function a98rgb2la98(r, g, b, a = null) {
+    // convert an array of a98-rgb values in the range 0.0 - 1.0
+    // to linear light (un-companded) form.
+    // negative values are also now accepted
+    return [r, g, b].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        return sign * Math.pow(abs, 563 / 256);
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function la98rgb2a98rgb(r, g, b, a = null) {
+    // convert an array of linear-light a98-rgb  in the range 0.0-1.0
+    // to gamma corrected form
+    // negative values are also now accepted
+    return [r, b, g].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        return sign * Math.pow(abs, 256 / 563);
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function la98rgb2xyz(r, g, b, a = null) {
+    // convert an array of linear-light a98-rgb values to CIE XYZ
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    // has greater numerical precision than section 4.3.5.3 of
+    // https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
+    // but the values below were calculated from first principles
+    // from the chromaticity coordinates of R G B W
+    // see matrixmaker.html
+    var M = [
+        [573536 / 994567, 263643 / 1420810, 187206 / 994567],
+        [591459 / 1989134, 6239551 / 9945670, 374412 / 4972835],
+        [53769 / 1989134, 351524 / 4972835, 4929758 / 4972835],
+    ];
+    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+}
+function xyz2la98rgb(x, y, z, a = null) {
+    // convert XYZ to linear-light a98-rgb
+    var M = [
+        [1829569 / 896150, -506331 / 896150, -308931 / 896150],
+        [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+        [16779 / 1248040, -147721 / 1248040, 1266979 / 1248040],
+    ];
+    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
 }
 
-function rec20202srgb(r, g, b, a = null) {
+function rec20202srgb(r, g, b, a) {
     // @ts-ignore
-    return lsrgb2srgb(...rec20202lsrgb(r, g, b, a));
+    return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
+}
+function srgb2rec2020(r, g, b, a) {
+    // @ts-ignore
+    return lrec20202rec2020(...xyz2lrec2020(...srgb2xyz(r, g, b)), a);
+}
+function rec20202lrec2020(r, g, b, a) {
+    // convert an array of rec2020 RGB values in the range 0.0 - 1.0
+    // to linear light (un-companded) form.
+    // ITU-R BT.2020-2 p.4
+    const α = 1.09929682680944;
+    const β = 0.018053968510807;
+    return [r, g, b].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        if (abs < β * 4.5) {
+            return val / 4.5;
+        }
+        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function lrec20202rec2020(r, g, b, a) {
+    // convert an array of linear-light rec2020 RGB  in the range 0.0-1.0
+    // to gamma corrected form
+    // ITU-R BT.2020-2 p.4
+    const α = 1.09929682680944;
+    const β = 0.018053968510807;
+    return [r, g, b].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        if (abs > β) {
+            return sign * (α * Math.pow(abs, 0.45) - (α - 1));
+        }
+        return 4.5 * val;
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function lrec20202xyz(r, g, b, a) {
+    // convert an array of linear-light rec2020 values to CIE XYZ
+    // using  D65 (no chromatic adaptation)
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    var M = [
+        [63426534 / 99577255, 20160776 / 139408157, 47086771 / 278816314],
+        [26158966 / 99577255, 472592308 / 697040785, 8267143 / 139408157],
+        [0 / 1, 19567812 / 697040785, 295819943 / 278816314],
+    ];
+    // 0 is actually calculated as  4.994106574466076e-17
+    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+}
+function xyz2lrec2020(x, y, z, a) {
+    // convert XYZ to linear-light rec2020
+    var M = [
+        [30757411 / 17917100, -6372589 / 17917100, -4539589 / 17917100],
+        [-19765991 / 29648200, 47925759 / 29648200, 467509 / 29648200],
+        [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],
+    ];
+    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
 }
 
 function p32srgb(r, g, b, alpha) {
     // @ts-ignore
     return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
 }
+function srgb2p3(r, g, b, alpha) {
+    // @ts-ignore
+    return srgb2xyz(...xyz2lp3(...lp32p3(r, g, b, alpha)));
+}
 function p32lp3(r, g, b, alpha) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     return srgb2lsrgb(r, g, b, alpha); // same as sRGB
+}
+function lp32p3(r, g, b, alpha) {
+    // convert an array of linear-light display-p3 RGB  in the range 0.0-1.0
+    // to gamma corrected form
+    return lsrgb2srgb(r, g, b, alpha); // same as sRGB
 }
 function lp32xyz(r, g, b, alpha) {
     // convert an array of linear-light display-p3 values to CIE XYZ
@@ -1419,6 +1527,19 @@ function lp32xyz(r, g, b, alpha) {
         [0 / 1, 32229 / 714400, 5220557 / 5000800],
     ];
     const result = multiplyMatrices(M, [r, g, b]);
+    if (alpha != null && alpha != 1) {
+        result.push(alpha);
+    }
+    return result;
+}
+function xyz2lp3(x, y, z, alpha) {
+    // convert XYZ to linear-light P3
+    const M = [
+        [446124 / 178915, -333277 / 357830, -72051 / 178915],
+        [-14852 / 17905, 63121 / 35810, 423 / 17905],
+        [11844 / 330415, -50337 / 660830, 316169 / 330415],
+    ];
+    const result = multiplyMatrices(M, [x, y, z]);
     if (alpha != null && alpha != 1) {
         result.push(alpha);
     }
@@ -1440,7 +1561,7 @@ function color2srgb(token) {
             break;
         case 'prophoto-rgb':
             // @ts-ignore
-            values = prophotoRgb2srgbvalues(...values);
+            values = prophotorgb2srgbvalues(...values);
             break;
         case 'a98-rgb':
             // @ts-ignore
@@ -1949,15 +2070,26 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     }).concat(mul == 1 ? [] : [{
             typ: exports.EnumToken.NumberTokenType, val: String(mul)
         }]));
-    // ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65']
     switch (colorSpace.val) {
         case 'srgb':
             break;
         case 'display-p3':
             // @ts-ignore
-            values1 = p32srgb(...values1);
+            values1 = srgb2p3(...values1);
             // @ts-ignore
-            values2 = p32srgb(...values2);
+            values2 = srgb2p3(...values2);
+            break;
+        case 'a98-rgb':
+            // @ts-ignore
+            values1 = srgb2a98values(...values1);
+            // @ts-ignore
+            values2 = srgb2a98values(...values2);
+            break;
+        case 'prophoto-rgb':
+            // @ts-ignore
+            values1 = srgb2prophotorgbvalues(...values1);
+            // @ts-ignore
+            values2 = srgb2prophotorgbvalues(...values2);
             break;
         case 'srgb-linear':
             // @ts-ignore
@@ -1965,12 +2097,25 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             // @ts-ignore
             values2 = srgb2lsrgb(...values2);
             break;
+        case 'rec2020':
+            // @ts-ignore
+            values1 = srgb2rec2020(...values1);
+            // @ts-ignore
+            values2 = srgb2rec2020(...values2);
+            break;
         case 'xyz':
         case 'xyz-d65':
+        case 'xyz-d50':
             // @ts-ignore
             values1 = srgb2xyz(...values1);
             // @ts-ignore
             values2 = srgb2xyz(...values2);
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values1 = XYZ_D65_to_D50(...values1);
+                // @ts-ignore
+                values2 = XYZ_D65_to_D50(...values2);
+            }
             break;
         case 'rgb':
             // @ts-ignore
@@ -2032,19 +2177,21 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     }
     if (hueInterpolationMethod != null) {
         let hueIndex = 2;
+        let multiplier = 1;
         if (['hwb', 'hsl'].includes(colorSpace.val)) {
             hueIndex = 0;
+            multiplier = 360;
         }
-        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex], values2[hueIndex]);
-        values1[hueIndex] = h1;
-        values2[hueIndex] = h2;
-        console.error({ hueInterpolationMethod, h1, h2 });
+        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex] * multiplier, values2[hueIndex] * multiplier);
+        values1[hueIndex] = h1 / multiplier;
+        values2[hueIndex] = h2 / multiplier;
     }
     switch (colorSpace.val) {
         case 'srgb':
         case 'srgb-linear':
         case 'xyz':
         case 'xyz-d65':
+        case 'a98-rgb':
             // @ts-ignore
             return {
                 typ: exports.EnumToken.ColorTokenType,
@@ -2061,7 +2208,6 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case 'oklab':
         case 'oklch':
             if (['hsl', 'hwb'].includes(colorSpace.val)) {
-                // console.error({values1, values2});
                 // @ts-ignore
                 if (values1[2] < 0) {
                     // @ts-ignore
@@ -2100,8 +2246,6 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 // @ts-ignore
                 result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
             }
-            // console.error(JSON.stringify(result, null, 1));
-            // console.error({mul, p1, p2, mul1, mul2, values1, values2});
             return result;
     }
     return null;
@@ -2889,7 +3033,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 break;
                             case 'prophoto-rgb':
                                 // @ts-ignore
-                                values = prophotoRgb2srgbvalues(...values);
+                                values = prophotorgb2srgbvalues(...values);
                                 break;
                             case 'a98-rgb':
                                 // @ts-ignore
@@ -2909,27 +3053,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 values = xyzd502srgb(...values);
                                 break;
                         }
-                        // clampValues(values, colorSpace);
-                        // if (values.length == 4 && values[3] == 1) {
-                        //
-                        //     values.pop();
-                        // }
                         // @ts-ignore
                         let value = srgb2hexvalues(...values);
-                        // if ((<Token[]>token.chi).length == 6) {
-                        //
-                        //     if ((<Token[]>token.chi)[5].typ == EnumToken.NumberTokenType || (<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
-                        //
-                        //         let c: number = 255 * +(<NumberToken>(<Token[]>token.chi)[5]).val;
-                        //
-                        //         if ((<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
-                        //
-                        //             c /= 100;
-                        //         }
-                        //
-                        //         value += Math.round(c).toString(16).padStart(2, '0');
-                        //     }
-                        // }
                         return reduceHexValue(value);
                     }
                 }

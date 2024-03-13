@@ -1,6 +1,6 @@
 import { e, k, D50 } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { xyzd502srgb } from './xyz.js';
+import { srgb2xyz, xyzd502srgb } from './xyz.js';
 import { hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, oklch2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
 import { OKLab_to_XYZ, getOKLABComponents } from './oklab.js';
@@ -8,7 +8,6 @@ import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { srgb2xyz } from './xyzd65.js';
 import '../sourcemap/lib/encode.js';
 
 // L: 0% = 0.0, 100% = 100.0

@@ -12,7 +12,7 @@ export * from './xyz';
 export * from './lab';
 export * from './lch';
 export * from './relativecolor';
-export * from './xyzd65';
+export * from './xyzd50';
 export * from './prophotorgb';
 export * from './a98rgb';
 export * from './rec2020';

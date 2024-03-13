@@ -2,7 +2,7 @@ import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { lsrgb2srgb } from './srgb.js';
+import { lsrgb2srgb, srgb2lsrgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 
 function xyzd502srgb(x, y, z) {
@@ -21,5 +21,23 @@ function xyzd502srgb(x, y, z) {
         y * 0.2289768264158322 +
         1.405386058324125 * z);
 }
+function srgb2xyz(r, g, b, alpha) {
+    [r, g, b] = srgb2lsrgb(r, g, b);
+    const rgb = [
+        0.436065742824811 * r +
+            0.3851514688337912 * g +
+            0.14307845442264197 * b,
+        0.22249319175623702 * r +
+            0.7168870538238823 * g +
+            0.06061979053616537 * b,
+        0.013923904500943465 * r +
+            0.09708128566574634 * g +
+            0.7140993584005155 * b
+    ];
+    if (alpha != null && alpha != 1) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
 
-export { xyzd502srgb };
+export { srgb2xyz, xyzd502srgb };

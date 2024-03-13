@@ -1,12 +1,11 @@
 import {D50, e, getComponents, k} from "./utils";
-import { xyzd502srgb} from "./xyz";
+import {srgb2xyz, xyzd502srgb} from "./xyz";
 import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb";
 import {getLCHComponents} from "./lch";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
-import {srgb2xyz} from "./xyzd65";
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
@@ -83,7 +82,7 @@ export function xyz2lab(x: number, y: number, z: number, a: number | null = null
     // now compute f
     const f: number[] = xyz.map((value: number): number => value > e ? Math.cbrt(value) : (k * value + 16) / 116);
 
-    const result : number[] = [
+    const result: number[] = [
         (116 * f[1]) - 16, 	 // L
         500 * (f[0] - f[1]), // a
         200 * (f[1] - f[2])  // b
@@ -143,7 +142,7 @@ export function getLABComponents(token: ColorToken) {
         result.push(alpha);
     }
 
-    return  result;
+    return result;
 }
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code

@@ -9,13 +9,17 @@ import { getComponents } from './utils/components.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
 import { srgbvalues, srgb2lsrgb } from './srgb.js';
-import { srgb2xyz } from './xyzd65.js';
 import { srgb2lch } from './lch.js';
 import { srgb2lab } from './lab.js';
-import { p32srgb } from './displayp3.js';
+import { srgb2p3 } from './p3.js';
 import { eq } from '../../parser/utils/eq.js';
 import { srgb2oklch } from './oklch.js';
 import { srgb2oklab } from './oklab.js';
+import { srgb2a98values } from './a98rgb.js';
+import { srgb2prophotorgbvalues } from './prophotorgb.js';
+import { srgb2xyz } from './xyz.js';
+import { XYZ_D65_to_D50 } from './xyzd50.js';
+import { srgb2rec2020 } from './rec2020.js';
 import '../sourcemap/lib/encode.js';
 
 function interpolateHue(interpolationMethod, h1, h2) {
@@ -125,15 +129,26 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     }).concat(mul == 1 ? [] : [{
             typ: EnumToken.NumberTokenType, val: String(mul)
         }]));
-    // ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65']
     switch (colorSpace.val) {
         case 'srgb':
             break;
         case 'display-p3':
             // @ts-ignore
-            values1 = p32srgb(...values1);
+            values1 = srgb2p3(...values1);
             // @ts-ignore
-            values2 = p32srgb(...values2);
+            values2 = srgb2p3(...values2);
+            break;
+        case 'a98-rgb':
+            // @ts-ignore
+            values1 = srgb2a98values(...values1);
+            // @ts-ignore
+            values2 = srgb2a98values(...values2);
+            break;
+        case 'prophoto-rgb':
+            // @ts-ignore
+            values1 = srgb2prophotorgbvalues(...values1);
+            // @ts-ignore
+            values2 = srgb2prophotorgbvalues(...values2);
             break;
         case 'srgb-linear':
             // @ts-ignore
@@ -141,12 +156,25 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             // @ts-ignore
             values2 = srgb2lsrgb(...values2);
             break;
+        case 'rec2020':
+            // @ts-ignore
+            values1 = srgb2rec2020(...values1);
+            // @ts-ignore
+            values2 = srgb2rec2020(...values2);
+            break;
         case 'xyz':
         case 'xyz-d65':
+        case 'xyz-d50':
             // @ts-ignore
             values1 = srgb2xyz(...values1);
             // @ts-ignore
             values2 = srgb2xyz(...values2);
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values1 = XYZ_D65_to_D50(...values1);
+                // @ts-ignore
+                values2 = XYZ_D65_to_D50(...values2);
+            }
             break;
         case 'rgb':
             // @ts-ignore
@@ -208,19 +236,21 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     }
     if (hueInterpolationMethod != null) {
         let hueIndex = 2;
+        let multiplier = 1;
         if (['hwb', 'hsl'].includes(colorSpace.val)) {
             hueIndex = 0;
+            multiplier = 360;
         }
-        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex], values2[hueIndex]);
-        values1[hueIndex] = h1;
-        values2[hueIndex] = h2;
-        console.error({ hueInterpolationMethod, h1, h2 });
+        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex] * multiplier, values2[hueIndex] * multiplier);
+        values1[hueIndex] = h1 / multiplier;
+        values2[hueIndex] = h2 / multiplier;
     }
     switch (colorSpace.val) {
         case 'srgb':
         case 'srgb-linear':
         case 'xyz':
         case 'xyz-d65':
+        case 'a98-rgb':
             // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,
@@ -237,7 +267,6 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case 'oklab':
         case 'oklch':
             if (['hsl', 'hwb'].includes(colorSpace.val)) {
-                // console.error({values1, values2});
                 // @ts-ignore
                 if (values1[2] < 0) {
                     // @ts-ignore
@@ -276,8 +305,6 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 // @ts-ignore
                 result.chi[2] = { typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
             }
-            // console.error(JSON.stringify(result, null, 1));
-            // console.error({mul, p1, p2, mul1, mul2, values1, values2});
             return result;
     }
     return null;

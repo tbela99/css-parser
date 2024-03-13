@@ -3,7 +3,7 @@
 // 0 <= r, g, b <= 1
 import {COLORS_NAMES, getComponents} from "./utils";
 import {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {color2srgb, convert, getAngle, getNumber} from "./color";
+import {color2srgb, getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab";
 import {expandHexValue} from "./hex";
@@ -11,7 +11,7 @@ import {getOKLABComponents, OKLab_to_sRGB} from "./oklab";
 import {getLCHComponents} from "./lch";
 import {getOKLCHComponents} from "./oklch";
 import {xyzd502srgb} from "./xyz";
-import {XYZ_D65_to_D50} from "./xyzd65";
+import {XYZ_D65_to_D50} from "./xyzd50";
 import {eq} from "../../parser/utils/eq";
 
 export function srgbvalues(token: ColorToken): number[] | null {
@@ -72,6 +72,7 @@ export function hex2srgb(token: ColorToken): number[] {
 }
 
 export function xyz2srgb(x: number, y: number, z: number): number[] {
+
     // @ts-ignore
     return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
 }
@@ -205,15 +206,8 @@ export function hslvalues(token: ColorToken): { h: number, s: number, l: number,
         // @ts-ignore
         t = token.chi[3];
 
-        // @ts-ignore
-        // if ((t.typ == EnumToken.IdenTokenType && t.val == 'none') || (
-        //         t.typ == EnumToken.PercentageTokenType && +t.val < 100) ||
-        //     // @ts-ignore
-        //     (t.typ == EnumToken.NumberTokenType && t.val < 1)) {
-
             // @ts-ignore
             a = getNumber(t);
-        // }
     }
 
     return a == null ? {h, s, l} : {h, s, l, a};
@@ -362,85 +356,4 @@ export function lsrgb2srgb(r: number, g: number, b: number, alpha?: number): num
     }
 
     return rgb;
-}
-
-export function gam_ProPhoto(r: number, g: number, b: number): number[] {
-    // convert an array of linear-light prophoto-rgb  in the range 0.0-1.0
-    // to gamma corrected form
-    // Transfer curve is gamma 1.8 with a small linear portion
-    // TODO for negative values, extend linear portion on reflection of axis, then add pow below that
-    const Et: number = 1 / 512;
-    return [r, g, b].map(function (val: number): number {
-        let sign: number = val < 0 ? -1 : 1;
-        let abs: number = Math.abs(val);
-
-        if (abs >= Et) {
-            return sign * Math.pow(abs, 1 / 1.8);
-        }
-
-        return 16 * val;
-    });
-}
-
-// export function gam_a98rgb(r: number, g: number, b: number): number[] {
-//     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
-//     // to gamma corrected form
-//     // negative values are also now accepted
-//     return [r, g, b].map(function (val: number): number {
-//         let sign: number = val < 0? -1 : 1;
-//         let abs: number = Math.abs(val);
-//
-//         return roundWithPrecision(sign * Math.pow(abs, 256/563), val);
-//     });
-// }
-
-export function prophotoRgb2lsrgb(r: number, g: number, b: number): number[] {
-    // convert an array of prophoto-rgb values
-    // where in-gamut colors are in the range [0.0 - 1.0]
-    // to linear light (un-companded) form.
-    // Transfer curve is gamma 1.8 with a small linear portion
-    // Extended transfer function
-    const Et2: number = 16 / 512;
-    return [r, g, b].map(function (val: number): number {
-        let sign: number = val < 0 ? -1 : 1;
-        let abs: number = Math.abs(val);
-
-        if (abs <= Et2) {
-            return val / 16;
-        }
-
-        return sign * Math.pow(abs, 1.8);
-    });
-}
-
-export function a982lrgb(r: number, g: number, b: number, alpha?: number): number[] {
-    // convert an array of a98-rgb values in the range 0.0 - 1.0
-    // to linear light (un-companded) form.
-    // negative values are also now accepted
-    return [r, g, b].map(function (val: number): number {
-        let sign: number = val < 0 ? -1 : 1;
-        let abs: number = Math.abs(val);
-
-        return sign * Math.pow(abs, 563 / 256);
-    }).concat(alpha == null ? [] : [alpha]);
-}
-
-export function rec20202lsrgb(r: number, g: number, b: number, alpha?: number): number[] {
-    // convert an array of rec2020 RGB values in the range 0.0 - 1.0
-    // to linear light (un-companded) form.
-    // ITU-R BT.2020-2 p.4
-
-    const α: number = 1.09929682680944;
-    const β: number = 0.018053968510807;
-
-    return [r, g, b].map(function (val: number): number {
-        let sign: number = val < 0 ? -1 : 1;
-        let abs: number = Math.abs(val);
-
-        if (abs < β * 4.5) {
-            return val / 4.5;
-        }
-
-        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-    }).concat(alpha == null ? [] : [alpha]);
 }

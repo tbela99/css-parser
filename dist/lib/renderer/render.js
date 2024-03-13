@@ -9,13 +9,13 @@ import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
 import { xyzd502srgb } from './color/xyz.js';
 import { parseRelativeColor } from './color/relativecolor.js';
-import { prophotoRgb2srgbvalues } from './color/prophotorgb.js';
+import { prophotorgb2srgbvalues } from './color/prophotorgb.js';
 import { a98rgb2srgbvalues } from './color/a98rgb.js';
 import { rec20202srgb } from './color/rec2020.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
-import { p32srgb } from './color/displayp3.js';
+import { p32srgb } from './color/p3.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {
@@ -310,7 +310,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 break;
                             case 'prophoto-rgb':
                                 // @ts-ignore
-                                values = prophotoRgb2srgbvalues(...values);
+                                values = prophotorgb2srgbvalues(...values);
                                 break;
                             case 'a98-rgb':
                                 // @ts-ignore
@@ -330,27 +330,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                                 values = xyzd502srgb(...values);
                                 break;
                         }
-                        // clampValues(values, colorSpace);
-                        // if (values.length == 4 && values[3] == 1) {
-                        //
-                        //     values.pop();
-                        // }
                         // @ts-ignore
                         let value = srgb2hexvalues(...values);
-                        // if ((<Token[]>token.chi).length == 6) {
-                        //
-                        //     if ((<Token[]>token.chi)[5].typ == EnumToken.NumberTokenType || (<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
-                        //
-                        //         let c: number = 255 * +(<NumberToken>(<Token[]>token.chi)[5]).val;
-                        //
-                        //         if ((<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
-                        //
-                        //             c /= 100;
-                        //         }
-                        //
-                        //         value += Math.round(c).toString(16).padStart(2, '0');
-                        //     }
-                        // }
                         return reduceHexValue(value);
                     }
                 }

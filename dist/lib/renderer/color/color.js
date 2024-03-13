@@ -11,11 +11,11 @@ import { srgb2oklch, lch2oklch, oklab2oklch, lab2oklch, hwb2oklch, hsl2oklch, rg
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { xyz2srgb, lsrgb2srgb } from './srgb.js';
-import { prophotoRgb2srgbvalues } from './prophotorgb.js';
+import { prophotorgb2srgbvalues } from './prophotorgb.js';
 import { a98rgb2srgbvalues } from './a98rgb.js';
 import { rec20202srgb } from './rec2020.js';
 import { xyzd502srgb } from './xyz.js';
-import { p32srgb } from './displayp3.js';
+import { p32srgb } from './p3.js';
 import '../sourcemap/lib/encode.js';
 
 function color2srgb(token) {
@@ -33,7 +33,7 @@ function color2srgb(token) {
             break;
         case 'prophoto-rgb':
             // @ts-ignore
-            values = prophotoRgb2srgbvalues(...values);
+            values = prophotorgb2srgbvalues(...values);
             break;
         case 'a98-rgb':
             // @ts-ignore

@@ -23,7 +23,7 @@ import {
     colorMix,
     COLORS_NAMES,
     getAngle, getNumber,
-    hsl2hex, hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex, prophotoRgb2srgbvalues,
+    hsl2hex, hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex, prophotorgb2srgbvalues,
     reduceHexValue,
     rgb2hex, srgb2hexvalues, xyz2srgb,
     parseRelativeColor,
@@ -35,7 +35,7 @@ import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
 import {getComponents} from "./color/utils";
-import {p32srgb} from "./color/displayp3";
+import {p32srgb} from "./color/p3";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 
@@ -492,9 +492,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                             case 'prophoto-rgb':
 
                                 // @ts-ignore
-                                values = prophotoRgb2srgbvalues(...values);
+                                values = prophotorgb2srgbvalues(...values);
                                 break;
                             case 'a98-rgb':
+
                                 // @ts-ignore
                                 values = a98rgb2srgbvalues(...values);
                                 break;
@@ -514,30 +515,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                                 break;
                         }
 
-                        // clampValues(values, colorSpace);
-
-                        // if (values.length == 4 && values[3] == 1) {
-                        //
-                        //     values.pop();
-                        // }
-
                         // @ts-ignore
                         let value: string = srgb2hexvalues(...values);
-
-                        // if ((<Token[]>token.chi).length == 6) {
-                        //
-                        //     if ((<Token[]>token.chi)[5].typ == EnumToken.NumberTokenType || (<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
-                        //
-                        //         let c: number = 255 * +(<NumberToken>(<Token[]>token.chi)[5]).val;
-                        //
-                        //         if ((<Token[]>token.chi)[5].typ == EnumToken.PercentageTokenType) {
-                        //
-                        //             c /= 100;
-                        //         }
-                        //
-                        //         value += Math.round(c).toString(16).padStart(2, '0');
-                        //     }
-                        // }
 
                         return reduceHexValue(value);
                     }

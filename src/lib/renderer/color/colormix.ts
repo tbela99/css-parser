@@ -3,17 +3,21 @@ import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser
 import {EnumToken} from "../../ast";
 import {getNumber} from "./color";
 import {srgb2lsrgb, srgbvalues} from "./srgb";
-import {srgb2xyz} from "./xyzd65";
 import {srgb2lch} from "./lch";
 import {srgb2rgb} from "./rgb";
 import {srgb2hsl} from "./hsl";
 import {srgb2hwb} from "./hwb";
 import {srgb2lab} from "./lab";
-import {p32srgb} from "./displayp3";
+import {srgb2p3} from "./p3";
 import {getComponents, powerlessColorComponent} from "./utils";
 import {eq} from "../../parser/utils/eq";
 import {srgb2oklch} from "./oklch";
 import {srgb2oklab} from "./oklab";
+import {srgb2a98values} from "./a98rgb";
+import {srgb2prophotorgbvalues} from "./prophotorgb";
+import {srgb2xyz} from "./xyz";
+import {XYZ_D65_to_D50} from "./xyzd50";
+import {srgb2rec2020} from "./rec2020";
 
 function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
 
@@ -130,7 +134,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         }
     }
 
-    let values1: number[] =  <number[]>srgbvalues(color1);
+    let values1: number[] = <number[]>srgbvalues(color1);
     let values2: number[] = <number[]>srgbvalues(color2);
 
     if (values1 == null || values2 == null) {
@@ -169,8 +173,6 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         typ: EnumToken.NumberTokenType, val: String(mul)
     }]));
 
-    // ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65']
-
     switch (colorSpace.val) {
 
         case 'srgb':
@@ -180,9 +182,25 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'display-p3':
 
             // @ts-ignore
-            values1 = p32srgb(...values1);
+            values1 = srgb2p3(...values1);
             // @ts-ignore
-            values2 = p32srgb(...values2);
+            values2 = srgb2p3(...values2);
+            break;
+
+        case 'a98-rgb':
+
+            // @ts-ignore
+            values1 = srgb2a98values(...values1);
+            // @ts-ignore
+            values2 = srgb2a98values(...values2);
+            break;
+
+        case 'prophoto-rgb':
+
+            // @ts-ignore
+            values1 = srgb2prophotorgbvalues(...values1);
+            // @ts-ignore
+            values2 = srgb2prophotorgbvalues(...values2);
             break;
 
         case 'srgb-linear':
@@ -193,13 +211,30 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
             values2 = srgb2lsrgb(...values2);
             break;
 
+        case 'rec2020':
+
+            // @ts-ignore
+            values1 = srgb2rec2020(...values1);
+            // @ts-ignore
+            values2 = srgb2rec2020(...values2);
+            break;
+
         case 'xyz':
         case 'xyz-d65':
+        case 'xyz-d50':
 
             // @ts-ignore
             values1 = srgb2xyz(...values1);
             // @ts-ignore
             values2 = srgb2xyz(...values2);
+
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values1 = XYZ_D65_to_D50(...values1);
+                // @ts-ignore
+                values2 = XYZ_D65_to_D50(...values2);
+            }
+
             break;
 
         case 'rgb':
@@ -286,17 +321,19 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
 
     if (hueInterpolationMethod != null) {
 
-        let hueIndex : number = 2;
+        let hueIndex: number = 2;
+        let multiplier: number = 1;
 
         if (['hwb', 'hsl'].includes(colorSpace.val)) {
 
             hueIndex = 0;
+            multiplier = 360;
         }
 
-        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex], values2[hueIndex]);
+        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex] * multiplier, values2[hueIndex] * multiplier);
 
-        values1[hueIndex] = h1;
-        values2[hueIndex] = h2;
+        values1[hueIndex] = h1 / multiplier;
+        values2[hueIndex] = h2 / multiplier;
     }
 
     switch (colorSpace.val) {
@@ -305,6 +342,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'srgb-linear':
         case 'xyz':
         case 'xyz-d65':
+        case 'a98-rgb':
 
             // @ts-ignore
             return <ColorToken>{
@@ -325,7 +363,6 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
 
             if (['hsl', 'hwb'].includes(colorSpace.val)) {
 
-                // console.error({values1, values2});
                 // @ts-ignore
                 if (values1[2] < 0) {
 

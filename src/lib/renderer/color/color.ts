@@ -9,11 +9,11 @@ import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2
 import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch";
 import {getComponents} from "./utils";
 import {lsrgb2srgb, xyz2srgb} from "./srgb";
-import {prophotoRgb2srgbvalues} from "./prophotorgb";
+import {prophotorgb2srgbvalues} from "./prophotorgb";
 import {a98rgb2srgbvalues} from "./a98rgb";
 import {rec20202srgb} from "./rec2020";
 import {xyzd502srgb} from "./xyz";
-import {p32srgb} from "./displayp3";
+import {p32srgb} from "./p3";
 
 export function color2srgb(token: ColorToken): number[] {
 
@@ -35,7 +35,7 @@ export function color2srgb(token: ColorToken): number[] {
         case 'prophoto-rgb':
 
             // @ts-ignore
-            values = prophotoRgb2srgbvalues(...values);
+            values = prophotorgb2srgbvalues(...values);
             break;
         case 'a98-rgb':
             // @ts-ignore

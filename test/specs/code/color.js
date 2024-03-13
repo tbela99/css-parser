@@ -991,5 +991,55 @@ color: color-mix(in oklch decreasing, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
 }`));
     });
 
+
+    it('color(sRGB 0.41587 0.503670 0.36664) #99', function () {
+        return parse(`
+.selector {
+color: color(sRGB 0.41587 0.503670 0.36664);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #6a805d
+}`));
+    });
+
+
+    it('color(display-p3 0.43313 0.50108 0.37950) #100', function () {
+        return parse(`
+.selector {
+color: color(display-p3 0.43313 0.50108 0.37950)
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #6a805d
+}`));
+    });
+
+
+    it('color-mix hue interpolation decreasing #101', function () {
+        return parse(`
+.selector {
+color: color(a98-rgb 0.44091 0.49971 0.37408);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #6a805d
+}`));
+    });
+
+
+    it('color(prophoto-rgb 0.36589 0.41717 0.31333) #102', function () {
+        return parse(`
+.selector {
+color: color(prophoto-rgb 0.36589 0.41717 0.31333);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #6a805d
+}`));
+    });
+
+
+    it('color(rec2020 0.42210 0.47580 0.35605) #103', function () {
+        return parse(`
+.selector {
+color: color(rec2020 0.42210 0.47580 0.35605);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #728765
+}`));
+    });
+
     //
 }
