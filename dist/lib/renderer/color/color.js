@@ -2,10 +2,10 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { srgb2rgb, lch2rgb, lab2rgb, oklch2rgb, oklab2rgb, hwb2rgb, hsl2rgb, hex2rgb } from './rgb.js';
-import { lch2hsl, srgb2hsl, lab2hsl, oklch2hsl, oklab2hsl, hwb2hsl, hex2hsl, rgb2hsl } from './hsl.js';
+import { srgb2hsl, lch2hsl, lab2hsl, oklch2hsl, oklab2hsl, hwb2hsl, hex2hsl, rgb2hsl } from './hsl.js';
 import { srgb2hwb, lch2hwb, lab2hwb, oklch2hwb, oklab2hwb, hsl2hwb, rgb2hwb } from './hwb.js';
 import { srgb2lab, oklch2lab, oklab2lab, lch2lab, hwb2lab, hsl2lab, rgb2lab, hex2lab } from './lab.js';
-import { oklch2lch, oklab2lch, lab2lch, hwb2lch, hsl2lch, rgb2lch, hex2lch } from './lch.js';
+import { srgb2lch, oklch2lch, oklab2lch, lab2lch, hwb2lch, hsl2lch, rgb2lch, hex2lch } from './lch.js';
 import { srgb2oklab, oklch2oklab, lch2oklab, lab2oklab, hwb2oklab, hsl2oklab, rgb2oklab, hex2oklab } from './oklab.js';
 import { srgb2oklch, lch2oklch, oklab2oklch, lab2oklch, hwb2oklch, hsl2oklch, rgb2oklch, hex2oklch } from './oklch.js';
 import './utils/constants.js';
@@ -149,10 +149,10 @@ function convert(token, to) {
                 return values2colortoken(srgb2oklch(...values), 'oklch');
             case 'lab':
                 // @ts-ignore
-                return values2colortoken(srgb2lab(...values), 'oklab');
+                return values2colortoken(srgb2lab(...values), 'lab');
             case 'lch':
-                values.push(...lch2hsl(token));
-                break;
+                // @ts-ignore
+                return values2colortoken(srgb2lch(...values), 'lch');
         }
         return null;
     }

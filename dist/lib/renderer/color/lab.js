@@ -76,7 +76,7 @@ function xyz2lab(x, y, z, a = null) {
 }
 function lch2labvalues(l, c, h, a = null) {
     // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
-    const result = [l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180)];
+    const result = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
     if (a != null) {
         result.push(a);
     }

@@ -426,6 +426,16 @@ function xyzd502srgb(x, y, z) {
         y * 0.2289768264158322 +
         1.405386058324125 * z);
 }
+function XYZ_to_lin_sRGB(x, y, z) {
+    // convert XYZ to linear-light sRGB
+    const M = [
+        [12831 / 3959, -329 / 214, -1974 / 3959],
+        [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+        [705 / 12673, -2585 / 12673, 705 / 667],
+    ];
+    const XYZ = [x, y, z]; // convert to XYZ
+    return multiplyMatrices(M, XYZ).map((v) => v);
+}
 function srgb2xyz(r, g, b, alpha) {
     [r, g, b] = srgb2lsrgb(r, g, b);
     const rgb = [
@@ -498,7 +508,7 @@ function getLCHComponents(token) {
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const h = getAngle(t);
+    const h = getAngle(t) * 360;
     // @ts-ignore
     t = components[3];
     // @ts-ignore
@@ -587,7 +597,7 @@ function getOKLCHComponents(token) {
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const h = getAngle(t);
+    const h = getAngle(t) * 360;
     // @ts-ignore
     t = components[3];
     // @ts-ignore
@@ -768,7 +778,7 @@ function xyz2lab(x, y, z, a = null) {
 }
 function lch2labvalues(l, c, h, a = null) {
     // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
-    const result = [l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180)];
+    const result = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
     if (a != null) {
         result.push(a);
     }
@@ -825,21 +835,6 @@ function Lab_to_XYZ(l, a, b) {
     return xyz.map((value, i) => value * D50[i]);
 }
 
-function XYZ_D65_to_D50(x, y, z) {
-    // Bradford chromatic adaptation from D65 to D50
-    // The matrix below is the result of three operations:
-    // - convert from XYZ to retinal cone domain
-    // - scale components from one reference white to another
-    // - convert back to XYZ
-    // see https://github.com/LeaVerou/color.js/pull/354/files
-    var M = [
-        [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
-        [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
-        [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
-    ];
-    return multiplyMatrices(M, [x, y, z]);
-}
-
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
@@ -870,7 +865,10 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return getComponents(token).map((t, index) => index == 3 ? (eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' }) ? 1 : getNumber(t)) : (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
+    return getComponents(token).map((t, index) => index == 3 ? (eq(t, {
+        typ: exports.EnumToken.IdenTokenType,
+        val: 'none'
+    }) ? 1 : getNumber(t)) : (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
 }
 function hex2srgb(token) {
     const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -882,7 +880,7 @@ function hex2srgb(token) {
 }
 function xyz2srgb(x, y, z) {
     // @ts-ignore
-    return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
+    return lsrgb2srgb(...XYZ_to_lin_sRGB(x, y, z));
 }
 function hwb2srgb(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
@@ -1331,6 +1329,21 @@ function hsl2hwbvalues(h, s, l, a = null) {
     return hsv2hwb(...hsl2hsv(h, s, l, a));
 }
 
+function XYZ_D65_to_D50(x, y, z) {
+    // Bradford chromatic adaptation from D65 to D50
+    // The matrix below is the result of three operations:
+    // - convert from XYZ to retinal cone domain
+    // - scale components from one reference white to another
+    // - convert back to XYZ
+    // see https://github.com/LeaVerou/color.js/pull/354/files
+    var M = [
+        [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
+        [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
+        [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
+    ];
+    return multiplyMatrices(M, [x, y, z]);
+}
+
 function prophotorgb2srgbvalues(r, g, b, a = null) {
     // @ts-ignore
     return xyzd502srgb(...prophotorgb2xyz50(r, g, b, a));
@@ -1677,10 +1690,10 @@ function convert(token, to) {
                 return values2colortoken(srgb2oklch(...values), 'oklch');
             case 'lab':
                 // @ts-ignore
-                return values2colortoken(srgb2lab(...values), 'oklab');
+                return values2colortoken(srgb2lab(...values), 'lab');
             case 'lch':
-                values.push(...lch2hsl(token));
-                break;
+                // @ts-ignore
+                return values2colortoken(srgb2lch(...values), 'lch');
         }
         return null;
     }
@@ -2192,6 +2205,23 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case 'xyz':
         case 'xyz-d65':
         case 'a98-rgb':
+        case 'rec2020':
+            // console.error({mul, mul1, mul2, p1, p2, colorSpace, values1, values2, percentage1, percentage2});
+            //
+            // console.error({
+            //     typ: EnumToken.ColorTokenType,
+            //     val: 'color',
+            //     chi: calculate(),
+            //     kin: 'color',
+            //     cal: 'col'
+            // });
+            // console.error(convert({
+            //     typ: EnumToken.ColorTokenType,
+            //     val: 'color',
+            //     chi: calculate(),
+            //     kin: 'color',
+            //     cal: 'col'
+            // }, 'lch'));
             // @ts-ignore
             return {
                 typ: exports.EnumToken.ColorTokenType,
@@ -2246,6 +2276,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 // @ts-ignore
                 result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
             }
+            // console.error(result);
             return result;
     }
     return null;

@@ -9,8 +9,7 @@ import { lch2labvalues, getLABComponents, Lab_to_sRGB } from './lab.js';
 import { getOKLABComponents, OKLab_to_sRGB } from './oklab.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
-import { xyzd502srgb } from './xyz.js';
-import { XYZ_D65_to_D50 } from './xyzd50.js';
+import { XYZ_to_lin_sRGB } from './xyz.js';
 import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
 
@@ -44,7 +43,10 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return getComponents(token).map((t, index) => index == 3 ? (eq(t, { typ: EnumToken.IdenTokenType, val: 'none' }) ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
+    return getComponents(token).map((t, index) => index == 3 ? (eq(t, {
+        typ: EnumToken.IdenTokenType,
+        val: 'none'
+    }) ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
 }
 function hex2srgb(token) {
     const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -56,7 +58,7 @@ function hex2srgb(token) {
 }
 function xyz2srgb(x, y, z) {
     // @ts-ignore
-    return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
+    return lsrgb2srgb(...XYZ_to_lin_sRGB(x, y, z));
 }
 function hwb2srgb(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);

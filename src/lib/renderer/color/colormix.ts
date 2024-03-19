@@ -1,7 +1,7 @@
 import {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
 import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser";
 import {EnumToken} from "../../ast";
-import {getNumber} from "./color";
+import {convert, getNumber} from "./color";
 import {srgb2lsrgb, srgbvalues} from "./srgb";
 import {srgb2lch} from "./lch";
 import {srgb2rgb} from "./rgb";
@@ -251,7 +251,6 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
             values1 = srgb2hsl(...values1);
             // @ts-ignore
             values2 = srgb2hsl(...values2);
-
             break;
 
         case 'hwb':
@@ -343,6 +342,25 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'xyz':
         case 'xyz-d65':
         case 'a98-rgb':
+        case 'rec2020':
+
+            // console.error({mul, mul1, mul2, p1, p2, colorSpace, values1, values2, percentage1, percentage2});
+            //
+            // console.error({
+            //     typ: EnumToken.ColorTokenType,
+            //     val: 'color',
+            //     chi: calculate(),
+            //     kin: 'color',
+            //     cal: 'col'
+            // });
+
+            // console.error(convert({
+            //     typ: EnumToken.ColorTokenType,
+            //     val: 'color',
+            //     chi: calculate(),
+            //     kin: 'color',
+            //     cal: 'col'
+            // }, 'lch'));
 
             // @ts-ignore
             return <ColorToken>{
@@ -412,6 +430,8 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 result.chi[2] = {typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100)};
 
             }
+
+            // console.error(result);
 
             return result;
     }

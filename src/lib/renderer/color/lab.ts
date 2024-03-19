@@ -98,7 +98,7 @@ export function xyz2lab(x: number, y: number, z: number, a: number | null = null
 
 export function lch2labvalues(l: number, c: number, h: number, a: number | null = null): number[] {
     // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
-    const result: number[] = [l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180)];
+    const result: number[] = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
 
     if (a != null) {
         result.push(a);

@@ -10,7 +10,7 @@ import {expandHexValue} from "./hex";
 import {getOKLABComponents, OKLab_to_sRGB} from "./oklab";
 import {getLCHComponents} from "./lch";
 import {getOKLCHComponents} from "./oklch";
-import {xyzd502srgb} from "./xyz";
+import {XYZ_to_lin_sRGB, xyzd502srgb} from "./xyz";
 import {XYZ_D65_to_D50} from "./xyzd50";
 import {eq} from "../../parser/utils/eq";
 
@@ -46,8 +46,8 @@ export function srgbvalues(token: ColorToken): number[] | null {
         case 'oklch':
             return oklch2srgb(token);
 
-            case 'color':
-                return color2srgb(token);
+        case 'color':
+            return color2srgb(token);
     }
 
     return null;
@@ -55,7 +55,10 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
 export function rgb2srgb(token: ColorToken): number[] {
 
-    return getComponents(token).map((t: Token, index: number) => index == 3 ? (eq(t, {typ: EnumToken.IdenTokenType, val: 'none'}) ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
+    return getComponents(token).map((t: Token, index: number) => index == 3 ? (eq(t, {
+        typ: EnumToken.IdenTokenType,
+        val: 'none'
+    }) ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
 }
 
 export function hex2srgb(token: ColorToken): number[] {
@@ -74,7 +77,7 @@ export function hex2srgb(token: ColorToken): number[] {
 export function xyz2srgb(x: number, y: number, z: number): number[] {
 
     // @ts-ignore
-    return xyzd502srgb(...XYZ_D65_to_D50(x, y, z));
+    return lsrgb2srgb(...XYZ_to_lin_sRGB(x, y, z));
 }
 
 export function hwb2srgb(token: ColorToken): number[] {
@@ -206,8 +209,8 @@ export function hslvalues(token: ColorToken): { h: number, s: number, l: number,
         // @ts-ignore
         t = token.chi[3];
 
-            // @ts-ignore
-            a = getNumber(t);
+        // @ts-ignore
+        a = getNumber(t);
     }
 
     return a == null ? {h, s, l} : {h, s, l, a};

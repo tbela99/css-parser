@@ -309,7 +309,7 @@ color: color( srgb-linear  0.21404 0.21404 0.21404 )
 .selector {
 color: color(display-p3 0.5 .5 .5);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: #7f807f
+ color: #7f8080
 }`));
     });
 
@@ -1031,13 +1031,21 @@ color: color(prophoto-rgb 0.36589 0.41717 0.31333);
 }`));
     });
 
-
     it('color(rec2020 0.42210 0.47580 0.35605) #103', function () {
         return parse(`
 .selector {
 color: color(rec2020 0.42210 0.47580 0.35605);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: #728765
+}`));
+    });
+
+    it('color-mix(in rec2020, white, black) #104', function () {
+        return parse(`
+.selector {
+color: color-mix(in rec2020, white, black);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #958a7a
 }`));
     });
 

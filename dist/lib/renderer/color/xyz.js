@@ -1,3 +1,4 @@
+import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
@@ -21,6 +22,16 @@ function xyzd502srgb(x, y, z) {
         y * 0.2289768264158322 +
         1.405386058324125 * z);
 }
+function XYZ_to_lin_sRGB(x, y, z) {
+    // convert XYZ to linear-light sRGB
+    const M = [
+        [12831 / 3959, -329 / 214, -1974 / 3959],
+        [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+        [705 / 12673, -2585 / 12673, 705 / 667],
+    ];
+    const XYZ = [x, y, z]; // convert to XYZ
+    return multiplyMatrices(M, XYZ).map((v) => v);
+}
 function srgb2xyz(r, g, b, alpha) {
     [r, g, b] = srgb2lsrgb(r, g, b);
     const rgb = [
@@ -40,4 +51,4 @@ function srgb2xyz(r, g, b, alpha) {
     return rgb;
 }
 
-export { srgb2xyz, xyzd502srgb };
+export { XYZ_to_lin_sRGB, srgb2xyz, xyzd502srgb };

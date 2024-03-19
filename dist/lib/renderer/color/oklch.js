@@ -54,7 +54,7 @@ function getOKLCHComponents(token) {
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const h = getAngle(t);
+    const h = getAngle(t) * 360;
     // @ts-ignore
     t = components[3];
     // @ts-ignore

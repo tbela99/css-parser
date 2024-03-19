@@ -251,6 +251,23 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case 'xyz':
         case 'xyz-d65':
         case 'a98-rgb':
+        case 'rec2020':
+            // console.error({mul, mul1, mul2, p1, p2, colorSpace, values1, values2, percentage1, percentage2});
+            //
+            // console.error({
+            //     typ: EnumToken.ColorTokenType,
+            //     val: 'color',
+            //     chi: calculate(),
+            //     kin: 'color',
+            //     cal: 'col'
+            // });
+            // console.error(convert({
+            //     typ: EnumToken.ColorTokenType,
+            //     val: 'color',
+            //     chi: calculate(),
+            //     kin: 'color',
+            //     cal: 'col'
+            // }, 'lch'));
             // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,
@@ -305,6 +322,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 // @ts-ignore
                 result.chi[2] = { typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
             }
+            // console.error(result);
             return result;
     }
     return null;

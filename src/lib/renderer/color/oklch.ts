@@ -83,7 +83,7 @@ export function getOKLCHComponents(token: ColorToken): number[] {
     t = <NumberToken | PercentageToken>components[2];
 
     // @ts-ignore
-    const h: number = getAngle(t);
+    const h: number = getAngle(t) * 360;
 
     // @ts-ignore
     t = <NumberToken | PercentageToken>components[3];

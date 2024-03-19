@@ -64,6 +64,14 @@ export function lab2lchvalues(l: number, a: number, b: number, alpha: number | n
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 
+export function srgb2lchvalues(r: number, g: number, blue: number, alpha?: number): number[] {
+
+    // @ts-ignore
+    const [l, c, h] = lab2lchvalues(...srgb2lab(r, g, blue));
+
+    return alpha == null || alpha == 1 ? [l, c, h] : [l, c, h, alpha];
+}
+
 export function getLCHComponents(token: ColorToken): number[] {
 
     const components: Token[] = getComponents(token);
@@ -84,7 +92,7 @@ export function getLCHComponents(token: ColorToken): number[] {
     t = <NumberToken | PercentageToken>components[2];
 
     // @ts-ignore
-    const h: number = getAngle(t);
+    const h: number = getAngle(t) * 360;
 
     // @ts-ignore
     t = <NumberToken | PercentageToken>components[3];

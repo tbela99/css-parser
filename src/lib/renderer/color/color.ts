@@ -4,7 +4,7 @@ import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2
 import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl";
 import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb, srgb2hwb} from "./hwb";
 import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab";
-import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch} from "./lch";
+import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch, srgb2lch} from "./lch";
 import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab";
 import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch";
 import {getComponents} from "./utils";
@@ -12,7 +12,7 @@ import {lsrgb2srgb, xyz2srgb} from "./srgb";
 import {prophotorgb2srgbvalues} from "./prophotorgb";
 import {a98rgb2srgbvalues} from "./a98rgb";
 import {rec20202srgb} from "./rec2020";
-import {xyzd502srgb} from "./xyz";
+import {srgb2xyz, xyzd502srgb} from "./xyz";
 import {p32srgb} from "./p3";
 
 export function color2srgb(token: ColorToken): number[] {
@@ -198,12 +198,12 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
             case 'lab':
 
                 // @ts-ignore
-                return values2colortoken(srgb2lab(...values), 'oklab');
+                return values2colortoken(srgb2lab(...values), 'lab');
 
             case 'lch':
 
-                values.push(...lch2hsl(token));
-                break;
+                // @ts-ignore
+                return values2colortoken(srgb2lch(...values), 'lch');
         }
 
         return null;

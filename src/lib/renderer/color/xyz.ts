@@ -1,5 +1,19 @@
 import {multiplyMatrices} from "./utils";
 import {lsrgb2srgb, srgb2lsrgb} from "./srgb";
+import {Lab_to_XYZ} from "./lab";
+
+export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
+
+    const [x, y, z] = Lab_to_XYZ(l, a, b);
+
+    return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
+}
+
+export function lch2xyz(l: number, c: number, h: number, alpha?: number): number[] {
+
+    return lab2xyz(l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180), alpha);
+}
+
 
 export function xyzd502srgb(x: number, y: number, z: number): number[] {
 
@@ -33,7 +47,7 @@ export function XYZ_to_lin_sRGB(x: number, y: number, z: number): number[] {
     return multiplyMatrices(M, XYZ).map((v: number) => v);
 }
 
-export function D50_to_D65(x: number, y: number, z: number): number[] {
+export function XYZ_D50_to_D65(x: number, y: number, z: number): number[] {
     // Bradford chromatic adaptation from D50 to D65
     const M: number[][] = [
         [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],

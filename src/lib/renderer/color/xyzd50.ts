@@ -1,4 +1,13 @@
 import {multiplyMatrices} from "./utils";
+import {Lab_to_XYZ} from "./lab";
+
+export function lab2xyzd50(l: number, a: number, b: number, alpha?: number): number[] {
+
+    // @ts-ignore
+    const [x, y, z] = XYZ_D65_to_D50(...Lab_to_XYZ(l, a, b));
+
+    return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
+}
 
 export function XYZ_D65_to_D50(x: number, y: number, z: number): number[] {
     // Bradford chromatic adaptation from D65 to D50
