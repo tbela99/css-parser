@@ -3,7 +3,7 @@ import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser
 import {EnumToken} from "../../ast";
 import {convert, getNumber} from "./color";
 import {srgb2lsrgb, srgbvalues} from "./srgb";
-import {srgb2lch} from "./lch";
+import {srgb2lch, xyz2lchvalues} from "./lch";
 import {srgb2rgb} from "./rgb";
 import {srgb2hsl} from "./hsl";
 import {srgb2hwb} from "./hwb";
@@ -15,8 +15,8 @@ import {srgb2oklch} from "./oklch";
 import {srgb2oklab} from "./oklab";
 import {srgb2a98values} from "./a98rgb";
 import {srgb2prophotorgbvalues} from "./prophotorgb";
-import {srgb2xyz} from "./xyz";
-import {XYZ_D65_to_D50} from "./xyzd50";
+import {srgb2xyz, XYZ_D50_to_D65} from "./xyz";
+import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50";
 import {srgb2rec2020} from "./rec2020";
 
 function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
@@ -337,30 +337,42 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
 
     switch (colorSpace.val) {
 
-        case 'srgb':
-        case 'srgb-linear':
         case 'xyz':
         case 'xyz-d65':
+        case 'xyz-d50':
+
+            let values: number[] = (<number[]>values1).map((v1: number, i: number) =>  (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+            .concat(mul == 1 ? [] : [mul]);
+
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values = xyzd502lch(...values);
+            }
+
+            else {
+
+                // @ts-ignore
+                values = xyz2lchvalues(...values);
+            }
+
+            // @ts-ignore
+            return <ColorToken>{
+                typ: EnumToken.ColorTokenType,
+                val: 'lch',
+                chi: values.map(v => {
+                    return {
+
+                        typ: EnumToken.NumberTokenType,
+                        val: String(v)
+                    }
+                }),
+                kin: 'lch'
+            };
+
+        case 'srgb':
+        case 'srgb-linear':
         case 'a98-rgb':
         case 'rec2020':
-
-            // console.error({mul, mul1, mul2, p1, p2, colorSpace, values1, values2, percentage1, percentage2});
-            //
-            // console.error({
-            //     typ: EnumToken.ColorTokenType,
-            //     val: 'color',
-            //     chi: calculate(),
-            //     kin: 'color',
-            //     cal: 'col'
-            // });
-
-            // console.error(convert({
-            //     typ: EnumToken.ColorTokenType,
-            //     val: 'color',
-            //     chi: calculate(),
-            //     kin: 'color',
-            //     cal: 'col'
-            // }, 'lch'));
 
             // @ts-ignore
             return <ColorToken>{

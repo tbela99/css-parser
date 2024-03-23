@@ -32,6 +32,16 @@ function XYZ_to_lin_sRGB(x, y, z) {
     const XYZ = [x, y, z]; // convert to XYZ
     return multiplyMatrices(M, XYZ).map((v) => v);
 }
+function XYZ_D50_to_D65(x, y, z) {
+    // Bradford chromatic adaptation from D50 to D65
+    const M = [
+        [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
+        [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
+        [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
+    ];
+    const XYZ = [x, y, z];
+    return multiplyMatrices(M, XYZ).map((v) => v);
+}
 function srgb2xyz(r, g, b, alpha) {
     [r, g, b] = srgb2lsrgb(r, g, b);
     const rgb = [
@@ -51,4 +61,4 @@ function srgb2xyz(r, g, b, alpha) {
     return rgb;
 }
 
-export { XYZ_to_lin_sRGB, srgb2xyz, xyzd502srgb };
+export { XYZ_D50_to_D65, XYZ_to_lin_sRGB, srgb2xyz, xyzd502srgb };

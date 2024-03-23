@@ -9,7 +9,7 @@ import { getComponents } from './utils/components.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
 import { srgbvalues, srgb2lsrgb } from './srgb.js';
-import { srgb2lch } from './lch.js';
+import { srgb2lch, xyz2lchvalues } from './lch.js';
 import { srgb2lab } from './lab.js';
 import { srgb2p3 } from './p3.js';
 import { eq } from '../../parser/utils/eq.js';
@@ -18,7 +18,7 @@ import { srgb2oklab } from './oklab.js';
 import { srgb2a98values } from './a98rgb.js';
 import { srgb2prophotorgbvalues } from './prophotorgb.js';
 import { srgb2xyz } from './xyz.js';
-import { XYZ_D65_to_D50 } from './xyzd50.js';
+import { XYZ_D65_to_D50, xyzd502lch } from './xyzd50.js';
 import { srgb2rec2020 } from './rec2020.js';
 import '../sourcemap/lib/encode.js';
 
@@ -246,28 +246,35 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         values2[hueIndex] = h2 / multiplier;
     }
     switch (colorSpace.val) {
-        case 'srgb':
-        case 'srgb-linear':
         case 'xyz':
         case 'xyz-d65':
+        case 'xyz-d50':
+            let values = values1.map((v1, i) => (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+                .concat(mul == 1 ? [] : [mul]);
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values = xyzd502lch(...values);
+            }
+            else {
+                // @ts-ignore
+                values = xyz2lchvalues(...values);
+            }
+            // @ts-ignore
+            return {
+                typ: EnumToken.ColorTokenType,
+                val: 'lch',
+                chi: values.map(v => {
+                    return {
+                        typ: EnumToken.NumberTokenType,
+                        val: String(v)
+                    };
+                }),
+                kin: 'lch'
+            };
+        case 'srgb':
+        case 'srgb-linear':
         case 'a98-rgb':
         case 'rec2020':
-            // console.error({mul, mul1, mul2, p1, p2, colorSpace, values1, values2, percentage1, percentage2});
-            //
-            // console.error({
-            //     typ: EnumToken.ColorTokenType,
-            //     val: 'color',
-            //     chi: calculate(),
-            //     kin: 'color',
-            //     cal: 'col'
-            // });
-            // console.error(convert({
-            //     typ: EnumToken.ColorTokenType,
-            //     val: 'color',
-            //     chi: calculate(),
-            //     kin: 'color',
-            //     cal: 'col'
-            // }, 'lch'));
             // @ts-ignore
             return {
                 typ: EnumToken.ColorTokenType,

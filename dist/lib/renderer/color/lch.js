@@ -4,7 +4,7 @@ import { getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { srgb2lab, hex2lab, rgb2lab, hsl2lab, hwb2lab, getLABComponents, oklab2lab, oklch2lab } from './lab.js';
+import { srgb2lab, xyz2lab, hex2lab, rgb2lab, hsl2lab, hwb2lab, getLABComponents, oklab2lab, oklch2lab } from './lab.js';
 import '../sourcemap/lib/encode.js';
 
 function hex2lch(token) {
@@ -40,12 +40,21 @@ function oklch2lch(token) {
     return lab2lchvalues(...oklch2lab(token));
 }
 function lab2lchvalues(l, a, b, alpha = null) {
-    const c = Math.sqrt(a * a + b * b);
+    let c = Math.sqrt(a * a + b * b);
     let h = Math.atan2(b, a) * 180 / Math.PI;
     if (h < 0) {
         h += 360;
     }
+    if (c < .0001) {
+        c = 0;
+        h = 0;
+    }
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
+}
+function xyz2lchvalues(x, y, z, alpha) {
+    // @ts-ignore(
+    const lch = lab2lchvalues(...xyz2lab(x, y, z));
+    return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
 }
 function getLCHComponents(token) {
     const components = getComponents(token);
@@ -68,4 +77,4 @@ function getLCHComponents(token) {
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 
-export { getLCHComponents, hex2lch, hsl2lch, hwb2lch, lab2lch, lab2lchvalues, oklab2lch, oklch2lch, rgb2lch, srgb2lch };
+export { getLCHComponents, hex2lch, hsl2lch, hwb2lch, lab2lch, lab2lchvalues, oklab2lch, oklch2lch, rgb2lch, srgb2lch, xyz2lchvalues };

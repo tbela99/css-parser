@@ -1,5 +1,7 @@
-import {multiplyMatrices} from "./utils";
-import {Lab_to_XYZ} from "./lab";
+import {e, k, multiplyMatrices} from "./utils";
+import {Lab_to_XYZ, xyz2lab} from "./lab";
+import {lab2lchvalues} from "./lch";
+import {XYZ_D50_to_D65} from "./xyz";
 
 export function lab2xyzd50(l: number, a: number, b: number, alpha?: number): number[] {
 
@@ -7,6 +9,16 @@ export function lab2xyzd50(l: number, a: number, b: number, alpha?: number): num
     const [x, y, z] = XYZ_D65_to_D50(...Lab_to_XYZ(l, a, b));
 
     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
+}
+
+export function xyzd502lch(x: number, y: number, z: number, alpha?: number): number[] {
+
+    // @ts-ignore
+    const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
+    // L in range [0,100]. For use in CSS, add a percent
+
+    // @ts-ignore
+    return lab2lchvalues(l, a, b, alpha);
 }
 
 export function XYZ_D65_to_D50(x: number, y: number, z: number): number[] {

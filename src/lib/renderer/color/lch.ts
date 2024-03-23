@@ -2,7 +2,8 @@ import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
-import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab";
+import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab, xyz2lab} from "./lab";
+import {XYZ_D65_to_D50} from "./xyzd50";
 
 export function hex2lch(token: ColorToken): number[] {
 
@@ -54,14 +55,27 @@ export function oklch2lch(token: ColorToken): number[] {
 
 export function lab2lchvalues(l: number, a: number, b: number, alpha: number | null = null): number[] {
 
-    const c: number = Math.sqrt(a * a + b * b);
+    let c: number = Math.sqrt(a * a + b * b);
     let h: number = Math.atan2(b, a) * 180 / Math.PI;
 
     if (h < 0) {
         h += 360;
     }
 
+    if (c < .0001) {
+        c = 0;
+        h = 0;
+    }
+
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
+}
+
+export function xyz2lchvalues(x: number, y: number, z: number, alpha?: number): number[] {
+
+    // @ts-ignore(
+    const lch = lab2lchvalues(...xyz2lab(x, y, z));
+
+    return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
 }
 
 export function srgb2lchvalues(r: number, g: number, blue: number, alpha?: number): number[] {

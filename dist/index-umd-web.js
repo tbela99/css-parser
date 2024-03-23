@@ -438,6 +438,16 @@
         const XYZ = [x, y, z]; // convert to XYZ
         return multiplyMatrices(M, XYZ).map((v) => v);
     }
+    function XYZ_D50_to_D65(x, y, z) {
+        // Bradford chromatic adaptation from D50 to D65
+        const M = [
+            [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
+            [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
+            [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
+        ];
+        const XYZ = [x, y, z];
+        return multiplyMatrices(M, XYZ).map((v) => v);
+    }
     function srgb2xyz(r, g, b, alpha) {
         [r, g, b] = srgb2lsrgb(r, g, b);
         const rgb = [
@@ -490,12 +500,21 @@
         return lab2lchvalues(...oklch2lab(token));
     }
     function lab2lchvalues(l, a, b, alpha = null) {
-        const c = Math.sqrt(a * a + b * b);
+        let c = Math.sqrt(a * a + b * b);
         let h = Math.atan2(b, a) * 180 / Math.PI;
         if (h < 0) {
             h += 360;
         }
+        if (c < .0001) {
+            c = 0;
+            h = 0;
+        }
         return alpha == null ? [l, c, h] : [l, c, h, alpha];
+    }
+    function xyz2lchvalues(x, y, z, alpha) {
+        // @ts-ignore(
+        const lch = lab2lchvalues(...xyz2lab(x, y, z));
+        return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
     }
     function getLCHComponents(token) {
         const components = getComponents(token);
@@ -1331,6 +1350,13 @@
         return hsv2hwb(...hsl2hsv(h, s, l, a));
     }
 
+    function xyzd502lch(x, y, z, alpha) {
+        // @ts-ignore
+        const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
+        // L in range [0,100]. For use in CSS, add a percent
+        // @ts-ignore
+        return lab2lchvalues(l, a, b, alpha);
+    }
     function XYZ_D65_to_D50(x, y, z) {
         // Bradford chromatic adaptation from D65 to D50
         // The matrix below is the result of three operations:
@@ -2202,28 +2228,35 @@
             values2[hueIndex] = h2 / multiplier;
         }
         switch (colorSpace.val) {
-            case 'srgb':
-            case 'srgb-linear':
             case 'xyz':
             case 'xyz-d65':
+            case 'xyz-d50':
+                let values = values1.map((v1, i) => (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+                    .concat(mul == 1 ? [] : [mul]);
+                if (colorSpace.val == 'xyz-d50') {
+                    // @ts-ignore
+                    values = xyzd502lch(...values);
+                }
+                else {
+                    // @ts-ignore
+                    values = xyz2lchvalues(...values);
+                }
+                // @ts-ignore
+                return {
+                    typ: exports.EnumToken.ColorTokenType,
+                    val: 'lch',
+                    chi: values.map(v => {
+                        return {
+                            typ: exports.EnumToken.NumberTokenType,
+                            val: String(v)
+                        };
+                    }),
+                    kin: 'lch'
+                };
+            case 'srgb':
+            case 'srgb-linear':
             case 'a98-rgb':
             case 'rec2020':
-                // console.error({mul, mul1, mul2, p1, p2, colorSpace, values1, values2, percentage1, percentage2});
-                //
-                // console.error({
-                //     typ: EnumToken.ColorTokenType,
-                //     val: 'color',
-                //     chi: calculate(),
-                //     kin: 'color',
-                //     cal: 'col'
-                // });
-                // console.error(convert({
-                //     typ: EnumToken.ColorTokenType,
-                //     val: 'color',
-                //     chi: calculate(),
-                //     kin: 'color',
-                //     cal: 'col'
-                // }, 'lch'));
                 // @ts-ignore
                 return {
                     typ: exports.EnumToken.ColorTokenType,

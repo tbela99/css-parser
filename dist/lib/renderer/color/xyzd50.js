@@ -3,8 +3,18 @@ import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
+import { xyz2lab } from './lab.js';
+import { lab2lchvalues } from './lch.js';
+import { XYZ_D50_to_D65 } from './xyz.js';
 import '../sourcemap/lib/encode.js';
 
+function xyzd502lch(x, y, z, alpha) {
+    // @ts-ignore
+    const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
+    // L in range [0,100]. For use in CSS, add a percent
+    // @ts-ignore
+    return lab2lchvalues(l, a, b, alpha);
+}
 function XYZ_D65_to_D50(x, y, z) {
     // Bradford chromatic adaptation from D65 to D50
     // The matrix below is the result of three operations:
@@ -20,4 +30,4 @@ function XYZ_D65_to_D50(x, y, z) {
     return multiplyMatrices(M, [x, y, z]);
 }
 
-export { XYZ_D65_to_D50 };
+export { XYZ_D65_to_D50, xyzd502lch };

@@ -1049,5 +1049,50 @@ color: color-mix(in rec2020, white, black);
 }`));
     });
 
-    //
+    it('color-mix(in xyz, white, black) #105', function () {
+        return parse(`
+.selector {
+color: color-mix(in xyz, white, black);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #bcbcbc
+}`));
+    });
+
+    it('color-mix(in lch, white, black) #106', function () {
+        return parse(`
+.selector {
+color: color-mix(in lch, white, black);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #777
+}`));
+    });
+
+    it('color-mix(in srgb, white, black) #107', function () {
+        return parse(`
+.selector {
+color: color-mix(in srgb, white, black);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: grey
+}`));
+    });
+
+    it('color-mix(in srgb-linear, white, black) #107', function () {
+        return parse(`
+.selector {
+color: color-mix(in srgb-linear, white, black);
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #bcbcbc
+}`));
+    });
+
+    it('color-mix(in xyz, rgb(82.02% 30.21% 35.02%) 75.23%, rgb(5.64% 55.94% 85.31%)) #108', function () {
+        return parse(`
+.selector {
+color: color-mix(in xyz, rgb(82.02% 30.21% 35.02%) 75.23%, rgb(5.64% 55.94% 85.31%));
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+ color: #b86389
+}`));
+    });
+
+    // color-mix(in lch, white, black)
 }
