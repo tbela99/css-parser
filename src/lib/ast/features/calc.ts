@@ -2,22 +2,14 @@ import {
     AstAtRule,
     AstDeclaration,
     AstRule,
-    BinaryExpressionNode,
-    BinaryExpressionToken,
-    FractionToken,
     FunctionToken,
-    LiteralToken,
     MinifyOptions,
-    ParensToken,
     Token
 } from "../../../@types";
 import {EnumToken} from "../types";
-import {reduceNumber} from "../../renderer";
 import {walkValues} from "../walk";
 import {MinifyFeature} from "../utils";
-import {compute} from "./utils";
 import {IterableWeakSet} from "../../iterable";
-import {isDimension} from "../../parser";
 import {evaluate} from "../math";
 
 export class ComputeCalcExpressionFeature extends MinifyFeature {
@@ -26,7 +18,7 @@ export class ComputeCalcExpressionFeature extends MinifyFeature {
         return 1;
     }
 
-    static register(options: MinifyOptions):void {
+    static register(options: MinifyOptions): void {
 
         if (options.computeCalcExpression) {
 
@@ -43,11 +35,11 @@ export class ComputeCalcExpressionFeature extends MinifyFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule): AstRule | AstAtRule {
+    run(ast: AstRule | AstAtRule): void {
 
         if (!('chi' in ast)) {
 
-            return ast;
+            return;
         }
 
         // @ts-ignore
@@ -78,15 +70,11 @@ export class ComputeCalcExpressionFeature extends MinifyFeature {
                                     if (parent.l == value) {
 
                                         parent.l = value.chi[0];
-                                    }
-
-                                    else {
+                                    } else {
 
                                         parent.r = value.chi[0];
                                     }
-                                }
-
-                                else {
+                                } else {
 
                                     for (let i = 0; i < parent.chi.length; i++) {
 
@@ -103,7 +91,5 @@ export class ComputeCalcExpressionFeature extends MinifyFeature {
                 }
             }
         }
-
-        return ast;
     }
 }

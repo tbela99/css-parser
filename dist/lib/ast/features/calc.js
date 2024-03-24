@@ -21,7 +21,7 @@ class ComputeCalcExpressionFeature extends MinifyFeature {
     }
     run(ast) {
         if (!('chi' in ast)) {
-            return ast;
+            return;
         }
         // @ts-ignore
         for (const node of ast.chi) {
@@ -58,7 +58,6 @@ class ComputeCalcExpressionFeature extends MinifyFeature {
                 }
             }
         }
-        return ast;
     }
 }
 

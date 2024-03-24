@@ -515,6 +515,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
 
                     default: [],
+                    types: [],
                     keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
                 }
             },
@@ -522,6 +523,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 shorthand: 'overflow-y',
                 properties: {
                     default: [],
+                    types: [],
                     keywords: ['auto', 'visible', 'hidden', 'clip', 'scroll']
                 }
             }
@@ -676,10 +678,14 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
     [
         {
             shorthand: 'background',
-            pattern: 'background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size',
+            pattern: 'background-attachment background-origin background-clip background-color background-image background-repeat background-position background-size',
             keywords: ['none'],
-            default: [],
+            default: ['0 0', 'none', 'auto', 'repeat', 'transparent', '#0000', 'scroll', 'padding-box', 'border-box'],
             multiple: true,
+            set: {
+
+                'background-origin': ['background-clip']
+            },
             separator: {typ: 'Comma'}
         },
         [
@@ -704,7 +710,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 shorthand: 'background-color',
                 properties: {
                     types: ['Color'],
-                    default: ['transparent'],
+                    default: ['#0000', 'transparent'],
                     multiple: true,
                     keywords: []
                 }
@@ -756,7 +762,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                         top: '0',
                         center: '50%',
                         bottom: '100%',
-                        'right': '100%'
+                        right: '100%'
                     },
                     constraints: {
                         mapping: {

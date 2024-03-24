@@ -1,8 +1,8 @@
 import { PropertySet } from './set.js';
-import '../../renderer/utils/color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { parseString } from '../parse.js';
+import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { getConfig } from '../utils/config.js';
 import { PropertyMap } from './map.js';

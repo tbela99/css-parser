@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { reduceNumber } from '../../renderer/render.js';
 
-const gcd = (x, y) => {
+function gcd(x, y) {
     x = Math.abs(x);
     y = Math.abs(y);
     let t;
@@ -14,7 +14,7 @@ const gcd = (x, y) => {
         x = t;
     }
     return x;
-};
+}
 function compute(a, b, op) {
     if (typeof a == 'number' && typeof b == 'number') {
         switch (op) {

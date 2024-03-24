@@ -45,7 +45,7 @@ class InlineCssVariablesFeature extends MinifyFeature {
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
-        const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && ast.sel == ':root';
+        const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes(ast.sel);
         const variableScope = context.variableScope;
         // @ts-ignore
         for (const node of ast.chi) {

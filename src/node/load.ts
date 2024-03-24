@@ -1,4 +1,4 @@
-import {readFile} from "fs/promises";
+import {readFile} from "node:fs/promises";
 import {resolve, matchUrl} from "../lib/fs";
 
 function parseResponse(response: Response) {

@@ -52,7 +52,7 @@ export class InlineCssVariablesFeature extends MinifyFeature {
         return 0;
     }
 
-    static register(options: MinifyOptions) {
+    static register(options: MinifyOptions): void {
 
         if (options.inlineCssVariables) {
 
@@ -71,14 +71,14 @@ export class InlineCssVariablesFeature extends MinifyFeature {
 
     run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) {
+    }): void {
 
         if (!('variableScope' in context)) {
 
             context.variableScope = <Map<string, VariableScopeInfo>>new Map;
         }
 
-        const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && (<AstRule>ast).sel == ':root';
+        const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes((<AstRule>ast).sel);
 
         const variableScope = context.variableScope;
 

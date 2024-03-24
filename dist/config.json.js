@@ -924,6 +924,8 @@ var map = {
 			"overflow-x": {
 				"default": [
 				],
+				types: [
+				],
 				keywords: [
 					"auto",
 					"visible",
@@ -934,6 +936,8 @@ var map = {
 			},
 			"overflow-y": {
 				"default": [
+				],
+				types: [
 				],
 				keywords: [
 					"auto",
@@ -1267,13 +1271,27 @@ var map = {
 	},
 	background: {
 		shorthand: "background",
-		pattern: "background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size",
+		pattern: "background-attachment background-origin background-clip background-color background-image background-repeat background-position background-size",
 		keywords: [
 			"none"
 		],
 		"default": [
+			"0 0",
+			"none",
+			"auto",
+			"repeat",
+			"transparent",
+			"#0000",
+			"scroll",
+			"padding-box",
+			"border-box"
 		],
 		multiple: true,
+		set: {
+			"background-origin": [
+				"background-clip"
+			]
+		},
 		separator: {
 			typ: "Comma"
 		},
@@ -1307,6 +1325,7 @@ var map = {
 					"Color"
 				],
 				"default": [
+					"#0000",
 					"transparent"
 				],
 				multiple: true,

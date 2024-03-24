@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions)
+[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
 
@@ -14,16 +14,15 @@ $ npm install @tbela99/css-parser
 
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- CSS color level 4 & 5: color(), lab(), lch(), oklab(), oklch(), color-mix() and relative color
 - automatically generate nested css rules
-- generate sourcemap
-- compute css shorthands. see the list below
-- compute calc() expression
-- inline css variables
-- relative css colors using rgb(), hsl() and hwb()
 - nested css expansion
-- remove duplicate properties
-- flatten @import rules
-- works the same way in node and web browser
+- sourcemap generation
+- CSS shorthands computation. see supported properties list below
+- calc() expression evaluation
+- css variables inlining
+- duplicate properties removal
+- flattening @import rules
 
 ## Transform
 
@@ -65,7 +64,7 @@ Include ParseOptions and RenderOptions
 - computeShorthand: boolean, optional. compute shorthand properties.
 - inlineCssVariables: boolean, optional. replace css variables with their current value.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
-- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} rule.
+- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
 - visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
@@ -525,7 +524,7 @@ console.debug(await transform(css, options));
 ```typescript
 
 import {AstDeclaration, LengthToken, ParserOptions} from "../src/@types";
-import {EnumToken, NodeType} from "../src/lib";
+import {EnumToken, EnumToken} from "../src/lib";
 import {transform} from "../src/node";
 
 const options: ParserOptions = {
@@ -542,7 +541,7 @@ const options: ParserOptions = {
                     node,
                     {
 
-                        typ: NodeType.DeclarationNodeType,
+                        typ: EnumToken.DeclarationNodeType,
                         nam: 'width',
                         val: [
                             <LengthToken>{
@@ -563,11 +562,14 @@ const css = `
 .foo {
     height: calc(100px * 2/ 15);
 }
+.selector {
+color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180)) 
+}
 `;
 
 console.debug(await transform(css, options));
 
-// .foo{height:calc(40px/3);width:3px}
+// .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}
 
 ```
 
@@ -678,6 +680,44 @@ const css = `
 console.debug(await transform(css, options));
 
 // .foo,.bar,.fubar{height:calc(40px/3)}
+
+```
+### Exemple 6: Rule
+
+Adding declarations
+
+```typescript
+import {transform} from "../src/node";
+import {AstRule, ParserOptions} from "../src/@types";
+import {parseDeclarations} from "../src/lib";
+
+const options: ParserOptions = {
+
+    removeEmpty: false,
+    visitor: {
+
+        Rule: async (node: AstRule): Promise<AstRule | null> => {
+
+            if (node.sel == '.foo') {
+
+                node.chi.push(...await parseDeclarations('width: 3px'));
+                return node;
+            }
+
+            return null;
+        }
+    }
+};
+
+const css = `
+
+.foo {
+}
+`;
+
+console.debug(await transform(css, options));
+
+// .foo{width:3px}
 
 ```
 

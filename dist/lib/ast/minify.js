@@ -17,7 +17,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         context.nodes = new WeakSet;
     }
     if (context.nodes.has(ast)) {
-        // console.error('skipped', ast.typ);
         return ast;
     }
     context.nodes.add(ast);

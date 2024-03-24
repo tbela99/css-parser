@@ -1,9 +1,9 @@
 
-import {transform, parse, render, resolve}from '../../dist/node/index.js';
+import {transform, parse, render, resolve} from '../../dist/node/index.js';
 import * as tests from './code/index.js';
 import {expect} from "@esm-bundle/chai";
-import {readFile} from "fs/promises";
-import {dirname} from 'path';
+import {readFile} from "node:fs/promises";
+import {dirname} from 'node:path';
 
 
 //

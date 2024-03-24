@@ -37,7 +37,6 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
     if (context.nodes.has(ast)) {
 
-        // console.error('skipped', ast.typ);
         return ast;
     }
 

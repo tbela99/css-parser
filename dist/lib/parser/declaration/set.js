@@ -3,7 +3,7 @@ import { isLength } from '../utils/syntax.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
-import '../../renderer/utils/color.js';
+import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function dedup(values) {

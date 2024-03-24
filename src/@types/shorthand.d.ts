@@ -56,6 +56,7 @@ export interface ShorthandMapType {
     mapping?: string[];
     multiple?: boolean;
     separator?: Token;
+    set?: Record<string, string[]>
     properties: {
         [property: string]: PropertyMapType;
     }

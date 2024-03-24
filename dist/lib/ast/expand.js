@@ -1,9 +1,9 @@
 import { splitRule, combinators } from './minify.js';
 import { parseString } from '../parser/parse.js';
 import { renderToken } from '../renderer/render.js';
-import '../renderer/utils/color.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
+import '../renderer/color/utils/constants.js';
 
 function expand(ast) {
     //

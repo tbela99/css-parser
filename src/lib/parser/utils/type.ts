@@ -1,5 +1,5 @@
 import {EnumToken} from "../../ast";
-import {FunctionToken, IdentToken, PropertyMapType, Token} from "../../../@types";
+import {IdentToken, PropertyMapType, Token} from "../../../@types";
 
 // https://www.w3.org/TR/css-values-4/#math-function
 export const funcList: string[] = ['clamp', 'calc'];
@@ -27,7 +27,7 @@ export function matchType(val: Token, properties: PropertyMapType): boolean {
     if (val.typ == EnumToken.FunctionTokenType) {
 
         if (funcList.includes(val.val)) {
-            return val.chi.every((t => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+            return val.chi.every(((t: Token) => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
         }
 
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.
