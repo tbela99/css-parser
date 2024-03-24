@@ -506,8 +506,7 @@
             h += 360;
         }
         if (c < .0001) {
-            c = 0;
-            h = 0;
+            c = h = 0;
         }
         return alpha == null ? [l, c, h] : [l, c, h, alpha];
     }
@@ -2622,6 +2621,7 @@
         let keys = {};
         let values = {};
         const names = relativeKeys.slice(-3);
+        // @ts-ignore
         const converted = convert(original, relativeKeys);
         if (converted == null) {
             return null;
@@ -2650,6 +2650,20 @@
         return computeComponentValue(keys, values);
     }
     function computeComponentValue(expr, values) {
+        for (const object of [values, expr]) {
+            if ('h' in object) {
+                // normalize hue
+                // @ts-ignore
+                for (const k of walkValues([object.h])) {
+                    if (k.value.typ == exports.EnumToken.AngleTokenType && k.value.unit == 'deg') {
+                        // @ts-ignore
+                        k.value.typ = exports.EnumToken.NumberTokenType;
+                        // @ts-ignore
+                        delete k.value.unit;
+                    }
+                }
+            }
+        }
         for (const [key, exp] of Object.entries(expr)) {
             if (exp == null) {
                 if (key in values) {

@@ -63,8 +63,7 @@ export function lab2lchvalues(l: number, a: number, b: number, alpha: number | n
     }
 
     if (c < .0001) {
-        c = 0;
-        h = 0;
+        c = h = 0;
     }
 
     return alpha == null ? [l, c, h] : [l, c, h, alpha];

@@ -524,7 +524,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 } else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
 
                     const chi: Token[] = getComponents(token);
-
                     const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(<string>token.val, <ColorToken>chi[1], chi[2], chi[3], chi[4], chi[5]);
 
                     if (components != null) {

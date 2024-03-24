@@ -46,8 +46,7 @@ function lab2lchvalues(l, a, b, alpha = null) {
         h += 360;
     }
     if (c < .0001) {
-        c = 0;
-        h = 0;
+        c = h = 0;
     }
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }

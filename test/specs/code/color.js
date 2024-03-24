@@ -1094,5 +1094,41 @@ color: color-mix(in xyz, rgb(82.02% 30.21% 35.02%) 75.23%, rgb(5.64% 55.94% 85.3
 }`));
     });
 
+    it('color-mix(in xyz, rgb(82.02% 30.21% 35.02%) 75.23%, rgb(5.64% 55.94% 85.31%)) #109', function () {
+        return parse(`
+html { --color: green; }
+.foo {
+  --darker-accent: lch(from var(--color) calc(l / 2) c h);
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+ --darker-accent: #004500
+}`));
+    });
+
+    it('oklch(from var(--base) l c  calc(h + 90)) #110', function () {
+        return parse(`
+html { --base:  oklch(52.6% 0.115 44.6deg) }
+.summary {
+  background:  oklch(from var(--base) l c  calc(h + 90));
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.summary {
+ background: #4d792f
+}`));
+    });
+
+    it('lch(from var(--color) calc(l / 2) c h) #111', function () {
+        return parse(`
+html { 
+--color: green;
+  --darker-accent: lch(from var(--color) calc(l / 2) c h); 
+  }
+.foo {
+background: var(--darker-accent);
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+ background: #004500
+}`));
+    });
+
     // color-mix(in lch, white, black)
 }

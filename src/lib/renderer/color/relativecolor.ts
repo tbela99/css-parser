@@ -33,6 +33,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     let values: Record<RelativeColorTypes, number | Token | null> = <Record<RelativeColorTypes, number | Token | null>>{};
 
     const names: string = relativeKeys.slice(-3);
+    // @ts-ignore
     const converted: ColorToken = <ColorToken>convert(original, relativeKeys);
 
     if (converted == null) {
@@ -68,6 +69,25 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
 }
 
 function computeComponentValue(expr: Record<RelativeColorTypes, Token>, values: Record<RelativeColorTypes, number | Token | null>): Record<RelativeColorTypes, Token> | null {
+
+    for (const object of [values, expr]) {
+
+        if ('h' in object) {
+
+            // normalize hue
+            // @ts-ignore
+            for (const k of walkValues([object.h])) {
+
+                if (k.value.typ == EnumToken.AngleTokenType && k.value.unit == 'deg') {
+
+                    // @ts-ignore
+                    k.value.typ = EnumToken.NumberTokenType;
+                    // @ts-ignore
+                    delete k.value.unit;
+                }
+            }
+        }
+    }
 
     for (const [key, exp] of Object.entries(expr)) {
 
