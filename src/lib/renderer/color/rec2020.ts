@@ -8,7 +8,7 @@ export function rec20202srgb(r: number, g: number, b: number, a?: number): numbe
     return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
 }
 
-export function srgb2rec2020(r: number, g: number, b: number, a?: number): number[] {
+export function srgb2rec2020values(r: number, g: number, b: number, a?: number): number[] {
     // @ts-ignore
     return lrec20202rec2020(...xyz2lrec2020(...srgb2xyz(r, g, b)), a);
 }
@@ -60,7 +60,7 @@ function lrec20202xyz(r: number, g: number, b: number, a?: number): number[] {
     var M = [
         [ 63426534 / 99577255,  20160776 / 139408157,  47086771 / 278816314 ],
         [ 26158966 / 99577255, 472592308 / 697040785,   8267143 / 139408157 ],
-        [        0 /        1,  19567812 / 697040785, 295819943 / 278816314 ],
+        [        0,  19567812 / 697040785, 295819943 / 278816314 ],
     ];
     // 0 is actually calculated as  4.994106574466076e-17
 

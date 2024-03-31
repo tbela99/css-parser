@@ -1,4 +1,3 @@
-
 export * from './color';
 export * from './rgb';
 export * from './hex';
@@ -16,5 +15,4 @@ export * from './xyzd50';
 export * from './prophotorgb';
 export * from './a98rgb';
 export * from './rec2020';
-export {NAMES_COLORS} from "./utils";
-export {COLORS_NAMES} from "./utils";
+export {NAMES_COLORS, COLORS_NAMES} from "./utils";

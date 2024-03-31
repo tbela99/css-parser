@@ -73,7 +73,6 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
         r: {typ: EnumToken.NumberTokenType, val: '1'}
     } : b;
 
-
     let l2: number;
     let r2: number;
 

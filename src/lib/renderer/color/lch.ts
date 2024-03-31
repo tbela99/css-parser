@@ -3,7 +3,6 @@ import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab, xyz2lab} from "./lab";
-import {XYZ_D65_to_D50} from "./xyzd50";
 
 export function hex2lch(token: ColorToken): number[] {
 

@@ -7,8 +7,6 @@ import '../../parser/parse.js';
 import { srgb2xyz } from './xyz.js';
 import '../sourcemap/lib/encode.js';
 
-// a98rgb -> la98rgb -> xyz -> srgb
-// srgb -> xyz -> la98rgb -> a98rgb
 function a98rgb2srgbvalues(r, g, b, a = null) {
     //  @ts-ignore
     return xyz2srgb(...la98rgb2xyz(...a98rgb2la98(r, g, b, a)));

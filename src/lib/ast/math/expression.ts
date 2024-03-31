@@ -98,11 +98,6 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
         r
     };
 
-    if (typeof l != 'object') {
-
-        throw new Error('foo');
-    }
-
     if (!isScalarToken(l) || !isScalarToken(r)) {
 
         return defaultReturn;
@@ -115,9 +110,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
             return defaultReturn;
         }
-    }
-
-    else if (
+    } else if (
         op == EnumToken.Mul &&
         ![EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(l.typ) &&
         ![EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(r.typ)) {
@@ -128,7 +121,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
     const typ: EnumToken = l.typ == EnumToken.NumberTokenType ? r.typ : (r.typ == EnumToken.NumberTokenType ? l.typ : (l.typ == EnumToken.PercentageTokenType ? r.typ : l.typ));
 
     // @ts-ignore
-    let v1 = typeof l.val == 'string' ? +l.val :  l.val;
+    let v1 = typeof l.val == 'string' ? +l.val : l.val;
     // @ts-ignore
     let v2 = typeof r.val == 'string' ? +r.val : r.val;
 
@@ -138,12 +131,18 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
             if (typeof v1 == 'number' && l.typ == EnumToken.PercentageTokenType) {
 
-                v1 = {typ: EnumToken.FractionTokenType, l: {typ: EnumToken.NumberTokenType, val: String(v1)}, r: {typ: EnumToken.NumberTokenType, val: '100'}};
-            }
+                v1 = {
+                    typ: EnumToken.FractionTokenType,
+                    l: {typ: EnumToken.NumberTokenType, val: String(v1)},
+                    r: {typ: EnumToken.NumberTokenType, val: '100'}
+                };
+            } else if (typeof v2 == 'number' && r.typ == EnumToken.PercentageTokenType) {
 
-            else if (typeof v2 == 'number' && r.typ == EnumToken.PercentageTokenType) {
-
-                v2 = {typ: EnumToken.FractionTokenType, l: {typ: EnumToken.NumberTokenType, val: String(v2)}, r: {typ: EnumToken.NumberTokenType, val: '100'}};
+                v2 = {
+                    typ: EnumToken.FractionTokenType,
+                    l: {typ: EnumToken.NumberTokenType, val: String(v2)},
+                    r: {typ: EnumToken.NumberTokenType, val: '100'}
+                };
             }
         }
     }
@@ -151,12 +150,11 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
     // @ts-ignore
     const val: number | FractionToken = compute(v1, v2, op);
 
-    // if (typeof val == 'number') {
-    //
-    //     return {typ: EnumToken.NumberTokenType, val: String(val)};
-    // }
-
-    return <Token>{...(l.typ == EnumToken.NumberTokenType ? r : l), typ, val : typeof val == 'number' ? reduceNumber(val) : val};
+    return <Token>{
+        ...(l.typ == EnumToken.NumberTokenType ? r : l),
+        typ,
+        val: typeof val == 'number' ? reduceNumber(val) : val
+    };
 }
 
 /**
@@ -170,9 +168,7 @@ function inlineExpression(token: Token): Token[] {
     if (token.typ == EnumToken.ParensTokenType && token.chi.length == 1) {
 
         result.push(token.chi[0]);
-    }
-
-    else if (token.typ == EnumToken.BinaryExpressionTokenType) {
+    } else if (token.typ == EnumToken.BinaryExpressionTokenType) {
 
         if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
 
@@ -181,7 +177,9 @@ function inlineExpression(token: Token): Token[] {
 
             result.push(...inlineExpression(token.l), {typ: token.op}, ...inlineExpression(token.r));
         }
-    }   else {
+    }
+
+    else {
 
         result.push(token);
     }
@@ -287,6 +285,12 @@ function factor(tokens: Array<Token | BinaryExpressionToken>, ops: Array<'+' | '
     }
 
     for (let i = 0; i < tokens.length; i++) {
+
+        if (tokens[i].typ == EnumToken.ListToken) {
+
+            // @ts-ignore
+            tokens.splice(i, 1, ...tokens[i].chi);
+        }
 
         isOp = opList.includes((<Token>tokens[i]).typ);
 

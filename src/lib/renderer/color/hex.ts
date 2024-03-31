@@ -1,4 +1,4 @@
-import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, IdentToken, NumberToken, PercentageToken} from "../../../@types";
 import {EnumToken} from "../../ast";
 import {getNumber, minmax} from "./color";
 import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";

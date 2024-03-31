@@ -1,5 +1,5 @@
 import {multiplyMatrices} from "./utils";
-import {lsrgb2srgb, srgb2lsrgb} from "./srgb";
+import {lsrgb2srgbvalues, srgb2lsrgbvalues} from "./srgb";
 import {Lab_to_XYZ} from "./lab";
 
 export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
@@ -18,7 +18,7 @@ export function lch2xyz(l: number, c: number, h: number, alpha?: number): number
 export function xyzd502srgb(x: number, y: number, z: number): number[] {
 
     // @ts-ignore
-    return lsrgb2srgb(
+    return lsrgb2srgbvalues(
         /* r: */
         x * 3.1341359569958707 -
         y * 1.6173863321612538 -
@@ -56,32 +56,11 @@ export function XYZ_D50_to_D65(x: number, y: number, z: number): number[] {
     ];
     const XYZ: number[] = [x, y, z];
 
-    return multiplyMatrices(M, XYZ).map((v: number) => v);
+    return multiplyMatrices(M, XYZ); //.map((v: number) => v);
 }
-
-export function linear_sRGB_to_XYZ_D50(r: number, g: number, b: number): number[] {
-
-    // @ts-ignore
-    return [
-
-        0.436065742824811 * r +
-        0.3851514688337912 * g +
-        0.14307845442264197 * b,
-
-        0.22249319175623702 * r +
-        0.7168870538238823 * g +
-        0.06061979053616537 * b,
-
-        0.013923904500943465 * r +
-        0.09708128566574634 * g +
-        0.7140993584005155 * b
-    ];
-}
-
-
 export function srgb2xyz(r: number, g: number, b: number, alpha?: number): number[] {
 
-    [r, g, b] = srgb2lsrgb(r, g, b);
+    [r, g, b] = srgb2lsrgbvalues(r, g, b);
 
     const rgb: number[] = [
 

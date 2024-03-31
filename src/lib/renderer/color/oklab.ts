@@ -1,5 +1,5 @@
 import {getComponents, multiplyMatrices, powerlessColorComponent} from "./utils";
-import {srgb2lsrgb, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgb} from "./srgb";
+import {srgb2lsrgbvalues, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgbvalues} from "./srgb";
 import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
@@ -51,7 +51,7 @@ export function oklch2oklab(token: ColorToken): number[] {
 
 export function srgb2oklab(r: number, g: number, blue: number, alpha: number | null): number[] {
 
-    [r, g, blue] = srgb2lsrgb(r, g, blue);
+    [r, g, blue] = srgb2lsrgbvalues(r, g, blue);
 
     let L: number = Math.cbrt(
         0.41222147079999993 * r + 0.5363325363 * g + 0.0514459929 * blue
@@ -159,7 +159,7 @@ export function OKLab_to_sRGB(l: number, a: number, b: number): number[] {
         3
     );
 
-    return lsrgb2srgb(
+    return lsrgb2srgbvalues(
         /* r: */
         +4.076741661347994 * L -
         3.307711590408193 * M +

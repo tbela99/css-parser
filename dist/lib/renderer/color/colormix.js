@@ -8,10 +8,10 @@ import { powerlessColorComponent } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
-import { srgbvalues, srgb2lsrgb } from './srgb.js';
+import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { srgb2lch, xyz2lchvalues } from './lch.js';
 import { srgb2lab } from './lab.js';
-import { srgb2p3 } from './p3.js';
+import { srgb2p3values } from './p3.js';
 import { eq } from '../../parser/utils/eq.js';
 import { srgb2oklch } from './oklch.js';
 import { srgb2oklab } from './oklab.js';
@@ -19,7 +19,7 @@ import { srgb2a98values } from './a98rgb.js';
 import { srgb2prophotorgbvalues } from './prophotorgb.js';
 import { srgb2xyz } from './xyz.js';
 import { XYZ_D65_to_D50, xyzd502lch } from './xyzd50.js';
-import { srgb2rec2020 } from './rec2020.js';
+import { srgb2rec2020values } from './rec2020.js';
 import '../sourcemap/lib/encode.js';
 
 function interpolateHue(interpolationMethod, h1, h2) {
@@ -134,9 +134,9 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             break;
         case 'display-p3':
             // @ts-ignore
-            values1 = srgb2p3(...values1);
+            values1 = srgb2p3values(...values1);
             // @ts-ignore
-            values2 = srgb2p3(...values2);
+            values2 = srgb2p3values(...values2);
             break;
         case 'a98-rgb':
             // @ts-ignore
@@ -152,15 +152,15 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             break;
         case 'srgb-linear':
             // @ts-ignore
-            values1 = srgb2lsrgb(...values1);
+            values1 = srgb2lsrgbvalues(...values1);
             // @ts-ignore
-            values2 = srgb2lsrgb(...values2);
+            values2 = srgb2lsrgbvalues(...values2);
             break;
         case 'rec2020':
             // @ts-ignore
-            values1 = srgb2rec2020(...values1);
+            values1 = srgb2rec2020values(...values1);
             // @ts-ignore
-            values2 = srgb2rec2020(...values2);
+            values2 = srgb2rec2020values(...values2);
             break;
         case 'xyz':
         case 'xyz-d65':
@@ -329,7 +329,6 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 // @ts-ignore
                 result.chi[2] = { typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
             }
-            // console.error(result);
             return result;
     }
     return null;

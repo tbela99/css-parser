@@ -64,35 +64,45 @@ function isColor(token) {
     let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
         if (token.val == 'color') {
-            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType].includes(t.typ));
-            if (children.length != 4 && children.length != 6) {
+            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+            const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';
+            if (children.length < 4 || children.length > 8) {
                 return false;
             }
-            if (!isColorspace(children[0])) {
+            if (!isRelative && !isColorspace(children[0])) {
                 return false;
             }
-            for (let i = 1; i < 4; i++) {
-                if (children[i].typ == EnumToken.NumberTokenType && +children[i].val < 0 && +children[i].val > 1) {
-                    return false;
+            for (let i = 1; i < children.length - 2; i++) {
+                if (children[i].typ == EnumToken.IdenTokenType) {
+                    if (children[i].val != 'none' &&
+                        !(isRelative && ['alpha', 'r', 'g', 'b'].includes(children[i].val) || isColorspace(children[i]))) {
+                        return false;
+                    }
                 }
-                if (children[i].typ == EnumToken.IdenTokenType && children[i].val != 'none') {
+                if (children[i].typ == EnumToken.FunctionTokenType && !['calc'].includes(children[i].val)) {
                     return false;
                 }
             }
-            if (children.length == 6) {
-                if (children[4].typ != EnumToken.LiteralTokenType || children[4].val != '/') {
+            if (children.length == 8 || children.length == 6) {
+                const sep = children.at(-2);
+                const alpha = children.at(-1);
+                if (sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
                     return false;
                 }
-                if (children[5].typ == EnumToken.IdenTokenType && children[5].val != 'none') {
+                if (alpha.typ == EnumToken.IdenTokenType && alpha.val != 'none') {
                     return false;
                 }
                 else {
                     // @ts-ignore
-                    if (children[5].typ == EnumToken.PercentageTokenType && (children[5].val < 0) || (children[5].val > 100)) {
-                        return false;
+                    if (alpha.typ == EnumToken.PercentageTokenType) {
+                        if (+alpha.val < 0 || +alpha.val > 100) {
+                            return false;
+                        }
                     }
-                    else if (children[5].typ != EnumToken.NumberTokenType || +children[5].val < 0 || +children[5].val > 1) {
-                        return false;
+                    else if (alpha.typ == EnumToken.NumberTokenType) {
+                        if (+alpha.val < 0 || +alpha.val > 1) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -160,7 +170,7 @@ function isColor(token) {
                     }
                     continue;
                 }
-                if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
+                if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || v.val == 'var' || colorsFunc.includes(v.val))) {
                     continue;
                 }
                 if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
@@ -382,6 +392,31 @@ function isHexColor(name) {
     }
     return true;
 }
+/*
+export function isHexDigit(name: string): boolean {
+
+    if (name.length || name.length > 6) {
+
+        return false;
+    }
+
+    for (let chr of name) {
+
+        let codepoint = <number>chr.charCodeAt(0);
+
+        if (!isDigit(codepoint) &&
+            // A F
+            !(codepoint >= 0x41 && codepoint <= 0x46) &&
+            // a f
+            !(codepoint >= 0x61 && codepoint <= 0x66)) {
+
+            return false;
+        }
+    }
+
+    return true;
+}
+*/
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }

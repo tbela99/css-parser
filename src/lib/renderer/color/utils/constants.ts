@@ -1,13 +1,41 @@
-import {IdentToken} from "../../../../@types";
+import {ColorSpace, IdentToken} from "../../../../@types";
 import {EnumToken} from "../../../ast";
 
+export const colorRange = {
+
+    lab: {
+
+        l: [0, 100],
+        a: [-125, 125],
+        b: [-125, 125]
+    },
+    lch: {
+
+        l: [0, 100],
+        c: [0, 150],
+        h: [0, 360]
+    },
+    oklab: {
+
+        l: [0, 1],
+        a: [-0.4, .4],
+        b: [-0.4, 0.4]
+    },
+    oklch: {
+
+        l: [0, 1],
+        a: [0, .4],
+        b: [0, 0.4]
+    }
+}
+
+export const colorFuncColorSpace: ColorSpace[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 export const powerlessColorComponent: IdentToken = {typ: EnumToken.IdenTokenType, val: 'none'};
 
 export const D50: number[] = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
-export const D65: number[] = [0.3127 / 0.3290, 1.00000, (1.0 - 0.3127 - 0.3290) / 0.3290];
 
 export const k: number = Math.pow(29, 3) / Math.pow(3, 3);
-export const e: number  = Math.pow(6, 3) / Math.pow(29, 3);
+export const e: number = Math.pow(6, 3) / Math.pow(29, 3);
 // name to color
 export const COLORS_NAMES: { [key: string]: string } = Object.seal({
     'aliceblue': '#f0f8ff',

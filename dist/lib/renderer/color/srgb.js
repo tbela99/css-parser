@@ -1,6 +1,6 @@
 import { COLORS_NAMES } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { color2srgb, getNumber, getAngle } from './color.js';
+import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
@@ -38,7 +38,7 @@ function srgbvalues(token) {
         case 'oklch':
             return oklch2srgb(token);
         case 'color':
-            return color2srgb(token);
+            return color2srgbvalues(token);
     }
     return null;
 }
@@ -58,7 +58,7 @@ function hex2srgb(token) {
 }
 function xyz2srgb(x, y, z) {
     // @ts-ignore
-    return lsrgb2srgb(...XYZ_to_lin_sRGB(x, y, z));
+    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z));
 }
 function hwb2srgb(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
@@ -114,7 +114,7 @@ function oklab2srgb(token) {
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
-    return rgb; //.map(((value: number) => minmax(value, 0, 255)));
+    return rgb;
 }
 function oklch2srgb(token) {
     const [l, c, h, alpha] = getOKLCHComponents(token);
@@ -123,7 +123,7 @@ function oklch2srgb(token) {
     if (alpha != 1) {
         rgb.push(alpha);
     }
-    return rgb; //.map(((value: number): number => minmax(Math.round(255 * value), 0, 255)));
+    return rgb;
 }
 function hslvalues(token) {
     const components = getComponents(token);
@@ -203,7 +203,6 @@ function hsl2srgbvalues(h, s, l, a = null) {
 function lab2srgb(token) {
     const [l, a, b, alpha] = getLABComponents(token);
     const rgb = Lab_to_sRGB(l, a, b);
-    //
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
@@ -214,14 +213,13 @@ function lch2srgb(token) {
     const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
     const rgb = Lab_to_sRGB(l, a, b);
-    //
     if (alpha != 1) {
         rgb.push(alpha);
     }
     return rgb;
 }
 // sRGB -> lRGB
-function srgb2lsrgb(r, g, b, a = null) {
+function srgb2lsrgbvalues(r, g, b, a = null) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
@@ -240,7 +238,7 @@ function srgb2lsrgb(r, g, b, a = null) {
     }
     return rgb;
 }
-function lsrgb2srgb(r, g, b, alpha) {
+function lsrgb2srgbvalues(r, g, b, alpha) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
@@ -260,4 +258,4 @@ function lsrgb2srgb(r, g, b, alpha) {
     return rgb;
 }
 
-export { cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgb, oklab2srgb, oklch2srgb, rgb2srgb, srgb2lsrgb, srgbvalues, xyz2srgb };
+export { cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgbvalues, oklab2srgb, oklch2srgb, rgb2srgb, srgb2lsrgbvalues, srgbvalues, xyz2srgb };

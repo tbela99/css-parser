@@ -3,12 +3,12 @@ import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { lsrgb2srgb, srgb2lsrgb } from './srgb.js';
+import { lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 
 function xyzd502srgb(x, y, z) {
     // @ts-ignore
-    return lsrgb2srgb(
+    return lsrgb2srgbvalues(
     /* r: */
     x * 3.1341359569958707 -
         y * 1.6173863321612538 -
@@ -40,10 +40,10 @@ function XYZ_D50_to_D65(x, y, z) {
         [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
     ];
     const XYZ = [x, y, z];
-    return multiplyMatrices(M, XYZ).map((v) => v);
+    return multiplyMatrices(M, XYZ); //.map((v: number) => v);
 }
 function srgb2xyz(r, g, b, alpha) {
-    [r, g, b] = srgb2lsrgb(r, g, b);
+    [r, g, b] = srgb2lsrgbvalues(r, g, b);
     const rgb = [
         0.436065742824811 * r +
             0.3851514688337912 * g +

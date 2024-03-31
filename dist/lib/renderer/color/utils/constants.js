@@ -3,6 +3,29 @@ import '../../../ast/minify.js';
 import '../../../parser/parse.js';
 import '../../sourcemap/lib/encode.js';
 
+const colorRange = {
+    lab: {
+        l: [0, 100],
+        a: [-125, 125],
+        b: [-125, 125]
+    },
+    lch: {
+        l: [0, 100],
+        c: [0, 150],
+        h: [0, 360]
+    },
+    oklab: {
+        l: [0, 1],
+        a: [-0.4, .4],
+        b: [-0.4, 0.4]
+    },
+    oklch: {
+        l: [0, 1],
+        a: [0, .4],
+        b: [0, 0.4]
+    }
+};
+const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 const powerlessColorComponent = { typ: EnumToken.IdenTokenType, val: 'none' };
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
 const k = Math.pow(29, 3) / Math.pow(3, 3);
@@ -165,4 +188,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, D50, NAMES_COLORS, e, k, powerlessColorComponent };
+export { COLORS_NAMES, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, e, k, powerlessColorComponent };

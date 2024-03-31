@@ -614,7 +614,7 @@ color: lab(from hwb(346 0 0) l a b)  ;
     it('lab(from oklab(100% 0.4 0.4) l a b) #66', function () {
         return parse(`
 .selector {
-color: lab(from oklab(100% 0.4 0.4)  ;
+color: lab(from oklab(100% 0.4 0.4)   l a b);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: red
 }`));
@@ -1127,6 +1127,37 @@ background: var(--darker-accent);
 }
 `, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
  background: #004500
+}`));
+    });
+
+    it('color(from color(srgb 0 0 0 / 60%) srgb alpha 0.6 0.6 / 0.9) #112', function () {
+        return parse(`
+.foo {
+background: color(from color(srgb 0 0 0 / 60%) srgb alpha 0.6 0.6 / 0.9);
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+ background: #999999e6
+}`));
+    });
+
+    it('rgb(from rgb(0 0 0 / 60%) alpha 153 153 / 0.9) #123', function () {
+        return parse(`
+.foo {
+background: rgb(from rgb(0 0 0 / 60%) alpha 153 153 / 0.9);
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+ background: #019999e6
+}`));
+    });
+
+    it('rgb(from rgb(0 0 0 / 60%) alpha 153 153 / 0.9) #123', function () {
+        return parse(`
+html { --bluegreen:  oklab(54.3% -22.5% -5%); }
+.overlay {
+  background:  oklab(from var(--bluegreen) calc(1.0 - l) calc(a * 0.8) b);
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.overlay {
+ background: #0c6464
 }`));
     });
 

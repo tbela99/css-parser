@@ -11,7 +11,7 @@ function rec20202srgb(r, g, b, a) {
     // @ts-ignore
     return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
 }
-function srgb2rec2020(r, g, b, a) {
+function srgb2rec2020values(r, g, b, a) {
     // @ts-ignore
     return lrec20202rec2020(...xyz2lrec2020(...srgb2xyz(r, g, b)), a);
 }
@@ -52,7 +52,7 @@ function lrec20202xyz(r, g, b, a) {
     var M = [
         [63426534 / 99577255, 20160776 / 139408157, 47086771 / 278816314],
         [26158966 / 99577255, 472592308 / 697040785, 8267143 / 139408157],
-        [0 / 1, 19567812 / 697040785, 295819943 / 278816314],
+        [0, 19567812 / 697040785, 295819943 / 278816314],
     ];
     // 0 is actually calculated as  4.994106574466076e-17
     return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
@@ -67,4 +67,4 @@ function xyz2lrec2020(x, y, z, a) {
     return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
 }
 
-export { rec20202srgb, srgb2rec2020 };
+export { rec20202srgb, srgb2rec2020values };

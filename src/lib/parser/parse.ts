@@ -74,9 +74,7 @@ import {
 } from "../../@types";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
-
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
-
 const BadTokensTypes: EnumToken[] = [
     EnumToken.BadCommentTokenType,
     EnumToken.BadCdoTokenType,
@@ -237,7 +235,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         while (stack.length > 0 && context != ast) {
 
-            const previousNode: AstAtRule | AstRule = <AstAtRule | AstRule> stack.pop();
+            const previousNode: AstAtRule | AstRule = <AstAtRule | AstRule>stack.pop();
 
             // @ts-ignore
             context = stack[stack.length - 1] ?? ast;
@@ -448,7 +446,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                         return null;
                     }
 
-                    const name = (<AstAtRule>context.chi[i]).nam;
+                    const name: string = (<AstAtRule>context.chi[i]).nam;
 
                     if (name != 'charset' && name != 'import' && name != 'layer') {
                         errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
@@ -1282,7 +1280,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                     } else if (t.val == 'color') {
                         // @ts-ignore
                         t.cal = 'col';
-                        t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType].includes(t.typ));
+                        // t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(t.typ));
                     }
                 }
 

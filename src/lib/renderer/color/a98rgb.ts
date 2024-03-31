@@ -2,9 +2,6 @@ import {xyz2srgb} from "./srgb";
 import {multiplyMatrices} from "./utils";
 import {srgb2xyz} from "./xyz";
 
-// a98rgb -> la98rgb -> xyz -> srgb
-// srgb -> xyz -> la98rgb -> a98rgb
-
 export function a98rgb2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] {
 
     //  @ts-ignore

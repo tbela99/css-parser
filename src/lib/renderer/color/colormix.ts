@@ -1,23 +1,23 @@
 import {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
 import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser";
 import {EnumToken} from "../../ast";
-import {convert, getNumber} from "./color";
-import {srgb2lsrgb, srgbvalues} from "./srgb";
+import {getNumber} from "./color";
+import {srgb2lsrgbvalues, srgbvalues} from "./srgb";
 import {srgb2lch, xyz2lchvalues} from "./lch";
 import {srgb2rgb} from "./rgb";
 import {srgb2hsl} from "./hsl";
 import {srgb2hwb} from "./hwb";
 import {srgb2lab} from "./lab";
-import {srgb2p3} from "./p3";
+import {srgb2p3values} from "./p3";
 import {getComponents, powerlessColorComponent} from "./utils";
 import {eq} from "../../parser/utils/eq";
 import {srgb2oklch} from "./oklch";
 import {srgb2oklab} from "./oklab";
 import {srgb2a98values} from "./a98rgb";
 import {srgb2prophotorgbvalues} from "./prophotorgb";
-import {srgb2xyz, XYZ_D50_to_D65} from "./xyz";
+import {srgb2xyz} from "./xyz";
 import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50";
-import {srgb2rec2020} from "./rec2020";
+import {srgb2rec2020values} from "./rec2020";
 
 function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
 
@@ -182,9 +182,9 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'display-p3':
 
             // @ts-ignore
-            values1 = srgb2p3(...values1);
+            values1 = srgb2p3values(...values1);
             // @ts-ignore
-            values2 = srgb2p3(...values2);
+            values2 = srgb2p3values(...values2);
             break;
 
         case 'a98-rgb':
@@ -206,17 +206,17 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'srgb-linear':
 
             // @ts-ignore
-            values1 = srgb2lsrgb(...values1);
+            values1 = srgb2lsrgbvalues(...values1);
             // @ts-ignore
-            values2 = srgb2lsrgb(...values2);
+            values2 = srgb2lsrgbvalues(...values2);
             break;
 
         case 'rec2020':
 
             // @ts-ignore
-            values1 = srgb2rec2020(...values1);
+            values1 = srgb2rec2020values(...values1);
             // @ts-ignore
-            values2 = srgb2rec2020(...values2);
+            values2 = srgb2rec2020values(...values2);
             break;
 
         case 'xyz':
@@ -341,15 +341,13 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'xyz-d65':
         case 'xyz-d50':
 
-            let values: number[] = (<number[]>values1).map((v1: number, i: number) =>  (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
-            .concat(mul == 1 ? [] : [mul]);
+            let values: number[] = (<number[]>values1).map((v1: number, i: number) => (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+                .concat(mul == 1 ? [] : [mul]);
 
             if (colorSpace.val == 'xyz-d50') {
                 // @ts-ignore
                 values = xyzd502lch(...values);
-            }
-
-            else {
+            } else {
 
                 // @ts-ignore
                 values = xyz2lchvalues(...values);
@@ -442,8 +440,6 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 result.chi[2] = {typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100)};
 
             }
-
-            // console.error(result);
 
             return result;
     }

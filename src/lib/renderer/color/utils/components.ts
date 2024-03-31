@@ -1,6 +1,5 @@
 import {ColorToken, NumberToken, Token} from "../../../../@types";
 import {EnumToken} from "../../../ast";
-import {getLABComponents} from "../lab";
 import {COLORS_NAMES} from "./constants";
 import {expandHexValue} from "../hex";
 

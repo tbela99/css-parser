@@ -1,21 +1,15 @@
-import { getAngle, getNumber, clamp } from './color/color.js';
-import { COLORS_NAMES } from './color/utils/constants.js';
+import { getAngle, color2srgbvalues, clamp } from './color/color.js';
+import { colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
-import { srgb2hexvalues, reduceHexValue, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { xyz2srgb, lsrgb2srgb } from './color/srgb.js';
+import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
-import { xyzd502srgb } from './color/xyz.js';
 import { parseRelativeColor } from './color/relativecolor.js';
-import { prophotorgb2srgbvalues } from './color/prophotorgb.js';
-import { a98rgb2srgbvalues } from './color/a98rgb.js';
-import { rec20202srgb } from './color/rec2020.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
-import { p32srgb } from './color/p3.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {
@@ -289,58 +283,21 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         token = value;
                     }
                 }
-                if (token.val == 'color') {
-                    const supportedColorSpaces = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-                    if (token.chi[0].typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(token.chi[0].val.toLowerCase())) {
-                        let values = getComponents(token).slice(1).map((t) => {
-                            if (t.typ == EnumToken.IdenTokenType && t.val == 'none') {
-                                return 0;
-                            }
-                            return getNumber(t);
-                        });
-                        const colorSpace = token.chi[0].val.toLowerCase();
-                        switch (colorSpace) {
-                            case 'display-p3':
-                                // @ts-ignore
-                                values = p32srgb(...values);
-                                break;
-                            case 'srgb-linear':
-                                // @ts-ignore
-                                values = lsrgb2srgb(...values);
-                                break;
-                            case 'prophoto-rgb':
-                                // @ts-ignore
-                                values = prophotorgb2srgbvalues(...values);
-                                break;
-                            case 'a98-rgb':
-                                // @ts-ignore
-                                values = a98rgb2srgbvalues(...values);
-                                break;
-                            case 'rec2020':
-                                // @ts-ignore
-                                values = rec20202srgb(...values);
-                                break;
-                            case 'xyz':
-                            case 'xyz-d65':
-                                // @ts-ignore
-                                values = xyz2srgb(...values);
-                                break;
-                            case 'xyz-d50':
-                                // @ts-ignore
-                                values = xyzd502srgb(...values);
-                                break;
-                        }
-                        // @ts-ignore
-                        let value = srgb2hexvalues(...values);
-                        return reduceHexValue(value);
+                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
+                    const chi = getComponents(token);
+                    const offset = token.val == 'color' ? 2 : 1;
+                    // @ts-ignore
+                    const color = chi[1];
+                    const components = parseRelativeColor(token.val == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+                    if (components != null) {
+                        token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
+                        delete token.cal;
                     }
                 }
-                else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
-                    const chi = getComponents(token);
-                    const components = parseRelativeColor(token.val, chi[1], chi[2], chi[3], chi[4], chi[5]);
-                    if (components != null) {
-                        token.chi = Object.values(components);
-                        delete token.cal;
+                if (token.val == 'color') {
+                    if (token.chi[0].typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(token.chi[0].val.toLowerCase())) {
+                        // @ts-ignore
+                        return reduceHexValue(srgb2hexvalues(...color2srgbvalues(token)));
                     }
                 }
                 if (token.cal != null) {

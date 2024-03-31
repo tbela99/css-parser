@@ -1,10 +1,10 @@
-import { convert } from './color.js';
+import { convert, getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../../parser/parse.js';
 import { reduceNumber } from '../render.js';
-import './utils/constants.js';
+import { colorRange } from './utils/constants.js';
 import { eq } from '../../parser/utils/eq.js';
 import { evaluate } from '../../ast/math/expression.js';
 
@@ -15,34 +15,59 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let alpha = null;
     let keys = {};
     let values = {};
-    const names = relativeKeys.slice(-3);
+    // colorFuncColorSpace x,y,z or r,g,b
+    const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
     // @ts-ignore
     const converted = convert(original, relativeKeys);
     if (converted == null) {
         return null;
     }
-    [r, g, b, alpha] = converted.chi;
+    const children = converted.chi.filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(t.typ));
+    [r, g, b, alpha] = converted.kin == 'color' ? children.slice(1) : children;
     values = {
-        [names[0]]: r,
-        [names[1]]: g,
-        [names[2]]: b,
+        [names[0]]: getValue(r, converted, names[0]),
+        [names[1]]: getValue(g, converted, names[1]), // string,
+        [names[2]]: getValue(b, converted, names[2]),
         // @ts-ignore
         alpha: alpha == null || eq(alpha, {
             typ: EnumToken.IdenTokenType,
             val: 'none'
-        }) ? { typ: EnumToken.NumberTokenType, val: '1' } : alpha
-    };
-    keys = {
-        [names[0]]: rExp,
-        [names[1]]: gExp,
-        [names[2]]: bExp,
-        // @ts-ignore
-        alpha: aExp == null || eq(aExp, { typ: EnumToken.IdenTokenType, val: 'none' }) ? {
+        }) ? {
             typ: EnumToken.NumberTokenType,
             val: '1'
-        } : aExp
+        } : (alpha.typ == EnumToken.PercentageTokenType ? {
+            typ: EnumToken.NumberTokenType,
+            val: String(getNumber(alpha))
+        } : alpha)
+    };
+    keys = {
+        [names[0]]: getValue(rExp, converted, names[0]),
+        [names[1]]: getValue(gExp, converted, names[1]),
+        [names[2]]: getValue(bExp, converted, names[2]),
+        // @ts-ignore
+        alpha: getValue(aExp == null || eq(aExp, { typ: EnumToken.IdenTokenType, val: 'none' }) ? {
+            typ: EnumToken.NumberTokenType,
+            val: '1'
+        } : aExp)
     };
     return computeComponentValue(keys, values);
+}
+function getValue(t, converted, component) {
+    if (t == null) {
+        return t;
+    }
+    if (t.typ == EnumToken.PercentageTokenType) {
+        let value = getNumber(t);
+        if (converted.kin in colorRange) {
+            // @ts-ignore
+            value *= colorRange[converted.kin][component].at(-1);
+        }
+        return {
+            typ: EnumToken.NumberTokenType,
+            val: String(value)
+        };
+    }
+    return t;
 }
 function computeComponentValue(expr, values) {
     for (const object of [values, expr]) {

@@ -1,16 +1,7 @@
-import {e, k, multiplyMatrices} from "./utils";
-import {Lab_to_XYZ, xyz2lab} from "./lab";
+import {multiplyMatrices} from "./utils";
+import {xyz2lab} from "./lab";
 import {lab2lchvalues} from "./lch";
 import {XYZ_D50_to_D65} from "./xyz";
-
-export function lab2xyzd50(l: number, a: number, b: number, alpha?: number): number[] {
-
-    // @ts-ignore
-    const [x, y, z] = XYZ_D65_to_D50(...Lab_to_XYZ(l, a, b));
-
-    return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
-}
-
 export function xyzd502lch(x: number, y: number, z: number, alpha?: number): number[] {
 
     // @ts-ignore

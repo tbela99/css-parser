@@ -1,7 +1,7 @@
 /test/ export-ignore
 /docs/ export-ignore
-/build.sh export-ignore
-/Writerside export-ignore
+/build.sh export-ignore linguist-vendored
+/Writerside export-ignore linguist-vendored
 /benchmark
 /tools/ export-ignore
 /happydom.ts export-ignore
@@ -13,7 +13,7 @@
 /rollup.config.mjs export-ignore
 /tsconfig.json export-ignore
 # exclude all files in test/ from stats
-/rollup.config.mjs linguist-vendored
+/rollup.config.js linguist-vendored
 /test/** linguist-vendored
 /docs/** linguist-vendored
 /tools/** linguist-vendored

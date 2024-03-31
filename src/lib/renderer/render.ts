@@ -7,35 +7,42 @@ import {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
-    AttrToken, ColorSpace,
+    AttrToken,
+    ColorSpace,
     ColorToken,
     ErrorDescription,
-    FractionToken, IdentToken,
+    FractionToken,
+    IdentToken,
     Location,
-    NumberToken, PercentageToken,
+    NumberToken,
+    PercentageToken,
     Position,
     RenderOptions,
     RenderResult,
     Token
 } from "../../@types";
 import {
-    clamp, cmyk2hex,
+    clamp,
+    cmyk2hex, color2srgbvalues,
     colorMix,
     COLORS_NAMES,
-    getAngle, getNumber,
-    hsl2hex, hwb2hex, lab2hex, lch2hex, oklab2hex, oklch2hex, prophotorgb2srgbvalues,
-    reduceHexValue,
-    rgb2hex, srgb2hexvalues, xyz2srgb,
+    getAngle,
+    hsl2hex,
+    hwb2hex,
+    lab2hex,
+    lch2hex,
+    oklab2hex,
+    oklch2hex,
     parseRelativeColor,
+    reduceHexValue,
     RelativeColorTypes,
-    lsrgb2srgb,
-    xyzd502srgb, a98rgb2srgbvalues, rec20202srgb
+    rgb2hex,
+    srgb2hexvalues
 } from "./color";
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
-import {getComponents} from "./color/utils";
-import {p32srgb} from "./color/p3";
+import {colorFuncColorSpace, getComponents} from "./color/utils";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 
@@ -460,76 +467,30 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     }
                 }
 
-                if (token.val == 'color') {
-
-                    const supportedColorSpaces: ColorSpace[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-
-                    if ((<IdentToken>(<Token[]>token.chi)[0]).typ == EnumToken.IdenTokenType && supportedColorSpaces.includes(<ColorSpace>(<IdentToken>(<Token[]>token.chi)[0]).val.toLowerCase())) {
-
-                        let values: number[] = getComponents(token).slice(1).map((t: Token) => {
-
-                            if (t.typ == EnumToken.IdenTokenType && t.val == 'none') {
-
-                                return 0;
-                            }
-
-                            return getNumber(<IdentToken | NumberToken | PercentageToken>t);
-                        });
-
-                        const colorSpace: ColorSpace = <ColorSpace>(<IdentToken>(<Token[]>token.chi)[0]).val.toLowerCase();
-
-                        switch (colorSpace) {
-
-                            case 'display-p3':
-                                // @ts-ignore
-                                values = p32srgb(...values);
-                                break;
-
-                            case  'srgb-linear':
-                                // @ts-ignore
-                                values = lsrgb2srgb(...values);
-                                break;
-                            case 'prophoto-rgb':
-
-                                // @ts-ignore
-                                values = prophotorgb2srgbvalues(...values);
-                                break;
-                            case 'a98-rgb':
-
-                                // @ts-ignore
-                                values = a98rgb2srgbvalues(...values);
-                                break;
-                            case 'rec2020':
-                                // @ts-ignore
-                                values = rec20202srgb(...values);
-                                break;
-                            case 'xyz':
-                            case 'xyz-d65':
-
-                                // @ts-ignore
-                                values = xyz2srgb(...values);
-                                break;
-                            case 'xyz-d50':
-                                // @ts-ignore
-                                values = xyzd502srgb(...values);
-                                break;
-                        }
-
-                        // @ts-ignore
-                        let value: string = srgb2hexvalues(...values);
-
-                        return reduceHexValue(value);
-                    }
-
-                } else if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
 
                     const chi: Token[] = getComponents(token);
-                    const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(<string>token.val, <ColorToken>chi[1], chi[2], chi[3], chi[4], chi[5]);
+                    const offset: number = token.val == 'color' ? 2 : 1;
+
+                    // @ts-ignore
+                    const color: ColorToken = chi[1];
+
+                    const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(token.val == 'color' ? (<IdentToken>chi[offset]).val : <string>token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
 
                     if (components != null) {
 
-                        token.chi = Object.values(components);
+                        token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
+
                         delete token.cal;
+                    }
+                }
+
+                if (token.val == 'color') {
+
+                    if ((<IdentToken>(<Token[]>token.chi)[0]).typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(<ColorSpace>(<IdentToken>(<Token[]>token.chi)[0]).val.toLowerCase())) {
+
+                        // @ts-ignore
+                        return reduceHexValue(srgb2hexvalues(...color2srgbvalues(token)));
                     }
                 }
 

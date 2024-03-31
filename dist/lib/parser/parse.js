@@ -916,7 +916,7 @@ function parseTokens(tokens, options = {}) {
                     else if (t.val == 'color') {
                         // @ts-ignore
                         t.cal = 'col';
-                        t.chi = t.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType].includes(t.typ));
+                        // t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(t.typ));
                     }
                 }
                 t.chi = t.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));

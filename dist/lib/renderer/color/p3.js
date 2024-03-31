@@ -1,4 +1,4 @@
-import { xyz2srgb, srgb2lsrgb, lsrgb2srgb } from './srgb.js';
+import { xyz2srgb, srgb2lsrgbvalues, lsrgb2srgbvalues } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';
@@ -7,23 +7,23 @@ import '../../parser/parse.js';
 import { srgb2xyz } from './xyz.js';
 import '../sourcemap/lib/encode.js';
 
-function p32srgb(r, g, b, alpha) {
+function p32srgbvalues(r, g, b, alpha) {
     // @ts-ignore
     return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
 }
-function srgb2p3(r, g, b, alpha) {
+function srgb2p3values(r, g, b, alpha) {
     // @ts-ignore
     return srgb2xyz(...xyz2lp3(...lp32p3(r, g, b, alpha)));
 }
 function p32lp3(r, g, b, alpha) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
-    return srgb2lsrgb(r, g, b, alpha); // same as sRGB
+    return srgb2lsrgbvalues(r, g, b, alpha); // same as sRGB
 }
 function lp32p3(r, g, b, alpha) {
     // convert an array of linear-light display-p3 RGB  in the range 0.0-1.0
     // to gamma corrected form
-    return lsrgb2srgb(r, g, b, alpha); // same as sRGB
+    return lsrgb2srgbvalues(r, g, b, alpha); // same as sRGB
 }
 function lp32xyz(r, g, b, alpha) {
     // convert an array of linear-light display-p3 values to CIE XYZ
@@ -32,7 +32,7 @@ function lp32xyz(r, g, b, alpha) {
     const M = [
         [608311 / 1250200, 189793 / 714400, 198249 / 1000160],
         [35783 / 156275, 247089 / 357200, 198249 / 2500400],
-        [0 / 1, 32229 / 714400, 5220557 / 5000800],
+        [0, 32229 / 714400, 5220557 / 5000800],
     ];
     const result = multiplyMatrices(M, [r, g, b]);
     if (alpha != null && alpha != 1) {
@@ -54,4 +54,4 @@ function xyz2lp3(x, y, z, alpha) {
     return result;
 }
 
-export { lp32p3, lp32xyz, p32lp3, p32srgb, srgb2p3, xyz2lp3 };
+export { lp32p3, lp32xyz, p32lp3, p32srgbvalues, srgb2p3values, xyz2lp3 };
