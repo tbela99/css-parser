@@ -1,8 +1,8 @@
 import { colorsFunc } from '../../renderer/render.js';
-import { COLORS_NAMES } from '../../renderer/utils/color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
+import { COLORS_NAMES } from '../../renderer/color/utils/constants.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -29,6 +29,30 @@ function isTime(dimension) {
 function isFrequency(dimension) {
     return 'unit' in dimension && ['hz', 'khz'].includes(dimension.unit.toLowerCase());
 }
+function isColorspace(token) {
+    if (token.typ != EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb', 'hsl', 'hwb'].includes(token.val.toLowerCase());
+}
+function isRectangularOrthogonalColorspace(token) {
+    if (token.typ != EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+}
+function isPolarColorspace(token) {
+    if (token.typ != EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['hsl', 'hwb', 'lch', 'oklch'].includes(token.val);
+}
+function isHueInterpolationMethod(token) {
+    if (token.typ != EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token.val);
+}
 function isColor(token) {
     if (token.typ == EnumToken.ColorTokenType) {
         return true;
@@ -39,36 +63,119 @@ function isColor(token) {
     }
     let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
-        const keywords = ['from', 'none'];
-        if (['rgb', 'hsl', 'hwb'].includes(token.val)) {
-            keywords.push('a', ...token.val.split(''));
-        }
-        // console.debug(JSON.stringify({token}, null, 1));
-        // @ts-ignore
-        for (const v of token.chi) {
-            // console.debug(JSON.stringify({v}, null, 1));
-            if (v.typ == EnumToken.CommaTokenType) {
-                isLegacySyntax = true;
+        if (token.val == 'color') {
+            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+            const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';
+            if (children.length < 4 || children.length > 8) {
+                return false;
             }
-            if (v.typ == EnumToken.IdenTokenType) {
-                if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+            if (!isRelative && !isColorspace(children[0])) {
+                return false;
+            }
+            for (let i = 1; i < children.length - 2; i++) {
+                if (children[i].typ == EnumToken.IdenTokenType) {
+                    if (children[i].val != 'none' &&
+                        !(isRelative && ['alpha', 'r', 'g', 'b'].includes(children[i].val) || isColorspace(children[i]))) {
+                        return false;
+                    }
+                }
+                if (children[i].typ == EnumToken.FunctionTokenType && !['calc'].includes(children[i].val)) {
                     return false;
                 }
-                if (keywords.includes(v.val)) {
-                    if (isLegacySyntax) {
-                        return false;
+            }
+            if (children.length == 8 || children.length == 6) {
+                const sep = children.at(-2);
+                const alpha = children.at(-1);
+                if (sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                    return false;
+                }
+                if (alpha.typ == EnumToken.IdenTokenType && alpha.val != 'none') {
+                    return false;
+                }
+                else {
+                    // @ts-ignore
+                    if (alpha.typ == EnumToken.PercentageTokenType) {
+                        if (+alpha.val < 0 || +alpha.val > 100) {
+                            return false;
+                        }
                     }
-                    if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                    else if (alpha.typ == EnumToken.NumberTokenType) {
+                        if (+alpha.val < 0 || +alpha.val > 1) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        else if (token.val == 'color-mix') {
+            const children = token.chi.reduce((acc, t) => {
+                if (t.typ == EnumToken.CommaTokenType) {
+                    acc.push([]);
+                }
+                else {
+                    if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                        acc[acc.length - 1].push(t);
+                    }
+                }
+                return acc;
+            }, [[]]);
+            if (children.length == 3) {
+                if (children[0].length > 3 ||
+                    children[0][0].typ != EnumToken.IdenTokenType ||
+                    children[0][0].val != 'in' ||
+                    !isColorspace(children[0][1]) ||
+                    (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
+                    children[1].length > 2 ||
+                    children[1][0].typ != EnumToken.ColorTokenType ||
+                    children[2].length > 2 ||
+                    children[2][0].typ != EnumToken.ColorTokenType) {
+                    return false;
+                }
+                if (children[1].length == 2) {
+                    if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
                         return false;
                     }
                 }
-                continue;
+                if (children[2].length == 2) {
+                    if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
+                        return false;
+                    }
+                }
+                return true;
             }
-            if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
-                continue;
+            return false;
+        }
+        else {
+            const keywords = ['from', 'none'];
+            if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                keywords.push('alpha', ...token.val.slice(-3).split(''));
             }
-            if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
-                return false;
+            // @ts-ignore
+            for (const v of token.chi) {
+                if (v.typ == EnumToken.CommaTokenType) {
+                    isLegacySyntax = true;
+                }
+                if (v.typ == EnumToken.IdenTokenType) {
+                    if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+                        return false;
+                    }
+                    if (keywords.includes(v.val)) {
+                        if (isLegacySyntax) {
+                            return false;
+                        }
+                        if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                            return false;
+                        }
+                    }
+                    continue;
+                }
+                if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || v.val == 'var' || colorsFunc.includes(v.val))) {
+                    continue;
+                }
+                if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -239,7 +346,11 @@ function parseDimension(name) {
         index++;
         break;
     }
-    const dimension = { typ: EnumToken.DimensionTokenType, val: name.slice(0, index), unit: name.slice(index) };
+    const dimension = {
+        typ: EnumToken.DimensionTokenType,
+        val: name.slice(0, index),
+        unit: name.slice(index)
+    };
     if (isAngle(dimension)) {
         // @ts-ignore
         dimension.typ = EnumToken.AngleTokenType;
@@ -281,6 +392,31 @@ function isHexColor(name) {
     }
     return true;
 }
+/*
+export function isHexDigit(name: string): boolean {
+
+    if (name.length || name.length > 6) {
+
+        return false;
+    }
+
+    for (let chr of name) {
+
+        let codepoint = <number>chr.charCodeAt(0);
+
+        if (!isDigit(codepoint) &&
+            // A F
+            !(codepoint >= 0x41 && codepoint <= 0x46) &&
+            // a f
+            !(codepoint >= 0x61 && codepoint <= 0x66)) {
+
+            return false;
+        }
+    }
+
+    return true;
+}
+*/
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }
@@ -297,4 +433,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { isAngle, isAtKeyword, isColor, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPseudo, isResolution, isTime, isWhiteSpace, parseDimension };
+export { isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, parseDimension };

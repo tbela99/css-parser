@@ -524,4 +524,64 @@ content: '\\21 now\\21';
         });
     });
 
+    it('namespace selector attribute #23', function () {
+        const file =`
+
+.selector {
+  background: repeat scroll 0% 0% / auto padding-box border-box none #0000;
+  transition: none;
+}
+
+`;
+        return transform(file).then(result => expect(result.code).equals(`.selector{background:0 0;transition:0s}`));
+    });
+
+    it('namespace selector attribute #24', function () {
+        const file =`
+
+.selector {
+  background: repeat scroll 0% 0% / auto padding-box border-box none red;
+  transition: none;
+}
+
+`;
+        return transform(file).then(result => expect(result.code).equals(`.selector{background:red;transition:0s}`));
+    });
+
+    it('namespace selector attribute #25', function () {
+        const file =`
+
+.selector {
+  background: repeat scroll 0% 0% / auto padding-box none red;
+  transition: none;
+}
+
+`;
+        return transform(file).then(result => expect(result.code).equals(`.selector{background:padding-box red;transition:0s}`));
+    });
+
+    it('namespace selector attribute #26', function () {
+        const file =`
+
+.selector {
+  background: repeat scroll 0% 0% / auto border-box padding-box none red;
+  transition: none;
+}
+
+`;
+        return transform(file).then(result => expect(result.code).equals(`.selector{background:border-box padding-box red;transition:0s}`));
+    });
+
+    it('namespace selector attribute #27', function () {
+        const file =`
+
+.selector {
+  background: repeat scroll 0% 0% / auto border-box none red;
+  transition: none;
+}
+
+`;
+        return transform(file).then(result => expect(result.code).equals(`.selector{background:border-box red;transition:0s}`));
+    });
+
 }

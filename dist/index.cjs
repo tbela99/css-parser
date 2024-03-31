@@ -1,6 +1,6 @@
 'use strict';
 
-var promises = require('fs/promises');
+var promises = require('node:fs/promises');
 
 exports.EnumToken = void 0;
 (function (EnumToken) {
@@ -82,6 +82,7 @@ exports.EnumToken = void 0;
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
+    EnumToken[EnumToken["EOF"] = 47] = "EOF";
     EnumToken[EnumToken["Hash"] = 28] = "Hash";
     EnumToken[EnumToken["Flex"] = 57] = "Flex";
     EnumToken[EnumToken["Angle"] = 24] = "Angle";
@@ -119,6 +120,67 @@ const funcLike = [
     exports.EnumToken.GridTemplateFuncTokenType
 ];
 
+// from https://www.w3.org/TR/css-color-4/multiply-matrices.js
+/**
+ * Simple matrix (and vector) multiplication
+ * Warning: No error handling for incompatible dimensions!
+ * @author Lea Verou 2020 MIT License
+ */
+// A is m x n. B is n x p. product is m x p.
+function multiplyMatrices(A, B) {
+    let m = A.length;
+    if (!Array.isArray(A[0])) {
+        // A is vector, convert to [[a, b, c, ...]]
+        A = [A];
+    }
+    if (!Array.isArray(B[0])) {
+        // B is vector, convert to [[a], [b], [c], ...]]
+        B = B.map((x) => [x]);
+    }
+    let p = B[0].length;
+    let B_cols = B[0].map((_, i) => B.map((x) => x[i])); // transpose B
+    let product = A.map((row) => B_cols.map((col) => {
+        if (!Array.isArray(row)) {
+            return col.reduce((a, c) => a + c * row, 0);
+        }
+        return row.reduce((a, c, i) => a + c * (col[i] || 0), 0);
+    }));
+    if (m === 1) {
+        product = product[0]; // Avoid [[a, b, c, ...]]
+    }
+    if (p === 1) {
+        return product.map((x) => x[0]); // Avoid [[a], [b], [c], ...]]
+    }
+    return product;
+}
+
+const colorRange = {
+    lab: {
+        l: [0, 100],
+        a: [-125, 125],
+        b: [-125, 125]
+    },
+    lch: {
+        l: [0, 100],
+        c: [0, 150],
+        h: [0, 360]
+    },
+    oklab: {
+        l: [0, 1],
+        a: [-0.4, .4],
+        b: [-0.4, 0.4]
+    },
+    oklch: {
+        l: [0, 1],
+        a: [0, .4],
+        b: [0, 0.4]
+    }
+};
+const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
+const powerlessColorComponent = { typ: exports.EnumToken.IdenTokenType, val: 'none' };
+const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
+const k = Math.pow(29, 3) / Math.pow(3, 3);
+const e = Math.pow(6, 3) / Math.pow(29, 3);
 // name to color
 const COLORS_NAMES = Object.seal({
     'aliceblue': '#f0f8ff',
@@ -272,230 +334,683 @@ const COLORS_NAMES = Object.seal({
     'transparent': '#00000000'
 });
 // color to name
-const NAMES_COLORS = Object.seal({
-    '#f0f8ff': 'aliceblue',
-    '#faebd7': 'antiquewhite',
-    // '#00ffff': 'aqua',
-    '#7fffd4': 'aquamarine',
-    '#f0ffff': 'azure',
-    '#f5f5dc': 'beige',
-    '#ffe4c4': 'bisque',
-    '#000000': 'black',
-    '#ffebcd': 'blanchedalmond',
-    '#0000ff': 'blue',
-    '#8a2be2': 'blueviolet',
-    '#a52a2a': 'brown',
-    '#deb887': 'burlywood',
-    '#5f9ea0': 'cadetblue',
-    '#7fff00': 'chartreuse',
-    '#d2691e': 'chocolate',
-    '#ff7f50': 'coral',
-    '#6495ed': 'cornflowerblue',
-    '#fff8dc': 'cornsilk',
-    '#dc143c': 'crimson',
-    '#00ffff': 'cyan',
-    '#00008b': 'darkblue',
-    '#008b8b': 'darkcyan',
-    '#b8860b': 'darkgoldenrod',
-    // '#a9a9a9': 'darkgray',
-    '#a9a9a9': 'darkgrey',
-    '#006400': 'darkgreen',
-    '#bdb76b': 'darkkhaki',
-    '#8b008b': 'darkmagenta',
-    '#556b2f': 'darkolivegreen',
-    '#ff8c00': 'darkorange',
-    '#9932cc': 'darkorchid',
-    '#8b0000': 'darkred',
-    '#e9967a': 'darksalmon',
-    '#8fbc8f': 'darkseagreen',
-    '#483d8b': 'darkslateblue',
-    // '#2f4f4f': 'darkslategray',
-    '#2f4f4f': 'darkslategrey',
-    '#00ced1': 'darkturquoise',
-    '#9400d3': 'darkviolet',
-    '#ff1493': 'deeppink',
-    '#00bfff': 'deepskyblue',
-    // '#696969': 'dimgray',
-    '#696969': 'dimgrey',
-    '#1e90ff': 'dodgerblue',
-    '#b22222': 'firebrick',
-    '#fffaf0': 'floralwhite',
-    '#228b22': 'forestgreen',
-    // '#ff00ff': 'fuchsia',
-    '#dcdcdc': 'gainsboro',
-    '#f8f8ff': 'ghostwhite',
-    '#ffd700': 'gold',
-    '#daa520': 'goldenrod',
-    //    '#808080': 'gray',
-    '#808080': 'grey',
-    '#008000': 'green',
-    '#adff2f': 'greenyellow',
-    '#f0fff0': 'honeydew',
-    '#ff69b4': 'hotpink',
-    '#cd5c5c': 'indianred',
-    '#4b0082': 'indigo',
-    '#fffff0': 'ivory',
-    '#f0e68c': 'khaki',
-    '#e6e6fa': 'lavender',
-    '#fff0f5': 'lavenderblush',
-    '#7cfc00': 'lawngreen',
-    '#fffacd': 'lemonchiffon',
-    '#add8e6': 'lightblue',
-    '#f08080': 'lightcoral',
-    '#e0ffff': 'lightcyan',
-    '#fafad2': 'lightgoldenrodyellow',
-    // '#d3d3d3': 'lightgray',
-    '#d3d3d3': 'lightgrey',
-    '#90ee90': 'lightgreen',
-    '#ffb6c1': 'lightpink',
-    '#ffa07a': 'lightsalmon',
-    '#20b2aa': 'lightseagreen',
-    '#87cefa': 'lightskyblue',
-    // '#778899': 'lightslategray',
-    '#778899': 'lightslategrey',
-    '#b0c4de': 'lightsteelblue',
-    '#ffffe0': 'lightyellow',
-    '#00ff00': 'lime',
-    '#32cd32': 'limegreen',
-    '#faf0e6': 'linen',
-    '#ff00ff': 'magenta',
-    '#800000': 'maroon',
-    '#66cdaa': 'mediumaquamarine',
-    '#0000cd': 'mediumblue',
-    '#ba55d3': 'mediumorchid',
-    '#9370d8': 'mediumpurple',
-    '#3cb371': 'mediumseagreen',
-    '#7b68ee': 'mediumslateblue',
-    '#00fa9a': 'mediumspringgreen',
-    '#48d1cc': 'mediumturquoise',
-    '#c71585': 'mediumvioletred',
-    '#191970': 'midnightblue',
-    '#f5fffa': 'mintcream',
-    '#ffe4e1': 'mistyrose',
-    '#ffe4b5': 'moccasin',
-    '#ffdead': 'navajowhite',
-    '#000080': 'navy',
-    '#fdf5e6': 'oldlace',
-    '#808000': 'olive',
-    '#6b8e23': 'olivedrab',
-    '#ffa500': 'orange',
-    '#ff4500': 'orangered',
-    '#da70d6': 'orchid',
-    '#eee8aa': 'palegoldenrod',
-    '#98fb98': 'palegreen',
-    '#afeeee': 'paleturquoise',
-    '#d87093': 'palevioletred',
-    '#ffefd5': 'papayawhip',
-    '#ffdab9': 'peachpuff',
-    '#cd853f': 'peru',
-    '#ffc0cb': 'pink',
-    '#dda0dd': 'plum',
-    '#b0e0e6': 'powderblue',
-    '#800080': 'purple',
-    '#ff0000': 'red',
-    '#bc8f8f': 'rosybrown',
-    '#4169e1': 'royalblue',
-    '#8b4513': 'saddlebrown',
-    '#fa8072': 'salmon',
-    '#f4a460': 'sandybrown',
-    '#2e8b57': 'seagreen',
-    '#fff5ee': 'seashell',
-    '#a0522d': 'sienna',
-    '#c0c0c0': 'silver',
-    '#87ceeb': 'skyblue',
-    '#6a5acd': 'slateblue',
-    // '#708090': 'slategray',
-    '#708090': 'slategrey',
-    '#fffafa': 'snow',
-    '#00ff7f': 'springgreen',
-    '#4682b4': 'steelblue',
-    '#d2b48c': 'tan',
-    '#008080': 'teal',
-    '#d8bfd8': 'thistle',
-    '#ff6347': 'tomato',
-    '#40e0d0': 'turquoise',
-    '#ee82ee': 'violet',
-    '#f5deb3': 'wheat',
-    '#ffffff': 'white',
-    '#f5f5f5': 'whitesmoke',
-    '#ffff00': 'yellow',
-    '#9acd32': 'yellowgreen',
-    '#663399': 'rebeccapurple',
-    '#00000000': 'transparent'
-});
-/**
- * clamp color values
- * @param token
- */
-function clamp(token) {
-    if (token.kin == 'rgb' || token.kin == 'rgba') {
-        token.chi.filter((token) => ![exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType].includes(token.typ)).
-            forEach((token, index) => {
-            if (index <= 2) {
-                if (token.typ == exports.EnumToken.NumberTokenType) {
-                    token.val = String(Math.min(255, Math.max(0, +token.val)));
-                }
-                else if (token.typ == exports.EnumToken.PercentageTokenType) {
-                    token.val = String(Math.min(100, Math.max(0, +token.val)));
-                }
-            }
-            else {
-                if (token.typ == exports.EnumToken.NumberTokenType) {
-                    token.val = String(Math.min(1, Math.max(0, +token.val)));
-                }
-                else if (token.typ == exports.EnumToken.PercentageTokenType) {
-                    token.val = String(Math.min(100, Math.max(0, +token.val)));
-                }
-            }
-        });
-    }
-    return token;
+const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key, value]) => {
+    acc[value] = key;
+    return acc;
+}, Object.create(null)));
+
+function toHexString(acc, value) {
+    return acc + value.toString(16).padStart(2, '0');
 }
-function getNumber(token) {
-    if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
-        return 0;
-    }
-    // @ts-ignore
-    return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
-}
-function getAngle(token) {
-    if (token.typ == exports.EnumToken.IdenTokenType) {
-        if (token.val == 'none') {
-            return 0;
+function reduceHexValue(value) {
+    const named_color = NAMES_COLORS[expandHexValue(value)];
+    if (value.length == 7) {
+        if (value[1] == value[2] &&
+            value[3] == value[4] &&
+            value[5] == value[6]) {
+            value = `#${value[1]}${value[3]}${value[5]}`;
         }
     }
-    if (token.typ == exports.EnumToken.AngleTokenType) {
-        switch (token.unit) {
-            case 'deg':
-                // @ts-ignore
-                return token.val / 360;
-            case 'rad':
-                // @ts-ignore
-                return token.val / (2 * Math.PI);
-            case 'grad':
-                // @ts-ignore
-                return token.val / 400;
-            case 'turn':
-                // @ts-ignore
-                return +token.val;
+    else if (value.length == 9) {
+        if (value[1] == value[2] &&
+            value[3] == value[4] &&
+            value[5] == value[6] &&
+            value[7] == value[8]) {
+            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
         }
     }
+    return named_color != null && named_color.length <= value.length ? named_color : value;
+}
+function expandHexValue(value) {
+    if (value.length == 4) {
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+    }
+    if (value.length == 5) {
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}${value[4]}${value[4]}`;
+    }
+    return value;
+}
+function rgb2hex(token) {
+    let value = '#';
+    let t;
     // @ts-ignore
-    return token.val / 360;
+    const components = getComponents(token);
+    // @ts-ignore
+    for (let i = 0; i < 3; i++) {
+        // @ts-ignore
+        t = components[i];
+        // @ts-ignore
+        value += (t.typ == exports.EnumToken.Iden && t.val == 'none' ? '0' : Math.round(getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1))).toString(16).padStart(2, '0');
+    }
+    // @ts-ignore
+    if (components.length == 4) {
+        // @ts-ignore
+        t = components[3];
+        // @ts-ignore
+        const v = (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
+        // @ts-ignore
+        if (v < 1) {
+            // @ts-ignore
+            value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
+        }
+    }
+    return value;
+}
+function hsl2hex(token) {
+    return `${hsl2rgb(token).reduce(toHexString, '#')}`;
+}
+function hwb2hex(token) {
+    return `${hwb2rgb(token).reduce(toHexString, '#')}`;
+}
+function cmyk2hex(token) {
+    return `#${cmyk2rgb(token).reduce(toHexString, '')}`;
+}
+function oklab2hex(token) {
+    return `${oklab2rgb(token).reduce(toHexString, '#')}`;
+}
+function oklch2hex(token) {
+    return `${oklch2rgb(token).reduce(toHexString, '#')}`;
+}
+function lab2hex(token) {
+    return `${lab2rgb(token).reduce(toHexString, '#')}`;
+}
+function lch2hex(token) {
+    return `${lch2rgb(token).reduce(toHexString, '#')}`;
+}
+function srgb2hexvalues(r, g, b, alpha) {
+    return [r, g, b].concat(alpha == null || alpha == 1 ? [] : [alpha]).reduce((acc, value) => acc + minmax(Math.round(255 * value), 0, 255).toString(16).padStart(2, '0'), '#');
 }
 
-function hwb2rgb(hue, white, black, alpha = null) {
-    const rgb = hsl2rgb(hue, 1, .5);
+function getComponents(token) {
+    if (token.kin == 'hex' || token.kin == 'lit') {
+        const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+        // @ts-ignore
+        return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t) => {
+            return { typ: exports.EnumToken.Number, val: parseInt(t, 16).toString() };
+        });
+    }
+    return token.chi
+        .filter((t) => ![exports.EnumToken.LiteralTokenType, exports.EnumToken.CommentTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType].includes(t.typ));
+}
+
+function xyzd502srgb(x, y, z) {
+    // @ts-ignore
+    return lsrgb2srgbvalues(
+    /* r: */
+    x * 3.1341359569958707 -
+        y * 1.6173863321612538 -
+        0.4906619460083532 * z, 
+    /*  g: */
+    x * -0.978795502912089 +
+        y * 1.916254567259524 +
+        0.03344273116131949 * z, 
+    /*    b: */
+    x * 0.07195537988411677 -
+        y * 0.2289768264158322 +
+        1.405386058324125 * z);
+}
+function XYZ_to_lin_sRGB(x, y, z) {
+    // convert XYZ to linear-light sRGB
+    const M = [
+        [12831 / 3959, -329 / 214, -1974 / 3959],
+        [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+        [705 / 12673, -2585 / 12673, 705 / 667],
+    ];
+    const XYZ = [x, y, z]; // convert to XYZ
+    return multiplyMatrices(M, XYZ).map((v) => v);
+}
+function XYZ_D50_to_D65(x, y, z) {
+    // Bradford chromatic adaptation from D50 to D65
+    const M = [
+        [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
+        [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
+        [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
+    ];
+    const XYZ = [x, y, z];
+    return multiplyMatrices(M, XYZ); //.map((v: number) => v);
+}
+function srgb2xyz(r, g, b, alpha) {
+    [r, g, b] = srgb2lsrgbvalues(r, g, b);
+    const rgb = [
+        0.436065742824811 * r +
+            0.3851514688337912 * g +
+            0.14307845442264197 * b,
+        0.22249319175623702 * r +
+            0.7168870538238823 * g +
+            0.06061979053616537 * b,
+        0.013923904500943465 * r +
+            0.09708128566574634 * g +
+            0.7140993584005155 * b
+    ];
+    if (alpha != null && alpha != 1) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
+
+function hex2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hex2lab(token));
+}
+function rgb2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...rgb2lab(token));
+}
+function hsl2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hsl2lab(token));
+}
+function hwb2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hwb2lab(token));
+}
+function lab2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...getLABComponents(token));
+}
+function srgb2lch(r, g, blue, alpha) {
+    // @ts-ignore
+    return lab2lchvalues(...srgb2lab(r, g, blue, alpha));
+}
+function oklab2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...oklab2lab(token));
+}
+function oklch2lch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...oklch2lab(token));
+}
+function lab2lchvalues(l, a, b, alpha = null) {
+    let c = Math.sqrt(a * a + b * b);
+    let h = Math.atan2(b, a) * 180 / Math.PI;
+    if (h < 0) {
+        h += 360;
+    }
+    if (c < .0001) {
+        c = h = 0;
+    }
+    return alpha == null ? [l, c, h] : [l, c, h, alpha];
+}
+function xyz2lchvalues(x, y, z, alpha) {
+    // @ts-ignore(
+    const lch = lab2lchvalues(...xyz2lab(x, y, z));
+    return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
+}
+function getLCHComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 100 : 1);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const c = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 150 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const h = getAngle(t) * 360;
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null ? 1 : getNumber(t);
+    return alpha == null ? [l, c, h] : [l, c, h, alpha];
+}
+
+function eq(a, b) {
+    if (a == null || b == null) {
+        return a == b;
+    }
+    if (typeof a != 'object' || typeof b != 'object') {
+        return a === b;
+    }
+    if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
+        return false;
+    }
+    if (Array.isArray(a)) {
+        if (a.length != b.length) {
+            return false;
+        }
+        let i = 0;
+        for (; i < a.length; i++) {
+            if (!eq(a[i], b[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    const k1 = Object.keys(a);
+    const k2 = Object.keys(b);
+    if (k1.length != k2.length) {
+        return false;
+    }
+    let key;
+    for (key of k1) {
+        if (!(key in b) || !eq(a[key], b[key])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function hex2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hex2oklab(token));
+}
+function rgb2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...rgb2oklab(token));
+}
+function hsl2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hsl2oklab(token));
+}
+function hwb2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...hwb2oklab(token));
+}
+function lab2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...lab2oklab(token));
+}
+function lch2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...lch2oklab(token));
+}
+function oklab2oklch(token) {
+    // @ts-ignore
+    return lab2lchvalues(...getOKLABComponents(token));
+}
+function srgb2oklch(r, g, blue, alpha) {
+    // @ts-ignore
+    return lab2lchvalues(...srgb2oklab(r, g, blue, alpha));
+}
+function getOKLCHComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const c = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const h = getAngle(t) * 360;
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    return [l, c, h, alpha];
+}
+
+function hex2oklab(token) {
+    // @ts-ignore
+    return srgb2oklab(...hex2srgb(token));
+}
+function rgb2oklab(token) {
+    // @ts-ignore
+    return srgb2oklab(...rgb2srgb(token));
+}
+function hsl2oklab(token) {
+    // @ts-ignore
+    return srgb2oklab(...hsl2srgb(token));
+}
+function hwb2oklab(token) {
+    // @ts-ignore
+    return srgb2oklab(...hwb2srgb(token));
+}
+function lab2oklab(token) {
+    // @ts-ignore
+    return srgb2oklab(...lab2srgb(token));
+}
+function lch2oklab(token) {
+    // @ts-ignore
+    return srgb2oklab(...lch2srgb(token));
+}
+function oklch2oklab(token) {
+    // @ts-ignore
+    return lch2labvalues(...getOKLCHComponents(token));
+}
+function srgb2oklab(r, g, blue, alpha) {
+    [r, g, blue] = srgb2lsrgbvalues(r, g, blue);
+    let L = Math.cbrt(0.41222147079999993 * r + 0.5363325363 * g + 0.0514459929 * blue);
+    let M = Math.cbrt(0.2119034981999999 * r + 0.6806995450999999 * g + 0.1073969566 * blue);
+    let S = Math.cbrt(0.08830246189999998 * r + 0.2817188376 * g + 0.6299787005000002 * blue);
+    const l = 0.2104542553 * L + 0.793617785 * M - 0.0040720468 * S;
+    const a = r == g && g == blue ? 0 : 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
+    const b = r == g && g == blue ? 0 : 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
+    return alpha == null ? [l, a, b] : [l, a, b, alpha];
+}
+function getOKLABComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const a = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const b = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? .4 : 1);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    const rgb = [l, a, b];
+    if (alpha != 1 && alpha != null) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
+function OKLab_to_XYZ(l, a, b, alpha = null) {
+    // Given OKLab, convert to XYZ relative to D65
+    const LMStoXYZ = [
+        [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+        [-0.0405757452148008, 1.1122868032803170, -0.0717110580655164],
+        [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816]
+    ];
+    const OKLabtoLMS = [
+        [1.0000000000000000, 0.3963377773761749, 0.2158037573099136],
+        [1.0000000000000000, -0.1055613458156586, -0.0638541728258133],
+        [1.0000000000000000, -0.0894841775298119, -1.2914855480194092]
+    ];
+    const LMSnl = multiplyMatrices(OKLabtoLMS, [l, a, b]);
+    const xyz = multiplyMatrices(LMStoXYZ, LMSnl.map((c) => c ** 3));
+    if (alpha != null) {
+        xyz.push(alpha);
+    }
+    return xyz;
+}
+// from https://www.w3.org/TR/css-color-4/#color-conversion-code
+function OKLab_to_sRGB(l, a, b) {
+    let L = Math.pow(l * 0.99999999845051981432 +
+        0.39633779217376785678 * a +
+        0.21580375806075880339 * b, 3);
+    let M = Math.pow(l * 1.0000000088817607767 -
+        0.1055613423236563494 * a -
+        0.063854174771705903402 * b, 3);
+    let S = Math.pow(l * 1.0000000546724109177 -
+        0.089484182094965759684 * a -
+        1.2914855378640917399 * b, 3);
+    return lsrgb2srgbvalues(
+    /* r: */
+    +4.076741661347994 * L -
+        3.307711590408193 * M +
+        0.230969928729428 * S, 
+    /*  g: */
+    -1.2684380040921763 * L +
+        2.6097574006633715 * M -
+        0.3413193963102197 * S, 
+    /*  b: */
+    -0.004196086541837188 * L -
+        0.7034186144594493 * M +
+        1.7076147009309444 * S);
+}
+
+// L: 0% = 0.0, 100% = 100.0
+// for a and b: -100% = -125, 100% = 125
+function hex2lab(token) {
+    //  @ts-ignore
+    return srgb2lab(...hex2srgb(token));
+}
+function rgb2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...rgb2srgb(token));
+}
+function hsl2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...hsl2srgb(token));
+}
+function hwb2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...hwb2srgb(token));
+}
+function lch2lab(token) {
+    // @ts-ignore
+    return lch2labvalues(...getLCHComponents(token));
+}
+function oklab2lab(token) {
+    // @ts-ignore
+    return xyz2lab(...OKLab_to_XYZ(...getOKLABComponents(token)));
+}
+function oklch2lab(token) {
+    // @ts-ignore
+    return srgb2lab(...oklch2srgb(token));
+}
+function srgb2lab(r, g, b, a) {
+    // @ts-ignore */
+    const result = xyz2lab(...srgb2xyz(r, g, b));
+    // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
+    // and approximated computations in sRGB <-> CIELab.
+    // See: https://github.com/d3/d3-color/pull/46
+    if (r === b && b === g) {
+        result[1] = result[2] = 0;
+    }
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
+}
+function xyz2lab(x, y, z, a = null) {
+    // Assuming XYZ is relative to D50, convert to CIE Lab
+    // from CIE standard, which now defines these as a rational fraction
+    // var e = 216/24389;  // 6^3/29^3
+    // var k = 24389/27;   // 29^3/3^3
+    // compute xyz, which is XYZ scaled relative to reference white
+    const xyz = [x, y, z].map((value, i) => value / D50[i]);
+    // now compute f
+    const f = xyz.map((value) => value > e ? Math.cbrt(value) : (k * value + 16) / 116);
+    const result = [
+        (116 * f[1]) - 16, // L
+        500 * (f[0] - f[1]), // a
+        200 * (f[1] - f[2]) // b
+    ];
+    // L in range [0,100]. For use in CSS, add a percent
+    if (a != null && a != 1) {
+        result.push(a);
+    }
+    return result;
+}
+function lch2labvalues(l, c, h, a = null) {
+    // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
+    const result = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
+}
+function getLABComponents(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const l = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 100 : 1);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const a = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 125 : 1);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const b = getNumber(t) * (t.typ == exports.EnumToken.PercentageTokenType ? 125 : 1);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const alpha = t == null ? 1 : getNumber(t);
+    const result = [l, a, b];
+    if (alpha != null && alpha != 1) {
+        result.push(alpha);
+    }
+    return result;
+}
+// from https://www.w3.org/TR/css-color-4/#color-conversion-code
+// D50 LAB
+function Lab_to_sRGB(l, a, b) {
+    // @ts-ignore
+    return xyzd502srgb(...Lab_to_XYZ(l, a, b));
+}
+// from https://www.w3.org/TR/css-color-4/#color-conversion-code
+function Lab_to_XYZ(l, a, b) {
+    // Convert Lab to D50-adapted XYZ
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    const k = 24389 / 27; // 29^3/3^3
+    const e = 216 / 24389; // 6^3/29^3
+    const f = [];
+    // compute f, starting with the luminance-related term
+    f[1] = (l + 16) / 116;
+    f[0] = a / 500 + f[1];
+    f[2] = f[1] - b / 200;
+    // compute xyz
+    const xyz = [
+        Math.pow(f[0], 3) > e ? Math.pow(f[0], 3) : (116 * f[0] - 16) / k,
+        l > k * e ? Math.pow((l + 16) / 116, 3) : l / k,
+        Math.pow(f[2], 3) > e ? Math.pow(f[2], 3) : (116 * f[2] - 16) / k
+    ];
+    // Compute XYZ by scaling xyz by reference white
+    return xyz.map((value, i) => value * D50[i]);
+}
+
+// from https://www.w3.org/TR/css-color-4/#color-conversion-code
+// srgb-linear -> srgb
+// 0 <= r, g, b <= 1
+function srgbvalues(token) {
+    switch (token.kin) {
+        case 'lit':
+        case 'hex':
+            return hex2srgb(token);
+        case 'rgb':
+        case 'rgba':
+            return rgb2srgb(token);
+        case 'hsl':
+        case 'hsla':
+            return hsl2srgb(token);
+        case 'hwb':
+            return hwb2srgb(token);
+        case 'lab':
+            return lab2srgb(token);
+        case 'lch':
+            return lch2srgb(token);
+        case 'oklab':
+            return oklab2srgb(token);
+        case 'oklch':
+            return oklch2srgb(token);
+        case 'color':
+            return color2srgbvalues(token);
+    }
+    return null;
+}
+function rgb2srgb(token) {
+    return getComponents(token).map((t, index) => index == 3 ? (eq(t, {
+        typ: exports.EnumToken.IdenTokenType,
+        val: 'none'
+    }) ? 1 : getNumber(t)) : (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
+}
+function hex2srgb(token) {
+    const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const rgb = [];
+    for (let i = 1; i < value.length; i += 2) {
+        rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
+    }
+    return rgb;
+}
+function xyz2srgb(x, y, z) {
+    // @ts-ignore
+    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z));
+}
+function hwb2srgb(token) {
+    const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
+    const rgb = hsl2srgbvalues(hue, 1, .5);
     for (let i = 0; i < 3; i++) {
         rgb[i] *= (1 - white - black);
-        rgb[i] = Math.round(rgb[i] + white);
+        rgb[i] = rgb[i] + white;
     }
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);
     }
     return rgb;
 }
-function hsl2rgb(h, s, l, a = null) {
+function hsl2srgb(token) {
+    let { h, s, l, a } = hslvalues(token);
+    return hsl2srgbvalues(h, s, l, a);
+}
+function cmyk2srgb(token) {
+    const components = getComponents(token);
+    // @ts-ignore
+    let t = components[0];
+    // @ts-ignore
+    const c = getNumber(t);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    const m = getNumber(t);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    const y = getNumber(t);
+    // @ts-ignore
+    t = components[3];
+    // @ts-ignore
+    const k = getNumber(t);
+    const rgb = [
+        1 - Math.min(1, c * (1 - k) + k),
+        1 - Math.min(1, m * (1 - k) + k),
+        1 - Math.min(1, y * (1 - k) + k)
+    ];
+    // @ts-ignore
+    if (token.chi.length >= 9) {
+        // @ts-ignore
+        t = token.chi[8];
+        // @ts-ignore
+        rgb.push(getNumber(t));
+    }
+    return rgb;
+}
+function oklab2srgb(token) {
+    const [l, a, b, alpha] = getOKLABComponents(token);
+    const rgb = OKLab_to_sRGB(l, a, b);
+    if (alpha != null && alpha != 1) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
+function oklch2srgb(token) {
+    const [l, c, h, alpha] = getOKLCHComponents(token);
+    // @ts-ignore
+    const rgb = OKLab_to_sRGB(...lch2labvalues(l, c, h));
+    if (alpha != 1) {
+        rgb.push(alpha);
+    }
+    return rgb;
+}
+function hslvalues(token) {
+    const components = getComponents(token);
+    let t;
+    // @ts-ignore
+    let h = getAngle(components[0]);
+    // @ts-ignore
+    t = components[1];
+    // @ts-ignore
+    let s = getNumber(t);
+    // @ts-ignore
+    t = components[2];
+    // @ts-ignore
+    let l = getNumber(t);
+    let a = null;
+    if (token.chi?.length == 4) {
+        // @ts-ignore
+        t = token.chi[3];
+        // @ts-ignore
+        a = getNumber(t);
+    }
+    return a == null ? { h, s, l } : { h, s, l, a };
+}
+function hsl2srgbvalues(h, s, l, a = null) {
     let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
     let r = l;
     let g = l;
@@ -542,143 +1057,265 @@ function hsl2rgb(h, s, l, a = null) {
                 break;
         }
     }
-    const values = [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    const values = [r, g, b];
     if (a != null && a != 1) {
-        values.push(Math.round(a * 255));
+        values.push(a);
     }
     return values;
 }
-
-function rgb2Hex(token) {
-    let value = '#';
-    let t;
-    // @ts-ignore
-    for (let i = 0; i < 3; i++) {
-        // @ts-ignore
-        t = token.chi[i];
-        // @ts-ignore
-        value += (t.val == 'none' ? '0' : Math.round(t.typ == exports.EnumToken.PercentageTokenType ? 255 * t.val / 100 : t.val)).toString(16).padStart(2, '0');
+function lab2srgb(token) {
+    const [l, a, b, alpha] = getLABComponents(token);
+    const rgb = Lab_to_sRGB(l, a, b);
+    if (alpha != null && alpha != 1) {
+        rgb.push(alpha);
     }
-    // @ts-ignore
-    if (token.chi.length == 4) {
-        // @ts-ignore
-        t = token.chi[3];
-        // @ts-ignore
-        if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ||
-            (t.typ == exports.EnumToken.NumberTokenType && +t.val < 1) ||
-            (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100)) {
-            // @ts-ignore
-            value += Math.round(255 * getNumber(t)).toString(16).padStart(2, '0');
-        }
-    }
-    return value;
+    return rgb;
 }
-function hsl2Hex(token) {
-    let t;
+function lch2srgb(token) {
     // @ts-ignore
-    let h = getAngle(token.chi[0]);
-    // @ts-ignore
-    t = token.chi[1];
-    // @ts-ignore
-    let s = getNumber(t);
-    // @ts-ignore
-    t = token.chi[2];
-    // @ts-ignore
-    let l = getNumber(t);
-    let a = null;
-    if (token.chi?.length == 4) {
-        // @ts-ignore
-        t = token.chi[3];
-        // @ts-ignore
-        if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100) ||
-            // @ts-ignore
-            (t.typ == exports.EnumToken.NumberTokenType && t.val < 1)) {
-            // @ts-ignore
-            a = getNumber(t);
-        }
+    const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
+    // https://www.w3.org/TR/css-color-4/#lab-to-lch
+    const rgb = Lab_to_sRGB(l, a, b);
+    if (alpha != 1) {
+        rgb.push(alpha);
     }
-    return `#${hsl2rgb(h, s, l, a).reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    return rgb;
 }
-function hwb2hex(token) {
-    let t;
-    // @ts-ignore
-    let h = getAngle(token.chi[0]);
-    // @ts-ignore
-    t = token.chi[1];
-    // @ts-ignore
-    let white = getNumber(t);
-    // @ts-ignore
-    t = token.chi[2];
-    // @ts-ignore
-    let black = getNumber(t);
-    let a = null;
-    if (token.chi?.length == 4) {
-        // @ts-ignore
-        t = token.chi[3];
-        // @ts-ignore
-        if ((t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ||
-            (t.typ == exports.EnumToken.PercentageTokenType && +t.val < 100) ||
-            (t.typ == exports.EnumToken.NumberTokenType && +t.val < 1)) {
-            // @ts-ignore
-            a = getNumber(t);
+// sRGB -> lRGB
+function srgb2lsrgbvalues(r, g, b, a = null) {
+    // convert an array of linear-light sRGB values in the range 0.0-1.0
+    // to gamma corrected form
+    // https://en.wikipedia.org/wiki/SRGB
+    // Extended transfer function:
+    // For negative values, linear portion extends on reflection
+    // of axis, then uses reflected pow below that
+    const rgb = [r, g, b].map((val) => {
+        const abs = Math.abs(val);
+        if (abs <= 0.04045) {
+            return val / 12.92;
         }
+        return (Math.sign(val) || 1) * Math.pow((abs + 0.055) / 1.055, 2.4);
+    });
+    if (a != 1 && a != null) {
+        rgb.push(a);
     }
-    const rgb = hsl2rgb(h, 1, .5, a);
-    let value;
-    for (let i = 0; i < 3; i++) {
-        value = rgb[i] / 255;
-        value *= (1 - white - black);
-        value += white;
-        rgb[i] = Math.round(value * 255);
-    }
-    return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    return rgb;
 }
-function cmyk2hex(token) {
-    // @ts-ignore
-    let t = token.chi[0];
-    // @ts-ignore
-    const c = getNumber(t);
-    // @ts-ignore
-    t = token.chi[1];
-    // @ts-ignore
-    const m = getNumber(t);
-    // @ts-ignore
-    t = token.chi[2];
-    // @ts-ignore
-    const y = getNumber(t);
-    // @ts-ignore
-    t = token.chi[3];
-    // @ts-ignore
-    const k = getNumber(t);
-    const rgb = [
-        Math.round(255 * (1 - Math.min(1, c * (1 - k) + k))),
-        Math.round(255 * (1 - Math.min(1, m * (1 - k) + k))),
-        Math.round(255 * (1 - Math.min(1, y * (1 - k) + k)))
-    ];
-    // @ts-ignore
-    if (token.chi.length >= 9) {
-        // @ts-ignore
-        t = token.chi[8];
-        // @ts-ignore
-        rgb.push(Math.round(255 * getNumber(t)));
+function lsrgb2srgbvalues(r, g, b, alpha) {
+    // convert an array of linear-light sRGB values in the range 0.0-1.0
+    // to gamma corrected form
+    // https://en.wikipedia.org/wiki/SRGB
+    // Extended transfer function:
+    // For negative values, linear portion extends on reflection
+    // of axis, then uses reflected pow below that
+    const rgb = [r, g, b].map((val) => {
+        let abs = Math.abs(val);
+        if (Math.abs(val) > 0.0031308) {
+            return (Math.sign(val) || 1) * (1.055 * Math.pow(abs, 1 / 2.4) - 0.055);
+        }
+        return 12.92 * val;
+    });
+    if (alpha != 1 && alpha != null) {
+        rgb.push(alpha);
     }
-    return `#${rgb.reduce((acc, curr) => acc + curr.toString(16).padStart(2, '0'), '')}`;
+    return rgb;
 }
 
-function hwb2hsv(h, w, b) {
-    return [h, 1 - w / (1 - b), 1 - b];
+function srgb2rgb(value) {
+    return minmax(Math.round(value * 255), 0, 255);
+}
+function hex2rgb(token) {
+    const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const rgb = [];
+    for (let i = 1; i < value.length; i += 2) {
+        rgb.push(parseInt(value.slice(i, i + 2), 16));
+    }
+    return rgb;
+}
+function hwb2rgb(token) {
+    return hwb2srgb(token).map(srgb2rgb);
+}
+function hsl2rgb(token) {
+    let { h, s, l, a } = hslvalues(token);
+    return hsl2srgbvalues(h, s, l, a).map((t) => minmax(Math.round(t * 255), 0, 255));
+}
+function cmyk2rgb(token) {
+    return cmyk2srgb(token).map(srgb2rgb);
+}
+function oklab2rgb(token) {
+    return oklab2srgb(token).map(srgb2rgb);
+}
+function oklch2rgb(token) {
+    return oklch2srgb(token).map(srgb2rgb);
+}
+function lab2rgb(token) {
+    return lab2srgb(token).map(srgb2rgb);
+}
+function lch2rgb(token) {
+    return lch2srgb(token).map(srgb2rgb);
+}
+
+function hwb2hsv(h, w, b, a) {
+    // @ts-ignore
+    return [h, 1 - w / (1 - b), 1 - b, a];
 }
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-function hsl2hsv(h, s, l) {
+function hsl2hsv(h, s, l, a = null) {
     s *= l < .5 ? l : 1 - l;
-    return [
+    const result = [
         //Range should be between 0 - 1
-        h,
-        2 * s / (l + s),
+        h, //Hue stays the same
+        2 * s / (l + s), //Saturation
         l + s //Value
     ];
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
 }
 
+function hex2hsl(token) {
+    // @ts-ignore
+    return rgb2hslvalues(...hex2rgb(token));
+}
+function rgb2hsl(token) {
+    const chi = getComponents(token);
+    // @ts-ignore
+    let t = chi[0];
+    // @ts-ignore
+    let r = getNumber(t);
+    // @ts-ignore
+    t = chi[1];
+    // @ts-ignore
+    let g = getNumber(t);
+    // @ts-ignore
+    t = chi[2];
+    // @ts-ignore
+    let b = getNumber(t);
+    // @ts-ignore
+    t = chi[3];
+    // @ts-ignore
+    let a = null;
+    if (t != null && !eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
+        // @ts-ignore
+        a = getNumber(t) / 255;
+    }
+    const values = [r, g, b];
+    if (a != null && a != 1) {
+        values.push(a);
+    }
+    // @ts-ignore
+    return rgb2hslvalues(...values);
+}
+// https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
+function hsv2hsl(h, s, v, a) {
+    const result = [
+        //[hue, saturation, lightness]
+        //Range should be between 0 - 1
+        h, //Hue stays the same
+        //Saturation is very different between the two color spaces
+        //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
+        //Otherwise sat*val/(2-(2-sat)*val)
+        //Conditional is not operating with hue, it is reassigned!
+        s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h),
+        h / 2, //Lightness is (2-sat)*val/2
+    ];
+    if (a != null) {
+        result.push(a);
+    }
+    return result;
+}
+function hwb2hsl(token) {
+    // @ts-ignore
+    return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
+}
+function lab2hsl(token) {
+    // @ts-ignore
+    return rgb2hslvalues(...lab2rgb(token));
+}
+function lch2hsl(token) {
+    // @ts-ignore
+    return rgb2hslvalues(...lch2rgb(token));
+}
+function oklab2hsl(token) {
+    // @ts-ignore
+    return rgb2hslvalues(...oklab2rgb(token));
+}
+function oklch2hsl(token) {
+    // @ts-ignore
+    return rgb2hslvalues(...oklch2rgb(token));
+}
+function rgb2hslvalues(r, g, b, a = null) {
+    return srgb2hsl(r / 255, g / 255, b / 255, a);
+}
+function srgb2hsl(r, g, b, a = null) {
+    let max = Math.max(r, g, b);
+    let min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    let l = (max + min) / 2;
+    if (max != min) {
+        let d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r:
+                h = (g - b) / d + (g < b ? 6 : 0);
+                break;
+            case g:
+                h = (b - r) / d + 2;
+                break;
+            case b:
+                h = (r - g) / d + 4;
+                break;
+        }
+        h /= 6;
+    }
+    const hsl = [h, s, l];
+    if (a != null && a < 1) {
+        // @ts-ignore
+        return hsl.concat([a]);
+    }
+    // @ts-ignore
+    return hsl;
+}
+
+function rgb2hwb(token) {
+    // @ts-ignore
+    return srgb2hwb(...getComponents(token).map((t, index) => {
+        if (index == 3 && eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
+            return 1;
+        }
+        return getNumber(t) / 255;
+    }));
+}
+function hsl2hwb(token) {
+    // @ts-ignore
+    return hsl2hwbvalues(...getComponents(token).map((t, index) => {
+        if (index == 3 && eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
+            return 1;
+        }
+        if (index == 0) {
+            return getAngle(t);
+        }
+        return getNumber(t);
+    }));
+}
+function lab2hwb(token) {
+    // @ts-ignore
+    return srgb2hwb(...lab2srgb(token));
+}
+function lch2hwb(token) {
+    // @ts-ignore
+    return srgb2hwb(...lch2srgb(token));
+}
+function oklab2hwb(token) {
+    // @ts-ignore
+    return srgb2hwb(...oklab2srgb(token));
+}
+function oklch2hwb(token) {
+    // @ts-ignore
+    return srgb2hwb(...oklch2srgb(token));
+}
 function rgb2hue(r, g, b, fallback = 0) {
     let value = rgb2value(r, g, b);
     let whiteness = rgb2whiteness(r, g, b);
@@ -705,10 +1342,10 @@ function rgb2value(r, g, b) {
 function rgb2whiteness(r, g, b) {
     return Math.min(r, g, b);
 }
-function rgb2hwb(r, g, b, a = null, fallback = 0) {
-    r *= 100 / 255;
-    g *= 100 / 255;
-    b *= 100 / 255;
+function srgb2hwb(r, g, b, a = null, fallback = 0) {
+    r *= 100;
+    g *= 100;
+    b *= 100;
     let hue = rgb2hue(r, g, b, fallback);
     let whiteness = rgb2whiteness(r, g, b);
     let value = Math.round(rgb2value(r, g, b));
@@ -719,151 +1356,1065 @@ function rgb2hwb(r, g, b, a = null, fallback = 0) {
     }
     return result;
 }
-function hsv2hwb(h, s, v) {
-    return [h, (1 - s) * v, 1 - v];
-}
-function hsl2hwb(h, s, l) {
-    return hsv2hwb(...hsl2hsv(h, s, l));
-}
-
-function rgb2hsl(r, g, b, a) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    let max = Math.max(r, g, b);
-    let min = Math.min(r, g, b);
-    let h = 0;
-    let s = 0;
-    let l = (max + min) / 2;
-    if (max != min) {
-        let d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
-                break;
-            case g:
-                h = (b - r) / d + 2;
-                break;
-            case b:
-                h = (r - g) / d + 4;
-                break;
-        }
-        h /= 6;
-    }
-    return [h, s, l, a == 1 ? null : a ?? null];
-}
-// https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-function hsv2hsl(h, s, v) {
-    return [
-        //[hue, saturation, lightness]
-        //Range should be between 0 - 1
-        h,
-        //Saturation is very different between the two color spaces
-        //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
-        //Otherwise sat*val/(2-(2-sat)*val)
-        //Conditional is not operating with hue, it is reassigned!
-        s * v / ((h = (2 - s) * v) < 1 ? h : 2 - h),
-        h / 2 //Lightness is (2-sat)*val/2
-        //See reassignment of hue above
-    ];
-}
-function hwb2hsl(h, w, b) {
-    return hsv2hsl(...hwb2hsv(h, w, b));
-}
-
-// from https://github.com/Rich-Harris/vlq/tree/master
-// credit: Rich Harris
-const integer_to_char = {};
-let i = 0;
-for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {
-    integer_to_char[i++] = char;
-}
-function encode(value) {
-    if (typeof value === 'number') {
-        return encode_integer(value);
-    }
-    let result = '';
-    for (let i = 0; i < value.length; i += 1) {
-        result += encode_integer(value[i]);
+function hsv2hwb(h, s, v, a = null) {
+    const result = [h, (1 - s) * v, 1 - v];
+    if (a != null) {
+        result.push(a);
     }
     return result;
 }
-function encode_integer(num) {
-    let result = '';
-    if (num < 0) {
-        num = (-num << 1) | 1;
+function hsl2hwbvalues(h, s, l, a = null) {
+    // @ts-ignore
+    return hsv2hwb(...hsl2hsv(h, s, l, a));
+}
+
+function xyzd502lch(x, y, z, alpha) {
+    // @ts-ignore
+    const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
+    // L in range [0,100]. For use in CSS, add a percent
+    // @ts-ignore
+    return lab2lchvalues(l, a, b, alpha);
+}
+function XYZ_D65_to_D50(x, y, z) {
+    // Bradford chromatic adaptation from D65 to D50
+    // The matrix below is the result of three operations:
+    // - convert from XYZ to retinal cone domain
+    // - scale components from one reference white to another
+    // - convert back to XYZ
+    // see https://github.com/LeaVerou/color.js/pull/354/files
+    var M = [
+        [1.0479297925449969, 0.022946870601609652, -0.05019226628920524],
+        [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
+        [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371]
+    ];
+    return multiplyMatrices(M, [x, y, z]);
+}
+
+function prophotorgb2srgbvalues(r, g, b, a = null) {
+    // @ts-ignore
+    return xyzd502srgb(...prophotorgb2xyz50(r, g, b, a));
+}
+function srgb2prophotorgbvalues(r, g, b, a) {
+    // @ts-ignore
+    return xyz50_to_prophotorgb(...XYZ_D65_to_D50(...srgb2xyz(r, g, b, a)));
+}
+function prophotorgb2lin_ProPhoto(r, g, b, a = null) {
+    return [r, g, b].map(v => {
+        let abs = Math.abs(v);
+        if (abs >= 16 / 512) {
+            return Math.sign(v) * Math.pow(abs, 1.8);
+        }
+        return v / 16;
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function prophotorgb2xyz50(r, g, b, a = null) {
+    [r, g, b, a] = prophotorgb2lin_ProPhoto(r, g, b, a);
+    const xyz = [
+        0.7977666449006423 * r +
+            0.1351812974005331 * g +
+            0.0313477341283922 * b,
+        0.2880748288194013 * r +
+            0.7118352342418731 * g +
+            0.0000899369387256 * b,
+        0.8251046025104602 * b
+    ];
+    return xyz.concat(a == null || a == 1 ? [] : [a]);
+}
+function xyz50_to_prophotorgb(x, y, z, a) {
+    // @ts-ignore
+    return gam_prophotorgb(...[
+        x * 1.3457868816471585 -
+            y * 0.2555720873797946 -
+            0.0511018649755453 * z,
+        x * -0.5446307051249019 +
+            y * 1.5082477428451466 +
+            0.0205274474364214 * z,
+        1.2119675456389452 * z
+    ].concat(a == null || a == 1 ? [] : [a]));
+}
+function gam_prophotorgb(r, g, b, a) {
+    return [r, g, b].map(v => {
+        let abs = Math.abs(v);
+        if (abs >= 1 / 512) {
+            return Math.sign(v) * Math.pow(abs, 1 / 1.8);
+        }
+        return 16 * v;
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+
+function a98rgb2srgbvalues(r, g, b, a = null) {
+    //  @ts-ignore
+    return xyz2srgb(...la98rgb2xyz(...a98rgb2la98(r, g, b, a)));
+}
+function srgb2a98values(r, g, b, a = null) {
+    // @ts-ignore
+    return la98rgb2a98rgb(xyz2la98rgb(...srgb2xyz(r, g, b, a)));
+}
+// a98-rgb functions
+function a98rgb2la98(r, g, b, a = null) {
+    // convert an array of a98-rgb values in the range 0.0 - 1.0
+    // to linear light (un-companded) form.
+    // negative values are also now accepted
+    return [r, g, b].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        return sign * Math.pow(abs, 563 / 256);
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function la98rgb2a98rgb(r, g, b, a = null) {
+    // convert an array of linear-light a98-rgb  in the range 0.0-1.0
+    // to gamma corrected form
+    // negative values are also now accepted
+    return [r, b, g].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        return sign * Math.pow(abs, 256 / 563);
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function la98rgb2xyz(r, g, b, a = null) {
+    // convert an array of linear-light a98-rgb values to CIE XYZ
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    // has greater numerical precision than section 4.3.5.3 of
+    // https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
+    // but the values below were calculated from first principles
+    // from the chromaticity coordinates of R G B W
+    // see matrixmaker.html
+    var M = [
+        [573536 / 994567, 263643 / 1420810, 187206 / 994567],
+        [591459 / 1989134, 6239551 / 9945670, 374412 / 4972835],
+        [53769 / 1989134, 351524 / 4972835, 4929758 / 4972835],
+    ];
+    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+}
+function xyz2la98rgb(x, y, z, a = null) {
+    // convert XYZ to linear-light a98-rgb
+    var M = [
+        [1829569 / 896150, -506331 / 896150, -308931 / 896150],
+        [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+        [16779 / 1248040, -147721 / 1248040, 1266979 / 1248040],
+    ];
+    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
+}
+
+function rec20202srgb(r, g, b, a) {
+    // @ts-ignore
+    return xyz2srgb(...lrec20202xyz(...rec20202lrec2020(r, g, b)), a);
+}
+function srgb2rec2020values(r, g, b, a) {
+    // @ts-ignore
+    return lrec20202rec2020(...xyz2lrec2020(...srgb2xyz(r, g, b)), a);
+}
+function rec20202lrec2020(r, g, b, a) {
+    // convert an array of rec2020 RGB values in the range 0.0 - 1.0
+    // to linear light (un-companded) form.
+    // ITU-R BT.2020-2 p.4
+    const α = 1.09929682680944;
+    const β = 0.018053968510807;
+    return [r, g, b].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        if (abs < β * 4.5) {
+            return val / 4.5;
+        }
+        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function lrec20202rec2020(r, g, b, a) {
+    // convert an array of linear-light rec2020 RGB  in the range 0.0-1.0
+    // to gamma corrected form
+    // ITU-R BT.2020-2 p.4
+    const α = 1.09929682680944;
+    const β = 0.018053968510807;
+    return [r, g, b].map(function (val) {
+        let sign = val < 0 ? -1 : 1;
+        let abs = Math.abs(val);
+        if (abs > β) {
+            return sign * (α * Math.pow(abs, 0.45) - (α - 1));
+        }
+        return 4.5 * val;
+    }).concat(a == null || a == 1 ? [] : [a]);
+}
+function lrec20202xyz(r, g, b, a) {
+    // convert an array of linear-light rec2020 values to CIE XYZ
+    // using  D65 (no chromatic adaptation)
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    var M = [
+        [63426534 / 99577255, 20160776 / 139408157, 47086771 / 278816314],
+        [26158966 / 99577255, 472592308 / 697040785, 8267143 / 139408157],
+        [0, 19567812 / 697040785, 295819943 / 278816314],
+    ];
+    // 0 is actually calculated as  4.994106574466076e-17
+    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+}
+function xyz2lrec2020(x, y, z, a) {
+    // convert XYZ to linear-light rec2020
+    var M = [
+        [30757411 / 17917100, -6372589 / 17917100, -4539589 / 17917100],
+        [-19765991 / 29648200, 47925759 / 29648200, 467509 / 29648200],
+        [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],
+    ];
+    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
+}
+
+function p32srgbvalues(r, g, b, alpha) {
+    // @ts-ignore
+    return xyz2srgb(...lp32xyz(...p32lp3(r, g, b, alpha)));
+}
+function srgb2p3values(r, g, b, alpha) {
+    // @ts-ignore
+    return srgb2xyz(...xyz2lp3(...lp32p3(r, g, b, alpha)));
+}
+function p32lp3(r, g, b, alpha) {
+    // convert an array of display-p3 RGB values in the range 0.0 - 1.0
+    // to linear light (un-companded) form.
+    return srgb2lsrgbvalues(r, g, b, alpha); // same as sRGB
+}
+function lp32p3(r, g, b, alpha) {
+    // convert an array of linear-light display-p3 RGB  in the range 0.0-1.0
+    // to gamma corrected form
+    return lsrgb2srgbvalues(r, g, b, alpha); // same as sRGB
+}
+function lp32xyz(r, g, b, alpha) {
+    // convert an array of linear-light display-p3 values to CIE XYZ
+    // using  D65 (no chromatic adaptation)
+    // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+    const M = [
+        [608311 / 1250200, 189793 / 714400, 198249 / 1000160],
+        [35783 / 156275, 247089 / 357200, 198249 / 2500400],
+        [0, 32229 / 714400, 5220557 / 5000800],
+    ];
+    const result = multiplyMatrices(M, [r, g, b]);
+    if (alpha != null && alpha != 1) {
+        result.push(alpha);
+    }
+    return result;
+}
+function xyz2lp3(x, y, z, alpha) {
+    // convert XYZ to linear-light P3
+    const M = [
+        [446124 / 178915, -333277 / 357830, -72051 / 178915],
+        [-14852 / 17905, 63121 / 35810, 423 / 17905],
+        [11844 / 330415, -50337 / 660830, 316169 / 330415],
+    ];
+    const result = multiplyMatrices(M, [x, y, z]);
+    if (alpha != null && alpha != 1) {
+        result.push(alpha);
+    }
+    return result;
+}
+
+function convert(token, to) {
+    if (token.kin == to) {
+        return token;
+    }
+    if (token.kin == 'color') {
+        const colorSpace = token.chi.find(t => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
+        if (colorSpace.val == to) {
+            return token;
+        }
+    }
+    let values = [];
+    if (to == 'hsl') {
+        switch (token.kin) {
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2hsl(token));
+                break;
+            case 'hex':
+            case 'lit':
+                values.push(...hex2hsl(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2hsl(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2hsl(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2hsl(token));
+                break;
+            case 'lab':
+                values.push(...lab2hsl(token));
+                break;
+            case 'lch':
+                values.push(...lch2hsl(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                values.push(...srgb2hsl(...color2srgbvalues(token)));
+                break;
+        }
+        if (values.length > 0) {
+            return values2hsltoken(values);
+        }
+    }
+    else if (to == 'hwb') {
+        switch (token.kin) {
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2hwb(token));
+                break;
+            case 'hex':
+            case 'lit':
+                values.push(...hex2hsl(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2hwb(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2hwb(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2hwb(token));
+                break;
+            case 'lab':
+                values.push(...lab2hwb(token));
+                break;
+            case 'lch':
+                values.push(...lch2hwb(token));
+                break;
+        }
+        if (values.length > 0) {
+            return values2hwbtoken(values);
+        }
+    }
+    else if (to == 'rgb') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2rgb(token));
+                break;
+            case 'hsl':
+                values.push(...hsl2rgb(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2rgb(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2rgb(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2rgb(token));
+                break;
+            case 'lab':
+                values.push(...lab2rgb(token));
+                break;
+            case 'lch':
+                values.push(...lch2rgb(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                values.push(...srgb2rgb(...color2srgbvalues(token)));
+                break;
+        }
+        if (values.length > 0) {
+            return values2rgbtoken(values);
+        }
+    }
+    else if (to == 'lab') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2lab(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2lab(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2lab(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2lab(token));
+                break;
+            case 'lch':
+                values.push(...lch2lab(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2lab(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2lab(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                values.push(...srgb2lab(...color2srgbvalues(token)));
+                break;
+        }
+        if (values.length > 0) {
+            return values2colortoken(values, to);
+        }
+    }
+    else if (to == 'lch') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2lch(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2lch(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2lch(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2lch(token));
+                break;
+            case 'lab':
+                values.push(...lab2lch(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2lch(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2lch(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                values.push(...srgb2lch(...color2srgbvalues(token)));
+                break;
+        }
+        if (values.length > 0) {
+            return values2colortoken(values, to);
+        }
+    }
+    else if (to == 'oklab') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2oklab(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2oklab(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2oklab(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2oklab(token));
+                break;
+            case 'lab':
+                values.push(...lab2oklab(token));
+                break;
+            case 'lch':
+                values.push(...lch2oklab(token));
+                break;
+            case 'oklch':
+                values.push(...oklch2oklab(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                values.push(...srgb2oklab(...color2srgbvalues(token)));
+                break;
+        }
+        if (values.length > 0) {
+            return values2colortoken(values, to);
+        }
+    }
+    else if (to == 'oklch') {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2oklch(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2oklch(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2oklch(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2oklch(token));
+                break;
+            case 'lab':
+                values.push(...lab2oklch(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2oklch(token));
+                break;
+            case 'lch':
+                values.push(...lch2oklch(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                let val = color2srgbvalues(token);
+                switch (to) {
+                    case 'srgb':
+                        values.push(...val);
+                        break;
+                    case 'srgb-linear':
+                        // @ts-ignore
+                        values.push(...srgb2lsrgbvalues(...val));
+                        break;
+                    case 'display-p3':
+                        // @ts-ignore
+                        values.push(...srgb2p3values(...val));
+                        break;
+                    case 'prophoto-rgb':
+                        // @ts-ignore
+                        values.push(...srgb2prophotorgbvalues(...val));
+                        break;
+                    case 'a98-rgb':
+                        // @ts-ignore
+                        values.push(...srgb2a98values(...val));
+                        break;
+                    case 'rec2020':
+                        // @ts-ignore
+                        values.push(...srgb2rec2020values(...val));
+                        break;
+                    case 'xyz':
+                    case 'xyz-d65':
+                        // @ts-ignore
+                        values.push(...srgb2xyz(...val));
+                        break;
+                    case 'xyz-d50':
+                        // @ts-ignore
+                        values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
+                        break;
+                }
+                break;
+        }
+        if (values.length > 0) {
+            return values2colortoken(values, to);
+        }
+    }
+    else if (colorFuncColorSpace.includes(to)) {
+        switch (token.kin) {
+            case 'hex':
+            case 'lit':
+                values.push(...hex2srgb(token));
+                break;
+            case 'rgb':
+            case 'rgba':
+                values.push(...rgb2srgb(token));
+                break;
+            case 'hsl':
+            case 'hsla':
+                values.push(...hsl2srgb(token));
+                break;
+            case 'hwb':
+                values.push(...hwb2srgb(token));
+                break;
+            case 'lab':
+                values.push(...lab2srgb(token));
+                break;
+            case 'oklab':
+                values.push(...oklab2srgb(token));
+                break;
+            case 'lch':
+                values.push(...lch2srgb(token));
+                break;
+            case 'color':
+                // @ts-ignore
+                values.push(...srgb2oklch(...color2srgbvalues(token)));
+                break;
+        }
+        if (values.length > 0) {
+            return values2colortoken(values, to);
+        }
+    }
+    return null;
+}
+function minmax(value, min, max) {
+    if (value < min) {
+        return min;
+    }
+    if (value > max) {
+        return max;
+    }
+    return value;
+}
+function color2srgbvalues(token) {
+    const components = getComponents(token);
+    const colorSpace = components.shift();
+    let values = components.map((val) => getNumber(val));
+    switch (colorSpace.val) {
+        case 'display-p3':
+            // @ts-ignore
+            values = p32srgbvalues(...values);
+            break;
+        case 'srgb-linear':
+            // @ts-ignore
+            values = lsrgb2srgbvalues(...values);
+            break;
+        case 'prophoto-rgb':
+            // @ts-ignore
+            values = prophotorgb2srgbvalues(...values);
+            break;
+        case 'a98-rgb':
+            // @ts-ignore
+            values = a98rgb2srgbvalues(...values);
+            break;
+        case 'rec2020':
+            // @ts-ignore
+            values = rec20202srgb(...values);
+            break;
+        case 'xyz':
+        case 'xyz-d65':
+            // @ts-ignore
+            values = xyz2srgb(...values);
+            break;
+        case 'xyz-d50':
+            // @ts-ignore
+            values = xyzd502srgb(...values);
+            break;
+        // case srgb:
+    }
+    return values;
+}
+function values2hsltoken(values) {
+    const to = 'hsl';
+    const chi = [
+        { typ: exports.EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg' },
+        { typ: exports.EnumToken.PercentageTokenType, val: String(values[1] * 100) },
+        { typ: exports.EnumToken.PercentageTokenType, val: String(values[2] * 100) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+    }
+    return {
+        typ: exports.EnumToken.ColorTokenType,
+        val: to,
+        chi,
+        kin: to
+    };
+}
+function values2rgbtoken(values) {
+    const to = 'rgb';
+    const chi = [
+        { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+        { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+    }
+    return {
+        typ: exports.EnumToken.ColorTokenType,
+        val: to,
+        chi,
+        kin: to
+    };
+}
+function values2hwbtoken(values) {
+    const to = 'hwb';
+    const chi = [
+        { typ: exports.EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg' },
+        { typ: exports.EnumToken.PercentageTokenType, val: String(values[1] * 100) },
+        { typ: exports.EnumToken.PercentageTokenType, val: String(values[2] * 100) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+    }
+    return {
+        typ: exports.EnumToken.ColorTokenType,
+        val: to,
+        chi,
+        kin: to
+    };
+}
+function values2colortoken(values, to) {
+    const chi = [
+        { typ: exports.EnumToken.NumberTokenType, val: String(values[0]) },
+        { typ: exports.EnumToken.NumberTokenType, val: String(values[1]) },
+        { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: exports.EnumToken.PercentageTokenType, val: String(values[3] * 100) });
+    }
+    return colorFuncColorSpace.includes(to) ? {
+        typ: exports.EnumToken.ColorTokenType,
+        val: 'color',
+        chi: [{ typ: exports.EnumToken.IdenTokenType, val: to }].concat(chi),
+        kin: 'color'
+    } : {
+        typ: exports.EnumToken.ColorTokenType,
+        val: to,
+        chi,
+        kin: to
+    };
+}
+/**
+ * clamp color values
+ * @param token
+ */
+function clamp(token) {
+    if (token.kin == 'rgb' || token.kin == 'rgba') {
+        token.chi.filter((token) => ![exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token, index) => {
+            if (index <= 2) {
+                if (token.typ == exports.EnumToken.NumberTokenType) {
+                    token.val = String(minmax(+token.val, 0, 255));
+                }
+                else if (token.typ == exports.EnumToken.PercentageTokenType) {
+                    token.val = String(minmax(+token.val, 0, 100));
+                }
+            }
+            else {
+                if (token.typ == exports.EnumToken.NumberTokenType) {
+                    token.val = String(minmax(+token.val, 0, 1));
+                }
+                else if (token.typ == exports.EnumToken.PercentageTokenType) {
+                    token.val = String(minmax(+token.val, 0, 100));
+                }
+            }
+        });
+    }
+    return token;
+}
+function getNumber(token) {
+    if (token.typ == exports.EnumToken.IdenTokenType && token.val == 'none') {
+        return 0;
+    }
+    // @ts-ignore
+    return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
+}
+function getAngle(token) {
+    if (token.typ == exports.EnumToken.IdenTokenType) {
+        if (token.val == 'none') {
+            return 0;
+        }
+    }
+    if (token.typ == exports.EnumToken.AngleTokenType) {
+        switch (token.unit) {
+            case 'deg':
+                // @ts-ignore
+                return token.val / 360;
+            case 'rad':
+                // @ts-ignore
+                return token.val / (2 * Math.PI);
+            case 'grad':
+                // @ts-ignore
+                return token.val / 400;
+            case 'turn':
+                // @ts-ignore
+                return +token.val;
+        }
+    }
+    // @ts-ignore
+    return token.val / 360;
+}
+
+function interpolateHue(interpolationMethod, h1, h2) {
+    switch (interpolationMethod.val) {
+        case 'longer':
+            if (h2 - h1 < 180 && h2 - h1 > 0) {
+                h1 += 360;
+            }
+            else if (h2 - h1 <= 0 && h2 - h1 > -180) {
+                h2 += 360;
+            }
+            break;
+        case 'increasing':
+            if (h2 < h1) {
+                h2 += 360;
+            }
+            break;
+        case 'decreasing':
+            if (h2 > h1) {
+                h1 += 360;
+            }
+            break;
+        case 'shorter':
+        default:
+            // shorter
+            if (h2 - h1 > 180) {
+                h1 += 360;
+            }
+            else if (h2 - h1 < -180) {
+                h2 += 360;
+            }
+            break;
+    }
+    return [h1, h2];
+}
+function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
+    if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
+        return null;
+    }
+    if (isPolarColorspace(colorSpace) && hueInterpolationMethod == null) {
+        hueInterpolationMethod = { typ: exports.EnumToken.IdenTokenType, val: 'shorter' };
+    }
+    if (percentage1 == null) {
+        if (percentage2 == null) {
+            // @ts-ignore
+            percentage1 = { typ: exports.EnumToken.NumberTokenType, val: '.5' };
+            // @ts-ignore
+            percentage2 = { typ: exports.EnumToken.NumberTokenType, val: '.5' };
+        }
+        else {
+            if (+percentage2.val <= 0) {
+                return null;
+            }
+            if (+percentage2.val >= 100) {
+                // @ts-ignore
+                percentage2 = { typ: exports.EnumToken.NumberTokenType, val: '1' };
+            }
+            // @ts-ignore
+            percentage1 = { typ: exports.EnumToken.NumberTokenType, val: String(1 - percentage2.val / 100) };
+        }
     }
     else {
-        num <<= 1;
-    }
-    do {
-        let clamped = num & 31;
-        num >>>= 5;
-        if (num > 0) {
-            clamped |= 32;
+        // @ts-ignore
+        if (percentage1.val <= 0) {
+            return null;
         }
-        result += integer_to_char[clamped];
-    } while (num > 0);
-    return result;
-}
-
-class SourceMap {
-    #version = 3;
-    #sources = [];
-    #map = new Map;
-    #line = -1;
-    lastLocation = null;
-    add(source, original) {
-        if (original.src !== '') {
-            if (!this.#sources.includes(original.src)) {
-                this.#sources.push(original.src);
+        if (percentage2 == null) {
+            // @ts-ignore
+            if (percentage1.val >= 100) {
+                // @ts-ignore
+                percentage1 = { typ: exports.EnumToken.NumberTokenType, val: '1' };
             }
-            const line = source.sta.lin - 1;
-            let record;
-            if (line > this.#line) {
-                this.#line = line;
+            // @ts-ignore
+            percentage2 = { typ: exports.EnumToken.NumberTokenType, val: String(1 - percentage1.val / 100) };
+        }
+        else {
+            // @ts-ignore
+            if (percentage2.val <= 0) {
+                return null;
             }
-            if (!this.#map.has(line)) {
-                record = [Math.max(0, source.sta.col - 1), this.#sources.indexOf(original.src), original.sta.lin - 1, original.sta.col - 1];
-                this.#map.set(line, [record]);
-            }
-            else {
-                const arr = this.#map.get(line);
-                record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
-                arr.push(record);
-            }
-            if (this.lastLocation != null) {
-                record[2] -= this.lastLocation.sta.lin - 1;
-                record[3] -= this.lastLocation.sta.col - 1;
-            }
-            this.lastLocation = original;
         }
     }
-    toUrl() {
-        // /*# sourceMappingURL = ${url} */
-        return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
+    let values1 = srgbvalues(color1);
+    let values2 = srgbvalues(color2);
+    if (values1 == null || values2 == null) {
+        return null;
     }
-    toJSON() {
-        const mappings = [];
-        let i = 0;
-        for (; i <= this.#line; i++) {
-            if (!this.#map.has(i)) {
-                mappings.push('');
-            }
-            else {
-                mappings.push(this.#map.get(i).reduce((acc, curr) => acc + (acc === '' ? '' : ',') + encode(curr), ''));
-            }
-        }
+    const components1 = getComponents(color1);
+    const components2 = getComponents(color2);
+    if (eq(components1[3], powerlessColorComponent) && values2.length == 4) {
+        values1[3] = values2[3];
+    }
+    if (eq(components2[3], powerlessColorComponent) && values1.length == 4) {
+        values2[3] = values1[3];
+    }
+    const p1 = getNumber(percentage1);
+    const p2 = getNumber(percentage2);
+    const mul1 = values1.length == 4 ? values1.pop() : 1;
+    const mul2 = values2.length == 4 ? values2.pop() : 1;
+    const mul = mul1 * p1 + mul2 * p2;
+    // @ts-ignore
+    const calculate = () => [colorSpace].concat(values1.map((v1, i) => {
         return {
-            version: this.#version,
-            sources: this.#sources.slice(),
-            mappings: mappings.join(';')
+            // @ts-ignore
+            typ: exports.EnumToken.NumberTokenType, val: String((mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
         };
+    }).concat(mul == 1 ? [] : [{
+            typ: exports.EnumToken.NumberTokenType, val: String(mul)
+        }]));
+    switch (colorSpace.val) {
+        case 'srgb':
+            break;
+        case 'display-p3':
+            // @ts-ignore
+            values1 = srgb2p3values(...values1);
+            // @ts-ignore
+            values2 = srgb2p3values(...values2);
+            break;
+        case 'a98-rgb':
+            // @ts-ignore
+            values1 = srgb2a98values(...values1);
+            // @ts-ignore
+            values2 = srgb2a98values(...values2);
+            break;
+        case 'prophoto-rgb':
+            // @ts-ignore
+            values1 = srgb2prophotorgbvalues(...values1);
+            // @ts-ignore
+            values2 = srgb2prophotorgbvalues(...values2);
+            break;
+        case 'srgb-linear':
+            // @ts-ignore
+            values1 = srgb2lsrgbvalues(...values1);
+            // @ts-ignore
+            values2 = srgb2lsrgbvalues(...values2);
+            break;
+        case 'rec2020':
+            // @ts-ignore
+            values1 = srgb2rec2020values(...values1);
+            // @ts-ignore
+            values2 = srgb2rec2020values(...values2);
+            break;
+        case 'xyz':
+        case 'xyz-d65':
+        case 'xyz-d50':
+            // @ts-ignore
+            values1 = srgb2xyz(...values1);
+            // @ts-ignore
+            values2 = srgb2xyz(...values2);
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values1 = XYZ_D65_to_D50(...values1);
+                // @ts-ignore
+                values2 = XYZ_D65_to_D50(...values2);
+            }
+            break;
+        case 'rgb':
+            // @ts-ignore
+            values1 = srgb2rgb(...values1);
+            // @ts-ignore
+            values2 = srgb2rgb(...values2);
+            break;
+        case 'hsl':
+            // @ts-ignore
+            values1 = srgb2hsl(...values1);
+            // @ts-ignore
+            values2 = srgb2hsl(...values2);
+            break;
+        case 'hwb':
+            // @ts-ignore
+            values1 = srgb2hwb(...values1);
+            // @ts-ignore
+            values2 = srgb2hwb(...values2);
+            break;
+        case 'lab':
+            // @ts-ignore
+            values1 = srgb2lab(...values1);
+            // @ts-ignore
+            values2 = srgb2lab(...values2);
+            break;
+        case 'lch':
+            // @ts-ignore
+            values1 = srgb2lch(...values1);
+            // @ts-ignore
+            values2 = srgb2lch(...values2);
+            break;
+        case 'oklab':
+            // @ts-ignore
+            values1 = srgb2oklab(...values1);
+            // @ts-ignore
+            values2 = srgb2oklab(...values2);
+            break;
+        case 'oklch':
+            // @ts-ignore
+            values1 = srgb2oklch(...values1);
+            // @ts-ignore
+            values2 = srgb2oklch(...values2);
+            break;
+        default:
+            return null;
     }
+    const lchSpaces = ['lch', 'oklch'];
+    // powerless
+    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+        if (eq(components1[2], powerlessColorComponent) || values1[2] == 0) {
+            values1[2] = values2[2];
+        }
+    }
+    // powerless
+    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+        if (eq(components2[2], powerlessColorComponent) || values2[2] == 0) {
+            values2[2] = values1[2];
+        }
+    }
+    if (hueInterpolationMethod != null) {
+        let hueIndex = 2;
+        let multiplier = 1;
+        if (['hwb', 'hsl'].includes(colorSpace.val)) {
+            hueIndex = 0;
+            multiplier = 360;
+        }
+        const [h1, h2] = interpolateHue(hueInterpolationMethod, values1[hueIndex] * multiplier, values2[hueIndex] * multiplier);
+        values1[hueIndex] = h1 / multiplier;
+        values2[hueIndex] = h2 / multiplier;
+    }
+    switch (colorSpace.val) {
+        case 'xyz':
+        case 'xyz-d65':
+        case 'xyz-d50':
+            let values = values1.map((v1, i) => (mul1 * v1 * p1 + mul2 * values2[i] * p2) / mul)
+                .concat(mul == 1 ? [] : [mul]);
+            if (colorSpace.val == 'xyz-d50') {
+                // @ts-ignore
+                values = xyzd502lch(...values);
+            }
+            else {
+                // @ts-ignore
+                values = xyz2lchvalues(...values);
+            }
+            // @ts-ignore
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val: 'lch',
+                chi: values.map(v => {
+                    return {
+                        typ: exports.EnumToken.NumberTokenType,
+                        val: String(v)
+                    };
+                }),
+                kin: 'lch'
+            };
+        case 'srgb':
+        case 'srgb-linear':
+        case 'a98-rgb':
+        case 'rec2020':
+            // @ts-ignore
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val: 'color',
+                chi: calculate(),
+                kin: 'color',
+                cal: 'col'
+            };
+        case 'rgb':
+        case 'hsl':
+        case 'hwb':
+        case 'lab':
+        case 'lch':
+        case 'oklab':
+        case 'oklch':
+            if (['hsl', 'hwb'].includes(colorSpace.val)) {
+                // @ts-ignore
+                if (values1[2] < 0) {
+                    // @ts-ignore
+                    values1[2] += 1;
+                }
+                // @ts-ignore
+                if (values2[2] < 0) {
+                    // @ts-ignore
+                    values2[2] += 1;
+                }
+            }
+            else if (['lch', 'oklch'].includes(colorSpace.val)) {
+                // @ts-ignore
+                if (values1[2] < 0) {
+                    // @ts-ignore
+                    values1[2] += 360;
+                }
+                // @ts-ignore
+                if (values2[2] < 0) {
+                    // @ts-ignore
+                    values2[2] += 360;
+                }
+            }
+            // @ts-ignore
+            const result = {
+                typ: exports.EnumToken.ColorTokenType,
+                val: colorSpace.val,
+                chi: calculate().slice(1),
+                kin: colorSpace.val
+            };
+            if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
+                // @ts-ignore
+                result.chi[0] = { typ: exports.EnumToken.AngleTokenType, val: String(result.chi[0].val * 360), unit: 'deg' };
+                // @ts-ignore
+                result.chi[1] = { typ: exports.EnumToken.PercentageTokenType, val: String(result.chi[1].val * 100) };
+                // @ts-ignore
+                result.chi[2] = { typ: exports.EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
+            }
+            return result;
+    }
+    return null;
 }
 
-const gcd = (x, y) => {
+function gcd(x, y) {
     x = Math.abs(x);
     y = Math.abs(y);
     let t;
@@ -876,7 +2427,7 @@ const gcd = (x, y) => {
         x = t;
     }
     return x;
-};
+}
 function compute(a, b, op) {
     if (typeof a == 'number' && typeof b == 'number') {
         switch (op) {
@@ -1024,10 +2575,41 @@ function doEvaluate(l, r, op) {
             return defaultReturn;
         }
     }
-    const typ = l.typ == exports.EnumToken.NumberTokenType ? r.typ : l.typ;
+    else if (op == exports.EnumToken.Mul &&
+        ![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType].includes(l.typ) &&
+        ![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType].includes(r.typ)) {
+        return defaultReturn;
+    }
+    const typ = l.typ == exports.EnumToken.NumberTokenType ? r.typ : (r.typ == exports.EnumToken.NumberTokenType ? l.typ : (l.typ == exports.EnumToken.PercentageTokenType ? r.typ : l.typ));
     // @ts-ignore
-    const val = compute(typeof l.val == 'string' ? +l.val : l.val, typeof r.val == 'string' ? +r.val : r.val, op);
-    return { ...(l.typ == exports.EnumToken.NumberTokenType ? r : l), typ, val: typeof val == 'number' ? reduceNumber(val) : val };
+    let v1 = typeof l.val == 'string' ? +l.val : l.val;
+    // @ts-ignore
+    let v2 = typeof r.val == 'string' ? +r.val : r.val;
+    if (op == exports.EnumToken.Mul) {
+        if (l.typ != exports.EnumToken.NumberTokenType && r.typ != exports.EnumToken.NumberTokenType) {
+            if (typeof v1 == 'number' && l.typ == exports.EnumToken.PercentageTokenType) {
+                v1 = {
+                    typ: exports.EnumToken.FractionTokenType,
+                    l: { typ: exports.EnumToken.NumberTokenType, val: String(v1) },
+                    r: { typ: exports.EnumToken.NumberTokenType, val: '100' }
+                };
+            }
+            else if (typeof v2 == 'number' && r.typ == exports.EnumToken.PercentageTokenType) {
+                v2 = {
+                    typ: exports.EnumToken.FractionTokenType,
+                    l: { typ: exports.EnumToken.NumberTokenType, val: String(v2) },
+                    r: { typ: exports.EnumToken.NumberTokenType, val: '100' }
+                };
+            }
+        }
+    }
+    // @ts-ignore
+    const val = compute(v1, v2, op);
+    return {
+        ...(l.typ == exports.EnumToken.NumberTokenType ? r : l),
+        typ,
+        val: typeof val == 'number' ? reduceNumber(val) : val
+    };
 }
 /**
  * convert BinaryExpression into an array
@@ -1118,6 +2700,10 @@ function factor(tokens, ops) {
         return [factorToken(tokens[0])];
     }
     for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i].typ == exports.EnumToken.ListToken) {
+            // @ts-ignore
+            tokens.splice(i, 1, ...tokens[i].chi);
+        }
         isOp = opList.includes(tokens[i].typ);
         if (isOp ||
             // @ts-ignore
@@ -1135,166 +2721,81 @@ function factor(tokens, ops) {
 }
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
-    const type = relativeKeys.join('');
     let r;
     let g;
     let b;
     let alpha = null;
     let keys = {};
     let values = {};
-    let children;
-    switch (original.kin) {
-        case 'lit':
-        case 'hex':
-            let value = original.val.toLowerCase();
-            if (original.kin == 'lit') {
-                if (original.val.toLowerCase() in COLORS_NAMES) {
-                    value = COLORS_NAMES[original.val.toLowerCase()];
-                }
-                else {
-                    return null;
-                }
-            }
-            if (value.length == 4) {
-                value = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
-            }
-            else if (value.length == 5) {
-                value = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3] + value[4] + value[4];
-            }
-            r = parseInt(value.slice(1, 3), 16);
-            g = parseInt(value.slice(3, 5), 16);
-            b = parseInt(value.slice(5, 7), 16);
-            alpha = value.length == 9 ? parseInt(value.slice(7, 9), 16) : null;
-            break;
-        case 'rgb':
-        case 'rgba':
-            children = original.chi.filter((t) => t.typ == exports.EnumToken.NumberTokenType || t.typ == exports.EnumToken.IdenTokenType || t.typ == exports.EnumToken.PercentageTokenType);
-            if (children.every((t) => (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || t.typ == exports.EnumToken.NumberTokenType)) {
-                r = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'none' ? 0 : +children[0].val;
-                g = children[1].typ == exports.EnumToken.IdenTokenType && children[1].val == 'none' ? 0 : +children[1].val;
-                b = children[2].typ == exports.EnumToken.IdenTokenType && children[2].val == 'none' ? 0 : +children[2].val;
-                alpha = children.length < 4 ? null : children[3].typ == exports.EnumToken.IdenTokenType && children[3].val == 'none' ? 0 : +children[3].val;
-            }
-            else if (children.every((t) => t.typ == exports.EnumToken.PercentageTokenType || (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') || (t.typ == exports.EnumToken.NumberTokenType && t.val == '0'))) {
-                // @ts-ignore
-                r = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'none' ? 0 : children[0].val * 255 / 100;
-                // @ts-ignore
-                g = children[1].typ == exports.EnumToken.IdenTokenType && children[1].val == 'none' ? 0 : children[1].val * 255 / 100;
-                // @ts-ignore
-                b = children[2].typ == exports.EnumToken.IdenTokenType && children[2].val == 'none' ? 0 : children[2].val * 255 / 100;
-                alpha = children.length < 4 ? null : children[3].typ == exports.EnumToken.IdenTokenType && children[3].val == 'none' ? 0 : +children[3].val / 100;
-            }
-            else {
-                return null;
-            }
-            break;
-        case 'hsl':
-        case 'hsla':
-        case 'hwb':
-            children = original.chi.filter((t) => t.typ == exports.EnumToken.AngleTokenType || t.typ == exports.EnumToken.NumberTokenType || t.typ == exports.EnumToken.IdenTokenType || t.typ == exports.EnumToken.PercentageTokenType);
-            if (children.length == 3 || children.length == 4) {
-                [r, g, b, alpha] = children;
-            }
-            else {
-                return null;
-            }
-            break;
-        default:
-            return null;
-    }
-    const from = ['rgb', 'rgba', 'hex', 'lit'].includes(original.kin) ? 'rgb' : original.kin;
-    if (from != type) {
-        if (type == 'hsl' || type == 'hwb') {
-            if (from == 'rgb') {
-                [r, g, b] = (type == 'hwb' ? rgb2hwb : rgb2hsl)(r, g, b);
-                // @ts-ignore
-                r *= 360;
-                // @ts-ignore
-                g *= 100;
-                // @ts-ignore
-                b *= 100;
-                values = {
-                    [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
-                    [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
-                    [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b }
-                };
-            }
-            else if (from == 'hwb' || from == 'hsl') {
-                if (type == 'hsl') {
-                    if (from == 'hwb') {
-                        [r, g, b] = hwb2hsl(getAngle(r), getNumber(g), getNumber(b));
-                        // @ts-ignore
-                        r *= 360;
-                        // @ts-ignore
-                        g *= 100;
-                        // @ts-ignore
-                        b *= 100;
-                        // @ts-ignore
-                        values = {
-                            [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
-                            [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
-                            [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b }
-                        };
-                    }
-                }
-                else if (type == 'hwb') {
-                    if (from == 'hsl') {
-                        [r, g, b] = hsl2hwb(getAngle(r), getNumber(g), getNumber(b));
-                        // @ts-ignore
-                        r *= 360;
-                        // @ts-ignore
-                        g *= 100;
-                        // @ts-ignore
-                        b *= 100;
-                        // @ts-ignore
-                        values = {
-                            [relativeKeys[0]]: { typ: exports.EnumToken.AngleTokenType, val: r, unit: 'deg' },
-                            [relativeKeys[1]]: { typ: exports.EnumToken.PercentageTokenType, val: g },
-                            [relativeKeys[2]]: { typ: exports.EnumToken.PercentageTokenType, val: b }
-                        };
-                    }
-                }
-            }
-            else {
-                return null;
-            }
-        }
-        else if (type == 'rgb') {
-            if (from == 'hsl' || from == 'hwb') {
-                [r, g, b] = (from == 'hwb' ? hwb2rgb : hsl2rgb)(getAngle(r), getNumber(g), getNumber(b));
-                // @ts-ignore
-                values = {
-                    [relativeKeys[0]]: { typ: exports.EnumToken.NumberTokenType, val: r },
-                    [relativeKeys[1]]: { typ: exports.EnumToken.NumberTokenType, val: g },
-                    [relativeKeys[2]]: { typ: exports.EnumToken.NumberTokenType, val: b }
-                };
-            }
-            else {
-                return null;
-            }
-        }
-    }
-    else {
-        values = {
-            [relativeKeys[0]]: r,
-            [relativeKeys[1]]: g,
-            [relativeKeys[2]]: b
-        };
-    }
-    if (aExp != null && aExp.typ == exports.EnumToken.IdenTokenType && aExp.val == 'none') {
-        aExp = null;
-    }
-    keys = {
-        [relativeKeys[0]]: rExp,
-        [relativeKeys[1]]: gExp,
-        [relativeKeys[2]]: bExp,
-        alpha: aExp ?? { typ: exports.EnumToken.IdenTokenType, val: 'alpha' }
-    };
+    // colorFuncColorSpace x,y,z or r,g,b
+    const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
     // @ts-ignore
-    values.alpha = alpha != null && typeof alpha == 'object' ? alpha : b.typ == exports.EnumToken.PercentageTokenType ? { typ: exports.EnumToken.PercentageTokenType, val: String(alpha ?? 100) } : { typ: exports.EnumToken.NumberTokenType, val: String(alpha ?? 1) };
+    const converted = convert(original, relativeKeys);
+    if (converted == null) {
+        return null;
+    }
+    const children = converted.chi.filter(t => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
+    [r, g, b, alpha] = converted.kin == 'color' ? children.slice(1) : children;
+    values = {
+        [names[0]]: getValue(r, converted, names[0]),
+        [names[1]]: getValue(g, converted, names[1]), // string,
+        [names[2]]: getValue(b, converted, names[2]),
+        // @ts-ignore
+        alpha: alpha == null || eq(alpha, {
+            typ: exports.EnumToken.IdenTokenType,
+            val: 'none'
+        }) ? {
+            typ: exports.EnumToken.NumberTokenType,
+            val: '1'
+        } : (alpha.typ == exports.EnumToken.PercentageTokenType ? {
+            typ: exports.EnumToken.NumberTokenType,
+            val: String(getNumber(alpha))
+        } : alpha)
+    };
+    keys = {
+        [names[0]]: getValue(rExp, converted, names[0]),
+        [names[1]]: getValue(gExp, converted, names[1]),
+        [names[2]]: getValue(bExp, converted, names[2]),
+        // @ts-ignore
+        alpha: getValue(aExp == null || eq(aExp, { typ: exports.EnumToken.IdenTokenType, val: 'none' }) ? {
+            typ: exports.EnumToken.NumberTokenType,
+            val: '1'
+        } : aExp)
+    };
     return computeComponentValue(keys, values);
 }
+function getValue(t, converted, component) {
+    if (t == null) {
+        return t;
+    }
+    if (t.typ == exports.EnumToken.PercentageTokenType) {
+        let value = getNumber(t);
+        if (converted.kin in colorRange) {
+            // @ts-ignore
+            value *= colorRange[converted.kin][component].at(-1);
+        }
+        return {
+            typ: exports.EnumToken.NumberTokenType,
+            val: String(value)
+        };
+    }
+    return t;
+}
 function computeComponentValue(expr, values) {
+    for (const object of [values, expr]) {
+        if ('h' in object) {
+            // normalize hue
+            // @ts-ignore
+            for (const k of walkValues([object.h])) {
+                if (k.value.typ == exports.EnumToken.AngleTokenType && k.value.unit == 'deg') {
+                    // @ts-ignore
+                    k.value.typ = exports.EnumToken.NumberTokenType;
+                    // @ts-ignore
+                    delete k.value.unit;
+                }
+            }
+        }
+    }
     for (const [key, exp] of Object.entries(expr)) {
         if (exp == null) {
             if (key in values) {
@@ -1360,7 +2861,98 @@ function computeComponentValue(expr, values) {
     return expr;
 }
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk'];
+// from https://github.com/Rich-Harris/vlq/tree/master
+// credit: Rich Harris
+const integer_to_char = {};
+let i = 0;
+for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {
+    integer_to_char[i++] = char;
+}
+function encode(value) {
+    if (typeof value === 'number') {
+        return encode_integer(value);
+    }
+    let result = '';
+    for (let i = 0; i < value.length; i += 1) {
+        result += encode_integer(value[i]);
+    }
+    return result;
+}
+function encode_integer(num) {
+    let result = '';
+    if (num < 0) {
+        num = (-num << 1) | 1;
+    }
+    else {
+        num <<= 1;
+    }
+    do {
+        let clamped = num & 31;
+        num >>>= 5;
+        if (num > 0) {
+            clamped |= 32;
+        }
+        result += integer_to_char[clamped];
+    } while (num > 0);
+    return result;
+}
+
+class SourceMap {
+    #version = 3;
+    #sources = [];
+    #map = new Map;
+    #line = -1;
+    lastLocation = null;
+    add(source, original) {
+        if (original.src !== '') {
+            if (!this.#sources.includes(original.src)) {
+                this.#sources.push(original.src);
+            }
+            const line = source.sta.lin - 1;
+            let record;
+            if (line > this.#line) {
+                this.#line = line;
+            }
+            if (!this.#map.has(line)) {
+                record = [Math.max(0, source.sta.col - 1), this.#sources.indexOf(original.src), original.sta.lin - 1, original.sta.col - 1];
+                this.#map.set(line, [record]);
+            }
+            else {
+                const arr = this.#map.get(line);
+                record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
+                arr.push(record);
+            }
+            if (this.lastLocation != null) {
+                record[2] -= this.lastLocation.sta.lin - 1;
+                record[3] -= this.lastLocation.sta.col - 1;
+            }
+            this.lastLocation = original;
+        }
+    }
+    toUrl() {
+        // /*# sourceMappingURL = ${url} */
+        return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
+    }
+    toJSON() {
+        const mappings = [];
+        let i = 0;
+        for (; i <= this.#line; i++) {
+            if (!this.#map.has(i)) {
+                mappings.push('');
+            }
+            else {
+                mappings.push(this.#map.get(i).reduce((acc, curr) => acc + (acc === '' ? '' : ',') + encode(curr), ''));
+            }
+        }
+        return {
+            version: this.#version,
+            sources: this.#sources.slice(),
+            mappings: mappings.join(';')
+        };
+    }
+}
+
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -1437,12 +3029,10 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
     if ([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
-        // if (src !== '') {
         if (!(src in cache)) {
             // @ts-ignore
             cache[src] = options.resolve(src, options.cwd ?? '').relative;
         }
-        // }
         if (!(output in cache)) {
             // @ts-ignore
             cache[output] = options.resolve(output, options.cwd).relative;
@@ -1561,7 +3151,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 // @ts-ignore
                 token.cal = 'rel';
             }
+            else if (token.val == 'color-mix' && token.chi[0].typ == exports.EnumToken.IdenTokenType && token.chi[0].val == 'in') {
+                // @ts-ignore
+                token.cal = 'mix';
+            }
             else {
+                if (token.val == 'color') {
+                    // @ts-ignore
+                    token.cal = 'col';
+                }
                 token.chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
             }
         }
@@ -1609,17 +3207,41 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '/';
         case exports.EnumToken.ColorTokenType:
             if (options.convertColor) {
-                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb'].includes(token.val)) {
-                    const chi = token.chi.filter(x => ![
-                        exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType
-                    ].includes(x.typ));
-                    const components = parseRelativeColor(token.val.split(''), chi[1], chi[2], chi[3], chi[4], chi[5]);
+                if (token.cal == 'mix' && token.val == 'color-mix') {
+                    const children = token.chi.reduce((acc, t) => {
+                        if (t.typ == exports.EnumToken.ColorTokenType) {
+                            acc.push([t]);
+                        }
+                        else {
+                            if (![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)) {
+                                acc[acc.length - 1].push(t);
+                            }
+                        }
+                        return acc;
+                    }, [[]]);
+                    const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
+                    if (value != null) {
+                        token = value;
+                    }
+                }
+                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
+                    const chi = getComponents(token);
+                    const offset = token.val == 'color' ? 2 : 1;
+                    // @ts-ignore
+                    const color = chi[1];
+                    const components = parseRelativeColor(token.val == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
                     if (components != null) {
-                        token.chi = Object.values(components);
+                        token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
                         delete token.cal;
                     }
                 }
-                if (token.cal) {
+                if (token.val == 'color') {
+                    if (token.chi[0].typ == exports.EnumToken.IdenTokenType && colorFuncColorSpace.includes(token.chi[0].val.toLowerCase())) {
+                        // @ts-ignore
+                        return reduceHexValue(srgb2hexvalues(...color2srgbvalues(token)));
+                    }
+                }
+                if (token.cal != null) {
                     let slice = false;
                     if (token.cal == 'rel') {
                         const last = token.chi.at(-1);
@@ -1650,10 +3272,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 let value = token.kin == 'hex' ? token.val.toLowerCase() : (token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : '');
                 if (token.val == 'rgb' || token.val == 'rgba') {
-                    value = rgb2Hex(token);
+                    value = rgb2hex(token);
                 }
                 else if (token.val == 'hsl' || token.val == 'hsla') {
-                    value = hsl2Hex(token);
+                    value = hsl2hex(token);
                 }
                 else if (token.val == 'hwb') {
                     value = hwb2hex(token);
@@ -1661,24 +3283,20 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 else if (token.val == 'device-cmyk') {
                     value = cmyk2hex(token);
                 }
-                const named_color = NAMES_COLORS[value];
+                else if (token.val == 'oklab') {
+                    value = oklab2hex(token);
+                }
+                else if (token.val == 'oklch') {
+                    value = oklch2hex(token);
+                }
+                else if (token.val == 'lab') {
+                    value = lab2hex(token);
+                }
+                else if (token.val == 'lch') {
+                    value = lch2hex(token);
+                }
                 if (value !== '') {
-                    if (value.length == 7) {
-                        if (value[1] == value[2] &&
-                            value[3] == value[4] &&
-                            value[5] == value[6]) {
-                            value = `#${value[1]}${value[3]}${value[5]}`;
-                        }
-                    }
-                    else if (value.length == 9) {
-                        if (value[1] == value[2] &&
-                            value[3] == value[4] &&
-                            value[5] == value[6] &&
-                            value[7] == value[8]) {
-                            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
-                        }
-                    }
-                    return named_color != null && named_color.length <= value.length ? named_color : value;
+                    return reduceHexValue(value);
                 }
             }
             if (token.kin == 'hex' || token.kin == 'lit') {
@@ -1913,6 +3531,30 @@ function isTime(dimension) {
 function isFrequency(dimension) {
     return 'unit' in dimension && ['hz', 'khz'].includes(dimension.unit.toLowerCase());
 }
+function isColorspace(token) {
+    if (token.typ != exports.EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['srgb', 'srgb-linear', 'lab', 'oklab', 'lch', 'oklch', 'xyz', 'xyz-d50', 'xyz-d65', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'rgb', 'hsl', 'hwb'].includes(token.val.toLowerCase());
+}
+function isRectangularOrthogonalColorspace(token) {
+    if (token.typ != exports.EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020', 'lab', 'oklab', 'xyz', 'xyz-d50', 'xyz-d65'].includes(token.val.toLowerCase());
+}
+function isPolarColorspace(token) {
+    if (token.typ != exports.EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['hsl', 'hwb', 'lch', 'oklch'].includes(token.val);
+}
+function isHueInterpolationMethod(token) {
+    if (token.typ != exports.EnumToken.IdenTokenType) {
+        return false;
+    }
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token.val);
+}
 function isColor(token) {
     if (token.typ == exports.EnumToken.ColorTokenType) {
         return true;
@@ -1923,36 +3565,119 @@ function isColor(token) {
     }
     let isLegacySyntax = false;
     if (token.typ == exports.EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
-        const keywords = ['from', 'none'];
-        if (['rgb', 'hsl', 'hwb'].includes(token.val)) {
-            keywords.push('a', ...token.val.split(''));
-        }
-        // console.debug(JSON.stringify({token}, null, 1));
-        // @ts-ignore
-        for (const v of token.chi) {
-            // console.debug(JSON.stringify({v}, null, 1));
-            if (v.typ == exports.EnumToken.CommaTokenType) {
-                isLegacySyntax = true;
+        if (token.val == 'color') {
+            const children = token.chi.filter((t) => [exports.EnumToken.IdenTokenType, exports.EnumToken.NumberTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.ColorTokenType, exports.EnumToken.FunctionTokenType, exports.EnumToken.PercentageTokenType].includes(t.typ));
+            const isRelative = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'from';
+            if (children.length < 4 || children.length > 8) {
+                return false;
             }
-            if (v.typ == exports.EnumToken.IdenTokenType) {
-                if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+            if (!isRelative && !isColorspace(children[0])) {
+                return false;
+            }
+            for (let i = 1; i < children.length - 2; i++) {
+                if (children[i].typ == exports.EnumToken.IdenTokenType) {
+                    if (children[i].val != 'none' &&
+                        !(isRelative && ['alpha', 'r', 'g', 'b'].includes(children[i].val) || isColorspace(children[i]))) {
+                        return false;
+                    }
+                }
+                if (children[i].typ == exports.EnumToken.FunctionTokenType && !['calc'].includes(children[i].val)) {
                     return false;
                 }
-                if (keywords.includes(v.val)) {
-                    if (isLegacySyntax) {
-                        return false;
+            }
+            if (children.length == 8 || children.length == 6) {
+                const sep = children.at(-2);
+                const alpha = children.at(-1);
+                if (sep.typ != exports.EnumToken.LiteralTokenType || sep.val != '/') {
+                    return false;
+                }
+                if (alpha.typ == exports.EnumToken.IdenTokenType && alpha.val != 'none') {
+                    return false;
+                }
+                else {
+                    // @ts-ignore
+                    if (alpha.typ == exports.EnumToken.PercentageTokenType) {
+                        if (+alpha.val < 0 || +alpha.val > 100) {
+                            return false;
+                        }
                     }
-                    if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                    else if (alpha.typ == exports.EnumToken.NumberTokenType) {
+                        if (+alpha.val < 0 || +alpha.val > 1) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        else if (token.val == 'color-mix') {
+            const children = token.chi.reduce((acc, t) => {
+                if (t.typ == exports.EnumToken.CommaTokenType) {
+                    acc.push([]);
+                }
+                else {
+                    if (![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)) {
+                        acc[acc.length - 1].push(t);
+                    }
+                }
+                return acc;
+            }, [[]]);
+            if (children.length == 3) {
+                if (children[0].length > 3 ||
+                    children[0][0].typ != exports.EnumToken.IdenTokenType ||
+                    children[0][0].val != 'in' ||
+                    !isColorspace(children[0][1]) ||
+                    (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
+                    children[1].length > 2 ||
+                    children[1][0].typ != exports.EnumToken.ColorTokenType ||
+                    children[2].length > 2 ||
+                    children[2][0].typ != exports.EnumToken.ColorTokenType) {
+                    return false;
+                }
+                if (children[1].length == 2) {
+                    if (!(children[1][1].typ == exports.EnumToken.PercentageTokenType || (children[1][1].typ == exports.EnumToken.NumberTokenType && children[1][1].val == '0'))) {
                         return false;
                     }
                 }
-                continue;
+                if (children[2].length == 2) {
+                    if (!(children[2][1].typ == exports.EnumToken.PercentageTokenType || (children[2][1].typ == exports.EnumToken.NumberTokenType && children[2][1].val == '0'))) {
+                        return false;
+                    }
+                }
+                return true;
             }
-            if (v.typ == exports.EnumToken.FunctionTokenType && (v.val == 'calc' || colorsFunc.includes(v.val))) {
-                continue;
+            return false;
+        }
+        else {
+            const keywords = ['from', 'none'];
+            if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                keywords.push('alpha', ...token.val.slice(-3).split(''));
             }
-            if (![exports.EnumToken.ColorTokenType, exports.EnumToken.IdenTokenType, exports.EnumToken.NumberTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.LiteralTokenType].includes(v.typ)) {
-                return false;
+            // @ts-ignore
+            for (const v of token.chi) {
+                if (v.typ == exports.EnumToken.CommaTokenType) {
+                    isLegacySyntax = true;
+                }
+                if (v.typ == exports.EnumToken.IdenTokenType) {
+                    if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+                        return false;
+                    }
+                    if (keywords.includes(v.val)) {
+                        if (isLegacySyntax) {
+                            return false;
+                        }
+                        if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                            return false;
+                        }
+                    }
+                    continue;
+                }
+                if (v.typ == exports.EnumToken.FunctionTokenType && (v.val == 'calc' || v.val == 'var' || colorsFunc.includes(v.val))) {
+                    continue;
+                }
+                if (![exports.EnumToken.ColorTokenType, exports.EnumToken.IdenTokenType, exports.EnumToken.NumberTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.LiteralTokenType].includes(v.typ)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -2123,7 +3848,11 @@ function parseDimension(name) {
         index++;
         break;
     }
-    const dimension = { typ: exports.EnumToken.DimensionTokenType, val: name.slice(0, index), unit: name.slice(index) };
+    const dimension = {
+        typ: exports.EnumToken.DimensionTokenType,
+        val: name.slice(0, index),
+        unit: name.slice(index)
+    };
     if (isAngle(dimension)) {
         // @ts-ignore
         dimension.typ = exports.EnumToken.AngleTokenType;
@@ -2165,6 +3894,31 @@ function isHexColor(name) {
     }
     return true;
 }
+/*
+export function isHexDigit(name: string): boolean {
+
+    if (name.length || name.length > 6) {
+
+        return false;
+    }
+
+    for (let chr of name) {
+
+        let codepoint = <number>chr.charCodeAt(0);
+
+        if (!isDigit(codepoint) &&
+            // A F
+            !(codepoint >= 0x41 && codepoint <= 0x46) &&
+            // a f
+            !(codepoint >= 0x61 && codepoint <= 0x66)) {
+
+            return false;
+        }
+    }
+
+    return true;
+}
+*/
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }
@@ -3107,6 +4861,8 @@ var map = {
 			"overflow-x": {
 				"default": [
 				],
+				types: [
+				],
 				keywords: [
 					"auto",
 					"visible",
@@ -3117,6 +4873,8 @@ var map = {
 			},
 			"overflow-y": {
 				"default": [
+				],
+				types: [
 				],
 				keywords: [
 					"auto",
@@ -3450,13 +5208,27 @@ var map = {
 	},
 	background: {
 		shorthand: "background",
-		pattern: "background-repeat background-color background-image background-attachment background-clip background-origin background-position background-size",
+		pattern: "background-attachment background-origin background-clip background-color background-image background-repeat background-position background-size",
 		keywords: [
 			"none"
 		],
 		"default": [
+			"0 0",
+			"none",
+			"auto",
+			"repeat",
+			"transparent",
+			"#0000",
+			"scroll",
+			"padding-box",
+			"border-box"
 		],
 		multiple: true,
+		set: {
+			"background-origin": [
+				"background-clip"
+			]
+		},
 		separator: {
 			typ: "Comma"
 		},
@@ -3490,6 +5262,7 @@ var map = {
 					"Color"
 				],
 				"default": [
+					"#0000",
 					"transparent"
 				],
 				multiple: true,
@@ -3655,7 +5428,7 @@ function matchType(val, properties) {
     }
     if (val.typ == exports.EnumToken.FunctionTokenType) {
         if (funcList.includes(val.val)) {
-            return val.chi.every((t => [exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.StartParensTokenType, exports.EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+            return val.chi.every(((t) => [exports.EnumToken.LiteralTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.WhitespaceTokenType, exports.EnumToken.StartParensTokenType, exports.EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
         }
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.
         // return properties.types.includes((<FunctionToken>val).val + '()')
@@ -3721,179 +5494,175 @@ function parseGridTemplate(template) {
     return buffer.length > 0 ? result + buffer : result;
 }
 
+function consumeWhiteSpace(parseInfo) {
+    let count = 0;
+    while (isWhiteSpace(parseInfo.stream.charAt(count + parseInfo.currentPosition.ind + 1).charCodeAt(0))) {
+        count++;
+    }
+    next(parseInfo, count);
+    return count;
+}
+function pushToken(token, parseInfo, hint) {
+    const result = { token, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
+    parseInfo.position.ind = parseInfo.currentPosition.ind;
+    parseInfo.position.lin = parseInfo.currentPosition.lin;
+    parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
+    return result;
+}
+function* consumeString(quoteStr, buffer, parseInfo) {
+    const quote = quoteStr;
+    let value;
+    let hasNewLine = false;
+    if (buffer.length > 0) {
+        yield pushToken(buffer, parseInfo);
+        buffer = '';
+    }
+    buffer += quoteStr;
+    while (value = peek(parseInfo)) {
+        if (value == '\\') {
+            const sequence = peek(parseInfo, 6);
+            let escapeSequence = '';
+            let codepoint;
+            let i;
+            for (i = 1; i < sequence.length; i++) {
+                codepoint = sequence.charCodeAt(i);
+                if (codepoint == 0x20 ||
+                    (codepoint >= 0x61 && codepoint <= 0x66) ||
+                    (codepoint >= 0x41 && codepoint <= 0x46) ||
+                    (codepoint >= 0x30 && codepoint <= 0x39)) {
+                    escapeSequence += sequence[i];
+                    if (codepoint == 0x20) {
+                        break;
+                    }
+                    continue;
+                }
+                break;
+            }
+            if (i == 1) {
+                buffer += value + sequence[i];
+                next(parseInfo, 2);
+                continue;
+            }
+            if (escapeSequence.trimEnd().length > 0) {
+                const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
+                if (codepoint == 0 ||
+                    // leading surrogate
+                    (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
+                    // trailing surrogate
+                    (0xDC00 <= codepoint && codepoint <= 0xDFFF)) {
+                    buffer += String.fromCodePoint(0xFFFD);
+                }
+                else {
+                    buffer += String.fromCodePoint(codepoint);
+                }
+                next(parseInfo, escapeSequence.length + 1 + (isWhiteSpace(peek(parseInfo)?.charCodeAt(0)) ? 1 : 0));
+                continue;
+            }
+            buffer += next(parseInfo, 2);
+            continue;
+        }
+        if (value == quote) {
+            buffer += value;
+            yield pushToken(buffer, parseInfo, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
+            next(parseInfo);
+            // i += value.length;
+            buffer = '';
+            return;
+        }
+        if (isNewLine(value.charCodeAt(0))) {
+            hasNewLine = true;
+        }
+        if (hasNewLine && value == ';') {
+            yield pushToken(buffer + value, parseInfo, exports.EnumToken.BadStringTokenType);
+            buffer = '';
+            next(parseInfo);
+            break;
+        }
+        buffer += value;
+        next(parseInfo);
+    }
+    if (hasNewLine) {
+        yield pushToken(buffer, parseInfo, exports.EnumToken.BadStringTokenType);
+    }
+    else {
+        // EOF - 'Unclosed-string' fixed
+        yield pushToken(buffer + quote, parseInfo, exports.EnumToken.StringTokenType);
+    }
+}
+function peek(parseInfo, count = 1) {
+    if (count == 1) {
+        return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
+    }
+    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + count + 1);
+}
+function prev(parseInfo, count = 1) {
+    if (count == 1) {
+        return parseInfo.currentPosition.ind == 0 ? '' : parseInfo.stream.charAt(parseInfo.currentPosition.ind - 1);
+    }
+    return parseInfo.stream.slice(parseInfo.currentPosition.ind - 1 - count, parseInfo.currentPosition.ind - 1);
+}
+function next(parseInfo, count = 1) {
+    let char = '';
+    let chr = '';
+    if (count < 0) {
+        return '';
+    }
+    while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
+        char += chr;
+        const codepoint = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
+        if (isNaN(codepoint)) {
+            return char;
+        }
+        if (isNewLine(codepoint)) {
+            parseInfo.currentPosition.lin++;
+            parseInfo.currentPosition.col = 0;
+        }
+        else {
+            parseInfo.currentPosition.col++;
+        }
+    }
+    return char;
+}
 function* tokenize(stream) {
-    let ind = -1;
-    let lin = 1;
-    let col = 0;
-    const position = {
-        ind: Math.max(ind, 0),
-        lin: lin,
-        col: Math.max(col, 1)
+    const parseInfo = {
+        stream,
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
     };
     let value;
     let buffer = '';
-    function consumeWhiteSpace() {
-        let count = 0;
-        while (isWhiteSpace(stream.charAt(count + ind + 1).charCodeAt(0))) {
-            count++;
-        }
-        next(count);
-        return count;
-    }
-    function pushToken(token, hint) {
-        const result = { token, hint, position: { ...position }, bytesIn: ind + 1 };
-        position.ind = ind;
-        position.lin = lin;
-        position.col = col == 0 ? 1 : col;
-        return result;
-    }
-    function* consumeString(quoteStr) {
-        const quote = quoteStr;
-        let value;
-        let hasNewLine = false;
-        if (buffer.length > 0) {
-            yield pushToken(buffer);
-            buffer = '';
-        }
-        buffer += quoteStr;
-        while (value = peek()) {
-            if (value == '\\') {
-                const sequence = peek(6);
-                let escapeSequence = '';
-                let codepoint;
-                let i;
-                for (i = 1; i < sequence.length; i++) {
-                    codepoint = sequence.charCodeAt(i);
-                    if (codepoint == 0x20 ||
-                        (codepoint >= 0x61 && codepoint <= 0x66) ||
-                        (codepoint >= 0x41 && codepoint <= 0x46) ||
-                        (codepoint >= 0x30 && codepoint <= 0x39)) {
-                        escapeSequence += sequence[i];
-                        if (codepoint == 0x20) {
-                            break;
-                        }
-                        continue;
-                    }
-                    break;
-                }
-                if (i == 1) {
-                    buffer += value + sequence[i];
-                    next(2);
-                    continue;
-                }
-                if (escapeSequence.trimEnd().length > 0) {
-                    const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
-                    if (codepoint == 0 ||
-                        // leading surrogate
-                        (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
-                        // trailing surrogate
-                        (0xDC00 <= codepoint && codepoint <= 0xDFFF)) {
-                        buffer += String.fromCodePoint(0xFFFD);
-                    }
-                    else {
-                        buffer += String.fromCodePoint(codepoint);
-                    }
-                    next(escapeSequence.length + 1 + (isWhiteSpace(peek()?.charCodeAt(0)) ? 1 : 0));
-                    continue;
-                }
-                buffer += next(2);
-                continue;
-            }
-            if (value == quote) {
-                buffer += value;
-                yield pushToken(buffer, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
-                next();
-                // i += value.length;
-                buffer = '';
-                return;
-            }
-            if (isNewLine(value.charCodeAt(0))) {
-                hasNewLine = true;
-            }
-            if (hasNewLine && value == ';') {
-                yield pushToken(buffer + value, exports.EnumToken.BadStringTokenType);
-                buffer = '';
-                next();
-                break;
-            }
-            buffer += value;
-            next();
-        }
-        if (hasNewLine) {
-            yield pushToken(buffer, exports.EnumToken.BadStringTokenType);
-        }
-        else {
-            // EOF - 'Unclosed-string' fixed
-            yield pushToken(buffer + quote, exports.EnumToken.StringTokenType);
-        }
-        buffer = '';
-    }
-    function peek(count = 1) {
-        if (count == 1) {
-            return stream.charAt(ind + 1);
-        }
-        return stream.slice(ind + 1, ind + count + 1);
-    }
-    function prev(count = 1) {
-        if (count == 1) {
-            return ind == 0 ? '' : stream.charAt(ind - 1);
-        }
-        return stream.slice(ind - 1 - count, ind - 1);
-    }
-    function next(count = 1) {
-        let char = '';
-        let chr = '';
-        if (count < 0) {
-            return '';
-        }
-        while (count-- && (chr = stream.charAt(ind + 1))) {
-            char += chr;
-            const codepoint = stream.charCodeAt(++ind);
-            if (isNaN(codepoint)) {
-                return char;
-            }
-            if (isNewLine(codepoint)) {
-                lin++;
-                col = 0;
-            }
-            else {
-                col++;
-            }
-        }
-        return char;
-    }
-    while (value = next()) {
+    while (value = next(parseInfo)) {
         if (isWhiteSpace(value.charCodeAt(0))) {
             if (buffer.length > 0) {
-                yield pushToken(buffer);
+                yield pushToken(buffer, parseInfo);
                 buffer = '';
             }
-            while (value = next()) {
+            while (value = next(parseInfo)) {
                 if (!isWhiteSpace(value.charCodeAt(0))) {
                     break;
                 }
             }
-            yield pushToken('', exports.EnumToken.WhitespaceTokenType);
+            yield pushToken('', parseInfo, exports.EnumToken.WhitespaceTokenType);
             buffer = '';
         }
         switch (value) {
             case '/':
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
-                    if (peek() != '*') {
-                        yield pushToken(value);
+                    if (peek(parseInfo) != '*') {
+                        yield pushToken(value, parseInfo);
                         break;
                     }
                 }
                 buffer += value;
-                if (peek() == '*') {
-                    buffer += next();
-                    while (value = next()) {
+                if (peek(parseInfo) == '*') {
+                    buffer += next(parseInfo);
+                    while (value = next(parseInfo)) {
                         if (value == '*') {
                             buffer += value;
-                            if (peek() == '/') {
-                                yield pushToken(buffer + next(), exports.EnumToken.CommentTokenType);
+                            if (peek(parseInfo) == '/') {
+                                yield pushToken(buffer + next(parseInfo), parseInfo, exports.EnumToken.CommentTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -3902,71 +5671,72 @@ function* tokenize(stream) {
                             buffer += value;
                         }
                     }
-                    yield pushToken(buffer, exports.EnumToken.BadCommentTokenType);
+                    yield pushToken(buffer, parseInfo, exports.EnumToken.BadCommentTokenType);
                     buffer = '';
                 }
                 break;
             case '<':
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek() == '=') {
-                    yield pushToken('', exports.EnumToken.LteTokenType);
-                    next();
+                if (peek(parseInfo) == '=') {
+                    yield pushToken('', parseInfo, exports.EnumToken.LteTokenType);
+                    next(parseInfo);
                     break;
                 }
                 buffer += value;
-                if (peek(3) == '!--') {
-                    buffer += next(3);
-                    while (value = next()) {
+                if (peek(parseInfo, 3) == '!--') {
+                    buffer += next(parseInfo, 3);
+                    while (value = next(parseInfo)) {
                         buffer += value;
-                        if (value == '-' && peek(2) == '->') {
+                        if (value == '-' && peek(parseInfo, 2) == '->') {
                             break;
                         }
                     }
                     if (value === '') {
-                        yield pushToken(buffer, exports.EnumToken.BadCdoTokenType);
+                        yield pushToken(buffer, parseInfo, exports.EnumToken.BadCdoTokenType);
                     }
                     else {
-                        yield pushToken(buffer + next(2), exports.EnumToken.CDOCOMMTokenType);
+                        yield pushToken(buffer + next(parseInfo, 2), parseInfo, exports.EnumToken.CDOCOMMTokenType);
                     }
                     buffer = '';
                 }
                 break;
             case '\\':
                 // EOF
-                if (!(value = next())) {
+                if (!(value = next(parseInfo))) {
                     // end of stream ignore \\
                     if (buffer.length > 0) {
-                        yield pushToken(buffer);
+                        yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
                     break;
                 }
-                buffer += prev() + value;
+                buffer += prev(parseInfo) + value;
                 break;
             case '"':
             case "'":
-                yield* consumeString(value);
+                yield* consumeString(value, buffer, parseInfo);
+                buffer = '';
                 break;
             case '^':
             case '~':
             case '|':
             case '$':
-                if (value == '|' && peek() == '|') {
-                    next();
-                    yield pushToken('', exports.EnumToken.ColumnCombinatorTokenType);
+                if (value == '|' && peek(parseInfo) == '|') {
+                    next(parseInfo);
+                    yield pushToken('', parseInfo, exports.EnumToken.ColumnCombinatorTokenType);
                     buffer = '';
                     break;
                 }
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
                 buffer += value;
-                if (!(value = peek())) {
-                    yield pushToken(buffer);
+                if (!(value = peek(parseInfo))) {
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                     break;
                 }
@@ -3974,46 +5744,46 @@ function* tokenize(stream) {
                 // ^=
                 // $=
                 // |=
-                if (peek() == '=') {
-                    next();
+                if (peek(parseInfo) == '=') {
+                    next(parseInfo);
                     switch (buffer.charAt(0)) {
                         case '~':
-                            yield pushToken(buffer, exports.EnumToken.IncludeMatchTokenType);
+                            yield pushToken(buffer, parseInfo, exports.EnumToken.IncludeMatchTokenType);
                             break;
                         case '^':
-                            yield pushToken(buffer, exports.EnumToken.StartMatchTokenType);
+                            yield pushToken(buffer, parseInfo, exports.EnumToken.StartMatchTokenType);
                             break;
                         case '$':
-                            yield pushToken(buffer, exports.EnumToken.EndMatchTokenType);
+                            yield pushToken(buffer, parseInfo, exports.EnumToken.EndMatchTokenType);
                             break;
                         case '|':
-                            yield pushToken(buffer, exports.EnumToken.DashMatchTokenType);
+                            yield pushToken(buffer, parseInfo, exports.EnumToken.DashMatchTokenType);
                             break;
                     }
                     buffer = '';
                     break;
                 }
-                yield pushToken(buffer);
+                yield pushToken(buffer, parseInfo);
                 buffer = '';
                 break;
             case '>':
                 if (buffer !== '') {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek() == '=') {
-                    yield pushToken('', exports.EnumToken.GteTokenType);
-                    next();
+                if (peek(parseInfo) == '=') {
+                    yield pushToken('', parseInfo, exports.EnumToken.GteTokenType);
+                    next(parseInfo);
                 }
                 else {
-                    yield pushToken('', exports.EnumToken.GtTokenType);
+                    yield pushToken('', parseInfo, exports.EnumToken.GtTokenType);
                 }
-                consumeWhiteSpace();
+                consumeWhiteSpace(parseInfo);
                 break;
             case '.':
-                const codepoint = peek().charCodeAt(0);
+                const codepoint = peek(parseInfo).charCodeAt(0);
                 if (!isDigit(codepoint) && buffer !== '') {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = value;
                     break;
                 }
@@ -4025,47 +5795,47 @@ function* tokenize(stream) {
             case ',':
             case '=':
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                const val = peek();
+                const val = peek(parseInfo);
                 if (val == '=') {
-                    next();
-                    yield pushToken(value + val, exports.EnumToken.ContainMatchTokenType);
+                    next(parseInfo);
+                    yield pushToken(value + val, parseInfo, exports.EnumToken.ContainMatchTokenType);
                     break;
                 }
                 if (value == ':' && ':' == val) {
-                    buffer += value + next();
+                    buffer += value + next(parseInfo);
                     break;
                 }
-                yield pushToken(value);
+                yield pushToken(value, parseInfo);
                 buffer = '';
-                if (['+', '*', '/'].includes(value) && isWhiteSpace(peek().charCodeAt(0))) {
-                    yield pushToken(next());
+                if (['+', '*', '/'].includes(value) && isWhiteSpace(peek(parseInfo).charCodeAt(0))) {
+                    yield pushToken(next(parseInfo), parseInfo);
                 }
-                while (isWhiteSpace(peek().charCodeAt(0))) {
-                    next();
+                while (isWhiteSpace(peek(parseInfo).charCodeAt(0))) {
+                    next(parseInfo);
                 }
                 break;
             case ')':
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                yield pushToken('', exports.EnumToken.EndParensTokenType);
+                yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                 break;
             case '(':
                 if (buffer.length == 0) {
-                    yield pushToken(value);
+                    yield pushToken(value, parseInfo);
                     break;
                 }
                 buffer += value;
                 // @ts-ignore
                 if (buffer == 'url(') {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
-                    consumeWhiteSpace();
-                    value = peek();
+                    consumeWhiteSpace(parseInfo);
+                    value = peek(parseInfo);
                     let cp;
                     let whitespace = '';
                     let hasWhiteSpace = false;
@@ -4074,15 +5844,15 @@ function* tokenize(stream) {
                         const quote = value;
                         let inquote = true;
                         let hasNewLine = false;
-                        buffer = next();
-                        while (value = next()) {
+                        buffer = next(parseInfo);
+                        while (value = next(parseInfo)) {
                             cp = value.charCodeAt(0);
                             // consume an invalid string
                             if (inquote) {
                                 buffer += value;
                                 if (isNewLine(cp)) {
                                     hasNewLine = true;
-                                    while (value = next()) {
+                                    while (value = next(parseInfo)) {
                                         buffer += value;
                                         if (value == ';') {
                                             inquote = false;
@@ -4090,7 +5860,7 @@ function* tokenize(stream) {
                                         }
                                     }
                                     if (value === '') {
-                                        yield pushToken(buffer, exports.EnumToken.BadUrlTokenType);
+                                        yield pushToken(buffer, parseInfo, exports.EnumToken.BadUrlTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -4098,7 +5868,7 @@ function* tokenize(stream) {
                                 }
                                 // '\\'
                                 if (cp == 0x5c) {
-                                    buffer += next();
+                                    buffer += next(parseInfo);
                                 }
                                 else if (value == quote) {
                                     inquote = false;
@@ -4108,16 +5878,16 @@ function* tokenize(stream) {
                             if (!inquote) {
                                 if (isWhiteSpace(cp)) {
                                     whitespace += value;
-                                    while (value = peek()) {
+                                    while (value = peek(parseInfo)) {
                                         hasWhiteSpace = true;
                                         if (isWhiteSpace(value?.charCodeAt(0))) {
-                                            whitespace += next();
+                                            whitespace += next(parseInfo);
                                             continue;
                                         }
                                         break;
                                     }
-                                    if (!(value = next())) {
-                                        yield pushToken(buffer, hasNewLine ? exports.EnumToken.BadUrlTokenType : exports.EnumToken.UrlTokenTokenType);
+                                    if (!(value = next(parseInfo))) {
+                                        yield pushToken(buffer, parseInfo, hasNewLine ? exports.EnumToken.BadUrlTokenType : exports.EnumToken.UrlTokenTokenType);
                                         buffer = '';
                                         break;
                                     }
@@ -4125,27 +5895,27 @@ function* tokenize(stream) {
                                 cp = value.charCodeAt(0);
                                 // ')'
                                 if (cp == 0x29) {
-                                    yield pushToken(buffer, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
-                                    yield pushToken('', exports.EnumToken.EndParensTokenType);
+                                    yield pushToken(buffer, parseInfo, hasNewLine ? exports.EnumToken.BadStringTokenType : exports.EnumToken.StringTokenType);
+                                    yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                                     buffer = '';
                                     break;
                                 }
-                                while (value = next()) {
+                                while (value = next(parseInfo)) {
                                     cp = value.charCodeAt(0);
                                     if (cp == 0x5c) {
-                                        buffer += value + next();
+                                        buffer += value + next(parseInfo);
                                         continue;
                                     }
                                     if (cp == 0x29) {
-                                        yield pushToken(buffer, exports.EnumToken.BadStringTokenType);
-                                        yield pushToken('', exports.EnumToken.EndParensTokenType);
+                                        yield pushToken(buffer, parseInfo, exports.EnumToken.BadStringTokenType);
+                                        yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                                         buffer = '';
                                         break;
                                     }
                                     buffer += value;
                                 }
                                 if (hasNewLine) {
-                                    yield pushToken(buffer, exports.EnumToken.BadStringTokenType);
+                                    yield pushToken(buffer, parseInfo, exports.EnumToken.BadStringTokenType);
                                     buffer = '';
                                 }
                                 break;
@@ -4156,20 +5926,20 @@ function* tokenize(stream) {
                     }
                     else {
                         buffer = '';
-                        while (value = next()) {
+                        while (value = next(parseInfo)) {
                             cp = value.charCodeAt(0);
                             // ')'
                             if (cp == 0x29) {
-                                yield pushToken(buffer, exports.EnumToken.UrlTokenTokenType);
-                                yield pushToken('', exports.EnumToken.EndParensTokenType);
+                                yield pushToken(buffer, parseInfo, exports.EnumToken.UrlTokenTokenType);
+                                yield pushToken('', parseInfo, exports.EnumToken.EndParensTokenType);
                                 buffer = '';
                                 break;
                             }
                             if (isWhiteSpace(cp)) {
                                 hasWhiteSpace = true;
                                 whitespace = value;
-                                while (isWhiteSpace(peek()?.charCodeAt(0))) {
-                                    whitespace += next();
+                                while (isWhiteSpace(peek(parseInfo)?.charCodeAt(0))) {
+                                    whitespace += next(parseInfo);
                                 }
                                 continue;
                             }
@@ -4185,19 +5955,19 @@ function* tokenize(stream) {
                             }
                             if (errorState) {
                                 buffer += whitespace + value;
-                                while (value = peek()) {
+                                while (value = peek(parseInfo)) {
                                     cp = value.charCodeAt(0);
                                     if (cp == 0x5c) {
-                                        buffer += next(2);
+                                        buffer += next(parseInfo, 2);
                                         continue;
                                     }
                                     // ')'
                                     if (cp == 0x29) {
                                         break;
                                     }
-                                    buffer += next();
+                                    buffer += next(parseInfo);
                                 }
-                                yield pushToken(buffer, exports.EnumToken.BadUrlTokenType);
+                                yield pushToken(buffer, parseInfo, exports.EnumToken.BadUrlTokenType);
                                 buffer = '';
                                 break;
                             }
@@ -4205,13 +5975,13 @@ function* tokenize(stream) {
                         }
                     }
                     if (buffer !== '') {
-                        yield pushToken(buffer, exports.EnumToken.UrlTokenTokenType);
+                        yield pushToken(buffer, parseInfo, exports.EnumToken.UrlTokenTokenType);
                         buffer = '';
                         break;
                     }
                     break;
                 }
-                yield pushToken(buffer);
+                yield pushToken(buffer, parseInfo);
                 buffer = '';
                 break;
             case '[':
@@ -4220,19 +5990,19 @@ function* tokenize(stream) {
             case '}':
             case ';':
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                yield pushToken(value);
+                yield pushToken(value, parseInfo);
                 break;
             case '!':
                 if (buffer.length > 0) {
-                    yield pushToken(buffer);
+                    yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(9) == 'important') {
-                    yield pushToken('', exports.EnumToken.ImportantTokenType);
-                    next(9);
+                if (peek(parseInfo, 9) == 'important') {
+                    yield pushToken('', parseInfo, exports.EnumToken.ImportantTokenType);
+                    next(parseInfo, 9);
                     buffer = '';
                     break;
                 }
@@ -4244,9 +6014,9 @@ function* tokenize(stream) {
         }
     }
     if (buffer.length > 0) {
-        yield pushToken(buffer);
+        yield pushToken(buffer, parseInfo);
     }
-    // yield pushToken('', 'EOF');
+    // yield pushToken('', EnumToken.EOFTokenType);
 }
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -4291,13 +6061,19 @@ async function doParse(iterator, options = {}) {
         const errors = [];
         const src = options.src;
         const stack = [];
+        const stats = {
+            bytesIn: 0,
+            importedBytesIn: 0,
+            parse: `0ms`,
+            minify: `0ms`,
+            total: `0ms`
+        };
         let ast = {
             typ: exports.EnumToken.StyleSheetNodeType,
             chi: []
         };
         let tokens = [];
         let map = new Map;
-        let bytesIn = 0;
         let context = ast;
         if (options.sourcemap) {
             ast.loc = {
@@ -4309,307 +6085,21 @@ async function doParse(iterator, options = {}) {
                 src: ''
             };
         }
-        async function parseNode(results) {
-            let tokens = results.map(mapToken);
-            let i;
-            let loc;
-            for (i = 0; i < tokens.length; i++) {
-                if (tokens[i].typ == exports.EnumToken.CommentTokenType || tokens[i].typ == exports.EnumToken.CDOCOMMTokenType) {
-                    const position = map.get(tokens[i]);
-                    if (tokens[i].typ == exports.EnumToken.CDOCOMMTokenType && context.typ != exports.EnumToken.StyleSheetNodeType) {
-                        errors.push({
-                            action: 'drop',
-                            message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
-                            location: { src, ...position }
-                        });
-                        continue;
-                    }
-                    loc = {
-                        sta: position,
-                        src
-                    };
-                    // @ts-ignore
-                    context.chi.push(tokens[i]);
-                    if (options.sourcemap) {
-                        tokens[i].loc = loc;
-                    }
-                }
-                else if (tokens[i].typ != exports.EnumToken.WhitespaceTokenType) {
-                    break;
-                }
-            }
-            tokens = tokens.slice(i);
-            if (tokens.length == 0) {
-                return null;
-            }
-            let delim = tokens.at(-1);
-            if (delim.typ == exports.EnumToken.SemiColonTokenType || delim.typ == exports.EnumToken.BlockStartTokenType || delim.typ == exports.EnumToken.BlockEndTokenType) {
-                tokens.pop();
-            }
-            else {
-                delim = { typ: exports.EnumToken.SemiColonTokenType };
-            }
-            // @ts-ignore
-            while ([exports.EnumToken.WhitespaceTokenType, exports.EnumToken.BadStringTokenType, exports.EnumToken.BadCommentTokenType].includes(tokens.at(-1)?.typ)) {
-                tokens.pop();
-            }
-            if (tokens.length == 0) {
-                return null;
-            }
-            if (tokens[0]?.typ == exports.EnumToken.AtRuleTokenType) {
-                const atRule = tokens.shift();
-                const position = map.get(atRule);
-                if (atRule.val == 'charset') {
-                    if (position.ind > 0) {
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid @charset',
-                            location: { src, ...position }
-                        });
-                        return null;
-                    }
-                    if (options.removeCharset) {
-                        return null;
-                    }
-                }
-                // @ts-ignore
-                while ([exports.EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
-                    tokens.shift();
-                }
-                if (atRule.val == 'import') {
-                    // only @charset and @layer are accepted before @import
-                    if (context.chi.length > 0) {
-                        let i = context.chi.length;
-                        while (i--) {
-                            const type = context.chi[i].typ;
-                            if (type == exports.EnumToken.CommentNodeType) {
-                                continue;
-                            }
-                            if (type != exports.EnumToken.AtRuleNodeType) {
-                                errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
-                                return null;
-                            }
-                            const name = context.chi[i].nam;
-                            if (name != 'charset' && name != 'import' && name != 'layer') {
-                                errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
-                                return null;
-                            }
-                            break;
-                        }
-                    }
-                    // @ts-ignore
-                    if (tokens[0]?.typ != exports.EnumToken.StringTokenType && tokens[0]?.typ != exports.EnumToken.UrlFunctionTokenType) {
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid @import',
-                            location: { src, ...position }
-                        });
-                        return null;
-                    }
-                    // @ts-ignore
-                    if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType && tokens[1]?.typ != exports.EnumToken.UrlTokenTokenType && tokens[1]?.typ != exports.EnumToken.StringTokenType) {
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid @import',
-                            location: { src, ...position }
-                        });
-                        return null;
-                    }
-                }
-                if (atRule.val == 'import') {
-                    // @ts-ignore
-                    if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType && tokens[1].typ == exports.EnumToken.UrlTokenTokenType) {
-                        tokens.shift();
-                        // @ts-ignore
-                        tokens[0].typ = exports.EnumToken.StringTokenType;
-                        // @ts-ignore
-                        tokens[0].val = `"${tokens[0].val}"`;
-                    }
-                    // @ts-ignore
-                    if (tokens[0].typ == exports.EnumToken.StringTokenType) {
-                        if (options.resolveImport) {
-                            const url = tokens[0].val.slice(1, -1);
-                            try {
-                                // @ts-ignore
-                                const root = await options.load(url, options.src).then((src) => {
-                                    return doParse(src, Object.assign({}, options, {
-                                        minify: false,
-                                        // @ts-ignore
-                                        src: options.resolve(url, options.src).absolute
-                                    }));
-                                });
-                                bytesIn += root.stats.bytesIn;
-                                if (root.ast.chi.length > 0) {
-                                    // @todo - filter charset, layer and scope
-                                    context.chi.push(...root.ast.chi);
-                                }
-                                if (root.errors.length > 0) {
-                                    errors.push(...root.errors);
-                                }
-                                return null;
-                            }
-                            catch (error) {
-                                // @ts-ignore
-                                errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
-                            }
-                        }
-                    }
-                }
-                // https://www.w3.org/TR/css-nesting-1/#conditionals
-                // allowed nesting at-rules
-                // there must be a top level rule in the stack
-                const raw = parseTokens(tokens, { minify: options.minify }).reduce((acc, curr) => {
-                    acc.push(renderToken(curr, { removeComments: true }));
-                    return acc;
-                }, []);
-                const node = {
-                    typ: exports.EnumToken.AtRuleNodeType,
-                    nam: renderToken(atRule, { removeComments: true }),
-                    val: raw.join('')
-                };
-                Object.defineProperty(node, 'raw', { enumerable: false, configurable: true, writable: true, value: raw });
-                if (delim.typ == exports.EnumToken.BlockStartTokenType) {
-                    node.chi = [];
-                }
-                loc = {
-                    sta: position,
-                    src
-                };
-                if (options.sourcemap) {
-                    node.loc = loc;
-                }
-                // @ts-ignore
-                context.chi.push(node);
-                return delim.typ == exports.EnumToken.BlockStartTokenType ? node : null;
-            }
-            else {
-                // rule
-                if (delim.typ == exports.EnumToken.BlockStartTokenType) {
-                    const position = map.get(tokens[0]);
-                    const uniq = new Map;
-                    parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
-                        if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
-                            if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                                combinators.includes(array[index - 1]?.val) ||
-                                combinators.includes(array[index + 1]?.val)) {
-                                return acc;
-                            }
-                        }
-                        let t = renderToken(curr, { minify: false });
-                        if (t == ',') {
-                            acc.push([]);
-                        }
-                        else {
-                            acc[acc.length - 1].push(t);
-                        }
-                        return acc;
-                    }, [[]]).reduce((acc, curr) => {
-                        acc.set(curr.join(''), curr);
-                        return acc;
-                    }, uniq);
-                    const node = {
-                        typ: exports.EnumToken.RuleNodeType,
-                        // @ts-ignore
-                        sel: [...uniq.keys()].join(','),
-                        chi: []
-                    };
-                    let raw = [...uniq.values()];
-                    Object.defineProperty(node, 'raw', {
-                        enumerable: false,
-                        configurable: true,
-                        writable: true,
-                        value: raw
-                    });
-                    loc = {
-                        sta: position,
-                        src
-                    };
-                    if (options.sourcemap) {
-                        node.loc = loc;
-                    }
-                    // @ts-ignore
-                    context.chi.push(node);
-                    return node;
-                }
-                else {
-                    // declaration
-                    // @ts-ignore
-                    let name = null;
-                    // @ts-ignore
-                    let value = null;
-                    for (let i = 0; i < tokens.length; i++) {
-                        if (tokens[i].typ == exports.EnumToken.CommentTokenType) {
-                            continue;
-                        }
-                        if (tokens[i].typ == exports.EnumToken.ColonTokenType) {
-                            name = tokens.slice(0, i);
-                            value = parseTokens(tokens.slice(i + 1), {
-                                parseColor: options.parseColor,
-                                src: options.src,
-                                resolveUrls: options.resolveUrls,
-                                resolve: options.resolve,
-                                cwd: options.cwd
-                            });
-                        }
-                    }
-                    if (name == null) {
-                        name = tokens;
-                    }
-                    const position = map.get(name[0]);
-                    if (name.length > 0) {
-                        for (let i = 1; i < name.length; i++) {
-                            if (name[i].typ != exports.EnumToken.WhitespaceTokenType && name[i].typ != exports.EnumToken.CommentTokenType) {
-                                errors.push({
-                                    action: 'drop',
-                                    message: 'doParse: invalid declaration',
-                                    location: { src, ...position }
-                                });
-                                return null;
-                            }
-                        }
-                    }
-                    if (value == null || value.length == 0) {
-                        errors.push({
-                            action: 'drop',
-                            message: 'doParse: invalid declaration',
-                            location: { src, ...position }
-                        });
-                        return null;
-                    }
-                    const node = {
-                        typ: exports.EnumToken.DeclarationNodeType,
-                        // @ts-ignore
-                        nam: renderToken(name.shift(), { removeComments: true }),
-                        // @ts-ignore
-                        val: value
-                    };
-                    const result = parseDeclaration(node, errors, src, position);
-                    if (result != null) {
-                        // @ts-ignore
-                        context.chi.push(node);
-                    }
-                    return null;
-                }
-            }
-        }
-        function mapToken(token) {
-            const node = getTokenType(token.token, token.hint);
-            map.set(node, token.position);
-            return node;
-        }
         const iter = tokenize(iterator);
         let item;
         while (item = iter.next().value) {
-            bytesIn = item.bytesIn;
+            stats.bytesIn = item.bytesIn;
+            //
             // doParse error
             if (item.hint != null && BadTokensTypes.includes(item.hint)) {
                 // bad token
                 continue;
             }
-            tokens.push(item);
+            if (item.hint != exports.EnumToken.EOFTokenType) {
+                tokens.push(item);
+            }
             if (item.token == ';' || item.token == '{') {
-                let node = await parseNode(tokens);
+                let node = await parseNode(tokens, context, stats, options, errors, src, map);
                 if (node != null) {
                     stack.push(node);
                     // @ts-ignore
@@ -4636,7 +6126,7 @@ async function doParse(iterator, options = {}) {
                 map = new Map;
             }
             else if (item.token == '}') {
-                await parseNode(tokens);
+                await parseNode(tokens, context, stats, options, errors, src, map);
                 const previousNode = stack.pop();
                 // @ts-ignore
                 context = stack[stack.length - 1] || ast;
@@ -4649,12 +6139,12 @@ async function doParse(iterator, options = {}) {
             }
         }
         if (tokens.length > 0) {
-            await parseNode(tokens);
+            await parseNode(tokens, context, stats, options, errors, src, map);
         }
         while (stack.length > 0 && context != ast) {
             const previousNode = stack.pop();
             // @ts-ignore
-            context = stack[stack.length - 1] || ast;
+            context = stack[stack.length - 1] ?? ast;
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
@@ -4672,7 +6162,7 @@ async function doParse(iterator, options = {}) {
                     // @ts-ignore
                     (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[result.node.nam] != null)) {
                     const callable = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[result.node.nam];
-                    const results = callable(result.node);
+                    const results = await callable(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
                     }
@@ -4680,7 +6170,7 @@ async function doParse(iterator, options = {}) {
                     result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
                 }
                 else if (options.visitor.Rule != null && result.node.typ == exports.EnumToken.RuleNodeType) {
-                    const results = options.visitor.Rule(result.node);
+                    const results = await options.visitor.Rule(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
                     }
@@ -4692,7 +6182,7 @@ async function doParse(iterator, options = {}) {
                     // @ts-ignore
                     (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[result.node.nam] != null)) {
                     const callable = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[result.node.nam];
-                    const results = callable(result.node);
+                    const results = await callable(result.node);
                     if (results == null || (Array.isArray(results) && results.length == 0)) {
                         continue;
                     }
@@ -4710,17 +6200,307 @@ async function doParse(iterator, options = {}) {
         if (options.signal != null) {
             options.signal.removeEventListener('abort', reject);
         }
+        stats.bytesIn += stats.importedBytesIn;
         resolve({
             ast,
             errors,
             stats: {
-                bytesIn,
+                ...stats,
                 parse: `${(endParseTime - startTime).toFixed(2)}ms`,
                 minify: `${(endTime - endParseTime).toFixed(2)}ms`,
                 total: `${(endTime - startTime).toFixed(2)}ms`
             }
         });
     });
+}
+async function parseNode(results, context, stats, options, errors, src, map) {
+    let tokens = results.map((t) => mapToken(t, map));
+    let i;
+    let loc;
+    for (i = 0; i < tokens.length; i++) {
+        if (tokens[i].typ == exports.EnumToken.CommentTokenType || tokens[i].typ == exports.EnumToken.CDOCOMMTokenType) {
+            const position = map.get(tokens[i]);
+            if (tokens[i].typ == exports.EnumToken.CDOCOMMTokenType && context.typ != exports.EnumToken.StyleSheetNodeType) {
+                errors.push({
+                    action: 'drop',
+                    message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                    location: { src, ...position }
+                });
+                continue;
+            }
+            loc = {
+                sta: position,
+                src
+            };
+            // @ts-ignore
+            context.chi.push(tokens[i]);
+            if (options.sourcemap) {
+                tokens[i].loc = loc;
+            }
+        }
+        else if (tokens[i].typ != exports.EnumToken.WhitespaceTokenType) {
+            break;
+        }
+    }
+    tokens = tokens.slice(i);
+    if (tokens.length == 0) {
+        return null;
+    }
+    let delim = tokens.at(-1);
+    if (delim.typ == exports.EnumToken.SemiColonTokenType || delim.typ == exports.EnumToken.BlockStartTokenType || delim.typ == exports.EnumToken.BlockEndTokenType) {
+        tokens.pop();
+    }
+    else {
+        delim = { typ: exports.EnumToken.SemiColonTokenType };
+    }
+    // @ts-ignore
+    while ([exports.EnumToken.WhitespaceTokenType, exports.EnumToken.BadStringTokenType, exports.EnumToken.BadCommentTokenType].includes(tokens.at(-1)?.typ)) {
+        tokens.pop();
+    }
+    if (tokens.length == 0) {
+        return null;
+    }
+    if (tokens[0]?.typ == exports.EnumToken.AtRuleTokenType) {
+        const atRule = tokens.shift();
+        const position = map.get(atRule);
+        if (atRule.val == 'charset') {
+            if (position.ind > 0) {
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid @charset',
+                    location: { src, ...position }
+                });
+                return null;
+            }
+            if (options.removeCharset) {
+                return null;
+            }
+        }
+        // @ts-ignore
+        while ([exports.EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
+            tokens.shift();
+        }
+        if (atRule.val == 'import') {
+            // only @charset and @layer are accepted before @import
+            if (context.chi.length > 0) {
+                let i = context.chi.length;
+                while (i--) {
+                    const type = context.chi[i].typ;
+                    if (type == exports.EnumToken.CommentNodeType) {
+                        continue;
+                    }
+                    if (type != exports.EnumToken.AtRuleNodeType) {
+                        errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                        return null;
+                    }
+                    const name = context.chi[i].nam;
+                    if (name != 'charset' && name != 'import' && name != 'layer') {
+                        errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                        return null;
+                    }
+                    break;
+                }
+            }
+            // @ts-ignore
+            if (tokens[0]?.typ != exports.EnumToken.StringTokenType && tokens[0]?.typ != exports.EnumToken.UrlFunctionTokenType) {
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid @import',
+                    location: { src, ...position }
+                });
+                return null;
+            }
+            // @ts-ignore
+            if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType && tokens[1]?.typ != exports.EnumToken.UrlTokenTokenType && tokens[1]?.typ != exports.EnumToken.StringTokenType) {
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid @import',
+                    location: { src, ...position }
+                });
+                return null;
+            }
+        }
+        if (atRule.val == 'import') {
+            // @ts-ignore
+            if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType && tokens[1].typ == exports.EnumToken.UrlTokenTokenType) {
+                tokens.shift();
+                // @ts-ignore
+                tokens[0].typ = exports.EnumToken.StringTokenType;
+                // @ts-ignore
+                tokens[0].val = `"${tokens[0].val}"`;
+            }
+            // @ts-ignore
+            if (tokens[0].typ == exports.EnumToken.StringTokenType) {
+                if (options.resolveImport) {
+                    const url = tokens[0].val.slice(1, -1);
+                    try {
+                        // @ts-ignore
+                        const root = await options.load(url, options.src).then((src) => {
+                            return doParse(src, Object.assign({}, options, {
+                                minify: false,
+                                // @ts-ignore
+                                src: options.resolve(url, options.src).absolute
+                            }));
+                        });
+                        stats.importedBytesIn += root.stats.bytesIn;
+                        if (root.ast.chi.length > 0) {
+                            // @todo - filter charset, layer and scope
+                            context.chi.push(...root.ast.chi);
+                        }
+                        if (root.errors.length > 0) {
+                            errors.push(...root.errors);
+                        }
+                        return null;
+                    }
+                    catch (error) {
+                        // @ts-ignore
+                        errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
+                    }
+                }
+            }
+        }
+        // https://www.w3.org/TR/css-nesting-1/#conditionals
+        // allowed nesting at-rules
+        // there must be a top level rule in the stack
+        const raw = parseTokens(tokens, { minify: options.minify }).reduce((acc, curr) => {
+            acc.push(renderToken(curr, { removeComments: true }));
+            return acc;
+        }, []);
+        const node = {
+            typ: exports.EnumToken.AtRuleNodeType,
+            nam: renderToken(atRule, { removeComments: true }),
+            val: raw.join('')
+        };
+        Object.defineProperty(node, 'raw', { enumerable: false, configurable: true, writable: true, value: raw });
+        if (delim.typ == exports.EnumToken.BlockStartTokenType) {
+            node.chi = [];
+        }
+        loc = {
+            sta: position,
+            src
+        };
+        if (options.sourcemap) {
+            node.loc = loc;
+        }
+        // @ts-ignore
+        context.chi.push(node);
+        return delim.typ == exports.EnumToken.BlockStartTokenType ? node : null;
+    }
+    else {
+        // rule
+        if (delim.typ == exports.EnumToken.BlockStartTokenType) {
+            const position = map.get(tokens[0]);
+            const uniq = new Map;
+            parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
+                if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
+                    if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                        combinators.includes(array[index - 1]?.val) ||
+                        combinators.includes(array[index + 1]?.val)) {
+                        return acc;
+                    }
+                }
+                let t = renderToken(curr, { minify: false });
+                if (t == ',') {
+                    acc.push([]);
+                }
+                else {
+                    acc[acc.length - 1].push(t);
+                }
+                return acc;
+            }, [[]]).reduce((acc, curr) => {
+                acc.set(curr.join(''), curr);
+                return acc;
+            }, uniq);
+            const node = {
+                typ: exports.EnumToken.RuleNodeType,
+                // @ts-ignore
+                sel: [...uniq.keys()].join(','),
+                chi: []
+            };
+            let raw = [...uniq.values()];
+            Object.defineProperty(node, 'raw', {
+                enumerable: false,
+                configurable: true,
+                writable: true,
+                value: raw
+            });
+            loc = {
+                sta: position,
+                src
+            };
+            if (options.sourcemap) {
+                node.loc = loc;
+            }
+            // @ts-ignore
+            context.chi.push(node);
+            return node;
+        }
+        else {
+            // declaration
+            // @ts-ignore
+            let name = null;
+            // @ts-ignore
+            let value = null;
+            for (let i = 0; i < tokens.length; i++) {
+                if (tokens[i].typ == exports.EnumToken.CommentTokenType) {
+                    continue;
+                }
+                if (tokens[i].typ == exports.EnumToken.ColonTokenType) {
+                    name = tokens.slice(0, i);
+                    value = parseTokens(tokens.slice(i + 1), {
+                        parseColor: options.parseColor,
+                        src: options.src,
+                        resolveUrls: options.resolveUrls,
+                        resolve: options.resolve,
+                        cwd: options.cwd
+                    });
+                }
+            }
+            if (name == null) {
+                name = tokens;
+            }
+            const position = map.get(name[0]);
+            if (name.length > 0) {
+                for (let i = 1; i < name.length; i++) {
+                    if (name[i].typ != exports.EnumToken.WhitespaceTokenType && name[i].typ != exports.EnumToken.CommentTokenType) {
+                        errors.push({
+                            action: 'drop',
+                            message: 'doParse: invalid declaration',
+                            location: { src, ...position }
+                        });
+                        return null;
+                    }
+                }
+            }
+            if (value == null || value.length == 0) {
+                errors.push({
+                    action: 'drop',
+                    message: 'doParse: invalid declaration',
+                    location: { src, ...position }
+                });
+                return null;
+            }
+            const node = {
+                typ: exports.EnumToken.DeclarationNodeType,
+                // @ts-ignore
+                nam: renderToken(name.shift(), { removeComments: true }),
+                // @ts-ignore
+                val: value
+            };
+            const result = parseDeclaration(node, errors, src, position);
+            if (result != null) {
+                // @ts-ignore
+                context.chi.push(node);
+            }
+            return null;
+        }
+    }
+}
+function mapToken(token, map) {
+    const node = getTokenType(token.token, token.hint);
+    map.set(node, token.position);
+    return node;
 }
 function parseString(src, options = { location: false }) {
     return parseTokens([...tokenize(src)].map(t => {
@@ -5134,9 +6914,21 @@ function parseTokens(tokens, options = {}) {
                 t.typ = exports.EnumToken.ColorTokenType;
                 // @ts-ignore
                 t.kin = t.val;
-                if (t.chi[0].typ == exports.EnumToken.IdenTokenType && t.chi[0].val == 'from') {
+                if (t.chi[0].typ == exports.EnumToken.IdenTokenType) {
+                    if (t.chi[0].val == 'from') {
+                        // @ts-ignore
+                        t.cal = 'rel';
+                    }
                     // @ts-ignore
-                    t.cal = 'rel';
+                    else if (t.val == 'color-mix' && t.chi[0].val == 'in') {
+                        // @ts-ignore
+                        t.cal = 'mix';
+                    }
+                    else if (t.val == 'color') {
+                        // @ts-ignore
+                        t.cal = 'col';
+                        // t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+                    }
                 }
                 t.chi = t.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
                 continue;
@@ -5200,42 +6992,6 @@ function parseTokens(tokens, options = {}) {
         }
     }
     return tokens;
-}
-
-function eq(a, b) {
-    if (a == null || b == null) {
-        return a == b;
-    }
-    if (typeof a != 'object' || typeof b != 'object') {
-        return a === b;
-    }
-    if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
-        return false;
-    }
-    if (Array.isArray(a)) {
-        if (a.length != b.length) {
-            return false;
-        }
-        let i = 0;
-        for (; i < a.length; i++) {
-            if (!eq(a[i], b[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    const k1 = Object.keys(a);
-    const k2 = Object.keys(b);
-    if (k1.length != k2.length) {
-        return false;
-    }
-    let key;
-    for (key of k1) {
-        if (!(key in b) || !eq(a[key], b[key])) {
-            return false;
-        }
-    }
-    return true;
 }
 
 function* walk(node, filter) {
@@ -5448,9 +7204,10 @@ function replaceCompoundLiteral(selector, replace) {
 }
 
 class MinifyFeature {
-    static get ordering() { return 10000; }
-    register(options) { }
-    run(ast, options = {}, parent, context) {
+    static get ordering() {
+        return 10000;
+    }
+    register(options) {
     }
 }
 
@@ -5543,7 +7300,7 @@ class InlineCssVariablesFeature extends MinifyFeature {
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
-        const isRoot = parent.typ == exports.EnumToken.StyleSheetNodeType && ast.typ == exports.EnumToken.RuleNodeType && ast.sel == ':root';
+        const isRoot = parent.typ == exports.EnumToken.StyleSheetNodeType && ast.typ == exports.EnumToken.RuleNodeType && [':root', 'html'].includes(ast.sel);
         const variableScope = context.variableScope;
         // @ts-ignore
         for (const node of ast.chi) {
@@ -5827,12 +7584,10 @@ class PropertyMap {
         this.pattern = config.pattern.split(/\s/);
     }
     add(declaration) {
-        for (const val of declaration.val) {
-            Object.defineProperty(val, 'propertyName', { enumerable: false, writable: true, value: declaration.nam });
-        }
         if (declaration.nam == this.config.shorthand) {
             this.declarations = new Map;
             this.declarations.set(declaration.nam, declaration);
+            this.matchTypes(declaration);
         }
         else {
             const separator = this.config.separator != null ? {
@@ -5970,6 +7725,55 @@ class PropertyMap {
         }
         return this;
     }
+    matchTypes(declaration) {
+        const patterns = this.pattern.slice();
+        const values = [...declaration.val];
+        let i;
+        let j;
+        const map = new Map;
+        for (i = 0; i < patterns.length; i++) {
+            for (j = 0; j < values.length; j++) {
+                if (!map.has(patterns[i])) {
+                    // @ts-ignore
+                    map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
+                }
+                let count = map.get(patterns[i]);
+                if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
+                    Object.defineProperty(values[j], 'propertyName', {
+                        enumerable: false,
+                        writable: true,
+                        value: patterns[i]
+                    });
+                    map.set(patterns[i], --count);
+                    values.splice(j--, 1);
+                }
+            }
+        }
+        if (this.config.set != null) {
+            for (const [key, val] of Object.entries(this.config.set)) {
+                if (map.has(key)) {
+                    for (const v of val) {
+                        // missing
+                        if (map.get(v) == 1) {
+                            let i = declaration.val.length;
+                            while (i--) {
+                                // @ts-ignore
+                                if (declaration.val[i].propertyName == key) {
+                                    const val = { ...declaration.val[i] };
+                                    Object.defineProperty(val, 'propertyName', {
+                                        enumerable: false,
+                                        writable: true,
+                                        value: v
+                                    });
+                                    declaration.val.splice(i, 0, val, { typ: exports.EnumToken.WhitespaceTokenType });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     [Symbol.iterator]() {
         let iterable;
         let requiredCount = 0;
@@ -6000,33 +7804,59 @@ class PropertyMap {
             if (isShorthand && this.declarations.has(this.config.shorthand)) {
                 const cache = new Map();
                 const removeDefaults = (declaration) => {
-                    let config = this.config.shorthand == declaration.nam ? this.config : this.config.properties[declaration.nam];
-                    if (config == null && declaration.nam in propertiesConfig.properties) {
-                        // @ts-ignore
-                        const shorthand = propertiesConfig.properties[declaration.nam].shorthand;
-                        // @ts-ignore
-                        config = propertiesConfig.properties[shorthand];
-                    }
-                    declaration.val = declaration.val.map((t) => {
+                    let i;
+                    let t;
+                    let map = new Map();
+                    let value = [];
+                    let values = [];
+                    // @ts-ignore
+                    let typ = (exports.EnumToken[this.config.separator?.typ] ?? exports.EnumToken.CommaTokenType);
+                    let separator = this.config.separator ? renderToken(this.config.separator) : ',';
+                    this.matchTypes(declaration);
+                    values.push(value);
+                    for (i = 0; i < declaration.val.length; i++) {
+                        t = declaration.val[i];
                         if (!cache.has(t)) {
                             cache.set(t, renderToken(t, { minify: true }));
                         }
-                        const value = cache.get(t);
-                        // @ts-ignore
-                        if (config?.mapping?.[value] != null) {
-                            // @ts-ignore
-                            t = parseString(config.mapping[value])[0];
-                            cache.set(t, renderToken(t, { minify: true }));
+                        if (t.typ == typ && separator == cache.get(t)) {
+                            this.removeDefaults(map, value);
+                            value = [];
+                            values.push(value);
+                            map.clear();
+                            continue;
                         }
-                        return t;
-                    }).filter((val) => {
-                        return !config?.default?.includes(cache.get(val));
-                    })
-                        .filter((val, index, array) => !(index > 0 &&
-                        val.typ == exports.EnumToken.WhitespaceTokenType &&
-                        array[index - 1].typ == exports.EnumToken.WhitespaceTokenType));
-                    if (declaration.val.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
+                        value.push(t);
+                        // @ts-ignore
+                        if ('propertyName' in t) {
+                            // @ts-ignore
+                            if (!map.has(t.propertyName)) {
+                                // @ts-ignore
+                                map.set(t.propertyName, { t: [t], value: [cache.get(t)] });
+                            }
+                            else {
+                                // @ts-ignore
+                                const v = map.get(t.propertyName);
+                                v.t.push(t);
+                                v.value.push(cache.get(t));
+                            }
+                        }
+                    }
+                    this.removeDefaults(map, value);
+                    declaration.val = values.reduce((acc, curr) => {
+                        for (const cr of curr) {
+                            if (cr.typ == exports.EnumToken.WhitespaceTokenType && acc.at(-1)?.typ == cr.typ) {
+                                continue;
+                            }
+                            acc.push(cr);
+                        }
+                        return acc;
+                    }, []);
+                    while (declaration.val.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
                         declaration.val.pop();
+                    }
+                    while (declaration.val.at(0)?.typ == exports.EnumToken.WhitespaceTokenType) {
+                        declaration.val.shift();
                     }
                     return declaration;
                 };
@@ -6127,12 +7957,12 @@ class PropertyMap {
                 return acc;
             }, []);
             count++;
-            if (!isShorthand || Object.entries(this.config.properties).some(entry => {
+            if (!isShorthand || Object.entries(this.config.properties).some((entry) => {
                 // missing required property
                 return entry[1].required && !(entry[0] in tokens);
             }) ||
                 // @ts-ignore
-                !Object.values(tokens).every(v => v.filter(t => t.typ != exports.EnumToken.CommentTokenType).length == count)) {
+                !Object.values(tokens).every((v) => v.filter((t) => t.typ != exports.EnumToken.CommentTokenType).length == count)) {
                 // @ts-ignore
                 iterable = this.declarations.values();
             }
@@ -6286,6 +8116,36 @@ class PropertyMap {
                 return v;
             }
         };
+    }
+    removeDefaults(map, value) {
+        for (const [key, val] of map) {
+            const config = this.config.properties[key];
+            if (config == null) {
+                continue;
+            }
+            const v = val.value.join(' ');
+            if (config.default.includes(v) || (value.length == 1 && this.config.default.includes(v))) {
+                for (const token of value) {
+                    if (val.t.includes(token)) {
+                        let index = value.indexOf(token);
+                        value.splice(index, 1);
+                        if (config.prefix != null) {
+                            while (index-- > 0) {
+                                if (value[index].typ == exports.EnumToken.WhitespaceTokenType) {
+                                    continue;
+                                }
+                                if (value[index].typ == exports.EnumToken[config.prefix.typ] &&
+                                    // @ts-ignore
+                                    value[index].val == config.prefix.val) {
+                                    value.splice(index, 1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -6446,7 +8306,7 @@ class ComputeCalcExpressionFeature extends MinifyFeature {
     }
     run(ast) {
         if (!('chi' in ast)) {
-            return ast;
+            return;
         }
         // @ts-ignore
         for (const node of ast.chi) {
@@ -6483,7 +8343,6 @@ class ComputeCalcExpressionFeature extends MinifyFeature {
                 }
             }
         }
-        return ast;
     }
 }
 
@@ -6504,7 +8363,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         context.nodes = new WeakSet;
     }
     if (context.nodes.has(ast)) {
-        // console.error('skipped', ast.typ);
         return ast;
     }
     context.nodes.add(ast);

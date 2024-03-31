@@ -1,7 +1,7 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
-import '../../renderer/utils/color.js';
+import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 // https://www.w3.org/TR/css-values-4/#math-function
@@ -22,7 +22,7 @@ function matchType(val, properties) {
     }
     if (val.typ == EnumToken.FunctionTokenType) {
         if (funcList.includes(val.val)) {
-            return val.chi.every((t => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+            return val.chi.every(((t) => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
         }
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.
         // return properties.types.includes((<FunctionToken>val).val + '()')

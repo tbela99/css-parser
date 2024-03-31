@@ -3,7 +3,7 @@ import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../parse.js';
 import { isWhiteSpace } from './syntax.js';
-import '../../renderer/utils/color.js';
+import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function parseDeclaration(node, errors, src, position) {

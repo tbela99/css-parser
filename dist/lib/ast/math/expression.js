@@ -72,10 +72,41 @@ function doEvaluate(l, r, op) {
             return defaultReturn;
         }
     }
-    const typ = l.typ == EnumToken.NumberTokenType ? r.typ : l.typ;
+    else if (op == EnumToken.Mul &&
+        ![EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(l.typ) &&
+        ![EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(r.typ)) {
+        return defaultReturn;
+    }
+    const typ = l.typ == EnumToken.NumberTokenType ? r.typ : (r.typ == EnumToken.NumberTokenType ? l.typ : (l.typ == EnumToken.PercentageTokenType ? r.typ : l.typ));
     // @ts-ignore
-    const val = compute(typeof l.val == 'string' ? +l.val : l.val, typeof r.val == 'string' ? +r.val : r.val, op);
-    return { ...(l.typ == EnumToken.NumberTokenType ? r : l), typ, val: typeof val == 'number' ? reduceNumber(val) : val };
+    let v1 = typeof l.val == 'string' ? +l.val : l.val;
+    // @ts-ignore
+    let v2 = typeof r.val == 'string' ? +r.val : r.val;
+    if (op == EnumToken.Mul) {
+        if (l.typ != EnumToken.NumberTokenType && r.typ != EnumToken.NumberTokenType) {
+            if (typeof v1 == 'number' && l.typ == EnumToken.PercentageTokenType) {
+                v1 = {
+                    typ: EnumToken.FractionTokenType,
+                    l: { typ: EnumToken.NumberTokenType, val: String(v1) },
+                    r: { typ: EnumToken.NumberTokenType, val: '100' }
+                };
+            }
+            else if (typeof v2 == 'number' && r.typ == EnumToken.PercentageTokenType) {
+                v2 = {
+                    typ: EnumToken.FractionTokenType,
+                    l: { typ: EnumToken.NumberTokenType, val: String(v2) },
+                    r: { typ: EnumToken.NumberTokenType, val: '100' }
+                };
+            }
+        }
+    }
+    // @ts-ignore
+    const val = compute(v1, v2, op);
+    return {
+        ...(l.typ == EnumToken.NumberTokenType ? r : l),
+        typ,
+        val: typeof val == 'number' ? reduceNumber(val) : val
+    };
 }
 /**
  * convert BinaryExpression into an array
@@ -166,6 +197,10 @@ function factor(tokens, ops) {
         return [factorToken(tokens[0])];
     }
     for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i].typ == EnumToken.ListToken) {
+            // @ts-ignore
+            tokens.splice(i, 1, ...tokens[i].chi);
+        }
         isOp = opList.includes(tokens[i].typ);
         if (isOp ||
             // @ts-ignore

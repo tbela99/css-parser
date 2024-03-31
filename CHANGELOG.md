@@ -1,6 +1,24 @@
 # Changelog
 
-### V0.3.0
+## V0.4.0
+
+Parsing
+
+- [x] allow async node visitors
+- [x] adding declaration parsing helper async parseDeclarations(source: string): Promise<AstDeclarations[]>
+
+CSS color level 4 & 5
+
+- [x] color space: srgb, srgb-linear, display-p3, prophoto-rgb, a98-rgb, rec2020, xyz, xyz-d50
+- [x] color-mix()
+- [x] color()
+- [x] relative color
+- [x] lab()
+- [x] lch()
+- [x] oklab()
+- [x] oklch()
+
+## V0.3.0
 
 ### shorthands
 

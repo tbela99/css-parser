@@ -1,8 +1,8 @@
 import { PropertyList } from '../../parser/declaration/list.js';
-import '../../renderer/utils/color.js';
 import { EnumToken } from '../types.js';
 import '../minify.js';
 import '../../parser/parse.js';
+import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { MinifyFeature } from '../utils/minifyfeature.js';
 

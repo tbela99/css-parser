@@ -2,7 +2,7 @@ import {FractionToken} from "../../../@types";
 import {EnumToken} from "../types";
 import {reduceNumber} from "../../renderer";
 
-export const gcd = (x: number, y: number): number => {
+export function gcd (x: number, y: number): number {
 
     x = Math.abs(x);
     y = Math.abs(y);
@@ -73,7 +73,6 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
         r: {typ: EnumToken.NumberTokenType, val: '1'}
     } : b;
 
-
     let l2: number;
     let r2: number;
 
@@ -131,6 +130,5 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
 export function simplify(a: number, b: number): [number, number] {
 
     const g: number = gcd(a, b);
-
     return g > 1 ? [a / g, b / g] : [a, b];
 }
