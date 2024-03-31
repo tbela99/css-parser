@@ -26,6 +26,85 @@ $ npm install @tbela99/css-parser
 - remove duplicate properties
 - flatten @import rules
 
+## Exports
+
+There are several ways to import the library into your application.
+
+### Node exports
+
+import as a module
+
+```javascript
+
+import {transform} from '@tbela99/css-parser';
+
+// ...
+```
+### Deno exports
+
+import as a module
+
+```javascript
+
+import {transform} from 'npm:@tbela99/css-parser';
+
+// ...
+```
+import as a CommonJS module
+
+```javascript
+
+const {transform} = require('@tbela99/css-parser/cjs');
+
+// ...
+```
+
+### Web export
+
+Programmatic import
+
+```javascript
+
+import {transform} from '@tbela99/css-parser/web';
+
+// ...
+```
+
+Javascript module from cdn
+
+```javascript
+
+<script type="module">
+
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@0.3.0/web';
+
+
+    const css = `
+    .s {
+
+    background: color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow);
+}
+    `;
+
+    console.debug(await transform(css).then(r => r.code));
+
+</script>
+```
+
+Javascript module
+
+```javascript
+
+<script src="dist/web/index.js" type="module"></script>
+```
+
+Single Javascript file
+
+```javascript
+
+<script src="dist/index-umd-web.js"></script>
+```
+
 ## Transform
 
 Parse and render css in a single pass.
@@ -52,35 +131,49 @@ Include ParseOptions and RenderOptions
 
 #### ParseOptions
 
+> Minify Options
 - minify: boolean, optional. default to _true_. optimize ast.
-- src: string, optional. original css file location to be used with sourcemap.
-- sourcemap: boolean, optional. preserve node location data.
 - nestingRules: boolean, optional. automatically generated nested rules.
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules to false.
-- removeCharset: boolean, optional. remove @charset.
-- removeEmpty: boolean, optional. remove empty rule lists from the ast.
-- resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
-- resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
-- cwd: string, optional. the current working directory. when specified url() are resolved using this value
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeShorthand: boolean, optional. compute shorthand properties.
 - inlineCssVariables: boolean, optional. replace css variables with their current value.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
+- removeEmpty: boolean, optional. remove empty rule lists from the ast.
+
+> Sourcemap Options
+
+- src: string, optional. original css file location to be used with sourcemap.
+- sourcemap: boolean, optional. preserve node location data.
+
+> Misc Options
+
+- resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
+- resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
+- removeCharset: boolean, optional. remove @charset.
+- cwd: string, optional. the current working directory. when specified url() are resolved using this value
 - visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
 #### RenderOptions
 
+> Minify Options
+
 - minify: boolean, optional. default to _true_. minify css output.
 - expandNestingRules: boolean, optional. expand nesting rules.
-- sourcemap: boolean, optional. generate sourcemap
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
-- sourcemap: boolean, optional. generate sourcemap.
-- indent: string, optional. css indention string. uses space character by default.
-- newLine: string, optional. new line character.
 - removeComments: boolean, remove comments in generated css.
 - colorConvert: boolean, convert colors to hex.
+
+> Sourcemap Options
+
+- sourcemap: boolean, optional. generate sourcemap
+
+> Misc Options
+
+- indent: string, optional. css indention string. uses space character by default.
+- newLine: string, optional. new line character.
 - output: string, optional. file where to store css. url() are resolved according to the specified value. no file is created though.
 - cwd: string, optional. value used as current working directory. when output is not provided, urls are resolved according to this value.
 
@@ -108,9 +201,12 @@ const {ast, errors, stats} = await parse(css);
 render(ast, RenderOptions = {});
 ```
 
-### Example
+### Examples
+
+Rendering ast
 
 ```javascript
+
 import {render} from '@tbela99/css-parser';
 
 // minified
@@ -119,66 +215,38 @@ const {code, stats} = render(ast, {minify: true});
 console.log(code);
 ```
 
-## Node Walker
+### Merge similar rules
 
-```javascript
-import {walk} from '@tbela99/css-parser';
+CSS
 
-for (const {node, parent, root} of walk(ast)) {
-    
-    // do somehting
+```css
+
+.clear {
+  width: 0;
+  height: 0;
+  color: transparent;
+}
+
+.clearfix:before {
+
+  height: 0;
+  width: 0;
 }
 ```
-
-## Exports
-
-There are several ways to import the library into your application.
-
-### Node exports
-
-import as a module
 
 ```javascript
 
 import {transform} from '@tbela99/css-parser';
 
-// ...
-```
-import as a CommonJS module
+const result = await transform(css);
 
-```javascript
-
-const {transform} = require('@tbela99/css-parser/cjs');
-
-// ...
 ```
 
-### Web export
+Result
 
-Programmatic import
-
-```javascript
-
-import {transform} from '@tbela99/css-parser/web';
-
-// ...
+```css
+.clear,.clearfix:before{height:0;width:0}.clear{color:#0000}
 ```
-
-Javascript module
-
-```javascript
-
-<script src="dist/web/index.js" type="module"></script>
-```
-
-Single JavaScript file
-
-```javascript
-
-<script src="dist/index-umd-web.js"></script>
-```
-
-## Example 1
 
 ### Automatic CSS Nesting
 
@@ -227,8 +295,6 @@ table.colortable {
 }
 ```
 
-## Example 2
-
 ### Nested CSS Expansion
 
 CSS
@@ -251,14 +317,12 @@ table.colortable {
  }
 }
 ```
-
 Javascript
+
 ```javascript
 import {parse, render} from '@tbela99/css-parser';
 
-
 const options = {minify: true};
-
 const {code} = await parse(css, options).then(result => render(result.ast, {minify: false, expandNestingRules: true}));
 //
 console.debug(code);
@@ -283,8 +347,6 @@ table.colortable th {
   color:white;
 }
 ```
-
-### Example 3
 
 ### Calc() resolution
 
@@ -313,8 +375,6 @@ result
     max-width: calc(3.5rem + var(--bs-border-width)*2)
 }
 ```
-
-### Example 4
 
 ### CSS variable inlining
 
@@ -347,8 +407,6 @@ result
 
 ```
 
-### Example 5
-
 ### CSS variable inlining and relative color
 
 ```javascript
@@ -376,6 +434,17 @@ result
     color: navy
 }
 
+```
+
+## Node Walker
+
+```javascript
+import {walk} from '@tbela99/css-parser';
+
+for (const {node, parent, root} of walk(ast)) {
+    
+    // do something
+}
 ```
 
 ## AST
