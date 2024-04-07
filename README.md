@@ -222,19 +222,14 @@ const css = `
 
 const result = await parse(css, options);
 
-// print declaration with parents
-console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
-// -> @media screen and (min-width:40em){.a{width:3px}}
-
 // print declaration without parents
 console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
 // -> width:3px
 
-// minified
-const {code, stats} = render(resultast, {minify: true});
+// print declaration with parents
+console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+// -> @media screen and (min-width:40em){.a{width:3px}}
 
-console.log(code);
-// -> @media screen and (min-width:40em){.featurette-heading{font-size:50px}.a{color:red;width:3px}}
 ```
 
 ### Merge similar rules
@@ -482,43 +477,8 @@ result
 }
 
 ```
-### Ast node rendering
 
-```javascript
-
-import {parse, render} from '@tbela99/css-parser';
-
-const css = `
-
-@media screen and (min-width: 40em) {
-    .featurette-heading {
-        font-size: 50px;
-    }
-    .a {
-        color: red;
-        width: 3px;
-    }
-}
-`
-
-const parseResult = await parse(css);
-
-// render node only
-console.debug(render(result.ast.chi[0].chi[1].chi[1]));
-// width:3px
-
-// render node with parents
-console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
-// @media screen and (min-width:40em){.a{width:3px}}
-
-
-
-```
-
-
-```
-
-## Node Walker
+# Node Walker
 
 ```javascript
 import {walk} from '@tbela99/css-parser';

@@ -72,10 +72,14 @@ function isColor(token) {
             if (!isRelative && !isColorspace(children[0])) {
                 return false;
             }
-            for (let i = 1; i < children.length - 2; i++) {
+            let limit = children.length;
+            if ((!isRelative && children.length == 6) || (isRelative && children.length == 8)) {
+                limit -= 2;
+            }
+            for (let i = 1; i < limit; i++) {
                 if (children[i].typ == EnumToken.IdenTokenType) {
                     if (children[i].val != 'none' &&
-                        !(isRelative && ['alpha', 'r', 'g', 'b'].includes(children[i].val) || isColorspace(children[i]))) {
+                        !(isRelative && ['alpha', 'r', 'g', 'b', 'x', 'y', 'z'].includes(children[i].val) || isColorspace(children[i]))) {
                         return false;
                     }
                 }
@@ -83,10 +87,13 @@ function isColor(token) {
                     return false;
                 }
             }
+            if (children.length == 4 || (isRelative && children.length == 6)) {
+                return true;
+            }
             if (children.length == 8 || children.length == 6) {
                 const sep = children.at(-2);
                 const alpha = children.at(-1);
-                if (sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                if ((children.length > 6 || !isRelative) && (sep.typ != EnumToken.LiteralTokenType || sep.val != '/')) {
                     return false;
                 }
                 if (alpha.typ == EnumToken.IdenTokenType && alpha.val != 'none') {

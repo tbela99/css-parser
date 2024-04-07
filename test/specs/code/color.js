@@ -1161,5 +1161,25 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
 }`));
     });
 
+    it('color(from color(xyz-d50 0.9642 1.0000 0.8249) srgb r 0 b) #124', function () {
+        return parse(`
+.overlay {
+  background: color(from color(xyz-d50 0.9642 1.0000 0.8249) srgb r 0 b)
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.overlay {
+ background: #f0f
+}`));
+    });
+
+    it('color(from color(xyz-d50 0.9642 1.0000 0.8249) xyz-d65 x 0 z) #125', function () {
+        return parse(`
+.overlay {
+  background: color(from color(xyz-d50 0.9642 1.0000 0.8249) xyz-d65 x 0 z)
+}
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.overlay {
+ background: #ff00f6
+}`));
+    });
+    //
     // color-mix(in lch, white, black)
 }

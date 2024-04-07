@@ -6,9 +6,9 @@ for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567
     integer_to_char[i++] = char;
 }
 function encode(value) {
-    if (typeof value === 'number') {
-        return encode_integer(value);
-    }
+    // if (typeof value === 'number') {
+    //     return encode_integer(value);
+    // }
     let result = '';
     for (let i = 0; i < value.length; i += 1) {
         result += encode_integer(value[i]);

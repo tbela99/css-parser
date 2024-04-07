@@ -467,32 +467,32 @@ export function renderToken(token: Token, options: RenderOptions = {}, reducer?:
         }
     }
 
-    if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
-
-        if (isColor(token)) {
-
-            // @ts-ignore
-            token.typ = EnumToken.ColorTokenType;
-
-            if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
-
-                // @ts-ignore
-                (<ColorToken>token).cal = 'rel';
-            } else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
-
-                // @ts-ignore
-                (<ColorToken>token).cal = 'mix';
-            } else {
-
-                if (token.val == 'color') {
-                    // @ts-ignore
-                    token.cal = 'col';
-                }
-
-                token.chi = token.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
-            }
-        }
-    }
+    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
+    //
+    //     if (isColor(token)) {
+    //
+    //         // @ts-ignore
+    //         token.typ = EnumToken.ColorTokenType;
+    //
+    //         if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
+    //
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = 'rel';
+    //         } else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
+    //
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = 'mix';
+    //         } else {
+    //
+    //             if (token.val == 'color') {
+    //                 // @ts-ignore
+    //                 token.cal = 'col';
+    //             }
+    //
+    //             token.chi = token.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+    //         }
+    //     }
+    // }
 
     switch (token.typ) {
 

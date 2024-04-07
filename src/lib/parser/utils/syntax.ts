@@ -107,8 +107,8 @@ export function isColor(token: Token): boolean {
         if (token.val == 'color') {
 
             const children: Token[] = (<Token[]>token.chi).filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
-
             const isRelative: boolean = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';
+
             if (children.length < 4 || children.length > 8) {
 
                 return false;
@@ -119,12 +119,19 @@ export function isColor(token: Token): boolean {
                 return false;
             }
 
-            for (let i = 1; i < children.length - 2; i++) {
+            let limit =  children.length;
+
+            if((!isRelative && children.length == 6) || (isRelative && children.length == 8)) {
+
+                limit -=2;
+            }
+
+            for (let i = 1; i < limit; i++) {
 
                 if (children[i].typ == EnumToken.IdenTokenType) {
 
                     if ((<IdentToken>children[i]).val != 'none' &&
-                        !(isRelative && (['alpha', 'r', 'g', 'b'] as string[]).includes((<IdentToken>children[i]).val) || isColorspace(children[i]))) {
+                        !(isRelative && (['alpha', 'r', 'g', 'b', 'x', 'y', 'z'] as string[]).includes((<IdentToken>children[i]).val) || isColorspace(children[i]))) {
 
                         return false;
                     }
@@ -136,11 +143,16 @@ export function isColor(token: Token): boolean {
                 }
             }
 
+            if (children.length == 4 ||(isRelative && children.length == 6)) {
+
+                return true;
+            }
+
             if (children.length == 8 || children.length == 6) {
 
                 const sep: Token = <Token>children.at(-2);
                 const alpha: Token = <Token>children.at(-1);
-                if (sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                if ((children.length > 6 || !isRelative) && (sep.typ != EnumToken.LiteralTokenType || sep.val != '/')) {
 
                     return false;
                 }

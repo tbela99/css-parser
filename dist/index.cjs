@@ -1912,9 +1912,46 @@ function convert(token, to) {
             case 'lch':
                 values.push(...lch2srgb(token));
                 break;
-            case 'color':
+            case 'oklch':
                 // @ts-ignore
                 values.push(...srgb2oklch(...color2srgbvalues(token)));
+                break;
+            case 'color':
+                const val = color2srgbvalues(token);
+                switch (to) {
+                    case 'srgb':
+                        values.push(...val);
+                        break;
+                    case 'srgb-linear':
+                        // @ts-ignore
+                        values.push(...srgb2lsrgbvalues(...val));
+                        break;
+                    case 'display-p3':
+                        // @ts-ignore
+                        values.push(...srgb2p3values(...val));
+                        break;
+                    case 'prophoto-rgb':
+                        // @ts-ignore
+                        values.push(...srgb2prophotorgbvalues(...val));
+                        break;
+                    case 'a98-rgb':
+                        // @ts-ignore
+                        values.push(...srgb2a98values(...val));
+                        break;
+                    case 'rec2020':
+                        // @ts-ignore
+                        values.push(...srgb2rec2020values(...val));
+                        break;
+                    case 'xyz':
+                    case 'xyz-d65':
+                        // @ts-ignore
+                        values.push(...srgb2xyz(...val));
+                        break;
+                    case 'xyz-d50':
+                        // @ts-ignore
+                        values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
+                        break;
+                }
                 break;
         }
         if (values.length > 0) {
@@ -2869,9 +2906,9 @@ for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567
     integer_to_char[i++] = char;
 }
 function encode(value) {
-    if (typeof value === 'number') {
-        return encode_integer(value);
-    }
+    // if (typeof value === 'number') {
+    //     return encode_integer(value);
+    // }
     let result = '';
     for (let i = 0; i < value.length; i += 1) {
         result += encode_integer(value[i]);
@@ -2917,22 +2954,27 @@ class SourceMap {
                 record = [Math.max(0, source.sta.col - 1), this.#sources.indexOf(original.src), original.sta.lin - 1, original.sta.col - 1];
                 this.#map.set(line, [record]);
             }
-            else {
-                const arr = this.#map.get(line);
-                record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
-                arr.push(record);
-            }
+            // else {
+            //
+            //     const arr: number[][] = <number[][]> this.#map.get(line);
+            //
+            //     record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
+            //     arr.push(record);
+            // }
             if (this.lastLocation != null) {
+                // @ts-ignore
                 record[2] -= this.lastLocation.sta.lin - 1;
+                // @ts-ignore
                 record[3] -= this.lastLocation.sta.col - 1;
             }
             this.lastLocation = original;
         }
     }
-    toUrl() {
-        // /*# sourceMappingURL = ${url} */
-        return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
-    }
+    // toUrl() {
+    //
+    //     // /*# sourceMappingURL = ${url} */
+    //     return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;
+    // }
     toJSON() {
         const mappings = [];
         let i = 0;
@@ -3235,27 +3277,32 @@ function renderToken(token, options = {}, reducer, errors) {
             return acc + renderToken(curr, options, reducer, errors);
         };
     }
-    if (token.typ == exports.EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
-        if (isColor(token)) {
-            // @ts-ignore
-            token.typ = exports.EnumToken.ColorTokenType;
-            if (token.chi[0].typ == exports.EnumToken.IdenTokenType && token.chi[0].val == 'from') {
-                // @ts-ignore
-                token.cal = 'rel';
-            }
-            else if (token.val == 'color-mix' && token.chi[0].typ == exports.EnumToken.IdenTokenType && token.chi[0].val == 'in') {
-                // @ts-ignore
-                token.cal = 'mix';
-            }
-            else {
-                if (token.val == 'color') {
-                    // @ts-ignore
-                    token.cal = 'col';
-                }
-                token.chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
-            }
-        }
-    }
+    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
+    //
+    //     if (isColor(token)) {
+    //
+    //         // @ts-ignore
+    //         token.typ = EnumToken.ColorTokenType;
+    //
+    //         if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
+    //
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = 'rel';
+    //         } else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
+    //
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = 'mix';
+    //         } else {
+    //
+    //             if (token.val == 'color') {
+    //                 // @ts-ignore
+    //                 token.cal = 'col';
+    //             }
+    //
+    //             token.chi = token.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+    //         }
+    //     }
+    // }
     switch (token.typ) {
         case exports.EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options), '');
@@ -3605,10 +3652,14 @@ function isColor(token) {
             if (!isRelative && !isColorspace(children[0])) {
                 return false;
             }
-            for (let i = 1; i < children.length - 2; i++) {
+            let limit = children.length;
+            if ((!isRelative && children.length == 6) || (isRelative && children.length == 8)) {
+                limit -= 2;
+            }
+            for (let i = 1; i < limit; i++) {
                 if (children[i].typ == exports.EnumToken.IdenTokenType) {
                     if (children[i].val != 'none' &&
-                        !(isRelative && ['alpha', 'r', 'g', 'b'].includes(children[i].val) || isColorspace(children[i]))) {
+                        !(isRelative && ['alpha', 'r', 'g', 'b', 'x', 'y', 'z'].includes(children[i].val) || isColorspace(children[i]))) {
                         return false;
                     }
                 }
@@ -3616,10 +3667,13 @@ function isColor(token) {
                     return false;
                 }
             }
+            if (children.length == 4 || (isRelative && children.length == 6)) {
+                return true;
+            }
             if (children.length == 8 || children.length == 6) {
                 const sep = children.at(-2);
                 const alpha = children.at(-1);
-                if (sep.typ != exports.EnumToken.LiteralTokenType || sep.val != '/') {
+                if ((children.length > 6 || !isRelative) && (sep.typ != exports.EnumToken.LiteralTokenType || sep.val != '/')) {
                     return false;
                 }
                 if (alpha.typ == exports.EnumToken.IdenTokenType && alpha.val != 'none') {
@@ -7250,30 +7304,40 @@ function replaceCompoundLiteral(selector, replace) {
 class IterableWeakSet {
     #weakset = new WeakSet;
     #set = new Set;
-    constructor(iterable) {
-        if (iterable) {
-            for (const value of iterable) {
-                const ref = new WeakRef(value);
-                this.#weakset.add(value);
-                this.#set.add(ref);
-            }
-        }
-    }
+    // constructor(iterable?: Iterable<any>) {
+    //
+    //     if (iterable) {
+    //
+    //         for (const value of iterable) {
+    //
+    //             const ref: WeakRef<any> = new WeakRef(value);
+    //
+    //             this.#weakset.add(value);
+    //             this.#set.add(ref);
+    //         }
+    //     }
+    // }
     has(value) {
         return this.#weakset.has(value);
     }
-    delete(value) {
-        if (this.#weakset.has(value)) {
-            for (const ref of this.#set) {
-                if (ref.deref() === value) {
-                    this.#set.delete(ref);
-                    break;
-                }
-            }
-            return this.#weakset.delete(value);
-        }
-        return false;
-    }
+    // delete(value: any): boolean {
+    //
+    //     if (this.#weakset.has(value)) {
+    //
+    //         for (const ref of this.#set) {
+    //
+    //             if (ref.deref() === value) {
+    //
+    //                 this.#set.delete(ref);
+    //                 break;
+    //             }
+    //         }
+    //
+    //         return this.#weakset.delete(value);
+    //     }
+    //
+    //     return false;
+    // }
     add(value) {
         if (!this.#weakset.has(value)) {
             this.#weakset.add(value);

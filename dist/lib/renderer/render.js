@@ -9,7 +9,7 @@ import { colorMix } from './color/colormix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
-import { isColor, isNewLine } from '../parser/utils/syntax.js';
+import { isNewLine } from '../parser/utils/syntax.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {
@@ -294,27 +294,32 @@ function renderToken(token, options = {}, reducer, errors) {
             return acc + renderToken(curr, options, reducer, errors);
         };
     }
-    if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
-        if (isColor(token)) {
-            // @ts-ignore
-            token.typ = EnumToken.ColorTokenType;
-            if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
-                // @ts-ignore
-                token.cal = 'rel';
-            }
-            else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
-                // @ts-ignore
-                token.cal = 'mix';
-            }
-            else {
-                if (token.val == 'color') {
-                    // @ts-ignore
-                    token.cal = 'col';
-                }
-                token.chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
-            }
-        }
-    }
+    // if (token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
+    //
+    //     if (isColor(token)) {
+    //
+    //         // @ts-ignore
+    //         token.typ = EnumToken.ColorTokenType;
+    //
+    //         if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
+    //
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = 'rel';
+    //         } else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
+    //
+    //             // @ts-ignore
+    //             (<ColorToken>token).cal = 'mix';
+    //         } else {
+    //
+    //             if (token.val == 'color') {
+    //                 // @ts-ignore
+    //                 token.cal = 'col';
+    //             }
+    //
+    //             token.chi = token.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+    //         }
+    //     }
+    // }
     switch (token.typ) {
         case EnumToken.ListToken:
             return token.chi.reduce((acc, curr) => acc + renderToken(curr, options), '');
