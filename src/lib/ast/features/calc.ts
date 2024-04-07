@@ -8,11 +8,10 @@ import {
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utils";
 import {IterableWeakSet} from "../../iterable";
 import {evaluate} from "../math";
 
-export class ComputeCalcExpressionFeature extends MinifyFeature {
+export class ComputeCalcExpressionFeature {
 
     static get ordering(): number {
         return 1;

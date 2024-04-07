@@ -1,10 +1,9 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { MinifyFeature } from '../utils/minifyfeature.js';
 import { IterableWeakSet } from '../../iterable/weakset.js';
 import { evaluate } from '../math/expression.js';
 
-class ComputeCalcExpressionFeature extends MinifyFeature {
+class ComputeCalcExpressionFeature {
     static get ordering() {
         return 1;
     }

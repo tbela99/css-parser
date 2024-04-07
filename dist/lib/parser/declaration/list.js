@@ -12,12 +12,15 @@ class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;
     constructor(options = {}) {
-        for (const key of Object.keys(this.options)) {
-            if (key in options) {
-                // @ts-ignore
-                this.options[key] = options[key];
-            }
-        }
+        this.options = options;
+        // for (const key of Object.keys(this.options)) {
+        //
+        //     if (key in options) {
+        //
+        //         // @ts-ignore
+        //         this.options[key] = options[key];
+        //     }
+        // }
         this.declarations = new Map;
     }
     set(nam, value) {
@@ -62,7 +65,7 @@ class PropertyList {
             // @ts-ignore
             if (!this.declarations.has(shorthand)) {
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                this.declarations.set(shorthand, new PropertyMap(config.map[shorthand], this.options));
             }
             // @ts-ignore
             this.declarations.get(shorthand).add(declaration);
@@ -74,7 +77,7 @@ class PropertyList {
             // const shorthand: string = <string>config.properties[propertyName].shorthand;
             if (!this.declarations.has(shorthand)) {
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertySet(config.properties[shorthand]));
+                this.declarations.set(shorthand, new PropertySet(config.properties[shorthand], this.options));
             }
             // @ts-ignore
             this.declarations.get(shorthand).add(declaration);

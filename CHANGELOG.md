@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.0
+
+- [x] render node with parents
+- [ ] improve parsing performance
+
 ## V0.4.0
 
 Parsing

@@ -1,6 +1,5 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { MinifyFeature } from '../utils/minifyfeature.js';
 import { IterableWeakSet } from '../../iterable/weakset.js';
 
 function replace(node, variableScope) {
@@ -26,7 +25,7 @@ function replace(node, variableScope) {
         }
     }
 }
-class InlineCssVariablesFeature extends MinifyFeature {
+class InlineCssVariablesFeature {
     static get ordering() {
         return 0;
     }
@@ -42,8 +41,8 @@ class InlineCssVariablesFeature extends MinifyFeature {
         }
     }
     run(ast, options = {}, parent, context) {
-        if (!('variableScope' in context)) {
-            context.variableScope = new Map;
+        if (!('variableScope' in context) || context.variableScope == null) {
+            context.variableScope = new Map();
         }
         const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes(ast.sel);
         const variableScope = context.variableScope;

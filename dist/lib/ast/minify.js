@@ -8,8 +8,8 @@ import { renderToken, doRender } from '../renderer/render.js';
 import * as index from './features/index.js';
 
 const combinators = ['+', '>', '~', '||'];
-const notEndingWith = ['(', '['].concat(combinators);
 const definedPropertySettings = { configurable: true, enumerable: false, writable: true };
+const notEndingWith = ['(', '['].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
@@ -892,4 +892,4 @@ function reduceRuleSelector(node) {
     }
 }
 
-export { combinators, hasDeclaration, minify, reduceSelector, splitRule };
+export { combinators, definedPropertySettings, hasDeclaration, minify, reduceSelector, splitRule };

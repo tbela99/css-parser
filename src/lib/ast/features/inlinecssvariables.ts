@@ -9,7 +9,6 @@ import {
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utils";
 import {IterableWeakSet} from "../../iterable";
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
@@ -46,7 +45,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
     }
 }
 
-export class InlineCssVariablesFeature extends MinifyFeature {
+export class InlineCssVariablesFeature {
 
     static get ordering() {
         return 0;
@@ -73,9 +72,9 @@ export class InlineCssVariablesFeature extends MinifyFeature {
         [key: string]: any
     }): void {
 
-        if (!('variableScope' in context)) {
+        if (!('variableScope' in context) || context.variableScope == null) {
 
-            context.variableScope = <Map<string, VariableScopeInfo>>new Map;
+            context.variableScope = <Map<string, VariableScopeInfo>>new Map();
         }
 
         const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes((<AstRule>ast).sel);

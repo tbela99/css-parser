@@ -8,7 +8,7 @@ import {
     TransformResult
 } from "../@types";
 
-import {doParse, doRender} from "../lib";
+import {doParse, doRender, getDefaultParseOptions, getDefaultRenderOptions} from "../lib";
 import {resolve, dirname} from "../lib/fs";
 import {load} from "./load";
 
@@ -36,7 +36,7 @@ export async function parse(iterator: string, opt: ParserOptions = {}): Promise<
 
 export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
 
-    options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
+    options = getDefaultParseOptions(getDefaultRenderOptions(options));
 
     const startTime: number = performance.now();
 

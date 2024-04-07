@@ -12,7 +12,10 @@ export interface ShorthandPropertyType {
     properties: string[];
     types: string[];
     multiple: boolean;
-    separator: string;
+    separator: {
+        typ:'string',
+        val: string
+    };
     keywords: string[];
 }
 

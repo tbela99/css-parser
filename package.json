@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser for node and the browser",
-  "version": "0.4.1",
+  "version": "0.5.0-alpha.1",
   "exports": {
     ".": "./dist/node/index.js",
     "./umd": "./dist/index-umd-web.js",
@@ -15,7 +15,7 @@
     "test": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
     "test:cov": "c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
     "test:web-cov": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage",
-    "profile": "node --inspect-brk test/inspect.mjs",
+    "profile": "node --enable-source-maps --inspect-brk test/inspect.mjs",
     "debug": "web-test-runner \"test/**/web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
   "repository": {

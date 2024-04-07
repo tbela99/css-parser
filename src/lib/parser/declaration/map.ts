@@ -1,6 +1,6 @@
 import {
     AstDeclaration,
-    IdentToken, PropertiesConfig,
+    IdentToken, PropertiesConfig, PropertyListOptions,
     PropertyMapType,
     ShorthandMapType,
     ShorthandPropertyType, StringToken,
@@ -27,10 +27,13 @@ export class PropertyMap {
     protected declarations: Map<string, AstDeclaration | PropertySet>;
     protected requiredCount: any;
     protected pattern: string[];
+    protected options: PropertyListOptions;
 
-    constructor(config: ShorthandMapType) {
+    constructor(config: ShorthandMapType, options: PropertyListOptions) {
 
         const values: PropertyMapType[] = Object.values(config.properties);
+
+        this.options = options;
         this.requiredCount = values.reduce((acc: number, curr: PropertyMapType): number => curr.required ? ++acc : acc, 0) || values.length;
         this.config = config;
         this.declarations = new Map<string, AstDeclaration>;
@@ -364,8 +367,11 @@ export class PropertyMap {
                     let values: Token[][] = [];
 
                     // @ts-ignore
-                    let typ: EnumToken = <EnumToken>(EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
-                    let separator: string | null = this.config.separator ? renderToken(this.config.separator) : ',';
+                    let separator: Token = this.config.separator ? {
+                        ...this.config.separator,
+                        typ: EnumToken[this.config.separator.typ]
+                    } : {typ: EnumToken.CommaTokenType};
+                    let typ: EnumToken = separator.typ;
 
                     this.matchTypes(declaration);
 
@@ -377,10 +383,12 @@ export class PropertyMap {
 
                         if (!cache.has(t)) {
 
-                            cache.set(t, renderToken(t, {minify: true}));
+                            // @ts-ignore
+                            cache.set(t, renderToken(t, this.options));
                         }
 
-                        if (t.typ == typ && separator == <string>cache.get(t)) {
+                        // @ts-ignore
+                        if (t.typ == typ && t.val == separator.val) {
 
                             this.removeDefaults(map, value);
 
@@ -415,6 +423,11 @@ export class PropertyMap {
                     this.removeDefaults(map, value);
 
                     declaration.val = values.reduce((acc: Token[], curr: Token[]) => {
+
+                        if (acc.length > 0) {
+
+                            acc.push({...separator});
+                        }
 
                         for (const cr of curr) {
 
@@ -698,10 +711,10 @@ export class PropertyMap {
 
                                     // @ts-ignore
                                     acc.push(<Token>{
-                                        ...((props.separator && {
+                                        ...(props.separator ? {
                                             ...props.separator,
                                             typ: EnumToken[props.separator.typ]
-                                        }) ?? {typ: EnumToken.WhitespaceTokenType})
+                                        } : {typ: EnumToken.WhitespaceTokenType})
                                     });
                                 }
 

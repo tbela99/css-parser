@@ -14,7 +14,7 @@ import {
 } from "./utils";
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/color";
-import {combinators, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
+import {combinators, definedPropertySettings, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
     TimelineFunctionToken,
@@ -86,6 +86,33 @@ const webkitPseudoAliasMap: Record<string, string> = {
     '-webkit-autofill': 'autofill'
 }
 
+const enumTokenHints: Set<EnumToken> = new Set([
+    EnumToken.WhitespaceTokenType, EnumToken.SemiColonTokenType, EnumToken.ColonTokenType, EnumToken.BlockStartTokenType,
+    EnumToken.BlockStartTokenType, EnumToken.AttrStartTokenType, EnumToken.AttrEndTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType,
+    EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.CommaTokenType,
+    EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
+    EnumToken.EOFTokenType
+]);
+
+export function getDefaultParseOptions(options: ParserOptions = {}): ParserOptions {
+    return {
+        src: '',
+        sourcemap: false,
+        minify: true,
+        parseColor: true,
+        nestingRules: false,
+        resolveImport: false,
+        resolveUrls: false,
+        removeCharset: false,
+        removeEmpty: true,
+        removeDuplicateDeclarations: true,
+        computeShorthand: true,
+        computeCalcExpression: true,
+        inlineCssVariables: false,
+        ...options
+    };
+}
+
 export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
 
     return new Promise(async (resolve, reject) => {
@@ -95,22 +122,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             options.signal.addEventListener('abort', reject);
         }
 
-        options = {
-            src: '',
-            sourcemap: false,
-            minify: true,
-            parseColor: true,
-            nestingRules: false,
-            resolveImport: false,
-            resolveUrls: false,
-            removeCharset: false,
-            removeEmpty: true,
-            removeDuplicateDeclarations: true,
-            computeShorthand: true,
-            computeCalcExpression: true,
-            inlineCssVariables: false,
-            ...options
-        };
+        options = getDefaultParseOptions(options);
 
         if (options.expandNestingRules) {
 
@@ -139,7 +151,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         };
 
         let tokens: TokenizeResult[] = [];
-        let map: Map<Token, Position> = new Map<Token, Position>;
+        let map: WeakMap<Token, Position> = new WeakMap<Token, Position>;
         let context: AstRuleList = ast;
 
         if (options.sourcemap) {
@@ -210,7 +222,6 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 }
 
                 tokens = [];
-                map = new Map;
             } else if (item.token == '}') {
 
                 await parseNode(tokens, context, stats, options, errors, src, map);
@@ -223,9 +234,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     context.chi.pop();
                 }
 
-                tokens = [];
-                map = new Map;
-            }
+                tokens = [];}
         }
 
         if (tokens.length > 0) {
@@ -314,6 +323,11 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             }
         }
 
+        for (const result of walk(ast)) {
+
+            Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
+        }
+
         const endTime: number = performance.now();
 
         if (options.signal != null) {
@@ -340,14 +354,22 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 async function parseNode(results: TokenizeResult[], context: AstRuleList, stats: {
     bytesIn: number;
     importedBytesIn: number;
-}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | null> {
+}, options: ParserOptions, errors: ErrorDescription[], src: string, map: WeakMap<Token, Position>): Promise<AstRule | AstAtRule | null> {
 
-    let tokens: Token[] = results.map((t: TokenizeResult) => mapToken(t, map));
+    let tokens: Token[] = [];
+
+    for (const t of results) {
+
+        const node: Token = getTokenType(t.token, t.hint);
+
+        map.set(node, t.position);
+        tokens.push(node);
+    }
 
     let i: number;
     let loc: Location;
 
-    for (i = 0; i < tokens.length; i++) {
+    for (i = 0; i < results.length; i++) {
 
         if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
 
@@ -427,7 +449,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
         }
 
         // @ts-ignore
-        while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
+        while (EnumToken.WhitespaceTokenType == tokens[0]?.typ) {
             tokens.shift();
         }
 
@@ -533,12 +555,12 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
         // allowed nesting at-rules
         // there must be a top level rule in the stack
 
-        const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
+        const raw = [];
 
-            acc.push(renderToken(curr, {removeComments: true}));
+        for (const r of parseTokens(tokens, {minify: options.minify})) {
 
-            return acc
-        }, []);
+            raw.push(renderToken(r, {removeComments: true}));
+        }
 
         const node: AstAtRule = {
             typ: EnumToken.AtRuleNodeType,
@@ -660,6 +682,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
                 name = tokens;
             }
+
             const position: Position = <Position>map.get(name[0]);
 
             if (name.length > 0) {
@@ -709,13 +732,13 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
     }
 }
 
-function mapToken(token: TokenizeResult, map: Map<Token, Position>): Token {
-
-    const node: Token = getTokenType(token.token, token.hint);
-
-    map.set(node, token.position);
-    return node;
-}
+// function mapToken(token: TokenizeResult, map: WeakMap<Token, Position>): Token {
+//
+//     const node: Token = getTokenType(token.token, token.hint);
+//
+//     map.set(node, token.position);
+//     return node;
+// }
 
 export async function parseDeclarations(src: string, options: ParserOptions = {}): Promise<AstDeclaration[]> {
 
@@ -724,7 +747,9 @@ export async function parseDeclarations(src: string, options: ParserOptions = {}
 
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
-    return parseTokens([...tokenize(src)].map(t => {
+    const tokens: Token[] = [];
+
+    for (const t of tokenize(src)) {
 
         const token: Token = getTokenType(t.token, t.hint);
 
@@ -733,8 +758,10 @@ export function parseString(src: string, options: { location: boolean } = {locat
             Object.assign(token, {loc: t.position});
         }
 
-        return token;
-    }));
+        tokens.push(token);
+    }
+
+    return parseTokens(tokens);
 }
 
 function getTokenType(val: string, hint?: EnumToken): Token {
@@ -745,13 +772,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (hint != null) {
 
-        return <Token>([
-            EnumToken.WhitespaceTokenType, EnumToken.SemiColonTokenType, EnumToken.ColonTokenType, EnumToken.BlockStartTokenType,
-            EnumToken.BlockStartTokenType, EnumToken.AttrStartTokenType, EnumToken.AttrEndTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType,
-            EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.CommaTokenType,
-            EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
-            EnumToken.EOFTokenType
-        ].includes(hint) ? {typ: hint} : {typ: hint, val});
+        return enumTokenHints.has(hint) ? <Token>{typ: hint} : <Token>{typ: hint, val};
     }
 
     if (val == ' ') {

@@ -1,9 +1,9 @@
 import {
     AstDeclaration,
     DimensionToken,
-     LiteralToken,
+    LiteralToken,
 
-    NumberToken,
+    NumberToken, PropertyListOptions,
     ShorthandPropertyType,
     Token,
     WhitespaceToken
@@ -44,16 +44,18 @@ function dedup(values: Token[][]) {
         }
     }
 
-    return  values;
+    return values;
 }
 
 export class PropertySet {
 
     protected config: ShorthandPropertyType;
     protected declarations: Map<string, AstDeclaration>;
+    private options: PropertyListOptions;
 
-    constructor(config: ShorthandPropertyType) {
+    constructor(config: ShorthandPropertyType, options: PropertyListOptions) {
 
+        this.options = options;
         this.config = config;
         this.declarations = new Map<string, AstDeclaration>;
     }
@@ -94,7 +96,7 @@ export class PropertySet {
 
                     if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
 
-                        if (token.typ == EnumToken.IdenTokenType&& this.config.keywords.includes(token.val)) {
+                        if (token.typ == EnumToken.IdenTokenType && this.config.keywords.includes(token.val)) {
 
                             if (tokens.length == 0) {
 
@@ -105,7 +107,7 @@ export class PropertySet {
                             tokens[current].push(token);
                         }
 
-                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
+                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator.val) {
 
                             tokens.push([]);
                             current++;
@@ -185,11 +187,11 @@ export class PropertySet {
 
         if (declarations.size < this.config.properties.length) {
 
-            const values  = [...declarations.values()];
+            const values = [...declarations.values()];
 
             if (this.isShortHand()) {
 
-                const val: Token[] = values[0].val.reduce((acc, curr) => {
+                const val: Token[] = values[0].val.reduce((acc, curr, index) => {
 
                     if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
 
@@ -197,9 +199,9 @@ export class PropertySet {
                     }
 
                     return acc;
-                }, <Token[]> []);
+                }, <Token[]>[]);
 
-                values[0].val = val.reduce((acc: Token[],  curr: Token) => {
+                values[0].val = val.reduce((acc: Token[], curr: Token) => {
 
                     if (acc.length > 0) {
 
@@ -209,14 +211,12 @@ export class PropertySet {
                     acc.push(curr);
                     return acc;
 
-                }, <Token[]> []);
+                }, <Token[]>[]);
             }
-
 
             return values[Symbol.iterator]();
 
-        }
-        else {
+        } else {
 
             const values: Token[][] = [];
             this.config.properties.forEach((property: string) => {
@@ -263,7 +263,8 @@ export class PropertySet {
 
                     if (acc.length > 0) {
 
-                        acc.push(<LiteralToken>{typ: EnumToken.LiteralTokenType, val: this.config.separator});
+                        // @ts-ignore
+                        acc.push(<LiteralToken>{...this.config.separator, typ: EnumToken[this.config.separator.typ]});
                     }
 
                     acc.push(...curr);

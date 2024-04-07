@@ -8,14 +8,14 @@ import { COLORS_NAMES } from '../../renderer/color/utils/constants.js';
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits = [
+const dimensionUnits = new Set([
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
     'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
     'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
-];
+]);
 function isLength(dimension) {
-    return 'unit' in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
+    return 'unit' in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }
 function isResolution(dimension) {
     return 'unit' in dimension && ['dpi', 'dpcm', 'dppx', 'x'].includes(dimension.unit.toLowerCase());

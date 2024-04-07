@@ -32,7 +32,9 @@ function dedup(values) {
 class PropertySet {
     config;
     declarations;
-    constructor(config) {
+    options;
+    constructor(config, options) {
+        this.options = options;
         this.config = config;
         this.declarations = new Map;
     }
@@ -68,7 +70,7 @@ class PropertySet {
                             }
                             tokens[current].push(token);
                         }
-                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
+                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator.val) {
                             tokens.push([]);
                             current++;
                             continue;
@@ -125,7 +127,7 @@ class PropertySet {
         if (declarations.size < this.config.properties.length) {
             const values = [...declarations.values()];
             if (this.isShortHand()) {
-                const val = values[0].val.reduce((acc, curr) => {
+                const val = values[0].val.reduce((acc, curr, index) => {
                     if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
                         acc.push(curr);
                     }
@@ -171,7 +173,8 @@ class PropertySet {
                             }
                         }
                         if (acc.length > 0) {
-                            acc.push({ typ: EnumToken.LiteralTokenType, val: this.config.separator });
+                            // @ts-ignore
+                            acc.push({ ...this.config.separator, typ: EnumToken[this.config.separator.typ] });
                         }
                         acc.push(...curr);
                         return acc;

@@ -1,9 +1,8 @@
 import {PropertyList} from "../../parser/declaration";
 import {EnumToken} from "../types";
 import {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types";
-import {MinifyFeature} from "../utils";
 
-export class ComputeShorthandFeature extends MinifyFeature {
+export class ComputeShorthandFeature {
 
     static get ordering() {
         return 2;
@@ -22,7 +21,7 @@ export class ComputeShorthandFeature extends MinifyFeature {
             }
 
             // @ts-ignore
-            options.features.push(new ComputeShorthandFeature());
+            options.features.push(new ComputeShorthandFeature(options));
         }
     }
 

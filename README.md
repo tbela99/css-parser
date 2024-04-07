@@ -137,7 +137,6 @@ Include ParseOptions and RenderOptions
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules to false.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeShorthand: boolean, optional. compute shorthand properties.
-- inlineCssVariables: boolean, optional. replace css variables with their current value.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
@@ -161,6 +160,7 @@ Include ParseOptions and RenderOptions
 > Minify Options
 
 - minify: boolean, optional. default to _true_. minify css output.
+- withParents: boolean, optional. render this node and its parents.
 - expandNestingRules: boolean, optional. expand nesting rules.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
 - removeComments: boolean, remove comments in generated css.
@@ -206,13 +206,35 @@ render(ast, RenderOptions = {});
 Rendering ast
 
 ```javascript
+import {parse, render} from '@tbela99/css-parser';
 
-import {render} from '@tbela99/css-parser';
+const css = `
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
+
+const result = await parse(css, options);
+
+// print declaration with parents
+console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+// -> @media screen and (min-width:40em){.a{width:3px}}
+
+// print declaration without parents
+console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
+// -> width:3px
 
 // minified
-const {code, stats} = render(ast, {minify: true});
+const {code, stats} = render(resultast, {minify: true});
 
 console.log(code);
+// -> @media screen and (min-width:40em){.featurette-heading{font-size:50px}.a{color:red;width:3px}}
 ```
 
 ### Merge similar rules
@@ -435,6 +457,66 @@ result
 }
 
 ```
+### CSS variable inlining and relative color
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+html { --bluegreen:  oklab(54.3% -22.5% -5%); }
+.overlay {
+  background:  oklab(from var(--bluegreen) calc(1.0 - l) calc(a * 0.8) b);
+}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+result
+
+```css
+.overlay {
+    background: #0c6464
+}
+
+```
+### Ast node rendering
+
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`
+
+const parseResult = await parse(css);
+
+// render node only
+console.debug(render(result.ast.chi[0].chi[1].chi[1]));
+// width:3px
+
+// render node with parents
+console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+// @media screen and (min-width:40em){.a{width:3px}}
+
+
+
+```
+
+
+```
 
 ## Node Walker
 
@@ -500,7 +582,7 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Computed shorthands properties
 
-- ~all~
+- [ ] ~all~
 - [x] animation
 - [x] background
 - [x] border

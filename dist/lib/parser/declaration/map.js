@@ -14,8 +14,10 @@ class PropertyMap {
     declarations;
     requiredCount;
     pattern;
-    constructor(config) {
+    options;
+    constructor(config, options) {
         const values = Object.values(config.properties);
+        this.options = options;
         this.requiredCount = values.reduce((acc, curr) => curr.required ? ++acc : acc, 0) || values.length;
         this.config = config;
         this.declarations = new Map;
@@ -248,16 +250,21 @@ class PropertyMap {
                     let value = [];
                     let values = [];
                     // @ts-ignore
-                    let typ = (EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
-                    let separator = this.config.separator ? renderToken(this.config.separator) : ',';
+                    let separator = this.config.separator ? {
+                        ...this.config.separator,
+                        typ: EnumToken[this.config.separator.typ]
+                    } : { typ: EnumToken.CommaTokenType };
+                    let typ = separator.typ;
                     this.matchTypes(declaration);
                     values.push(value);
                     for (i = 0; i < declaration.val.length; i++) {
                         t = declaration.val[i];
                         if (!cache.has(t)) {
-                            cache.set(t, renderToken(t, { minify: true }));
+                            // @ts-ignore
+                            cache.set(t, renderToken(t, this.options));
                         }
-                        if (t.typ == typ && separator == cache.get(t)) {
+                        // @ts-ignore
+                        if (t.typ == typ && t.val == separator.val) {
                             this.removeDefaults(map, value);
                             value = [];
                             values.push(value);
@@ -282,6 +289,9 @@ class PropertyMap {
                     }
                     this.removeDefaults(map, value);
                     declaration.val = values.reduce((acc, curr) => {
+                        if (acc.length > 0) {
+                            acc.push({ ...separator });
+                        }
                         for (const cr of curr) {
                             if (cr.typ == EnumToken.WhitespaceTokenType && acc.at(-1)?.typ == cr.typ) {
                                 continue;
@@ -470,10 +480,10 @@ class PropertyMap {
                                 if (acc.length > 0) {
                                     // @ts-ignore
                                     acc.push({
-                                        ...((props.separator && {
+                                        ...(props.separator ? {
                                             ...props.separator,
                                             typ: EnumToken[props.separator.typ]
-                                        }) ?? { typ: EnumToken.WhitespaceTokenType })
+                                        } : { typ: EnumToken.WhitespaceTokenType })
                                     });
                                 }
                                 // @ts-ignore

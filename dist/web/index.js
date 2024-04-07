@@ -2,9 +2,9 @@ export { EnumToken } from '../lib/ast/types.js';
 export { minify } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
 export { expand } from '../lib/ast/expand.js';
-import { doRender } from '../lib/renderer/render.js';
+import { doRender, getDefaultRenderOptions } from '../lib/renderer/render.js';
 export { renderToken } from '../lib/renderer/render.js';
-import { doParse } from '../lib/parser/parse.js';
+import { doParse, getDefaultParseOptions } from '../lib/parser/parse.js';
 export { parseString, parseTokens } from '../lib/parser/parse.js';
 import '../lib/renderer/color/utils/constants.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
@@ -27,7 +27,7 @@ async function parse(iterator, opt = {}) {
     }));
 }
 async function transform(css, options = {}) {
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    options = getDefaultParseOptions(getDefaultRenderOptions(options));
     const startTime = performance.now();
     return parse(css, options).then((parseResult) => {
         const rendered = render(parseResult.ast, options);

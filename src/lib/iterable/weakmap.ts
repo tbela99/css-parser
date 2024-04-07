@@ -58,6 +58,40 @@ export class IterableWeakMap<K, V> {
         return false;
     }
 
+    * keys(): IterableIterator<V> {
+
+        for (const ref of new Set(this.#set)) {
+
+            const key = ref.deref();
+
+            if (key == null) {
+
+                this.#set.delete(ref);
+                continue;
+            }
+
+            // @ts-ignore
+            yield key;
+        }
+    }
+
+    * values(): IterableIterator<V> {
+
+        for (const ref of new Set(this.#set)) {
+
+            const key = ref.deref();
+
+            if (key == null) {
+
+                this.#set.delete(ref);
+                continue;
+            }
+
+            // @ts-ignore
+            yield this.#map.get(key);
+        }
+    }
+
     * [Symbol.iterator](): IterableIterator<[K, V]> {
 
         for (const ref of new Set(this.#set)) {

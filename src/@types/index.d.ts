@@ -1,4 +1,5 @@
 import {VisitorNodeMap} from "./visitor";
+import {AstAtRule, AstRule, AstRuleStyleSheet} from "./ast";
 
 export * from './ast';
 export * from './token';
@@ -64,6 +65,17 @@ export declare interface MinifyOptions extends ParserOptions {
     features: MinifyFeature[];
 }
 
+export declare interface MinifyFeature {
+
+    ordering: number;
+
+    register: (options: MinifyOptions | ParserOptions) => void;
+
+    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) => void;
+}
+
 export declare interface ResolvedPath {
     absolute: string;
     relative: string;
@@ -79,6 +91,7 @@ export declare interface RenderOptions {
     newLine?: string;
     removeComments?: boolean;
     convertColor?: boolean;
+    withParents?: boolean;
     output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;

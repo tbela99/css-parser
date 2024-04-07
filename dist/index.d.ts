@@ -109,9 +109,7 @@ declare function walkValues(values: Token[], root?: AstNode | null, filter?: Wal
 
 declare function expand(ast: AstNode): AstNode;
 
-declare function renderToken(token: Token, options?: RenderOptions, cache?: {
-    [key: string]: any;
-}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
+declare function renderToken(token: Token, options?: RenderOptions, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
 declare function parseString(src: string, options?: {
     location: boolean;
@@ -664,7 +662,7 @@ export declare interface AstDeclaration extends Node {
     typ: EnumToken.DeclarationNodeType
 }
 
-export declare interface AstRule$1 extends Node {
+export declare interface AstRule extends Node {
 
     typ: EnumToken.RuleNodeType;
     sel: string;
@@ -682,12 +680,12 @@ export declare interface OptimizedSelector {
     reducible: boolean;
 }
 
-export declare interface AstAtRule$1 extends Node {
+export declare interface AstAtRule extends Node {
 
     typ: AtRuleNodeType,
     nam: string;
     val: string;
-    chi?: Array<AstDeclaration | AstComment> | Array<AstRule$1 | AstComment>
+    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
 export declare interface AstRuleList extends Node {
@@ -696,17 +694,17 @@ export declare interface AstRuleList extends Node {
     chi: Array<Node | AstComment>
 }
 
-export declare interface AstRuleStyleSheet$1 extends AstRuleList {
+export declare interface AstRuleStyleSheet extends AstRuleList {
     typ: StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
 export declare type AstNode =
-    AstRuleStyleSheet$1
+    AstRuleStyleSheet
     | AstRuleList
     | AstComment
-    | AstAtRule$1
-    | AstRule$1
+    | AstAtRule
+    | AstRule
     | AstDeclaration;
 
 /**
@@ -716,12 +714,12 @@ export declare type DeclarationVisitorHandler = (node: AstDeclaration) => AstDec
 /**
  * Rule visitor handler
  */
-export declare type RuleVisitorHandler = (node: AstRule$1) => AstRule$1 | AstRule$1[] | null | Promise<AstRule$1 | AstRule$1[] | null>;
+export declare type RuleVisitorHandler = (node: AstRule) => AstRule | AstRule[] | null | Promise<AstRule | AstRule[] | null>;
 
 /**
  * AtRule visitor handler
  */
-export declare type AtRuleVisitorHandler = (node: AstAtRule$1) => AstAtRule$1 | AstAtRule$1[] | null | Promise<AstAtRule$1 | AstAtRule$1[] | null>;
+export declare type AtRuleVisitorHandler = (node: AstAtRule) => AstAtRule | AstAtRule[] | null | Promise<AstAtRule | AstAtRule[] | null>;
 
 /**
  * Value visitor handler
@@ -781,17 +779,6 @@ export declare interface ErrorDescription {
     error?: Error;
 }
 
-export declare interface MinifyFeature {
-
-    ordering: number;
-
-    register: (options: MinifyOptions | ParserOptions) => void;
-    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
-        [key: string]: any
-    }) => void;
-    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
-}
-
 export declare interface ParserOptions extends PropertyListOptions {
 
     minify?: boolean;
@@ -824,6 +811,28 @@ export declare interface MinifyOptions extends ParserOptions {
     features: MinifyFeature[];
 }
 
+export declare interface MinifyFeature {
+
+    ordering: number;
+
+    register: (options: MinifyOptions | ParserOptions) => void;
+    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) => void;
+    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
+}
+
+export declare interface MinifyFeature {
+
+    ordering: number;
+
+    register: (options: MinifyOptions | ParserOptions) => void;
+
+    run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
+        [key: string]: any
+    }) => void;
+}
+
 export declare interface ResolvedPath {
     absolute: string;
     relative: string;
@@ -839,6 +848,7 @@ export declare interface RenderOptions {
     newLine?: string;
     removeComments?: boolean;
     convertColor?: boolean;
+    withParents?: boolean;
     output?: string;
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;

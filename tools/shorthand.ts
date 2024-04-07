@@ -254,7 +254,9 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
         {
             shorthand: 'transition',
             multiple: true,
-            separator: ',',
+            separator: {
+                typ: 'Comma'
+            },
             pattern: 'transition-property transition-duration transition-timing-function transition-delay transition-behavior',
             keywords: ['none', 'all'],
             default: ['0s', '0ms', 'all', 'ease', 'none', 'normal'],
@@ -838,7 +840,10 @@ export const properties: PropertySetType = [
         properties: ['border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius'],
         types: ['Length', 'Perc'],
         multiple: true,
-        separator: '/',
+        separator: {
+            typ: 'Literal',
+            val: '/'
+        },
         keywords: []
     },
     {

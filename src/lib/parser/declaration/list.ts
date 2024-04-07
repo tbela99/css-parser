@@ -22,14 +22,15 @@ export class PropertyList {
 
     constructor(options: PropertyListOptions = {}) {
 
-        for (const key of Object.keys(this.options)) {
-
-            if (key in options) {
-
-                // @ts-ignore
-                this.options[key] = options[key];
-            }
-        }
+        this.options = options;
+        // for (const key of Object.keys(this.options)) {
+        //
+        //     if (key in options) {
+        //
+        //         // @ts-ignore
+        //         this.options[key] = options[key];
+        //     }
+        // }
 
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>;
     }
@@ -89,7 +90,7 @@ export class PropertyList {
             if (!this.declarations.has(shorthand)) {
 
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand]));
+                this.declarations.set(shorthand, new PropertyMap(<ShorthandMapType>config.map[shorthand], this.options));
             }
 
             // @ts-ignore
@@ -106,7 +107,7 @@ export class PropertyList {
             if (!this.declarations.has(shorthand)) {
 
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertySet(<ShorthandPropertyType>config.properties[shorthand]));
+                this.declarations.set(shorthand, new PropertySet(<ShorthandPropertyType>config.properties[shorthand], this.options));
             }
 
             // @ts-ignore

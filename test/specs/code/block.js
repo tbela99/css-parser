@@ -584,4 +584,36 @@ content: '\\21 now\\21';
         return transform(file).then(result => expect(result.code).equals(`.selector{background:border-box red;transition:0s}`));
     });
 
+    it('render with parents #28', function () {
+        const file =`
+
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
+        return parse(file).then(result => expect(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}).code).equals(`@media screen and (min-width:40em){.a{width:3px}}`));
+    });
+
+    it('render without parents #29', function () {
+        const file =`
+
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
+        return parse(file).then(result => expect(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}).code).equals(`width:3px`));
+    });
+
 }
