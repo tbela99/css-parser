@@ -189,7 +189,12 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             shorthand: 'flex',
             pattern: `flex-grow flex-shrink flex-basis`,
             keywords: ['auto', 'none', 'initial'],
-            default: ['0', '0 1', '0 auto', '0 1 auto']
+            default: [],
+            mapping: {
+                '0 1 auto': 'initial',
+                '0 0 auto': 'none',
+                '1 1 auto': 'auto',
+            }
         },
         [
             {
@@ -198,7 +203,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
                     required: true,
                     keywords: [],
-                    default: ['0'],
+                    default: [],
                     types: ['Number']
                 }
             },
@@ -207,7 +212,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
 
                     keywords: [],
-                    default: ['1'],
+                    default: [],
                     types: ['Number']
                 }
             },
@@ -216,7 +221,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 properties: {
 
                     keywords: ['max-content', 'min-content', 'fit-content', 'fit-content', 'content', 'auto'],
-                    default: ['auto'],
+                    default: [],
                     types: ['Length', 'Perc'],
                 }
             }
@@ -577,7 +582,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                 shorthand: 'font-weight',
                 properties: {
                     types: ['Number'],
-                    default: ['normal', '400'],
+                    default: ['400', 'normal'],
                     keywords: ['normal', 'bold', 'lighter', 'bolder'],
                     constraints: {
                         value: {
@@ -763,6 +768,8 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
                         left: '0',
                         top: '0',
                         center: '50%',
+                        'center center': '50%',
+                        '50% 50%': '50%',
                         bottom: '100%',
                         right: '100%'
                     },

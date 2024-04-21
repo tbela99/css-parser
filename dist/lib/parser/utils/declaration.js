@@ -3,6 +3,7 @@ import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../parse.js';
 import { isWhiteSpace } from './syntax.js';
+import './type.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 

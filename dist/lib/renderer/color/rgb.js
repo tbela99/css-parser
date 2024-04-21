@@ -6,6 +6,7 @@ import '../../parser/parse.js';
 import { expandHexValue } from './hex.js';
 import { hwb2srgb, hslvalues, hsl2srgbvalues, cmyk2srgb, oklab2srgb, oklch2srgb, lab2srgb, lch2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 function srgb2rgb(value) {
     return minmax(Math.round(value * 255), 0, 255);

@@ -8,6 +8,7 @@ import { lab2lchvalues } from './lch.js';
 import { srgb2oklab, hex2oklab, rgb2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, getOKLABComponents } from './oklab.js';
 import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 function hex2oklch(token) {
     // @ts-ignore

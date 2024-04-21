@@ -4,6 +4,7 @@ import '../../../parser/parse.js';
 import { COLORS_NAMES } from './constants.js';
 import { expandHexValue } from '../hex.js';
 import '../../sourcemap/lib/encode.js';
+import '../../../parser/utils/type.js';
 
 function getComponents(token) {
     if (token.kin == 'hex' || token.kin == 'lit') {

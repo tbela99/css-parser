@@ -1,14 +1,50 @@
 import { eq } from '../utils/eq.js';
 import { renderToken } from '../../renderer/render.js';
 import { EnumToken } from '../../ast/types.js';
-import '../../ast/minify.js';
+import { definedPropertySettings } from '../../ast/minify.js';
 import { parseString } from '../parse.js';
 import '../../renderer/color/utils/constants.js';
 import { getConfig } from '../utils/config.js';
-import { matchType } from '../utils/type.js';
+import { matchType, unMappedTokensType, copyNodeProperties, compareTokens } from '../utils/type.js';
 import { PropertySet } from './set.js';
 
 const propertiesConfig = getConfig();
+function processMapping(values, props) {
+    let i;
+    for (i = 0; i < values.length; i++) {
+        const val = values[i];
+        if (unMappedTokensType.includes(val.typ)) {
+            continue;
+        }
+        // @ts-ignore
+        const config = val.propertyName == props.shorthand ? props : props?.properties?.[val.propertyName] ?? props;
+        if (config == null) {
+            continue;
+        }
+        if ('mapping' in config) {
+            // @ts-ignore
+            if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
+                const v = renderToken(val, { minify: true });
+                if (v in config.mapping) {
+                    values.splice(i, 1, ...copyNodeProperties(parseString(config.mapping[v]), val));
+                    // i--;
+                }
+            }
+        }
+    }
+    if ('mapping' in props) {
+        const v = values.reduce((acc, val) => {
+            return acc + renderToken(val, { minify: true });
+        }, '');
+        // @ts-ignore
+        if (v in props.mapping) {
+            const val = values[0];
+            values.length = 0;
+            // @ts-ignore
+            values.push(...copyNodeProperties(parseString(props.mapping[v]), val));
+        }
+    }
+}
 class PropertyMap {
     config;
     declarations;
@@ -32,6 +68,7 @@ class PropertyMap {
         else {
             const separator = this.config.separator != null ? {
                 ...this.config.separator,
+                // @ts-ignore
                 typ: EnumToken[this.config.separator.typ]
             } : null;
             // expand shorthand
@@ -214,6 +251,10 @@ class PropertyMap {
             }
         }
     }
+    getConfig(name) {
+        // @ts-ignore
+        return name == this.config.shorthand ? this.config : this.config.properties[name] ?? propertiesConfig.properties[propertiesConfig.properties[name].shorthand];
+    }
     [Symbol.iterator]() {
         let iterable;
         let requiredCount = 0;
@@ -221,7 +262,7 @@ class PropertyMap {
         let isShorthand = true;
         for (property of Object.keys(this.config.properties)) {
             if (this.config.properties[property].required) {
-                if (!this.declarations.has(property)) {
+                if (!this.declarations.has(property) && !this.declarations.has(this.config.shorthand)) {
                     isShorthand = false;
                     break;
                 }
@@ -240,103 +281,110 @@ class PropertyMap {
         if (requiredCount == 0) {
             requiredCount = this.declarations.size;
         }
-        if (!isShorthand || requiredCount < this.requiredCount) {
-            if (isShorthand && this.declarations.has(this.config.shorthand)) {
-                const cache = new Map();
-                const removeDefaults = (declaration) => {
-                    let i;
-                    let t;
-                    let map = new Map();
-                    let value = [];
-                    let values = [];
+        if (!isShorthand || this.declarations.has(this.config.shorthand) || requiredCount < this.requiredCount) {
+            const removeDefaults = (declaration) => {
+                let i;
+                let t;
+                let value = [];
+                let values = [];
+                // @ts-ignore
+                let separator = this.config.separator ? {
+                    ...this.config.separator,
                     // @ts-ignore
-                    let separator = this.config.separator ? {
-                        ...this.config.separator,
-                        typ: EnumToken[this.config.separator.typ]
-                    } : { typ: EnumToken.CommaTokenType };
-                    let typ = separator.typ;
-                    this.matchTypes(declaration);
-                    values.push(value);
-                    for (i = 0; i < declaration.val.length; i++) {
-                        t = declaration.val[i];
-                        if (!cache.has(t)) {
-                            // @ts-ignore
-                            cache.set(t, renderToken(t, this.options));
-                        }
-                        // @ts-ignore
-                        if (t.typ == typ && t.val == separator.val) {
-                            this.removeDefaults(map, value);
-                            value = [];
-                            values.push(value);
-                            map.clear();
-                            continue;
-                        }
-                        value.push(t);
-                        // @ts-ignore
-                        if ('propertyName' in t) {
-                            // @ts-ignore
-                            if (!map.has(t.propertyName)) {
-                                // @ts-ignore
-                                map.set(t.propertyName, { t: [t], value: [cache.get(t)] });
-                            }
-                            else {
-                                // @ts-ignore
-                                const v = map.get(t.propertyName);
-                                v.t.push(t);
-                                v.value.push(cache.get(t));
-                            }
-                        }
+                    typ: EnumToken[this.config.separator.typ]
+                } : { typ: EnumToken.CommaTokenType };
+                let typ = separator.typ;
+                // @ts-ignore
+                const config = this.getConfig(declaration.nam);
+                this.matchTypes(declaration);
+                values.push(value);
+                for (i = 0; i < declaration.val.length; i++) {
+                    t = declaration.val[i];
+                    //
+                    //     // if (!cache.has(t)) {
+                    //     //
+                    //     //     // @ts-ignore
+                    //     //     cache.set(t, renderToken(t, this.options));
+                    //     // }
+                    //
+                    // @ts-ignore
+                    if (t.typ == typ && t.val == separator.val) {
+                        processMapping(value, config);
+                        this.removeDefaults(value, config, declaration.nam == this.config.shorthand);
+                        value = [];
+                        values.push(value);
+                        // map.clear();
+                        continue;
                     }
-                    this.removeDefaults(map, value);
-                    declaration.val = values.reduce((acc, curr) => {
-                        if (acc.length > 0) {
-                            acc.push({ ...separator });
-                        }
-                        for (const cr of curr) {
-                            if (cr.typ == EnumToken.WhitespaceTokenType && acc.at(-1)?.typ == cr.typ) {
-                                continue;
-                            }
-                            acc.push(cr);
-                        }
-                        return acc;
-                    }, []);
-                    while (declaration.val.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
-                        declaration.val.pop();
-                    }
-                    while (declaration.val.at(0)?.typ == EnumToken.WhitespaceTokenType) {
-                        declaration.val.shift();
-                    }
-                    return declaration;
-                };
-                const values = [...this.declarations.values()].reduce((acc, curr) => {
-                    if (curr instanceof PropertySet) {
-                        acc.push(...curr);
-                    }
-                    else {
-                        acc.push(curr);
-                    }
-                    return acc;
-                }, []);
-                let isImportant = false;
-                const filtered = values.map(removeDefaults).filter((x) => x.val.filter((t) => {
-                    if (t.typ == EnumToken.ImportantTokenType) {
-                        isImportant = true;
-                    }
-                    return ![EnumToken.WhitespaceTokenType, EnumToken.ImportantTokenType].includes(t.typ);
-                }).length > 0);
-                if (filtered.length == 0 && this.config.default.length > 0) {
-                    filtered.push({
-                        typ: EnumToken.DeclarationNodeType,
-                        nam: this.config.shorthand,
-                        val: parseString(this.config.default[0])
-                    });
-                    if (isImportant) {
-                        filtered[0].val.push({
-                            typ: EnumToken.ImportantTokenType
-                        });
-                    }
+                    value.push(t);
+                    //
+                    //     // @ts-ignore
+                    //     if ('propertyName' in t) {
+                    //
+                    //         // @ts-ignore
+                    //         if (!map.has(t.propertyName)) {
+                    //
+                    //             // @ts-ignore
+                    //             map.set(t.propertyName, {t: [t], value: [<string>cache.get(t)]});
+                    //         } else {
+                    //
+                    //             // @ts-ignore
+                    //             const v: TokenMap = <TokenMap>map.get(t.propertyName);
+                    //
+                    //             v.t.push(t);
+                    //             v.value.push(<string>cache.get(t));
+                    //         }
+                    //     }
                 }
-                return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
+                processMapping(value, config);
+                this.removeDefaults(value, config, declaration.nam == this.config.shorthand);
+                declaration.val = values.reduce((acc, curr) => {
+                    if (acc.length > 0) {
+                        acc.push({ ...separator });
+                    }
+                    acc.push(...curr);
+                    return acc;
+                });
+                return declaration;
+            };
+            const values = [...this.declarations.values()].reduce((acc, curr) => {
+                if (curr instanceof PropertySet) {
+                    acc.push(...curr);
+                }
+                else {
+                    acc.push(curr);
+                }
+                return acc;
+            }, []);
+            for (const declaration of values) {
+                removeDefaults(declaration);
+            }
+            if (isShorthand && this.declarations.has(this.config.shorthand)) {
+                // const cache: Map<Token, string> = new Map();
+                // let isImportant: boolean = false;
+                // const filtered: AstDeclaration[] = values.map(removeDefaults).filter((x: AstDeclaration): boolean => x.val.filter((t: Token) => {
+                //
+                //     if (t.typ == EnumToken.ImportantTokenType) {
+                //
+                //         isImportant = true;
+                //     }
+                //
+                //     return ![EnumToken.WhitespaceTokenType, EnumToken.ImportantTokenType].includes(t.typ)
+                // }).length > 0);
+                // if (filtered.length == 0 && this.config.default.length > 0) {
+                //     filtered.push(<AstDeclaration>{
+                //         typ: EnumToken.DeclarationNodeType,
+                //         nam: this.config.shorthand,
+                //         val: parseString(this.config.default[0])
+                //     });
+                // if (isImportant) {
+                //
+                //     filtered[0].val.push(<Token>{
+                //         typ: EnumToken.ImportantTokenType
+                //     });
+                // }
+                // }
+                return values[Symbol.iterator]();
             }
             // @ts-ignore
             iterable = this.declarations.values();
@@ -346,6 +394,7 @@ class PropertyMap {
             let match;
             const separator = this.config.separator != null ? {
                 ...this.config.separator,
+                // @ts-ignore
                 typ: EnumToken[this.config.separator.typ]
             } : null;
             const tokens = {};
@@ -363,7 +412,8 @@ class PropertyMap {
                 for (const declaration of [(properties instanceof PropertySet ? [...properties][0] : properties)]) {
                     // @ts-ignore
                     for (const val of declaration.val) {
-                        if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+                        // @ts-ignore
+                        if (separator != null && separator.typ == val.typ && separator.val == val.val) {
                             current++;
                             if (tokens[curr[0]].length == current) {
                                 tokens[curr[0]].push([]);
@@ -376,6 +426,7 @@ class PropertyMap {
                         // @ts-ignore
                         if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && eq({
                             ...props.separator,
+                            // @ts-ignore
                             typ: EnumToken[props.separator.typ]
                         }, val)) {
                             continue;
@@ -456,19 +507,7 @@ class PropertyMap {
                             values = filtered;
                         }
                         if (values.length > 0) {
-                            if ('mapping' in props) {
-                                // @ts-ignore
-                                if (!('constraints' in props) || !('max' in props.constraints) || values.length <= props.constraints.mapping.max) {
-                                    let i = values.length;
-                                    while (i--) {
-                                        // @ts-ignore
-                                        if (values[i].typ == EnumToken.IdenTokenType && values[i].val in props.mapping) {
-                                            // @ts-ignore
-                                            values.splice(i, 1, ...parseString(props.mapping[values[i].val]));
-                                        }
-                                    }
-                                }
-                            }
+                            processMapping(values, props);
                             if ('prefix' in props) {
                                 // @ts-ignore
                                 acc[i].push({ ...props.prefix, typ: EnumToken[props.prefix.typ] });
@@ -482,6 +521,7 @@ class PropertyMap {
                                     acc.push({
                                         ...(props.separator ? {
                                             ...props.separator,
+                                            // @ts-ignore
                                             typ: EnumToken[props.separator.typ]
                                         } : { typ: EnumToken.WhitespaceTokenType })
                                     });
@@ -509,28 +549,75 @@ class PropertyMap {
                     acc.push(...curr);
                     return acc;
                 }, []);
-                if (this.config.mapping != null) {
-                    const val = values.reduce((acc, curr) => acc + renderToken(curr, {
-                        removeComments: true,
-                        minify: true
-                    }), '');
-                    if (val in this.config.mapping) {
-                        values.length = 0;
-                        values.push({
-                            typ: ['"', "'"].includes(val.charAt(0)) ? EnumToken.StringTokenType : EnumToken.IdenTokenType,
-                            // @ts-ignore
-                            val: this.config.mapping[val]
-                        });
+                if (this.config.separator != null) {
+                    const allValues = [];
+                    const response = [];
+                    for (const val of values) {
+                        // @ts-ignore
+                        if (this.config.separator.typ == EnumToken[val.typ] && val.val == this.config.separator.val) {
+                            processMapping(allValues, this.config);
+                            this.removeDefaults(allValues, this.config, true);
+                            if (response.length > 0) {
+                                // @ts-ignore
+                                response.push({
+                                    ...this.config.separator,
+                                    // @ts-ignore
+                                    typ: EnumToken[this.config.separator.typ]
+                                });
+                            }
+                            response.push(...allValues);
+                            allValues.length = 0;
+                        }
+                        else {
+                            allValues.push(val);
+                        }
                     }
+                    if (allValues.length > 0) {
+                        processMapping(allValues, this.config);
+                        this.removeDefaults(allValues, this.config, true);
+                        if (response.length > 0) {
+                            // @ts-ignore
+                            response.push({
+                                ...this.config.separator,
+                                // @ts-ignore
+                                typ: EnumToken[this.config.separator.typ]
+                            });
+                        }
+                        response.push(...allValues);
+                    }
+                    values = response;
                 }
-                // @ts-ignore
-                if (values.length == 1 &&
-                    typeof values[0].val == 'string' &&
-                    this.config.default.includes(values[0].val.toLowerCase()) &&
-                    this.config.default[0] != values[0].val.toLowerCase()) {
-                    // @ts-ignore/
-                    values = parseString(this.config.default[0]);
+                else {
+                    processMapping(values, this.config);
+                    this.removeDefaults(values, this.config, true);
                 }
+                // if (this.config.mapping != null) {
+                //
+                //     const val: string = values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {
+                //         removeComments: true,
+                //         minify: true
+                //     }), '');
+                //
+                //     if (val in this.config.mapping) {
+                //
+                //         values.length = 0;
+                //         values.push(<StringToken | IdentToken>{
+                //             typ: ['"', "'"].includes(val.charAt(0)) ? EnumToken.StringTokenType : EnumToken.IdenTokenType,
+                //             // @ts-ignore
+                //             val: <string>this.config.mapping[val]
+                //         });
+                //     }
+                // }
+                //
+                // // @ts-ignore
+                // if (values.length == 1 &&
+                //     typeof (<IdentToken>values[0]).val == 'string' &&
+                //     this.config.default.includes((<IdentToken>values[0]).val.toLowerCase()) &&
+                //     this.config.default[0] != (<IdentToken>values[0]).val.toLowerCase()) {
+                //
+                //     // @ts-ignore/
+                //     values = parseString(this.config.default[0]);
+                // }
                 iterable = [{
                         typ: EnumToken.DeclarationNodeType,
                         nam: this.config.shorthand,
@@ -565,34 +652,77 @@ class PropertyMap {
             }
         };
     }
-    removeDefaults(map, value) {
-        for (const [key, val] of map) {
-            const config = this.config.properties[key];
+    removeDefaults(value, configuration, isShorthand) {
+        let i;
+        for (i = 0; i < value.length; i++) {
+            if (unMappedTokensType.includes(value[i].typ)) {
+                continue;
+            }
+            const val = value[i];
+            // @ts-ignore
+            const config = val.propertyName == this.config.shorthand ? configuration : this.config.properties[val.propertyName];
             if (config == null) {
                 continue;
             }
-            const v = val.value.join(' ');
-            if (config.default.includes(v) || (value.length == 1 && this.config.default.includes(v))) {
-                for (const token of value) {
-                    if (val.t.includes(token)) {
-                        let index = value.indexOf(token);
-                        value.splice(index, 1);
-                        if (config.prefix != null) {
-                            while (index-- > 0) {
-                                if (value[index].typ == EnumToken.WhitespaceTokenType) {
-                                    continue;
-                                }
-                                if (value[index].typ == EnumToken[config.prefix.typ] &&
-                                    // @ts-ignore
-                                    value[index].val == config.prefix.val) {
-                                    value.splice(index, 1);
-                                    break;
-                                }
-                            }
+            const tokens = config.default.map(t => {
+                return {
+                    t,
+                    val: copyNodeProperties(parseString(t), val)
+                };
+            }).sort((a, b) => b.val.length - a.val.length);
+            for (const token of tokens) {
+                if (compareTokens(token.val[0], val) && token.t == value.slice(i, i + token.val.length).reduce((acc, curr) => acc + renderToken(curr, { minify: true }), '')) {
+                    value.splice(i, token.val.length);
+                    if (config.prefix != null && i > 0) {
+                        let k = i;
+                        while (k-- && value[k].typ == EnumToken.WhitespaceTokenType)
+                            ;
+                        // @ts-ignore
+                        if (value[k].typ == EnumToken.LiteralTokenType && value[k].val == config.prefix.val) {
+                            value.splice(k, i - k);
+                            i = k - 1;
                         }
                     }
+                    break;
                 }
             }
+        }
+        if (isShorthand && configuration.default.length > 0) {
+            let r = '';
+            for (const vl of value) {
+                r += renderToken(vl, { minify: true });
+            }
+            for (i = 0; i < configuration.default.length; i++) {
+                if (r == configuration.default[i]) {
+                    value.length = 0;
+                    // @ts-ignore
+                    value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', { ...definedPropertySettings, value: this.config.shorthand })));
+                    break;
+                }
+            }
+        }
+        if (value.at(-1)?.typ == EnumToken.ImportantTokenType && value.at(-2)?.typ == EnumToken.WhitespaceTokenType) {
+            value.splice(-2, 1);
+        }
+        for (i = 0; i < value.length; i++) {
+            if (i == 0 && value[i].typ == EnumToken.WhitespaceTokenType) {
+                value.splice(i--, 1);
+                continue;
+            }
+            if (value[i].typ == EnumToken.WhitespaceTokenType && value?.[i + 1]?.typ == EnumToken.WhitespaceTokenType) {
+                value.splice(i--, 1);
+                continue;
+            }
+        }
+        // while (value[0]?.typ == EnumToken.WhitespaceTokenType) {
+        //
+        // }
+        // if (this.config.default.length == 0) {
+        //
+        //     return;
+        // }
+        if (value.length == 0 || (value.length == 1 && value[0].typ == EnumToken.ImportantTokenType)) {
+            value.unshift(...parseString(isShorthand ? this.config.default[0] : configuration.default[0]));
         }
     }
 }

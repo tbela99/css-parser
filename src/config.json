@@ -346,28 +346,24 @@
     "none",
     "initial"
    ],
-   "default": [
-    "0",
-    "0 1",
-    "0 auto",
-    "0 1 auto"
-   ],
+   "default": [],
+   "mapping": {
+    "0 1 auto": "initial",
+    "0 0 auto": "none",
+    "1 1 auto": "auto"
+   },
    "properties": {
     "flex-grow": {
      "required": true,
      "keywords": [],
-     "default": [
-      "0"
-     ],
+     "default": [],
      "types": [
       "Number"
      ]
     },
     "flex-shrink": {
      "keywords": [],
-     "default": [
-      "1"
-     ],
+     "default": [],
      "types": [
       "Number"
      ]
@@ -381,9 +377,7 @@
       "content",
       "auto"
      ],
-     "default": [
-      "auto"
-     ],
+     "default": [],
      "types": [
       "Length",
       "Perc"
@@ -1027,8 +1021,8 @@
       "Number"
      ],
      "default": [
-      "normal",
-      "400"
+      "400",
+      "normal"
      ],
      "keywords": [
       "normal",
@@ -1375,6 +1369,8 @@
       "left": "0",
       "top": "0",
       "center": "50%",
+      "center center": "50%",
+      "50% 50%": "50%",
       "bottom": "100%",
       "right": "100%"
      },

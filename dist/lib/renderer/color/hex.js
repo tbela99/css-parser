@@ -6,6 +6,7 @@ import { hsl2rgb, hwb2rgb, cmyk2rgb, oklab2rgb, oklch2rgb, lab2rgb, lch2rgb } fr
 import { NAMES_COLORS } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 function toHexString(acc, value) {
     return acc + value.toString(16).padStart(2, '0');

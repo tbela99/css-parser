@@ -20,13 +20,11 @@ class SourceMap {
                 record = [Math.max(0, source.sta.col - 1), this.#sources.indexOf(original.src), original.sta.lin - 1, original.sta.col - 1];
                 this.#map.set(line, [record]);
             }
-            // else {
-            //
-            //     const arr: number[][] = <number[][]> this.#map.get(line);
-            //
-            //     record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
-            //     arr.push(record);
-            // }
+            else {
+                const arr = this.#map.get(line);
+                record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
+                arr.push(record);
+            }
             if (this.lastLocation != null) {
                 // @ts-ignore
                 record[2] -= this.lastLocation.sta.lin - 1;

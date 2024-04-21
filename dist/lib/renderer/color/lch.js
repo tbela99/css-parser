@@ -6,6 +6,7 @@ import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { srgb2lab, xyz2lab, hex2lab, rgb2lab, hsl2lab, hwb2lab, getLABComponents, oklab2lab, oklch2lab } from './lab.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 function hex2lch(token) {
     // @ts-ignore

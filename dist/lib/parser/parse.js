@@ -1,10 +1,11 @@
 import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
+import './utils/type.js';
+import { parseDeclaration } from './utils/declaration.js';
+import { renderToken } from '../renderer/render.js';
 import { EnumToken, funcLike } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
-import { parseDeclaration } from './utils/declaration.js';
-import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
 import { tokenize } from './tokenize.js';
 
@@ -44,6 +45,7 @@ function getDefaultParseOptions(options = {}) {
         ...options
     };
 }
+const cacheMap = new Map();
 async function doParse(iterator, options = {}) {
     return new Promise(async (resolve, reject) => {
         if (options.signal != null) {
@@ -503,6 +505,10 @@ async function parseNode(results, context, stats, options, errors, src, map) {
     }
 }
 function parseString(src, options = { location: false }) {
+    const key = src + JSON.stringify(options);
+    if (cacheMap.has(key)) {
+        return structuredClone(cacheMap.get(key));
+    }
     const tokens = [];
     for (const t of tokenize(src)) {
         const token = getTokenType(t.token, t.hint);
@@ -511,7 +517,9 @@ function parseString(src, options = { location: false }) {
         }
         tokens.push(token);
     }
-    return parseTokens(tokens);
+    const result = parseTokens(tokens);
+    cacheMap.set(key, result);
+    return structuredClone(result);
 }
 function getTokenType(val, hint) {
     if (val === '' && hint == null) {
@@ -640,7 +648,7 @@ function getTokenType(val, hint) {
     if (v == 'currentcolor' || val == 'transparent' || v in COLORS_NAMES) {
         return {
             typ: EnumToken.ColorTokenType,
-            val,
+            val: v,
             kin: 'lit'
         };
     }

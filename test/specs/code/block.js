@@ -425,7 +425,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             const file = `
        
 @media all {.site-header .logo { 
-transition: all 0s ease 0s; flex: 0 1 0%; position: relative; align-self: stretch; display: flex; align-items: center; }}
+transition: all 0s ease 0s; flex: 0 1 auto; position: relative; align-self: stretch; display: flex; align-items: center; }}
 
 `;
             return parse(file, {
@@ -437,7 +437,7 @@ transition: all 0s ease 0s; flex: 0 1 0%; position: relative; align-self: stretc
                 preserveLicense: true
             }).code).equals(`.site-header .logo {
  transition: 0s;
- flex: 0 1 0%;
+ flex: initial;
  position: relative;
  align-self: stretch;
  display: flex;

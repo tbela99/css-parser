@@ -8,6 +8,7 @@ import '../../parser/parse.js';
 import { lab2srgb, lch2srgb, oklab2srgb, oklch2srgb } from './srgb.js';
 import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 function rgb2hwb(token) {
     // @ts-ignore

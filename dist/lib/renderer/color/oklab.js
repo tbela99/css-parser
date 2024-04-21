@@ -10,6 +10,7 @@ import { eq } from '../../parser/utils/eq.js';
 import { lch2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 function hex2oklab(token) {
     // @ts-ignore

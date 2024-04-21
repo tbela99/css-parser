@@ -1,5 +1,6 @@
 import { parseString } from '../parser/parse.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../parser/utils/syntax.js';
+import '../parser/utils/type.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';

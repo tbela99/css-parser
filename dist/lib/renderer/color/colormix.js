@@ -1,5 +1,6 @@
 import '../../parser/parse.js';
 import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../parser/utils/syntax.js';
+import '../../parser/utils/type.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { getNumber } from './color.js';

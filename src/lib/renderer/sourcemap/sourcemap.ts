@@ -33,13 +33,13 @@ export class SourceMap {
 
                 this.#map.set(line, [record]);
             }
-            // else {
-            //
-            //     const arr: number[][] = <number[][]> this.#map.get(line);
-            //
-            //     record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
-            //     arr.push(record);
-            // }
+            else {
+
+                const arr: number[][] = <number[][]> this.#map.get(line);
+
+                record = [Math.max(0, source.sta.col - 1 - arr[0][0]), this.#sources.indexOf(original.src) - arr[0][1], original.sta.lin - 1, original.sta.col - 1];
+                arr.push(record);
+            }
 
             if (this.lastLocation != null) {
 

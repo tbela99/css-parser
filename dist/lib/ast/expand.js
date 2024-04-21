@@ -4,6 +4,7 @@ import { renderToken } from '../renderer/render.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import '../renderer/color/utils/constants.js';
+import '../parser/utils/type.js';
 
 function expand(ast) {
     //

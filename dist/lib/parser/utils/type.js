@@ -1,11 +1,45 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
+import { renderToken } from '../../renderer/render.js';
 import '../../renderer/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
 
 // https://www.w3.org/TR/css-values-4/#math-function
 const funcList = ['clamp', 'calc'];
+const unMappedTokensType = [EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.ImportantTokenType, EnumToken.CommentTokenType];
+const numberTokenTypes = [EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.DimensionTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType];
+function compareTokens(a, b) {
+    // @ts-ignore
+    if (a.propertyName != b.propertyName) {
+        return false;
+    }
+    // @ts-ignore
+    if (numberTokenTypes.includes(a.typ) && numberTokenTypes.includes(b.typ) && (a.val == '0' || b.val == '0')) {
+        // @ts-ignore
+        return a.val == b.val;
+    }
+    if (a.typ != b.typ) {
+        return false;
+    }
+    return renderToken(a) == renderToken(b);
+}
+function copyNodeProperties(target, source) {
+    const descriptors = Object.entries(Object.getOwnPropertyDescriptors(source));
+    for (const val of target) {
+        if (val.typ == EnumToken.WhitespaceTokenType ||
+            val.typ == EnumToken.CommaTokenType ||
+            val.typ == EnumToken.ImportantTokenType ||
+            val.typ == EnumToken.CommentTokenType) {
+            continue;
+        }
+        for (const [name, property] of descriptors) {
+            if (!property.enumerable) {
+                Object.defineProperty(val, name, property);
+            }
+        }
+    }
+    return target;
+}
 function matchType(val, properties) {
     if (val.typ == EnumToken.IdenTokenType && properties.keywords.includes(val.val) ||
         // @ts-ignore
@@ -30,4 +64,4 @@ function matchType(val, properties) {
     return false;
 }
 
-export { funcList, matchType };
+export { compareTokens, copyNodeProperties, funcList, matchType, unMappedTokensType };

@@ -12,6 +12,7 @@ import { getOKLCHComponents } from './oklch.js';
 import { XYZ_to_lin_sRGB } from './xyz.js';
 import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb

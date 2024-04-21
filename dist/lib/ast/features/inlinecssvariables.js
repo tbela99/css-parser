@@ -98,6 +98,9 @@ class InlineCssVariablesFeature {
     }
     cleanup(ast, options = {}, context) {
         const variableScope = context.variableScope;
+        if (variableScope == null) {
+            return;
+        }
         for (const info of variableScope.values()) {
             if (info.replaceable) {
                 let i;

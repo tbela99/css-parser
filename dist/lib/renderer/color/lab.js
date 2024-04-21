@@ -9,6 +9,7 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/type.js';
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125

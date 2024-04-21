@@ -10,6 +10,7 @@ import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isNewLine } from '../parser/utils/syntax.js';
+import '../parser/utils/type.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 function reduceNumber(val) {

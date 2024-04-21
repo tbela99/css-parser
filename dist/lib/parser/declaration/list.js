@@ -5,6 +5,7 @@ import { parseString } from '../parse.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { getConfig } from '../utils/config.js';
+import '../utils/type.js';
 import { PropertyMap } from './map.js';
 
 const config = getConfig();

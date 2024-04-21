@@ -113,6 +113,8 @@ export function getDefaultParseOptions(options: ParserOptions = {}): ParserOptio
     };
 }
 
+const cacheMap: Map<string, Token[]> = new Map();
+
 export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
 
     return new Promise(async (resolve, reject) => {
@@ -747,6 +749,13 @@ export async function parseDeclarations(src: string, options: ParserOptions = {}
 
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
+    const key = src + JSON.stringify(options);
+
+    if (cacheMap.has(key)) {
+
+        return structuredClone(cacheMap.get(key)!);
+    }
+
     const tokens: Token[] = [];
 
     for (const t of tokenize(src)) {
@@ -761,7 +770,11 @@ export function parseString(src: string, options: { location: boolean } = {locat
         tokens.push(token);
     }
 
-    return parseTokens(tokens);
+    const result: Token[] = parseTokens(tokens);
+
+    cacheMap.set(key, result);
+
+    return structuredClone(result);
 }
 
 function getTokenType(val: string, hint?: EnumToken): Token {
@@ -930,7 +943,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     if (v == 'currentcolor' || val == 'transparent' || v in COLORS_NAMES) {
         return <ColorToken>{
             typ: EnumToken.ColorTokenType,
-            val,
+            val: v,
             kin: 'lit'
         };
     }

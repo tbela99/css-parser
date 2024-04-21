@@ -1,4 +1,5 @@
 import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from './utils/syntax.js';
+import './utils/type.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import './parse.js';
