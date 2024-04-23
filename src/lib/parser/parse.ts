@@ -335,6 +335,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             // @ts-ignore
             if (node.chi.length > 0) {
 
+                // @ts-ignore
                 for (const child of node.chi) {
 
                     Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
@@ -347,11 +348,6 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 }
             }
         }
-
-        // for (const result of walk(ast)) {
-        //
-        //     Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
-        // }
 
         const endTime: number = performance.now();
 
