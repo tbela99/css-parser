@@ -10,7 +10,7 @@ export function eq(a: { [key: string]: any }, b: { [key: string]: any }): boolea
         return a === b;
     }
 
-    if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
+    if (a.constructor != b.constructor) {
 
         return false;
     }
@@ -22,7 +22,7 @@ export function eq(a: { [key: string]: any }, b: { [key: string]: any }): boolea
             return false;
         }
 
-        let i = 0;
+        let i: number = 0;
 
         for (; i < a.length; i++) {
 

@@ -179,7 +179,7 @@
         }
     };
     const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-    const powerlessColorComponent = { typ: exports.EnumToken.IdenTokenType, val: 'none' };
+    ({ typ: exports.EnumToken.IdenTokenType, val: 'none' });
     const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
     const k = Math.pow(29, 3) / Math.pow(3, 3);
     const e = Math.pow(6, 3) / Math.pow(29, 3);
@@ -559,42 +559,6 @@
         return alpha == null ? [l, c, h] : [l, c, h, alpha];
     }
 
-    function eq(a, b) {
-        if (a == null || b == null) {
-            return a == b;
-        }
-        if (typeof a != 'object' || typeof b != 'object') {
-            return a === b;
-        }
-        if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
-            return false;
-        }
-        if (Array.isArray(a)) {
-            if (a.length != b.length) {
-                return false;
-            }
-            let i = 0;
-            for (; i < a.length; i++) {
-                if (!eq(a[i], b[i])) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        const k1 = Object.keys(a);
-        const k2 = Object.keys(b);
-        if (k1.length != k2.length) {
-            return false;
-        }
-        let key;
-        for (key of k1) {
-            if (!(key in b) || !eq(a[key], b[key])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     function hex2oklch(token) {
         // @ts-ignore
         return lab2lchvalues(...hex2oklab(token));
@@ -644,7 +608,7 @@
         // @ts-ignore
         t = components[3];
         // @ts-ignore
-        const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+        const alpha = t == null || (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
         return [l, c, h, alpha];
     }
 
@@ -703,7 +667,7 @@
         // @ts-ignore
         t = components[3];
         // @ts-ignore
-        const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+        const alpha = t == null || (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
         const rgb = [l, a, b];
         if (alpha != 1 && alpha != null) {
             rgb.push(alpha);
@@ -908,10 +872,8 @@
         return null;
     }
     function rgb2srgb(token) {
-        return getComponents(token).map((t, index) => index == 3 ? (eq(t, {
-            typ: exports.EnumToken.IdenTokenType,
-            val: 'none'
-        }) ? 1 : getNumber(t)) : (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
+        return getComponents(token).map((t, index) => index == 3 ? (t.typ == exports.EnumToken.IdenTokenType && t.val == 'none'
+            ? 1 : getNumber(t)) : (t.typ == exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
     }
     function hex2srgb(token) {
         const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -1198,7 +1160,7 @@
         t = chi[3];
         // @ts-ignore
         let a = null;
-        if (t != null && !eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
+        if (t != null && (t.typ != exports.EnumToken.IdenTokenType || t.val != 'none')) {
             // @ts-ignore
             a = getNumber(t) / 255;
         }
@@ -1284,7 +1246,7 @@
     function rgb2hwb(token) {
         // @ts-ignore
         return srgb2hwb(...getComponents(token).map((t, index) => {
-            if (index == 3 && eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
+            if (index == 3 && t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') {
                 return 1;
             }
             return getNumber(t) / 255;
@@ -1293,7 +1255,7 @@
     function hsl2hwb(token) {
         // @ts-ignore
         return hsl2hwbvalues(...getComponents(token).map((t, index) => {
-            if (index == 3 && eq(t, { typ: exports.EnumToken.IdenTokenType, val: 'none' })) {
+            if (index == 3 && t.typ == exports.EnumToken.IdenTokenType && t.val == 'none') {
                 return 1;
             }
             if (index == 0) {
@@ -2228,10 +2190,10 @@
         }
         const components1 = getComponents(color1);
         const components2 = getComponents(color2);
-        if (eq(components1[3], powerlessColorComponent) && values2.length == 4) {
+        if (components1[3] != null && components1[3].typ == exports.EnumToken.IdenTokenType && components1[3].val == 'none' && values2.length == 4) {
             values1[3] = values2[3];
         }
-        if (eq(components2[3], powerlessColorComponent) && values1.length == 4) {
+        if (components2[3] != null && components2[3].typ == exports.EnumToken.IdenTokenType && components2[3].val == 'none' && values1.length == 4) {
             values2[3] = values1[3];
         }
         const p1 = getNumber(percentage1);
@@ -2343,13 +2305,13 @@
         const lchSpaces = ['lch', 'oklch'];
         // powerless
         if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
-            if (eq(components1[2], powerlessColorComponent) || values1[2] == 0) {
+            if ((components1[2] != null && components1[2].typ == exports.EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
                 values1[2] = values2[2];
             }
         }
         // powerless
         if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
-            if (eq(components2[2], powerlessColorComponent) || values2[2] == 0) {
+            if ((components2[2] != null && components2[2].typ == exports.EnumToken.IdenTokenType && components2[2].val == 'none') || values2[2] == 0) {
                 values2[2] = values1[2];
             }
         }
@@ -2780,10 +2742,7 @@
             [names[1]]: getValue(g, converted, names[1]), // string,
             [names[2]]: getValue(b, converted, names[2]),
             // @ts-ignore
-            alpha: alpha == null || eq(alpha, {
-                typ: exports.EnumToken.IdenTokenType,
-                val: 'none'
-            }) ? {
+            alpha: alpha == null || (alpha.typ == exports.EnumToken.IdenTokenType && alpha.val == 'none') ? {
                 typ: exports.EnumToken.NumberTokenType,
                 val: '1'
             } : (alpha.typ == exports.EnumToken.PercentageTokenType ? {
@@ -2796,7 +2755,7 @@
             [names[1]]: getValue(gExp, converted, names[1]),
             [names[2]]: getValue(bExp, converted, names[2]),
             // @ts-ignore
-            alpha: getValue(aExp == null || eq(aExp, { typ: exports.EnumToken.IdenTokenType, val: 'none' }) ? {
+            alpha: getValue(aExp == null || (aExp.typ == exports.EnumToken.IdenTokenType && aExp.val == 'none') ? {
                 typ: exports.EnumToken.NumberTokenType,
                 val: '1'
             } : aExp)
@@ -6180,7 +6139,6 @@
             ...options
         };
     }
-    const cacheMap = new Map();
     async function doParse(iterator, options = {}) {
         return new Promise(async (resolve, reject) => {
             if (options.signal != null) {
@@ -6330,9 +6288,23 @@
                     minify(ast, options, true, errors, false);
                 }
             }
-            for (const result of walk(ast)) {
-                Object.defineProperty(result.node, 'parent', { ...definedPropertySettings, value: result.parent });
+            const nodes = [ast];
+            let node;
+            while ((node = nodes.shift())) {
+                if (node.chi.length > 0) {
+                    for (const child of node.chi) {
+                        Object.defineProperty(child, 'parent', { ...definedPropertySettings, value: node });
+                        if ('chi' in child && child.chi.length > 0) {
+                            // @ts-ignore
+                            nodes.push(child);
+                        }
+                    }
+                }
             }
+            // for (const result of walk(ast)) {
+            //
+            //     Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
+            // }
             const endTime = performance.now();
             if (options.signal != null) {
                 options.signal.removeEventListener('abort', reject);
@@ -6640,10 +6612,6 @@
         }
     }
     function parseString(src, options = { location: false }) {
-        const key = src + JSON.stringify(options);
-        if (cacheMap.has(key)) {
-            return structuredClone(cacheMap.get(key));
-        }
         const tokens = [];
         for (const t of tokenize(src)) {
             const token = getTokenType(t.token, t.hint);
@@ -6652,9 +6620,7 @@
             }
             tokens.push(token);
         }
-        const result = parseTokens(tokens);
-        cacheMap.set(key, result);
-        return structuredClone(result);
+        return parseTokens(tokens);
     }
     function getTokenType(val, hint) {
         if (val === '' && hint == null) {
@@ -7131,6 +7097,42 @@
             }
         }
         return tokens;
+    }
+
+    function eq(a, b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
+        if (typeof a != 'object' || typeof b != 'object') {
+            return a === b;
+        }
+        if (a.constructor != b.constructor) {
+            return false;
+        }
+        if (Array.isArray(a)) {
+            if (a.length != b.length) {
+                return false;
+            }
+            let i = 0;
+            for (; i < a.length; i++) {
+                if (!eq(a[i], b[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        const k1 = Object.keys(a);
+        const k2 = Object.keys(b);
+        if (k1.length != k2.length) {
+            return false;
+        }
+        let key;
+        for (key of k1) {
+            if (!(key in b) || !eq(a[key], b[key])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function* walk(node, filter) {
@@ -7787,7 +7789,9 @@
                     // @ts-ignore
                     this.declarations.get(this.config.shorthand).val.slice().reduce((acc, curr) => {
                         // @ts-ignore
-                        if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
+                        if (separator != null &&
+                            separator.typ == curr.typ &&
+                            renderToken(separator) == renderToken(curr)) {
                             acc.push([]);
                             return acc;
                         }
@@ -7826,7 +7830,7 @@
                                     i--;
                                     // @ts-ignore
                                     if ('prefix' in props && acc[i]?.typ == exports.EnumToken[props.prefix.typ]) {
-                                        if (eq(acc[i], {
+                                        if (renderToken(acc[i]) == renderToken({
                                             ...this.config.properties[property].prefix,
                                             // @ts-ignore
                                             typ: exports.EnumToken[props.prefix.typ]
@@ -8133,11 +8137,11 @@
                                 continue;
                             }
                             // @ts-ignore
-                            if (props.multiple && props.separator != null && exports.EnumToken[props.separator.typ] == val.typ && eq({
+                            if (props.multiple && props.separator != null && exports.EnumToken[props.separator.typ] == val.typ && renderToken({
                                 ...props.separator,
                                 // @ts-ignore
                                 typ: exports.EnumToken[props.separator.typ]
-                            }, val)) {
+                            }) == renderToken(val)) {
                                 continue;
                             }
                             // @ts-ignore
@@ -8405,7 +8409,10 @@
                     if (r == configuration.default[i]) {
                         value.length = 0;
                         // @ts-ignore
-                        value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', { ...definedPropertySettings, value: this.config.shorthand })));
+                        value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', {
+                            ...definedPropertySettings,
+                            value: this.config.shorthand
+                        })));
                         break;
                     }
                 }

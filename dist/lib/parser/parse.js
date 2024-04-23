@@ -45,7 +45,6 @@ function getDefaultParseOptions(options = {}) {
         ...options
     };
 }
-const cacheMap = new Map();
 async function doParse(iterator, options = {}) {
     return new Promise(async (resolve, reject) => {
         if (options.signal != null) {
@@ -195,9 +194,23 @@ async function doParse(iterator, options = {}) {
                 minify(ast, options, true, errors, false);
             }
         }
-        for (const result of walk(ast)) {
-            Object.defineProperty(result.node, 'parent', { ...definedPropertySettings, value: result.parent });
+        const nodes = [ast];
+        let node;
+        while ((node = nodes.shift())) {
+            if (node.chi.length > 0) {
+                for (const child of node.chi) {
+                    Object.defineProperty(child, 'parent', { ...definedPropertySettings, value: node });
+                    if ('chi' in child && child.chi.length > 0) {
+                        // @ts-ignore
+                        nodes.push(child);
+                    }
+                }
+            }
         }
+        // for (const result of walk(ast)) {
+        //
+        //     Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
+        // }
         const endTime = performance.now();
         if (options.signal != null) {
             options.signal.removeEventListener('abort', reject);
@@ -505,10 +518,6 @@ async function parseNode(results, context, stats, options, errors, src, map) {
     }
 }
 function parseString(src, options = { location: false }) {
-    const key = src + JSON.stringify(options);
-    if (cacheMap.has(key)) {
-        return structuredClone(cacheMap.get(key));
-    }
     const tokens = [];
     for (const t of tokenize(src)) {
         const token = getTokenType(t.token, t.hint);
@@ -517,9 +526,7 @@ function parseString(src, options = { location: false }) {
         }
         tokens.push(token);
     }
-    const result = parseTokens(tokens);
-    cacheMap.set(key, result);
-    return structuredClone(result);
+    return parseTokens(tokens);
 }
 function getTokenType(val, hint) {
     if (val === '' && hint == null) {
@@ -998,4 +1005,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, getDefaultParseOptions, parseString, parseTokens, urlTokenMatcher };
+export { doParse, getDefaultParseOptions, getTokenType, parseString, parseTokens, urlTokenMatcher };

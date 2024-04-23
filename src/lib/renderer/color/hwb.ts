@@ -3,7 +3,6 @@ import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token}
 import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
-import {eq} from "../../parser/utils/eq";
 import {lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb";
 
 export function rgb2hwb(token: ColorToken): number[] {
@@ -11,7 +10,7 @@ export function rgb2hwb(token: ColorToken): number[] {
     // @ts-ignore
     return srgb2hwb(...getComponents(token).map((t: Token, index: number): number => {
 
-        if (index == 3 && eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == 'none') {
             return 1;
         }
 
@@ -24,7 +23,7 @@ export function hsl2hwb(token: ColorToken): number[] {
     // @ts-ignore
     return hsl2hwbvalues(...getComponents(token).map((t: Token, index: number) => {
 
-        if (index == 3 && eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == 'none') {
             return 1;
         }
 

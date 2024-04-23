@@ -19,9 +19,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 
     const weakMap: WeakMap<AstNode, AstNode> = new WeakMap;
 
-    while (parents.length > 0) {
-
-        node = <AstNode>parents.shift();
+    while ((node = <AstNode>parents.shift())) {
 
         let option: WalkerOption = null;
 
@@ -66,9 +64,7 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
 
     let value: Token;
 
-    while (stack.length > 0) {
-
-        value = <Token>stack.shift();
+    while ((value = <Token>stack.shift())) {
 
         let option: WalkerOption = null;
 

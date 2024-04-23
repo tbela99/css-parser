@@ -1,5 +1,5 @@
 import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {getComponents, powerlessColorComponent} from "./utils";
+import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {lab2lchvalues} from "./lch";
@@ -13,7 +13,6 @@ import {
     rgb2oklab,
     srgb2oklab
 } from "./oklab";
-import {eq} from "../../parser/utils/eq";
 
 export function hex2oklch(token: ColorToken): number[] {
 
@@ -89,7 +88,7 @@ export function getOKLCHComponents(token: ColorToken): number[] {
     t = <NumberToken | PercentageToken>components[3];
 
     // @ts-ignore
-    const alpha: number = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    const alpha: number = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
 
     return [l, c, h, alpha];
 }

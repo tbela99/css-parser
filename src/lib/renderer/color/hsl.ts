@@ -3,7 +3,6 @@ import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../..
 import {getNumber} from "./color";
 import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
 import {getComponents} from "./utils";
-import {eq} from "../../parser/utils/eq";
 import {EnumToken} from "../../ast";
 import {hslvalues} from './srgb';
 
@@ -38,7 +37,7 @@ export function rgb2hsl(token: ColorToken): number[] {
     // @ts-ignore
     let a: number = null;
 
-    if (t != null && !eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
+    if (t != null && (t.typ != EnumToken.IdenTokenType || t.val != 'none')) {
 
         // @ts-ignore
         a = getNumber(t) / 255;

@@ -1,4 +1,4 @@
-import { powerlessColorComponent } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
@@ -6,7 +6,6 @@ import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { lab2lchvalues } from './lch.js';
 import { srgb2oklab, hex2oklab, rgb2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, getOKLABComponents } from './oklab.js';
-import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/type.js';
 
@@ -59,7 +58,7 @@ function getOKLCHComponents(token) {
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    const alpha = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
     return [l, c, h, alpha];
 }
 

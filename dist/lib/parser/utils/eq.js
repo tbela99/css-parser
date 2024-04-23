@@ -5,7 +5,7 @@ function eq(a, b) {
     if (typeof a != 'object' || typeof b != 'object') {
         return a === b;
     }
-    if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) {
+    if (a.constructor != b.constructor) {
         return false;
     }
     if (Array.isArray(a)) {

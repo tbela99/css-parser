@@ -145,12 +145,12 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     const components1: Token[] = getComponents(color1);
     const components2: Token[] = getComponents(color2);
 
-    if (eq(components1[3], powerlessColorComponent) && values2.length == 4) {
+    if (components1[3] != null && components1[3].typ == EnumToken.IdenTokenType && components1[3].val == 'none' && values2.length == 4) {
 
         values1[3] = values2[3];
     }
 
-    if (eq(components2[3], powerlessColorComponent) && values1.length == 4) {
+    if (components2[3] != null && components2[3].typ == EnumToken.IdenTokenType && components2[3].val == 'none' && values1.length == 4) {
 
         values2[3] = values1[3];
     }
@@ -303,7 +303,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
 
-        if (eq(components1[2], powerlessColorComponent) || values1[2] == 0) {
+        if ((components1[2] != null && components1[2].typ == EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
 
             values1[2] = values2[2];
         }
@@ -312,7 +312,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
 
-        if (eq(components2[2], powerlessColorComponent) || values2[2] == 0) {
+        if ((components2[2] != null && components2[2].typ == EnumToken.IdenTokenType && components2[2].val == 'none') || values2[2] == 0) {
 
             values2[2] = values1[2];
         }

@@ -5,7 +5,7 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { getNumber } from './color.js';
 import { srgb2rgb } from './rgb.js';
-import { powerlessColorComponent } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
@@ -13,7 +13,6 @@ import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { srgb2lch, xyz2lchvalues } from './lch.js';
 import { srgb2lab } from './lab.js';
 import { srgb2p3values } from './p3.js';
-import { eq } from '../../parser/utils/eq.js';
 import { srgb2oklch } from './oklch.js';
 import { srgb2oklab } from './oklab.js';
 import { srgb2a98values } from './a98rgb.js';
@@ -110,10 +109,10 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     }
     const components1 = getComponents(color1);
     const components2 = getComponents(color2);
-    if (eq(components1[3], powerlessColorComponent) && values2.length == 4) {
+    if (components1[3] != null && components1[3].typ == EnumToken.IdenTokenType && components1[3].val == 'none' && values2.length == 4) {
         values1[3] = values2[3];
     }
-    if (eq(components2[3], powerlessColorComponent) && values1.length == 4) {
+    if (components2[3] != null && components2[3].typ == EnumToken.IdenTokenType && components2[3].val == 'none' && values1.length == 4) {
         values2[3] = values1[3];
     }
     const p1 = getNumber(percentage1);
@@ -225,13 +224,13 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     const lchSpaces = ['lch', 'oklch'];
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
-        if (eq(components1[2], powerlessColorComponent) || values1[2] == 0) {
+        if ((components1[2] != null && components1[2].typ == EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
             values1[2] = values2[2];
         }
     }
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
-        if (eq(components2[2], powerlessColorComponent) || values2[2] == 0) {
+        if ((components2[2] != null && components2[2].typ == EnumToken.IdenTokenType && components2[2].val == 'none') || values2[2] == 0) {
             values2[2] = values1[2];
         }
     }

@@ -1,7 +1,8 @@
 import {
     isAtKeyword,
     isColor,
-    isDimension, isFlex,
+    isDimension,
+    isFlex,
     isFunction,
     isHash,
     isHexColor,
@@ -9,7 +10,8 @@ import {
     isIdentStart,
     isNumber,
     isPercentage,
-    isPseudo, parseDeclaration,
+    isPseudo,
+    parseDeclaration,
     parseDimension
 } from "./utils";
 import {renderToken} from "../renderer";
@@ -17,8 +19,6 @@ import {COLORS_NAMES} from "../renderer/color";
 import {combinators, definedPropertySettings, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
-    TimelineFunctionToken,
-    TimingFunctionToken,
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -41,6 +41,7 @@ import {
     DelimToken,
     EndMatchToken,
     ErrorDescription,
+    FlexToken,
     FunctionImageToken,
     FunctionToken,
     FunctionURLToken,
@@ -66,11 +67,13 @@ import {
     PseudoClassToken,
     SemiColonToken,
     StartMatchToken,
+    TimelineFunctionToken,
+    TimingFunctionToken,
     Token,
     TokenizeResult,
     UnclosedStringToken,
     UrlToken,
-    WhitespaceToken, FlexToken
+    WhitespaceToken
 } from "../../@types";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -112,8 +115,6 @@ export function getDefaultParseOptions(options: ParserOptions = {}): ParserOptio
         ...options
     };
 }
-
-const cacheMap: Map<string, Token[]> = new Map();
 
 export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
 
@@ -236,7 +237,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     context.chi.pop();
                 }
 
-                tokens = [];}
+                tokens = [];
+            }
         }
 
         if (tokens.length > 0) {
@@ -325,10 +327,31 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             }
         }
 
-        for (const result of walk(ast)) {
+        const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
+        let node: AstNode;
 
-            Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
+        while ((node = nodes.shift()!)) {
+
+            // @ts-ignore
+            if (node.chi.length > 0) {
+
+                for (const child of node.chi) {
+
+                    Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
+
+                    if ('chi' in child && child.chi.length > 0) {
+
+                        // @ts-ignore
+                        nodes.push(<AstRule | AstAtRule>child);
+                    }
+                }
+            }
         }
+
+        // for (const result of walk(ast)) {
+        //
+        //     Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
+        // }
 
         const endTime: number = performance.now();
 
@@ -749,13 +772,6 @@ export async function parseDeclarations(src: string, options: ParserOptions = {}
 
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
-    const key = src + JSON.stringify(options);
-
-    if (cacheMap.has(key)) {
-
-        return structuredClone(cacheMap.get(key)!);
-    }
-
     const tokens: Token[] = [];
 
     for (const t of tokenize(src)) {
@@ -770,14 +786,10 @@ export function parseString(src: string, options: { location: boolean } = {locat
         tokens.push(token);
     }
 
-    const result: Token[] = parseTokens(tokens);
-
-    cacheMap.set(key, result);
-
-    return structuredClone(result);
+    return parseTokens(tokens);
 }
 
-function getTokenType(val: string, hint?: EnumToken): Token {
+export function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (val === '' && hint == null) {
         throw new Error('empty string?');

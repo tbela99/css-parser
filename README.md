@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
+[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dy/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
 
@@ -602,6 +602,8 @@ Ast can be transformed using node visitors
 
 ### Exemple 1: Declaration
 
+the visitor is called for any declaration encountered
+
 ```typescript
 
 import {AstDeclaration, ParserOptions} from "../src/@types";
@@ -633,6 +635,8 @@ console.debug(await transform(css, options));
 ```
 
 ### Exemple 2: Declaration
+
+the visitor is called only on 'height' declarations
 
 ```typescript
 
@@ -688,6 +692,8 @@ console.debug(await transform(css, options));
 
 ### Exemple 3: At-Rule
 
+the visitor is called on any at-rule
+
 ```typescript
 
 import {AstAtRule, ParserOptions} from "../src/@types";
@@ -727,6 +733,8 @@ console.debug(await transform(css, options));
 
 ### Exemple 4: At-Rule
 
+the visitor is called only for at-rule media
+
 ```typescript
 
 import {AstAtRule, ParserOptions} from "../src/@types";
@@ -765,6 +773,8 @@ console.debug(await transform(css, options));
 
 ### Exemple 5: Rule
 
+the visitor is called on any Rule
+
 ```typescript
 
 import {AstAtRule, ParserOptions} from "../src/@types";
@@ -797,9 +807,10 @@ console.debug(await transform(css, options));
 ```
 ### Exemple 6: Rule
 
-Adding declarations
+Adding declarations to any rule
 
 ```typescript
+
 import {transform} from "../src/node";
 import {AstRule, ParserOptions} from "../src/@types";
 import {parseDeclarations} from "../src/lib";

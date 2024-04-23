@@ -1,4 +1,3 @@
-import { eq } from '../utils/eq.js';
 import { renderToken } from '../../renderer/render.js';
 import { EnumToken } from '../../ast/types.js';
 import { definedPropertySettings } from '../../ast/minify.js';
@@ -78,7 +77,9 @@ class PropertyMap {
                 // @ts-ignore
                 this.declarations.get(this.config.shorthand).val.slice().reduce((acc, curr) => {
                     // @ts-ignore
-                    if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
+                    if (separator != null &&
+                        separator.typ == curr.typ &&
+                        renderToken(separator) == renderToken(curr)) {
                         acc.push([]);
                         return acc;
                     }
@@ -117,7 +118,7 @@ class PropertyMap {
                                 i--;
                                 // @ts-ignore
                                 if ('prefix' in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
-                                    if (eq(acc[i], {
+                                    if (renderToken(acc[i]) == renderToken({
                                         ...this.config.properties[property].prefix,
                                         // @ts-ignore
                                         typ: EnumToken[props.prefix.typ]
@@ -424,11 +425,11 @@ class PropertyMap {
                             continue;
                         }
                         // @ts-ignore
-                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && eq({
+                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && renderToken({
                             ...props.separator,
                             // @ts-ignore
                             typ: EnumToken[props.separator.typ]
-                        }, val)) {
+                        }) == renderToken(val)) {
                             continue;
                         }
                         // @ts-ignore
@@ -696,7 +697,10 @@ class PropertyMap {
                 if (r == configuration.default[i]) {
                     value.length = 0;
                     // @ts-ignore
-                    value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', { ...definedPropertySettings, value: this.config.shorthand })));
+                    value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', {
+                        ...definedPropertySettings,
+                        value: this.config.shorthand
+                    })));
                     break;
                 }
             }

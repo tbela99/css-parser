@@ -1,11 +1,10 @@
-import {getComponents, multiplyMatrices, powerlessColorComponent} from "./utils";
+import {getComponents, multiplyMatrices} from "./utils";
 import {srgb2lsrgbvalues, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgbvalues} from "./srgb";
 import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getOKLCHComponents} from "./oklch";
 import {lch2labvalues} from "./lab";
-import {eq} from "../../parser/utils/eq";
 
 export function hex2oklab(token: ColorToken) {
 
@@ -99,7 +98,7 @@ export function getOKLABComponents(token: ColorToken): number[] {
     t = <NumberToken | PercentageToken>components[3];
 
     // @ts-ignore
-    const alpha: number = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    const alpha: number = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
 
     const rgb: number[] = [l, a, b];
 

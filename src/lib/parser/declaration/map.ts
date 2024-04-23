@@ -118,7 +118,10 @@ export class PropertyMap {
                 this.declarations.get(this.config.shorthand).val.slice().reduce((acc: Token[][], curr: Token) => {
 
                     // @ts-ignore
-                    if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
+                    if (
+                        separator != null &&
+                        separator.typ == curr.typ &&
+                        renderToken(separator) == renderToken(curr)) {
 
                         acc.push([]);
                         return acc;
@@ -175,7 +178,7 @@ export class PropertyMap {
                                     // @ts-ignore
                                     if ('prefix' in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
 
-                                        if (eq(acc[i], {
+                                        if (renderToken(acc[i]) == renderToken({
                                             ...this.config.properties[property].prefix,
                                             // @ts-ignore
                                             typ: EnumToken[props.prefix.typ]
@@ -603,11 +606,11 @@ export class PropertyMap {
                         }
 
                         // @ts-ignore
-                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && eq({
+                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && renderToken({
                             ...props.separator,
                             // @ts-ignore
                             typ: EnumToken[props.separator.typ]
-                        }, val)) {
+                        }) == renderToken(val)) {
 
                             continue;
                         }
@@ -992,7 +995,10 @@ export class PropertyMap {
 
                     value.length = 0;
                     // @ts-ignore
-                    value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', {...definedPropertySettings, value: this.config.shorthand})));
+                    value.push(...copyNodeProperties(parseString(configuration.default[0]), Object.defineProperty({}, 'propertyName', {
+                        ...definedPropertySettings,
+                        value: this.config.shorthand
+                    })));
                     break;
                 }
             }
