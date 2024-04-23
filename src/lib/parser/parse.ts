@@ -154,7 +154,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         };
 
         let tokens: TokenizeResult[] = [];
-        let map: WeakMap<Token, Position> = new WeakMap<Token, Position>;
+        let map: Map<Token, Position> = new Map<Token, Position>;
         let context: AstRuleList = ast;
 
         if (options.sourcemap) {
@@ -375,7 +375,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 async function parseNode(results: TokenizeResult[], context: AstRuleList, stats: {
     bytesIn: number;
     importedBytesIn: number;
-}, options: ParserOptions, errors: ErrorDescription[], src: string, map: WeakMap<Token, Position>): Promise<AstRule | AstAtRule | null> {
+}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | null> {
 
     let tokens: Token[] = [];
 
@@ -752,14 +752,6 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
         }
     }
 }
-
-// function mapToken(token: TokenizeResult, map: WeakMap<Token, Position>): Token {
-//
-//     const node: Token = getTokenType(token.token, token.hint);
-//
-//     map.set(node, token.position);
-//     return node;
-// }
 
 export async function parseDeclarations(src: string, options: ParserOptions = {}): Promise<AstDeclaration[]> {
 

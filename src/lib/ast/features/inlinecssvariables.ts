@@ -9,7 +9,6 @@ import {
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {IterableWeakSet} from "../../iterable";
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
 
@@ -102,7 +101,7 @@ export class InlineCssVariablesFeature {
                     const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: <IterableWeakSet<AstRule | AstAtRule>>new IterableWeakSet(),
+                        parent: <Set<AstRule | AstAtRule>>new Set(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: (<AstDeclaration>node)

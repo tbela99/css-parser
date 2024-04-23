@@ -17,7 +17,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
     const parents: AstNode[] = [node];
     const root: AstRuleList = <AstRuleList>node;
 
-    const weakMap: WeakMap<AstNode, AstNode> = new WeakMap;
+    const map: Map<AstNode, AstNode> = new Map;
 
     while ((node = <AstNode>parents.shift())) {
 
@@ -42,7 +42,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
         if (option !== 'children') {
 
             // @ts-ignore
-            yield {node, parent: <AstRuleList>weakMap.get(node), root};
+            yield {node, parent: <AstRuleList>map.get(node), root};
         }
 
         if (option !== 'ignore-children' && 'chi' in node) {
@@ -51,7 +51,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 
             for (const child of <AstNode[]>(<AstRuleList>node).chi.slice()) {
 
-                weakMap.set(child, node);
+                map.set(child, node);
             }
         }
     }
@@ -60,7 +60,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 export function* walkValues(values: Token[], root: AstNode | null = null, filter?: WalkerValueFilter): Generator<WalkAttributesResult> {
 
     const stack: Token[] = values.slice();
-    const weakMap: WeakMap<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new WeakMap;
+    const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map;
 
     let value: Token;
 
@@ -87,14 +87,14 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
         if (option !== 'children') {
 
             // @ts-ignore
-            yield {value, parent: <FunctionToken | ParensToken>weakMap.get(value), root};
+            yield {value, parent: <FunctionToken | ParensToken>map.get(value), root};
         }
 
         if (option !== 'ignore-children' && 'chi' in value) {
 
             for (const child of (<FunctionToken | ParensToken>value).chi.slice()) {
 
-                weakMap.set(child, <FunctionToken | ParensToken>value);
+                map.set(child, <FunctionToken | ParensToken>value);
             }
 
             stack.unshift(...(<FunctionToken | ParensToken>value).chi);
@@ -102,8 +102,8 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
 
         else if (value.typ == EnumToken.BinaryExpressionTokenType) {
 
-            weakMap.set(value.l, <FunctionToken | ParensToken | BinaryExpressionToken>value);
-            weakMap.set(value.r, <FunctionToken | ParensToken | BinaryExpressionToken>value);
+            map.set(value.l, <FunctionToken | ParensToken | BinaryExpressionToken>value);
+            map.set(value.r, <FunctionToken | ParensToken | BinaryExpressionToken>value);
             stack.unshift(value.l, value.r);
         }
     }

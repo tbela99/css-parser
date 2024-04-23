@@ -73,7 +73,7 @@ async function doParse(iterator, options = {}) {
             chi: []
         };
         let tokens = [];
-        let map = new WeakMap;
+        let map = new Map;
         let context = ast;
         if (options.sourcemap) {
             ast.loc = {
@@ -197,7 +197,9 @@ async function doParse(iterator, options = {}) {
         const nodes = [ast];
         let node;
         while ((node = nodes.shift())) {
+            // @ts-ignore
             if (node.chi.length > 0) {
+                // @ts-ignore
                 for (const child of node.chi) {
                     Object.defineProperty(child, 'parent', { ...definedPropertySettings, value: node });
                     if ('chi' in child && child.chi.length > 0) {
@@ -207,10 +209,6 @@ async function doParse(iterator, options = {}) {
                 }
             }
         }
-        // for (const result of walk(ast)) {
-        //
-        //     Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
-        // }
         const endTime = performance.now();
         if (options.signal != null) {
             options.signal.removeEventListener('abort', reject);

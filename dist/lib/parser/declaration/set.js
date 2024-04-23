@@ -1,11 +1,9 @@
-import { eq } from '../utils/eq.js';
 import { isLength } from '../utils/syntax.js';
 import '../utils/type.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
-import '../../renderer/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { renderToken } from '../../renderer/render.js';
 
 function dedup(values) {
     for (const value of values) {
@@ -21,7 +19,7 @@ function dedup(values) {
                     continue;
                 }
             }
-            if (eq(t, k)) {
+            if (renderToken(t) == renderToken(k)) {
                 value.splice(i, 1);
                 continue;
             }

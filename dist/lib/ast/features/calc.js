@@ -1,6 +1,5 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { IterableWeakSet } from '../../iterable/weakset.js';
 import { evaluate } from '../math/expression.js';
 
 class ComputeCalcExpressionFeature {
@@ -27,7 +26,7 @@ class ComputeCalcExpressionFeature {
             if (node.typ != EnumToken.DeclarationNodeType) {
                 continue;
             }
-            const set = new IterableWeakSet;
+            const set = new Set;
             for (const { value, parent } of walkValues(node.val)) {
                 if (value != null && value.typ == EnumToken.FunctionTokenType && value.val == 'calc') {
                     if (!set.has(parent)) {

@@ -1,6 +1,5 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
-import { IterableWeakSet } from '../../iterable/weakset.js';
 
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
@@ -60,7 +59,7 @@ class InlineCssVariablesFeature {
                     const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: new IterableWeakSet(),
+                        parent: new Set(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: node

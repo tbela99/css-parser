@@ -11,6 +11,7 @@ import {
 import {eq} from "../utils/eq";
 import {isLength} from "../utils";
 import {EnumToken} from "../../ast";
+import {renderToken} from "../../renderer";
 
 function dedup(values: Token[][]) {
 
@@ -34,7 +35,7 @@ function dedup(values: Token[][]) {
                 }
             }
 
-            if (eq(t, k)) {
+            if (renderToken(t) == renderToken(k)) {
 
                 value.splice(i, 1);
                 continue;

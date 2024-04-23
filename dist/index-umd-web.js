@@ -6167,7 +6167,7 @@
                 chi: []
             };
             let tokens = [];
-            let map = new WeakMap;
+            let map = new Map;
             let context = ast;
             if (options.sourcemap) {
                 ast.loc = {
@@ -6291,7 +6291,9 @@
             const nodes = [ast];
             let node;
             while ((node = nodes.shift())) {
+                // @ts-ignore
                 if (node.chi.length > 0) {
+                    // @ts-ignore
                     for (const child of node.chi) {
                         Object.defineProperty(child, 'parent', { ...definedPropertySettings, value: node });
                         if ('chi' in child && child.chi.length > 0) {
@@ -6301,10 +6303,6 @@
                     }
                 }
             }
-            // for (const result of walk(ast)) {
-            //
-            //     Object.defineProperty(result.node, 'parent', {...definedPropertySettings, value: result.parent});
-            // }
             const endTime = performance.now();
             if (options.signal != null) {
                 options.signal.removeEventListener('abort', reject);
@@ -7138,9 +7136,8 @@
     function* walk(node, filter) {
         const parents = [node];
         const root = node;
-        const weakMap = new WeakMap;
-        while (parents.length > 0) {
-            node = parents.shift();
+        const map = new Map;
+        while ((node = parents.shift())) {
             let option = null;
             if (filter != null) {
                 option = filter(node);
@@ -7154,22 +7151,21 @@
             // @ts-ignore
             if (option !== 'children') {
                 // @ts-ignore
-                yield { node, parent: weakMap.get(node), root };
+                yield { node, parent: map.get(node), root };
             }
             if (option !== 'ignore-children' && 'chi' in node) {
                 parents.unshift(...node.chi);
                 for (const child of node.chi.slice()) {
-                    weakMap.set(child, node);
+                    map.set(child, node);
                 }
             }
         }
     }
     function* walkValues(values, root = null, filter) {
         const stack = values.slice();
-        const weakMap = new WeakMap;
+        const map = new Map;
         let value;
-        while (stack.length > 0) {
-            value = stack.shift();
+        while ((value = stack.shift())) {
             let option = null;
             if (filter != null) {
                 option = filter(value);
@@ -7183,17 +7179,17 @@
             // @ts-ignore
             if (option !== 'children') {
                 // @ts-ignore
-                yield { value, parent: weakMap.get(value), root };
+                yield { value, parent: map.get(value), root };
             }
             if (option !== 'ignore-children' && 'chi' in value) {
                 for (const child of value.chi.slice()) {
-                    weakMap.set(child, value);
+                    map.set(child, value);
                 }
                 stack.unshift(...value.chi);
             }
             else if (value.typ == exports.EnumToken.BinaryExpressionTokenType) {
-                weakMap.set(value.l, value);
-                weakMap.set(value.r, value);
+                map.set(value.l, value);
+                map.set(value.r, value);
                 stack.unshift(value.l, value.r);
             }
         }
@@ -7344,63 +7340,6 @@
         }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
     }
 
-    class IterableWeakSet {
-        #weakset = new WeakSet;
-        #set = new Set;
-        // constructor(iterable?: Iterable<any>) {
-        //
-        //     if (iterable) {
-        //
-        //         for (const value of iterable) {
-        //
-        //             const ref: WeakRef<any> = new WeakRef(value);
-        //
-        //             this.#weakset.add(value);
-        //             this.#set.add(ref);
-        //         }
-        //     }
-        // }
-        has(value) {
-            return this.#weakset.has(value);
-        }
-        // delete(value: any): boolean {
-        //
-        //     if (this.#weakset.has(value)) {
-        //
-        //         for (const ref of this.#set) {
-        //
-        //             if (ref.deref() === value) {
-        //
-        //                 this.#set.delete(ref);
-        //                 break;
-        //             }
-        //         }
-        //
-        //         return this.#weakset.delete(value);
-        //     }
-        //
-        //     return false;
-        // }
-        add(value) {
-            if (!this.#weakset.has(value)) {
-                this.#weakset.add(value);
-                this.#set.add(new WeakRef(value));
-            }
-            return this;
-        }
-        *[Symbol.iterator]() {
-            for (const ref of new Set(this.#set)) {
-                const key = ref.deref();
-                if (key != null) {
-                    yield key;
-                }
-                else {
-                    this.#set.delete(ref);
-                }
-            }
-        }
-    }
-
     function replace(node, variableScope) {
         for (const { value, parent: parentValue } of walkValues(node.val)) {
             if (value?.typ == exports.EnumToken.FunctionTokenType && value.val == 'var') {
@@ -7459,7 +7398,7 @@
                         const info = {
                             globalScope: isRoot,
                             // @ts-ignore
-                            parent: new IterableWeakSet(),
+                            parent: new Set(),
                             declarationCount: 1,
                             replaceable: isRoot,
                             node: node
@@ -7542,7 +7481,7 @@
                         continue;
                     }
                 }
-                if (eq(t, k)) {
+                if (renderToken(t) == renderToken(k)) {
                     value.splice(i, 1);
                     continue;
                 }
@@ -8610,7 +8549,7 @@
                 if (node.typ != exports.EnumToken.DeclarationNodeType) {
                     continue;
                 }
-                const set = new IterableWeakSet;
+                const set = new Set;
                 for (const { value, parent } of walkValues(node.val)) {
                     if (value != null && value.typ == exports.EnumToken.FunctionTokenType && value.val == 'calc') {
                         if (!set.has(parent)) {

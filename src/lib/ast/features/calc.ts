@@ -8,7 +8,6 @@ import {
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {IterableWeakSet} from "../../iterable";
 import {evaluate} from "../math";
 
 export class ComputeCalcExpressionFeature {
@@ -49,7 +48,7 @@ export class ComputeCalcExpressionFeature {
                 continue;
             }
 
-            const set: IterableWeakSet<Token> = new IterableWeakSet;
+            const set: Set<Token> = new Set;
 
             for (const {value, parent} of walkValues((<AstDeclaration>node).val)) {
 
