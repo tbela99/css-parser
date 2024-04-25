@@ -14,7 +14,7 @@ import {
 } from "./utils";
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/color";
-import {combinators, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
+import {combinators, definedPropertySettings, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
     TimelineFunctionToken,
@@ -82,13 +82,26 @@ const BadTokensTypes: EnumToken[] = [
     EnumToken.BadStringTokenType
 ];
 
+const enumTokenHints: Set<EnumToken> = new Set([
+    EnumToken.WhitespaceTokenType, EnumToken.SemiColonTokenType, EnumToken.ColonTokenType, EnumToken.BlockStartTokenType,
+    EnumToken.BlockStartTokenType, EnumToken.AttrStartTokenType, EnumToken.AttrEndTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType,
+    EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.CommaTokenType,
+    EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
+    EnumToken.EOFTokenType
+]);
+
 const webkitPseudoAliasMap: Record<string, string> = {
     '-webkit-autofill': 'autofill'
 }
 
+function reject(reason?: any) {
+
+    throw new Error(reason ?? 'Parsing aborted');
+}
+
 export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
 
-    return new Promise(async (resolve, reject) => {
+    // return new Promise(async (resolve, reject) => {
 
         if (options.signal != null) {
 
@@ -314,6 +327,27 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             }
         }
 
+        const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
+        let node: AstNode;
+
+        while ((node = nodes.shift()!)) {
+
+            // @ts-ignore
+            if (node.chi.length > 0) {
+
+                // @ts-ignore
+                for (const child of node.chi) {
+
+                    Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
+
+                    if ('chi' in child && child.chi.length > 0) {
+
+                        // @ts-ignore
+                        nodes.push(<AstRule | AstAtRule>child);
+                    }
+                }
+            }
+        }
         const endTime: number = performance.now();
 
         if (options.signal != null) {
@@ -323,7 +357,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         stats.bytesIn += stats.importedBytesIn;
 
-        resolve(<ParseResult>{
+        return <ParseResult>{
             ast,
             errors,
             stats: {
@@ -332,8 +366,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 minify: `${(endTime - endParseTime).toFixed(2)}ms`,
                 total: `${(endTime - startTime).toFixed(2)}ms`
             }
-        });
-    });
+        };
+    // });
 }
 
 
@@ -342,7 +376,15 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
     importedBytesIn: number;
 }, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | null> {
 
-    let tokens: Token[] = results.map((t: TokenizeResult) => mapToken(t, map));
+    let tokens: Token[] = [];
+
+    for (const t of results) {
+
+        const node: Token = getTokenType(t.token, t.hint);
+        map.set(node, t.position);
+
+        tokens.push(node);
+    }
 
     let i: number;
     let loc: Location;
@@ -533,7 +575,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
         // allowed nesting at-rules
         // there must be a top level rule in the stack
 
-        const raw = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
+        const raw: string[] = parseTokens(tokens, {minify: options.minify}).reduce((acc: string[], curr: Token) => {
 
             acc.push(renderToken(curr, {removeComments: true}));
 
@@ -546,7 +588,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
             val: raw.join('')
         };
 
-        Object.defineProperty(node, 'raw', {enumerable: false, configurable: true, writable: true, value: raw});
+        Object.defineProperty(node, 'raw', {...definedPropertySettings, value: raw});
 
         if (delim.typ == EnumToken.BlockStartTokenType) {
 
@@ -709,13 +751,13 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
     }
 }
 
-function mapToken(token: TokenizeResult, map: Map<Token, Position>): Token {
-
-    const node: Token = getTokenType(token.token, token.hint);
-
-    map.set(node, token.position);
-    return node;
-}
+// function mapToken(token: TokenizeResult, map: Map<Token, Position>): Token {
+//
+//     const node: Token = getTokenType(token.token, token.hint);
+//
+//     map.set(node, token.position);
+//     return node;
+// }
 
 export async function parseDeclarations(src: string, options: ParserOptions = {}): Promise<AstDeclaration[]> {
 
@@ -906,10 +948,10 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     }
 
     const v: string = val.toLowerCase();
-    if (v == 'currentcolor' || val == 'transparent' || v in COLORS_NAMES) {
+    if (v == 'currentcolor' || v == 'transparent' || v in COLORS_NAMES) {
         return <ColorToken>{
             typ: EnumToken.ColorTokenType,
-            val,
+            val: v,
             kin: 'lit'
         };
     }

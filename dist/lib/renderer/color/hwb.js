@@ -6,13 +6,12 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { lab2srgb, lch2srgb, oklab2srgb, oklch2srgb } from './srgb.js';
-import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
 
 function rgb2hwb(token) {
     // @ts-ignore
     return srgb2hwb(...getComponents(token).map((t, index) => {
-        if (index == 3 && eq(t, { typ: EnumToken.IdenTokenType, val: 'none' })) {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == 'none') {
             return 1;
         }
         return getNumber(t) / 255;
@@ -21,7 +20,7 @@ function rgb2hwb(token) {
 function hsl2hwb(token) {
     // @ts-ignore
     return hsl2hwbvalues(...getComponents(token).map((t, index) => {
-        if (index == 3 && eq(t, { typ: EnumToken.IdenTokenType, val: 'none' })) {
+        if (index == 3 && (t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
             return 1;
         }
         if (index == 0) {

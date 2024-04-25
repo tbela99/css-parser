@@ -3,9 +3,8 @@ import { EnumToken } from './types.js';
 function* walk(node, filter) {
     const parents = [node];
     const root = node;
-    const weakMap = new WeakMap;
-    while (parents.length > 0) {
-        node = parents.shift();
+    const map = new Map;
+    while ((node = parents.shift())) {
         let option = null;
         if (filter != null) {
             option = filter(node);
@@ -19,22 +18,21 @@ function* walk(node, filter) {
         // @ts-ignore
         if (option !== 'children') {
             // @ts-ignore
-            yield { node, parent: weakMap.get(node), root };
+            yield { node, parent: map.get(node), root };
         }
         if (option !== 'ignore-children' && 'chi' in node) {
             parents.unshift(...node.chi);
             for (const child of node.chi.slice()) {
-                weakMap.set(child, node);
+                map.set(child, node);
             }
         }
     }
 }
 function* walkValues(values, root = null, filter) {
     const stack = values.slice();
-    const weakMap = new WeakMap;
+    const map = new Map;
     let value;
-    while (stack.length > 0) {
-        value = stack.shift();
+    while ((value = stack.shift())) {
         let option = null;
         if (filter != null) {
             option = filter(value);
@@ -48,17 +46,17 @@ function* walkValues(values, root = null, filter) {
         // @ts-ignore
         if (option !== 'children') {
             // @ts-ignore
-            yield { value, parent: weakMap.get(value), root };
+            yield { value, parent: map.get(value), root };
         }
         if (option !== 'ignore-children' && 'chi' in value) {
             for (const child of value.chi.slice()) {
-                weakMap.set(child, value);
+                map.set(child, value);
             }
             stack.unshift(...value.chi);
         }
         else if (value.typ == EnumToken.BinaryExpressionTokenType) {
-            weakMap.set(value.l, value);
-            weakMap.set(value.r, value);
+            map.set(value.l, value);
+            map.set(value.r, value);
             stack.unshift(value.l, value.r);
         }
     }

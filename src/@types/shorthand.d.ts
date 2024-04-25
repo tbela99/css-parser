@@ -12,7 +12,10 @@ export interface ShorthandPropertyType {
     properties: string[];
     types: string[];
     multiple: boolean;
-    separator: string;
+    separator: {
+        typ: keyof EnumToken;
+        val: string
+    };
     keywords: string[];
 }
 
@@ -29,22 +32,20 @@ export interface PropertyMapType {
     required?: boolean;
     multiple?: boolean;
     prefix?: {
-        typ: 'Literal',
+        typ: keyof EnumToken;
         val: string
     };
     previous?: string;
     separator?: {
 
-        typ: 'Comma'
+        typ: keyof EnumToken;
     };
     constraints?: {
         [key: string]: {
             [key: string]: any;
         }
     };
-    mapping?: {
-        [key: string]: any
-    }
+    mapping?: Record<string, string>
 }
 
 export interface ShorthandMapType {
@@ -53,9 +54,9 @@ export interface ShorthandMapType {
     pattern: string;
     keywords: string[];
     default: string[];
-    mapping?: string[];
+    mapping?: Record<string, string>;
     multiple?: boolean;
-    separator?: Token;
+    separator?: { typ: keyof EnumToken ; val?: string };
     set?: Record<string, string[]>
     properties: {
         [property: string]: PropertyMapType;

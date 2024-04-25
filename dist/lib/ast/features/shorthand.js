@@ -4,9 +4,8 @@ import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import { MinifyFeature } from '../utils/minifyfeature.js';
 
-class ComputeShorthandFeature extends MinifyFeature {
+class ComputeShorthandFeature {
     static get ordering() {
         return 2;
     }
@@ -18,7 +17,7 @@ class ComputeShorthandFeature extends MinifyFeature {
                 }
             }
             // @ts-ignore
-            options.features.push(new ComputeShorthandFeature());
+            options.features.push(new ComputeShorthandFeature(options));
         }
     }
     run(ast, options = {}, parent, context) {

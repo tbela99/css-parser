@@ -10,7 +10,6 @@ import { getOKLABComponents, OKLab_to_sRGB } from './oklab.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
 import { XYZ_to_lin_sRGB } from './xyz.js';
-import { eq } from '../../parser/utils/eq.js';
 import '../sourcemap/lib/encode.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
@@ -43,10 +42,7 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return getComponents(token).map((t, index) => index == 3 ? (eq(t, {
-        typ: EnumToken.IdenTokenType,
-        val: 'none'
-    }) ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
+    return getComponents(token).map((t, index) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
 }
 function hex2srgb(token) {
     const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);

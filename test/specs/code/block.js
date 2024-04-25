@@ -72,7 +72,7 @@ border-left-color: red;
 }
 
 .blockquote-footer::before {
-    content: "— "
+    content: "— "
 }
 
 .img-fluid {
@@ -92,7 +92,7 @@ border-left-color: red;
 `;
             return transform(file, {
                 minify: true
-            }).then(result => expect(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer:before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
+            }).then(result => expect(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer:before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
         });
 
         it('merge selectors #5', function () {
@@ -425,7 +425,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             const file = `
        
 @media all {.site-header .logo { 
-transition: all 0s ease 0s; flex: 0 1 0%; position: relative; align-self: stretch; display: flex; align-items: center; }}
+transition: all 0s ease 0s; flex: 0 1 auto; position: relative; align-self: stretch; display: flex; align-items: center; }}
 
 `;
             return parse(file, {
@@ -437,7 +437,7 @@ transition: all 0s ease 0s; flex: 0 1 0%; position: relative; align-self: stretc
                 preserveLicense: true
             }).code).equals(`.site-header .logo {
  transition: 0s;
- flex: 0 1 0%;
+ flex: initial;
  position: relative;
  align-self: stretch;
  display: flex;
@@ -582,6 +582,38 @@ content: '\\21 now\\21';
 
 `;
         return transform(file).then(result => expect(result.code).equals(`.selector{background:border-box red;transition:0s}`));
+    });
+
+    it('render with parents #28', function () {
+        const file =`
+
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
+        return parse(file).then(result => expect(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}).code).equals(`@media screen and (min-width:40em){.a{width:3px}}`));
+    });
+
+    it('render without parents #29', function () {
+        const file =`
+
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
+        return parse(file).then(result => expect(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}).code).equals(`width:3px`));
     });
 
 }

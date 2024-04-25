@@ -50,6 +50,7 @@ export class PropertyMap {
 
             const separator: Token | null = this.config.separator != null ? <Token>{
                 ...this.config.separator,
+                // @ts-ignore
                 typ: EnumToken[this.config.separator.typ]
             } : null;
 
@@ -63,7 +64,7 @@ export class PropertyMap {
                 this.declarations.get(this.config.shorthand).val.slice().reduce((acc: Token[][], curr: Token) => {
 
                     // @ts-ignore
-                    if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
+                    if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
 
                         acc.push([]);
                         return acc;
@@ -120,11 +121,8 @@ export class PropertyMap {
                                     // @ts-ignore
                                     if ('prefix' in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
 
-                                        if (eq(acc[i], {
-                                            ...this.config.properties[property].prefix,
-                                            // @ts-ignore
-                                            typ: EnumToken[props.prefix.typ]
-                                        })) {
+                                        // @ts-ignore
+                                        if (acc[i].typ == EnumToken[props.prefix.typ] && acc[i].val == this.config.properties[property].prefix.val) {
 
                                             acc.splice(i, 1);
                                             i--;
@@ -365,6 +363,7 @@ export class PropertyMap {
 
                     // @ts-ignore
                     let typ: EnumToken = <EnumToken>(EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
+                    // @ts-ignore
                     let separator: string | null = this.config.separator ? renderToken(this.config.separator) : ',';
 
                     this.matchTypes(declaration);
@@ -495,6 +494,7 @@ export class PropertyMap {
             let match: boolean;
             const separator = this.config.separator != null ? {
                 ...this.config.separator,
+                // @ts-ignore
                 typ: EnumToken[this.config.separator.typ]
             } : null;
             const tokens: { [key: string]: Token[][] } = <{ [key: string]: Token[][] }>{};
@@ -522,7 +522,8 @@ export class PropertyMap {
                     // @ts-ignore
                     for (const val of declaration.val) {
 
-                        if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+                        // @ts-ignore
+                        if (separator != null && separator.typ == val.typ && separator.val == val.val) {
 
                             current++;
 
@@ -540,10 +541,11 @@ export class PropertyMap {
                         }
 
                         // @ts-ignore
-                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && eq({
-                            ...props.separator,
-                            typ: EnumToken[props.separator.typ]
-                        }, val)) {
+                        if (props.multiple && props.separator != null &&
+                            // @ts-ignore
+                            EnumToken[props.separator.typ] == val.typ &&
+                            // @ts-ignore
+                            props.separator.val == val.val) {
 
                             continue;
                         }
@@ -692,7 +694,7 @@ export class PropertyMap {
                                 acc[i].push(<WhitespaceToken>{typ: EnumToken.WhitespaceTokenType});
                             }
 
-                            acc[i].push(...values.reduce((acc, curr) => {
+                            acc[i].push(...values.reduce((acc, curr: Token) => {
 
                                 if (acc.length > 0) {
 
@@ -700,6 +702,7 @@ export class PropertyMap {
                                     acc.push(<Token>{
                                         ...((props.separator && {
                                             ...props.separator,
+                                            // @ts-ignore
                                             typ: EnumToken[props.separator.typ]
                                         }) ?? {typ: EnumToken.WhitespaceTokenType})
                                     });
@@ -851,6 +854,7 @@ export class PropertyMap {
                                     continue;
                                 }
 
+                                // @ts-ignore@
                                 if (value[index].typ == EnumToken[config.prefix.typ] &&
                                     // @ts-ignore
                                     value[index].val == config.prefix.val) {

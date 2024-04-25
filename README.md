@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
+[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dy/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
 
@@ -15,7 +15,7 @@ $ npm install @tbela99/css-parser
 - no dependency
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - efficient minification without unsafe transforms, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- minify colors. 
+- minify colors.
 - support css color level 4 & 5: color(), lab(), lch(), oklab(), oklch(), color-mix() and relative color
 - generate nested css rules
 - convert nested css rules to legacy syntax
@@ -137,7 +137,6 @@ Include ParseOptions and RenderOptions
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules to false.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeShorthand: boolean, optional. compute shorthand properties.
-- inlineCssVariables: boolean, optional. replace css variables with their current value.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
@@ -161,10 +160,11 @@ Include ParseOptions and RenderOptions
 > Minify Options
 
 - minify: boolean, optional. default to _true_. minify css output.
+- withParents: boolean, optional. render this node and its parents.
 - expandNestingRules: boolean, optional. expand nesting rules.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
 - removeComments: boolean, remove comments in generated css.
-- colorConvert: boolean, convert colors to hex.
+- convertColor: boolean, convert colors to hex.
 
 > Sourcemap Options
 
@@ -206,13 +206,30 @@ render(ast, RenderOptions = {});
 Rendering ast
 
 ```javascript
+import {parse, render} from '@tbela99/css-parser';
 
-import {render} from '@tbela99/css-parser';
+const css = `
+@media screen and (min-width: 40em) {
+    .featurette-heading {
+        font-size: 50px;
+    }
+    .a {
+        color: red;
+        width: 3px;
+    }
+}
+`;
 
-// minified
-const {code, stats} = render(ast, {minify: true});
+const result = await parse(css, options);
 
-console.log(code);
+// print declaration without parents
+console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
+// -> width:3px
+
+// print declaration with parents
+console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+// -> @media screen and (min-width:40em){.a{width:3px}}
+
 ```
 
 ### Merge similar rules
@@ -435,8 +452,33 @@ result
 }
 
 ```
+### CSS variable inlining and relative color
 
-## Node Walker
+```javascript
+
+import {parse, render} from '@tbela99/css-parser';
+
+const css = `
+
+html { --bluegreen:  oklab(54.3% -22.5% -5%); }
+.overlay {
+  background:  oklab(from var(--bluegreen) calc(1.0 - l) calc(a * 0.8) b);
+}
+`
+
+const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
+
+```
+result
+
+```css
+.overlay {
+    background: #0c6464
+}
+
+```
+
+# Node Walker
 
 ```javascript
 import {walk} from '@tbela99/css-parser';
@@ -500,7 +542,7 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Computed shorthands properties
 
-- ~all~
+- [ ] ~all~
 - [x] animation
 - [x] background
 - [x] border
@@ -560,6 +602,8 @@ Ast can be transformed using node visitors
 
 ### Exemple 1: Declaration
 
+the visitor is called for any declaration encountered
+
 ```typescript
 
 import {AstDeclaration, ParserOptions} from "../src/@types";
@@ -591,6 +635,8 @@ console.debug(await transform(css, options));
 ```
 
 ### Exemple 2: Declaration
+
+the visitor is called only on 'height' declarations
 
 ```typescript
 
@@ -646,6 +692,8 @@ console.debug(await transform(css, options));
 
 ### Exemple 3: At-Rule
 
+the visitor is called on any at-rule
+
 ```typescript
 
 import {AstAtRule, ParserOptions} from "../src/@types";
@@ -685,6 +733,8 @@ console.debug(await transform(css, options));
 
 ### Exemple 4: At-Rule
 
+the visitor is called only for at-rule media
+
 ```typescript
 
 import {AstAtRule, ParserOptions} from "../src/@types";
@@ -723,6 +773,8 @@ console.debug(await transform(css, options));
 
 ### Exemple 5: Rule
 
+the visitor is called on any Rule
+
 ```typescript
 
 import {AstAtRule, ParserOptions} from "../src/@types";
@@ -755,9 +807,10 @@ console.debug(await transform(css, options));
 ```
 ### Exemple 6: Rule
 
-Adding declarations
+Adding declarations to any rule
 
 ```typescript
+
 import {transform} from "../src/node";
 import {AstRule, ParserOptions} from "../src/@types";
 import {parseDeclarations} from "../src/lib";

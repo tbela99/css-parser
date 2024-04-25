@@ -54,6 +54,19 @@ function doRender(data, options = {}) {
             removeComments: false,
         }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options
     };
+    if (options.withParents) {
+        // @ts-ignore
+        let parent = data.parent;
+        // @ts-ignore
+        while (data.parent != null) {
+            // @ts-ignore
+            parent = { ...data.parent, chi: [{ ...data }] };
+            // @ts-ignore
+            parent.parent = data.parent.parent;
+            // @ts-ignore
+            data = parent;
+        }
+    }
     const startTime = performance.now();
     const errors = [];
     const sourcemap = options.sourcemap ? new SourceMap : null;

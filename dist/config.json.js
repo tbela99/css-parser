@@ -353,18 +353,18 @@ var map = {
 			"initial"
 		],
 		"default": [
-			"0",
-			"0 1",
-			"0 auto",
-			"0 1 auto"
 		],
+		mapping: {
+			"0 1 auto": "initial",
+			"0 0 auto": "none",
+			"1 1 auto": "auto"
+		},
 		properties: {
 			"flex-grow": {
 				required: true,
 				keywords: [
 				],
 				"default": [
-					"0"
 				],
 				types: [
 					"Number"
@@ -374,7 +374,6 @@ var map = {
 				keywords: [
 				],
 				"default": [
-					"1"
 				],
 				types: [
 					"Number"
@@ -390,7 +389,6 @@ var map = {
 					"auto"
 				],
 				"default": [
-					"auto"
 				],
 				types: [
 					"Length",
@@ -1050,8 +1048,8 @@ var map = {
 					"Number"
 				],
 				"default": [
-					"normal",
-					"400"
+					"400",
+					"normal"
 				],
 				keywords: [
 					"normal",
@@ -1406,6 +1404,8 @@ var map = {
 					left: "0",
 					top: "0",
 					center: "50%",
+					"center center": "50%",
+					"50% 50%": "50%",
 					bottom: "100%",
 					right: "100%"
 				},

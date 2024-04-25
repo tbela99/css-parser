@@ -3,7 +3,6 @@ import { getNumber } from './color.js';
 import { hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb } from './rgb.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { eq } from '../../parser/utils/eq.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
@@ -32,7 +31,7 @@ function rgb2hsl(token) {
     t = chi[3];
     // @ts-ignore
     let a = null;
-    if (t != null && !eq(t, { typ: EnumToken.IdenTokenType, val: 'none' })) {
+    if (t != null && !(t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
         // @ts-ignore
         a = getNumber(t) / 255;
     }

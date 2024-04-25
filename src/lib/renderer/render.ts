@@ -109,6 +109,25 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options
     };
 
+    if (options.withParents) {
+
+        // @ts-ignore
+        let parent: AstNode = data.parent;
+
+        // @ts-ignore
+        while (data.parent != null) {
+
+            // @ts-ignore
+            parent = {...data.parent, chi: [{...data}]};
+
+            // @ts-ignore
+            parent.parent = data.parent.parent;
+
+            // @ts-ignore
+            data = parent;
+        }
+    }
+
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const sourcemap: SourceMap | null = options.sourcemap ? new SourceMap : null;
