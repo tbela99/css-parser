@@ -1,0 +1,268 @@
+<!Doctype html>
+<html>
+<head>
+    <title>@tbela99/css-parser Playground</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <h1>@tbela99/css-parser Playground</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <div class="row" id="optionsWrapper">
+                <div class="col-sm-12">
+                    <div class="mb-3">
+                        <label class="form-label">Parse Options</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[minify]" checked value="" id="parseoptionsminify">
+                            <label class="form-check-label" for="parseoptionsminify">
+                                Minify
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[parseColor]" checked value="" id="parseoptionsparseColor">
+                            <label class="form-check-label" for="parseoptionsparseColor">
+                                Parse color
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[resolveImport]" checked value="" id="parseoptionsresolveImport">
+                            <label class="form-check-label" for="parseoptionsresolveImport">
+                                Resolve @import
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[removeCharset]" checked value="" id="parseoptionsremoveCharset">
+                            <label class="form-check-label" for="parseoptionsremoveCharset">
+                                Remove @charset
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[removeEmpty]" checked value="" id="parseoptionsremoveEmpty">
+                            <label class="form-check-label" for="parseoptionsremoveEmpty">
+                                Remove empty nodes
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[removeDuplicateDeclarations]" checked value="" id="parseoptionsremoveDuplicateDeclarations">
+                            <label class="form-check-label" for="parseoptionsremoveDuplicateDeclarations">
+                                Remove duplicate declarations
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[computeShorthand]" checked value="" id="parseoptionscomputeShorthand">
+                            <label class="form-check-label" for="parseoptionscomputeShorthand">
+                                Compute shorthand properties
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[computeCalcExpression]" checked value="" id="parseoptionscomputeCalcExpression">
+                            <label class="form-check-label" for="parseoptionscomputeCalcExpression">
+                                Compute calc() expressions
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[inlineCssVariables]" value="" id="parseoptionsinlineCssVariables">
+                            <label class="form-check-label" for="parseoptionsinlineCssVariables">
+                                Inline CSS variables
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[nestingRules]" value="" id="parseoptionsnestingRules">
+                            <label class="form-check-label" for="parseoptionsnestingRules">
+                                CSS Nesting
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[resolveUrls]" value="" id="parseoptionsresolveUrls">
+                            <label class="form-check-label" for="parseoptionsresolveUrls">
+                                Rewrite URLs
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[sourcemap]" value="" id="parseoptionssourcemap">
+                            <label class="form-check-label" for="parseoptionssourcemap">
+                                Sourcemap
+                            </label>
+                        </div>
+                        <hr>
+                    </div>
+                </div>
+                <div class="col-sm-12">
+                    <div class="mb-3">
+                        <label class="form-label">Render Options</label>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[minify]" checked value="" id="renderoptionsminify">
+                            <label class="form-check-label" for="renderoptionsminify">
+                                Minify
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[convertColor]" checked value="" id="renderoptionsconvertColor">
+                            <label class="form-check-label" for="renderoptionsconvertColor">
+                                Convert color
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[removeComments]" checked value="" id="renderoptionsremoveComments">
+                            <label class="form-check-label" for="renderoptionsremoveComments">
+                                Remove comments
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[preserveLicense]" value="" id="renderoptionspreserveLicense">
+                            <label class="form-check-label" for="renderoptionspreserveLicense">
+                                Preserve license
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[sourcemap]" checked value="" id="renderoptionssourcemap">
+                            <label class="form-check-label" for="renderoptionssourcemap">
+                                Soucemap
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[expandNestingRules]" checked value="" id="renderoptionsexpandNestingRules">
+                            <label class="form-check-label" for="renderoptionsexpandNestingRules">
+                                Expand nesting rules
+                            </label>
+                        </div>
+                        <hr>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-10">
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="css" class="form-label">CSS</label>
+                        <textarea class="form-control" id="css" name="css" rows="10">@import 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';</textarea>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="result" class="form-label">Result</label>
+                        <textarea class="form-control" id="result" name="result" rows="10" disabled></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="ast" class="form-label">AST</label>
+                        <textarea class="form-control" id="ast" name="ast" rows="10" disabled></textarea>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="errors" class="form-label">Errors</label>
+                        <textarea class="form-control" id="errors" name="errors" rows="10" disabled></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+
+                        <label for="parse-stats" class="form-label">Parse Stats</label>
+                        <textarea class="form-control" id="parse-stats" rows="10" disabled></textarea>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+
+                        <label for="render-stats" class="form-label">Render Stats</label>
+                        <textarea class="form-control" id="render-stats" rows="10" disabled></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="module">
+
+    // import {parse, render} from 'https://esm.sh/@tbela99/css-parser/web';
+    import {parse, render} from '../dist/web/index.js';
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+    function toFileSize(size) {
+
+        if(size == 0) return 0;
+
+        const e = Math.floor(Math.log(size) / Math.log(1024));
+
+        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units?.[e] ?? s[e]);
+    }
+
+    const css = document.querySelector('#css');
+    const result = document.querySelector('#result');
+    const ast = document.querySelector('#ast');
+    const errors = document.querySelector('#errors');
+    const parseStats = document.querySelector('#parse-stats');
+    const renderStats = document.querySelector('#render-stats');
+
+    css.addEventListener('change', async () => {
+
+        if (css.value.trim() === '') {
+
+            result.value = '';
+            ast.value = '';
+            errors.value = '';
+            parseStats.textContent = '';
+            renderStats.textContent = '';
+        } else {
+
+            const parseOptions = {};
+            const renderOptions = {};
+
+            for (const option of document.querySelectorAll('input[type=checkbox][name]')) {
+
+                if (option.name.startsWith('renderoptions[')) {
+
+                    renderOptions[option.name.slice('renderoptions['.length, -1)] = option.checked;
+                }
+                else if (option.name.startsWith('parseoptions[')) {
+
+                    parseOptions[option.name.slice('parseoptions['.length, -1)] = option.checked;
+                }
+            }
+
+            const parsed = await parse(css.value, parseOptions);
+            const rendered = render(parsed.ast, renderOptions);
+
+            result.value = rendered.code;
+            ast.value = JSON.stringify(parsed.ast, null, 1);
+            errors.value = JSON.stringify(parsed.errors.concat(rendered.errors), null, 1);
+
+            parseStats.value = Object.entries(parsed.stats).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+            renderStats.value = Object.entries(rendered.stats).concat([['Ratio', (100 * (1 -rendered.code.length / parsed.stats.bytesIn)).toFixed(2) + ' %']]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+        }
+    });
+
+    document.querySelector('#optionsWrapper').addEventListener('click', (event) => {
+
+        if (event.target.matches('input[type=checkbox][name]')) {
+
+            css.dispatchEvent(new Event('change'));
+        }
+    });
+
+    css.dispatchEvent(new Event('change'));
+</script>
+<script>
+    navigator.serviceWorker.register('./sw.js', {scope: './', type: 'module'}).then(registration => {
+
+        if (registration.installing) {
+
+            location.reload();
+        }
+    });
+</script>
+</body>
