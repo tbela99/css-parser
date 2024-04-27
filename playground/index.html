@@ -84,7 +84,7 @@
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[sourcemap]" value="" id="parseoptionssourcemap">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[sourcemap]" checked value="" id="parseoptionssourcemap">
                             <label class="form-check-label" for="parseoptionssourcemap">
                                 Sourcemap
                             </label>
@@ -236,7 +236,7 @@
             const parsed = await parse(css.value, parseOptions);
             const rendered = render(parsed.ast, renderOptions);
 
-            result.value = rendered.code;
+            result.value = rendered.code + (renderOptions.sourcemap && rendered.map ? '\n\n' + `/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(rendered.map))} */` : '');
             ast.value = JSON.stringify(parsed.ast, null, 1);
             errors.value = JSON.stringify(parsed.errors.concat(rendered.errors), null, 1);
 
