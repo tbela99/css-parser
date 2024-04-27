@@ -13,14 +13,6 @@ class PropertyList {
     declarations;
     constructor(options = {}) {
         this.options = options;
-        // for (const key of Object.keys(this.options)) {
-        //
-        //     if (key in options) {
-        //
-        //         // @ts-ignore
-        //         this.options[key] = options[key];
-        //     }
-        // }
         this.declarations = new Map;
     }
     set(nam, value) {

@@ -133,7 +133,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
-            if (data.val.startsWith('# sourceMappingURL=')) {
+            if (data.val.startsWith('/*# sourceMappingURL=')) {
                 // ignore sourcemap
                 return '';
             }
@@ -145,12 +145,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     return css;
                 }
                 if (css === '') {
-                    if (sourcemap != null) {
+                    if (sourcemap != null && node.loc != null) {
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
                     return str;
                 }
-                if (sourcemap != null) {
+                if (sourcemap != null && node.loc != null) {
                     update(position, options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);
                 }

@@ -231,7 +231,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
 
-            if ((<AstComment>data).val.startsWith('# sourceMappingURL=')) {
+            if ((<AstComment>data).val.startsWith('/*# sourceMappingURL=')) {
 
                 // ignore sourcemap
                 return '';
@@ -252,7 +252,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
                 if (css === '') {
 
-                    if (sourcemap != null) {
+                    if (sourcemap != null && node.loc != null) {
 
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
@@ -260,7 +260,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     return str;
                 }
 
-                if (sourcemap != null) {
+                if (sourcemap != null && node.loc != null) {
 
                     update(position, <string>options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);

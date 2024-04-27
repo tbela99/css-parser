@@ -116,12 +116,13 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             nestingRules: false,
             resolveImport: false,
             resolveUrls: false,
-            removeCharset: false,
+            removeCharset: true,
             removeEmpty: true,
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             inlineCssVariables: false,
+            setParent: true,
             ...options
         };
 
@@ -327,27 +328,34 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             }
         }
 
-        const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
-        let node: AstNode;
+        if (options.setParent) {
 
-        while ((node = nodes.shift()!)) {
+            const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
+            let node: AstNode;
 
-            // @ts-ignore
-            if (node.chi.length > 0) {
+            while ((node = nodes.shift()!)) {
 
                 // @ts-ignore
-                for (const child of node.chi) {
+                if (node.chi.length > 0) {
 
-                    Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
+                    // @ts-ignore
+                    for (const child of node.chi) {
 
-                    if ('chi' in child && child.chi.length > 0) {
+                        if (child.parent != node) {
 
-                        // @ts-ignore
-                        nodes.push(<AstRule | AstAtRule>child);
+                            Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
+                        }
+
+                        if ('chi' in child && child.chi.length > 0) {
+
+                            // @ts-ignore
+                            nodes.push(<AstRule | AstAtRule>child);
+                        }
                     }
                 }
             }
         }
+
         const endTime: number = performance.now();
 
         if (options.signal != null) {
@@ -545,6 +553,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
                             return doParse(src, Object.assign({}, options, {
                                 minify: false,
+                                setParent: false,
                                 // @ts-ignore
                                 src: options.resolve(url, options.src).absolute
                             }))
@@ -753,7 +762,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
 export async function parseDeclarations(src: string, options: ParserOptions = {}): Promise<AstDeclaration[]> {
 
-    return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi);
+    return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
 }
 
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {

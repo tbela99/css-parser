@@ -806,6 +806,7 @@ export declare interface ParserOptions extends PropertyListOptions {
     };
     visitor?: VisitorNodeMap;
     signal?: AbortSignal;
+    setParent?: boolean;
 }
 
 export declare interface MinifyOptions extends ParserOptions {

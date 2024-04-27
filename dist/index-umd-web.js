@@ -3071,7 +3071,7 @@
                 return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
             case exports.EnumToken.CommentNodeType:
             case exports.EnumToken.CDOCOMMNodeType:
-                if (data.val.startsWith('# sourceMappingURL=')) {
+                if (data.val.startsWith('/*# sourceMappingURL=')) {
                     // ignore sourcemap
                     return '';
                 }
@@ -3083,12 +3083,12 @@
                         return css;
                     }
                     if (css === '') {
-                        if (sourcemap != null) {
+                        if (sourcemap != null && node.loc != null) {
                             updateSourceMap(node, options, cache, sourcemap, position, str);
                         }
                         return str;
                     }
-                    if (sourcemap != null) {
+                    if (sourcemap != null && node.loc != null) {
                         update(position, options.newLine);
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
@@ -6067,12 +6067,13 @@
             nestingRules: false,
             resolveImport: false,
             resolveUrls: false,
-            removeCharset: false,
+            removeCharset: true,
             removeEmpty: true,
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
             inlineCssVariables: false,
+            setParent: true,
             ...options
         };
         if (options.expandNestingRules) {
@@ -6220,17 +6221,21 @@
                 minify(ast, options, true, errors, false);
             }
         }
-        const nodes = [ast];
-        let node;
-        while ((node = nodes.shift())) {
-            // @ts-ignore
-            if (node.chi.length > 0) {
+        if (options.setParent) {
+            const nodes = [ast];
+            let node;
+            while ((node = nodes.shift())) {
                 // @ts-ignore
-                for (const child of node.chi) {
-                    Object.defineProperty(child, 'parent', { ...definedPropertySettings, value: node });
-                    if ('chi' in child && child.chi.length > 0) {
-                        // @ts-ignore
-                        nodes.push(child);
+                if (node.chi.length > 0) {
+                    // @ts-ignore
+                    for (const child of node.chi) {
+                        if (child.parent != node) {
+                            Object.defineProperty(child, 'parent', { ...definedPropertySettings, value: node });
+                        }
+                        if ('chi' in child && child.chi.length > 0) {
+                            // @ts-ignore
+                            nodes.push(child);
+                        }
                     }
                 }
             }
@@ -6382,6 +6387,7 @@
                             const root = await options.load(url, options.src).then((src) => {
                                 return doParse(src, Object.assign({}, options, {
                                     minify: false,
+                                    setParent: false,
                                     // @ts-ignore
                                     src: options.resolve(url, options.src).absolute
                                 }));
@@ -8196,14 +8202,6 @@
         declarations;
         constructor(options = {}) {
             this.options = options;
-            // for (const key of Object.keys(this.options)) {
-            //
-            //     if (key in options) {
-            //
-            //         // @ts-ignore
-            //         this.options[key] = options[key];
-            //     }
-            // }
             this.declarations = new Map;
         }
         set(nam, value) {
