@@ -9401,8 +9401,10 @@
         if (matchUrl.test(currentFile)) {
             return fetch(new URL(url, currentFile)).then(parseResponse);
         }
+        const path = resolve(url, currentFile).absolute;
+        const t = new URL(path, self.origin);
         // return fetch(new URL(url, new URL(currentFile, self.location.href).href)).then(parseResponse);
-        return fetch(resolve(url, currentFile).absolute).then(parseResponse);
+        return fetch(url, t.origin != self.location.origin ? { mode: 'cors' } : {}).then(parseResponse);
     }
 
     function render(data, options = {}) {
