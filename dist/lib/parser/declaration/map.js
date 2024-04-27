@@ -1,3 +1,4 @@
+import { eq } from '../utils/eq.js';
 import { renderToken } from '../../renderer/render.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -325,6 +326,26 @@ class PropertyMap {
                     }
                 }
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
+            }
+            for (const declaration of this.declarations.values()) {
+                if (declaration instanceof PropertySet) {
+                    continue;
+                }
+                const config = declaration.nam == this.config.shorthand ? this.config : this.config.properties[declaration.nam] ?? this.config;
+                if (!('mapping' in config)) {
+                    continue;
+                }
+                // @ts-ignore
+                for (const [key, val] of Object.entries(config.mapping)) {
+                    const keys = parseString(key);
+                    if (keys.length != declaration.val.length) {
+                        continue;
+                    }
+                    if (eq(declaration.val, keys)) {
+                        declaration.val = parseString(val);
+                        break;
+                    }
+                }
             }
             // @ts-ignore
             iterable = this.declarations.values();
