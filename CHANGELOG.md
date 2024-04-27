@@ -1,5 +1,16 @@
 # Changelog
 
+## V0.5.0
+- [x] render node with parents
+- [x] fix relative color from xyz
+- [x] fix bug when inlineCss is true bug no css variable exists
+- [x] compute more shorthands
+- [x] (web) fetch imported css files from external domains using cors
+
+## V0.4.1
+
+no code change
+
 ## V0.4.0
 
 Parsing

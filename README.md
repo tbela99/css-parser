@@ -14,7 +14,7 @@ $ npm install @tbela99/css-parser
 
 - no dependency
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- efficient minification without unsafe transforms, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- fast and efficient minification without unsafe transforms, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - minify colors.
 - support css color level 4 & 5: color(), lab(), lch(), oklab(), oklch(), color-mix() and relative color
 - generate nested css rules

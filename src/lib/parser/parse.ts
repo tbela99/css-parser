@@ -751,14 +751,6 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
     }
 }
 
-// function mapToken(token: TokenizeResult, map: Map<Token, Position>): Token {
-//
-//     const node: Token = getTokenType(token.token, token.hint);
-//
-//     map.set(node, token.position);
-//     return node;
-// }
-
 export async function parseDeclarations(src: string, options: ParserOptions = {}): Promise<AstDeclaration[]> {
 
     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi);
@@ -787,13 +779,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (hint != null) {
 
-        return <Token>([
-            EnumToken.WhitespaceTokenType, EnumToken.SemiColonTokenType, EnumToken.ColonTokenType, EnumToken.BlockStartTokenType,
-            EnumToken.BlockStartTokenType, EnumToken.AttrStartTokenType, EnumToken.AttrEndTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType,
-            EnumToken.CommaTokenType, EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.CommaTokenType,
-            EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
-            EnumToken.EOFTokenType
-        ].includes(hint) ? {typ: hint} : {typ: hint, val});
+        return enumTokenHints.has(hint) ? <Token>{typ: hint} :  <Token>{typ: hint, val};
     }
 
     if (val == ' ') {

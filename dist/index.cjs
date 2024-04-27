@@ -6039,7 +6039,7 @@ const BadTokensTypes = [
     exports.EnumToken.BadUrlTokenType,
     exports.EnumToken.BadStringTokenType
 ];
-new Set([
+const enumTokenHints = new Set([
     exports.EnumToken.WhitespaceTokenType, exports.EnumToken.SemiColonTokenType, exports.EnumToken.ColonTokenType, exports.EnumToken.BlockStartTokenType,
     exports.EnumToken.BlockStartTokenType, exports.EnumToken.AttrStartTokenType, exports.EnumToken.AttrEndTokenType, exports.EnumToken.StartParensTokenType, exports.EnumToken.EndParensTokenType,
     exports.EnumToken.CommaTokenType, exports.EnumToken.GtTokenType, exports.EnumToken.LtTokenType, exports.EnumToken.GteTokenType, exports.EnumToken.LteTokenType, exports.EnumToken.CommaTokenType,
@@ -6553,13 +6553,7 @@ function getTokenType(val, hint) {
         throw new Error('empty string?');
     }
     if (hint != null) {
-        return ([
-            exports.EnumToken.WhitespaceTokenType, exports.EnumToken.SemiColonTokenType, exports.EnumToken.ColonTokenType, exports.EnumToken.BlockStartTokenType,
-            exports.EnumToken.BlockStartTokenType, exports.EnumToken.AttrStartTokenType, exports.EnumToken.AttrEndTokenType, exports.EnumToken.StartParensTokenType, exports.EnumToken.EndParensTokenType,
-            exports.EnumToken.CommaTokenType, exports.EnumToken.GtTokenType, exports.EnumToken.LtTokenType, exports.EnumToken.GteTokenType, exports.EnumToken.LteTokenType, exports.EnumToken.CommaTokenType,
-            exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.DashMatchTokenType, exports.EnumToken.ContainMatchTokenType,
-            exports.EnumToken.EOFTokenType
-        ].includes(hint) ? { typ: hint } : { typ: hint, val });
+        return enumTokenHints.has(hint) ? { typ: hint } : { typ: hint, val };
     }
     if (val == ' ') {
         return { typ: exports.EnumToken.WhitespaceTokenType };
