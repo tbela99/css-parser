@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>@tbela99/css-parser Playground</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
 <body>
 <div class="container-fluid">
@@ -18,73 +19,86 @@
                     <div class="mb-3">
                         <label class="form-label">Parse Options</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[minify]" checked value="" id="parseoptionsminify">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[minify]" checked value=""
+                                   id="parseoptionsminify">
                             <label class="form-check-label" for="parseoptionsminify">
                                 Minify
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[parseColor]" checked value="" id="parseoptionsparseColor">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[parseColor]" checked
+                                   value="" id="parseoptionsparseColor">
                             <label class="form-check-label" for="parseoptionsparseColor">
                                 Parse color
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[resolveImport]" checked value="" id="parseoptionsresolveImport">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[resolveImport]" checked
+                                   value="" id="parseoptionsresolveImport">
                             <label class="form-check-label" for="parseoptionsresolveImport">
                                 Resolve @import
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[removeCharset]" checked value="" id="parseoptionsremoveCharset">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[removeCharset]" checked
+                                   value="" id="parseoptionsremoveCharset">
                             <label class="form-check-label" for="parseoptionsremoveCharset">
                                 Remove @charset
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[removeEmpty]" checked value="" id="parseoptionsremoveEmpty">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[removeEmpty]" checked
+                                   value="" id="parseoptionsremoveEmpty">
                             <label class="form-check-label" for="parseoptionsremoveEmpty">
                                 Remove empty nodes
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[removeDuplicateDeclarations]" checked value="" id="parseoptionsremoveDuplicateDeclarations">
+                            <input class="form-check-input" type="checkbox"
+                                   name="parseoptions[removeDuplicateDeclarations]" checked value=""
+                                   id="parseoptionsremoveDuplicateDeclarations">
                             <label class="form-check-label" for="parseoptionsremoveDuplicateDeclarations">
                                 Remove duplicate declarations
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[computeShorthand]" checked value="" id="parseoptionscomputeShorthand">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[computeShorthand]"
+                                   checked value="" id="parseoptionscomputeShorthand">
                             <label class="form-check-label" for="parseoptionscomputeShorthand">
                                 Compute shorthand properties
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[computeCalcExpression]" checked value="" id="parseoptionscomputeCalcExpression">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[computeCalcExpression]"
+                                   checked value="" id="parseoptionscomputeCalcExpression">
                             <label class="form-check-label" for="parseoptionscomputeCalcExpression">
                                 Compute calc() expressions
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[inlineCssVariables]" value="" id="parseoptionsinlineCssVariables">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[inlineCssVariables]"
+                                   value="" id="parseoptionsinlineCssVariables">
                             <label class="form-check-label" for="parseoptionsinlineCssVariables">
                                 Inline CSS variables
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[nestingRules]" value="" id="parseoptionsnestingRules">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[nestingRules]" value=""
+                                   id="parseoptionsnestingRules">
                             <label class="form-check-label" for="parseoptionsnestingRules">
                                 CSS Nesting
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[resolveUrls]" value="" id="parseoptionsresolveUrls">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[resolveUrls]" value=""
+                                   id="parseoptionsresolveUrls">
                             <label class="form-check-label" for="parseoptionsresolveUrls">
                                 Rewrite URLs
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="parseoptions[sourcemap]" checked value="" id="parseoptionssourcemap">
+                            <input class="form-check-input" type="checkbox" name="parseoptions[sourcemap]" checked
+                                   value="" id="parseoptionssourcemap">
                             <label class="form-check-label" for="parseoptionssourcemap">
                                 Sourcemap
                             </label>
@@ -97,37 +111,43 @@
                         <label class="form-label">Render Options</label>
 
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="renderoptions[minify]" checked value="" id="renderoptionsminify">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[minify]" checked
+                                   value="" id="renderoptionsminify">
                             <label class="form-check-label" for="renderoptionsminify">
                                 Minify
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="renderoptions[convertColor]" checked value="" id="renderoptionsconvertColor">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[convertColor]" checked
+                                   value="" id="renderoptionsconvertColor">
                             <label class="form-check-label" for="renderoptionsconvertColor">
                                 Convert color
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="renderoptions[removeComments]" checked value="" id="renderoptionsremoveComments">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[removeComments]" checked
+                                   value="" id="renderoptionsremoveComments">
                             <label class="form-check-label" for="renderoptionsremoveComments">
                                 Remove comments
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="renderoptions[preserveLicense]" value="" id="renderoptionspreserveLicense">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[preserveLicense]"
+                                   value="" id="renderoptionspreserveLicense">
                             <label class="form-check-label" for="renderoptionspreserveLicense">
                                 Preserve license
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="renderoptions[sourcemap]" checked value="" id="renderoptionssourcemap">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[sourcemap]" checked
+                                   value="" id="renderoptionssourcemap">
                             <label class="form-check-label" for="renderoptionssourcemap">
                                 Soucemap
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="renderoptions[expandNestingRules]" checked value="" id="renderoptionsexpandNestingRules">
+                            <input class="form-check-input" type="checkbox" name="renderoptions[expandNestingRules]"
+                                   checked value="" id="renderoptionsexpandNestingRules">
                             <label class="form-check-label" for="renderoptionsexpandNestingRules">
                                 Expand nesting rules
                             </label>
@@ -137,7 +157,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-10">
+        <div class="col-md-10" id="zone">
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
@@ -148,6 +168,7 @@
                 <div class="col">
                     <div class="mb-3">
                         <label for="result" class="form-label">Result</label>
+                        <a download="result" href="#">Download                        </a>
                         <textarea class="form-control" id="result" name="result" rows="10" disabled></textarea>
                     </div>
                 </div>
@@ -156,13 +177,16 @@
                 <div class="col">
                     <div class="mb-3">
                         <label for="ast" class="form-label">AST</label>
-                        <textarea class="form-control" id="ast" name="ast" rows="10" disabled></textarea>
+                        <a download="ast" href="#">Download</a>
+
+                            <textarea class="form-control" id="ast" name="ast" rows="10" disabled></textarea>
                     </div>
                 </div>
                 <div class="col">
                     <div class="mb-3">
                         <label for="errors" class="form-label">Errors</label>
-                        <textarea class="form-control" id="errors" name="errors" rows="10" disabled></textarea>
+                        <a download="errors" href="#">Download</a>
+                            <textarea class="form-control" id="errors" name="errors" rows="10" disabled></textarea>
                     </div>
                 </div>
             </div>
@@ -191,21 +215,21 @@
 
     const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
 
-    function toFileSize(size) {
-
-        if(size == 0) return 0;
-
-        const e = Math.floor(Math.log(size) / Math.log(1024));
-
-        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units?.[e] ?? s[e]);
-    }
-
     const css = document.querySelector('#css');
     const result = document.querySelector('#result');
     const ast = document.querySelector('#ast');
     const errors = document.querySelector('#errors');
     const parseStats = document.querySelector('#parse-stats');
     const renderStats = document.querySelector('#render-stats');
+
+    function toFileSize(size) {
+
+        if (size === 0) return 0;
+
+        const e = Math.floor(Math.log(size) / Math.log(1024));
+
+        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units?.[e] ?? s[e]);
+    }
 
     css.addEventListener('change', async () => {
 
@@ -226,8 +250,7 @@
                 if (option.name.startsWith('renderoptions[')) {
 
                     renderOptions[option.name.slice('renderoptions['.length, -1)] = option.checked;
-                }
-                else if (option.name.startsWith('parseoptions[')) {
+                } else if (option.name.startsWith('parseoptions[')) {
 
                     parseOptions[option.name.slice('parseoptions['.length, -1)] = option.checked;
                 }
@@ -236,16 +259,53 @@
             const parsed = await parse(css.value, parseOptions);
             const rendered = render(parsed.ast, renderOptions);
 
-            result.value = rendered.code + (renderOptions.sourcemap && rendered.map ? '\n\n' + `/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(rendered.map))} */` : '');
+            result.value = rendered.code + (renderOptions.sourcemap && rendered.map ? '\n' + `/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(rendered.map))} */` : '');
             ast.value = JSON.stringify(parsed.ast, null, 1);
             errors.value = JSON.stringify(parsed.errors.concat(rendered.errors), null, 1);
 
             parseStats.value = Object.entries(parsed.stats).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
-            renderStats.value = Object.entries(rendered.stats).concat([['Ratio', (100 * (1 -rendered.code.length / parsed.stats.bytesIn)).toFixed(2) + ' %']]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+            renderStats.value = Object.entries(rendered.stats).concat([['Ratio', (100 * (1 - rendered.code.length / parsed.stats.bytesIn)).toFixed(2) + ' %']]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
         }
     });
 
+    function generateDownloadUrl(target, input, type) {
+
+        if (input.length === 0) {
+
+            return null;
+        }
+
+        return URL.createObjectURL(new Blob([input], {type}));
+    }
+
+    document.querySelector('#zone').addEventListener('click', (event) => {
+
+        const target = event.target.closest('a[download]');
+
+        if (target === null) {
+
+            return;
+        }
+
+        const url = generateDownloadUrl(target, target.download === 'result' ? result.value : (target.download === 'ast' ? ast.value : errors.value), target.download === 'result' ? 'text/css' : 'application/json');
+
+        if (url === null) {
+
+            event.preventDefault();
+            return;
+        }
+
+        if (event.target.href.startsWith('blob:')) {
+
+            URL.revokeObjectURL(event.target.href);
+        }
+
+        event.target.href = url;
+    });
+
     document.querySelector('#optionsWrapper').addEventListener('click', (event) => {
+
+        event.stopPropagation();
 
         if (event.target.matches('input[type=checkbox][name]')) {
 
