@@ -11,6 +11,7 @@ import {
 import {eq} from "../utils/eq";
 import {isLength} from "../utils";
 import {EnumToken} from "../../ast";
+import {renderToken} from "../../renderer";
 
 function dedup(values: Token[][]) {
 
@@ -105,6 +106,7 @@ export class PropertySet {
                             tokens[current].push(token);
                         }
 
+                        // @ts-ignore
                         if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
 
                             tokens.push([]);
@@ -263,6 +265,7 @@ export class PropertySet {
 
                     if (acc.length > 0) {
 
+                        // @ts-ignore
                         acc.push(<LiteralToken>{typ: EnumToken.LiteralTokenType, val: this.config.separator});
                     }
 

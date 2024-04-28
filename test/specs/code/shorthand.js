@@ -364,4 +364,40 @@ overflow-y: hidden;
         });
     });
 
+    it('shorthand parsing #25', function () {
+        return transform(`
+
+.foo {
+font-weight: bold;
+background-position: center center;
+background-image: url("logo.png");
+}
+
+`).then(result => expect(result.code).equals(`.foo{font-weight:700;background-position:50%;background-image:url(logo.png)}`));
+    });
+
+    it('shorthand parsing #26', function () {
+        return transform(`
+
+._19_u :focus { outline: none !important; }
+}
+
+`).then(result => expect(result.code).equals(`._19_u :focus{outline:0!important}`));
+    });
+
+
+    it('shorthand parsing #27', function () {
+        return transform(`
+
+.pure-table-bordered tbody > tr:last-child > td {
+    border-bottom-width: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-color: #34edc7;
+    border-style: medium;
+}
+`).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td{border-width:0;border-color:#34edc7;border-style:medium}`));
+    });
+
 }

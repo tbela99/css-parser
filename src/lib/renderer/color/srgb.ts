@@ -54,10 +54,7 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
 export function rgb2srgb(token: ColorToken): number[] {
 
-    return getComponents(token).map((t: Token, index: number) => index == 3 ? (eq(t, {
-        typ: EnumToken.IdenTokenType,
-        val: 'none'
-    }) ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
+    return getComponents(token).map((t: Token, index: number) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
 }
 
 export function hex2srgb(token: ColorToken): number[] {

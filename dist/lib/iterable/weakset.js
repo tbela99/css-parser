@@ -1,30 +1,40 @@
 class IterableWeakSet {
     #weakset = new WeakSet;
     #set = new Set;
-    constructor(iterable) {
-        if (iterable) {
-            for (const value of iterable) {
-                const ref = new WeakRef(value);
-                this.#weakset.add(value);
-                this.#set.add(ref);
-            }
-        }
-    }
+    // constructor(iterable?: Iterable<any>) {
+    //
+    //     if (iterable) {
+    //
+    //         for (const value of iterable) {
+    //
+    //             const ref: WeakRef<any> = new WeakRef(value);
+    //
+    //             this.#weakset.add(value);
+    //             this.#set.add(ref);
+    //         }
+    //     }
+    // }
     has(value) {
         return this.#weakset.has(value);
     }
-    delete(value) {
-        if (this.#weakset.has(value)) {
-            for (const ref of this.#set) {
-                if (ref.deref() === value) {
-                    this.#set.delete(ref);
-                    break;
-                }
-            }
-            return this.#weakset.delete(value);
-        }
-        return false;
-    }
+    // delete(value: any): boolean {
+    //
+    //     if (this.#weakset.has(value)) {
+    //
+    //         for (const ref of this.#set) {
+    //
+    //             if (ref.deref() === value) {
+    //
+    //                 this.#set.delete(ref);
+    //                 break;
+    //             }
+    //         }
+    //
+    //         return this.#weakset.delete(value);
+    //     }
+    //
+    //     return false;
+    // }
     add(value) {
         if (!this.#weakset.has(value)) {
             this.#weakset.add(value);

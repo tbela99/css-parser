@@ -8,11 +8,9 @@ import {
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utils";
-import {IterableWeakSet} from "../../iterable";
 import {evaluate} from "../math";
 
-export class ComputeCalcExpressionFeature extends MinifyFeature {
+export class ComputeCalcExpressionFeature {
 
     static get ordering(): number {
         return 1;
@@ -50,7 +48,7 @@ export class ComputeCalcExpressionFeature extends MinifyFeature {
                 continue;
             }
 
-            const set: IterableWeakSet<Token> = new IterableWeakSet;
+            const set: Set<Token> = new Set;
 
             for (const {value, parent} of walkValues((<AstDeclaration>node).val)) {
 

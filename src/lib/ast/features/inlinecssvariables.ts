@@ -9,8 +9,6 @@ import {
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
-import {MinifyFeature} from "../utils";
-import {IterableWeakSet} from "../../iterable";
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
 
@@ -46,7 +44,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
     }
 }
 
-export class InlineCssVariablesFeature extends MinifyFeature {
+export class InlineCssVariablesFeature {
 
     static get ordering() {
         return 0;
@@ -103,7 +101,7 @@ export class InlineCssVariablesFeature extends MinifyFeature {
                     const info = {
                         globalScope: isRoot,
                         // @ts-ignore
-                        parent: <IterableWeakSet<AstRule | AstAtRule>>new IterableWeakSet(),
+                        parent: <Set<AstRule | AstAtRule>>new Set(),
                         declarationCount: 1,
                         replaceable: isRoot,
                         node: (<AstDeclaration>node)
@@ -159,6 +157,11 @@ export class InlineCssVariablesFeature extends MinifyFeature {
     cleanup(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
+
+        if (variableScope == null) {
+
+            return;
+        }
 
         for (const info of variableScope.values()) {
 

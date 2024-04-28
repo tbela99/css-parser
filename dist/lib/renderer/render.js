@@ -54,6 +54,19 @@ function doRender(data, options = {}) {
             removeComments: false,
         }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options
     };
+    if (options.withParents) {
+        // @ts-ignore
+        let parent = data.parent;
+        // @ts-ignore
+        while (data.parent != null) {
+            // @ts-ignore
+            parent = { ...data.parent, chi: [{ ...data }] };
+            // @ts-ignore
+            parent.parent = data.parent.parent;
+            // @ts-ignore
+            data = parent;
+        }
+    }
     const startTime = performance.now();
     const errors = [];
     const sourcemap = options.sourcemap ? new SourceMap : null;
@@ -120,7 +133,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
-            if (data.val.startsWith('# sourceMappingURL=')) {
+            if (data.val.startsWith('/*# sourceMappingURL=')) {
                 // ignore sourcemap
                 return '';
             }
@@ -132,12 +145,12 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     return css;
                 }
                 if (css === '') {
-                    if (sourcemap != null) {
+                    if (sourcemap != null && node.loc != null) {
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
                     return str;
                 }
-                if (sourcemap != null) {
+                if (sourcemap != null && node.loc != null) {
                     update(position, options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);
                 }

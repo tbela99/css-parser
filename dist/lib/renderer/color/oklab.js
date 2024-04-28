@@ -1,12 +1,11 @@
 import { multiplyMatrices } from './utils/matrix.js';
-import { powerlessColorComponent } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { srgb2lsrgbvalues, hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgbvalues } from './srgb.js';
 import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../parser/parse.js';
-import { eq } from '../../parser/utils/eq.js';
 import { lch2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
@@ -66,7 +65,7 @@ function getOKLABComponents(token) {
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const alpha = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    const alpha = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
     const rgb = [l, a, b];
     if (alpha != 1 && alpha != null) {
         rgb.push(alpha);

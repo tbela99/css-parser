@@ -99,7 +99,7 @@ export function getOKLABComponents(token: ColorToken): number[] {
     t = <NumberToken | PercentageToken>components[3];
 
     // @ts-ignore
-    const alpha: number = t == null || eq(t, powerlessColorComponent) ? 1 : getNumber(t);
+    const alpha: number = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
 
     const rgb: number[] = [l, a, b];
 

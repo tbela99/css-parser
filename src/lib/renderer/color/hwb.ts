@@ -11,7 +11,7 @@ export function rgb2hwb(token: ColorToken): number[] {
     // @ts-ignore
     return srgb2hwb(...getComponents(token).map((t: Token, index: number): number => {
 
-        if (index == 3 && eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == 'none') {
             return 1;
         }
 
@@ -24,7 +24,7 @@ export function hsl2hwb(token: ColorToken): number[] {
     // @ts-ignore
     return hsl2hwbvalues(...getComponents(token).map((t: Token, index: number) => {
 
-        if (index == 3 && eq(t, {typ: EnumToken.IdenTokenType, val: 'none'})) {
+        if (index == 3 && (t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
             return 1;
         }
 

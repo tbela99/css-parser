@@ -5,7 +5,8 @@ import {colorsFunc} from "../../renderer";
 import {COLORS_NAMES} from "../../renderer/color";
 import {
     AngleToken,
-    DimensionToken, FunctionToken,
+    DimensionToken,
+    FunctionToken,
     IdentToken,
     LengthToken,
     NumberToken,
@@ -16,16 +17,16 @@ import {EnumToken} from "../../ast";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits: string[] = [
+const dimensionUnits: Set<string> = new Set([
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
     'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
     'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
-];
+]);
 
 export function isLength(dimension: DimensionToken): boolean {
 
-    return 'unit' in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
+    return 'unit' in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }
 
 export function isResolution(dimension: DimensionToken): boolean {
@@ -124,7 +125,7 @@ export function isColor(token: Token): boolean {
                 if (children[i].typ == EnumToken.IdenTokenType) {
 
                     if ((<IdentToken>children[i]).val != 'none' &&
-                        !(isRelative && (['alpha', 'r', 'g', 'b'] as string[]).includes((<IdentToken>children[i]).val) || isColorspace(children[i]))) {
+                        !(isRelative && (['alpha', 'r', 'g', 'b', 'x', 'y', 'z'] as string[]).includes((<IdentToken>children[i]).val) || isColorspace(children[i]))) {
 
                         return false;
                     }
@@ -136,11 +137,17 @@ export function isColor(token: Token): boolean {
                 }
             }
 
+            if (children.length == 4 || (isRelative && children.length == 6)) {
+
+                return true;
+            }
+
             if (children.length == 8 || children.length == 6) {
 
                 const sep: Token = <Token>children.at(-2);
                 const alpha: Token = <Token>children.at(-1);
-                if (sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                // @ts-ignore
+                if ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
 
                     return false;
                 }

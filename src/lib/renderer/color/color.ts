@@ -477,9 +477,62 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...lch2srgb(token));
                 break;
 
-            case 'color':
+            case 'oklch':
                 // @ts-ignore
                 values.push(...srgb2oklch(...color2srgbvalues(token)));
+                break;
+
+            case 'color':
+
+                const val: number[] = color2srgbvalues(token);
+
+                switch (<ColorSpace>to) {
+
+                    case 'srgb':
+
+                        values.push(...val);
+                        break;
+                    case 'srgb-linear':
+
+                        // @ts-ignore
+                        values.push(...srgb2lsrgbvalues(...val));
+                        break;
+                    case 'display-p3':
+
+                        // @ts-ignore
+                        values.push(...srgb2p3values(...val));
+                        break;
+                    case 'prophoto-rgb':
+
+                        // @ts-ignore
+                        values.push(...srgb2prophotorgbvalues(...val));
+                        break;
+                    case 'a98-rgb':
+
+                        // @ts-ignore
+                        values.push(...srgb2a98values(...val));
+                        break;
+
+                    case 'rec2020':
+
+                        // @ts-ignore
+                        values.push(...srgb2rec2020values(...val));
+                        break;
+
+                    case 'xyz':
+                    case 'xyz-d65':
+
+                        // @ts-ignore
+                        values.push(...srgb2xyz(...val));
+                        break;
+
+                    case 'xyz-d50':
+
+                        // @ts-ignore
+                        values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
+                        break
+                }
+
                 break;
         }
 

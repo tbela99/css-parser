@@ -5,7 +5,6 @@ import { walkValues } from '../../ast/walk.js';
 import '../../parser/parse.js';
 import { reduceNumber } from '../render.js';
 import { colorRange } from './utils/constants.js';
-import { eq } from '../../parser/utils/eq.js';
 import { evaluate } from '../../ast/math/expression.js';
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
@@ -29,10 +28,7 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         [names[1]]: getValue(g, converted, names[1]), // string,
         [names[2]]: getValue(b, converted, names[2]),
         // @ts-ignore
-        alpha: alpha == null || eq(alpha, {
-            typ: EnumToken.IdenTokenType,
-            val: 'none'
-        }) ? {
+        alpha: alpha == null || (alpha.typ == EnumToken.IdenTokenType && alpha.val == 'none') ? {
             typ: EnumToken.NumberTokenType,
             val: '1'
         } : (alpha.typ == EnumToken.PercentageTokenType ? {
@@ -45,7 +41,7 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         [names[1]]: getValue(gExp, converted, names[1]),
         [names[2]]: getValue(bExp, converted, names[2]),
         // @ts-ignore
-        alpha: getValue(aExp == null || eq(aExp, { typ: EnumToken.IdenTokenType, val: 'none' }) ? {
+        alpha: getValue(aExp == null || (aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') ? {
             typ: EnumToken.NumberTokenType,
             val: '1'
         } : aExp)

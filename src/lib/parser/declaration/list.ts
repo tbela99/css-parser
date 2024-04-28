@@ -22,15 +22,7 @@ export class PropertyList {
 
     constructor(options: PropertyListOptions = {}) {
 
-        for (const key of Object.keys(this.options)) {
-
-            if (key in options) {
-
-                // @ts-ignore
-                this.options[key] = options[key];
-            }
-        }
-
+        this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>;
     }
 

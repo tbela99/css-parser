@@ -22,6 +22,9 @@ export async function load(url: string, currentFile: string) {
         return fetch(new URL(url, currentFile)).then(parseResponse);
     }
 
+    const path: string = resolve(url, currentFile).absolute;
+    const t: URL = new URL(path, self.origin);
+
     // return fetch(new URL(url, new URL(currentFile, self.location.href).href)).then(parseResponse);
-    return fetch(resolve(url, currentFile).absolute).then(parseResponse);
+    return fetch(url, t.origin != self.location.origin ? {mode: 'cors'} : {}).then(parseResponse);
 }

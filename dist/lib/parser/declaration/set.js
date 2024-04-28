@@ -68,6 +68,7 @@ class PropertySet {
                             }
                             tokens[current].push(token);
                         }
+                        // @ts-ignore
                         if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator) {
                             tokens.push([]);
                             current++;
@@ -171,6 +172,7 @@ class PropertySet {
                             }
                         }
                         if (acc.length > 0) {
+                            // @ts-ignore
                             acc.push({ typ: EnumToken.LiteralTokenType, val: this.config.separator });
                         }
                         acc.push(...curr);

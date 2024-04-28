@@ -109,6 +109,25 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options
     };
 
+    if (options.withParents) {
+
+        // @ts-ignore
+        let parent: AstNode = data.parent;
+
+        // @ts-ignore
+        while (data.parent != null) {
+
+            // @ts-ignore
+            parent = {...data.parent, chi: [{...data}]};
+
+            // @ts-ignore
+            parent.parent = data.parent.parent;
+
+            // @ts-ignore
+            data = parent;
+        }
+    }
+
     const startTime: number = performance.now();
     const errors: ErrorDescription[] = [];
     const sourcemap: SourceMap | null = options.sourcemap ? new SourceMap : null;
@@ -212,7 +231,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
 
-            if ((<AstComment>data).val.startsWith('# sourceMappingURL=')) {
+            if ((<AstComment>data).val.startsWith('/*# sourceMappingURL=')) {
 
                 // ignore sourcemap
                 return '';
@@ -233,7 +252,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
                 if (css === '') {
 
-                    if (sourcemap != null) {
+                    if (sourcemap != null && node.loc != null) {
 
                         updateSourceMap(node, options, cache, sourcemap, position, str);
                     }
@@ -241,7 +260,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     return str;
                 }
 
-                if (sourcemap != null) {
+                if (sourcemap != null && node.loc != null) {
 
                     update(position, <string>options.newLine);
                     updateSourceMap(node, options, cache, sourcemap, position, str);

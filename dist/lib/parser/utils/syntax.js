@@ -8,14 +8,14 @@ import { COLORS_NAMES } from '../../renderer/color/utils/constants.js';
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits = [
+const dimensionUnits = new Set([
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
     'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
     'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
-];
+]);
 function isLength(dimension) {
-    return 'unit' in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
+    return 'unit' in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
 }
 function isResolution(dimension) {
     return 'unit' in dimension && ['dpi', 'dpcm', 'dppx', 'x'].includes(dimension.unit.toLowerCase());
@@ -75,7 +75,7 @@ function isColor(token) {
             for (let i = 1; i < children.length - 2; i++) {
                 if (children[i].typ == EnumToken.IdenTokenType) {
                     if (children[i].val != 'none' &&
-                        !(isRelative && ['alpha', 'r', 'g', 'b'].includes(children[i].val) || isColorspace(children[i]))) {
+                        !(isRelative && ['alpha', 'r', 'g', 'b', 'x', 'y', 'z'].includes(children[i].val) || isColorspace(children[i]))) {
                         return false;
                     }
                 }
@@ -83,10 +83,14 @@ function isColor(token) {
                     return false;
                 }
             }
+            if (children.length == 4 || (isRelative && children.length == 6)) {
+                return true;
+            }
             if (children.length == 8 || children.length == 6) {
                 const sep = children.at(-2);
                 const alpha = children.at(-1);
-                if (sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                // @ts-ignore
+                if ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
                     return false;
                 }
                 if (alpha.typ == EnumToken.IdenTokenType && alpha.val != 'none') {

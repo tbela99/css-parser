@@ -30,6 +30,7 @@ class PropertyMap {
         else {
             const separator = this.config.separator != null ? {
                 ...this.config.separator,
+                // @ts-ignore
                 typ: EnumToken[this.config.separator.typ]
             } : null;
             // expand shorthand
@@ -39,7 +40,7 @@ class PropertyMap {
                 // @ts-ignore
                 this.declarations.get(this.config.shorthand).val.slice().reduce((acc, curr) => {
                     // @ts-ignore
-                    if (separator != null && separator.typ == curr.typ && eq(separator, curr)) {
+                    if (separator != null && separator.typ == curr.typ && separator.val == curr.val) {
                         acc.push([]);
                         return acc;
                     }
@@ -78,11 +79,8 @@ class PropertyMap {
                                 i--;
                                 // @ts-ignore
                                 if ('prefix' in props && acc[i]?.typ == EnumToken[props.prefix.typ]) {
-                                    if (eq(acc[i], {
-                                        ...this.config.properties[property].prefix,
-                                        // @ts-ignore
-                                        typ: EnumToken[props.prefix.typ]
-                                    })) {
+                                    // @ts-ignore
+                                    if (acc[i].typ == EnumToken[props.prefix.typ] && acc[i].val == this.config.properties[property].prefix.val) {
                                         acc.splice(i, 1);
                                         i--;
                                     }
@@ -249,6 +247,7 @@ class PropertyMap {
                     let values = [];
                     // @ts-ignore
                     let typ = (EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
+                    // @ts-ignore
                     let separator = this.config.separator ? renderToken(this.config.separator) : ',';
                     this.matchTypes(declaration);
                     values.push(value);
@@ -328,6 +327,26 @@ class PropertyMap {
                 }
                 return (filtered.length > 0 ? filtered : values)[Symbol.iterator]();
             }
+            for (const declaration of this.declarations.values()) {
+                if (declaration instanceof PropertySet) {
+                    continue;
+                }
+                const config = declaration.nam == this.config.shorthand ? this.config : this.config.properties[declaration.nam] ?? this.config;
+                if (!('mapping' in config)) {
+                    continue;
+                }
+                // @ts-ignore
+                for (const [key, val] of Object.entries(config.mapping)) {
+                    const keys = parseString(key);
+                    if (keys.length != declaration.val.length) {
+                        continue;
+                    }
+                    if (eq(declaration.val, keys)) {
+                        declaration.val = parseString(val);
+                        break;
+                    }
+                }
+            }
             // @ts-ignore
             iterable = this.declarations.values();
         }
@@ -336,6 +355,7 @@ class PropertyMap {
             let match;
             const separator = this.config.separator != null ? {
                 ...this.config.separator,
+                // @ts-ignore
                 typ: EnumToken[this.config.separator.typ]
             } : null;
             const tokens = {};
@@ -353,7 +373,8 @@ class PropertyMap {
                 for (const declaration of [(properties instanceof PropertySet ? [...properties][0] : properties)]) {
                     // @ts-ignore
                     for (const val of declaration.val) {
-                        if (separator != null && separator.typ == val.typ && eq(separator, val)) {
+                        // @ts-ignore
+                        if (separator != null && separator.typ == val.typ && separator.val == val.val) {
                             current++;
                             if (tokens[curr[0]].length == current) {
                                 tokens[curr[0]].push([]);
@@ -364,10 +385,11 @@ class PropertyMap {
                             continue;
                         }
                         // @ts-ignore
-                        if (props.multiple && props.separator != null && EnumToken[props.separator.typ] == val.typ && eq({
-                            ...props.separator,
-                            typ: EnumToken[props.separator.typ]
-                        }, val)) {
+                        if (props.multiple && props.separator != null &&
+                            // @ts-ignore
+                            EnumToken[props.separator.typ] == val.typ &&
+                            // @ts-ignore
+                            props.separator.val == val.val) {
                             continue;
                         }
                         // @ts-ignore
@@ -472,6 +494,7 @@ class PropertyMap {
                                     acc.push({
                                         ...((props.separator && {
                                             ...props.separator,
+                                            // @ts-ignore
                                             typ: EnumToken[props.separator.typ]
                                         }) ?? { typ: EnumToken.WhitespaceTokenType })
                                     });
@@ -572,6 +595,7 @@ class PropertyMap {
                                 if (value[index].typ == EnumToken.WhitespaceTokenType) {
                                     continue;
                                 }
+                                // @ts-ignore@
                                 if (value[index].typ == EnumToken[config.prefix.typ] &&
                                     // @ts-ignore
                                     value[index].val == config.prefix.val) {
