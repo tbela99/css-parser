@@ -26,6 +26,10 @@ $ npm install @tbela99/css-parser
 - remove duplicate properties
 - flatten @import rules
 
+## Playground
+
+Try it [online](https://tbela99.github.io/css-parser/playground/)
+
 ## Exports
 
 There are several ways to import the library into your application.
