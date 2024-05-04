@@ -7,4 +7,4 @@ const css = readFileSync(dirname(new URL(import.meta.url).pathname) + '/files/cs
 const {code, stats} = await transform(css);
 
 console.log(code);
-console.error({stats});
+console.log({stats});
