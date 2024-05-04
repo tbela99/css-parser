@@ -532,12 +532,20 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
         if (atRule.val == 'import') {
 
             // @ts-ignore
-            if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1].typ == EnumToken.UrlTokenTokenType) {
-                tokens.shift();
-                // @ts-ignore
-                tokens[0].typ = EnumToken.StringTokenType;
-                // @ts-ignore
-                tokens[0].val = `"${tokens[0].val}"`;
+            if (tokens[0].typ == EnumToken.UrlFunctionTokenType) {
+
+                if (tokens[1].typ == EnumToken.UrlTokenTokenType || tokens[1].typ == EnumToken.StringTokenType) {
+
+                    tokens.shift();
+
+                    if (tokens[1].typ == EnumToken.UrlTokenTokenType)   {
+
+                        // @ts-ignore
+                        tokens[0].typ = EnumToken.StringTokenType;
+                        // @ts-ignore
+                        tokens[0].val = `"${tokens[0].val}"`;
+                    }
+                }
             }
             // @ts-ignore
             if (tokens[0].typ == EnumToken.StringTokenType) {

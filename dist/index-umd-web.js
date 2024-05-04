@@ -6371,12 +6371,16 @@
             }
             if (atRule.val == 'import') {
                 // @ts-ignore
-                if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType && tokens[1].typ == exports.EnumToken.UrlTokenTokenType) {
-                    tokens.shift();
-                    // @ts-ignore
-                    tokens[0].typ = exports.EnumToken.StringTokenType;
-                    // @ts-ignore
-                    tokens[0].val = `"${tokens[0].val}"`;
+                if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType) {
+                    if (tokens[1].typ == exports.EnumToken.UrlTokenTokenType || tokens[1].typ == exports.EnumToken.StringTokenType) {
+                        tokens.shift();
+                        if (tokens[1].typ == exports.EnumToken.UrlTokenTokenType) {
+                            // @ts-ignore
+                            tokens[0].typ = exports.EnumToken.StringTokenType;
+                            // @ts-ignore
+                            tokens[0].val = `"${tokens[0].val}"`;
+                        }
+                    }
                 }
                 // @ts-ignore
                 if (tokens[0].typ == exports.EnumToken.StringTokenType) {
