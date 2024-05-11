@@ -497,30 +497,36 @@ for (const {node, parent, root} of walk(ast)) {
 
 ### Comment
 
-- typ: string 'Comment'
+- typ: number 
 - val: string, the comment
 
 ### Declaration
 
-- typ: string 'Declaration'
+- typ: number
 - nam: string, declaration name
 - val: array of tokens
 
 ### Rule
 
-- typ: string 'Rule'
+- typ: number
 - sel: string, css selector
 - chi: array of children
 
 ### AtRule
 
-- typ: string 'AtRule'
+- typ: number
 - nam: string. AtRule name
 - val: rule prelude
 
 ### AtRuleStyleSheet
 
-- typ: string 'Stylesheet'
+- typ: number
+- chi: array of children
+
+### KeyFrameRule
+
+- typ: number
+- sel: string, css selector
 - chi: array of children
 
 ## Sourcemap

@@ -35,11 +35,21 @@ export declare interface AstDeclaration extends Node {
     typ: EnumToken.DeclarationNodeType
 }
 
+
 export declare interface AstRule extends Node {
 
     typ: EnumToken.RuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare interface AstKeyFrameRule extends Node {
+
+    typ: EnumToken.KeyFrameRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
 }

@@ -1,7 +1,8 @@
 import {
     isAtKeyword,
     isColor,
-    isDimension, isFlex,
+    isDimension,
+    isFlex,
     isFunction,
     isHash,
     isHexColor,
@@ -9,7 +10,8 @@ import {
     isIdentStart,
     isNumber,
     isPercentage,
-    isPseudo, parseDeclaration,
+    isPseudo,
+    parseDeclaration,
     parseDimension
 } from "./utils";
 import {renderToken} from "../renderer";
@@ -17,11 +19,9 @@ import {COLORS_NAMES} from "../renderer/color";
 import {combinators, definedPropertySettings, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
 import {
-    TimelineFunctionToken,
-    TimingFunctionToken,
     AstAtRule,
     AstComment,
-    AstDeclaration,
+    AstDeclaration, AstKeyFrameRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -41,6 +41,7 @@ import {
     DelimToken,
     EndMatchToken,
     ErrorDescription,
+    FlexToken,
     FunctionImageToken,
     FunctionToken,
     FunctionURLToken,
@@ -66,11 +67,13 @@ import {
     PseudoClassToken,
     SemiColonToken,
     StartMatchToken,
+    TimelineFunctionToken,
+    TimingFunctionToken,
     Token,
     TokenizeResult,
     UnclosedStringToken,
     UrlToken,
-    WhitespaceToken, FlexToken
+    WhitespaceToken
 } from "../../@types";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -103,278 +106,278 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
     // return new Promise(async (resolve, reject) => {
 
-        if (options.signal != null) {
+    if (options.signal != null) {
 
-            options.signal.addEventListener('abort', reject);
-        }
+        options.signal.addEventListener('abort', reject);
+    }
 
-        options = {
-            src: '',
-            sourcemap: false,
-            minify: true,
-            parseColor: true,
-            nestingRules: false,
-            resolveImport: false,
-            resolveUrls: false,
-            removeCharset: true,
-            removeEmpty: true,
-            removeDuplicateDeclarations: true,
-            computeShorthand: true,
-            computeCalcExpression: true,
-            inlineCssVariables: false,
-            setParent: true,
-            ...options
+    options = {
+        src: '',
+        sourcemap: false,
+        minify: true,
+        parseColor: true,
+        nestingRules: false,
+        resolveImport: false,
+        resolveUrls: false,
+        removeCharset: true,
+        removeEmpty: true,
+        removeDuplicateDeclarations: true,
+        computeShorthand: true,
+        computeCalcExpression: true,
+        inlineCssVariables: false,
+        setParent: true,
+        ...options
+    };
+
+    if (options.expandNestingRules) {
+
+        options.nestingRules = false;
+    }
+
+    if (options.resolveImport) {
+        options.resolveUrls = true;
+    }
+
+    const startTime: number = performance.now();
+    const errors: ErrorDescription[] = [];
+    const src: string = <string>options.src;
+    const stack: Array<AstNode | AstComment> = [];
+    const stats = {
+        bytesIn: 0,
+        importedBytesIn: 0,
+        parse: `0ms`,
+        minify: `0ms`,
+        total: `0ms`
+    };
+
+    let ast: AstRuleStyleSheet = {
+        typ: EnumToken.StyleSheetNodeType,
+        chi: []
+    };
+
+    let tokens: TokenizeResult[] = [];
+    let map: Map<Token, Position> = new Map<Token, Position>;
+    let context: AstRuleList = ast;
+
+    if (options.sourcemap) {
+        ast.loc = {
+            sta: {
+                ind: 0,
+                lin: 1,
+                col: 1
+            },
+            src: ''
         };
+    }
 
-        if (options.expandNestingRules) {
+    const iter: Generator<TokenizeResult> = tokenize(iterator);
+    let item: TokenizeResult;
 
-            options.nestingRules = false;
+    while (item = iter.next().value) {
+
+        stats.bytesIn = item.bytesIn;
+
+        //
+        // doParse error
+        if (item.hint != null && BadTokensTypes.includes(item.hint)) {
+
+            // bad token
+            continue;
         }
 
-        if (options.resolveImport) {
-            options.resolveUrls = true;
+        if (item.hint != EnumToken.EOFTokenType) {
+
+            tokens.push(item);
         }
 
-        const startTime: number = performance.now();
-        const errors: ErrorDescription[] = [];
-        const src: string = <string>options.src;
-        const stack: Array<AstNode | AstComment> = [];
-        const stats = {
-            bytesIn: 0,
-            importedBytesIn: 0,
-            parse: `0ms`,
-            minify: `0ms`,
-            total: `0ms`
-        };
+        if (item.token == ';' || item.token == '{') {
 
-        let ast: AstRuleStyleSheet = {
-            typ: EnumToken.StyleSheetNodeType,
-            chi: []
-        };
+            let node: AstAtRule | AstRule | AstKeyFrameRule | null = await parseNode(tokens, context, stats, options, errors, src, map);
 
-        let tokens: TokenizeResult[] = [];
-        let map: Map<Token, Position> = new Map<Token, Position>;
-        let context: AstRuleList = ast;
+            if (node != null) {
 
-        if (options.sourcemap) {
-            ast.loc = {
-                sta: {
-                    ind: 0,
-                    lin: 1,
-                    col: 1
-                },
-                src: ''
-            };
-        }
+                stack.push(node);
+                // @ts-ignore
+                context = node;
+            } else if (item.token == '{') {
+                // node == null
+                // consume and throw away until the closing '}' or EOF
 
-        const iter: Generator<TokenizeResult> = tokenize(iterator);
-        let item: TokenizeResult;
+                let inBlock = 1;
 
-        while (item = iter.next().value) {
+                do {
 
-            stats.bytesIn = item.bytesIn;
+                    item = iter.next().value;
 
-            //
-            // doParse error
-            if (item.hint != null && BadTokensTypes.includes(item.hint)) {
+                    if (item == null) {
 
-                // bad token
-                continue;
-            }
-
-            if (item.hint != EnumToken.EOFTokenType) {
-
-                tokens.push(item);
-            }
-
-            if (item.token == ';' || item.token == '{') {
-
-                let node: AstAtRule | AstRule | null = await parseNode(tokens, context, stats, options, errors, src, map);
-
-                if (node != null) {
-
-                    stack.push(node);
-                    // @ts-ignore
-                    context = node;
-                } else if (item.token == '{') {
-                    // node == null
-                    // consume and throw away until the closing '}' or EOF
-
-                    let inBlock = 1;
-
-                    do {
-
-                        item = iter.next().value;
-
-                        if (item == null) {
-
-                            break;
-                        }
-
-                        if (item.token == '{') {
-
-                            inBlock++;
-                        } else if (item.token == '}') {
-
-                            inBlock--;
-                        }
+                        break;
                     }
 
-                    while (inBlock != 0);
+                    if (item.token == '{') {
+
+                        inBlock++;
+                    } else if (item.token == '}') {
+
+                        inBlock--;
+                    }
                 }
 
-                tokens = [];
-                map = new Map;
-            } else if (item.token == '}') {
-
-                await parseNode(tokens, context, stats, options, errors, src, map);
-                const previousNode = stack.pop();
-
-                // @ts-ignore
-                context = stack[stack.length - 1] || ast;
-                // @ts-ignore
-                if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
-                    context.chi.pop();
-                }
-
-                tokens = [];
-                map = new Map;
+                while (inBlock != 0);
             }
-        }
 
-        if (tokens.length > 0) {
+            tokens = [];
+            map = new Map;
+        } else if (item.token == '}') {
 
             await parseNode(tokens, context, stats, options, errors, src, map);
-        }
-
-        while (stack.length > 0 && context != ast) {
-
-            const previousNode: AstAtRule | AstRule = <AstAtRule | AstRule>stack.pop();
+            const previousNode = stack.pop();
 
             // @ts-ignore
-            context = stack[stack.length - 1] ?? ast;
+            context = stack[stack.length - 1] || ast;
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
-                continue;
             }
 
-            break;
+            tokens = [];
+            map = new Map;
+        }
+    }
+
+    if (tokens.length > 0) {
+
+        await parseNode(tokens, context, stats, options, errors, src, map);
+    }
+
+    while (stack.length > 0 && context != ast) {
+
+        const previousNode: AstAtRule | AstRule = <AstAtRule | AstRule>stack.pop();
+
+        // @ts-ignore
+        context = stack[stack.length - 1] ?? ast;
+        // @ts-ignore
+        if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
+            context.chi.pop();
+            continue;
         }
 
-        const endParseTime: number = performance.now();
+        break;
+    }
 
-        if (options.expandNestingRules) {
+    const endParseTime: number = performance.now();
 
-            ast = <AstRuleStyleSheet>expand(ast);
-        }
+    if (options.expandNestingRules) {
 
-        if (options.visitor != null) {
+        ast = <AstRuleStyleSheet>expand(ast);
+    }
 
-            for (const result of walk(ast)) {
+    if (options.visitor != null) {
 
-                if (
-                    result.node.typ == EnumToken.DeclarationNodeType &&
+        for (const result of walk(ast)) {
 
-                    // @ts-ignore
-                    (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[(<AstDeclaration>result.node).nam] != null)
-                ) {
-
-                    const callable: DeclarationVisitorHandler = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[(<AstDeclaration>result.node).nam];
-                    const results: AstDeclaration | AstDeclaration[] | void | null = await callable(<AstDeclaration>result.node);
-
-                    if (results == null || (Array.isArray(results) && results.length == 0)) {
-
-                        continue;
-                    }
-
-                    // @ts-ignore
-                    result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
-                } else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
-
-                    const results: AstRule | AstRule[] | void | null = await options.visitor.Rule(<AstRule>result.node);
-
-                    if (results == null || (Array.isArray(results) && results.length == 0)) {
-
-                        continue;
-                    }
-
-                    // @ts-ignore
-                    result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
-                } else if (options.visitor.AtRule != null &&
-                    result.node.typ == EnumToken.AtRuleNodeType &&
-                    // @ts-ignore
-                    (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[(<AstAtRule>result.node).nam] != null)) {
-
-                    const callable: AtRuleVisitorHandler = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[(<AstAtRule>result.node).nam];
-                    const results: AstAtRule | AstAtRule[] | void | null = await callable(<AstAtRule>result.node);
-
-                    if (results == null || (Array.isArray(results) && results.length == 0)) {
-
-                        continue;
-                    }
-
-                    // @ts-ignore
-                    result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
-                }
-            }
-        }
-
-        if (options.minify) {
-
-            if (ast.chi.length > 0) {
-
-                minify(ast, options, true, errors, false);
-            }
-        }
-
-        if (options.setParent) {
-
-            const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
-            let node: AstNode;
-
-            while ((node = nodes.shift()!)) {
+            if (
+                result.node.typ == EnumToken.DeclarationNodeType &&
 
                 // @ts-ignore
-                if (node.chi.length > 0) {
+                (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[(<AstDeclaration>result.node).nam] != null)
+            ) {
 
-                    // @ts-ignore
-                    for (const child of node.chi) {
+                const callable: DeclarationVisitorHandler = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[(<AstDeclaration>result.node).nam];
+                const results: AstDeclaration | AstDeclaration[] | void | null = await callable(<AstDeclaration>result.node);
 
-                        if (child.parent != node) {
+                if (results == null || (Array.isArray(results) && results.length == 0)) {
 
-                            Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
-                        }
+                    continue;
+                }
 
-                        if ('chi' in child && child.chi.length > 0) {
+                // @ts-ignore
+                result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
+            } else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
 
-                            // @ts-ignore
-                            nodes.push(<AstRule | AstAtRule>child);
-                        }
+                const results: AstRule | AstRule[] | void | null = await options.visitor.Rule(<AstRule>result.node);
+
+                if (results == null || (Array.isArray(results) && results.length == 0)) {
+
+                    continue;
+                }
+
+                // @ts-ignore
+                result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
+            } else if (options.visitor.AtRule != null &&
+                result.node.typ == EnumToken.AtRuleNodeType &&
+                // @ts-ignore
+                (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[(<AstAtRule>result.node).nam] != null)) {
+
+                const callable: AtRuleVisitorHandler = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[(<AstAtRule>result.node).nam];
+                const results: AstAtRule | AstAtRule[] | void | null = await callable(<AstAtRule>result.node);
+
+                if (results == null || (Array.isArray(results) && results.length == 0)) {
+
+                    continue;
+                }
+
+                // @ts-ignore
+                result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
+            }
+        }
+    }
+
+    if (options.minify) {
+
+        if (ast.chi.length > 0) {
+
+            minify(ast, options, true, errors, false);
+        }
+    }
+
+    if (options.setParent) {
+
+        const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
+        let node: AstNode;
+
+        while ((node = nodes.shift()!)) {
+
+            // @ts-ignore
+            if (node.chi.length > 0) {
+
+                // @ts-ignore
+                for (const child of node.chi) {
+
+                    if (child.parent != node) {
+
+                        Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
+                    }
+
+                    if ('chi' in child && child.chi.length > 0) {
+
+                        // @ts-ignore
+                        nodes.push(<AstRule | AstAtRule>child);
                     }
                 }
             }
         }
+    }
 
-        const endTime: number = performance.now();
+    const endTime: number = performance.now();
 
-        if (options.signal != null) {
+    if (options.signal != null) {
 
-            options.signal.removeEventListener('abort', reject);
+        options.signal.removeEventListener('abort', reject);
+    }
+
+    stats.bytesIn += stats.importedBytesIn;
+
+    return <ParseResult>{
+        ast,
+        errors,
+        stats: {
+            ...stats,
+            parse: `${(endParseTime - startTime).toFixed(2)}ms`,
+            minify: `${(endTime - endParseTime).toFixed(2)}ms`,
+            total: `${(endTime - startTime).toFixed(2)}ms`
         }
-
-        stats.bytesIn += stats.importedBytesIn;
-
-        return <ParseResult>{
-            ast,
-            errors,
-            stats: {
-                ...stats,
-                parse: `${(endParseTime - startTime).toFixed(2)}ms`,
-                minify: `${(endTime - endParseTime).toFixed(2)}ms`,
-                total: `${(endTime - startTime).toFixed(2)}ms`
-            }
-        };
+    };
     // });
 }
 
@@ -382,7 +385,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 async function parseNode(results: TokenizeResult[], context: AstRuleList, stats: {
     bytesIn: number;
     importedBytesIn: number;
-}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | null> {
+}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | AstKeyFrameRule | null> {
 
     let tokens: Token[] = [];
 
@@ -538,7 +541,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
                     tokens.shift();
 
-                    if (tokens[1].typ == EnumToken.UrlTokenTokenType)   {
+                    if (tokens[1].typ == EnumToken.UrlTokenTokenType) {
 
                         // @ts-ignore
                         tokens[0].typ = EnumToken.StringTokenType;
@@ -633,6 +636,11 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
             const uniq = new Map<string, string[]>;
             parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
 
+                if (curr.typ == EnumToken.CommentTokenType) {
+
+                    return acc;
+                }
+
                 if (curr.typ == EnumToken.WhitespaceTokenType) {
 
                     if (
@@ -659,8 +667,8 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                 return acc;
             }, uniq);
 
-            const node: AstRule = {
-                typ: EnumToken.RuleNodeType,
+            const node: AstRule | AstKeyFrameRule = {
+                typ: context.typ == EnumToken.AtRuleNodeType && (<AstAtRule>context).nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType,
                 // @ts-ignore
                 sel: [...uniq.keys()].join(','),
                 chi: []
@@ -796,7 +804,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (hint != null) {
 
-        return enumTokenHints.has(hint) ? <Token>{typ: hint} :  <Token>{typ: hint, val};
+        return enumTokenHints.has(hint) ? <Token>{typ: hint} : <Token>{typ: hint, val};
     }
 
     if (val == ' ') {

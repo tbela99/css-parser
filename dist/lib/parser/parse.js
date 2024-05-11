@@ -421,6 +421,9 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             const position = map.get(tokens[0]);
             const uniq = new Map;
             parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
+                if (curr.typ == EnumToken.CommentTokenType) {
+                    return acc;
+                }
                 if (curr.typ == EnumToken.WhitespaceTokenType) {
                     if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
                         trimWhiteSpace.includes(array[index + 1]?.typ) ||
@@ -442,7 +445,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 return acc;
             }, uniq);
             const node = {
-                typ: EnumToken.RuleNodeType,
+                typ: context.typ == EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType,
                 // @ts-ignore
                 sel: [...uniq.keys()].join(','),
                 chi: []

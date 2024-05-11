@@ -17,7 +17,19 @@ import {reduceNumber} from "../../renderer";
  */
 export function evaluate(tokens: Token[]): Token[] {
 
-    const nodes: Token[] = inlineExpression(evaluateExpression(buildExpression(tokens)));
+    let nodes: Token[];
+
+    try {
+
+        nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
+    }
+
+    catch (e) {
+
+        // console.error({tokens});
+        // console.error(e);
+        return tokens;
+    }
 
     if (nodes.length <= 1) {
 

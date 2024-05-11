@@ -13,10 +13,12 @@ import {
     AstRuleStyleSheet,
     ErrorDescription,
     LiteralToken,
-    MatchedSelector, MinifyFeature,
+    MatchedSelector,
+    MinifyFeature,
     MinifyOptions,
     OptimizedSelector,
-    ParserOptions, RawSelectorTokens
+    ParserOptions,
+    RawSelectorTokens
 } from "../../@types";
 import {EnumToken} from "./types";
 
@@ -30,9 +32,11 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     [key: string]: any
 } = {}): AstNode {
 
+    // console.debug(JSON.stringify({ast}, null, 1));
+
     if (!('nodes' in context)) {
 
-        context.nodes = <WeakSet<AstNode>>new WeakSet;
+        context.nodes = <Set<AstNode>>new Set;
     }
 
     if (context.nodes.has(ast)) {
@@ -72,7 +76,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
 
                 curr.splice(0, 2);
-            } else if (combinators.includes(curr[1])) {
+            } else if (':['.includes(curr[1]) ||combinators.includes(curr[1])) {
 
                 curr.splice(0, 1);
             }
@@ -277,7 +281,6 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                         // @ts-ignore
                         acc.push(curr);
-
                         return acc;
 
                     }, []);
@@ -339,7 +342,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                         if (shouldMerge) {
                             // @ts-ignore
-                            if ((node.typ == EnumToken.RuleNodeType && node.sel == previous.sel) ||
+                            if (((node.typ == EnumToken.RuleNodeType || node.typ == EnumToken.KeyFrameRuleNodeType) && node.sel == previous.sel) ||
                                 // @ts-ignore
                                 (node.typ == EnumToken.AtRuleNodeType) && node.val != 'font-face' && node.val == previous.val) {
 
@@ -359,7 +362,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                 previous = node;
                                 nodeIndex = i;
                                 continue;
-                            } else if (node.typ == EnumToken.RuleNodeType && previous?.typ == EnumToken.RuleNodeType) {
+                            } else if (node.typ == previous?.typ && [EnumToken.KeyFrameRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)) {
 
                                 const intersect = diff(<AstRule>previous, <AstRule>node, reducer, options);
 
@@ -369,25 +372,28 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                         // @ts-ignore
                                         ast.chi.splice(i--, 1);
                                         // @ts-ignore
-                                        node = ast.chi[i];
+                                        // node = ast.chi[i];
                                     } else {
                                         // @ts-ignore
                                         ast.chi.splice(i, 1, intersect.node1);
-                                        node = intersect.node1;
+                                        // node = ast.chi intersect.node1;
                                     }
 
                                     if (intersect.node2.chi.length == 0) {
                                         // @ts-ignore
                                         ast.chi.splice(nodeIndex, 1, intersect.result);
-                                        previous = intersect.result;
                                     } else {
 
                                         // @ts-ignore
                                         ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
-                                        previous = intersect.result;
                                         // @ts-ignore
-                                        i = nodeIndex;
+                                        i = (nodeIndex??0) + 1;
                                     }
+
+                                    reduceRuleSelector(intersect.result);
+
+                                    previous = intersect.result;
+                                    nodeIndex = i;
                                 }
                             }
                         }
@@ -395,6 +401,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                     // @ts-ignore
                     if (recursive && previous != node) {
+
                         // @ts-ignore
                         if (!hasDeclaration(previous)) {
                             // @ts-ignore
@@ -564,11 +571,18 @@ export function reduceSelector(selector: string[][]) {
         selector.forEach(selector => selector.unshift(combinator));
     }
 
-    let reducible = optimized.length == 1;
+    let reducible: boolean = optimized.length == 1;
 
-    if (optimized[0] == '&' && optimized[1] == ' ') {
+    if (optimized[0] == '&') {
 
-        optimized.splice(0, 2);
+        if (optimized[1] == ' ') {
+
+            optimized.splice(0, 2);
+        }
+
+        else if (combinators.includes(optimized[1])) {
+
+        }
     }
 
     if (optimized.length == 0 ||
@@ -647,7 +661,7 @@ export function splitRule(buffer: string): string[][] {
 
         if (isWhiteSpace(chr.charCodeAt(0))) {
 
-            let k = i;
+            let k: number = i;
 
             while (k + 1 < buffer.length) {
 
@@ -679,6 +693,7 @@ export function splitRule(buffer: string): string[][] {
         }
 
         if (chr == ',') {
+
             if (str !== '') {
                 // @ts-ignore
                 result.at(-1).push(str);
@@ -689,12 +704,32 @@ export function splitRule(buffer: string): string[][] {
             continue;
         }
 
+        if (chr == ':') {
+
+            if (str !== '') {
+                // @ts-ignore
+                result.at(-1).push(str);
+                str = '';
+            }
+
+            if (buffer.charAt(i + 1) == ':') {
+
+                chr += buffer.charAt(++i);
+            }
+
+            str += chr;
+            continue;
+        }
+
         str += chr;
         if (chr == '\\') {
+
             str += buffer.charAt(++i);
             continue;
         }
+
         if (chr == '"' || chr == "'") {
+
             let k = i;
             while (++k < buffer.length) {
                 chr = buffer.charAt(k);
@@ -709,6 +744,7 @@ export function splitRule(buffer: string): string[][] {
             }
             continue;
         }
+
         if (chr == '(' || chr == '[') {
             const open = chr;
             const close = chr == '(' ? ')' : ']';
@@ -1073,17 +1109,20 @@ function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast
 
 function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOptions = {}) {
 
-    let node1 = n1;
-    let node2 = n2;
-    let exchanged = false;
+    let node1: AstRule = n1;
+    let node2: AstRule = n2;
+    let exchanged: boolean = false;
+
     if (node1.chi.length > node2.chi.length) {
-        const t = node1;
+        const t: AstRule = node1;
         node1 = node2;
         node2 = t;
         exchanged = true;
     }
-    let i = node1.chi.length;
-    let j = node2.chi.length;
+
+    let i: number = node1.chi.length;
+    let j: number = node2.chi.length;
+
     if (i == 0 || j == 0) {
         // @ts-ignore
         return null;
@@ -1093,6 +1132,82 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 
     // @ts-ignore
     const raw2: RawSelectorTokens = <RawSelectorTokens>node2.raw;
+
+    if (raw1 != null && raw2 != null) {
+
+        const prefixes1: Set<string> = new Set;
+        const prefixes2: Set<string> = new Set;
+
+        for (const token1 of raw1) {
+
+            for (const t of token1) {
+
+                if (t[0] == ':') {
+
+                    const matches = t.match(/::?-([a-z]+)-/);
+
+                    if (matches == null) {
+
+                        continue;
+                    }
+
+                    prefixes1.add(matches[1]);
+
+                    if (prefixes1.size > 1) {
+
+                        break;
+                    }
+                }
+            }
+
+            if (prefixes1.size > 1) {
+
+                break;
+            }
+        }
+
+        for (const token2 of raw2) {
+
+            for (const t of token2) {
+
+                if (t[0] == ':') {
+
+                    const matches = t.match(/::?-([a-z]+)-/);
+
+                    if (matches == null) {
+
+                        continue;
+                    }
+
+                    prefixes2.add(matches[1]);
+
+                    if (prefixes2.size > 1) {
+
+                        break;
+                    }
+                }
+            }
+
+            if (prefixes2.size > 1) {
+
+                break;
+            }
+        }
+
+        if (prefixes1.size != prefixes2.size) {
+
+            return null;
+        }
+
+        for (const prefix of prefixes1) {
+
+            if (!prefixes2.has(prefix)) {
+
+                return null;
+            }
+        }
+    }
+
     // @ts-ignore
     node1 = {...node1, chi: node1.chi.slice()};
     node2 = {...node2, chi: node2.chi.slice()};
@@ -1104,7 +1219,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
         Object.defineProperty(node2, 'raw', {...definedPropertySettings, value: raw2});
     }
 
-    const intersect = [];
+    const intersect: AstDeclaration[] = [];
 
     while (i--) {
 
@@ -1131,7 +1246,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 
                 if (eq(node1.chi[i], node2.chi[j])) {
 
-                    intersect.push(node1.chi[i]);
+                    intersect.push(node1.chi[i] as AstDeclaration);
                     node1.chi.splice(i, 1);
                     node2.chi.splice(j, 1);
                     break;
@@ -1144,7 +1259,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
     const result = (intersect.length == 0 ? null : {
         ...node1,
         // @ts-ignore
-        sel: [...new Set([...(n1?.raw?.reduce(reducer, []) || splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) || splitRule(n2.sel))])].join(','),
+        sel: [...new Set([...(n1?.raw?.reduce(reducer, []) ?? splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) ?? splitRule(n2.sel))])].join(','),
         chi: intersect.reverse()
     });
 

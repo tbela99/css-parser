@@ -7,16 +7,18 @@ function parseResponse(response) {
     return response.text();
 }
 async function load(url, currentFile) {
+    let t;
     if (matchUrl.test(url)) {
-        return fetch(url).then(parseResponse);
+        t = new URL(url);
     }
-    if (matchUrl.test(currentFile)) {
-        return fetch(new URL(url, currentFile)).then(parseResponse);
+    else if (matchUrl.test(currentFile)) {
+        t = new URL(url, currentFile);
     }
-    const path = resolve(url, currentFile).absolute;
-    const t = new URL(path, self.origin);
-    // return fetch(new URL(url, new URL(currentFile, self.location.href).href)).then(parseResponse);
-    return fetch(url, t.origin != self.location.origin ? { mode: 'cors' } : {}).then(parseResponse);
+    else {
+        const path = resolve(url, currentFile).absolute;
+        t = new URL(path, self.origin);
+    }
+    return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(parseResponse);
 }
 
 export { load };
