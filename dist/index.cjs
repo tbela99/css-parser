@@ -8850,7 +8850,7 @@ function reduceSelector(selector) {
         selector: selector.reduce((acc, curr) => {
             let hasCompound = true;
             if (hasCompound && curr.length > 0) {
-                hasCompound = ':' != curr[0] || !['&'].concat(combinators).includes(curr[0].charAt(0));
+                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
             }
             // @ts-ignore
             if (hasCompound && curr[0] == ' ') {

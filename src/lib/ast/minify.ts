@@ -604,7 +604,7 @@ export function reduceSelector(selector: string[][]) {
 
             if (hasCompound && curr.length > 0) {
 
-                hasCompound = ':' != curr[0] || !['&'].concat(combinators).includes(curr[0].charAt(0));
+                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
             }
 
             // @ts-ignore
