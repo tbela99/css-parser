@@ -18,7 +18,7 @@ import {
     MinifyOptions,
     OptimizedSelector,
     ParserOptions,
-    RawSelectorTokens
+    RawSelectorTokens, Token
 } from "../../@types";
 import {EnumToken} from "./types";
 
@@ -31,8 +31,6 @@ const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).so
 export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
-
-    // console.debug(JSON.stringify({ast}, null, 1));
 
     if (!('nodes' in context)) {
 
@@ -76,9 +74,9 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
 
                 curr.splice(0, 2);
-            } else if (':['.includes(curr[1]) ||combinators.includes(curr[1])) {
+            } else if (combinators.includes(curr[1])) {
 
-                curr.splice(0, 1);
+                curr.shift();
             }
         } else if (ast.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
 
@@ -387,7 +385,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                         // @ts-ignore
                                         ast.chi.splice(nodeIndex, 1, intersect.result, intersect.node2);
                                         // @ts-ignore
-                                        i = (nodeIndex??0) + 1;
+                                        i = (nodeIndex ?? 0) + 1;
                                     }
 
                                     reduceRuleSelector(intersect.result);
@@ -535,7 +533,7 @@ export function reduceSelector(selector: string[][]) {
     let j;
     let match;
     for (; i < k; i++) {
-        const item = selector[0][i];
+        const item: string = selector[0][i];
         match = true;
         for (j = 1; j < selector.length; j++) {
             if (item != selector[j][i]) {
@@ -552,7 +550,7 @@ export function reduceSelector(selector: string[][]) {
 
     while (optimized.length > 0) {
 
-        const last = <string>optimized.at(-1);
+        const last: string = <string>optimized.at(-1);
 
         if ((last == ' ' || combinators.includes(<string>last))) {
 
@@ -563,12 +561,12 @@ export function reduceSelector(selector: string[][]) {
         break;
     }
 
-    selector.forEach((selector) => selector.splice(0, optimized.length));
+    selector.forEach((selector: string[]) => selector.splice(0, optimized.length));
 
     // combinator
     if (combinators.includes(<string>optimized.at(-1))) {
-        const combinator = <string>optimized.pop();
-        selector.forEach(selector => selector.unshift(combinator));
+        const combinator: string = <string>optimized.pop();
+        selector.forEach((selector: string[]) => selector.unshift(combinator));
     }
 
     let reducible: boolean = optimized.length == 1;
@@ -580,32 +578,33 @@ export function reduceSelector(selector: string[][]) {
             optimized.splice(0, 2);
         }
 
-        else if (combinators.includes(optimized[1])) {
-
-        }
+        // else if (combinators.includes(optimized[1])) {
+        //
+        // }
     }
 
     if (optimized.length == 0 ||
         (optimized[0].charAt(0) == '&' ||
             selector.length == 1)) {
+
         return {
             match: false,
             optimized,
-            selector: selector.map(selector => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : selector),
-            reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0]))
+            selector: selector.map((selector: string[]): string[] => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
+            reducible: selector.length > 1 && selector.every((selector: string[]) => !combinators.includes(selector[0]))
         };
     }
 
     return {
         match: true,
         optimized,
-        selector: selector.reduce((acc, curr) => {
+        selector: selector.reduce((acc: string[][], curr: string[]) => {
 
-            let hasCompound = true;
+            let hasCompound: boolean = true;
 
             if (hasCompound && curr.length > 0) {
 
-                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
+                hasCompound = ':' != curr[0] || !['&'].concat(combinators).includes(curr[0].charAt(0));
             }
 
             // @ts-ignore
@@ -629,7 +628,7 @@ export function reduceSelector(selector: string[][]) {
             acc.push(hasCompound ? ['&'].concat(curr) : curr);
             return acc;
         }, <string[][]>[]),
-        reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
+        reducible: selector.every((selector: string[]) => !['>', '+', '~', '&'].includes(selector[0]))
     };
 }
 
@@ -868,6 +867,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
             }
         }
     }
+
     if (match.length > 1) {
 
         errors?.push({
@@ -885,7 +885,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
 
         while (part.length > 0) {
 
-            const token = <string>part.at(-1);
+            const token: string = <string>part.at(-1);
 
             if (token == ' ' || combinators.includes(token) || notEndingWith.includes(<string>token.at(-1))) {
 
@@ -914,7 +914,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
             return null;
         }
 
-        let hasCompoundSelector = true;
+        let hasCompoundSelector:    boolean = true;
 
         curr = curr.slice(match[0].length);
 
@@ -1009,7 +1009,6 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
         return acc;
     }
 
-
     // @ts-ignore
     selector1 = selector1.reduce(reduce, <string[][]>[]);
     // @ts-ignore
@@ -1028,7 +1027,7 @@ function fixSelector(node: AstRule) {
     // @ts-ignore
     if (node.sel.includes('&')) {
 
-        const attributes = parseString(node.sel);
+        const attributes: Token[] = parseString(node.sel);
 
         for (const attr of walkValues(attributes)) {
 
@@ -1053,10 +1052,10 @@ function fixSelector(node: AstRule) {
 function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast: AstNode, reducer: Function, i: number, nodeIndex: number): AstRule {
 
     // @ts-ignore
-    let pSel = match.selector1.reduce(reducer, []).join(',');
+    let pSel: string = match.selector1.reduce(reducer, []).join(',');
 
     // @ts-ignore
-    let nSel = match.selector2.reduce(reducer, []).join(',');
+    let nSel: string = match.selector2.reduce(reducer, []).join(',');
 
 // @ts-ignore
     const wrapper = <AstRule>{...previous, chi: [], sel: match.match.reduce(reducer, []).join(',')};
@@ -1101,7 +1100,6 @@ function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast
     node.sel = nSel;
     // @ts-ignore
     node.raw = match.selector2;
-
 
     reduceRuleSelector(wrapper);
     return wrapper;
@@ -1293,7 +1291,15 @@ function reduceRuleSelector(node: AstRule) {
 
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
 
-        const raw = [
+        for (const selector of optimized.selector) {
+
+            if (selector.length > 1 && selector[0] == '&' && combinators.includes(selector[1])) {
+
+                selector.shift();
+            }
+        }
+
+        const raw: string[][] = [
             [
                 optimized.optimized[0], ':is('
             ].concat(optimized.selector.reduce((acc, curr) => {
@@ -1305,7 +1311,9 @@ function reduceRuleSelector(node: AstRule) {
             }, [])).concat(')')
         ];
 
-        const sel = raw[0].join('');
+
+        const sel: string = raw[0].join('');
+
         if (sel.length < node.sel.length) {
             node.sel = sel;
             // node.raw = raw;

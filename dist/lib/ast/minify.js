@@ -13,7 +13,6 @@ const notEndingWith = ['(', '['].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
-    // console.debug(JSON.stringify({ast}, null, 1));
     if (!('nodes' in context)) {
         context.nodes = new Set;
     }
@@ -44,7 +43,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 curr.splice(0, 2);
             }
             else if (combinators.includes(curr[1])) {
-                curr.splice(0, 1);
+                curr.shift();
             }
         }
         else if (ast.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
@@ -421,11 +420,16 @@ function reduceSelector(selector) {
     // combinator
     if (combinators.includes(optimized.at(-1))) {
         const combinator = optimized.pop();
-        selector.forEach(selector => selector.unshift(combinator));
+        selector.forEach((selector) => selector.unshift(combinator));
     }
     let reducible = optimized.length == 1;
-    if (optimized[0] == '&' && optimized[1] == ' ') {
-        optimized.splice(0, 2);
+    if (optimized[0] == '&') {
+        if (optimized[1] == ' ') {
+            optimized.splice(0, 2);
+        }
+        // else if (combinators.includes(optimized[1])) {
+        //
+        // }
     }
     if (optimized.length == 0 ||
         (optimized[0].charAt(0) == '&' ||
@@ -433,7 +437,7 @@ function reduceSelector(selector) {
         return {
             match: false,
             optimized,
-            selector: selector.map(selector => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : selector),
+            selector: selector.map((selector) => selector[0] == '&' && selector[1] == ' ' ? selector.slice(2) : (selector)),
             reducible: selector.length > 1 && selector.every((selector) => !combinators.includes(selector[0]))
         };
     }
@@ -443,7 +447,7 @@ function reduceSelector(selector) {
         selector: selector.reduce((acc, curr) => {
             let hasCompound = true;
             if (hasCompound && curr.length > 0) {
-                hasCompound = !['&'].concat(combinators).includes(curr[0].charAt(0));
+                hasCompound = ':' != curr[0] || !['&'].concat(combinators).includes(curr[0].charAt(0));
             }
             // @ts-ignore
             if (hasCompound && curr[0] == ' ') {
@@ -932,6 +936,11 @@ function reduceRuleSelector(node) {
         Object.defineProperty(node, 'optimized', { ...definedPropertySettings, value: optimized });
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
+        for (const selector of optimized.selector) {
+            if (selector.length > 1 && selector[0] == '&' && combinators.includes(selector[1])) {
+                selector.shift();
+            }
+        }
         const raw = [
             [
                 optimized.optimized[0], ':is('
