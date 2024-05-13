@@ -1,16 +1,20 @@
 # Changelog
 
+## V0.5.2
+
+[x] do not merge rules when a vendor prefix is used to avoid the rule being rejected. #35
+
 ## V0.5.1
 
-- [x] failed to flatten @import when using url() syntax
+- [x] failed to flatten @import when using url() syntax #33 #34
 
 ## V0.5.0
 
-- [x] render node with parents
-- [x] fix relative color from xyz
-- [x] fix bug when inlineCss is true bug no css variable exists
-- [x] compute more shorthands
-- [x] (web) fetch imported css files from external domains using cors
+- [x] render node with parents #30
+- [x] fix relative color from xyz #30
+- [x] fix bug when inlineCss is true bug no css variable exists #30
+- [x] compute more shorthands #30
+- [x] (web) fetch imported css files from external domains using cors #30
 
 ## V0.4.1
 
