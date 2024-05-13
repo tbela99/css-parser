@@ -75,6 +75,7 @@ var EnumToken;
     EnumToken[EnumToken["FractionTokenType"] = 69] = "FractionTokenType";
     EnumToken[EnumToken["IdenListTokenType"] = 70] = "IdenListTokenType";
     EnumToken[EnumToken["GridTemplateFuncTokenType"] = 71] = "GridTemplateFuncTokenType";
+    EnumToken[EnumToken["KeyFrameRuleNodeType"] = 72] = "KeyFrameRuleNodeType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";

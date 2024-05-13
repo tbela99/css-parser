@@ -1,9 +1,11 @@
 # Changelog
 
 ## V0.5.1
+
 - [x] failed to flatten @import when using url() syntax
-- 
+
 ## V0.5.0
+
 - [x] render node with parents
 - [x] fix relative color from xyz
 - [x] fix bug when inlineCss is true bug no css variable exists

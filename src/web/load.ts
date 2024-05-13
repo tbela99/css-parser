@@ -10,21 +10,21 @@ function parseResponse(response: Response) {
     return response.text();
 }
 
-export async function load(url: string, currentFile: string) {
+export async function load(url: string, currentFile: string): Promise<string> {
+
+    let t: URL;
 
     if (matchUrl.test(url)) {
 
-        return fetch(url).then(parseResponse);
+        t = new URL(url);
+    } else if (matchUrl.test(currentFile)) {
+
+        t = new URL(url, currentFile);
+    } else {
+
+        const path: string = resolve(url, currentFile).absolute;
+        t = new URL(path, self.origin);
     }
 
-    if (matchUrl.test(currentFile)) {
-
-        return fetch(new URL(url, currentFile)).then(parseResponse);
-    }
-
-    const path: string = resolve(url, currentFile).absolute;
-    const t: URL = new URL(path, self.origin);
-
-    // return fetch(new URL(url, new URL(currentFile, self.location.href).href)).then(parseResponse);
-    return fetch(url, t.origin != self.location.origin ? {mode: 'cors'} : {}).then(parseResponse);
+    return fetch(t, t.origin != self.origin ? {mode: 'cors'} : {}).then(parseResponse);
 }

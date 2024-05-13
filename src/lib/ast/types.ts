@@ -76,6 +76,7 @@ export enum EnumToken {
     FractionTokenType,
     IdenListTokenType,
     GridTemplateFuncTokenType,
+    KeyFrameRuleNodeType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,

@@ -71,6 +71,7 @@ declare enum EnumToken {
     FractionTokenType = 69,
     IdenListTokenType = 70,
     GridTemplateFuncTokenType = 71,
+    KeyFrameRuleNodeType = 72,
     Time = 25,
     Iden = 7,
     EOF = 47,
@@ -663,6 +664,7 @@ export declare interface AstDeclaration extends Node {
     val: Token[];
     typ: EnumToken.DeclarationNodeType
 }
+
 
 export declare interface AstRule extends Node {
 

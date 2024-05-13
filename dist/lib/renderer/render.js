@@ -98,7 +98,7 @@ function doRender(data, options = {}) {
     return result;
 }
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
-    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
         if (!(src in cache)) {
@@ -158,6 +158,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             }, '');
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
+        case EnumToken.KeyFrameRuleNodeType:
             if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
                 return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }

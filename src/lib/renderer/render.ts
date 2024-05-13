@@ -23,7 +23,8 @@ import {
 } from "../../@types";
 import {
     clamp,
-    cmyk2hex, color2srgbvalues,
+    cmyk2hex,
+    color2srgbvalues,
     colorMix,
     COLORS_NAMES,
     getAngle,
@@ -176,7 +177,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
-    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType].includes(node.typ)) {
 
         let src: string = (<Location>node.loc)?.src ?? '';
         let output: string = <string>options.output ?? '';
@@ -272,6 +273,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
+        case EnumToken.KeyFrameRuleNodeType:
 
             if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
 

@@ -7,7 +7,15 @@ import { reduceNumber } from '../../renderer/render.js';
  * @param tokens
  */
 function evaluate(tokens) {
-    const nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
+    let nodes;
+    try {
+        nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
+    }
+    catch (e) {
+        // console.error({tokens});
+        // console.error(e);
+        return tokens;
+    }
     if (nodes.length <= 1) {
         return nodes;
     }
