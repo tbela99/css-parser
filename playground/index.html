@@ -118,7 +118,7 @@
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="parseoptions[inlineCssVariables]"
-                                checked   value="" id="parseoptionsinlineCssVariables">
+                                   checked value="" id="parseoptionsinlineCssVariables">
                             <label class="form-check-label" for="parseoptionsinlineCssVariables">
                                 Inline CSS variables
                             </label>
@@ -203,7 +203,26 @@
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
-                        <label for="css" class="form-label">CSS</label>
+                        <div class="row">
+
+                            <div class="col-sm-10">
+                                <div data-type="preset-group" class="input-group mb-3">
+                                    <label for="css" class="input-group-text">CSS Preset </label>
+                                    <button class="btn btn-outline-secondary" data-type="preset-calc" type="button">Calc
+                                    </button>
+                                    <button class="btn btn-outline-secondary" data-type="preset-import" type="button">Import
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-sm-2">
+                                <div class="input-group mb-3">
+                                    <button class="btn btn-outline-secondary" data-bs-copy="css" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+                                    </svg> Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <textarea class="form-control" id="css" name="css" rows="10">:root {
 --color: green;
 }
@@ -220,8 +239,23 @@
                 </div>
                 <div class="col">
                     <div class="mb-3">
-                        <label for="result" class="form-label">Result</label>
-                        <a download="result" href="#">Download </a>
+
+                        <div class="row">
+                            <div class="col-sm-10">
+                                <div class="input-group mb-3">
+                                    <label for="result" class="input-group-text">Result</label>
+                                    <a download="result" href="#" class="btn btn-outline-secondary">Download</a>
+                                </div>
+                            </div>
+                            <div class="col-sm-2">
+                                <div class="input-group mb-3">
+                                    <button class="btn btn-outline-secondary" data-bs-copy="result" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+                                    </svg> Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <textarea class="form-control" id="result" name="result" rows="10" disabled></textarea>
                     </div>
                 </div>
@@ -229,16 +263,45 @@
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
-                        <label for="ast" class="form-label">AST</label>
-                        <a download="ast" href="#">Download</a>
+                        <div class="row">
+                            <div class="col-sm-10">
+                                <div class="input-group mb-3">
+                                    <label for="ast" class="input-group-text">AST</label>
+                                    <a download="ast" href="#" class="btn btn-outline-secondary">Download</a>
+                                </div>
+                            </div>
+                            <div class="col-sm-2">
+                                <div class="input-group mb-3">
+                                    <button class="btn btn-outline-secondary" data-bs-copy="ast" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+                                    </svg> Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         <textarea class="form-control" id="ast" name="ast" rows="10" disabled></textarea>
                     </div>
                 </div>
                 <div class="col">
+
                     <div class="mb-3">
-                        <label for="errors" class="form-label">Errors</label>
-                        <a download="errors" href="#">Download</a>
+                        <div class="row">
+                            <div class="col-sm-10">
+                                <div class="input-group mb-3">
+                                    <label for="errors" class="input-group-text">Errors</label>
+                                    <a download="errors" href="#" class="btn btn-outline-secondary">Download</a>
+                                </div>
+                            </div>
+                            <div class="col-sm-2">
+                                <div class="input-group mb-3">
+                                    <button class="btn btn-outline-secondary" data-bs-copy="errors" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+                                    </svg> Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <textarea class="form-control" id="errors" name="errors" rows="10" disabled></textarea>
                     </div>
                 </div>
@@ -259,15 +322,15 @@
                     </div>
                 </div>
             </div>
-        <!--    <div class="row">
-                <div class="col">
-                    <div class="mb-3">
-                        <label for="code" class="form-label">Code</label>
-                        <textarea disabled class="form-control" id="code" name="code" rows="10"></textarea>
-                        <hr>
+            <!--    <div class="row">
+                    <div class="col">
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Code</label>
+                            <textarea disabled class="form-control" id="code" name="code" rows="10"></textarea>
+                            <hr>
+                        </div>
                     </div>
-                </div>
-            </div> -->
+                </div> -->
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
@@ -299,6 +362,7 @@
     const errors = document.querySelector('#errors');
     const parseStats = document.querySelector('#parse-stats');
     const renderStats = document.querySelector('#render-stats');
+
     // const code = document.querySelector('#code');
 
     function toFileSize(size) {
@@ -343,7 +407,11 @@
             errors.value = JSON.stringify(parsed.errors.concat(rendered.errors), null, 1);
 
             parseStats.value = Object.entries(parsed.stats).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
-            renderStats.value = Object.entries(rendered.stats).concat([['Ratio', (100 * (1 - rendered.code.length / parsed.stats.bytesIn)).toFixed(2) + ' %']]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+            renderStats.value = Object.entries(rendered.stats).concat([
+                ['Ratio', (100 * (1 - rendered.code.length / parsed.stats.bytesIn)).toFixed(2) + ' %'],
+                ['Input', toFileSize(parsed.stats.bytesIn)],
+                ['Output', toFileSize(rendered.code.length)]
+            ]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
         }
 
         /*
@@ -369,6 +437,19 @@ console.debug({parsed, rendered});`;
         return URL.createObjectURL(new Blob([input], {type}));
     }
 
+    document.documentElement.addEventListener('click', async (event) => {
+
+        const target = event.target.closest('[data-bs-copy]');
+
+        if (target != null) {
+
+            target.classList.add('btn-outline-danger');
+            await navigator.clipboard.writeText(document.getElementById(target.getAttribute('data-bs-copy')).value);
+
+            setTimeout(() => target.classList.remove('btn-outline-danger'), 1000);
+        }
+    })
+
     document.querySelector('#zone').addEventListener('click', (event) => {
 
         const target = event.target.closest('a[download]');
@@ -391,7 +472,10 @@ console.debug({parsed, rendered});`;
             URL.revokeObjectURL(event.target.href);
         }
 
+        event.target.classList.add('btn-outline-danger');
         event.target.href = url;
+
+        setTimeout(() => event.target.classList.remove('btn-outline-danger'), 1000);
     });
 
     document.querySelector('#optionsWrapper').addEventListener('click', (event) => {
@@ -401,6 +485,40 @@ console.debug({parsed, rendered});`;
         if (event.target.matches('input[type=checkbox][name]')) {
 
             css.dispatchEvent(new Event('change'));
+        }
+    });
+
+    document.querySelector('[data-type=preset-group]').addEventListener('click', (event) => {
+
+        if (event.target.matches('button[data-type]')) {
+
+            if (event.target.dataset.type === 'preset-calc') {
+
+                css.value = `:root {
+--color: green;
+}
+._19_u :focus {
+    color:  hsl(from var(--color) calc(h * 2) s l);
+}
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);}`;
+
+            }
+            else {
+
+                parseoptionsresolveImport.checked = true;
+                css.value = `@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.css');`;
+
+            }
+
+            event.target.classList.add('btn-outline-danger');
+            css.dispatchEvent(new Event('change'));
+
+            setTimeout(() => event.target.classList.remove('btn-outline-danger'), 1000);
         }
     });
 
