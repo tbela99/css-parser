@@ -10,6 +10,7 @@
           content="css, parser, node, browser, compiler, ast, css-parser, css-compiler, nested, nesting, css-nesting">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
 
         .github-corner {
@@ -29,6 +30,41 @@
         .github-corner svg {
             color: #fff;
             fill: #42b983;
+        }
+
+        .css-tree {
+
+            list-style: none;
+            font-size: 14px;
+
+            ul {
+                list-style: none;
+                padding-left: 15px;
+
+                > li:not(.tree-collapsed) > .tree-more-dots {
+
+                    display: none;
+                }
+            }
+        }
+
+        .tree-collapsed {
+            > ul {
+
+                display: none;
+
+            }
+
+            > .e:before {
+
+                content: '\2192';
+            }
+        }
+
+        .e:before {
+
+            content: '\2193';
+            cursor: pointer;
         }
     </style>
     <script>
@@ -201,24 +237,25 @@
         </div>
         <div class="col-md-10" id="zone">
             <div class="row">
-                <div class="col">
+                <div class="col-sm-12 col-md-6">
                     <div class="mb-3">
                         <div class="row">
 
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <div data-type="preset-group" class="input-group mb-3">
                                     <label for="css" class="input-group-text">CSS Preset </label>
-                                    <button class="btn btn-outline-secondary" data-type="preset-calc" type="button">Calc
-                                    </button>
-                                    <button class="btn btn-outline-secondary" data-type="preset-import" type="button">Import
-                                    </button>
+                                    <select name="preset" class="form-select form-control">
+                                        <option value="">None</option>
+                                        <option value="calc" selected>Calc</option>
+                                        <option value="bootstrap">Import Bootstrap</option>
+                                        <option value="tailwind">Import Tailwind CSS</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <div class="input-group mb-3">
-                                    <button class="btn btn-outline-secondary" data-bs-copy="css" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
-                                    </svg> Copy
+                                    <button class="btn btn-outline-secondary" data-bs-copy="css" type="button">
+                                        <i class="bi bi-copy"></i>
                                     </button>
                                 </div>
                             </div>
@@ -237,21 +274,21 @@
     height: calc(100% / 4);}</textarea>
                     </div>
                 </div>
-                <div class="col">
+                <div class="col-sm-12 col-md-6">
                     <div class="mb-3">
-
                         <div class="row">
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <div class="input-group mb-3">
                                     <label for="result" class="input-group-text">Result</label>
-                                    <a download="result" href="#" class="btn btn-outline-secondary">Download</a>
+                                    <a download="result" href="#" class="btn btn-outline-secondary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
                                 </div>
                             </div>
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <div class="input-group mb-3">
-                                    <button class="btn btn-outline-secondary" data-bs-copy="result" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
-                                    </svg> Copy
+                                    <button class="btn btn-outline-secondary" data-bs-copy="result" type="button">
+                                        <i class="bi bi-copy"></i>
                                     </button>
                                 </div>
                             </div>
@@ -261,43 +298,42 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col-sm-12 col-md-6">
                     <div class="mb-3">
+
                         <div class="row">
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <div class="input-group mb-3">
-                                    <label for="ast" class="input-group-text">AST</label>
-                                    <a download="ast" href="#" class="btn btn-outline-secondary">Download</a>
+                                    <label for="render-stats" class="input-group-text">Stats</label>
                                 </div>
                             </div>
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <div class="input-group mb-3">
-                                    <button class="btn btn-outline-secondary" data-bs-copy="ast" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
-                                    </svg> Copy
+                                    <button class="btn btn-outline-secondary" data-bs-copy="render-stats" type="button">
+                                        <i class="bi bi-copy"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
-
-                        <textarea class="form-control" id="ast" name="ast" rows="10" disabled></textarea>
+                        <textarea class="form-control" id="render-stats" rows="10" disabled></textarea>
                     </div>
                 </div>
-                <div class="col">
+                <div class="col-sm-12 col-md-6">
 
                     <div class="mb-3">
                         <div class="row">
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <div class="input-group mb-3">
                                     <label for="errors" class="input-group-text">Errors</label>
-                                    <a download="errors" href="#" class="btn btn-outline-secondary">Download</a>
+                                    <a download="errors" href="#" class="btn btn-outline-secondary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
                                 </div>
                             </div>
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <div class="input-group mb-3">
-                                    <button class="btn btn-outline-secondary" data-bs-copy="errors" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
-                                    </svg> Copy
+                                    <button class="btn btn-outline-secondary" data-bs-copy="errors" type="button">
+                                        <i class="bi bi-copy"></i>
                                     </button>
                                 </div>
                             </div>
@@ -307,18 +343,32 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col-sm-12">
                     <div class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                    <label for="ast" class="input-group-text">AST</label>
+                                    <button class="btn btn-outline-secondary" data-bs-tree="expand" type="button"
+                                            title="Expand">
+                                        <i class="bi bi-arrows-expand-vertical"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary" data-bs-tree="collapse" type="button"
+                                            title="Collapse">
+                                        <i class="bi bi-arrows-collapse-vertical"></i>
+                                    </button>
+                                    <a download="ast" href="#" class="btn btn-outline-secondary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button class="btn btn-outline-secondary" data-bs-copy="ast" type="button">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-                        <label for="parse-stats" class="form-label">Parse Stats</label>
-                        <textarea class="form-control" id="parse-stats" rows="10" disabled></textarea>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="mb-3">
-
-                        <label for="render-stats" class="form-label">Render Stats</label>
-                        <textarea class="form-control" id="render-stats" rows="10" disabled></textarea>
+                        <textarea class="form-control d-none" id="ast" name="ast" rows="10" disabled></textarea>
+                        <div class="nav flex-column css-tree" id="css-tree"></div>
                     </div>
                 </div>
             </div>
@@ -338,10 +388,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="https://github.com/tbela99/css-parser"
                                    target="_blank">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                         class="bi bi-github" viewBox="0 0 16 16">
-                                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
-                                    </svg>
+                                    <i class="bi bi-github"></i>
                                     GitHub</a></li>
                         </ul>
                     </div>
@@ -352,7 +399,10 @@
 </div>
 <script type="module">
 
-    import {parse, render} from 'https://esm.sh/@tbela99/css-parser/web';
+    const worker = new Worker('./worker.js', {type: 'module'});
+
+    import {parse, render, EnumToken} from 'https://esm.sh/@tbela99/css-parser/web';
+    import {buildTree} from "./tree.js";
 
     const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
 
@@ -360,10 +410,8 @@
     const result = document.querySelector('#result');
     const ast = document.querySelector('#ast');
     const errors = document.querySelector('#errors');
-    const parseStats = document.querySelector('#parse-stats');
     const renderStats = document.querySelector('#render-stats');
-
-    // const code = document.querySelector('#code');
+    const tree = document.querySelector('#css-tree');
 
     function toFileSize(size) {
 
@@ -384,8 +432,8 @@
             result.value = '';
             ast.value = '';
             errors.value = '';
-            parseStats.value = '';
             renderStats.value = '';
+            tree.innerHTML = '';
         } else {
 
             for (const option of document.querySelectorAll('input[type=checkbox][name]')) {
@@ -399,19 +447,40 @@
                 }
             }
 
-            const parsed = await parse(css.value, {...parseOptions});
-            const rendered = render(parsed.ast, {...renderOptions});
+            console.debug('parsing');
+            const startTime = performance.now();
 
-            result.value = rendered.code + (renderOptions.sourcemap && rendered.map ? '\n' + `/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(rendered.map))} */` : '');
-            ast.value = JSON.stringify(parsed.ast, null, 1);
-            errors.value = JSON.stringify(parsed.errors.concat(rendered.errors), null, 1);
+            parse(css.value, parseOptions).then(parseResult => {
 
-            parseStats.value = Object.entries(parsed.stats).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
-            renderStats.value = Object.entries(rendered.stats).concat([
-                ['Ratio', (100 * (1 - rendered.code.length / parsed.stats.bytesIn)).toFixed(2) + ' %'],
-                ['Input', toFileSize(parsed.stats.bytesIn)],
-                ['Output', toFileSize(rendered.code.length)]
-            ]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+                console.debug('rendering');
+                const rendered = render(parseResult.ast, renderOptions);
+
+                const transformResult = {
+                    parseOptions,
+                    renderOptions,
+                    ...parseResult,
+                    ...rendered,
+                    errors: parseResult.errors.concat(rendered.errors),
+                    stats: {
+                        bytesOut: rendered.code.length,
+                        ...parseResult.stats,
+                        render: rendered.stats.total,
+                        total: (performance.now() - startTime).toFixed(2) + 'ms'
+                    }
+                };
+
+                result.value = transformResult.code + (transformResult.map ? '\n' + `/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(transformResult.map))} */` : '');
+                ast.value = JSON.stringify(transformResult.ast, null, 1);
+                errors.value = JSON.stringify(transformResult.errors, null, 1);
+
+                renderStats.value = Object.entries(transformResult.stats).concat([
+                    ['Ratio', (100 * (1 - transformResult.code.length / transformResult.stats.bytesIn)).toFixed(2) + ' %'],
+                    ['Input', toFileSize(transformResult.stats.bytesIn)],
+                    ['Output', toFileSize(transformResult.code.length)]
+                ]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+
+                buildTree(tree, transformResult.ast, {transform: (name, value) => ({name: name === 'typ' ? '' : name, value: name === 'typ' ? /* 'EnumToken.' + */ EnumToken[value] + ' (' + value + ')' : value})});
+            })
         }
 
         /*
@@ -445,37 +514,84 @@ console.debug({parsed, rendered});`;
 
             target.classList.add('btn-outline-danger');
             await navigator.clipboard.writeText(document.getElementById(target.getAttribute('data-bs-copy')).value);
-
-            setTimeout(() => target.classList.remove('btn-outline-danger'), 1000);
         }
     })
 
     document.querySelector('#zone').addEventListener('click', (event) => {
 
-        const target = event.target.closest('a[download]');
+        let target = event.target.closest('a[download]');
 
-        if (target === null) {
+        if (target != null) {
 
+            const url = generateDownloadUrl(target, target.download === 'result' ? result.value : (target.download === 'ast' ? ast.value : errors.value), target.download === 'result' ? 'text/css' : 'application/json');
+
+            if (url === null) {
+
+                event.preventDefault();
+                return;
+            }
+
+            if (target.href.startsWith('blob:')) {
+
+                URL.revokeObjectURL(target.href);
+            }
+
+            target.classList.add('btn-outline-danger');
+            target.href = url;
+
+            setTimeout(() => event.target.classList.remove('btn-outline-danger'), 1000);
             return;
         }
 
-        const url = generateDownloadUrl(target, target.download === 'result' ? result.value : (target.download === 'ast' ? ast.value : errors.value), target.download === 'result' ? 'text/css' : 'application/json');
+        target = event.target.closest('[data-bs-tree]');
 
-        if (url === null) {
+        if (target != null) {
 
-            event.preventDefault();
-            return;
+            const collapse = target.dataset.bsTree == 'collapse';
+            const stack = [tree.firstElementChild];
+
+            let item;
+
+            let maxDepth = 1000;
+
+            while ((item = stack.shift())) {
+
+                if (maxDepth-- < 0) {
+
+                    break;
+                }
+
+                for (const child of item.children) {
+
+                    if (collapse && child.classList.contains('tree-collapsed')) {
+
+                        continue;
+                    }
+
+                    if (!collapse && child.dataset.parsed === 'no') {
+
+                        const el = child.querySelector(':scope>.e');
+
+                        console.debug({el});
+                        if (el != null) {
+
+                            el.click();
+                        }
+                    }
+
+                    const ul = child.querySelector(':scope>ul');
+
+                    // console.debug({ul, child, collapse});
+
+                    if (ul != null) {
+
+                        stack.push(ul);
+                    }
+
+                    child.classList.toggle('tree-collapsed', collapse);
+                }
+            }
         }
-
-        if (event.target.href.startsWith('blob:')) {
-
-            URL.revokeObjectURL(event.target.href);
-        }
-
-        event.target.classList.add('btn-outline-danger');
-        event.target.href = url;
-
-        setTimeout(() => event.target.classList.remove('btn-outline-danger'), 1000);
     });
 
     document.querySelector('#optionsWrapper').addEventListener('click', (event) => {
@@ -488,13 +604,11 @@ console.debug({parsed, rendered});`;
         }
     });
 
-    document.querySelector('[data-type=preset-group]').addEventListener('click', (event) => {
+    document.querySelector('select[name=preset]').addEventListener('change', (event) => {
 
-        if (event.target.matches('button[data-type]')) {
+        if (event.target.value === 'calc') {
 
-            if (event.target.dataset.type === 'preset-calc') {
-
-                css.value = `:root {
+            css.value = `:root {
 --color: green;
 }
 ._19_u :focus {
@@ -507,19 +621,24 @@ console.debug({parsed, rendered});`;
     width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
     height: calc(100% / 4);}`;
 
-            }
-            else {
-
-                parseoptionsresolveImport.checked = true;
-                css.value = `@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.css');`;
-
-            }
-
-            event.target.classList.add('btn-outline-danger');
-            css.dispatchEvent(new Event('change'));
-
-            setTimeout(() => event.target.classList.remove('btn-outline-danger'), 1000);
         }
+        else if (event.target.value === 'bootstrap') {
+
+            parseoptionsresolveImport.checked = true;
+            css.value = `@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.css');`;
+        } else if (event.target.value === 'tailwind') {
+
+            parseoptionsresolveImport.checked = true;
+            css.value = `@import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.4/tailwind.css');`;
+        } else {
+
+            css.value = '';
+        }
+
+        event.target.classList.add('btn-outline-danger');
+        css.dispatchEvent(new Event('change'));
+
+        setTimeout(() => event.target.classList.remove('btn-outline-danger'), 1000);
     });
 
     css.dispatchEvent(new Event('change'));
