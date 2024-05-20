@@ -42,8 +42,11 @@ export function buildTree(treeElement, jsonObj, options) {
 
     treeElement.innerHTML = `<ul><li data-key=''>
         <span class="e"></span>
+        ${options?.rootName ? `
+<span class="token property">${options.rootName}</span>
+        <span class="token operator">: </span>` : ''}
         <span class="token punctuation">${openKey}</span>
-        <span class="tree-more-dots"> ... </span> 
+        <span class="tree-more-dots"> ... </span>
         <span class="token punctuation">${closeKey}</span>
    `;
 
@@ -106,11 +109,13 @@ function createTreeDom(obj, key, options) {
 
         const childTypeof = typeof child;
 
+        const {name, value} = options?.transform(key, child, obj) ?? {name: key, value: child};
+
         if (childTypeof === "object" && child != null) {
 
             if (Object.keys(child).length === 0) {
 
-                li.innerHTML = `<span class="token property">${key}</span>
+                li.innerHTML = `<span class="token property">${name}</span>
                 <span class="token operator">: </span>
                 <span class="token punctuation">{</span>
                 <span class="tree-more-dots"> ... </span>
@@ -128,7 +133,7 @@ function createTreeDom(obj, key, options) {
                 if (objectIsArray) {
 
                     li.innerHTML = `<span class="e"></span>
-                                    <span class="token property">${key}</span>
+                                    <span class="token property">${name}</span>
                                     <span class="token operator">: </span>
                                     <a href="#" class="token punctuation">${openKey}</a>
                                     <span class="tree-more-dots"> ... </span>
@@ -149,8 +154,6 @@ function createTreeDom(obj, key, options) {
             }
 
         } else {
-
-            const {name, value} = options?.transform(key, child) ?? {name: key, value: child};
 
             li.innerHTML = `${name === '' ? '' : `<span class="token property">${name}</span>
             <span class="token operator">: </span>
