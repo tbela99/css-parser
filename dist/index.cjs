@@ -84,7 +84,7 @@ exports.EnumToken = void 0;
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
     EnumToken[EnumToken["EOF"] = 47] = "EOF";
-    EnumToken[EnumToken["Hash"] = 28] = "Hash";
+    EnumToken[EnumToken["HashMark"] = 28] = "Hash";
     EnumToken[EnumToken["Flex"] = 57] = "Flex";
     EnumToken[EnumToken["Angle"] = 24] = "Angle";
     EnumToken[EnumToken["Color"] = 49] = "Color";
