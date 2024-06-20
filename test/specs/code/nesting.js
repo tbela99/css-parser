@@ -333,7 +333,6 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             }).then((result) => expect(result.code).equals(`.nav-pills{.nav-link.active,.show>.nav-link{color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}}`));
         });
 
-
         it('merge selectors #16', function () {
             const file = `
 
@@ -354,6 +353,86 @@ a {
                 nestingRules: true,
                 minify: true
             }).then(result => expect(result.code).equals(`a{color:rgb(var(--bs-link-color-rgb) var(--bs-link-opacity,1));text-decoration:underline;:hover,& span{--bs-link-color-rgb:var(--bs-link-hover-color-rgb)}}`));
+        });
+
+        it('merge selectors #17', function () {
+            const file = `
+table.colortable {
+ width: 100%;
+ text-shadow: none;
+ border-collapse: collapse;
+ & td {
+  text-align: center;
+  &.c {
+   text-transform: uppercase;
+   background: #ff0
+  }
+ }
+ & th {
+  text-align: center;
+  color: green;
+  font-weight: 400;
+  padding: 2px 3px
+ }
+ & td,& th {
+  border: 1px solid #d9dadd;
+  padding: 5px
+ }
+}
+.foo {
+ color: blue;
+ & {
+  padding: 2ch;
+  color: blue;
+  && {
+   padding: 2ch
+  }
+ }
+}
+.error,#404 {
+ &:hover>.baz {
+  color: red
+ }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`table.colortable {
+ width: 100%;
+ text-shadow: none;
+ border-collapse: collapse
+}
+table.colortable td {
+ text-align: center
+}
+table.colortable td.c {
+ text-transform: uppercase;
+ background: #ff0
+}
+table.colortable th {
+ text-align: center;
+ color: green;
+ font-weight: 400;
+ padding: 2px 3px
+}
+table.colortable td,table.colortable th {
+ border: 1px solid #d9dadd;
+ padding: 5px
+}
+.foo {
+ color: blue
+}
+.foo {
+ padding: 2ch;
+ color: blue
+}
+.foo.foo {
+ padding: 2ch
+}
+:is(.error,#404):hover>.baz {
+ color: red
+}`));
         });
 
         // see https://www.w3.org/TR/css-nesting-1/#conditionals

@@ -28,7 +28,7 @@ function rec20202lrec2020(r, g, b, a) {
             return val / 4.5;
         }
         return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-    }).concat(a == null || a == 1 ? [] : [a]);
+    }).concat([] );
 }
 function lrec20202rec2020(r, g, b, a) {
     // convert an array of linear-light rec2020 RGB  in the range 0.0-1.0
