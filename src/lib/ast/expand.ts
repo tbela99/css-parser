@@ -81,10 +81,10 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 if (!rule.sel.includes('&')) {
 
-                    const selRule = splitRule(rule.sel);
+                    const selRule: string[][] = splitRule(rule.sel);
                     selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
 
-                    rule.sel = selRule.reduce((acc, curr) => {
+                    rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
 
                         acc.push(curr.join(''));
 
@@ -102,7 +102,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
 
                 let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
-                const values = <Array<AstRule | AstAtRule>>[];
+                const values: Array<AstRule | AstAtRule> = <Array<AstRule | AstAtRule>>[];
 
                 if (astAtRule.nam == 'scope') {
 
@@ -171,7 +171,9 @@ export function replaceCompound(input: string, replace: string) {
 
             if (t.value.val == '&') {
 
-                t.value.val = replace;
+                const rule = splitRule(replace);
+
+                t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             } else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {
 
                 t.value.val = replaceCompoundLiteral(t.value.val, replace);

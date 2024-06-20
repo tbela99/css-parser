@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.5.3
+
+- [x] incorrectly expand css nesting rules
+
 ## V0.5.1
 
 - [x] failed to flatten @import when using url() syntax

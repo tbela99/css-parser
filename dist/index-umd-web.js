@@ -1481,7 +1481,7 @@
                 return val / 4.5;
             }
             return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
-        }).concat(a == null || a == 1 ? [] : [a]);
+        }).concat([] );
     }
     function lrec20202rec2020(r, g, b, a) {
         // convert an array of linear-light rec2020 RGB  in the range 0.0-1.0
@@ -7264,7 +7264,8 @@
         for (const t of walkValues(tokens)) {
             if (t.value.typ == exports.EnumToken.LiteralTokenType) {
                 if (t.value.val == '&') {
-                    t.value.val = replace;
+                    const rule = splitRule(replace);
+                    t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
                 }
                 else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {
                     t.value.val = replaceCompoundLiteral(t.value.val, replace);

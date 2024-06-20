@@ -13,7 +13,6 @@ function createProperties(data: ShorthandPropertyType) {
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
-
             return Object.assign(acc, {
                 [property]: {
                     map,
