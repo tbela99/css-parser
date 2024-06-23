@@ -82,14 +82,25 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                 if (!rule.sel.includes('&')) {
 
                     const selRule: string[][] = splitRule(rule.sel);
-                    selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
 
-                    rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
+                    if (selRule.length > 1) {
 
-                        acc.push(curr.join(''));
+                        const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
 
-                        return acc;
-                    }, <string[]>[]).join(',');
+                        rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), <string[]>[]).join(',');
+                    }
+
+                    else {
+
+                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
+                        rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
+
+                            acc.push(curr.join(''));
+
+                            return acc;
+                        }, <string[]>[]).join(',');
+                    }
+
                 } else {
 
                     rule.sel = replaceCompound(rule.sel, ast.sel);
