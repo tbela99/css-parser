@@ -1,4 +1,4 @@
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, ValidationAction } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../parse.js';
@@ -12,7 +12,7 @@ function parseDeclaration(node, errors, src, position) {
     }
     if (node.val.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
         errors.push({
-            action: 'drop',
+            action: ValidationAction.Drop,
             message: 'doParse: invalid declaration',
             location: { src, ...position }
         });

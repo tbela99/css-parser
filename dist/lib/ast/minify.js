@@ -1,6 +1,6 @@
 import { parseString } from '../parser/parse.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../parser/utils/syntax.js';
-import { EnumToken } from './types.js';
+import { EnumToken, ValidationAction } from './types.js';
 import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';
 import { eq } from '../parser/utils/eq.js';
@@ -644,7 +644,7 @@ function matchSelectors(selector1, selector2, parentType, errors) {
     }
     if (match.length > 1) {
         errors?.push({
-            action: 'ignore',
+            action: ValidationAction.Ignore,
             message: `minify: unsupported multilevel matching\n${JSON.stringify({
                 match,
                 selector1,

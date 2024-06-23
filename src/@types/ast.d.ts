@@ -32,7 +32,7 @@ export declare interface AstDeclaration extends Node {
 
     nam: string,
     val: Token[];
-    typ: EnumToken.DeclarationNodeType
+    typ: EnumToken.DeclarationNodeType;
 }
 
 

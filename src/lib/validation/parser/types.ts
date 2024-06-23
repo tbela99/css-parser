@@ -6,6 +6,7 @@ export enum ValidationTokenEnum {
     DeclarationType,
     AtRule,
     ValidationFunction,
+    ValidationFunctionDefinition,
     OpenBracket,
     CloseBracket,
     OpenParenthesis,
@@ -78,19 +79,25 @@ export interface NumberToken extends ValidationToken {
     val: number;
 }
 
-export interface WhitespaceToken extends ValidationToken {
+export interface ValidationKeywordToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.Keyword;
+    val: string;
+}
+
+export interface ValidationWhitespaceToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Whitespace;
 }
 
-export interface FunctionToken extends ValidationToken {
+export interface ValidationFunctionToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Function;
     val: string;
     chi: ValidationToken[]
 }
 
-export interface CommaToken extends ValidationToken {
+export interface ValidationCommaToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Comma
 }
@@ -141,7 +148,8 @@ export interface ValidationDeclarationToken extends ValidationToken {
 
 export interface ValidationPropertyToken extends ValidationToken {
 
-    typ: ValidationTokenEnum.PropertyType
+    typ: ValidationTokenEnum.PropertyType;
+    range?: [number, number];
     val: string;
 }
 
@@ -212,7 +220,13 @@ export interface OptionalToken extends ValidationToken {
 
 export interface ValidationFunctionToken extends ValidationToken {
 
-    typ: ValidationTokenEnum.ValidationFunction
+    typ: ValidationTokenEnum.Function
     val: string;
     chi: ValidationToken[]
+}
+
+export interface ValidationFunctionDefinitionToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.ValidationFunctionDefinition
+    val: string;
 }

@@ -13,7 +13,6 @@ function createProperties(data: ShorthandPropertyType) {
     return {
         [data.shorthand]: {...data}, ...data.properties.reduce((acc, property: string) => {
 
-
             return Object.assign(acc, {
                 [property]: {
                     map,
@@ -907,4 +906,4 @@ export const properties: PropertySetType = [
     return Object.assign(acc, createProperties(<ShorthandPropertyType>data));
 }, <PropertySetType>{});
 
-console.debug(JSON.stringify({properties, map}, null, 1));
+console.debug(JSON.stringify({properties, map}));

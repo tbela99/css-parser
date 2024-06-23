@@ -1,4 +1,10 @@
-import {parseAllSyntaxes, parseDeclarationsSyntax, parseFunctionsSyntax} from "../src/lib/validation/parser";
+import {
+    cleanup,
+    parseAllSyntaxes,
+    parseDeclarationsSyntax,
+    parseFunctionsSyntax,
+    parseSyntax
+} from "../src/lib/validation/parser";
 
 
 console.debug(JSON.stringify({
@@ -9,4 +15,7 @@ console.debug(JSON.stringify({
     }, null, 1)
 );
 
+// console.debug(
+//     JSON.stringify(parseSyntax('normal | bold | <number [1,1000]>'), null, 1)
+// );
 

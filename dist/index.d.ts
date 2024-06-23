@@ -1,3 +1,7 @@
+declare enum ValidationAction$1 {
+    Drop = "drop",
+    Ignore = "ignore"
+}
 declare enum EnumToken {
     CommentTokenType = 0,
     CDOCOMMTokenType = 1,
@@ -101,7 +105,20 @@ declare enum EnumToken {
     TimelineFunction = 16
 }
 
-declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+export declare interface ErrorDescription$1 {
+
+    // drop rule or declaration | fix rule or declaration
+    action: ValidationAction$1;
+    message: string;
+    location?: {
+        src: string,
+        lin: number,
+        col: number;
+    } | null;
+    error?: Error;
+}
+
+declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription$1[], nestingContent?: boolean, context?: {
     [key: string]: any;
 }): AstNode;
 
@@ -112,7 +129,7 @@ declare function expand(ast: AstNode): AstNode;
 
 declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
-}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
+}, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription$1[]): string;
 
 declare function parseString(src: string, options?: {
     location: boolean;
@@ -662,7 +679,7 @@ export declare interface AstDeclaration extends Node {
 
     nam: string,
     val: Token[];
-    typ: EnumToken.DeclarationNodeType
+    typ: EnumToken.DeclarationNodeType;
 }
 
 
@@ -770,25 +787,13 @@ export declare interface WalkAttributesResult {
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
 }
 
-export declare interface ErrorDescription {
-
-    // drop rule or declaration | fix rule or declaration
-    action: 'drop' | 'ignore';
-    message: string;
-    location?: {
-        src: string,
-        lin: number,
-        col: number;
-    };
-    error?: Error;
-}
-
 export declare interface ParserOptions extends PropertyListOptions {
 
     minify?: boolean;
     src?: string;
     sourcemap?: boolean;
     nestingRules?: boolean;
+    validate?: boolean | ValidationAction;
     expandNestingRules?: boolean;
     removeCharset?: boolean;
     removeEmpty?: boolean;

@@ -5,11 +5,8 @@ import {
     CloseCurlyBraceToken,
     CloseParenthesisToken,
     ColumnToken,
-    CommaToken,
     ExclamationToken,
     FinalToken,
-    FunctionToken,
-    KeywordToken,
     NumberToken,
     OpenBracketToken,
     OpenCurlyBraceToken,
@@ -23,20 +20,23 @@ import {
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
+    ValidationCommaToken,
     ValidationDeclarationToken,
+    ValidationFunctionDefinitionToken,
     ValidationFunctionToken,
+    ValidationKeywordToken,
     ValidationPipeToken,
     ValidationPropertyToken,
     ValidationRootToken,
     ValidationToken,
     ValidationTokenEnum,
-    WhitespaceToken
+    ValidationWhitespaceToken
 } from "./index";
 
 declare type ValidationContext =
     ValidationRootToken
     | ValidationBracketToken
-    | FunctionToken
+    | ValidationFunctionToken
     | ParenthesisToken;
 
 interface ValidationTokenIteratorValue {
@@ -84,6 +84,28 @@ function* tokenize(syntax: string): Generator<ValidationToken> {
         move(currentPosition, chr);
 
         switch (chr) {
+
+            case '<':
+
+                buffer += chr;
+
+                while (i + 1 < syntax.length) {
+
+                    chr = syntax.charAt(++i);
+                    buffer += chr;
+
+                    move(currentPosition, chr);
+
+                    if (chr == '>') {
+
+                        break;
+                    }
+                }
+
+                yield getTokenType(buffer, position, currentPosition);
+                buffer = '';
+
+                break;
 
             case ' ':
             case '|':
@@ -223,13 +245,14 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
                 break;
 
+            case ValidationTokenEnum.ValidationFunctionDefinition:
             case ValidationTokenEnum.DeclarationType:
+            case ValidationTokenEnum.PropertyType:
             case ValidationTokenEnum.Whitespace:
             case ValidationTokenEnum.Separator:
-            case ValidationTokenEnum.PropertyType:
             case ValidationTokenEnum.Keyword:
-            case ValidationTokenEnum.Comma:
             case ValidationTokenEnum.Number:
+            case ValidationTokenEnum.Comma:
 
                 context.chi.push(item.value);
                 break;
@@ -249,7 +272,7 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
             case ValidationTokenEnum.OpenParenthesis:
 
-                const name: string = (context.chi.pop() as KeywordToken)?.val ?? '';
+                const name: string = (context.chi.pop() as ValidationKeywordToken)?.val ?? '';
 
                 context.chi.push(
                     Object.assign(parseParenthesis(syntax, iterator as Iterator<ValidationTokenIteratorValue>, {pos: item.value.pos}) as ValidationToken, {
@@ -307,7 +330,6 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
         }
     }
 
-
     return context;
 }
 
@@ -323,7 +345,6 @@ function parseParenthesis(syntax: string, iterator: Iterator<ValidationTokenIter
     }
 
     let match: number = 1;
-
     let tokens: ValidationToken[] = [];
     let item: ValidationTokenIteratorValue;
 
@@ -359,7 +380,6 @@ function parseBrackets(syntax: string, iterator: Iterator<ValidationTokenIterato
     }
 
     let match: number = 1;
-
     let tokens: ValidationToken[] = [];
     let item: ValidationTokenIteratorValue;
 
@@ -392,7 +412,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
     if (token.match(/^\s+$/)) {
 
-        return <WhitespaceToken>{
+        return <ValidationWhitespaceToken>{
             typ: ValidationTokenEnum.Whitespace,
             pos
         };
@@ -465,7 +485,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
     if (token == ',') {
 
-        return <CommaToken>{
+        return <ValidationCommaToken>{
             typ: ValidationTokenEnum.Comma,
             pos
         };
@@ -546,6 +566,37 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
     if (token.startsWith('<')) {
 
+        // <number [1,1000]>
+        // <length [0,∞]>
+        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+),(([0-9]+)|∞)\])?>/);
+
+        if (match == null) {
+
+            let match = token.match(/<([a-zA-Z0-9-]+)\(\)>/);
+
+            if (match != null) {
+
+                return <ValidationFunctionDefinitionToken>{
+                    typ: ValidationTokenEnum.ValidationFunctionDefinition,
+                    val: match[1],
+                    pos
+                };
+            }
+
+
+            throw new Error('invalid token at position: ' + position.lin + ':' + position.col + ' ' + token);
+        }
+
+        if (match[2] != null) {
+
+            return <ValidationPropertyToken>{
+                typ: ValidationTokenEnum.PropertyType,
+                val: match[1],
+                range: [+match[3], match[4] == '∞' ? Infinity : +match[4]],
+                pos
+            };
+        }
+
         return <ValidationPropertyToken>{
             typ: ValidationTokenEnum.PropertyType,
             val: token.slice(1, -1),
@@ -553,7 +604,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
         };
     }
 
-    return <KeywordToken>{
+    return <ValidationKeywordToken>{
         typ: ValidationTokenEnum.Keyword,
         val: token,
         pos
@@ -582,6 +633,10 @@ export function render(token: ValidationToken): string {
         case ValidationTokenEnum.Whitespace:
 
             return ' ';
+
+        case ValidationTokenEnum.ValidationFunctionDefinition:
+
+            return '<' + (token as ValidationFunctionDefinitionToken).val + '()>';
 
         case ValidationTokenEnum.HashMark:
 
@@ -614,7 +669,7 @@ export function render(token: ValidationToken): string {
 
         case ValidationTokenEnum.Keyword:
 
-            return (token as KeywordToken).val + renderAttributes(token);
+            return (token as ValidationKeywordToken).val + renderAttributes(token);
 
         case ValidationTokenEnum.OpenBracket:
 
@@ -748,6 +803,11 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 }
 
 export function cleanup(ast: { [key: string]: any }) {
+
+    if (typeof ast != 'object') {
+
+        return ast;
+    }
 
     const {pos, ...response} = ast;
 

@@ -11,7 +11,6 @@ import {
     AstNode,
     AstRule,
     AstRuleStyleSheet,
-    ErrorDescription,
     LiteralToken,
     MatchedSelector,
     MinifyFeature,
@@ -20,7 +19,8 @@ import {
     ParserOptions,
     RawSelectorTokens, Token
 } from "../../@types";
-import {EnumToken} from "./types";
+import {EnumToken, ValidationAction} from "./types";
+import {ErrorDescription} from "../../@types/validation";
 
 export const combinators: string[] = ['+', '>', '~', '||'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
@@ -871,7 +871,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
     if (match.length > 1) {
 
         errors?.push({
-            action: 'ignore',
+            action: ValidationAction.Ignore,
             message: `minify: unsupported multilevel matching\n${JSON.stringify({
                 match,
                 selector1,

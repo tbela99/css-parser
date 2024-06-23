@@ -1,6 +1,7 @@
-import {AstDeclaration, ErrorDescription, FunctionToken, ParensToken, Position, Token} from "../../../@types";
-import {EnumToken, walkValues} from "../../ast";
+import {AstDeclaration, FunctionToken, ParensToken, Position, Token} from "../../../@types";
+import {EnumToken, ValidationAction, walkValues} from "../../ast";
 import {isWhiteSpace} from "./syntax";
+import {ErrorDescription} from "../../../@types/validation";
 
 export function parseDeclaration(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
 
@@ -11,7 +12,7 @@ export function parseDeclaration(node: AstDeclaration, errors: ErrorDescription[
     if (node.val.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
 
         errors.push(<ErrorDescription>{
-            action: 'drop',
+            action: ValidationAction.Drop,
             message: 'doParse: invalid declaration',
             location: {src, ...position}
         });

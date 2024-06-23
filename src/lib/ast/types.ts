@@ -1,4 +1,10 @@
 
+export enum ValidationAction {
+
+    Drop = 'drop',
+    Ignore = 'ignore'
+}
+
 
 export enum EnumToken {
     CommentTokenType,

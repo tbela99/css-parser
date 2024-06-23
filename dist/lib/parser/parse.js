@@ -1,5 +1,5 @@
 import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, isColor } from './utils/syntax.js';
-import { EnumToken, funcLike } from '../ast/types.js';
+import { EnumToken, funcLike, ValidationAction } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -7,6 +7,7 @@ import { parseDeclaration } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
 import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
 import { tokenize } from './tokenize.js';
+import { validate } from '../validation/validate.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -129,7 +130,7 @@ async function doParse(iterator, options = {}) {
             await parseNode(tokens, context, stats, options, errors, src, map);
             const previousNode = stack.pop();
             // @ts-ignore
-            context = stack[stack.length - 1] || ast;
+            context = stack[stack.length - 1] ?? ast;
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 context.chi.pop();
@@ -246,21 +247,18 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             const position = map.get(tokens[i]);
             if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
                 errors.push({
-                    action: 'drop',
+                    action: ValidationAction.Drop,
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     location: { src, ...position }
                 });
                 continue;
             }
-            loc = {
-                sta: position,
-                src
-            };
             // @ts-ignore
             context.chi.push(tokens[i]);
-            if (options.sourcemap) {
-                tokens[i].loc = loc;
-            }
+            Object.defineProperty(tokens[i], 'loc', { ...definedPropertySettings, value: {
+                    sta: position,
+                    src
+                }, enumerable: options.sourcemap });
         }
         else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
             break;
@@ -287,10 +285,13 @@ async function parseNode(results, context, stats, options, errors, src, map) {
     if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
         const atRule = tokens.shift();
         const position = map.get(atRule);
+        if (!validate(atRule, errors)) {
+            return null;
+        }
         if (atRule.val == 'charset') {
             if (position.ind > 0) {
                 errors.push({
-                    action: 'drop',
+                    action: ValidationAction.Drop,
                     message: 'doParse: invalid @charset',
                     location: { src, ...position }
                 });
@@ -314,12 +315,12 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                         continue;
                     }
                     if (type != EnumToken.AtRuleNodeType) {
-                        errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                        errors.push({ action: ValidationAction.Drop, message: 'invalid @import', location: { src, ...position } });
                         return null;
                     }
                     const name = context.chi[i].nam;
                     if (name != 'charset' && name != 'import' && name != 'layer') {
-                        errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                        errors.push({ action: ValidationAction.Drop, message: 'invalid @import', location: { src, ...position } });
                         return null;
                     }
                     break;
@@ -328,7 +329,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             // @ts-ignore
             if (tokens[0]?.typ != EnumToken.StringTokenType && tokens[0]?.typ != EnumToken.UrlFunctionTokenType) {
                 errors.push({
-                    action: 'drop',
+                    action: ValidationAction.Drop,
                     message: 'doParse: invalid @import',
                     location: { src, ...position }
                 });
@@ -337,7 +338,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             // @ts-ignore
             if (tokens[0].typ == EnumToken.UrlFunctionTokenType && tokens[1]?.typ != EnumToken.UrlTokenTokenType && tokens[1]?.typ != EnumToken.StringTokenType) {
                 errors.push({
-                    action: 'drop',
+                    action: ValidationAction.Drop,
                     message: 'doParse: invalid @import',
                     location: { src, ...position }
                 });
@@ -383,7 +384,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                     }
                     catch (error) {
                         // @ts-ignore
-                        errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
+                        errors.push({ action: ValidationAction.Ignore, message: 'doParse: ' + error.message, error });
                     }
                 }
             }
@@ -450,6 +451,9 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 sel: [...uniq.keys()].join(','),
                 chi: []
             };
+            if (!validate(node, errors)) {
+                return null;
+            }
             let raw = [...uniq.values()];
             Object.defineProperty(node, 'raw', {
                 enumerable: false,
@@ -520,8 +524,12 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 // @ts-ignore
                 val: value
             };
+            Object.defineProperty(node, 'loc', { enumerable: false, configurable: true, writable: true, value: { sta: position, src } });
             const result = parseDeclaration(node, errors, src, position);
             if (result != null) {
+                if (!validate(result, errors)) {
+                    return null;
+                }
                 // @ts-ignore
                 context.chi.push(node);
             }

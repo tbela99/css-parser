@@ -9,19 +9,6 @@ export * from './visitor';
 export * from './walker';
 export * from './parse';
 
-export declare interface ErrorDescription {
-
-    // drop rule or declaration | fix rule or declaration
-    action: 'drop' | 'ignore';
-    message: string;
-    location?: {
-        src: string,
-        lin: number,
-        col: number;
-    };
-    error?: Error;
-}
-
 export declare interface MinifyFeature {
 
     ordering: number;
@@ -39,6 +26,7 @@ export declare interface ParserOptions extends PropertyListOptions {
     src?: string;
     sourcemap?: boolean;
     nestingRules?: boolean;
+    validate?: boolean | ValidationAction;
     expandNestingRules?: boolean;
     removeCharset?: boolean;
     removeEmpty?: boolean;

@@ -2,7 +2,7 @@ import { getAngle, color2srgbvalues, clamp } from './color/color.js';
 import { colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { EnumToken } from '../ast/types.js';
+import { EnumToken, ValidationAction } from '../ast/types.js';
 import '../ast/minify.js';
 import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
@@ -575,7 +575,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DashedIdenTokenType:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
     }
-    errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
+    errors?.push({ action: ValidationAction.Ignore, message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
 }
 

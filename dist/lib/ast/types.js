@@ -1,3 +1,8 @@
+var ValidationAction;
+(function (ValidationAction) {
+    ValidationAction["Drop"] = "drop";
+    ValidationAction["Ignore"] = "ignore";
+})(ValidationAction || (ValidationAction = {}));
 var EnumToken;
 (function (EnumToken) {
     EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";
@@ -117,4 +122,4 @@ const funcLike = [
     EnumToken.GridTemplateFuncTokenType
 ];
 
-export { EnumToken, funcLike };
+export { EnumToken, ValidationAction, funcLike };

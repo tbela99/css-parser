@@ -17,7 +17,7 @@ import {EnumToken} from "../../ast";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
-const dimensionUnits: Set<string> = new Set([
+ const dimensionUnits: Set<string> = new Set([
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',
     'dvh', 'dvi', 'dvmax', 'dvmin', 'dvw', 'em', 'ex', 'ic', 'in', 'lh', 'lvb',
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',

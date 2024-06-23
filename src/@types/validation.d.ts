@@ -1,68 +1,27 @@
-export declare interface ValidationConstrains {
+import {ValidationAction} from "../lib";
 
-    optional?: boolean;
-    multiple?: boolean;
-    occurrence?: number | {
+export declare interface ErrorDescription {
 
-        min?: number;
-        max?: number;
-    }
-    range?: {
-        min?: number,
-        max?: number;
-    }
+    // drop rule or declaration | fix rule or declaration
+    action: ValidationAction;
+    message: string;
+    location?: {
+        src: string,
+        lin: number,
+        col: number;
+    } | null;
+    error?: Error;
 }
 
-export declare interface ValidationTokenGeneric extends ValidationConstrains {
-
-    type: string;
-    name?: string;
-    value?: string;
-}
-
-export declare interface ValidationTokenGroup extends ValidationConstrains {
-
-    type: 'all' | 'any' | 'children';
-    value: ValidationTokenList
-}
-
-export declare interface ValidationTokenFunction extends ValidationConstrains {
-    type: 'function',
-    name: string,
-    arguments: ValidationTokenList;
-}
-
-export declare type ValidationToken = ValidationTokenFunction | ValidationTokenGeneric | ValidationTokenGroup;
-export declare type ValidationTokenList = Array<ValidationToken>;
-
-export declare interface ValidationRuleDescriptor {
-
-    syntax?: ValidationTokenList;
-    initial?: string;
-}
-
-export declare interface ValidationRule {
-
-    syntax: ValidationTokenList;
-    pattern: string;
-    descriptors?: {
-        [key: string]: ValidationRuleDescriptor
-    }
-}
-
-export declare interface ValidationRuleSet {
-
-    [key: string]: ValidationRule;
-}
-
-
-export declare interface SyntaxRuleSet {
-
+export declare interface ValidationSyntaxNode {
     syntax: string;
-    descriptors?: {
-        [key: string]: {
+    ast: ValidationToken[];
 
-            syntax?: string
-        }
-    }
+}
+
+export declare interface ValidationConfiguration {
+
+    declarations: Record<string, ValidationSyntaxNode>;
+    functions: Record<string, ValidationSyntaxNode>;
+    syntaxes: Record<string, ValidationSyntaxNode>;
 }

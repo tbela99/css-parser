@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.5.3
+
+- [x] incorrectly expand css nesting rules
+
 ## V0.5.2
 
 [x] do not merge rules when a vendor prefix is used to avoid the rule being rejected. #35

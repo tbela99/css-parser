@@ -10,7 +10,6 @@ import {
     AttrToken,
     ColorSpace,
     ColorToken,
-    ErrorDescription,
     FractionToken,
     IdentToken,
     Location,
@@ -40,10 +39,11 @@ import {
     rgb2hex,
     srgb2hexvalues
 } from "./color";
-import {EnumToken, expand} from "../ast";
+import {EnumToken, expand, ValidationAction} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
+import {ErrorDescription} from "../../@types/validation";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 
@@ -905,7 +905,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
     }
 
-    errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
+    errors?.push({action: ValidationAction.Ignore, message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
 
     return '';
 }
