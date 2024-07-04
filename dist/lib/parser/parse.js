@@ -502,7 +502,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                     if (name[i].typ != EnumToken.WhitespaceTokenType && name[i].typ != EnumToken.CommentTokenType) {
                         errors.push({
                             action: 'drop',
-                            message: 'doParse: invalid declaration',
+                            message: `doParse: invalid declaration name'`,
                             location: { src, ...position }
                         });
                         return null;
@@ -512,7 +512,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             if (value == null || value.length == 0) {
                 errors.push({
                     action: 'drop',
-                    message: 'doParse: invalid declaration',
+                    message: `doParse: invalid declaration`,
                     location: { src, ...position }
                 });
                 return null;

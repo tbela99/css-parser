@@ -1,3 +1,5 @@
+
+export const specialValues: string[] = ['inherit', 'initial', 'unset',  'revert', 'revert-layer'];
 export enum ValidationTokenEnum {
 
     Root,
@@ -109,9 +111,8 @@ export interface PipeToken extends ValidationToken {
 
 export interface ValidationPipeToken extends ValidationToken {
 
-    typ: ValidationTokenEnum.PipeToken,
-    l: ValidationToken[],
-    r: ValidationToken[]
+    typ: ValidationTokenEnum.PipeToken;
+    chi: ValidationToken[][]
 }
 
 export interface ValidationBracketToken extends ValidationToken {
@@ -128,15 +129,13 @@ export interface ColumnToken extends ValidationToken {
 export interface ValidationAmpersandToken extends ValidationToken {
 
     typ: ValidationTokenEnum.AmpersandToken
-    l: ValidationToken[],
-    r: ValidationToken[]
+    chi: ValidationToken[][]
 }
 
 export interface ValidationColumnToken extends ValidationToken {
 
     typ: ValidationTokenEnum.ColumnToken,
-    l: ValidationToken[],
-    r: ValidationToken[]
+    chi: ValidationToken[][]
 }
 
 

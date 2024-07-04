@@ -175,6 +175,7 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
     let item: ValidationTokenIteratorValue;
     let hasPipe: boolean = false;
+    let pipe: ValidationTokenEnum;
     let i: number;
 
     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
@@ -262,6 +263,7 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
             case ValidationTokenEnum.Ampersand:
 
                 hasPipe = true;
+                pipe = item.value.typ;
                 context.chi.push(item.value);
                 break;
 
@@ -295,39 +297,61 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
     if (hasPipe) {
 
-        let l: number;
-        let r: number;
-        i = context.chi.length;
 
-        while (i--) {
+        // i = context.chi.length;
 
-            if (
-                [ValidationTokenEnum.Pipe, ValidationTokenEnum.Column, ValidationTokenEnum.Ampersand].includes(context.chi[i].typ)) {
+        const token = {
+            // @ts-ignore
+            typ: pipe == ValidationTokenEnum.Pipe ? ValidationTokenEnum.PipeToken : (pipe == ValidationTokenEnum.Column ? ValidationTokenEnum.ColumnToken : ValidationTokenEnum.AmpersandToken),
+            chi: [[]] as ValidationToken[][]
+        } as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken;
 
-                l = i - 1;
+        const chi = context.chi;
+        context.chi = [token];
 
-                while (l >= 0 && context.chi[l].typ == ValidationTokenEnum.Whitespace) {
+        for (const c of chi) {
 
-                    l--;
-                }
+            // @ts-ignore
+            if (c.typ == pipe) {
 
-                r = i + 1;
+                token.chi.push([]);
+            } else {
 
-                while (r < context.chi.length - 1 && context.chi[r].typ == ValidationTokenEnum.Whitespace) {
-
-                    r++;
-                }
-
-                const token = {
-                    typ: context.chi[i].typ == ValidationTokenEnum.Pipe ? ValidationTokenEnum.PipeToken : (context.chi[i].typ == ValidationTokenEnum.Ampersand ? ValidationTokenEnum.AmpersandToken : ValidationTokenEnum.ColumnToken),
-                    l: context.chi.slice(l, i),
-                    r: context.chi.slice(i + 1, r + 1)
-                }
-
-                context.chi.splice(l, r - l + 1, token as ValidationPipeToken);
-                i = l;
+                token.chi[token.chi.length - 1].push(c);
             }
         }
+
+        // while (i-- > 2) {
+        //
+        //     if (
+        //         [ValidationTokenEnum.Pipe, ValidationTokenEnum.Column, ValidationTokenEnum.Ampersand].includes(context.chi[i].typ)) {
+        //
+        //         l = i - 1;
+        //
+        //         // @ts-ignore
+        //         while (l > 0 && context.chi[l].typ != (pipe as ValidationTokenEnum)) {
+        //
+        //             l--;
+        //         }
+        //
+        //         r = i + 1;
+        //
+        //         // @ts-ignore
+        //         while (r < context.chi.length - 1 && context.chi[r].typ == (pipe as ValidationTokenEnum)) {
+        //
+        //             r++;
+        //         }
+        //
+        //         const token = {
+        //             typ: context.chi[i].typ == ValidationTokenEnum.Pipe ? ValidationTokenEnum.PipeToken : (context.chi[i].typ == ValidationTokenEnum.Ampersand ? ValidationTokenEnum.AmpersandToken : ValidationTokenEnum.ColumnToken),
+        //             l: context.chi.slice(l, i),
+        //             r: context.chi.slice(i + 1, r + 1)
+        //         }
+        //
+        //         context.chi.splice(l, r - l + 1, token as ValidationPipeToken);
+        //         i = l;
+        //     }
+        // }
     }
 
     return context;
@@ -624,6 +648,7 @@ function move(position: Position, chr: string): Position {
 
 export function render(token: ValidationToken): string {
 
+    let glue: string;
     switch (token.typ) {
 
         case ValidationTokenEnum.Root:
@@ -646,17 +671,17 @@ export function render(token: ValidationToken): string {
 
             return '|';
 
+        case ValidationTokenEnum.Column:
+
+            return '||';
+
         case ValidationTokenEnum.PipeToken:
-
-            return (token as ValidationPipeToken).l.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '') + ' | ' + (token as ValidationPipeToken).r.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '');
-
         case ValidationTokenEnum.ColumnToken:
-
-            return (token as ValidationColumnToken).l.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '') + ' || ' + (token as ValidationColumnToken).r.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '');
-
         case ValidationTokenEnum.AmpersandToken:
 
-            return (token as ValidationAmpersandToken).l.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '') + ' && ' + (token as ValidationAmpersandToken).r.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '');
+            glue = token.typ == ValidationTokenEnum.PipeToken ? ' | ' : (token.typ == ValidationTokenEnum.ColumnToken ? ' || ' : ' && ');
+
+            return (token as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).chi.reduce((acc: string, curr: ValidationToken[]) => acc + (acc.length > 0 ?  glue : '') + curr.reduce((a, b) => a + render(b), ''), '');
 
         case ValidationTokenEnum.Function:
         case ValidationTokenEnum.ParentsToken:
@@ -766,8 +791,10 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
             if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
 
-                minify((ast[i] as ValidationPipeToken | ValidationColumnToken).l as ValidationToken[]);
-                minify((ast[i] as ValidationPipeToken | ValidationColumnToken).r as ValidationToken[]);
+                for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).chi) {
+
+                    minify(j);
+                }
 
             } else if ('chi' in ast[i]) {
 
@@ -786,12 +813,15 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
                 }
             }
         }
+
     } else {
 
-        if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken].includes(ast.typ)) {
+        if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast.typ)) {
 
-            minify((ast as ValidationPipeToken | ValidationColumnToken).l as ValidationToken[]);
-            minify((ast as ValidationPipeToken | ValidationColumnToken).r as ValidationToken[]);
+            for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).chi) {
+
+                minify(j);
+            }
 
         } else if ('chi' in ast) {
 
@@ -804,25 +834,27 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
 export function cleanup(ast: { [key: string]: any }) {
 
-    if (typeof ast != 'object') {
+    return ast;
 
-        return ast;
-    }
-
-    const {pos, ...response} = ast;
-
-    for (const [key, value] of Object.entries(response)) {
-
-        if (Array.isArray(value)) {
-
-            response[key] = value.map(e => cleanup(e));
-        } else if (typeof value == 'object') {
-
-            response[key] = cleanup(value);
-        }
-    }
-
-    return response;
+    // if (typeof ast != 'object') {
+    //
+    //     return ast;
+    // }
+    //
+    // const {pos, ...response} = ast;
+    //
+    // for (const [key, value] of Object.entries(response)) {
+    //
+    //     if (Array.isArray(value)) {
+    //
+    //         response[key] = value.map(e => cleanup(e));
+    //     } else if (typeof value == 'object') {
+    //
+    //         response[key] = cleanup(value);
+    //     }
+    // }
+    //
+    // return response;
 }
 
 interface ParsedSyntax {

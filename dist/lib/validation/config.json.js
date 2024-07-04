@@ -1,0 +1,37285 @@
+var declarations = {
+	"-ms-accelerator": {
+		syntax: "false | true",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "false"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "true"
+					}
+				]
+			}
+		]
+	},
+	"-ms-block-progression": {
+		syntax: "tb | rl | bt | lr",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "tb"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "rl"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "bt"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "lr"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-content-zoom-chaining": {
+		syntax: "none | chained",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "chained"
+					}
+				]
+			}
+		]
+	},
+	"-ms-content-zooming": {
+		syntax: "none | zoom",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "zoom"
+					}
+				]
+			}
+		]
+	},
+	"-ms-content-zoom-limit": {
+		syntax: "<'-ms-content-zoom-limit-min'> <'-ms-content-zoom-limit-max'>",
+		ast: [
+			{
+				typ: 3,
+				val: "-ms-content-zoom-limit-min"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "-ms-content-zoom-limit-max"
+			}
+		]
+	},
+	"-ms-content-zoom-limit-max": {
+		syntax: "<percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "percentage"
+			}
+		]
+	},
+	"-ms-content-zoom-limit-min": {
+		syntax: "<percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "percentage"
+			}
+		]
+	},
+	"-ms-content-zoom-snap": {
+		syntax: "<'-ms-content-zoom-snap-type'> || <'-ms-content-zoom-snap-points'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "-ms-content-zoom-snap-type"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "-ms-content-zoom-snap-points"
+					}
+				]
+			}
+		]
+	},
+	"-ms-content-zoom-snap-points": {
+		syntax: "snapInterval( <percentage>, <percentage> ) | snapList( <percentage># )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "snapInterval",
+						chi: [
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "snapList",
+						chi: [
+							{
+								typ: 2,
+								val: "percentage",
+								isList: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-content-zoom-snap-type": {
+		syntax: "none | proximity | mandatory",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "proximity"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "mandatory"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-filter": {
+		syntax: "<string>",
+		ast: [
+			{
+				typ: 2,
+				val: "string"
+			}
+		]
+	},
+	"-ms-flow-from": {
+		syntax: "[ none | <custom-ident> ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "custom-ident"
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-ms-flow-into": {
+		syntax: "[ none | <custom-ident> ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "custom-ident"
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-ms-grid-columns": {
+		syntax: "none | <track-list> | <auto-track-list>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "track-list"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "auto-track-list"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-grid-rows": {
+		syntax: "none | <track-list> | <auto-track-list>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "track-list"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "auto-track-list"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-high-contrast-adjust": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-ms-hyphenate-limit-chars": {
+		syntax: "auto | <integer>{1,3}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "integer",
+						occurence: {
+							min: 1,
+							max: 3
+						}
+					}
+				]
+			}
+		]
+	},
+	"-ms-hyphenate-limit-lines": {
+		syntax: "no-limit | <integer>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "no-limit"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				]
+			}
+		]
+	},
+	"-ms-hyphenate-limit-zone": {
+		syntax: "<percentage> | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"-ms-ime-align": {
+		syntax: "auto | after",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "after"
+					}
+				]
+			}
+		]
+	},
+	"-ms-overflow-style": {
+		syntax: "auto | none | scrollbar | -ms-autohiding-scrollbar",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "scrollbar"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "-ms-autohiding-scrollbar"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-scrollbar-3dlight-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-arrow-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-base-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-darkshadow-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-face-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-highlight-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-shadow-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scrollbar-track-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-ms-scroll-chaining": {
+		syntax: "chained | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "chained"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-limit": {
+		syntax: "<'-ms-scroll-limit-x-min'> <'-ms-scroll-limit-y-min'> <'-ms-scroll-limit-x-max'> <'-ms-scroll-limit-y-max'>",
+		ast: [
+			{
+				typ: 3,
+				val: "-ms-scroll-limit-x-min"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "-ms-scroll-limit-y-min"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "-ms-scroll-limit-x-max"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "-ms-scroll-limit-y-max"
+			}
+		]
+	},
+	"-ms-scroll-limit-x-max": {
+		syntax: "auto | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-limit-x-min": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"-ms-scroll-limit-y-max": {
+		syntax: "auto | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-limit-y-min": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"-ms-scroll-rails": {
+		syntax: "none | railed",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "railed"
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-snap-points-x": {
+		syntax: "snapInterval( <length-percentage>, <length-percentage> ) | snapList( <length-percentage># )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "snapInterval",
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "snapList",
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage",
+								isList: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-snap-points-y": {
+		syntax: "snapInterval( <length-percentage>, <length-percentage> ) | snapList( <length-percentage># )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "snapInterval",
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "snapList",
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage",
+								isList: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-snap-type": {
+		syntax: "none | proximity | mandatory",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "proximity"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "mandatory"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-scroll-snap-x": {
+		syntax: "<'-ms-scroll-snap-type'> <'-ms-scroll-snap-points-x'>",
+		ast: [
+			{
+				typ: 3,
+				val: "-ms-scroll-snap-type"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "-ms-scroll-snap-points-x"
+			}
+		]
+	},
+	"-ms-scroll-snap-y": {
+		syntax: "<'-ms-scroll-snap-type'> <'-ms-scroll-snap-points-y'>",
+		ast: [
+			{
+				typ: 3,
+				val: "-ms-scroll-snap-type"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "-ms-scroll-snap-points-y"
+			}
+		]
+	},
+	"-ms-scroll-translation": {
+		syntax: "none | vertical-to-horizontal",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "vertical-to-horizontal"
+					}
+				]
+			}
+		]
+	},
+	"-ms-text-autospace": {
+		syntax: "none | ideograph-alpha | ideograph-numeric | ideograph-parenthesis | ideograph-space",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "ideograph-alpha"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "ideograph-numeric"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "ideograph-parenthesis"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "ideograph-space"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-touch-select": {
+		syntax: "grippers | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "grippers"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-ms-user-select": {
+		syntax: "none | element | text",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "element"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "text"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-wrap-flow": {
+		syntax: "auto | both | start | end | maximum | clear",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "both"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "start"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "end"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "maximum"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "clear"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-ms-wrap-margin": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"-ms-wrap-through": {
+		syntax: "wrap | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "wrap"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-moz-appearance": {
+		syntax: "none | button | button-arrow-down | button-arrow-next | button-arrow-previous | button-arrow-up | button-bevel | button-focus | caret | checkbox | checkbox-container | checkbox-label | checkmenuitem | dualbutton | groupbox | listbox | listitem | menuarrow | menubar | menucheckbox | menuimage | menuitem | menuitemtext | menulist | menulist-button | menulist-text | menulist-textfield | menupopup | menuradio | menuseparator | meterbar | meterchunk | progressbar | progressbar-vertical | progresschunk | progresschunk-vertical | radio | radio-container | radio-label | radiomenuitem | range | range-thumb | resizer | resizerpanel | scale-horizontal | scalethumbend | scalethumb-horizontal | scalethumbstart | scalethumbtick | scalethumb-vertical | scale-vertical | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | separator | sheet | spinner | spinner-downbutton | spinner-textfield | spinner-upbutton | splitter | statusbar | statusbarpanel | tab | tabpanel | tabpanels | tab-scroll-arrow-back | tab-scroll-arrow-forward | textfield | textfield-multiline | toolbar | toolbarbutton | toolbarbutton-dropdown | toolbargripper | toolbox | tooltip | treeheader | treeheadercell | treeheadersortarrow | treeitem | treeline | treetwisty | treetwistyopen | treeview | -moz-mac-unified-toolbar | -moz-win-borderless-glass | -moz-win-browsertabbar-toolbox | -moz-win-communicationstext | -moz-win-communications-toolbox | -moz-win-exclude-glass | -moz-win-glass | -moz-win-mediatext | -moz-win-media-toolbox | -moz-window-button-box | -moz-window-button-box-maximized | -moz-window-button-close | -moz-window-button-maximize | -moz-window-button-minimize | -moz-window-button-restore | -moz-window-frame-bottom | -moz-window-frame-left | -moz-window-frame-right | -moz-window-titlebar | -moz-window-titlebar-maximized",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "button"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "button-arrow-down"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "button-arrow-next"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "button-arrow-previous"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "button-arrow-up"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "button-bevel"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "button-focus"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "caret"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "checkbox"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "checkbox-container"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "checkbox-label"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "checkmenuitem"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "dualbutton"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "groupbox"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 1,
+																																				val: "listbox"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "listitem"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "menuarrow"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "menubar"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "menucheckbox"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "menuimage"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 28,
+																																														l: [
+																																															{
+																																																typ: 1,
+																																																val: "menuitem"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 28,
+																																																l: [
+																																																	{
+																																																		typ: 1,
+																																																		val: "menuitemtext"
+																																																	}
+																																																],
+																																																r: [
+																																																	{
+																																																		typ: 28,
+																																																		l: [
+																																																			{
+																																																				typ: 1,
+																																																				val: "menulist"
+																																																			}
+																																																		],
+																																																		r: [
+																																																			{
+																																																				typ: 28,
+																																																				l: [
+																																																					{
+																																																						typ: 1,
+																																																						val: "menulist-button"
+																																																					}
+																																																				],
+																																																				r: [
+																																																					{
+																																																						typ: 28,
+																																																						l: [
+																																																							{
+																																																								typ: 1,
+																																																								val: "menulist-text"
+																																																							}
+																																																						],
+																																																						r: [
+																																																							{
+																																																								typ: 28,
+																																																								l: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "menulist-textfield"
+																																																									}
+																																																								],
+																																																								r: [
+																																																									{
+																																																										typ: 28,
+																																																										l: [
+																																																											{
+																																																												typ: 1,
+																																																												val: "menupopup"
+																																																											}
+																																																										],
+																																																										r: [
+																																																											{
+																																																												typ: 28,
+																																																												l: [
+																																																													{
+																																																														typ: 1,
+																																																														val: "menuradio"
+																																																													}
+																																																												],
+																																																												r: [
+																																																													{
+																																																														typ: 28,
+																																																														l: [
+																																																															{
+																																																																typ: 1,
+																																																																val: "menuseparator"
+																																																															}
+																																																														],
+																																																														r: [
+																																																															{
+																																																																typ: 28,
+																																																																l: [
+																																																																	{
+																																																																		typ: 1,
+																																																																		val: "meterbar"
+																																																																	}
+																																																																],
+																																																																r: [
+																																																																	{
+																																																																		typ: 28,
+																																																																		l: [
+																																																																			{
+																																																																				typ: 1,
+																																																																				val: "meterchunk"
+																																																																			}
+																																																																		],
+																																																																		r: [
+																																																																			{
+																																																																				typ: 28,
+																																																																				l: [
+																																																																					{
+																																																																						typ: 1,
+																																																																						val: "progressbar"
+																																																																					}
+																																																																				],
+																																																																				r: [
+																																																																					{
+																																																																						typ: 28,
+																																																																						l: [
+																																																																							{
+																																																																								typ: 1,
+																																																																								val: "progressbar-vertical"
+																																																																							}
+																																																																						],
+																																																																						r: [
+																																																																							{
+																																																																								typ: 28,
+																																																																								l: [
+																																																																									{
+																																																																										typ: 1,
+																																																																										val: "progresschunk"
+																																																																									}
+																																																																								],
+																																																																								r: [
+																																																																									{
+																																																																										typ: 28,
+																																																																										l: [
+																																																																											{
+																																																																												typ: 1,
+																																																																												val: "progresschunk-vertical"
+																																																																											}
+																																																																										],
+																																																																										r: [
+																																																																											{
+																																																																												typ: 28,
+																																																																												l: [
+																																																																													{
+																																																																														typ: 1,
+																																																																														val: "radio"
+																																																																													}
+																																																																												],
+																																																																												r: [
+																																																																													{
+																																																																														typ: 28,
+																																																																														l: [
+																																																																															{
+																																																																																typ: 1,
+																																																																																val: "radio-container"
+																																																																															}
+																																																																														],
+																																																																														r: [
+																																																																															{
+																																																																																typ: 28,
+																																																																																l: [
+																																																																																	{
+																																																																																		typ: 1,
+																																																																																		val: "radio-label"
+																																																																																	}
+																																																																																],
+																																																																																r: [
+																																																																																	{
+																																																																																		typ: 28,
+																																																																																		l: [
+																																																																																			{
+																																																																																				typ: 1,
+																																																																																				val: "radiomenuitem"
+																																																																																			}
+																																																																																		],
+																																																																																		r: [
+																																																																																			{
+																																																																																				typ: 28,
+																																																																																				l: [
+																																																																																					{
+																																																																																						typ: 1,
+																																																																																						val: "range"
+																																																																																					}
+																																																																																				],
+																																																																																				r: [
+																																																																																					{
+																																																																																						typ: 28,
+																																																																																						l: [
+																																																																																							{
+																																																																																								typ: 1,
+																																																																																								val: "range-thumb"
+																																																																																							}
+																																																																																						],
+																																																																																						r: [
+																																																																																							{
+																																																																																								typ: 28,
+																																																																																								l: [
+																																																																																									{
+																																																																																										typ: 1,
+																																																																																										val: "resizer"
+																																																																																									}
+																																																																																								],
+																																																																																								r: [
+																																																																																									{
+																																																																																										typ: 28,
+																																																																																										l: [
+																																																																																											{
+																																																																																												typ: 1,
+																																																																																												val: "resizerpanel"
+																																																																																											}
+																																																																																										],
+																																																																																										r: [
+																																																																																											{
+																																																																																												typ: 28,
+																																																																																												l: [
+																																																																																													{
+																																																																																														typ: 1,
+																																																																																														val: "scale-horizontal"
+																																																																																													}
+																																																																																												],
+																																																																																												r: [
+																																																																																													{
+																																																																																														typ: 28,
+																																																																																														l: [
+																																																																																															{
+																																																																																																typ: 1,
+																																																																																																val: "scalethumbend"
+																																																																																															}
+																																																																																														],
+																																																																																														r: [
+																																																																																															{
+																																																																																																typ: 28,
+																																																																																																l: [
+																																																																																																	{
+																																																																																																		typ: 1,
+																																																																																																		val: "scalethumb-horizontal"
+																																																																																																	}
+																																																																																																],
+																																																																																																r: [
+																																																																																																	{
+																																																																																																		typ: 28,
+																																																																																																		l: [
+																																																																																																			{
+																																																																																																				typ: 1,
+																																																																																																				val: "scalethumbstart"
+																																																																																																			}
+																																																																																																		],
+																																																																																																		r: [
+																																																																																																			{
+																																																																																																				typ: 28,
+																																																																																																				l: [
+																																																																																																					{
+																																																																																																						typ: 1,
+																																																																																																						val: "scalethumbtick"
+																																																																																																					}
+																																																																																																				],
+																																																																																																				r: [
+																																																																																																					{
+																																																																																																						typ: 28,
+																																																																																																						l: [
+																																																																																																							{
+																																																																																																								typ: 1,
+																																																																																																								val: "scalethumb-vertical"
+																																																																																																							}
+																																																																																																						],
+																																																																																																						r: [
+																																																																																																							{
+																																																																																																								typ: 28,
+																																																																																																								l: [
+																																																																																																									{
+																																																																																																										typ: 1,
+																																																																																																										val: "scale-vertical"
+																																																																																																									}
+																																																																																																								],
+																																																																																																								r: [
+																																																																																																									{
+																																																																																																										typ: 28,
+																																																																																																										l: [
+																																																																																																											{
+																																																																																																												typ: 1,
+																																																																																																												val: "scrollbarbutton-down"
+																																																																																																											}
+																																																																																																										],
+																																																																																																										r: [
+																																																																																																											{
+																																																																																																												typ: 28,
+																																																																																																												l: [
+																																																																																																													{
+																																																																																																														typ: 1,
+																																																																																																														val: "scrollbarbutton-left"
+																																																																																																													}
+																																																																																																												],
+																																																																																																												r: [
+																																																																																																													{
+																																																																																																														typ: 28,
+																																																																																																														l: [
+																																																																																																															{
+																																																																																																																typ: 1,
+																																																																																																																val: "scrollbarbutton-right"
+																																																																																																															}
+																																																																																																														],
+																																																																																																														r: [
+																																																																																																															{
+																																																																																																																typ: 28,
+																																																																																																																l: [
+																																																																																																																	{
+																																																																																																																		typ: 1,
+																																																																																																																		val: "scrollbarbutton-up"
+																																																																																																																	}
+																																																																																																																],
+																																																																																																																r: [
+																																																																																																																	{
+																																																																																																																		typ: 28,
+																																																																																																																		l: [
+																																																																																																																			{
+																																																																																																																				typ: 1,
+																																																																																																																				val: "scrollbarthumb-horizontal"
+																																																																																																																			}
+																																																																																																																		],
+																																																																																																																		r: [
+																																																																																																																			{
+																																																																																																																				typ: 28,
+																																																																																																																				l: [
+																																																																																																																					{
+																																																																																																																						typ: 1,
+																																																																																																																						val: "scrollbarthumb-vertical"
+																																																																																																																					}
+																																																																																																																				],
+																																																																																																																				r: [
+																																																																																																																					{
+																																																																																																																						typ: 28,
+																																																																																																																						l: [
+																																																																																																																							{
+																																																																																																																								typ: 1,
+																																																																																																																								val: "scrollbartrack-horizontal"
+																																																																																																																							}
+																																																																																																																						],
+																																																																																																																						r: [
+																																																																																																																							{
+																																																																																																																								typ: 28,
+																																																																																																																								l: [
+																																																																																																																									{
+																																																																																																																										typ: 1,
+																																																																																																																										val: "scrollbartrack-vertical"
+																																																																																																																									}
+																																																																																																																								],
+																																																																																																																								r: [
+																																																																																																																									{
+																																																																																																																										typ: 28,
+																																																																																																																										l: [
+																																																																																																																											{
+																																																																																																																												typ: 1,
+																																																																																																																												val: "searchfield"
+																																																																																																																											}
+																																																																																																																										],
+																																																																																																																										r: [
+																																																																																																																											{
+																																																																																																																												typ: 28,
+																																																																																																																												l: [
+																																																																																																																													{
+																																																																																																																														typ: 1,
+																																																																																																																														val: "separator"
+																																																																																																																													}
+																																																																																																																												],
+																																																																																																																												r: [
+																																																																																																																													{
+																																																																																																																														typ: 28,
+																																																																																																																														l: [
+																																																																																																																															{
+																																																																																																																																typ: 1,
+																																																																																																																																val: "sheet"
+																																																																																																																															}
+																																																																																																																														],
+																																																																																																																														r: [
+																																																																																																																															{
+																																																																																																																																typ: 28,
+																																																																																																																																l: [
+																																																																																																																																	{
+																																																																																																																																		typ: 1,
+																																																																																																																																		val: "spinner"
+																																																																																																																																	}
+																																																																																																																																],
+																																																																																																																																r: [
+																																																																																																																																	{
+																																																																																																																																		typ: 28,
+																																																																																																																																		l: [
+																																																																																																																																			{
+																																																																																																																																				typ: 1,
+																																																																																																																																				val: "spinner-downbutton"
+																																																																																																																																			}
+																																																																																																																																		],
+																																																																																																																																		r: [
+																																																																																																																																			{
+																																																																																																																																				typ: 28,
+																																																																																																																																				l: [
+																																																																																																																																					{
+																																																																																																																																						typ: 1,
+																																																																																																																																						val: "spinner-textfield"
+																																																																																																																																					}
+																																																																																																																																				],
+																																																																																																																																				r: [
+																																																																																																																																					{
+																																																																																																																																						typ: 28,
+																																																																																																																																						l: [
+																																																																																																																																							{
+																																																																																																																																								typ: 1,
+																																																																																																																																								val: "spinner-upbutton"
+																																																																																																																																							}
+																																																																																																																																						],
+																																																																																																																																						r: [
+																																																																																																																																							{
+																																																																																																																																								typ: 28,
+																																																																																																																																								l: [
+																																																																																																																																									{
+																																																																																																																																										typ: 1,
+																																																																																																																																										val: "splitter"
+																																																																																																																																									}
+																																																																																																																																								],
+																																																																																																																																								r: [
+																																																																																																																																									{
+																																																																																																																																										typ: 28,
+																																																																																																																																										l: [
+																																																																																																																																											{
+																																																																																																																																												typ: 1,
+																																																																																																																																												val: "statusbar"
+																																																																																																																																											}
+																																																																																																																																										],
+																																																																																																																																										r: [
+																																																																																																																																											{
+																																																																																																																																												typ: 28,
+																																																																																																																																												l: [
+																																																																																																																																													{
+																																																																																																																																														typ: 1,
+																																																																																																																																														val: "statusbarpanel"
+																																																																																																																																													}
+																																																																																																																																												],
+																																																																																																																																												r: [
+																																																																																																																																													{
+																																																																																																																																														typ: 28,
+																																																																																																																																														l: [
+																																																																																																																																															{
+																																																																																																																																																typ: 1,
+																																																																																																																																																val: "tab"
+																																																																																																																																															}
+																																																																																																																																														],
+																																																																																																																																														r: [
+																																																																																																																																															{
+																																																																																																																																																typ: 28,
+																																																																																																																																																l: [
+																																																																																																																																																	{
+																																																																																																																																																		typ: 1,
+																																																																																																																																																		val: "tabpanel"
+																																																																																																																																																	}
+																																																																																																																																																],
+																																																																																																																																																r: [
+																																																																																																																																																	{
+																																																																																																																																																		typ: 28,
+																																																																																																																																																		l: [
+																																																																																																																																																			{
+																																																																																																																																																				typ: 1,
+																																																																																																																																																				val: "tabpanels"
+																																																																																																																																																			}
+																																																																																																																																																		],
+																																																																																																																																																		r: [
+																																																																																																																																																			{
+																																																																																																																																																				typ: 28,
+																																																																																																																																																				l: [
+																																																																																																																																																					{
+																																																																																																																																																						typ: 1,
+																																																																																																																																																						val: "tab-scroll-arrow-back"
+																																																																																																																																																					}
+																																																																																																																																																				],
+																																																																																																																																																				r: [
+																																																																																																																																																					{
+																																																																																																																																																						typ: 28,
+																																																																																																																																																						l: [
+																																																																																																																																																							{
+																																																																																																																																																								typ: 1,
+																																																																																																																																																								val: "tab-scroll-arrow-forward"
+																																																																																																																																																							}
+																																																																																																																																																						],
+																																																																																																																																																						r: [
+																																																																																																																																																							{
+																																																																																																																																																								typ: 28,
+																																																																																																																																																								l: [
+																																																																																																																																																									{
+																																																																																																																																																										typ: 1,
+																																																																																																																																																										val: "textfield"
+																																																																																																																																																									}
+																																																																																																																																																								],
+																																																																																																																																																								r: [
+																																																																																																																																																									{
+																																																																																																																																																										typ: 28,
+																																																																																																																																																										l: [
+																																																																																																																																																											{
+																																																																																																																																																												typ: 1,
+																																																																																																																																																												val: "textfield-multiline"
+																																																																																																																																																											}
+																																																																																																																																																										],
+																																																																																																																																																										r: [
+																																																																																																																																																											{
+																																																																																																																																																												typ: 28,
+																																																																																																																																																												l: [
+																																																																																																																																																													{
+																																																																																																																																																														typ: 1,
+																																																																																																																																																														val: "toolbar"
+																																																																																																																																																													}
+																																																																																																																																																												],
+																																																																																																																																																												r: [
+																																																																																																																																																													{
+																																																																																																																																																														typ: 28,
+																																																																																																																																																														l: [
+																																																																																																																																																															{
+																																																																																																																																																																typ: 1,
+																																																																																																																																																																val: "toolbarbutton"
+																																																																																																																																																															}
+																																																																																																																																																														],
+																																																																																																																																																														r: [
+																																																																																																																																																															{
+																																																																																																																																																																typ: 28,
+																																																																																																																																																																l: [
+																																																																																																																																																																	{
+																																																																																																																																																																		typ: 1,
+																																																																																																																																																																		val: "toolbarbutton-dropdown"
+																																																																																																																																																																	}
+																																																																																																																																																																],
+																																																																																																																																																																r: [
+																																																																																																																																																																	{
+																																																																																																																																																																		typ: 28,
+																																																																																																																																																																		l: [
+																																																																																																																																																																			{
+																																																																																																																																																																				typ: 1,
+																																																																																																																																																																				val: "toolbargripper"
+																																																																																																																																																																			}
+																																																																																																																																																																		],
+																																																																																																																																																																		r: [
+																																																																																																																																																																			{
+																																																																																																																																																																				typ: 28,
+																																																																																																																																																																				l: [
+																																																																																																																																																																					{
+																																																																																																																																																																						typ: 1,
+																																																																																																																																																																						val: "toolbox"
+																																																																																																																																																																					}
+																																																																																																																																																																				],
+																																																																																																																																																																				r: [
+																																																																																																																																																																					{
+																																																																																																																																																																						typ: 28,
+																																																																																																																																																																						l: [
+																																																																																																																																																																							{
+																																																																																																																																																																								typ: 1,
+																																																																																																																																																																								val: "tooltip"
+																																																																																																																																																																							}
+																																																																																																																																																																						],
+																																																																																																																																																																						r: [
+																																																																																																																																																																							{
+																																																																																																																																																																								typ: 28,
+																																																																																																																																																																								l: [
+																																																																																																																																																																									{
+																																																																																																																																																																										typ: 1,
+																																																																																																																																																																										val: "treeheader"
+																																																																																																																																																																									}
+																																																																																																																																																																								],
+																																																																																																																																																																								r: [
+																																																																																																																																																																									{
+																																																																																																																																																																										typ: 28,
+																																																																																																																																																																										l: [
+																																																																																																																																																																											{
+																																																																																																																																																																												typ: 1,
+																																																																																																																																																																												val: "treeheadercell"
+																																																																																																																																																																											}
+																																																																																																																																																																										],
+																																																																																																																																																																										r: [
+																																																																																																																																																																											{
+																																																																																																																																																																												typ: 28,
+																																																																																																																																																																												l: [
+																																																																																																																																																																													{
+																																																																																																																																																																														typ: 1,
+																																																																																																																																																																														val: "treeheadersortarrow"
+																																																																																																																																																																													}
+																																																																																																																																																																												],
+																																																																																																																																																																												r: [
+																																																																																																																																																																													{
+																																																																																																																																																																														typ: 28,
+																																																																																																																																																																														l: [
+																																																																																																																																																																															{
+																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																val: "treeitem"
+																																																																																																																																																																															}
+																																																																																																																																																																														],
+																																																																																																																																																																														r: [
+																																																																																																																																																																															{
+																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																l: [
+																																																																																																																																																																																	{
+																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																		val: "treeline"
+																																																																																																																																																																																	}
+																																																																																																																																																																																],
+																																																																																																																																																																																r: [
+																																																																																																																																																																																	{
+																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																		l: [
+																																																																																																																																																																																			{
+																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																				val: "treetwisty"
+																																																																																																																																																																																			}
+																																																																																																																																																																																		],
+																																																																																																																																																																																		r: [
+																																																																																																																																																																																			{
+																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																				l: [
+																																																																																																																																																																																					{
+																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																						val: "treetwistyopen"
+																																																																																																																																																																																					}
+																																																																																																																																																																																				],
+																																																																																																																																																																																				r: [
+																																																																																																																																																																																					{
+																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																						l: [
+																																																																																																																																																																																							{
+																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																								val: "treeview"
+																																																																																																																																																																																							}
+																																																																																																																																																																																						],
+																																																																																																																																																																																						r: [
+																																																																																																																																																																																							{
+																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																								l: [
+																																																																																																																																																																																									{
+																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																										val: "-moz-mac-unified-toolbar"
+																																																																																																																																																																																									}
+																																																																																																																																																																																								],
+																																																																																																																																																																																								r: [
+																																																																																																																																																																																									{
+																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																										l: [
+																																																																																																																																																																																											{
+																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																												val: "-moz-win-borderless-glass"
+																																																																																																																																																																																											}
+																																																																																																																																																																																										],
+																																																																																																																																																																																										r: [
+																																																																																																																																																																																											{
+																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																												l: [
+																																																																																																																																																																																													{
+																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																														val: "-moz-win-browsertabbar-toolbox"
+																																																																																																																																																																																													}
+																																																																																																																																																																																												],
+																																																																																																																																																																																												r: [
+																																																																																																																																																																																													{
+																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																														l: [
+																																																																																																																																																																																															{
+																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																val: "-moz-win-communicationstext"
+																																																																																																																																																																																															}
+																																																																																																																																																																																														],
+																																																																																																																																																																																														r: [
+																																																																																																																																																																																															{
+																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																l: [
+																																																																																																																																																																																																	{
+																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																		val: "-moz-win-communications-toolbox"
+																																																																																																																																																																																																	}
+																																																																																																																																																																																																],
+																																																																																																																																																																																																r: [
+																																																																																																																																																																																																	{
+																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																			{
+																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																				val: "-moz-win-exclude-glass"
+																																																																																																																																																																																																			}
+																																																																																																																																																																																																		],
+																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																			{
+																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																					{
+																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																						val: "-moz-win-glass"
+																																																																																																																																																																																																					}
+																																																																																																																																																																																																				],
+																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																					{
+																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																							{
+																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																								val: "-moz-win-mediatext"
+																																																																																																																																																																																																							}
+																																																																																																																																																																																																						],
+																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																							{
+																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																									{
+																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																										val: "-moz-win-media-toolbox"
+																																																																																																																																																																																																									}
+																																																																																																																																																																																																								],
+																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																									{
+																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																											{
+																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																												val: "-moz-window-button-box"
+																																																																																																																																																																																																											}
+																																																																																																																																																																																																										],
+																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																											{
+																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																													{
+																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																														val: "-moz-window-button-box-maximized"
+																																																																																																																																																																																																													}
+																																																																																																																																																																																																												],
+																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																													{
+																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																															{
+																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																val: "-moz-window-button-close"
+																																																																																																																																																																																																															}
+																																																																																																																																																																																																														],
+																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																															{
+																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																		val: "-moz-window-button-maximize"
+																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																],
+																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																				val: "-moz-window-button-minimize"
+																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																						val: "-moz-window-button-restore"
+																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																								val: "-moz-window-frame-bottom"
+																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																										val: "-moz-window-frame-left"
+																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																												val: "-moz-window-frame-right"
+																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																														val: "-moz-window-titlebar"
+																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																												],
+																																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																														val: "-moz-window-titlebar-maximized"
+																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																												]
+																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																]
+																																																																																																																																																																																																															}
+																																																																																																																																																																																																														]
+																																																																																																																																																																																																													}
+																																																																																																																																																																																																												]
+																																																																																																																																																																																																											}
+																																																																																																																																																																																																										]
+																																																																																																																																																																																																									}
+																																																																																																																																																																																																								]
+																																																																																																																																																																																																							}
+																																																																																																																																																																																																						]
+																																																																																																																																																																																																					}
+																																																																																																																																																																																																				]
+																																																																																																																																																																																																			}
+																																																																																																																																																																																																		]
+																																																																																																																																																																																																	}
+																																																																																																																																																																																																]
+																																																																																																																																																																																															}
+																																																																																																																																																																																														]
+																																																																																																																																																																																													}
+																																																																																																																																																																																												]
+																																																																																																																																																																																											}
+																																																																																																																																																																																										]
+																																																																																																																																																																																									}
+																																																																																																																																																																																								]
+																																																																																																																																																																																							}
+																																																																																																																																																																																						]
+																																																																																																																																																																																					}
+																																																																																																																																																																																				]
+																																																																																																																																																																																			}
+																																																																																																																																																																																		]
+																																																																																																																																																																																	}
+																																																																																																																																																																																]
+																																																																																																																																																																															}
+																																																																																																																																																																														]
+																																																																																																																																																																													}
+																																																																																																																																																																												]
+																																																																																																																																																																											}
+																																																																																																																																																																										]
+																																																																																																																																																																									}
+																																																																																																																																																																								]
+																																																																																																																																																																							}
+																																																																																																																																																																						]
+																																																																																																																																																																					}
+																																																																																																																																																																				]
+																																																																																																																																																																			}
+																																																																																																																																																																		]
+																																																																																																																																																																	}
+																																																																																																																																																																]
+																																																																																																																																																															}
+																																																																																																																																																														]
+																																																																																																																																																													}
+																																																																																																																																																												]
+																																																																																																																																																											}
+																																																																																																																																																										]
+																																																																																																																																																									}
+																																																																																																																																																								]
+																																																																																																																																																							}
+																																																																																																																																																						]
+																																																																																																																																																					}
+																																																																																																																																																				]
+																																																																																																																																																			}
+																																																																																																																																																		]
+																																																																																																																																																	}
+																																																																																																																																																]
+																																																																																																																																															}
+																																																																																																																																														]
+																																																																																																																																													}
+																																																																																																																																												]
+																																																																																																																																											}
+																																																																																																																																										]
+																																																																																																																																									}
+																																																																																																																																								]
+																																																																																																																																							}
+																																																																																																																																						]
+																																																																																																																																					}
+																																																																																																																																				]
+																																																																																																																																			}
+																																																																																																																																		]
+																																																																																																																																	}
+																																																																																																																																]
+																																																																																																																															}
+																																																																																																																														]
+																																																																																																																													}
+																																																																																																																												]
+																																																																																																																											}
+																																																																																																																										]
+																																																																																																																									}
+																																																																																																																								]
+																																																																																																																							}
+																																																																																																																						]
+																																																																																																																					}
+																																																																																																																				]
+																																																																																																																			}
+																																																																																																																		]
+																																																																																																																	}
+																																																																																																																]
+																																																																																																															}
+																																																																																																														]
+																																																																																																													}
+																																																																																																												]
+																																																																																																											}
+																																																																																																										]
+																																																																																																									}
+																																																																																																								]
+																																																																																																							}
+																																																																																																						]
+																																																																																																					}
+																																																																																																				]
+																																																																																																			}
+																																																																																																		]
+																																																																																																	}
+																																																																																																]
+																																																																																															}
+																																																																																														]
+																																																																																													}
+																																																																																												]
+																																																																																											}
+																																																																																										]
+																																																																																									}
+																																																																																								]
+																																																																																							}
+																																																																																						]
+																																																																																					}
+																																																																																				]
+																																																																																			}
+																																																																																		]
+																																																																																	}
+																																																																																]
+																																																																															}
+																																																																														]
+																																																																													}
+																																																																												]
+																																																																											}
+																																																																										]
+																																																																									}
+																																																																								]
+																																																																							}
+																																																																						]
+																																																																					}
+																																																																				]
+																																																																			}
+																																																																		]
+																																																																	}
+																																																																]
+																																																															}
+																																																														]
+																																																													}
+																																																												]
+																																																											}
+																																																										]
+																																																									}
+																																																								]
+																																																							}
+																																																						]
+																																																					}
+																																																				]
+																																																			}
+																																																		]
+																																																	}
+																																																]
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-moz-binding": {
+		syntax: "<url> | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "url"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-moz-border-bottom-colors": {
+		syntax: "<color>+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "color",
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-moz-border-left-colors": {
+		syntax: "<color>+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "color",
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-moz-border-right-colors": {
+		syntax: "<color>+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "color",
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-moz-border-top-colors": {
+		syntax: "<color>+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "color",
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-moz-context-properties": {
+		syntax: "none | [ fill | fill-opacity | stroke | stroke-opacity ]#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "fill"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "fill-opacity"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "stroke"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "stroke-opacity"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"-moz-float-edge": {
+		syntax: "border-box | content-box | margin-box | padding-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "border-box"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "content-box"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "margin-box"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "padding-box"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-moz-force-broken-image-icon": {
+		syntax: "0 | 1",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 20,
+						val: 0
+					}
+				],
+				r: [
+					{
+						typ: 20,
+						val: 1
+					}
+				]
+			}
+		]
+	},
+	"-moz-image-region": {
+		syntax: "<shape> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "shape"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				]
+			}
+		]
+	},
+	"-moz-orient": {
+		syntax: "inline | block | horizontal | vertical",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "inline"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "block"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "horizontal"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "vertical"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-moz-outline-radius": {
+		syntax: "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?",
+		ast: [
+			{
+				typ: 2,
+				val: "outline-radius",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "outline-radius",
+						occurence: {
+							min: 1,
+							max: 4
+						}
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"-moz-outline-radius-bottomleft": {
+		syntax: "<outline-radius>",
+		ast: [
+			{
+				typ: 2,
+				val: "outline-radius"
+			}
+		]
+	},
+	"-moz-outline-radius-bottomright": {
+		syntax: "<outline-radius>",
+		ast: [
+			{
+				typ: 2,
+				val: "outline-radius"
+			}
+		]
+	},
+	"-moz-outline-radius-topleft": {
+		syntax: "<outline-radius>",
+		ast: [
+			{
+				typ: 2,
+				val: "outline-radius"
+			}
+		]
+	},
+	"-moz-outline-radius-topright": {
+		syntax: "<outline-radius>",
+		ast: [
+			{
+				typ: 2,
+				val: "outline-radius"
+			}
+		]
+	},
+	"-moz-stack-sizing": {
+		syntax: "ignore | stretch-to-fit",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "ignore"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "stretch-to-fit"
+					}
+				]
+			}
+		]
+	},
+	"-moz-text-blink": {
+		syntax: "none | blink",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "blink"
+					}
+				]
+			}
+		]
+	},
+	"-moz-user-focus": {
+		syntax: "ignore | normal | select-after | select-before | select-menu | select-same | select-all | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "ignore"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "select-after"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "select-before"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "select-menu"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "select-same"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "select-all"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "none"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-moz-user-input": {
+		syntax: "auto | none | enabled | disabled",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "enabled"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "disabled"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-moz-user-modify": {
+		syntax: "read-only | read-write | write-only",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "read-only"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "read-write"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "write-only"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-moz-window-dragging": {
+		syntax: "drag | no-drag",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "drag"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "no-drag"
+					}
+				]
+			}
+		]
+	},
+	"-moz-window-shadow": {
+		syntax: "default | menu | tooltip | sheet | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "default"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "menu"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "tooltip"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "sheet"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-webkit-appearance": {
+		syntax: "none | button | button-bevel | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "button"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "button-bevel"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "caret"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "checkbox"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "default-button"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "inner-spin-button"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "listbox"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "listitem"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "media-controls-background"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "media-controls-fullscreen-background"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "media-current-time-display"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "media-enter-fullscreen-button"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "media-exit-fullscreen-button"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "media-fullscreen-button"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 1,
+																																				val: "media-mute-button"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "media-overlay-play-button"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "media-play-button"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "media-seek-back-button"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "media-seek-forward-button"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "media-slider"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 28,
+																																														l: [
+																																															{
+																																																typ: 1,
+																																																val: "media-sliderthumb"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 28,
+																																																l: [
+																																																	{
+																																																		typ: 1,
+																																																		val: "media-time-remaining-display"
+																																																	}
+																																																],
+																																																r: [
+																																																	{
+																																																		typ: 28,
+																																																		l: [
+																																																			{
+																																																				typ: 1,
+																																																				val: "media-toggle-closed-captions-button"
+																																																			}
+																																																		],
+																																																		r: [
+																																																			{
+																																																				typ: 28,
+																																																				l: [
+																																																					{
+																																																						typ: 1,
+																																																						val: "media-volume-slider"
+																																																					}
+																																																				],
+																																																				r: [
+																																																					{
+																																																						typ: 28,
+																																																						l: [
+																																																							{
+																																																								typ: 1,
+																																																								val: "media-volume-slider-container"
+																																																							}
+																																																						],
+																																																						r: [
+																																																							{
+																																																								typ: 28,
+																																																								l: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "media-volume-sliderthumb"
+																																																									}
+																																																								],
+																																																								r: [
+																																																									{
+																																																										typ: 28,
+																																																										l: [
+																																																											{
+																																																												typ: 1,
+																																																												val: "menulist"
+																																																											}
+																																																										],
+																																																										r: [
+																																																											{
+																																																												typ: 28,
+																																																												l: [
+																																																													{
+																																																														typ: 1,
+																																																														val: "menulist-button"
+																																																													}
+																																																												],
+																																																												r: [
+																																																													{
+																																																														typ: 28,
+																																																														l: [
+																																																															{
+																																																																typ: 1,
+																																																																val: "menulist-text"
+																																																															}
+																																																														],
+																																																														r: [
+																																																															{
+																																																																typ: 28,
+																																																																l: [
+																																																																	{
+																																																																		typ: 1,
+																																																																		val: "menulist-textfield"
+																																																																	}
+																																																																],
+																																																																r: [
+																																																																	{
+																																																																		typ: 28,
+																																																																		l: [
+																																																																			{
+																																																																				typ: 1,
+																																																																				val: "meter"
+																																																																			}
+																																																																		],
+																																																																		r: [
+																																																																			{
+																																																																				typ: 28,
+																																																																				l: [
+																																																																					{
+																																																																						typ: 1,
+																																																																						val: "progress-bar"
+																																																																					}
+																																																																				],
+																																																																				r: [
+																																																																					{
+																																																																						typ: 28,
+																																																																						l: [
+																																																																							{
+																																																																								typ: 1,
+																																																																								val: "progress-bar-value"
+																																																																							}
+																																																																						],
+																																																																						r: [
+																																																																							{
+																																																																								typ: 28,
+																																																																								l: [
+																																																																									{
+																																																																										typ: 1,
+																																																																										val: "push-button"
+																																																																									}
+																																																																								],
+																																																																								r: [
+																																																																									{
+																																																																										typ: 28,
+																																																																										l: [
+																																																																											{
+																																																																												typ: 1,
+																																																																												val: "radio"
+																																																																											}
+																																																																										],
+																																																																										r: [
+																																																																											{
+																																																																												typ: 28,
+																																																																												l: [
+																																																																													{
+																																																																														typ: 1,
+																																																																														val: "searchfield"
+																																																																													}
+																																																																												],
+																																																																												r: [
+																																																																													{
+																																																																														typ: 28,
+																																																																														l: [
+																																																																															{
+																																																																																typ: 1,
+																																																																																val: "searchfield-cancel-button"
+																																																																															}
+																																																																														],
+																																																																														r: [
+																																																																															{
+																																																																																typ: 28,
+																																																																																l: [
+																																																																																	{
+																																																																																		typ: 1,
+																																																																																		val: "searchfield-decoration"
+																																																																																	}
+																																																																																],
+																																																																																r: [
+																																																																																	{
+																																																																																		typ: 28,
+																																																																																		l: [
+																																																																																			{
+																																																																																				typ: 1,
+																																																																																				val: "searchfield-results-button"
+																																																																																			}
+																																																																																		],
+																																																																																		r: [
+																																																																																			{
+																																																																																				typ: 28,
+																																																																																				l: [
+																																																																																					{
+																																																																																						typ: 1,
+																																																																																						val: "searchfield-results-decoration"
+																																																																																					}
+																																																																																				],
+																																																																																				r: [
+																																																																																					{
+																																																																																						typ: 28,
+																																																																																						l: [
+																																																																																							{
+																																																																																								typ: 1,
+																																																																																								val: "slider-horizontal"
+																																																																																							}
+																																																																																						],
+																																																																																						r: [
+																																																																																							{
+																																																																																								typ: 28,
+																																																																																								l: [
+																																																																																									{
+																																																																																										typ: 1,
+																																																																																										val: "slider-vertical"
+																																																																																									}
+																																																																																								],
+																																																																																								r: [
+																																																																																									{
+																																																																																										typ: 28,
+																																																																																										l: [
+																																																																																											{
+																																																																																												typ: 1,
+																																																																																												val: "sliderthumb-horizontal"
+																																																																																											}
+																																																																																										],
+																																																																																										r: [
+																																																																																											{
+																																																																																												typ: 28,
+																																																																																												l: [
+																																																																																													{
+																																																																																														typ: 1,
+																																																																																														val: "sliderthumb-vertical"
+																																																																																													}
+																																																																																												],
+																																																																																												r: [
+																																																																																													{
+																																																																																														typ: 28,
+																																																																																														l: [
+																																																																																															{
+																																																																																																typ: 1,
+																																																																																																val: "square-button"
+																																																																																															}
+																																																																																														],
+																																																																																														r: [
+																																																																																															{
+																																																																																																typ: 28,
+																																																																																																l: [
+																																																																																																	{
+																																																																																																		typ: 1,
+																																																																																																		val: "textarea"
+																																																																																																	}
+																																																																																																],
+																																																																																																r: [
+																																																																																																	{
+																																																																																																		typ: 28,
+																																																																																																		l: [
+																																																																																																			{
+																																																																																																				typ: 1,
+																																																																																																				val: "textfield"
+																																																																																																			}
+																																																																																																		],
+																																																																																																		r: [
+																																																																																																			{
+																																																																																																				typ: 1,
+																																																																																																				val: "-apple-pay-button"
+																																																																																																			}
+																																																																																																		]
+																																																																																																	}
+																																																																																																]
+																																																																																															}
+																																																																																														]
+																																																																																													}
+																																																																																												]
+																																																																																											}
+																																																																																										]
+																																																																																									}
+																																																																																								]
+																																																																																							}
+																																																																																						]
+																																																																																					}
+																																																																																				]
+																																																																																			}
+																																																																																		]
+																																																																																	}
+																																																																																]
+																																																																															}
+																																																																														]
+																																																																													}
+																																																																												]
+																																																																											}
+																																																																										]
+																																																																									}
+																																																																								]
+																																																																							}
+																																																																						]
+																																																																					}
+																																																																				]
+																																																																			}
+																																																																		]
+																																																																	}
+																																																																]
+																																																															}
+																																																														]
+																																																													}
+																																																												]
+																																																											}
+																																																										]
+																																																									}
+																																																								]
+																																																							}
+																																																						]
+																																																					}
+																																																				]
+																																																			}
+																																																		]
+																																																	}
+																																																]
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-webkit-border-before": {
+		syntax: "<'border-width'> || <'border-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-webkit-border-before-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-webkit-border-before-style": {
+		syntax: "<'border-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-style"
+			}
+		]
+	},
+	"-webkit-border-before-width": {
+		syntax: "<'border-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-width"
+			}
+		]
+	},
+	"-webkit-box-reflect": {
+		syntax: "[ above | below | right | left ]? <length>? <image>?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "above"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "below"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "right"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "length",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "image",
+				isOptional: true
+			}
+		]
+	},
+	"-webkit-line-clamp": {
+		syntax: "none | <integer>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				]
+			}
+		]
+	},
+	"-webkit-mask": {
+		syntax: "[ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "mask-reference"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "position"
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "bg-size"
+									}
+								],
+								isOptional: true
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "repeat-style"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 2,
+																val: "box"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "border"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "padding"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "content"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 1,
+																						val: "text"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										],
+										r: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 2,
+																val: "box"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "border"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "padding"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 1,
+																				val: "content"
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-attachment": {
+		syntax: "<attachment>#",
+		ast: [
+			{
+				typ: 2,
+				val: "attachment",
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-clip": {
+		syntax: "[ <box> | border | padding | content | text ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "box"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "border"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "padding"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "content"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "text"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-composite": {
+		syntax: "<composite-style>#",
+		ast: [
+			{
+				typ: 2,
+				val: "composite-style",
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-image": {
+		syntax: "<mask-reference>#",
+		ast: [
+			{
+				typ: 2,
+				val: "mask-reference",
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-origin": {
+		syntax: "[ <box> | border | padding | content ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "box"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "border"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "padding"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "content"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-position": {
+		syntax: "<position>#",
+		ast: [
+			{
+				typ: 2,
+				val: "position",
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-position-x": {
+		syntax: "[ <length-percentage> | left | center | right ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "center"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "right"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-position-y": {
+		syntax: "[ <length-percentage> | top | center | bottom ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "top"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "center"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "bottom"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-repeat": {
+		syntax: "<repeat-style>#",
+		ast: [
+			{
+				typ: 2,
+				val: "repeat-style",
+				isList: true
+			}
+		]
+	},
+	"-webkit-mask-repeat-x": {
+		syntax: "repeat | no-repeat | space | round",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "repeat"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "no-repeat"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "space"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "round"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-webkit-mask-repeat-y": {
+		syntax: "repeat | no-repeat | space | round",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "repeat"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "no-repeat"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "space"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "round"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"-webkit-mask-size": {
+		syntax: "<bg-size>#",
+		ast: [
+			{
+				typ: 2,
+				val: "bg-size",
+				isList: true
+			}
+		]
+	},
+	"-webkit-overflow-scrolling": {
+		syntax: "auto | touch",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "touch"
+					}
+				]
+			}
+		]
+	},
+	"-webkit-tap-highlight-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-webkit-text-fill-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-webkit-text-stroke": {
+		syntax: "<length> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color"
+					}
+				]
+			}
+		]
+	},
+	"-webkit-text-stroke-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"-webkit-text-stroke-width": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"-webkit-touch-callout": {
+		syntax: "default | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "default"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"-webkit-user-modify": {
+		syntax: "read-only | read-write | read-write-plaintext-only",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "read-only"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "read-write"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "read-write-plaintext-only"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"accent-color": {
+		syntax: "auto | <color>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color"
+					}
+				]
+			}
+		]
+	},
+	"align-content": {
+		syntax: "normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "baseline-position"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "content-distribution"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "overflow-position",
+										isOptional: true
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "content-position"
+			}
+		]
+	},
+	"align-items": {
+		syntax: "normal | stretch | <baseline-position> | [ <overflow-position>? <self-position> ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "stretch"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "baseline-position"
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 2,
+												val: "overflow-position",
+												isOptional: true
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "self-position"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"align-self": {
+		syntax: "auto | normal | stretch | <baseline-position> | <overflow-position>? <self-position>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "stretch"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "baseline-position"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "overflow-position",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "self-position"
+			}
+		]
+	},
+	"align-tracks": {
+		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "baseline-position"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "content-distribution"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "overflow-position",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "content-position"
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	all: {
+		syntax: "initial | inherit | unset | revert | revert-layer",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "initial"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "inherit"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "unset"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "revert"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "revert-layer"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"anchor-name": {
+		syntax: "none | <dashed-ident>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "dashed-ident",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"anchor-scope": {
+		syntax: "none | all | <dashed-ident>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "all"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "dashed-ident",
+								isList: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	animation: {
+		syntax: "<single-animation>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation",
+				isList: true
+			}
+		]
+	},
+	"animation-composition": {
+		syntax: "<single-animation-composition>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation-composition",
+				isList: true
+			}
+		]
+	},
+	"animation-delay": {
+		syntax: "<time>#",
+		ast: [
+			{
+				typ: 2,
+				val: "time",
+				isList: true
+			}
+		]
+	},
+	"animation-direction": {
+		syntax: "<single-animation-direction>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation-direction",
+				isList: true
+			}
+		]
+	},
+	"animation-duration": {
+		syntax: "<time>#",
+		ast: [
+			{
+				typ: 2,
+				val: "time",
+				isList: true
+			}
+		]
+	},
+	"animation-fill-mode": {
+		syntax: "<single-animation-fill-mode>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation-fill-mode",
+				isList: true
+			}
+		]
+	},
+	"animation-iteration-count": {
+		syntax: "<single-animation-iteration-count>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation-iteration-count",
+				isList: true
+			}
+		]
+	},
+	"animation-name": {
+		syntax: "[ none | <keyframes-name> ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "keyframes-name"
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"animation-play-state": {
+		syntax: "<single-animation-play-state>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation-play-state",
+				isList: true
+			}
+		]
+	},
+	"animation-range": {
+		syntax: "[ <'animation-range-start'> <'animation-range-end'>? ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 3,
+						val: "animation-range-start"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 3,
+						val: "animation-range-end",
+						isOptional: true
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"animation-range-end": {
+		syntax: "[ normal | <length-percentage> | <timeline-range-name> <length-percentage>? ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "timeline-range-name"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						isOptional: true
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"animation-range-start": {
+		syntax: "[ normal | <length-percentage> | <timeline-range-name> <length-percentage>? ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "timeline-range-name"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						isOptional: true
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"animation-timing-function": {
+		syntax: "<easing-function>#",
+		ast: [
+			{
+				typ: 2,
+				val: "easing-function",
+				isList: true
+			}
+		]
+	},
+	"animation-timeline": {
+		syntax: "<single-animation-timeline>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-animation-timeline",
+				isList: true
+			}
+		]
+	},
+	appearance: {
+		syntax: "none | auto | textfield | menulist-button | <compat-auto>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "textfield"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "menulist-button"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "compat-auto"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"aspect-ratio": {
+		syntax: "auto | <ratio>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "ratio"
+					}
+				]
+			}
+		]
+	},
+	azimuth: {
+		syntax: "<angle> | [ [ left-side | far-left | left | center-left | center | center-right | right | far-right | right-side ] || behind ] | leftwards | rightwards",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "angle"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "left-side"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "far-left"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "left"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "center-left"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "center"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "center-right"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "right"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "far-right"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 1,
+																														val: "right-side"
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "behind"
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "leftwards"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "rightwards"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"backdrop-filter": {
+		syntax: "none | <filter-function-list>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "filter-function-list"
+					}
+				]
+			}
+		]
+	},
+	"backface-visibility": {
+		syntax: "visible | hidden",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "hidden"
+					}
+				]
+			}
+		]
+	},
+	background: {
+		syntax: "[ <bg-layer> , ]* <final-bg-layer>",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "bg-layer"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					}
+				],
+				isRepeatable: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "final-bg-layer"
+			}
+		]
+	},
+	"background-attachment": {
+		syntax: "<attachment>#",
+		ast: [
+			{
+				typ: 2,
+				val: "attachment",
+				isList: true
+			}
+		]
+	},
+	"background-blend-mode": {
+		syntax: "<blend-mode>#",
+		ast: [
+			{
+				typ: 2,
+				val: "blend-mode",
+				isList: true
+			}
+		]
+	},
+	"background-clip": {
+		syntax: "<box>#",
+		ast: [
+			{
+				typ: 2,
+				val: "box",
+				isList: true
+			}
+		]
+	},
+	"background-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"background-image": {
+		syntax: "<bg-image>#",
+		ast: [
+			{
+				typ: 2,
+				val: "bg-image",
+				isList: true
+			}
+		]
+	},
+	"background-origin": {
+		syntax: "<box>#",
+		ast: [
+			{
+				typ: 2,
+				val: "box",
+				isList: true
+			}
+		]
+	},
+	"background-position": {
+		syntax: "<bg-position>#",
+		ast: [
+			{
+				typ: 2,
+				val: "bg-position",
+				isList: true
+			}
+		]
+	},
+	"background-position-x": {
+		syntax: "[ center | [ [ left | right | x-start | x-end ]? <length-percentage>? ]! ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "center"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "left"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "x-start"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "x-end"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										],
+										isOptional: true
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "length-percentage",
+										isOptional: true
+									}
+								],
+								isRepeatableGroup: true
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"background-position-y": {
+		syntax: "[ center | [ [ top | bottom | y-start | y-end ]? <length-percentage>? ]! ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "center"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "top"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "bottom"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "y-start"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "y-end"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										],
+										isOptional: true
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "length-percentage",
+										isOptional: true
+									}
+								],
+								isRepeatableGroup: true
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"background-repeat": {
+		syntax: "<repeat-style>#",
+		ast: [
+			{
+				typ: 2,
+				val: "repeat-style",
+				isList: true
+			}
+		]
+	},
+	"background-size": {
+		syntax: "<bg-size>#",
+		ast: [
+			{
+				typ: 2,
+				val: "bg-size",
+				isList: true
+			}
+		]
+	},
+	"block-size": {
+		syntax: "<'width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "width"
+			}
+		]
+	},
+	border: {
+		syntax: "<line-width> || <line-style> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "line-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "line-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-block": {
+		syntax: "<'border-top-width'> || <'border-top-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-top-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-top-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-block-color": {
+		syntax: "<'border-top-color'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-block-style": {
+		syntax: "<'border-top-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-style"
+			}
+		]
+	},
+	"border-block-width": {
+		syntax: "<'border-top-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-width"
+			}
+		]
+	},
+	"border-block-end": {
+		syntax: "<'border-top-width'> || <'border-top-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-top-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-top-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-block-end-color": {
+		syntax: "<'border-top-color'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color"
+			}
+		]
+	},
+	"border-block-end-style": {
+		syntax: "<'border-top-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-style"
+			}
+		]
+	},
+	"border-block-end-width": {
+		syntax: "<'border-top-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-width"
+			}
+		]
+	},
+	"border-block-start": {
+		syntax: "<'border-top-width'> || <'border-top-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-top-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-top-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-block-start-color": {
+		syntax: "<'border-top-color'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color"
+			}
+		]
+	},
+	"border-block-start-style": {
+		syntax: "<'border-top-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-style"
+			}
+		]
+	},
+	"border-block-start-width": {
+		syntax: "<'border-top-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-width"
+			}
+		]
+	},
+	"border-bottom": {
+		syntax: "<line-width> || <line-style> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "line-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "line-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-bottom-color": {
+		syntax: "<'border-top-color'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color"
+			}
+		]
+	},
+	"border-bottom-left-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-bottom-right-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-bottom-style": {
+		syntax: "<line-style>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-style"
+			}
+		]
+	},
+	"border-bottom-width": {
+		syntax: "<line-width>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-width"
+			}
+		]
+	},
+	"border-collapse": {
+		syntax: "collapse | separate",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "collapse"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "separate"
+					}
+				]
+			}
+		]
+	},
+	"border-color": {
+		syntax: "<color>{1,4}",
+		ast: [
+			{
+				typ: 2,
+				val: "color",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"border-end-end-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-end-start-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-image": {
+		syntax: "<'border-image-source'> || <'border-image-slice'> [ / <'border-image-width'> | / <'border-image-width'>? / <'border-image-outset'> ]? || <'border-image-repeat'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-image-source"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "border-image-slice"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 3,
+										val: "border-image-width"
+									}
+								],
+								r: [
+									{
+										typ: 25
+									}
+								]
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 3,
+								val: "border-image-width",
+								isOptional: true
+							},
+							{
+								typ: 25
+							},
+							{
+								typ: 3,
+								val: "border-image-outset"
+							}
+						],
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "border-image-repeat"
+					}
+				]
+			}
+		]
+	},
+	"border-image-outset": {
+		syntax: "[ <length> | <number> ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "number"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"border-image-repeat": {
+		syntax: "[ stretch | repeat | round | space ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "stretch"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "repeat"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "round"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "space"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-image-slice": {
+		syntax: "<number-percentage>{1,4} && fill?",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 2,
+						val: "number-percentage",
+						occurence: {
+							min: 1,
+							max: 4
+						}
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "fill",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"border-image-source": {
+		syntax: "none | <image>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "image"
+					}
+				]
+			}
+		]
+	},
+	"border-image-width": {
+		syntax: "[ <length-percentage> | <number> | auto ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"border-inline": {
+		syntax: "<'border-top-width'> || <'border-top-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-top-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-top-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-inline-end": {
+		syntax: "<'border-top-width'> || <'border-top-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-top-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-top-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-inline-color": {
+		syntax: "<'border-top-color'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-inline-style": {
+		syntax: "<'border-top-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-style"
+			}
+		]
+	},
+	"border-inline-width": {
+		syntax: "<'border-top-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-width"
+			}
+		]
+	},
+	"border-inline-end-color": {
+		syntax: "<'border-top-color'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color"
+			}
+		]
+	},
+	"border-inline-end-style": {
+		syntax: "<'border-top-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-style"
+			}
+		]
+	},
+	"border-inline-end-width": {
+		syntax: "<'border-top-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-width"
+			}
+		]
+	},
+	"border-inline-start": {
+		syntax: "<'border-top-width'> || <'border-top-style'> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "border-top-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "border-top-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-inline-start-color": {
+		syntax: "<'border-top-color'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-color"
+			}
+		]
+	},
+	"border-inline-start-style": {
+		syntax: "<'border-top-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-style"
+			}
+		]
+	},
+	"border-inline-start-width": {
+		syntax: "<'border-top-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-top-width"
+			}
+		]
+	},
+	"border-left": {
+		syntax: "<line-width> || <line-style> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "line-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "line-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-left-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"border-left-style": {
+		syntax: "<line-style>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-style"
+			}
+		]
+	},
+	"border-left-width": {
+		syntax: "<line-width>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-width"
+			}
+		]
+	},
+	"border-radius": {
+		syntax: "<length-percentage>{1,4} [ / <length-percentage>{1,4} ]?",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						occurence: {
+							min: 1,
+							max: 4
+						}
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"border-right": {
+		syntax: "<line-width> || <line-style> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "line-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "line-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-right-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"border-right-style": {
+		syntax: "<line-style>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-style"
+			}
+		]
+	},
+	"border-right-width": {
+		syntax: "<line-width>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-width"
+			}
+		]
+	},
+	"border-spacing": {
+		syntax: "<length> <length>?",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "length",
+				isOptional: true
+			}
+		]
+	},
+	"border-start-end-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-start-start-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-style": {
+		syntax: "<line-style>{1,4}",
+		ast: [
+			{
+				typ: 2,
+				val: "line-style",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"border-top": {
+		syntax: "<line-width> || <line-style> || <color>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "line-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "line-style"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"border-top-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"border-top-left-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-top-right-radius": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"border-top-style": {
+		syntax: "<line-style>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-style"
+			}
+		]
+	},
+	"border-top-width": {
+		syntax: "<line-width>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-width"
+			}
+		]
+	},
+	"border-width": {
+		syntax: "<line-width>{1,4}",
+		ast: [
+			{
+				typ: 2,
+				val: "line-width",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	bottom: {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"box-align": {
+		syntax: "start | center | end | baseline | stretch",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "start"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "center"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "end"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "baseline"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "stretch"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"box-decoration-break": {
+		syntax: "slice | clone",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "slice"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "clone"
+					}
+				]
+			}
+		]
+	},
+	"box-direction": {
+		syntax: "normal | reverse | inherit",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "reverse"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "inherit"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"box-flex": {
+		syntax: "<number>",
+		ast: [
+			{
+				typ: 2,
+				val: "number"
+			}
+		]
+	},
+	"box-flex-group": {
+		syntax: "<integer>",
+		ast: [
+			{
+				typ: 2,
+				val: "integer"
+			}
+		]
+	},
+	"box-lines": {
+		syntax: "single | multiple",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "single"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "multiple"
+					}
+				]
+			}
+		]
+	},
+	"box-ordinal-group": {
+		syntax: "<integer>",
+		ast: [
+			{
+				typ: 2,
+				val: "integer"
+			}
+		]
+	},
+	"box-orient": {
+		syntax: "horizontal | vertical | inline-axis | block-axis | inherit",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "horizontal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "vertical"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "inline-axis"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "block-axis"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "inherit"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"box-pack": {
+		syntax: "start | center | end | justify",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "start"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "center"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "end"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "justify"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"box-shadow": {
+		syntax: "none | <shadow>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "shadow",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"box-sizing": {
+		syntax: "content-box | border-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "content-box"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "border-box"
+					}
+				]
+			}
+		]
+	},
+	"break-after": {
+		syntax: "auto | avoid | always | all | avoid-page | page | left | right | recto | verso | avoid-column | column | avoid-region | region",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "avoid"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "always"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "all"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "avoid-page"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "page"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "left"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "right"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "recto"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "verso"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "avoid-column"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "column"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "avoid-region"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 1,
+																														val: "region"
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"break-before": {
+		syntax: "auto | avoid | always | all | avoid-page | page | left | right | recto | verso | avoid-column | column | avoid-region | region",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "avoid"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "always"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "all"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "avoid-page"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "page"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "left"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "right"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "recto"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "verso"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "avoid-column"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "column"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "avoid-region"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 1,
+																														val: "region"
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"break-inside": {
+		syntax: "auto | avoid | avoid-page | avoid-column | avoid-region",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "avoid"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "avoid-page"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "avoid-column"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "avoid-region"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"caption-side": {
+		syntax: "top | bottom | block-start | block-end | inline-start | inline-end",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "top"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "bottom"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "block-start"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "block-end"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "inline-start"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "inline-end"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	caret: {
+		syntax: "<'caret-color'> || <'caret-shape'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "caret-color"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "caret-shape"
+					}
+				]
+			}
+		]
+	},
+	"caret-color": {
+		syntax: "auto | <color>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color"
+					}
+				]
+			}
+		]
+	},
+	"caret-shape": {
+		syntax: "auto | bar | block | underscore",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "bar"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "block"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "underscore"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	clear: {
+		syntax: "none | left | right | both | inline-start | inline-end",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "left"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "right"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "both"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "inline-start"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "inline-end"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	clip: {
+		syntax: "<shape> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "shape"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				]
+			}
+		]
+	},
+	"clip-path": {
+		syntax: "<clip-source> | [ <basic-shape> || <geometry-box> ] | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "clip-source"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "basic-shape"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "geometry-box"
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	color: {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"color-scheme": {
+		syntax: "normal | [ light | dark | <custom-ident> ]+ && only?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "light"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "dark"
+													}
+												],
+												r: [
+													{
+														typ: 2,
+														val: "custom-ident"
+													}
+												]
+											}
+										]
+									}
+								],
+								atLeastOnce: true
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "only",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"column-count": {
+		syntax: "<integer> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				]
+			}
+		]
+	},
+	"column-fill": {
+		syntax: "auto | balance | balance-all",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "balance"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "balance-all"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"column-gap": {
+		syntax: "normal | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"column-rule": {
+		syntax: "<'column-rule-width'> || <'column-rule-style'> || <'column-rule-color'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "column-rule-width"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "column-rule-style"
+							}
+						],
+						r: [
+							{
+								typ: 3,
+								val: "column-rule-color"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"column-rule-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"column-rule-style": {
+		syntax: "<'border-style'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-style"
+			}
+		]
+	},
+	"column-rule-width": {
+		syntax: "<'border-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "border-width"
+			}
+		]
+	},
+	"column-span": {
+		syntax: "none | all",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "all"
+					}
+				]
+			}
+		]
+	},
+	"column-width": {
+		syntax: "<length> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				]
+			}
+		]
+	},
+	columns: {
+		syntax: "<'column-width'> || <'column-count'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "column-width"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "column-count"
+					}
+				]
+			}
+		]
+	},
+	contain: {
+		syntax: "none | strict | content | [ [ size || inline-size ] || layout || style || paint ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "strict"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "content"
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 23,
+														chi: [
+															{
+																typ: 29,
+																l: [
+																	{
+																		typ: 1,
+																		val: "size"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "inline-size"
+																	}
+																]
+															}
+														]
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 1,
+																val: "layout"
+															}
+														],
+														r: [
+															{
+																typ: 29,
+																l: [
+																	{
+																		typ: 1,
+																		val: "style"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "paint"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"contain-intrinsic-size": {
+		syntax: "[ auto? [ none | <length> ] ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "auto",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "length"
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"contain-intrinsic-block-size": {
+		syntax: "auto? [ none | <length> ]",
+		ast: [
+			{
+				typ: 1,
+				val: "auto",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"contain-intrinsic-height": {
+		syntax: "auto? [ none | <length> ]",
+		ast: [
+			{
+				typ: 1,
+				val: "auto",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"contain-intrinsic-inline-size": {
+		syntax: "auto? [ none | <length> ]",
+		ast: [
+			{
+				typ: 1,
+				val: "auto",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"contain-intrinsic-width": {
+		syntax: "auto? [ none | <length> ]",
+		ast: [
+			{
+				typ: 1,
+				val: "auto",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	container: {
+		syntax: "<'container-name'> [ / <'container-type'> ]?",
+		ast: [
+			{
+				typ: 3,
+				val: "container-name"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 3,
+						val: "container-type"
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"container-name": {
+		syntax: "none | <custom-ident>+",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "custom-ident",
+						atLeastOnce: true
+					}
+				]
+			}
+		]
+	},
+	"container-type": {
+		syntax: "normal | size | inline-size",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "size"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "inline-size"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	content: {
+		syntax: "normal | none | [ <content-replacement> | <content-list> ] [/ [ <string> | <counter> ]+ ]?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "content-replacement"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "content-list"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "counter"
+									}
+								]
+							}
+						],
+						atLeastOnce: true
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"content-visibility": {
+		syntax: "visible | auto | hidden",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"counter-increment": {
+		syntax: "[ <counter-name> <integer>? ]+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "counter-name"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "integer",
+								isOptional: true
+							}
+						],
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"counter-reset": {
+		syntax: "[ <counter-name> <integer>? | <reversed-counter-name> <integer>? ]+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "counter-name"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "integer",
+										isOptional: true
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "reversed-counter-name"
+									}
+								]
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "integer",
+								isOptional: true
+							}
+						],
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"counter-set": {
+		syntax: "[ <counter-name> <integer>? ]+ | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "counter-name"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "integer",
+								isOptional: true
+							}
+						],
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	cursor: {
+		syntax: "[ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing ] ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "url"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 2,
+										val: "x"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "y"
+									}
+								],
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 11
+							}
+						],
+						isRepeatable: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "default"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "none"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "context-menu"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "help"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "pointer"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "progress"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "wait"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "cell"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "crosshair"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "text"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "vertical-text"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "alias"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 1,
+																																				val: "copy"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "move"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "no-drop"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "not-allowed"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "e-resize"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "n-resize"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 28,
+																																														l: [
+																																															{
+																																																typ: 1,
+																																																val: "ne-resize"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 28,
+																																																l: [
+																																																	{
+																																																		typ: 1,
+																																																		val: "nw-resize"
+																																																	}
+																																																],
+																																																r: [
+																																																	{
+																																																		typ: 28,
+																																																		l: [
+																																																			{
+																																																				typ: 1,
+																																																				val: "s-resize"
+																																																			}
+																																																		],
+																																																		r: [
+																																																			{
+																																																				typ: 28,
+																																																				l: [
+																																																					{
+																																																						typ: 1,
+																																																						val: "se-resize"
+																																																					}
+																																																				],
+																																																				r: [
+																																																					{
+																																																						typ: 28,
+																																																						l: [
+																																																							{
+																																																								typ: 1,
+																																																								val: "sw-resize"
+																																																							}
+																																																						],
+																																																						r: [
+																																																							{
+																																																								typ: 28,
+																																																								l: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "w-resize"
+																																																									}
+																																																								],
+																																																								r: [
+																																																									{
+																																																										typ: 28,
+																																																										l: [
+																																																											{
+																																																												typ: 1,
+																																																												val: "ew-resize"
+																																																											}
+																																																										],
+																																																										r: [
+																																																											{
+																																																												typ: 28,
+																																																												l: [
+																																																													{
+																																																														typ: 1,
+																																																														val: "ns-resize"
+																																																													}
+																																																												],
+																																																												r: [
+																																																													{
+																																																														typ: 28,
+																																																														l: [
+																																																															{
+																																																																typ: 1,
+																																																																val: "nesw-resize"
+																																																															}
+																																																														],
+																																																														r: [
+																																																															{
+																																																																typ: 28,
+																																																																l: [
+																																																																	{
+																																																																		typ: 1,
+																																																																		val: "nwse-resize"
+																																																																	}
+																																																																],
+																																																																r: [
+																																																																	{
+																																																																		typ: 28,
+																																																																		l: [
+																																																																			{
+																																																																				typ: 1,
+																																																																				val: "col-resize"
+																																																																			}
+																																																																		],
+																																																																		r: [
+																																																																			{
+																																																																				typ: 28,
+																																																																				l: [
+																																																																					{
+																																																																						typ: 1,
+																																																																						val: "row-resize"
+																																																																					}
+																																																																				],
+																																																																				r: [
+																																																																					{
+																																																																						typ: 28,
+																																																																						l: [
+																																																																							{
+																																																																								typ: 1,
+																																																																								val: "all-scroll"
+																																																																							}
+																																																																						],
+																																																																						r: [
+																																																																							{
+																																																																								typ: 28,
+																																																																								l: [
+																																																																									{
+																																																																										typ: 1,
+																																																																										val: "zoom-in"
+																																																																									}
+																																																																								],
+																																																																								r: [
+																																																																									{
+																																																																										typ: 28,
+																																																																										l: [
+																																																																											{
+																																																																												typ: 1,
+																																																																												val: "zoom-out"
+																																																																											}
+																																																																										],
+																																																																										r: [
+																																																																											{
+																																																																												typ: 28,
+																																																																												l: [
+																																																																													{
+																																																																														typ: 1,
+																																																																														val: "grab"
+																																																																													}
+																																																																												],
+																																																																												r: [
+																																																																													{
+																																																																														typ: 1,
+																																																																														val: "grabbing"
+																																																																													}
+																																																																												]
+																																																																											}
+																																																																										]
+																																																																									}
+																																																																								]
+																																																																							}
+																																																																						]
+																																																																					}
+																																																																				]
+																																																																			}
+																																																																		]
+																																																																	}
+																																																																]
+																																																															}
+																																																														]
+																																																													}
+																																																												]
+																																																											}
+																																																										]
+																																																									}
+																																																								]
+																																																							}
+																																																						]
+																																																					}
+																																																				]
+																																																			}
+																																																		]
+																																																	}
+																																																]
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	direction: {
+		syntax: "ltr | rtl",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "ltr"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "rtl"
+					}
+				]
+			}
+		]
+	},
+	display: {
+		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "display-outside"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "display-inside"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "display-listitem"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "display-internal"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "display-box"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "display-legacy"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"empty-cells": {
+		syntax: "show | hide",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "show"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "hide"
+					}
+				]
+			}
+		]
+	},
+	"field-sizing": {
+		syntax: "content | fixed",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "content"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "fixed"
+					}
+				]
+			}
+		]
+	},
+	filter: {
+		syntax: "none | <filter-function-list>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "filter-function-list"
+					}
+				]
+			}
+		]
+	},
+	flex: {
+		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 3,
+								val: "flex-grow"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 3,
+										val: "flex-shrink",
+										isOptional: true
+									}
+								],
+								r: [
+									{
+										typ: 3,
+										val: "flex-basis"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"flex-basis": {
+		syntax: "content | <'width'>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "content"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "width"
+					}
+				]
+			}
+		]
+	},
+	"flex-direction": {
+		syntax: "row | row-reverse | column | column-reverse",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "row"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "row-reverse"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "column"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "column-reverse"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"flex-flow": {
+		syntax: "<'flex-direction'> || <'flex-wrap'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "flex-direction"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "flex-wrap"
+					}
+				]
+			}
+		]
+	},
+	"flex-grow": {
+		syntax: "<number>",
+		ast: [
+			{
+				typ: 2,
+				val: "number"
+			}
+		]
+	},
+	"flex-shrink": {
+		syntax: "<number>",
+		ast: [
+			{
+				typ: 2,
+				val: "number"
+			}
+		]
+	},
+	"flex-wrap": {
+		syntax: "nowrap | wrap | wrap-reverse",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "nowrap"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "wrap"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "wrap-reverse"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	float: {
+		syntax: "left | right | none | inline-start | inline-end",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "left"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "right"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "inline-start"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "inline-end"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	font: {
+		syntax: "[ [ <'font-style'> || <font-variant-css21> || <'font-weight'> || <'font-stretch'> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'> ] | caption | icon | menu | message-box | small-caption | status-bar",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 3,
+												val: "font-style"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "font-variant-css21"
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 3,
+																val: "font-weight"
+															}
+														],
+														r: [
+															{
+																typ: 3,
+																val: "font-stretch"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 3,
+								val: "font-size"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 3,
+										val: "line-height"
+									}
+								],
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 3,
+								val: "font-family"
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "caption"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "icon"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "menu"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "message-box"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "small-caption"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "status-bar"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-family": {
+		syntax: "[ <family-name> | <generic-family> ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "family-name"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "generic-family"
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"font-feature-settings": {
+		syntax: "normal | <feature-tag-value>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "feature-tag-value",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"font-kerning": {
+		syntax: "auto | normal | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-language-override": {
+		syntax: "normal | <string>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "string"
+					}
+				]
+			}
+		]
+	},
+	"font-optical-sizing": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"font-palette": {
+		syntax: "normal | light | dark | <palette-identifier>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "light"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "dark"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "palette-identifier"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variation-settings": {
+		syntax: "normal | [ <string> <number> ]#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "string"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "number"
+							}
+						],
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"font-size": {
+		syntax: "<absolute-size> | <relative-size> | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "absolute-size"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "relative-size"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-size-adjust": {
+		syntax: "none | [ ex-height | cap-height | ch-width | ic-width | ic-height ]? [ from-font | <number> ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "ex-height"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "cap-height"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "ch-width"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "ic-width"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "ic-height"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "from-font"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "number"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-smooth": {
+		syntax: "auto | never | always | <absolute-size> | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "never"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "always"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "absolute-size"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "length"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-stretch": {
+		syntax: "<font-stretch-absolute>",
+		ast: [
+			{
+				typ: 2,
+				val: "font-stretch-absolute"
+			}
+		]
+	},
+	"font-style": {
+		syntax: "normal | italic | oblique <angle>?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "italic"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "oblique"
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "angle",
+				isOptional: true
+			}
+		]
+	},
+	"font-synthesis": {
+		syntax: "none | [ weight || style || small-caps || position]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "weight"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "style"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 1,
+														val: "small-caps"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "position"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-synthesis-position": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"font-synthesis-small-caps": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"font-synthesis-style": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"font-synthesis-weight": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"font-variant": {
+		syntax: "normal | none | [ <common-lig-values> || <discretionary-lig-values> || <historical-lig-values> || <contextual-alt-values> || stylistic( <feature-value-name> ) || historical-forms || styleset( <feature-value-name># ) || character-variant( <feature-value-name># ) || swash( <feature-value-name> ) || ornaments( <feature-value-name> ) || annotation( <feature-value-name> ) || [ small-caps | all-small-caps | petite-caps | all-petite-caps | unicase | titling-caps ] || <numeric-figure-values> || <numeric-spacing-values> || <numeric-fraction-values> || ordinal || slashed-zero || <east-asian-variant-values> || <east-asian-width-values> || ruby ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "common-lig-values"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "discretionary-lig-values"
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 2,
+																val: "historical-lig-values"
+															}
+														],
+														r: [
+															{
+																typ: 29,
+																l: [
+																	{
+																		typ: 2,
+																		val: "contextual-alt-values"
+																	}
+																],
+																r: [
+																	{
+																		typ: 29,
+																		l: [
+																			{
+																				typ: 19,
+																				val: "stylistic",
+																				chi: [
+																					{
+																						typ: 2,
+																						val: "feature-value-name"
+																					}
+																				]
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 29,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "historical-forms"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 29,
+																						l: [
+																							{
+																								typ: 19,
+																								val: "styleset",
+																								chi: [
+																									{
+																										typ: 2,
+																										val: "feature-value-name",
+																										isList: true
+																									}
+																								]
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 29,
+																								l: [
+																									{
+																										typ: 19,
+																										val: "character-variant",
+																										chi: [
+																											{
+																												typ: 2,
+																												val: "feature-value-name",
+																												isList: true
+																											}
+																										]
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 29,
+																										l: [
+																											{
+																												typ: 19,
+																												val: "swash",
+																												chi: [
+																													{
+																														typ: 2,
+																														val: "feature-value-name"
+																													}
+																												]
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 29,
+																												l: [
+																													{
+																														typ: 19,
+																														val: "ornaments",
+																														chi: [
+																															{
+																																typ: 2,
+																																val: "feature-value-name"
+																															}
+																														]
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 29,
+																														l: [
+																															{
+																																typ: 19,
+																																val: "annotation",
+																																chi: [
+																																	{
+																																		typ: 2,
+																																		val: "feature-value-name"
+																																	}
+																																]
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 29,
+																																l: [
+																																	{
+																																		typ: 23,
+																																		chi: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "small-caps"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "all-small-caps"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "petite-caps"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "all-petite-caps"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "unicase"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 1,
+																																														val: "titling-caps"
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 29,
+																																		l: [
+																																			{
+																																				typ: 2,
+																																				val: "numeric-figure-values"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 29,
+																																				l: [
+																																					{
+																																						typ: 2,
+																																						val: "numeric-spacing-values"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 29,
+																																						l: [
+																																							{
+																																								typ: 2,
+																																								val: "numeric-fraction-values"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 29,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "ordinal"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 29,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "slashed-zero"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 29,
+																																												l: [
+																																													{
+																																														typ: 2,
+																																														val: "east-asian-variant-values"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 29,
+																																														l: [
+																																															{
+																																																typ: 2,
+																																																val: "east-asian-width-values"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 1,
+																																																val: "ruby"
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-alternates": {
+		syntax: "normal | [ stylistic( <feature-value-name> ) || historical-forms || styleset( <feature-value-name># ) || character-variant( <feature-value-name># ) || swash( <feature-value-name> ) || ornaments( <feature-value-name> ) || annotation( <feature-value-name> ) ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 19,
+										val: "stylistic",
+										chi: [
+											{
+												typ: 2,
+												val: "feature-value-name"
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "historical-forms"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 19,
+														val: "styleset",
+														chi: [
+															{
+																typ: 2,
+																val: "feature-value-name",
+																isList: true
+															}
+														]
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 19,
+																val: "character-variant",
+																chi: [
+																	{
+																		typ: 2,
+																		val: "feature-value-name",
+																		isList: true
+																	}
+																]
+															}
+														],
+														r: [
+															{
+																typ: 29,
+																l: [
+																	{
+																		typ: 19,
+																		val: "swash",
+																		chi: [
+																			{
+																				typ: 2,
+																				val: "feature-value-name"
+																			}
+																		]
+																	}
+																],
+																r: [
+																	{
+																		typ: 29,
+																		l: [
+																			{
+																				typ: 19,
+																				val: "ornaments",
+																				chi: [
+																					{
+																						typ: 2,
+																						val: "feature-value-name"
+																					}
+																				]
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 19,
+																				val: "annotation",
+																				chi: [
+																					{
+																						typ: 2,
+																						val: "feature-value-name"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-caps": {
+		syntax: "normal | small-caps | all-small-caps | petite-caps | all-petite-caps | unicase | titling-caps",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "small-caps"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "all-small-caps"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "petite-caps"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "all-petite-caps"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "unicase"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "titling-caps"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-east-asian": {
+		syntax: "normal | [ <east-asian-variant-values> || <east-asian-width-values> || ruby ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "east-asian-variant-values"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "east-asian-width-values"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "ruby"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-emoji": {
+		syntax: "normal | text | emoji | unicode",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "text"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "emoji"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "unicode"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-ligatures": {
+		syntax: "normal | none | [ <common-lig-values> || <discretionary-lig-values> || <historical-lig-values> || <contextual-alt-values> ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "common-lig-values"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "discretionary-lig-values"
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 2,
+																val: "historical-lig-values"
+															}
+														],
+														r: [
+															{
+																typ: 2,
+																val: "contextual-alt-values"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-numeric": {
+		syntax: "normal | [ <numeric-figure-values> || <numeric-spacing-values> || <numeric-fraction-values> || ordinal || slashed-zero ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "numeric-figure-values"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "numeric-spacing-values"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "numeric-fraction-values"
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 1,
+																val: "ordinal"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "slashed-zero"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-position": {
+		syntax: "normal | sub | super",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "sub"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "super"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-weight": {
+		syntax: "<font-weight-absolute> | bolder | lighter",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "font-weight-absolute"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "bolder"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "lighter"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"forced-color-adjust": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	gap: {
+		syntax: "<'row-gap'> <'column-gap'>?",
+		ast: [
+			{
+				typ: 3,
+				val: "row-gap"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "column-gap",
+				isOptional: true
+			}
+		]
+	},
+	grid: {
+		syntax: "<'grid-template'> | <'grid-template-rows'> / [ auto-flow && dense? ] <'grid-auto-columns'>? | [ auto-flow && dense? ] <'grid-auto-rows'>? / <'grid-template-columns'>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 3,
+						val: "grid-template"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "grid-template-rows"
+					}
+				]
+			},
+			{
+				typ: 25
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 1,
+								val: "auto-flow"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "dense",
+								isOptional: true
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 3,
+						val: "grid-auto-columns",
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 1,
+										val: "auto-flow"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "dense",
+										isOptional: true
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "grid-auto-rows",
+				isOptional: true
+			},
+			{
+				typ: 25
+			},
+			{
+				typ: 3,
+				val: "grid-template-columns"
+			}
+		]
+	},
+	"grid-area": {
+		syntax: "<grid-line> [ / <grid-line> ]{0,3}",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "grid-line"
+					}
+				],
+				occurence: {
+					min: 3,
+					max: 0
+				}
+			}
+		]
+	},
+	"grid-auto-columns": {
+		syntax: "<track-size>+",
+		ast: [
+			{
+				typ: 2,
+				val: "track-size",
+				atLeastOnce: true
+			}
+		]
+	},
+	"grid-auto-flow": {
+		syntax: "[ row | column ] || dense",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "row"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "column"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "dense"
+					}
+				]
+			}
+		]
+	},
+	"grid-auto-rows": {
+		syntax: "<track-size>+",
+		ast: [
+			{
+				typ: 2,
+				val: "track-size",
+				atLeastOnce: true
+			}
+		]
+	},
+	"grid-column": {
+		syntax: "<grid-line> [ / <grid-line> ]?",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "grid-line"
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"grid-column-end": {
+		syntax: "<grid-line>",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			}
+		]
+	},
+	"grid-column-gap": {
+		syntax: "<length-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage"
+			}
+		]
+	},
+	"grid-column-start": {
+		syntax: "<grid-line>",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			}
+		]
+	},
+	"grid-gap": {
+		syntax: "<'grid-row-gap'> <'grid-column-gap'>?",
+		ast: [
+			{
+				typ: 3,
+				val: "grid-row-gap"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "grid-column-gap",
+				isOptional: true
+			}
+		]
+	},
+	"grid-row": {
+		syntax: "<grid-line> [ / <grid-line> ]?",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "grid-line"
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"grid-row-end": {
+		syntax: "<grid-line>",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			}
+		]
+	},
+	"grid-row-gap": {
+		syntax: "<length-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage"
+			}
+		]
+	},
+	"grid-row-start": {
+		syntax: "<grid-line>",
+		ast: [
+			{
+				typ: 2,
+				val: "grid-line"
+			}
+		]
+	},
+	"grid-template": {
+		syntax: "none | [ <'grid-template-rows'> / <'grid-template-columns'> ] | [ <line-names>? <string> <track-size>? <line-names>? ]+ [ / <explicit-track-list> ]?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 3,
+										val: "grid-template-rows"
+									},
+									{
+										typ: 25
+									},
+									{
+										typ: 3,
+										val: "grid-template-columns"
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 2,
+										val: "line-names",
+										isOptional: true
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "string"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "track-size",
+										isOptional: true
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "line-names",
+										isOptional: true
+									}
+								],
+								atLeastOnce: true
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "explicit-track-list"
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"grid-template-areas": {
+		syntax: "none | <string>+",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "string",
+						atLeastOnce: true
+					}
+				]
+			}
+		]
+	},
+	"grid-template-columns": {
+		syntax: "none | <track-list> | <auto-track-list> | subgrid <line-name-list>?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "track-list"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "auto-track-list"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "subgrid"
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "line-name-list",
+				isOptional: true
+			}
+		]
+	},
+	"grid-template-rows": {
+		syntax: "none | <track-list> | <auto-track-list> | subgrid <line-name-list>?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "track-list"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "auto-track-list"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "subgrid"
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "line-name-list",
+				isOptional: true
+			}
+		]
+	},
+	"hanging-punctuation": {
+		syntax: "none | [ first || [ force-end | allow-end ] || last ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "first"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "force-end"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "allow-end"
+															}
+														]
+													}
+												]
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "last"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	height: {
+		syntax: "auto | <length> | <percentage> | min-content | max-content | fit-content | fit-content(<length-percentage>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "min-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "max-content"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "fit-content"
+															}
+														],
+														r: [
+															{
+																typ: 19,
+																val: "fit-content",
+																chi: [
+																	{
+																		typ: 2,
+																		val: "length-percentage"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"hyphenate-character": {
+		syntax: "auto | <string>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "string"
+					}
+				]
+			}
+		]
+	},
+	"hyphenate-limit-chars": {
+		syntax: "[ auto | <integer> ]{1,3}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "integer"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 3
+				}
+			}
+		]
+	},
+	hyphens: {
+		syntax: "none | manual | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "manual"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"image-orientation": {
+		syntax: "from-image | <angle> | [ <angle>? flip ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "from-image"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 2,
+										val: "angle",
+										isOptional: true
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 1,
+										val: "flip"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"image-rendering": {
+		syntax: "auto | crisp-edges | pixelated",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "crisp-edges"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "pixelated"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"image-resolution": {
+		syntax: "[ from-image || <resolution> ] && snap?",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "from-image"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "resolution"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "snap",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"ime-mode": {
+		syntax: "auto | normal | active | inactive | disabled",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "active"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "inactive"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "disabled"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"initial-letter": {
+		syntax: "normal | [ <number> <integer>? ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "number"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "integer",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"initial-letter-align": {
+		syntax: "[ auto | alphabetic | hanging | ideographic ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "alphabetic"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "hanging"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "ideographic"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"inline-size": {
+		syntax: "<'width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "width"
+			}
+		]
+	},
+	"input-security": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	inset: {
+		syntax: "<'top'>{1,4}",
+		ast: [
+			{
+				typ: 3,
+				val: "top",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"inset-area": {
+		syntax: "none | <inset-area>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "inset-area"
+					}
+				]
+			}
+		]
+	},
+	"inset-block": {
+		syntax: "<'top'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "top",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"inset-block-end": {
+		syntax: "<'top'>",
+		ast: [
+			{
+				typ: 3,
+				val: "top"
+			}
+		]
+	},
+	"inset-block-start": {
+		syntax: "<'top'>",
+		ast: [
+			{
+				typ: 3,
+				val: "top"
+			}
+		]
+	},
+	"inset-inline": {
+		syntax: "<'top'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "top",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"inset-inline-end": {
+		syntax: "<'top'>",
+		ast: [
+			{
+				typ: 3,
+				val: "top"
+			}
+		]
+	},
+	"inset-inline-start": {
+		syntax: "<'top'>",
+		ast: [
+			{
+				typ: 3,
+				val: "top"
+			}
+		]
+	},
+	isolation: {
+		syntax: "auto | isolate",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "isolate"
+					}
+				]
+			}
+		]
+	},
+	"justify-content": {
+		syntax: "normal | <content-distribution> | <overflow-position>? [ <content-position> | left | right ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "content-distribution"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "overflow-position",
+								isOptional: true
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "content-position"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "right"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"justify-items": {
+		syntax: "normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ] | legacy | legacy && [ left | right | center ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "stretch"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "baseline-position"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "overflow-position",
+										isOptional: true
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "self-position"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "right"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "legacy"
+							}
+						],
+						r: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 1,
+										val: "legacy"
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "left"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "center"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"justify-self": {
+		syntax: "auto | normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "stretch"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "baseline-position"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "overflow-position",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "self-position"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "right"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"justify-tracks": {
+		syntax: "[ normal | <content-distribution> | <overflow-position>? [ <content-position> | left | right ] ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "content-distribution"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "overflow-position",
+										isOptional: true
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "content-position"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "right"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	left: {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"letter-spacing": {
+		syntax: "normal | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"line-break": {
+		syntax: "auto | loose | normal | strict | anywhere",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "loose"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "normal"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "strict"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "anywhere"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"line-clamp": {
+		syntax: "none | <integer>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				]
+			}
+		]
+	},
+	"line-height": {
+		syntax: "normal | <number> | <length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "number"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"line-height-step": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"list-style": {
+		syntax: "<'list-style-type'> || <'list-style-position'> || <'list-style-image'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "list-style-type"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "list-style-position"
+							}
+						],
+						r: [
+							{
+								typ: 3,
+								val: "list-style-image"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"list-style-image": {
+		syntax: "<image> | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "image"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"list-style-position": {
+		syntax: "inside | outside",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "inside"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "outside"
+					}
+				]
+			}
+		]
+	},
+	"list-style-type": {
+		syntax: "<counter-style> | <string> | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "counter-style"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "string"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	margin: {
+		syntax: "[ <length> | <percentage> | auto ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"margin-block": {
+		syntax: "<'margin-left'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "margin-left",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"margin-block-end": {
+		syntax: "<'margin-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "margin-left"
+			}
+		]
+	},
+	"margin-block-start": {
+		syntax: "<'margin-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "margin-left"
+			}
+		]
+	},
+	"margin-bottom": {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"margin-inline": {
+		syntax: "<'margin-left'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "margin-left",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"margin-inline-end": {
+		syntax: "<'margin-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "margin-left"
+			}
+		]
+	},
+	"margin-inline-start": {
+		syntax: "<'margin-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "margin-left"
+			}
+		]
+	},
+	"margin-left": {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"margin-right": {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"margin-top": {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"margin-trim": {
+		syntax: "none | in-flow | all",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "in-flow"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "all"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	mask: {
+		syntax: "<mask-layer>#",
+		ast: [
+			{
+				typ: 2,
+				val: "mask-layer",
+				isList: true
+			}
+		]
+	},
+	"mask-border": {
+		syntax: "<'mask-border-source'> || <'mask-border-slice'> [ / <'mask-border-width'>? [ / <'mask-border-outset'> ]? ]? || <'mask-border-repeat'> || <'mask-border-mode'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "mask-border-source"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "mask-border-slice"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 3,
+								val: "mask-border-width",
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 3,
+										val: "mask-border-outset"
+									}
+								],
+								isOptional: true
+							}
+						],
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "mask-border-repeat"
+							}
+						],
+						r: [
+							{
+								typ: 3,
+								val: "mask-border-mode"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"mask-border-mode": {
+		syntax: "luminance | alpha",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "luminance"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "alpha"
+					}
+				]
+			}
+		]
+	},
+	"mask-border-outset": {
+		syntax: "[ <length> | <number> ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "number"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"mask-border-repeat": {
+		syntax: "[ stretch | repeat | round | space ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "stretch"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "repeat"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "round"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "space"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"mask-border-slice": {
+		syntax: "<number-percentage>{1,4} fill?",
+		ast: [
+			{
+				typ: 2,
+				val: "number-percentage",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "fill",
+				isOptional: true
+			}
+		]
+	},
+	"mask-border-source": {
+		syntax: "none | <image>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "image"
+					}
+				]
+			}
+		]
+	},
+	"mask-border-width": {
+		syntax: "[ <length-percentage> | <number> | auto ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"mask-clip": {
+		syntax: "[ <geometry-box> | no-clip ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "geometry-box"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "no-clip"
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"mask-composite": {
+		syntax: "<compositing-operator>#",
+		ast: [
+			{
+				typ: 2,
+				val: "compositing-operator",
+				isList: true
+			}
+		]
+	},
+	"mask-image": {
+		syntax: "<mask-reference>#",
+		ast: [
+			{
+				typ: 2,
+				val: "mask-reference",
+				isList: true
+			}
+		]
+	},
+	"mask-mode": {
+		syntax: "<masking-mode>#",
+		ast: [
+			{
+				typ: 2,
+				val: "masking-mode",
+				isList: true
+			}
+		]
+	},
+	"mask-origin": {
+		syntax: "<geometry-box>#",
+		ast: [
+			{
+				typ: 2,
+				val: "geometry-box",
+				isList: true
+			}
+		]
+	},
+	"mask-position": {
+		syntax: "<position>#",
+		ast: [
+			{
+				typ: 2,
+				val: "position",
+				isList: true
+			}
+		]
+	},
+	"mask-repeat": {
+		syntax: "<repeat-style>#",
+		ast: [
+			{
+				typ: 2,
+				val: "repeat-style",
+				isList: true
+			}
+		]
+	},
+	"mask-size": {
+		syntax: "<bg-size>#",
+		ast: [
+			{
+				typ: 2,
+				val: "bg-size",
+				isList: true
+			}
+		]
+	},
+	"mask-type": {
+		syntax: "luminance | alpha",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "luminance"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "alpha"
+					}
+				]
+			}
+		]
+	},
+	"masonry-auto-flow": {
+		syntax: "[ pack | next ] || [ definite-first | ordered ]",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "pack"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "next"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "definite-first"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "ordered"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"math-depth": {
+		syntax: "auto-add | add(<integer>) | <integer>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto-add"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "add",
+								chi: [
+									{
+										typ: 2,
+										val: "integer"
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "integer"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"math-shift": {
+		syntax: "normal | compact",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "compact"
+					}
+				]
+			}
+		]
+	},
+	"math-style": {
+		syntax: "normal | compact",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "compact"
+					}
+				]
+			}
+		]
+	},
+	"max-block-size": {
+		syntax: "<'max-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "max-width"
+			}
+		]
+	},
+	"max-height": {
+		syntax: "none | <length-percentage> | min-content | max-content | fit-content | fit-content(<length-percentage>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "min-content"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "max-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "fit-content"
+													}
+												],
+												r: [
+													{
+														typ: 19,
+														val: "fit-content",
+														chi: [
+															{
+																typ: 2,
+																val: "length-percentage"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"max-inline-size": {
+		syntax: "<'max-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "max-width"
+			}
+		]
+	},
+	"max-lines": {
+		syntax: "none | <integer>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				]
+			}
+		]
+	},
+	"max-width": {
+		syntax: "none | <length-percentage> | min-content | max-content | fit-content | fit-content(<length-percentage>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "min-content"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "max-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "fit-content"
+													}
+												],
+												r: [
+													{
+														typ: 19,
+														val: "fit-content",
+														chi: [
+															{
+																typ: 2,
+																val: "length-percentage"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"min-block-size": {
+		syntax: "<'min-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "min-width"
+			}
+		]
+	},
+	"min-height": {
+		syntax: "auto | <length> | <percentage> | min-content | max-content | fit-content | fit-content(<length-percentage>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "min-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "max-content"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "fit-content"
+															}
+														],
+														r: [
+															{
+																typ: 19,
+																val: "fit-content",
+																chi: [
+																	{
+																		typ: 2,
+																		val: "length-percentage"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"min-inline-size": {
+		syntax: "<'min-width'>",
+		ast: [
+			{
+				typ: 3,
+				val: "min-width"
+			}
+		]
+	},
+	"min-width": {
+		syntax: "auto | <length> | <percentage> | min-content | max-content | fit-content | fit-content(<length-percentage>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "min-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "max-content"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "fit-content"
+															}
+														],
+														r: [
+															{
+																typ: 19,
+																val: "fit-content",
+																chi: [
+																	{
+																		typ: 2,
+																		val: "length-percentage"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"mix-blend-mode": {
+		syntax: "<blend-mode> | plus-lighter",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "blend-mode"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "plus-lighter"
+					}
+				]
+			}
+		]
+	},
+	"object-fit": {
+		syntax: "fill | contain | cover | none | scale-down",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "fill"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "contain"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "cover"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "scale-down"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"object-position": {
+		syntax: "<position>",
+		ast: [
+			{
+				typ: 2,
+				val: "position"
+			}
+		]
+	},
+	offset: {
+		syntax: "[ <'offset-position'>? [ <'offset-path'> [ <'offset-distance'> || <'offset-rotate'> ]? ]? ]! [ / <'offset-anchor'> ]?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 3,
+						val: "offset-position",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 3,
+								val: "offset-path"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 3,
+												val: "offset-distance"
+											}
+										],
+										r: [
+											{
+												typ: 3,
+												val: "offset-rotate"
+											}
+										]
+									}
+								],
+								isOptional: true
+							}
+						],
+						isOptional: true
+					}
+				],
+				isRepeatableGroup: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 3,
+						val: "offset-anchor"
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"offset-anchor": {
+		syntax: "auto | <position>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "position"
+					}
+				]
+			}
+		]
+	},
+	"offset-distance": {
+		syntax: "<length-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage"
+			}
+		]
+	},
+	"offset-path": {
+		syntax: "none | <offset-path> || <coord-box>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "offset-path"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "coord-box"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"offset-position": {
+		syntax: "normal | auto | <position>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "position"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"offset-rotate": {
+		syntax: "[ auto | reverse ] || <angle>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "reverse"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "angle"
+					}
+				]
+			}
+		]
+	},
+	opacity: {
+		syntax: "<alpha-value>",
+		ast: [
+			{
+				typ: 2,
+				val: "alpha-value"
+			}
+		]
+	},
+	order: {
+		syntax: "<integer>",
+		ast: [
+			{
+				typ: 2,
+				val: "integer"
+			}
+		]
+	},
+	orphans: {
+		syntax: "<integer>",
+		ast: [
+			{
+				typ: 2,
+				val: "integer"
+			}
+		]
+	},
+	outline: {
+		syntax: "[ <'outline-color'> || <'outline-style'> || <'outline-width'> ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "outline-color"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 3,
+										val: "outline-style"
+									}
+								],
+								r: [
+									{
+										typ: 3,
+										val: "outline-width"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"outline-color": {
+		syntax: "auto | <color>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color"
+					}
+				]
+			}
+		]
+	},
+	"outline-offset": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"outline-style": {
+		syntax: "auto | <'border-style'>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "border-style"
+					}
+				]
+			}
+		]
+	},
+	"outline-width": {
+		syntax: "<line-width>",
+		ast: [
+			{
+				typ: 2,
+				val: "line-width"
+			}
+		]
+	},
+	overflow: {
+		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "visible"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "hidden"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "clip"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "scroll"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "auto"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"overflow-anchor": {
+		syntax: "auto | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"overflow-block": {
+		syntax: "visible | hidden | clip | scroll | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "clip"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "scroll"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "auto"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overflow-clip-box": {
+		syntax: "padding-box | content-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "padding-box"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "content-box"
+					}
+				]
+			}
+		]
+	},
+	"overflow-clip-margin": {
+		syntax: "<visual-box> || <length [0,∞]>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "visual-box"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length",
+						range: [
+							0,
+							null
+						]
+					}
+				]
+			}
+		]
+	},
+	"overflow-inline": {
+		syntax: "visible | hidden | clip | scroll | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "clip"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "scroll"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "auto"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overflow-wrap": {
+		syntax: "normal | break-word | anywhere",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "break-word"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "anywhere"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overflow-x": {
+		syntax: "visible | hidden | clip | scroll | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "clip"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "scroll"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "auto"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overflow-y": {
+		syntax: "visible | hidden | clip | scroll | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "clip"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "scroll"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "auto"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	overlay: {
+		syntax: "none | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				]
+			}
+		]
+	},
+	"overscroll-behavior": {
+		syntax: "[ contain | none | auto ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "contain"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"overscroll-behavior-block": {
+		syntax: "contain | none | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "contain"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overscroll-behavior-inline": {
+		syntax: "contain | none | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "contain"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overscroll-behavior-x": {
+		syntax: "contain | none | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "contain"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overscroll-behavior-y": {
+		syntax: "contain | none | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "contain"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	padding: {
+		syntax: "[ <length> | <percentage> ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"padding-block": {
+		syntax: "<'padding-left'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "padding-left",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"padding-block-end": {
+		syntax: "<'padding-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "padding-left"
+			}
+		]
+	},
+	"padding-block-start": {
+		syntax: "<'padding-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "padding-left"
+			}
+		]
+	},
+	"padding-bottom": {
+		syntax: "<length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"padding-inline": {
+		syntax: "<'padding-left'>{1,2}",
+		ast: [
+			{
+				typ: 3,
+				val: "padding-left",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"padding-inline-end": {
+		syntax: "<'padding-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "padding-left"
+			}
+		]
+	},
+	"padding-inline-start": {
+		syntax: "<'padding-left'>",
+		ast: [
+			{
+				typ: 3,
+				val: "padding-left"
+			}
+		]
+	},
+	"padding-left": {
+		syntax: "<length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"padding-right": {
+		syntax: "<length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"padding-top": {
+		syntax: "<length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	page: {
+		syntax: "auto | <custom-ident>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					}
+				]
+			}
+		]
+	},
+	"page-break-after": {
+		syntax: "auto | always | avoid | left | right | recto | verso",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "always"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "avoid"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "right"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "recto"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "verso"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"page-break-before": {
+		syntax: "auto | always | avoid | left | right | recto | verso",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "always"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "avoid"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "right"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "recto"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "verso"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"page-break-inside": {
+		syntax: "auto | avoid",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "avoid"
+					}
+				]
+			}
+		]
+	},
+	"paint-order": {
+		syntax: "normal | [ fill || stroke || markers ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "fill"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "stroke"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "markers"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	perspective: {
+		syntax: "none | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"perspective-origin": {
+		syntax: "<position>",
+		ast: [
+			{
+				typ: 2,
+				val: "position"
+			}
+		]
+	},
+	"place-content": {
+		syntax: "<'align-content'> <'justify-content'>?",
+		ast: [
+			{
+				typ: 3,
+				val: "align-content"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "justify-content",
+				isOptional: true
+			}
+		]
+	},
+	"place-items": {
+		syntax: "<'align-items'> <'justify-items'>?",
+		ast: [
+			{
+				typ: 3,
+				val: "align-items"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "justify-items",
+				isOptional: true
+			}
+		]
+	},
+	"place-self": {
+		syntax: "<'align-self'> <'justify-self'>?",
+		ast: [
+			{
+				typ: 3,
+				val: "align-self"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "justify-self",
+				isOptional: true
+			}
+		]
+	},
+	"pointer-events": {
+		syntax: "auto | none | visiblePainted | visibleFill | visibleStroke | visible | painted | fill | stroke | all | inherit",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "visiblePainted"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "visibleFill"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "visibleStroke"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "visible"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "painted"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "fill"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "stroke"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "all"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 1,
+																								val: "inherit"
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	position: {
+		syntax: "static | relative | absolute | sticky | fixed",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "static"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "relative"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "absolute"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "sticky"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "fixed"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"position-anchor": {
+		syntax: "<anchor-element>",
+		ast: [
+			{
+				typ: 2,
+				val: "anchor-element"
+			}
+		]
+	},
+	"position-try": {
+		syntax: "<'position-try-order'>? <'position-try-options'>",
+		ast: [
+			{
+				typ: 3,
+				val: "position-try-order",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 3,
+				val: "position-try-options"
+			}
+		]
+	},
+	"position-try-options": {
+		syntax: "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "dashed-ident"
+													}
+												],
+												r: [
+													{
+														typ: 2,
+														val: "try-tactic"
+													}
+												]
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 19,
+										val: "inset-area",
+										chi: [
+											{
+												typ: 3,
+												val: "inset-area"
+											}
+										]
+									}
+								]
+							}
+						],
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"position-try-order": {
+		syntax: "normal | <try-size>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "try-size"
+					}
+				]
+			}
+		]
+	},
+	"position-visibility": {
+		syntax: "always | [ anchors-valid || anchors-visible || no-overflow ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "always"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "anchors-valid"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "anchors-visible"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "no-overflow"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"print-color-adjust": {
+		syntax: "economy | exact",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "economy"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "exact"
+					}
+				]
+			}
+		]
+	},
+	quotes: {
+		syntax: "none | auto | [ <string> <string> ]+",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 2,
+										val: "string"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								atLeastOnce: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	resize: {
+		syntax: "none | both | horizontal | vertical | block | inline",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "both"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "horizontal"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "vertical"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "block"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "inline"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	right: {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	rotate: {
+		syntax: "none | <angle> | [ x | y | z | <number>{3} ] && <angle>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						r: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "x"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "y"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "z"
+																	}
+																],
+																r: [
+																	{
+																		typ: 2,
+																		val: "number",
+																		occurence: {
+																			min: 3,
+																			max: 0
+																		}
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"row-gap": {
+		syntax: "normal | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"ruby-align": {
+		syntax: "start | center | space-between | space-around",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "start"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "center"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "space-between"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "space-around"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"ruby-merge": {
+		syntax: "separate | collapse | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "separate"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "collapse"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"ruby-position": {
+		syntax: "[ alternate || [ over | under ] ] | inter-character",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "alternate"
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "over"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "under"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "inter-character"
+					}
+				]
+			}
+		]
+	},
+	scale: {
+		syntax: "none | <number>{1,3}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "number",
+						occurence: {
+							min: 1,
+							max: 3
+						}
+					}
+				]
+			}
+		]
+	},
+	"scrollbar-color": {
+		syntax: "auto | <color>{2}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color",
+						occurence: {
+							min: 2,
+							max: 0
+						}
+					}
+				]
+			}
+		]
+	},
+	"scrollbar-gutter": {
+		syntax: "auto | stable && both-edges?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 1,
+								val: "stable"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "both-edges",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scrollbar-width": {
+		syntax: "auto | thin | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "thin"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scroll-behavior": {
+		syntax: "auto | smooth",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "smooth"
+					}
+				]
+			}
+		]
+	},
+	"scroll-margin": {
+		syntax: "<length>{1,4}",
+		ast: [
+			{
+				typ: 2,
+				val: "length",
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"scroll-margin-block": {
+		syntax: "<length>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"scroll-margin-block-start": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-block-end": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-bottom": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-inline": {
+		syntax: "<length>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"scroll-margin-inline-start": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-inline-end": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-left": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-right": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-margin-top": {
+		syntax: "<length>",
+		ast: [
+			{
+				typ: 2,
+				val: "length"
+			}
+		]
+	},
+	"scroll-padding": {
+		syntax: "[ auto | <length-percentage> ]{1,4}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 4
+				}
+			}
+		]
+	},
+	"scroll-padding-block": {
+		syntax: "[ auto | <length-percentage> ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"scroll-padding-block-start": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-block-end": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-bottom": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-inline": {
+		syntax: "[ auto | <length-percentage> ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"scroll-padding-inline-start": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-inline-end": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-left": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-right": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-padding-top": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scroll-snap-align": {
+		syntax: "[ none | start | end | center ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "start"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "end"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "center"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"scroll-snap-coordinate": {
+		syntax: "none | <position>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "position",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"scroll-snap-destination": {
+		syntax: "<position>",
+		ast: [
+			{
+				typ: 2,
+				val: "position"
+			}
+		]
+	},
+	"scroll-snap-points-x": {
+		syntax: "none | repeat( <length-percentage> )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "repeat",
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scroll-snap-points-y": {
+		syntax: "none | repeat( <length-percentage> )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "repeat",
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scroll-snap-stop": {
+		syntax: "normal | always",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "always"
+					}
+				]
+			}
+		]
+	},
+	"scroll-snap-type": {
+		syntax: "none | [ x | y | block | inline | both ] [ mandatory | proximity ]?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "x"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "y"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "block"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "inline"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "both"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "mandatory"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "proximity"
+							}
+						]
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"scroll-snap-type-x": {
+		syntax: "none | mandatory | proximity",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "mandatory"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "proximity"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scroll-snap-type-y": {
+		syntax: "none | mandatory | proximity",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "mandatory"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "proximity"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scroll-timeline": {
+		syntax: "[ <'scroll-timeline-name'> <'scroll-timeline-axis'>? ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 3,
+						val: "scroll-timeline-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 3,
+						val: "scroll-timeline-axis",
+						isOptional: true
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"scroll-timeline-axis": {
+		syntax: "[ block | inline | x | y ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "block"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "inline"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "x"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "y"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"scroll-timeline-name": {
+		syntax: "none | <dashed-ident>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "dashed-ident",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"shape-image-threshold": {
+		syntax: "<alpha-value>",
+		ast: [
+			{
+				typ: 2,
+				val: "alpha-value"
+			}
+		]
+	},
+	"shape-margin": {
+		syntax: "<length-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage"
+			}
+		]
+	},
+	"shape-outside": {
+		syntax: "none | [ <shape-box> || <basic-shape> ] | <image>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "shape-box"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "basic-shape"
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "image"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"tab-size": {
+		syntax: "<integer> | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"table-layout": {
+		syntax: "auto | fixed",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "fixed"
+					}
+				]
+			}
+		]
+	},
+	"text-align": {
+		syntax: "start | end | left | right | center | justify | match-parent",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "start"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "end"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "right"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "justify"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "match-parent"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-align-last": {
+		syntax: "auto | start | end | left | right | center | justify",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "start"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "end"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "right"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "center"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "justify"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-combine-upright": {
+		syntax: "none | all | [ digits <integer>? ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "all"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 1,
+										val: "digits"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "integer",
+										isOptional: true
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-decoration": {
+		syntax: "<'text-decoration-line'> || <'text-decoration-style'> || <'text-decoration-color'> || <'text-decoration-thickness'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "text-decoration-line"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 3,
+								val: "text-decoration-style"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 3,
+										val: "text-decoration-color"
+									}
+								],
+								r: [
+									{
+										typ: 3,
+										val: "text-decoration-thickness"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-decoration-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"text-decoration-line": {
+		syntax: "none | [ underline || overline || line-through || blink ] | spelling-error | grammar-error",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "underline"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 1,
+														val: "overline"
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 1,
+																val: "line-through"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "blink"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "spelling-error"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "grammar-error"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-decoration-skip": {
+		syntax: "none | [ objects || [ spaces | [ leading-spaces || trailing-spaces ] ] || edges || box-decoration ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 1,
+										val: "objects"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "spaces"
+															}
+														],
+														r: [
+															{
+																typ: 23,
+																chi: [
+																	{
+																		typ: 29,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "leading-spaces"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 1,
+																				val: "trailing-spaces"
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 1,
+														val: "edges"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "box-decoration"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-decoration-skip-ink": {
+		syntax: "auto | all | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "all"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-decoration-style": {
+		syntax: "solid | double | dotted | dashed | wavy",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "solid"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "double"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "dotted"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "dashed"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "wavy"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-decoration-thickness": {
+		syntax: "auto | from-font | <length> | <percentage> ",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "from-font"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-emphasis": {
+		syntax: "<'text-emphasis-style'> || <'text-emphasis-color'>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "text-emphasis-style"
+					}
+				],
+				r: [
+					{
+						typ: 3,
+						val: "text-emphasis-color"
+					}
+				]
+			}
+		]
+	},
+	"text-emphasis-color": {
+		syntax: "<color>",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			}
+		]
+	},
+	"text-emphasis-position": {
+		syntax: "[ over | under ] && [ right | left ]",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "over"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "under"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "right"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-emphasis-style": {
+		syntax: "none | [ [ filled | open ] || [ dot | circle | double-circle | triangle | sesame ] ] | <string>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "filled"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "open"
+															}
+														]
+													}
+												]
+											}
+										],
+										r: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "dot"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "circle"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "double-circle"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "triangle"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 1,
+																						val: "sesame"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "string"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-indent": {
+		syntax: "<length-percentage> && hanging? && each-line?",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				],
+				r: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 1,
+								val: "hanging",
+								isOptional: true
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "each-line",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-justify": {
+		syntax: "auto | inter-character | inter-word | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "inter-character"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "inter-word"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-orientation": {
+		syntax: "mixed | upright | sideways",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "mixed"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "upright"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "sideways"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-overflow": {
+		syntax: "[ clip | ellipsis | <string> ]{1,2}",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "clip"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "ellipsis"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								]
+							}
+						]
+					}
+				],
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"text-rendering": {
+		syntax: "auto | optimizeSpeed | optimizeLegibility | geometricPrecision",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "optimizeSpeed"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "optimizeLegibility"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "geometricPrecision"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-shadow": {
+		syntax: "none | <shadow-t>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "shadow-t",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"text-size-adjust": {
+		syntax: "none | auto | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-transform": {
+		syntax: "none | capitalize | uppercase | lowercase | full-width | full-size-kana",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "capitalize"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "uppercase"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "lowercase"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "full-width"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "full-size-kana"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-underline-offset": {
+		syntax: "auto | <length> | <percentage> ",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-underline-position": {
+		syntax: "auto | from-font | [ under || [ left | right ] ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "from-font"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "under"
+											}
+										],
+										r: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "left"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-wrap": {
+		syntax: "wrap | nowrap | balance | stable | pretty",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "wrap"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "nowrap"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "balance"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "stable"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "pretty"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-wrap-mode": {
+		syntax: "auto | wrap | nowrap",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "wrap"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "nowrap"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"text-wrap-style": {
+		syntax: "auto | balance | stable | pretty",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "balance"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "stable"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "pretty"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"timeline-scope": {
+		syntax: "none | <dashed-ident>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "dashed-ident",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	top: {
+		syntax: "<length> | <percentage> | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "percentage"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "auto"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"touch-action": {
+		syntax: "auto | none | [ [ pan-x | pan-left | pan-right ] || [ pan-y | pan-up | pan-down ] || pinch-zoom ] | manipulation",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 23,
+														chi: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "pan-x"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "pan-left"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 1,
+																				val: "pan-right"
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 23,
+																chi: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "pan-y"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "pan-up"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 1,
+																						val: "pan-down"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "pinch-zoom"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "manipulation"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	transform: {
+		syntax: "none | <transform-list>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "transform-list"
+					}
+				]
+			}
+		]
+	},
+	"transform-box": {
+		syntax: "content-box | border-box | fill-box | stroke-box | view-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "content-box"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "border-box"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "fill-box"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "stroke-box"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "view-box"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"transform-origin": {
+		syntax: "[ <length-percentage> | left | center | right | top | bottom ] | [ [ <length-percentage> | left | center | right ] && [ <length-percentage> | top | center | bottom ] ] <length>?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "top"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "bottom"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 2,
+														val: "length-percentage"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "left"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "center"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "right"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 2,
+														val: "length-percentage"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "top"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "center"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "bottom"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "length",
+				isOptional: true
+			}
+		]
+	},
+	"transform-style": {
+		syntax: "flat | preserve-3d",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "flat"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "preserve-3d"
+					}
+				]
+			}
+		]
+	},
+	transition: {
+		syntax: "<single-transition>#",
+		ast: [
+			{
+				typ: 2,
+				val: "single-transition",
+				isList: true
+			}
+		]
+	},
+	"transition-behavior": {
+		syntax: "<transition-behavior-value>#",
+		ast: [
+			{
+				typ: 2,
+				val: "transition-behavior-value",
+				isList: true
+			}
+		]
+	},
+	"transition-delay": {
+		syntax: "<time>#",
+		ast: [
+			{
+				typ: 2,
+				val: "time",
+				isList: true
+			}
+		]
+	},
+	"transition-duration": {
+		syntax: "<time>#",
+		ast: [
+			{
+				typ: 2,
+				val: "time",
+				isList: true
+			}
+		]
+	},
+	"transition-property": {
+		syntax: "none | <single-transition-property>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "single-transition-property",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"transition-timing-function": {
+		syntax: "<easing-function>#",
+		ast: [
+			{
+				typ: 2,
+				val: "easing-function",
+				isList: true
+			}
+		]
+	},
+	translate: {
+		syntax: "none | <length-percentage> [ <length-percentage> <length>? ]?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length",
+						isOptional: true
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"unicode-bidi": {
+		syntax: "normal | embed | isolate | bidi-override | isolate-override | plaintext",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "embed"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "isolate"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "bidi-override"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "isolate-override"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "plaintext"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"user-select": {
+		syntax: "auto | text | none | contain | all",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "text"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "contain"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "all"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"vertical-align": {
+		syntax: "baseline | sub | super | text-top | text-bottom | middle | top | bottom | <percentage> | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "baseline"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "sub"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "super"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "text-top"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "text-bottom"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "middle"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "top"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "bottom"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 2,
+																						val: "percentage"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 2,
+																						val: "length"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"view-timeline": {
+		syntax: "[ <'view-timeline-name'> <'view-timeline-axis'>? ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 3,
+						val: "view-timeline-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 3,
+						val: "view-timeline-axis",
+						isOptional: true
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"view-timeline-axis": {
+		syntax: "[ block | inline | x | y ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "block"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "inline"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "x"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "y"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"view-timeline-inset": {
+		syntax: "[ [ auto | <length-percentage> ]{1,2} ]#",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								]
+							}
+						],
+						occurence: {
+							min: 1,
+							max: 2
+						}
+					}
+				],
+				isList: true
+			}
+		]
+	},
+	"view-timeline-name": {
+		syntax: "none | <dashed-ident>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "dashed-ident",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"view-transition-name": {
+		syntax: "none | <custom-ident>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					}
+				]
+			}
+		]
+	},
+	visibility: {
+		syntax: "visible | hidden | collapse",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "visible"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "collapse"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"white-space": {
+		syntax: "normal | pre | nowrap | pre-wrap | pre-line | break-spaces | [ <'white-space-collapse'> || <'text-wrap'> || <'white-space-trim'> ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "pre"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "nowrap"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "pre-wrap"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "pre-line"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "break-spaces"
+															}
+														],
+														r: [
+															{
+																typ: 23,
+																chi: [
+																	{
+																		typ: 29,
+																		l: [
+																			{
+																				typ: 3,
+																				val: "white-space-collapse"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 29,
+																				l: [
+																					{
+																						typ: 3,
+																						val: "text-wrap"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 3,
+																						val: "white-space-trim"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"white-space-collapse": {
+		syntax: "collapse | discard | preserve | preserve-breaks | preserve-spaces | break-spaces",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "collapse"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "discard"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "preserve"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "preserve-breaks"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "preserve-spaces"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "break-spaces"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	widows: {
+		syntax: "<integer>",
+		ast: [
+			{
+				typ: 2,
+				val: "integer"
+			}
+		]
+	},
+	width: {
+		syntax: "auto | <length> | <percentage> | min-content | max-content | fit-content | fit-content(<length-percentage>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "min-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "max-content"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "fit-content"
+															}
+														],
+														r: [
+															{
+																typ: 19,
+																val: "fit-content",
+																chi: [
+																	{
+																		typ: 2,
+																		val: "length-percentage"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"will-change": {
+		syntax: "auto | <animateable-feature>#",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "animateable-feature",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"word-break": {
+		syntax: "normal | break-all | keep-all | break-word",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "break-all"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "keep-all"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "break-word"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"word-spacing": {
+		syntax: "normal | <length>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"word-wrap": {
+		syntax: "normal | break-word",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "break-word"
+					}
+				]
+			}
+		]
+	},
+	"writing-mode": {
+		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "horizontal-tb"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "vertical-rl"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "vertical-lr"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "sideways-rl"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "sideways-lr"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"z-index": {
+		syntax: "auto | <integer>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "integer"
+					}
+				]
+			}
+		]
+	},
+	zoom: {
+		syntax: "normal | reset | <number> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "reset"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+};
+var functions = {
+	anchor: {
+		syntax: "anchor( <anchor-element>? <anchor-side>, <length-percentage>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "anchor",
+				chi: [
+					{
+						typ: 2,
+						val: "anchor-element",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "anchor-side"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/anchor"
+	},
+	"anchor-size": {
+		syntax: "anchor-size( <anchor-element>? <anchor-size>, <length-percentage>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "anchor-size",
+				chi: [
+					{
+						typ: 2,
+						val: "anchor-element",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "anchor-size"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/anchor-size"
+	},
+	attr: {
+		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "attr",
+				chi: [
+					{
+						typ: 2,
+						val: "attr-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "type-or-unit",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "attr-fallback"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/attr"
+	},
+	blur: {
+		syntax: "blur( <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "blur",
+				chi: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/blur"
+	},
+	brightness: {
+		syntax: "brightness( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "brightness",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/brightness"
+	},
+	calc: {
+		syntax: "calc( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "calc",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/calc"
+	},
+	circle: {
+		syntax: "circle( [ <shape-radius> ]? [ at <position> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "circle",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "shape-radius"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/basic-shape/circle"
+	},
+	clamp: {
+		syntax: "clamp( <calc-sum>#{3} )",
+		ast: [
+			{
+				typ: 19,
+				val: "clamp",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true,
+						occurence: {
+							min: 3,
+							max: 0
+						}
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/clamp"
+	},
+	"conic-gradient": {
+		syntax: "conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "conic-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "from"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "angular-color-stop-list"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/gradient/conic-gradient"
+	},
+	contrast: {
+		syntax: "contrast( [ <number-percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "contrast",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "number-percentage"
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/contrast"
+	},
+	counter: {
+		syntax: "counter( <custom-ident>, <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "counter",
+				chi: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/counter"
+	},
+	counters: {
+		syntax: "counters( <custom-ident>, <string>, <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "counters",
+				chi: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "string"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/counters"
+	},
+	"cross-fade": {
+		syntax: "cross-fade( <cf-mixing-image> , <cf-final-image>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "cross-fade",
+				chi: [
+					{
+						typ: 2,
+						val: "cf-mixing-image"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "cf-final-image",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/cross-fade"
+	},
+	"drop-shadow": {
+		syntax: "drop-shadow( <length>{2,3} <color>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "drop-shadow",
+				chi: [
+					{
+						typ: 2,
+						val: "length",
+						occurence: {
+							min: 2,
+							max: 3
+						}
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/drop-shadow"
+	},
+	element: {
+		syntax: "element( <id-selector> )",
+		ast: [
+			{
+				typ: 19,
+				val: "element",
+				chi: [
+					{
+						typ: 2,
+						val: "id-selector"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/element"
+	},
+	ellipse: {
+		syntax: "ellipse( [ <shape-radius>{2} ]? [ at <position> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "ellipse",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "shape-radius",
+								occurence: {
+									min: 2,
+									max: 0
+								}
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/basic-shape/ellipse"
+	},
+	env: {
+		syntax: "env( <custom-ident> , <declaration-value>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "env",
+				chi: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "declaration-value",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/env"
+	},
+	"fit-content": {
+		syntax: "fit-content( [ <length> | <percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "fit-content",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/fit-content"
+	},
+	grayscale: {
+		syntax: "grayscale( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "grayscale",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/grayscale"
+	},
+	hsl: {
+		syntax: "hsl( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsl( <hue>, <percentage>, <percentage>, <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "hsl",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "hsl",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "alpha-value",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/color_value/hsl"
+	},
+	hsla: {
+		syntax: "hsla( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsla( <hue>, <percentage>, <percentage>, <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "hsla",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "hsla",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "alpha-value",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/color_value/hsla"
+	},
+	"hue-rotate": {
+		syntax: "hue-rotate( <angle> )",
+		ast: [
+			{
+				typ: 19,
+				val: "hue-rotate",
+				chi: [
+					{
+						typ: 2,
+						val: "angle"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/hue-rotate"
+	},
+	image: {
+		syntax: "image( <image-tags>? [ <image-src>? , <color>? ]! )",
+		ast: [
+			{
+				typ: 19,
+				val: "image",
+				chi: [
+					{
+						typ: 2,
+						val: "image-tags",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "image-src",
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "color",
+								isOptional: true
+							}
+						],
+						isRepeatableGroup: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/image/image"
+	},
+	"image-set": {
+		syntax: "image-set( <image-set-option># )",
+		ast: [
+			{
+				typ: 19,
+				val: "image-set",
+				chi: [
+					{
+						typ: 2,
+						val: "image-set-option",
+						isList: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/image/image-set"
+	},
+	inset: {
+		syntax: "inset( <length-percentage>{1,4} [ round <'border-radius'> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "inset",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage",
+						occurence: {
+							min: 1,
+							max: 4
+						}
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "round"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 3,
+								val: "border-radius"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/basic-shape/inset"
+	},
+	invert: {
+		syntax: "invert( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "invert",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/invert"
+	},
+	leader: {
+		syntax: "leader( <leader-type> )",
+		ast: [
+			{
+				typ: 19,
+				val: "leader",
+				chi: [
+					{
+						typ: 2,
+						val: "leader-type"
+					}
+				]
+			}
+		]
+	},
+	"linear-gradient": {
+		syntax: "linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "linear-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "to"
+									}
+								]
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "side-or-corner"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/gradient/linear-gradient"
+	},
+	matrix: {
+		syntax: "matrix( <number>#{6} )",
+		ast: [
+			{
+				typ: 19,
+				val: "matrix",
+				chi: [
+					{
+						typ: 2,
+						val: "number",
+						isList: true,
+						occurence: {
+							min: 6,
+							max: 0
+						}
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/matrix"
+	},
+	matrix3d: {
+		syntax: "matrix3d( <number>#{16} )",
+		ast: [
+			{
+				typ: 19,
+				val: "matrix3d",
+				chi: [
+					{
+						typ: 2,
+						val: "number",
+						isList: true,
+						occurence: {
+							min: 16,
+							max: 0
+						}
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/matrix3d"
+	},
+	max: {
+		syntax: "max( <calc-sum># )",
+		ast: [
+			{
+				typ: 19,
+				val: "max",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/max"
+	},
+	min: {
+		syntax: "min( <calc-sum># )",
+		ast: [
+			{
+				typ: 19,
+				val: "min",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/min"
+	},
+	minmax: {
+		syntax: "minmax( [ <length> | <percentage> | min-content | max-content | auto ] , [ <length> | <percentage> | <flex> | min-content | max-content | auto ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "minmax",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "percentage"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "min-content"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "max-content"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "auto"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "percentage"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 2,
+														val: "flex"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "min-content"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "max-content"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "auto"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/minmax"
+	},
+	oklab: {
+		syntax: "oklab( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "oklab",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/color_value/oklab"
+	},
+	oklch: {
+		syntax: "oklch( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "oklch",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "hue"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/color_value/oklch"
+	},
+	opacity: {
+		syntax: "opacity( [ <number-percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "opacity",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "number-percentage"
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/opacity"
+	},
+	path: {
+		syntax: "path( [ <fill-rule>, ]? <string> )",
+		ast: [
+			{
+				typ: 19,
+				val: "path",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "fill-rule"
+							},
+							{
+								typ: 11
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "string"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/basic-shape/path"
+	},
+	paint: {
+		syntax: "paint( <ident>, <declaration-value>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "paint",
+				chi: [
+					{
+						typ: 2,
+						val: "ident"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "declaration-value",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/image/paint"
+	},
+	perspective: {
+		syntax: "perspective( <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "perspective",
+				chi: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/perspective"
+	},
+	polygon: {
+		syntax: "polygon( <fill-rule>? , [ <length-percentage> <length-percentage> ]# )",
+		ast: [
+			{
+				typ: 19,
+				val: "polygon",
+				chi: [
+					{
+						typ: 2,
+						val: "fill-rule",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						isList: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/basic-shape/polygon"
+	},
+	"radial-gradient": {
+		syntax: "radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "radial-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "ending-shape"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "size"
+									}
+								]
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/gradient/radial-gradient"
+	},
+	ray: {
+		syntax: "ray( <angle> && <ray-size>? && contain? && [at <position>]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "ray",
+				chi: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						r: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 2,
+										val: "ray-size",
+										isOptional: true
+									}
+								],
+								r: [
+									{
+										typ: 30,
+										l: [
+											{
+												typ: 1,
+												val: "contain",
+												isOptional: true
+											}
+										],
+										r: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 1,
+														val: "at"
+													},
+													{
+														typ: 21
+													},
+													{
+														typ: 2,
+														val: "position"
+													}
+												],
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/ray"
+	},
+	"repeating-linear-gradient": {
+		syntax: "repeating-linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeating-linear-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "to"
+									}
+								]
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "side-or-corner"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/repeating-linear-gradient"
+	},
+	"repeating-radial-gradient": {
+		syntax: "repeating-radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeating-radial-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "ending-shape"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "size"
+									}
+								]
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/gradient/repeating-linear-gradient"
+	},
+	rgb: {
+		syntax: "rgb( <percentage>{3} [ / <alpha-value> ]? ) | rgb( <number>{3} [ / <alpha-value> ]? ) | rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "rgb",
+						chi: [
+							{
+								typ: 2,
+								val: "percentage",
+								occurence: {
+									min: 3,
+									max: 0
+								}
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "rgb",
+								chi: [
+									{
+										typ: 2,
+										val: "number",
+										occurence: {
+											min: 3,
+											max: 0
+										}
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 25
+											},
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										isOptional: true
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 19,
+										val: "rgb",
+										chi: [
+											{
+												typ: 2,
+												val: "percentage",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 19,
+										val: "rgb",
+										chi: [
+											{
+												typ: 2,
+												val: "number",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/color_value/rgb"
+	},
+	rgba: {
+		syntax: "rgba( <percentage>{3} [ / <alpha-value> ]? ) | rgba( <number>{3} [ / <alpha-value> ]? ) | rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "rgba",
+						chi: [
+							{
+								typ: 2,
+								val: "percentage",
+								occurence: {
+									min: 3,
+									max: 0
+								}
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "rgba",
+								chi: [
+									{
+										typ: 2,
+										val: "number",
+										occurence: {
+											min: 3,
+											max: 0
+										}
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 25
+											},
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										isOptional: true
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 19,
+										val: "rgba",
+										chi: [
+											{
+												typ: 2,
+												val: "percentage",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 19,
+										val: "rgba",
+										chi: [
+											{
+												typ: 2,
+												val: "number",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/color_value/rgba"
+	},
+	rotate: {
+		syntax: "rotate( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotate",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/rotate"
+	},
+	rotate3d: {
+		syntax: "rotate3d( <number> , <number> , <number> , [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotate3d",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/rotate3d"
+	},
+	rotateX: {
+		syntax: "rotateX( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotateX",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/rotateX"
+	},
+	rotateY: {
+		syntax: "rotateY( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotateY",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/rotateY"
+	},
+	rotateZ: {
+		syntax: "rotateZ( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotateZ",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/rotateZ"
+	},
+	saturate: {
+		syntax: "saturate( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "saturate",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/saturate"
+	},
+	scale: {
+		syntax: "scale( <number> , <number>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "scale",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/scale"
+	},
+	scale3d: {
+		syntax: "scale3d( <number> , <number> , <number> )",
+		ast: [
+			{
+				typ: 19,
+				val: "scale3d",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/scale3d"
+	},
+	scaleX: {
+		syntax: "scaleX( <number> )",
+		ast: [
+			{
+				typ: 19,
+				val: "scaleX",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/scaleX"
+	},
+	scaleY: {
+		syntax: "scaleY( <number> )",
+		ast: [
+			{
+				typ: 19,
+				val: "scaleY",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/scaleY"
+	},
+	scaleZ: {
+		syntax: "scaleZ( <number> )",
+		ast: [
+			{
+				typ: 19,
+				val: "scaleZ",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/scaleZ"
+	},
+	scroll: {
+		syntax: "scroll([<axis> || <scroller>]?)",
+		ast: [
+			{
+				typ: 19,
+				val: "scroll",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "axis"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "scroller"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/animation-timeline/scroll"
+	},
+	skew: {
+		syntax: "skew( [ <angle> | <zero> ] , [ <angle> | <zero> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "skew",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/skew"
+	},
+	skewX: {
+		syntax: "skewX( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "skewX",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/skewX"
+	},
+	skewY: {
+		syntax: "skewY( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "skewY",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/skewY"
+	},
+	sepia: {
+		syntax: "sepia( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "sepia",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/filter-function/sepia"
+	},
+	"target-counter": {
+		syntax: "target-counter( [ <string> | <url> ] , <custom-ident> , <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "target-counter",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "url"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"target-counters": {
+		syntax: "target-counters( [ <string> | <url> ] , <custom-ident> , <string> , <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "target-counters",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "url"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "string"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"target-text": {
+		syntax: "target-text( [ <string> | <url> ] , [ content | before | after | first-letter ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "target-text",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "url"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "content"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "before"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "after"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "first-letter"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	translate: {
+		syntax: "translate( <length-percentage> , <length-percentage>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "translate",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/translate"
+	},
+	translate3d: {
+		syntax: "translate3d( <length-percentage> , <length-percentage> , <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translate3d",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/translate3d"
+	},
+	translateX: {
+		syntax: "translateX( <length-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translateX",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/translateX"
+	},
+	translateY: {
+		syntax: "translateY( <length-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translateY",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/translateY"
+	},
+	translateZ: {
+		syntax: "translateZ( <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translateZ",
+				chi: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/transform-function/translateZ"
+	},
+	"var": {
+		syntax: "var( <custom-property-name> , <declaration-value>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "var",
+				chi: [
+					{
+						typ: 2,
+						val: "custom-property-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "declaration-value",
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/var"
+	},
+	view: {
+		syntax: "view([<axis> || <'view-timeline-inset'>]?)",
+		ast: [
+			{
+				typ: 19,
+				val: "view",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "axis"
+									}
+								],
+								r: [
+									{
+										typ: 3,
+										val: "view-timeline-inset"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		],
+		mdn_url: "https://developer.mozilla.org/docs/Web/CSS/animation-timeline/view"
+	}
+};
+var syntaxes = {
+	"abs()": {
+		syntax: "abs( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "abs",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"absolute-size": {
+		syntax: "xx-small | x-small | small | medium | large | x-large | xx-large | xxx-large",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "xx-small"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "x-small"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "small"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "medium"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "large"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "x-large"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "xx-large"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "xxx-large"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"acos()": {
+		syntax: "acos( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "acos",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"alpha-value": {
+		syntax: "<number> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"angle-percentage": {
+		syntax: "<angle> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "angle"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"angular-color-hint": {
+		syntax: "<angle-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "angle-percentage"
+			}
+		]
+	},
+	"angular-color-stop": {
+		syntax: "<color> && <color-stop-angle>?",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 2,
+						val: "color"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color-stop-angle",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"angular-color-stop-list": {
+		syntax: "[ <angular-color-stop> [, <angular-color-hint>]? ]# , <angular-color-stop>",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "angular-color-stop"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "angular-color-hint"
+							}
+						],
+						isOptional: true
+					}
+				],
+				isList: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 11
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "angular-color-stop"
+			}
+		]
+	},
+	"animateable-feature": {
+		syntax: "scroll-position | contents | <custom-ident>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "scroll-position"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "contents"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "custom-ident"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"asin()": {
+		syntax: "asin( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "asin",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"atan()": {
+		syntax: "atan( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "atan",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"atan2()": {
+		syntax: "atan2( <calc-sum>, <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "atan2",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	attachment: {
+		syntax: "scroll | fixed | local",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "scroll"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "fixed"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "local"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"attr()": {
+		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "attr",
+				chi: [
+					{
+						typ: 2,
+						val: "attr-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "type-or-unit",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "attr-fallback"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"attr-matcher": {
+		syntax: "[ '~' | '|' | '^' | '$' | '*' ]? '='",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "'~'"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "'"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "'"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "'^'"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "'$'"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "'",
+																isRepeatable: true
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'='"
+			}
+		]
+	},
+	"attr-modifier": {
+		syntax: "i | s",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "i"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "s"
+					}
+				]
+			}
+		]
+	},
+	"attribute-selector": {
+		syntax: "'[' <wq-name> ']' | '[' <wq-name> <attr-matcher> [ <string-token> | <ident-token> ] <attr-modifier>? ']'",
+		ast: [
+			{
+				typ: 1,
+				val: "'"
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "wq-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				]
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "'"
+					}
+				]
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "wq-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "attr-matcher"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string-token"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "ident-token"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "attr-modifier",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				]
+			},
+			{
+				typ: 1,
+				val: "'"
+			}
+		]
+	},
+	"auto-repeat": {
+		syntax: "repeat( [ auto-fill | auto-fit ] , [ <line-names>? <fixed-size> ]+ <line-names>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeat",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "auto-fill"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto-fit"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "line-names",
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "fixed-size"
+							}
+						],
+						atLeastOnce: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"auto-track-list": {
+		syntax: "[ <line-names>? [ <fixed-size> | <fixed-repeat> ] ]* <line-names>? <auto-repeat>\n[ <line-names>? [ <fixed-size> | <fixed-repeat> ] ]* <line-names>?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "fixed-size"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "fixed-repeat"
+									}
+								]
+							}
+						]
+					}
+				],
+				isRepeatable: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "line-names",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "auto-repeat"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "fixed-size"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "fixed-repeat"
+									}
+								]
+							}
+						]
+					}
+				],
+				isRepeatable: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "line-names",
+				isOptional: true
+			}
+		]
+	},
+	axis: {
+		syntax: "block | inline | vertical | horizontal",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "block"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "inline"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "vertical"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "horizontal"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"baseline-position": {
+		syntax: "[ first | last ]? baseline",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "first"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "last"
+							}
+						]
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "baseline"
+			}
+		]
+	},
+	"basic-shape": {
+		syntax: "<inset()> | <circle()> | <ellipse()> | <polygon()> | <path()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "inset"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "circle"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 6,
+										val: "ellipse"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "polygon"
+											}
+										],
+										r: [
+											{
+												typ: 6,
+												val: "path"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"bg-image": {
+		syntax: "none | <image>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "image"
+					}
+				]
+			}
+		]
+	},
+	"bg-layer": {
+		syntax: "<bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <box> || <box>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "bg-image"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "bg-position"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 2,
+								val: "bg-size"
+							}
+						],
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "repeat-style"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "attachment"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "box"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "box"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"bg-position": {
+		syntax: "[ [ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] | [ center | [ left | right ] <length-percentage>? ] && [ center | [ top | bottom ] <length-percentage>? ] ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "top"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "bottom"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 2,
+																				val: "length-percentage"
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														],
+														r: [
+															{
+																typ: 2,
+																val: "length-percentage"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "top"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "bottom"
+															}
+														],
+														r: [
+															{
+																typ: 2,
+																val: "length-percentage"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 23,
+														chi: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "left"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "right"
+																	}
+																]
+															}
+														]
+													}
+												]
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "length-percentage",
+												isOptional: true
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 23,
+														chi: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "top"
+																	}
+																],
+																r: [
+																	{
+																		typ: 1,
+																		val: "bottom"
+																	}
+																]
+															}
+														]
+													}
+												]
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "length-percentage",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"bg-size": {
+		syntax: "[ <length-percentage> | auto ]{1,2} | cover | contain",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								]
+							}
+						],
+						occurence: {
+							min: 1,
+							max: 2
+						}
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "cover"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "contain"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"blur()": {
+		syntax: "blur( <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "blur",
+				chi: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"blend-mode": {
+		syntax: "normal | multiply | screen | overlay | darken | lighten | color-dodge | color-burn | hard-light | soft-light | difference | exclusion | hue | saturation | color | luminosity",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "multiply"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "screen"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "overlay"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "darken"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "lighten"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "color-dodge"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "color-burn"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "hard-light"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "soft-light"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "difference"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "exclusion"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "hue"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "saturation"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "color"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 1,
+																																		val: "luminosity"
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	box: {
+		syntax: "border-box | padding-box | content-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "border-box"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "padding-box"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "content-box"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"brightness()": {
+		syntax: "brightness( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "brightness",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		]
+	},
+	"calc()": {
+		syntax: "calc( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "calc",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"calc-sum": {
+		syntax: "<calc-product> [ [ '+' | '-' ] <calc-product> ]*",
+		ast: [
+			{
+				typ: 2,
+				val: "calc-product"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "'",
+								atLeastOnce: true
+							},
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "'"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "'-'"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-product"
+					}
+				],
+				isRepeatable: true
+			}
+		]
+	},
+	"calc-product": {
+		syntax: "<calc-value> [ '*' <calc-value> | '/' <number> ]*",
+		ast: [
+			{
+				typ: 2,
+				val: "calc-value"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'",
+						isRepeatable: true
+					},
+					{
+						typ: 1,
+						val: "'"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "calc-value"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "'/'"
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					}
+				],
+				isRepeatable: true
+			}
+		]
+	},
+	"calc-value": {
+		syntax: "<number> | <dimension> | <percentage> | <calc-constant> | ( <calc-sum> )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "dimension"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "calc-constant"
+											}
+										],
+										r: [
+											{
+												typ: 31,
+												val: "",
+												chi: [
+													{
+														typ: 2,
+														val: "calc-sum"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"calc-constant": {
+		syntax: "e | pi | infinity | -infinity | NaN",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "e"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "pi"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "infinity"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "-infinity"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "NaN"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"cf-final-image": {
+		syntax: "<image> | <color>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "image"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color"
+					}
+				]
+			}
+		]
+	},
+	"cf-mixing-image": {
+		syntax: "<percentage>? && <image>",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 2,
+						val: "percentage",
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "image"
+					}
+				]
+			}
+		]
+	},
+	"circle()": {
+		syntax: "circle( [ <shape-radius> ]? [ at <position> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "circle",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "shape-radius"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"clamp()": {
+		syntax: "clamp( <calc-sum>#{3} )",
+		ast: [
+			{
+				typ: 19,
+				val: "clamp",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true,
+						occurence: {
+							min: 3,
+							max: 0
+						}
+					}
+				]
+			}
+		]
+	},
+	"class-selector": {
+		syntax: "'.' <ident-token>",
+		ast: [
+			{
+				typ: 1,
+				val: "'.'"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "ident-token"
+			}
+		]
+	},
+	"clip-source": {
+		syntax: "<url>",
+		ast: [
+			{
+				typ: 2,
+				val: "url"
+			}
+		]
+	},
+	color: {
+		syntax: "<rgb()> | <rgba()> | <hsl()> | <hsla()> | <hwb()> | <lab()> | <lch()> | <light-dark()> | <hex-color> | <named-color> | currentcolor | <deprecated-system-color>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "rgb"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "rgba"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 6,
+										val: "hsl"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "hsla"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 6,
+														val: "hwb"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 6,
+																val: "lab"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 6,
+																		val: "lch"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 6,
+																				val: "light-dark"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 2,
+																						val: "hex-color"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 2,
+																								val: "named-color"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "currentcolor"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 2,
+																										val: "deprecated-system-color"
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"color-stop": {
+		syntax: "<color-stop-length> | <color-stop-angle>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "color-stop-length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "color-stop-angle"
+					}
+				]
+			}
+		]
+	},
+	"color-stop-angle": {
+		syntax: "<angle-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "angle-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"color-stop-length": {
+		syntax: "<length-percentage>{1,2}",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage",
+				occurence: {
+					min: 1,
+					max: 2
+				}
+			}
+		]
+	},
+	"color-stop-list": {
+		syntax: "[ <linear-color-stop> [, <linear-color-hint>]? ]# , <linear-color-stop>",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "linear-color-stop"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "linear-color-hint"
+							}
+						],
+						isOptional: true
+					}
+				],
+				isList: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 11
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "linear-color-stop"
+			}
+		]
+	},
+	combinator: {
+		syntax: "'>' | '+' | '~' | [ '||' ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "'>'"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "'",
+						atLeastOnce: true
+					}
+				]
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "'~'"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 1,
+												val: "'"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "'"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"common-lig-values": {
+		syntax: "[ common-ligatures | no-common-ligatures ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "common-ligatures"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "no-common-ligatures"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"compat-auto": {
+		syntax: "searchfield | textarea | push-button | slider-horizontal | checkbox | radio | square-button | menulist | listbox | meter | progress-bar | button",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "searchfield"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "textarea"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "push-button"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "slider-horizontal"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "checkbox"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "radio"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "square-button"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "menulist"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "listbox"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "meter"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "progress-bar"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 1,
+																										val: "button"
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"composite-style": {
+		syntax: "clear | copy | source-over | source-in | source-out | source-atop | destination-over | destination-in | destination-out | destination-atop | xor",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "clear"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "copy"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "source-over"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "source-in"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "source-out"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "source-atop"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "destination-over"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "destination-in"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "destination-out"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "destination-atop"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 1,
+																								val: "xor"
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"compositing-operator": {
+		syntax: "add | subtract | intersect | exclude",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "add"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "subtract"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "intersect"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "exclude"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"compound-selector": {
+		syntax: "[ <type-selector>? <subclass-selector>* [ <pseudo-element-selector> <pseudo-class-selector>* ]* ]!",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "type-selector",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "subclass-selector",
+						isRepeatable: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "pseudo-element-selector"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "pseudo-class-selector",
+								isRepeatable: true
+							}
+						],
+						isRepeatable: true
+					}
+				],
+				isRepeatableGroup: true
+			}
+		]
+	},
+	"compound-selector-list": {
+		syntax: "<compound-selector>#",
+		ast: [
+			{
+				typ: 2,
+				val: "compound-selector",
+				isList: true
+			}
+		]
+	},
+	"complex-selector": {
+		syntax: "<compound-selector> [ <combinator>? <compound-selector> ]*",
+		ast: [
+			{
+				typ: 2,
+				val: "compound-selector"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "combinator",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "compound-selector"
+					}
+				],
+				isRepeatable: true
+			}
+		]
+	},
+	"complex-selector-list": {
+		syntax: "<complex-selector>#",
+		ast: [
+			{
+				typ: 2,
+				val: "complex-selector",
+				isList: true
+			}
+		]
+	},
+	"conic-gradient()": {
+		syntax: "conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "conic-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "from"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "angular-color-stop-list"
+					}
+				]
+			}
+		]
+	},
+	"contextual-alt-values": {
+		syntax: "[ contextual | no-contextual ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "contextual"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "no-contextual"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"content-distribution": {
+		syntax: "space-between | space-around | space-evenly | stretch",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "space-between"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "space-around"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "space-evenly"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "stretch"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"content-list": {
+		syntax: "[ <string> | contents | <image> | <counter> | <quote> | <target> | <leader()> ]+",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "string"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "contents"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "image"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 2,
+														val: "counter"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 2,
+																val: "quote"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 2,
+																		val: "target"
+																	}
+																],
+																r: [
+																	{
+																		typ: 6,
+																		val: "leader"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				atLeastOnce: true
+			}
+		]
+	},
+	"content-position": {
+		syntax: "center | start | end | flex-start | flex-end",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "center"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "start"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "end"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "flex-start"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "flex-end"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"content-replacement": {
+		syntax: "<image>",
+		ast: [
+			{
+				typ: 2,
+				val: "image"
+			}
+		]
+	},
+	"contrast()": {
+		syntax: "contrast( [ <number-percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "contrast",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "number-percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"cos()": {
+		syntax: "cos( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "cos",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	counter: {
+		syntax: "<counter()> | <counters()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "counter"
+					}
+				],
+				r: [
+					{
+						typ: 6,
+						val: "counters"
+					}
+				]
+			}
+		]
+	},
+	"counter()": {
+		syntax: "counter( <counter-name>, <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "counter",
+				chi: [
+					{
+						typ: 2,
+						val: "counter-name"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"counter-name": {
+		syntax: "<custom-ident>",
+		ast: [
+			{
+				typ: 2,
+				val: "custom-ident"
+			}
+		]
+	},
+	"counter-style": {
+		syntax: "<counter-style-name> | symbols()",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "counter-style-name"
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "symbols",
+						chi: [
+						]
+					}
+				]
+			}
+		]
+	},
+	"counter-style-name": {
+		syntax: "<custom-ident>",
+		ast: [
+			{
+				typ: 2,
+				val: "custom-ident"
+			}
+		]
+	},
+	"counters()": {
+		syntax: "counters( <counter-name>, <string>, <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "counters",
+				chi: [
+					{
+						typ: 2,
+						val: "counter-name"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "string"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"cross-fade()": {
+		syntax: "cross-fade( <cf-mixing-image> , <cf-final-image>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "cross-fade",
+				chi: [
+					{
+						typ: 2,
+						val: "cf-mixing-image"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "cf-final-image",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"cubic-bezier-timing-function": {
+		syntax: "ease | ease-in | ease-out | ease-in-out | cubic-bezier(<number [0,1]>, <number>, <number [0,1]>, <number>)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "ease"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "ease-in"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "ease-out"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "ease-in-out"
+											}
+										],
+										r: [
+											{
+												typ: 19,
+												val: "cubic-bezier",
+												chi: [
+													{
+														typ: 2,
+														val: "number",
+														range: [
+															0,
+															1
+														]
+													},
+													{
+														typ: 11
+													},
+													{
+														typ: 21
+													},
+													{
+														typ: 2,
+														val: "number"
+													},
+													{
+														typ: 11
+													},
+													{
+														typ: 21
+													},
+													{
+														typ: 2,
+														val: "number",
+														range: [
+															0,
+															1
+														]
+													},
+													{
+														typ: 11
+													},
+													{
+														typ: 21
+													},
+													{
+														typ: 2,
+														val: "number"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"deprecated-system-color": {
+		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonFace | ButtonHighlight | ButtonShadow | ButtonText | CaptionText | GrayText | Highlight | HighlightText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "ActiveBorder"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "ActiveCaption"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "AppWorkspace"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "Background"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "ButtonFace"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "ButtonHighlight"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "ButtonShadow"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "ButtonText"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "CaptionText"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "GrayText"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "Highlight"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "HighlightText"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "InactiveBorder"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "InactiveCaption"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "InactiveCaptionText"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 1,
+																																				val: "InfoBackground"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "InfoText"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "Menu"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "MenuText"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "Scrollbar"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "ThreeDDarkShadow"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 28,
+																																														l: [
+																																															{
+																																																typ: 1,
+																																																val: "ThreeDFace"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 28,
+																																																l: [
+																																																	{
+																																																		typ: 1,
+																																																		val: "ThreeDHighlight"
+																																																	}
+																																																],
+																																																r: [
+																																																	{
+																																																		typ: 28,
+																																																		l: [
+																																																			{
+																																																				typ: 1,
+																																																				val: "ThreeDLightShadow"
+																																																			}
+																																																		],
+																																																		r: [
+																																																			{
+																																																				typ: 28,
+																																																				l: [
+																																																					{
+																																																						typ: 1,
+																																																						val: "ThreeDShadow"
+																																																					}
+																																																				],
+																																																				r: [
+																																																					{
+																																																						typ: 28,
+																																																						l: [
+																																																							{
+																																																								typ: 1,
+																																																								val: "Window"
+																																																							}
+																																																						],
+																																																						r: [
+																																																							{
+																																																								typ: 28,
+																																																								l: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "WindowFrame"
+																																																									}
+																																																								],
+																																																								r: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "WindowText"
+																																																									}
+																																																								]
+																																																							}
+																																																						]
+																																																					}
+																																																				]
+																																																			}
+																																																		]
+																																																	}
+																																																]
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"discretionary-lig-values": {
+		syntax: "[ discretionary-ligatures | no-discretionary-ligatures ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "discretionary-ligatures"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "no-discretionary-ligatures"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"display-box": {
+		syntax: "contents | none",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "contents"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				]
+			}
+		]
+	},
+	"display-inside": {
+		syntax: "flow | flow-root | table | flex | grid | ruby",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "flow"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "flow-root"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "table"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "flex"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "grid"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "ruby"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"display-internal": {
+		syntax: "table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "table-row-group"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "table-header-group"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "table-footer-group"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "table-row"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "table-cell"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "table-column-group"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "table-column"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "table-caption"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "ruby-base"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "ruby-text"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "ruby-base-container"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 1,
+																										val: "ruby-text-container"
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"display-legacy": {
+		syntax: "inline-block | inline-list-item | inline-table | inline-flex | inline-grid",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "inline-block"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "inline-list-item"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "inline-table"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "inline-flex"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "inline-grid"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"display-listitem": {
+		syntax: "<display-outside>? && [ flow | flow-root ]? && list-item",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 2,
+						val: "display-outside",
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "flow"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "flow-root"
+											}
+										]
+									}
+								],
+								isOptional: true
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "list-item"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"display-outside": {
+		syntax: "block | inline | run-in",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "block"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "inline"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "run-in"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"drop-shadow()": {
+		syntax: "drop-shadow( <length>{2,3} <color>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "drop-shadow",
+				chi: [
+					{
+						typ: 2,
+						val: "length",
+						occurence: {
+							min: 2,
+							max: 3
+						}
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"east-asian-variant-values": {
+		syntax: "[ jis78 | jis83 | jis90 | jis04 | simplified | traditional ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "jis78"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "jis83"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "jis90"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "jis04"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "simplified"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "traditional"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"east-asian-width-values": {
+		syntax: "[ full-width | proportional-width ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "full-width"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "proportional-width"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"element()": {
+		syntax: "element( <id-selector> )",
+		ast: [
+			{
+				typ: 19,
+				val: "element",
+				chi: [
+					{
+						typ: 2,
+						val: "id-selector"
+					}
+				]
+			}
+		]
+	},
+	"ellipse()": {
+		syntax: "ellipse( [ <shape-radius>{2} ]? [ at <position> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "ellipse",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "shape-radius",
+								occurence: {
+									min: 2,
+									max: 0
+								}
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"ending-shape": {
+		syntax: "circle | ellipse",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "circle"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "ellipse"
+					}
+				]
+			}
+		]
+	},
+	"env()": {
+		syntax: "env( <custom-ident> , <declaration-value>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "env",
+				chi: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "declaration-value",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"exp()": {
+		syntax: "exp( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "exp",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"explicit-track-list": {
+		syntax: "[ <line-names>? <track-size> ]+ <line-names>?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "track-size"
+					}
+				],
+				atLeastOnce: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "line-names",
+				isOptional: true
+			}
+		]
+	},
+	"family-name": {
+		syntax: "<string> | <custom-ident>+",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "string"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "custom-ident",
+						atLeastOnce: true
+					}
+				]
+			}
+		]
+	},
+	"feature-tag-value": {
+		syntax: "<string> [ <integer> | on | off ]?",
+		ast: [
+			{
+				typ: 2,
+				val: "string"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "integer"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "on"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "off"
+									}
+								]
+							}
+						]
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"feature-type": {
+		syntax: "@stylistic | @historical-forms | @styleset | @character-variant | @swash | @ornaments | @annotation",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "@stylistic"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "@historical-forms"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "@styleset"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "@character-variant"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "@swash"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "@ornaments"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "@annotation"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"feature-value-block": {
+		syntax: "<feature-type> '{' <feature-value-declaration-list> '}'",
+		ast: [
+			{
+				typ: 2,
+				val: "feature-type"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			},
+			{
+				typ: 1,
+				val: "'"
+			}
+		]
+	},
+	"feature-value-block-list": {
+		syntax: "<feature-value-block>+",
+		ast: [
+			{
+				typ: 2,
+				val: "feature-value-block",
+				atLeastOnce: true
+			}
+		]
+	},
+	"feature-value-declaration": {
+		syntax: "<custom-ident>: <integer>+;",
+		ast: [
+			{
+				typ: 2,
+				val: "custom-ident"
+			},
+			{
+				typ: 1,
+				val: ":"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "integer",
+				atLeastOnce: true
+			},
+			{
+				typ: 1,
+				val: ";"
+			}
+		]
+	},
+	"feature-value-declaration-list": {
+		syntax: "<feature-value-declaration>",
+		ast: [
+			{
+				typ: 2,
+				val: "feature-value-declaration"
+			}
+		]
+	},
+	"feature-value-name": {
+		syntax: "<custom-ident>",
+		ast: [
+			{
+				typ: 2,
+				val: "custom-ident"
+			}
+		]
+	},
+	"fill-rule": {
+		syntax: "nonzero | evenodd",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "nonzero"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "evenodd"
+					}
+				]
+			}
+		]
+	},
+	"filter-function": {
+		syntax: "<blur()> | <brightness()> | <contrast()> | <drop-shadow()> | <grayscale()> | <hue-rotate()> | <invert()> | <opacity()> | <saturate()> | <sepia()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "blur"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "brightness"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 6,
+										val: "contrast"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "drop-shadow"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 6,
+														val: "grayscale"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 6,
+																val: "hue-rotate"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 6,
+																		val: "invert"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 6,
+																				val: "opacity"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 6,
+																						val: "saturate"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 6,
+																						val: "sepia"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"filter-function-list": {
+		syntax: "[ <filter-function> | <url> ]+",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "filter-function"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "url"
+							}
+						]
+					}
+				],
+				atLeastOnce: true
+			}
+		]
+	},
+	"final-bg-layer": {
+		syntax: "<'background-color'> || <bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <box> || <box>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "background-color"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "bg-image"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "bg-position"
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 2,
+								val: "bg-size"
+							}
+						],
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "repeat-style"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "attachment"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "box"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "box"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"fixed-breadth": {
+		syntax: "<length-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage"
+			}
+		]
+	},
+	"fixed-repeat": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <line-names>? <fixed-size> ]+ <line-names>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeat",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "integer",
+								range: [
+									1,
+									null
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "line-names",
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "fixed-size"
+							}
+						],
+						atLeastOnce: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"fixed-size": {
+		syntax: "<fixed-breadth> | minmax( <fixed-breadth> , <track-breadth> ) | minmax( <inflexible-breadth> , <fixed-breadth> )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "fixed-breadth"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "minmax",
+								chi: [
+									{
+										typ: 2,
+										val: "fixed-breadth"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 11
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "track-breadth"
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 19,
+								val: "minmax",
+								chi: [
+									{
+										typ: 2,
+										val: "inflexible-breadth"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 11
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "fixed-breadth"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-stretch-absolute": {
+		syntax: "normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "ultra-condensed"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "extra-condensed"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "condensed"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "semi-condensed"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "semi-expanded"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "expanded"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "extra-expanded"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "ultra-expanded"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 2,
+																						val: "percentage"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-variant-css21": {
+		syntax: "[ normal | small-caps ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "normal"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "small-caps"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"font-weight-absolute": {
+		syntax: "normal | bold | <number [1,1000]>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "bold"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "number",
+								range: [
+									1,
+									1000
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"frequency-percentage": {
+		syntax: "<frequency> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "frequency"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"general-enclosed": {
+		syntax: "[ <function-token> <any-value> ) ] | ( <ident> <any-value> )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "function-token"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "any-value"
+							},
+							{
+								typ: 21
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 31,
+						val: "",
+						chi: [
+							{
+								typ: 2,
+								val: "ident"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "any-value"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"generic-family": {
+		syntax: "serif | sans-serif | cursive | fantasy | monospace",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "serif"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "sans-serif"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "cursive"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "fantasy"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "monospace"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"generic-name": {
+		syntax: "serif | sans-serif | cursive | fantasy | monospace",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "serif"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "sans-serif"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "cursive"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "fantasy"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "monospace"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"geometry-box": {
+		syntax: "<shape-box> | fill-box | stroke-box | view-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "shape-box"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "fill-box"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "stroke-box"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "view-box"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	gradient: {
+		syntax: "<linear-gradient()> | <repeating-linear-gradient()> | <radial-gradient()> | <repeating-radial-gradient()> | <conic-gradient()> | <repeating-conic-gradient()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "linear-gradient"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "repeating-linear-gradient"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 6,
+										val: "radial-gradient"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "repeating-radial-gradient"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 6,
+														val: "conic-gradient"
+													}
+												],
+												r: [
+													{
+														typ: 6,
+														val: "repeating-conic-gradient"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"grayscale()": {
+		syntax: "grayscale( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "grayscale",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		]
+	},
+	"grid-line": {
+		syntax: "auto | <custom-ident> | [ <integer> && <custom-ident>? ] | [ span && [ <integer> || <custom-ident> ] ]",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "custom-ident"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 30,
+												l: [
+													{
+														typ: 2,
+														val: "integer"
+													}
+												],
+												r: [
+													{
+														typ: 2,
+														val: "custom-ident",
+														isOptional: true
+													}
+												]
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 30,
+												l: [
+													{
+														typ: 1,
+														val: "span"
+													}
+												],
+												r: [
+													{
+														typ: 23,
+														chi: [
+															{
+																typ: 29,
+																l: [
+																	{
+																		typ: 2,
+																		val: "integer"
+																	}
+																],
+																r: [
+																	{
+																		typ: 2,
+																		val: "custom-ident"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"historical-lig-values": {
+		syntax: "[ historical-ligatures | no-historical-ligatures ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "historical-ligatures"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "no-historical-ligatures"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"hsl()": {
+		syntax: "hsl( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsl( <hue>, <percentage>, <percentage>, <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "hsl",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "hsl",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "alpha-value",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"hsla()": {
+		syntax: "hsla( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsla( <hue>, <percentage>, <percentage>, <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "hsla",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 19,
+						val: "hsla",
+						chi: [
+							{
+								typ: 2,
+								val: "hue"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "percentage"
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "alpha-value",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	hue: {
+		syntax: "<number> | <angle>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "angle"
+					}
+				]
+			}
+		]
+	},
+	"hue-rotate()": {
+		syntax: "hue-rotate( <angle> )",
+		ast: [
+			{
+				typ: 19,
+				val: "hue-rotate",
+				chi: [
+					{
+						typ: 2,
+						val: "angle"
+					}
+				]
+			}
+		]
+	},
+	"hwb()": {
+		syntax: "hwb( [<hue> | none] [<percentage> | none] [<percentage> | none] [ / [<alpha-value> | none] ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "hwb",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "hue"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"hypot()": {
+		syntax: "hypot( <calc-sum># )",
+		ast: [
+			{
+				typ: 19,
+				val: "hypot",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"id-selector": {
+		syntax: "<hash-token>",
+		ast: [
+			{
+				typ: 2,
+				val: "hash-token"
+			}
+		]
+	},
+	image: {
+		syntax: "<url> | <image()> | <image-set()> | <element()> | <paint()> | <cross-fade()> | <gradient>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "url"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "image"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 6,
+										val: "image-set"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "element"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 6,
+														val: "paint"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 6,
+																val: "cross-fade"
+															}
+														],
+														r: [
+															{
+																typ: 2,
+																val: "gradient"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"image()": {
+		syntax: "image( <image-tags>? [ <image-src>? , <color>? ]! )",
+		ast: [
+			{
+				typ: 19,
+				val: "image",
+				chi: [
+					{
+						typ: 2,
+						val: "image-tags",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "image-src",
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 11
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "color",
+								isOptional: true
+							}
+						],
+						isRepeatableGroup: true
+					}
+				]
+			}
+		]
+	},
+	"image-set()": {
+		syntax: "image-set( <image-set-option># )",
+		ast: [
+			{
+				typ: 19,
+				val: "image-set",
+				chi: [
+					{
+						typ: 2,
+						val: "image-set-option",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"image-set-option": {
+		syntax: "[ <image> | <string> ] [ <resolution> || type(<string>) ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "image"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "string"
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "resolution"
+							}
+						],
+						r: [
+							{
+								typ: 19,
+								val: "type",
+								chi: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"image-src": {
+		syntax: "<url> | <string>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "url"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "string"
+					}
+				]
+			}
+		]
+	},
+	"image-tags": {
+		syntax: "ltr | rtl",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "ltr"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "rtl"
+					}
+				]
+			}
+		]
+	},
+	"inflexible-breadth": {
+		syntax: "<length-percentage> | min-content | max-content | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "min-content"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "max-content"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"inset()": {
+		syntax: "inset( <length-percentage>{1,4} [ round <'border-radius'> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "inset",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage",
+						occurence: {
+							min: 1,
+							max: 4
+						}
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "round"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 3,
+								val: "border-radius"
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"invert()": {
+		syntax: "invert( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "invert",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		]
+	},
+	"keyframes-name": {
+		syntax: "<custom-ident> | <string>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "string"
+					}
+				]
+			}
+		]
+	},
+	"keyframe-block": {
+		syntax: "<keyframe-selector># {\n  <declaration-list>\n}",
+		ast: [
+			{
+				typ: 2,
+				val: "keyframe-selector",
+				isList: true,
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"keyframe-block-list": {
+		syntax: "<keyframe-block>+",
+		ast: [
+			{
+				typ: 2,
+				val: "keyframe-block",
+				atLeastOnce: true
+			}
+		]
+	},
+	"keyframe-selector": {
+		syntax: "from | to | <percentage> | <timeline-range-name> <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "from"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "to"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "timeline-range-name"
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "percentage"
+			}
+		]
+	},
+	"lab()": {
+		syntax: "lab( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "lab",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"layer()": {
+		syntax: "layer( <layer-name> )",
+		ast: [
+			{
+				typ: 19,
+				val: "layer",
+				chi: [
+					{
+						typ: 2,
+						val: "layer-name"
+					}
+				]
+			}
+		]
+	},
+	"layer-name": {
+		syntax: "<ident> [ '.' <ident> ]*",
+		ast: [
+			{
+				typ: 2,
+				val: "ident"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'.'"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "ident"
+					}
+				],
+				isRepeatable: true
+			}
+		]
+	},
+	"lch()": {
+		syntax: "lch( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "lch",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "number"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "hue"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "none"
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"leader()": {
+		syntax: "leader( <leader-type> )",
+		ast: [
+			{
+				typ: 19,
+				val: "leader",
+				chi: [
+					{
+						typ: 2,
+						val: "leader-type"
+					}
+				]
+			}
+		]
+	},
+	"leader-type": {
+		syntax: "dotted | solid | space | <string>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "dotted"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "solid"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "space"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"length-percentage": {
+		syntax: "<length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"light-dark()": {
+		syntax: "light-dark( <color>, <color> )",
+		ast: [
+			{
+				typ: 19,
+				val: "light-dark",
+				chi: [
+					{
+						typ: 2,
+						val: "color"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color"
+					}
+				]
+			}
+		]
+	},
+	"line-names": {
+		syntax: "'[' <custom-ident>* ']'",
+		ast: [
+			{
+				typ: 1,
+				val: "'"
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "custom-ident",
+						isRepeatable: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				]
+			},
+			{
+				typ: 1,
+				val: "'"
+			}
+		]
+	},
+	"line-name-list": {
+		syntax: "[ <line-names> | <name-repeat> ]+",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "line-names"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "name-repeat"
+							}
+						]
+					}
+				],
+				atLeastOnce: true
+			}
+		]
+	},
+	"line-style": {
+		syntax: "none | hidden | dotted | dashed | solid | double | groove | ridge | inset | outset",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "hidden"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "dotted"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "dashed"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "solid"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "double"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "groove"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "ridge"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "inset"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 1,
+																						val: "outset"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"line-width": {
+		syntax: "<length> | thin | medium | thick",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "thin"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "medium"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "thick"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"linear-color-hint": {
+		syntax: "<length-percentage>",
+		ast: [
+			{
+				typ: 2,
+				val: "length-percentage"
+			}
+		]
+	},
+	"linear-color-stop": {
+		syntax: "<color> <color-stop-length>?",
+		ast: [
+			{
+				typ: 2,
+				val: "color"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "color-stop-length",
+				isOptional: true
+			}
+		]
+	},
+	"linear-gradient()": {
+		syntax: "linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "linear-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "to"
+									}
+								]
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "side-or-corner"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		]
+	},
+	"log()": {
+		syntax: "log( <calc-sum>, <calc-sum>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "log",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"mask-layer": {
+		syntax: "<mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || <geometry-box> || [ <geometry-box> | no-clip ] || <compositing-operator> || <masking-mode>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 2,
+						val: "mask-reference"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "position"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 25
+							},
+							{
+								typ: 2,
+								val: "bg-size"
+							}
+						],
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "repeat-style"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "geometry-box"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 2,
+																val: "geometry-box"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "no-clip"
+															}
+														]
+													}
+												]
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "compositing-operator"
+													}
+												],
+												r: [
+													{
+														typ: 2,
+														val: "masking-mode"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"mask-position": {
+		syntax: "[ <length-percentage> | left | center | right ] [ <length-percentage> | top | center | bottom ]?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "center"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "right"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "top"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "center"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "bottom"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"mask-reference": {
+		syntax: "none | <image> | <mask-source>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "image"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "mask-source"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"mask-source": {
+		syntax: "<url>",
+		ast: [
+			{
+				typ: 2,
+				val: "url"
+			}
+		]
+	},
+	"masking-mode": {
+		syntax: "alpha | luminance | match-source",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "alpha"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "luminance"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "match-source"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"matrix()": {
+		syntax: "matrix( <number>#{6} )",
+		ast: [
+			{
+				typ: 19,
+				val: "matrix",
+				chi: [
+					{
+						typ: 2,
+						val: "number",
+						isList: true,
+						occurence: {
+							min: 6,
+							max: 0
+						}
+					}
+				]
+			}
+		]
+	},
+	"matrix3d()": {
+		syntax: "matrix3d( <number>#{16} )",
+		ast: [
+			{
+				typ: 19,
+				val: "matrix3d",
+				chi: [
+					{
+						typ: 2,
+						val: "number",
+						isList: true,
+						occurence: {
+							min: 16,
+							max: 0
+						}
+					}
+				]
+			}
+		]
+	},
+	"max()": {
+		syntax: "max( <calc-sum># )",
+		ast: [
+			{
+				typ: 19,
+				val: "max",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"media-and": {
+		syntax: "<media-in-parens> [ and <media-in-parens> ]+",
+		ast: [
+			{
+				typ: 2,
+				val: "media-in-parens"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "and"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "media-in-parens"
+					}
+				],
+				atLeastOnce: true
+			}
+		]
+	},
+	"media-condition": {
+		syntax: "<media-not> | <media-and> | <media-or> | <media-in-parens>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "media-not"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "media-and"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "media-or"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "media-in-parens"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"media-condition-without-or": {
+		syntax: "<media-not> | <media-and> | <media-in-parens>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "media-not"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "media-and"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "media-in-parens"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"media-feature": {
+		syntax: "( [ <mf-plain> | <mf-boolean> | <mf-range> ] )",
+		ast: [
+			{
+				typ: 31,
+				val: "",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "mf-plain"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "mf-boolean"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "mf-range"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"media-in-parens": {
+		syntax: "( <media-condition> ) | <media-feature> | <general-enclosed>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 31,
+						val: "",
+						chi: [
+							{
+								typ: 2,
+								val: "media-condition"
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "media-feature"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "general-enclosed"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"media-not": {
+		syntax: "not <media-in-parens>",
+		ast: [
+			{
+				typ: 1,
+				val: "not"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "media-in-parens"
+			}
+		]
+	},
+	"media-or": {
+		syntax: "<media-in-parens> [ or <media-in-parens> ]+",
+		ast: [
+			{
+				typ: 2,
+				val: "media-in-parens"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "or"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "media-in-parens"
+					}
+				],
+				atLeastOnce: true
+			}
+		]
+	},
+	"media-query": {
+		syntax: "<media-condition> | [ not | only ]? <media-type> [ and <media-condition-without-or> ]?",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "media-condition"
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "not"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "only"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "media-type"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "and"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "media-condition-without-or"
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"media-query-list": {
+		syntax: "<media-query>#",
+		ast: [
+			{
+				typ: 2,
+				val: "media-query",
+				isList: true
+			}
+		]
+	},
+	"media-type": {
+		syntax: "<ident>",
+		ast: [
+			{
+				typ: 2,
+				val: "ident"
+			}
+		]
+	},
+	"mf-boolean": {
+		syntax: "<mf-name>",
+		ast: [
+			{
+				typ: 2,
+				val: "mf-name"
+			}
+		]
+	},
+	"mf-name": {
+		syntax: "<ident>",
+		ast: [
+			{
+				typ: 2,
+				val: "ident"
+			}
+		]
+	},
+	"mf-plain": {
+		syntax: "<mf-name> : <mf-value>",
+		ast: [
+			{
+				typ: 2,
+				val: "mf-name"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: ":"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "mf-value"
+			}
+		]
+	},
+	"mf-range": {
+		syntax: "<mf-name> [ '<' | '>' ]? '='? <mf-value>\n| <mf-value> [ '<' | '>' ]? '='? <mf-name>\n| <mf-value> '<' '='? <mf-name> '<' '='? <mf-value>\n| <mf-value> '>' '='? <mf-name> '>' '='? <mf-value>",
+		ast: [
+			{
+				typ: 2,
+				val: "mf-name"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'<' | '>"
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'='",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "mf-value"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "mf-value"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "'<' | '>"
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'='",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "mf-name"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "mf-value"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'<' '='? <mf-name>"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "'<' '='? <mf-value>"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "mf-value"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'>'"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'='",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "mf-name"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'>'"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'='",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "mf-value"
+			}
+		]
+	},
+	"mf-value": {
+		syntax: "<number> | <dimension> | <ident> | <ratio>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "dimension"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "ident"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "ratio"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"min()": {
+		syntax: "min( <calc-sum># )",
+		ast: [
+			{
+				typ: 19,
+				val: "min",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum",
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	"minmax()": {
+		syntax: "minmax( [ <length-percentage> | min-content | max-content | auto ] , [ <length-percentage> | <flex> | min-content | max-content | auto ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "minmax",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "min-content"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "max-content"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "auto"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 2,
+												val: "flex"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "min-content"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "max-content"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "auto"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"mod()": {
+		syntax: "mod( <calc-sum>, <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "mod",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"name-repeat": {
+		syntax: "repeat( [ <integer [1,∞]> | auto-fill ], <line-names>+ )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeat",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "integer",
+										range: [
+											1,
+											null
+										]
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "auto-fill"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "line-names",
+						atLeastOnce: true
+					}
+				]
+			}
+		]
+	},
+	"named-color": {
+		syntax: "transparent | aliceblue | antiquewhite | aqua | aquamarine | azure | beige | bisque | black | blanchedalmond | blue | blueviolet | brown | burlywood | cadetblue | chartreuse | chocolate | coral | cornflowerblue | cornsilk | crimson | cyan | darkblue | darkcyan | darkgoldenrod | darkgray | darkgreen | darkgrey | darkkhaki | darkmagenta | darkolivegreen | darkorange | darkorchid | darkred | darksalmon | darkseagreen | darkslateblue | darkslategray | darkslategrey | darkturquoise | darkviolet | deeppink | deepskyblue | dimgray | dimgrey | dodgerblue | firebrick | floralwhite | forestgreen | fuchsia | gainsboro | ghostwhite | gold | goldenrod | gray | green | greenyellow | grey | honeydew | hotpink | indianred | indigo | ivory | khaki | lavender | lavenderblush | lawngreen | lemonchiffon | lightblue | lightcoral | lightcyan | lightgoldenrodyellow | lightgray | lightgreen | lightgrey | lightpink | lightsalmon | lightseagreen | lightskyblue | lightslategray | lightslategrey | lightsteelblue | lightyellow | lime | limegreen | linen | magenta | maroon | mediumaquamarine | mediumblue | mediumorchid | mediumpurple | mediumseagreen | mediumslateblue | mediumspringgreen | mediumturquoise | mediumvioletred | midnightblue | mintcream | mistyrose | moccasin | navajowhite | navy | oldlace | olive | olivedrab | orange | orangered | orchid | palegoldenrod | palegreen | paleturquoise | palevioletred | papayawhip | peachpuff | peru | pink | plum | powderblue | purple | rebeccapurple | red | rosybrown | royalblue | saddlebrown | salmon | sandybrown | seagreen | seashell | sienna | silver | skyblue | slateblue | slategray | slategrey | snow | springgreen | steelblue | tan | teal | thistle | tomato | turquoise | violet | wheat | white | whitesmoke | yellow | yellowgreen",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "transparent"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "aliceblue"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "antiquewhite"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "aqua"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "aquamarine"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "azure"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "beige"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "bisque"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "black"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "blanchedalmond"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "blue"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "blueviolet"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "brown"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "burlywood"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "cadetblue"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 1,
+																																				val: "chartreuse"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "chocolate"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "coral"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "cornflowerblue"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "cornsilk"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "crimson"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 28,
+																																														l: [
+																																															{
+																																																typ: 1,
+																																																val: "cyan"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 28,
+																																																l: [
+																																																	{
+																																																		typ: 1,
+																																																		val: "darkblue"
+																																																	}
+																																																],
+																																																r: [
+																																																	{
+																																																		typ: 28,
+																																																		l: [
+																																																			{
+																																																				typ: 1,
+																																																				val: "darkcyan"
+																																																			}
+																																																		],
+																																																		r: [
+																																																			{
+																																																				typ: 28,
+																																																				l: [
+																																																					{
+																																																						typ: 1,
+																																																						val: "darkgoldenrod"
+																																																					}
+																																																				],
+																																																				r: [
+																																																					{
+																																																						typ: 28,
+																																																						l: [
+																																																							{
+																																																								typ: 1,
+																																																								val: "darkgray"
+																																																							}
+																																																						],
+																																																						r: [
+																																																							{
+																																																								typ: 28,
+																																																								l: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "darkgreen"
+																																																									}
+																																																								],
+																																																								r: [
+																																																									{
+																																																										typ: 28,
+																																																										l: [
+																																																											{
+																																																												typ: 1,
+																																																												val: "darkgrey"
+																																																											}
+																																																										],
+																																																										r: [
+																																																											{
+																																																												typ: 28,
+																																																												l: [
+																																																													{
+																																																														typ: 1,
+																																																														val: "darkkhaki"
+																																																													}
+																																																												],
+																																																												r: [
+																																																													{
+																																																														typ: 28,
+																																																														l: [
+																																																															{
+																																																																typ: 1,
+																																																																val: "darkmagenta"
+																																																															}
+																																																														],
+																																																														r: [
+																																																															{
+																																																																typ: 28,
+																																																																l: [
+																																																																	{
+																																																																		typ: 1,
+																																																																		val: "darkolivegreen"
+																																																																	}
+																																																																],
+																																																																r: [
+																																																																	{
+																																																																		typ: 28,
+																																																																		l: [
+																																																																			{
+																																																																				typ: 1,
+																																																																				val: "darkorange"
+																																																																			}
+																																																																		],
+																																																																		r: [
+																																																																			{
+																																																																				typ: 28,
+																																																																				l: [
+																																																																					{
+																																																																						typ: 1,
+																																																																						val: "darkorchid"
+																																																																					}
+																																																																				],
+																																																																				r: [
+																																																																					{
+																																																																						typ: 28,
+																																																																						l: [
+																																																																							{
+																																																																								typ: 1,
+																																																																								val: "darkred"
+																																																																							}
+																																																																						],
+																																																																						r: [
+																																																																							{
+																																																																								typ: 28,
+																																																																								l: [
+																																																																									{
+																																																																										typ: 1,
+																																																																										val: "darksalmon"
+																																																																									}
+																																																																								],
+																																																																								r: [
+																																																																									{
+																																																																										typ: 28,
+																																																																										l: [
+																																																																											{
+																																																																												typ: 1,
+																																																																												val: "darkseagreen"
+																																																																											}
+																																																																										],
+																																																																										r: [
+																																																																											{
+																																																																												typ: 28,
+																																																																												l: [
+																																																																													{
+																																																																														typ: 1,
+																																																																														val: "darkslateblue"
+																																																																													}
+																																																																												],
+																																																																												r: [
+																																																																													{
+																																																																														typ: 28,
+																																																																														l: [
+																																																																															{
+																																																																																typ: 1,
+																																																																																val: "darkslategray"
+																																																																															}
+																																																																														],
+																																																																														r: [
+																																																																															{
+																																																																																typ: 28,
+																																																																																l: [
+																																																																																	{
+																																																																																		typ: 1,
+																																																																																		val: "darkslategrey"
+																																																																																	}
+																																																																																],
+																																																																																r: [
+																																																																																	{
+																																																																																		typ: 28,
+																																																																																		l: [
+																																																																																			{
+																																																																																				typ: 1,
+																																																																																				val: "darkturquoise"
+																																																																																			}
+																																																																																		],
+																																																																																		r: [
+																																																																																			{
+																																																																																				typ: 28,
+																																																																																				l: [
+																																																																																					{
+																																																																																						typ: 1,
+																																																																																						val: "darkviolet"
+																																																																																					}
+																																																																																				],
+																																																																																				r: [
+																																																																																					{
+																																																																																						typ: 28,
+																																																																																						l: [
+																																																																																							{
+																																																																																								typ: 1,
+																																																																																								val: "deeppink"
+																																																																																							}
+																																																																																						],
+																																																																																						r: [
+																																																																																							{
+																																																																																								typ: 28,
+																																																																																								l: [
+																																																																																									{
+																																																																																										typ: 1,
+																																																																																										val: "deepskyblue"
+																																																																																									}
+																																																																																								],
+																																																																																								r: [
+																																																																																									{
+																																																																																										typ: 28,
+																																																																																										l: [
+																																																																																											{
+																																																																																												typ: 1,
+																																																																																												val: "dimgray"
+																																																																																											}
+																																																																																										],
+																																																																																										r: [
+																																																																																											{
+																																																																																												typ: 28,
+																																																																																												l: [
+																																																																																													{
+																																																																																														typ: 1,
+																																																																																														val: "dimgrey"
+																																																																																													}
+																																																																																												],
+																																																																																												r: [
+																																																																																													{
+																																																																																														typ: 28,
+																																																																																														l: [
+																																																																																															{
+																																																																																																typ: 1,
+																																																																																																val: "dodgerblue"
+																																																																																															}
+																																																																																														],
+																																																																																														r: [
+																																																																																															{
+																																																																																																typ: 28,
+																																																																																																l: [
+																																																																																																	{
+																																																																																																		typ: 1,
+																																																																																																		val: "firebrick"
+																																																																																																	}
+																																																																																																],
+																																																																																																r: [
+																																																																																																	{
+																																																																																																		typ: 28,
+																																																																																																		l: [
+																																																																																																			{
+																																																																																																				typ: 1,
+																																																																																																				val: "floralwhite"
+																																																																																																			}
+																																																																																																		],
+																																																																																																		r: [
+																																																																																																			{
+																																																																																																				typ: 28,
+																																																																																																				l: [
+																																																																																																					{
+																																																																																																						typ: 1,
+																																																																																																						val: "forestgreen"
+																																																																																																					}
+																																																																																																				],
+																																																																																																				r: [
+																																																																																																					{
+																																																																																																						typ: 28,
+																																																																																																						l: [
+																																																																																																							{
+																																																																																																								typ: 1,
+																																																																																																								val: "fuchsia"
+																																																																																																							}
+																																																																																																						],
+																																																																																																						r: [
+																																																																																																							{
+																																																																																																								typ: 28,
+																																																																																																								l: [
+																																																																																																									{
+																																																																																																										typ: 1,
+																																																																																																										val: "gainsboro"
+																																																																																																									}
+																																																																																																								],
+																																																																																																								r: [
+																																																																																																									{
+																																																																																																										typ: 28,
+																																																																																																										l: [
+																																																																																																											{
+																																																																																																												typ: 1,
+																																																																																																												val: "ghostwhite"
+																																																																																																											}
+																																																																																																										],
+																																																																																																										r: [
+																																																																																																											{
+																																																																																																												typ: 28,
+																																																																																																												l: [
+																																																																																																													{
+																																																																																																														typ: 1,
+																																																																																																														val: "gold"
+																																																																																																													}
+																																																																																																												],
+																																																																																																												r: [
+																																																																																																													{
+																																																																																																														typ: 28,
+																																																																																																														l: [
+																																																																																																															{
+																																																																																																																typ: 1,
+																																																																																																																val: "goldenrod"
+																																																																																																															}
+																																																																																																														],
+																																																																																																														r: [
+																																																																																																															{
+																																																																																																																typ: 28,
+																																																																																																																l: [
+																																																																																																																	{
+																																																																																																																		typ: 1,
+																																																																																																																		val: "gray"
+																																																																																																																	}
+																																																																																																																],
+																																																																																																																r: [
+																																																																																																																	{
+																																																																																																																		typ: 28,
+																																																																																																																		l: [
+																																																																																																																			{
+																																																																																																																				typ: 1,
+																																																																																																																				val: "green"
+																																																																																																																			}
+																																																																																																																		],
+																																																																																																																		r: [
+																																																																																																																			{
+																																																																																																																				typ: 28,
+																																																																																																																				l: [
+																																																																																																																					{
+																																																																																																																						typ: 1,
+																																																																																																																						val: "greenyellow"
+																																																																																																																					}
+																																																																																																																				],
+																																																																																																																				r: [
+																																																																																																																					{
+																																																																																																																						typ: 28,
+																																																																																																																						l: [
+																																																																																																																							{
+																																																																																																																								typ: 1,
+																																																																																																																								val: "grey"
+																																																																																																																							}
+																																																																																																																						],
+																																																																																																																						r: [
+																																																																																																																							{
+																																																																																																																								typ: 28,
+																																																																																																																								l: [
+																																																																																																																									{
+																																																																																																																										typ: 1,
+																																																																																																																										val: "honeydew"
+																																																																																																																									}
+																																																																																																																								],
+																																																																																																																								r: [
+																																																																																																																									{
+																																																																																																																										typ: 28,
+																																																																																																																										l: [
+																																																																																																																											{
+																																																																																																																												typ: 1,
+																																																																																																																												val: "hotpink"
+																																																																																																																											}
+																																																																																																																										],
+																																																																																																																										r: [
+																																																																																																																											{
+																																																																																																																												typ: 28,
+																																																																																																																												l: [
+																																																																																																																													{
+																																																																																																																														typ: 1,
+																																																																																																																														val: "indianred"
+																																																																																																																													}
+																																																																																																																												],
+																																																																																																																												r: [
+																																																																																																																													{
+																																																																																																																														typ: 28,
+																																																																																																																														l: [
+																																																																																																																															{
+																																																																																																																																typ: 1,
+																																																																																																																																val: "indigo"
+																																																																																																																															}
+																																																																																																																														],
+																																																																																																																														r: [
+																																																																																																																															{
+																																																																																																																																typ: 28,
+																																																																																																																																l: [
+																																																																																																																																	{
+																																																																																																																																		typ: 1,
+																																																																																																																																		val: "ivory"
+																																																																																																																																	}
+																																																																																																																																],
+																																																																																																																																r: [
+																																																																																																																																	{
+																																																																																																																																		typ: 28,
+																																																																																																																																		l: [
+																																																																																																																																			{
+																																																																																																																																				typ: 1,
+																																																																																																																																				val: "khaki"
+																																																																																																																																			}
+																																																																																																																																		],
+																																																																																																																																		r: [
+																																																																																																																																			{
+																																																																																																																																				typ: 28,
+																																																																																																																																				l: [
+																																																																																																																																					{
+																																																																																																																																						typ: 1,
+																																																																																																																																						val: "lavender"
+																																																																																																																																					}
+																																																																																																																																				],
+																																																																																																																																				r: [
+																																																																																																																																					{
+																																																																																																																																						typ: 28,
+																																																																																																																																						l: [
+																																																																																																																																							{
+																																																																																																																																								typ: 1,
+																																																																																																																																								val: "lavenderblush"
+																																																																																																																																							}
+																																																																																																																																						],
+																																																																																																																																						r: [
+																																																																																																																																							{
+																																																																																																																																								typ: 28,
+																																																																																																																																								l: [
+																																																																																																																																									{
+																																																																																																																																										typ: 1,
+																																																																																																																																										val: "lawngreen"
+																																																																																																																																									}
+																																																																																																																																								],
+																																																																																																																																								r: [
+																																																																																																																																									{
+																																																																																																																																										typ: 28,
+																																																																																																																																										l: [
+																																																																																																																																											{
+																																																																																																																																												typ: 1,
+																																																																																																																																												val: "lemonchiffon"
+																																																																																																																																											}
+																																																																																																																																										],
+																																																																																																																																										r: [
+																																																																																																																																											{
+																																																																																																																																												typ: 28,
+																																																																																																																																												l: [
+																																																																																																																																													{
+																																																																																																																																														typ: 1,
+																																																																																																																																														val: "lightblue"
+																																																																																																																																													}
+																																																																																																																																												],
+																																																																																																																																												r: [
+																																																																																																																																													{
+																																																																																																																																														typ: 28,
+																																																																																																																																														l: [
+																																																																																																																																															{
+																																																																																																																																																typ: 1,
+																																																																																																																																																val: "lightcoral"
+																																																																																																																																															}
+																																																																																																																																														],
+																																																																																																																																														r: [
+																																																																																																																																															{
+																																																																																																																																																typ: 28,
+																																																																																																																																																l: [
+																																																																																																																																																	{
+																																																																																																																																																		typ: 1,
+																																																																																																																																																		val: "lightcyan"
+																																																																																																																																																	}
+																																																																																																																																																],
+																																																																																																																																																r: [
+																																																																																																																																																	{
+																																																																																																																																																		typ: 28,
+																																																																																																																																																		l: [
+																																																																																																																																																			{
+																																																																																																																																																				typ: 1,
+																																																																																																																																																				val: "lightgoldenrodyellow"
+																																																																																																																																																			}
+																																																																																																																																																		],
+																																																																																																																																																		r: [
+																																																																																																																																																			{
+																																																																																																																																																				typ: 28,
+																																																																																																																																																				l: [
+																																																																																																																																																					{
+																																																																																																																																																						typ: 1,
+																																																																																																																																																						val: "lightgray"
+																																																																																																																																																					}
+																																																																																																																																																				],
+																																																																																																																																																				r: [
+																																																																																																																																																					{
+																																																																																																																																																						typ: 28,
+																																																																																																																																																						l: [
+																																																																																																																																																							{
+																																																																																																																																																								typ: 1,
+																																																																																																																																																								val: "lightgreen"
+																																																																																																																																																							}
+																																																																																																																																																						],
+																																																																																																																																																						r: [
+																																																																																																																																																							{
+																																																																																																																																																								typ: 28,
+																																																																																																																																																								l: [
+																																																																																																																																																									{
+																																																																																																																																																										typ: 1,
+																																																																																																																																																										val: "lightgrey"
+																																																																																																																																																									}
+																																																																																																																																																								],
+																																																																																																																																																								r: [
+																																																																																																																																																									{
+																																																																																																																																																										typ: 28,
+																																																																																																																																																										l: [
+																																																																																																																																																											{
+																																																																																																																																																												typ: 1,
+																																																																																																																																																												val: "lightpink"
+																																																																																																																																																											}
+																																																																																																																																																										],
+																																																																																																																																																										r: [
+																																																																																																																																																											{
+																																																																																																																																																												typ: 28,
+																																																																																																																																																												l: [
+																																																																																																																																																													{
+																																																																																																																																																														typ: 1,
+																																																																																																																																																														val: "lightsalmon"
+																																																																																																																																																													}
+																																																																																																																																																												],
+																																																																																																																																																												r: [
+																																																																																																																																																													{
+																																																																																																																																																														typ: 28,
+																																																																																																																																																														l: [
+																																																																																																																																																															{
+																																																																																																																																																																typ: 1,
+																																																																																																																																																																val: "lightseagreen"
+																																																																																																																																																															}
+																																																																																																																																																														],
+																																																																																																																																																														r: [
+																																																																																																																																																															{
+																																																																																																																																																																typ: 28,
+																																																																																																																																																																l: [
+																																																																																																																																																																	{
+																																																																																																																																																																		typ: 1,
+																																																																																																																																																																		val: "lightskyblue"
+																																																																																																																																																																	}
+																																																																																																																																																																],
+																																																																																																																																																																r: [
+																																																																																																																																																																	{
+																																																																																																																																																																		typ: 28,
+																																																																																																																																																																		l: [
+																																																																																																																																																																			{
+																																																																																																																																																																				typ: 1,
+																																																																																																																																																																				val: "lightslategray"
+																																																																																																																																																																			}
+																																																																																																																																																																		],
+																																																																																																																																																																		r: [
+																																																																																																																																																																			{
+																																																																																																																																																																				typ: 28,
+																																																																																																																																																																				l: [
+																																																																																																																																																																					{
+																																																																																																																																																																						typ: 1,
+																																																																																																																																																																						val: "lightslategrey"
+																																																																																																																																																																					}
+																																																																																																																																																																				],
+																																																																																																																																																																				r: [
+																																																																																																																																																																					{
+																																																																																																																																																																						typ: 28,
+																																																																																																																																																																						l: [
+																																																																																																																																																																							{
+																																																																																																																																																																								typ: 1,
+																																																																																																																																																																								val: "lightsteelblue"
+																																																																																																																																																																							}
+																																																																																																																																																																						],
+																																																																																																																																																																						r: [
+																																																																																																																																																																							{
+																																																																																																																																																																								typ: 28,
+																																																																																																																																																																								l: [
+																																																																																																																																																																									{
+																																																																																																																																																																										typ: 1,
+																																																																																																																																																																										val: "lightyellow"
+																																																																																																																																																																									}
+																																																																																																																																																																								],
+																																																																																																																																																																								r: [
+																																																																																																																																																																									{
+																																																																																																																																																																										typ: 28,
+																																																																																																																																																																										l: [
+																																																																																																																																																																											{
+																																																																																																																																																																												typ: 1,
+																																																																																																																																																																												val: "lime"
+																																																																																																																																																																											}
+																																																																																																																																																																										],
+																																																																																																																																																																										r: [
+																																																																																																																																																																											{
+																																																																																																																																																																												typ: 28,
+																																																																																																																																																																												l: [
+																																																																																																																																																																													{
+																																																																																																																																																																														typ: 1,
+																																																																																																																																																																														val: "limegreen"
+																																																																																																																																																																													}
+																																																																																																																																																																												],
+																																																																																																																																																																												r: [
+																																																																																																																																																																													{
+																																																																																																																																																																														typ: 28,
+																																																																																																																																																																														l: [
+																																																																																																																																																																															{
+																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																val: "linen"
+																																																																																																																																																																															}
+																																																																																																																																																																														],
+																																																																																																																																																																														r: [
+																																																																																																																																																																															{
+																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																l: [
+																																																																																																																																																																																	{
+																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																		val: "magenta"
+																																																																																																																																																																																	}
+																																																																																																																																																																																],
+																																																																																																																																																																																r: [
+																																																																																																																																																																																	{
+																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																		l: [
+																																																																																																																																																																																			{
+																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																				val: "maroon"
+																																																																																																																																																																																			}
+																																																																																																																																																																																		],
+																																																																																																																																																																																		r: [
+																																																																																																																																																																																			{
+																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																				l: [
+																																																																																																																																																																																					{
+																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																						val: "mediumaquamarine"
+																																																																																																																																																																																					}
+																																																																																																																																																																																				],
+																																																																																																																																																																																				r: [
+																																																																																																																																																																																					{
+																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																						l: [
+																																																																																																																																																																																							{
+																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																								val: "mediumblue"
+																																																																																																																																																																																							}
+																																																																																																																																																																																						],
+																																																																																																																																																																																						r: [
+																																																																																																																																																																																							{
+																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																								l: [
+																																																																																																																																																																																									{
+																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																										val: "mediumorchid"
+																																																																																																																																																																																									}
+																																																																																																																																																																																								],
+																																																																																																																																																																																								r: [
+																																																																																																																																																																																									{
+																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																										l: [
+																																																																																																																																																																																											{
+																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																												val: "mediumpurple"
+																																																																																																																																																																																											}
+																																																																																																																																																																																										],
+																																																																																																																																																																																										r: [
+																																																																																																																																																																																											{
+																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																												l: [
+																																																																																																																																																																																													{
+																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																														val: "mediumseagreen"
+																																																																																																																																																																																													}
+																																																																																																																																																																																												],
+																																																																																																																																																																																												r: [
+																																																																																																																																																																																													{
+																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																														l: [
+																																																																																																																																																																																															{
+																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																val: "mediumslateblue"
+																																																																																																																																																																																															}
+																																																																																																																																																																																														],
+																																																																																																																																																																																														r: [
+																																																																																																																																																																																															{
+																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																l: [
+																																																																																																																																																																																																	{
+																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																		val: "mediumspringgreen"
+																																																																																																																																																																																																	}
+																																																																																																																																																																																																],
+																																																																																																																																																																																																r: [
+																																																																																																																																																																																																	{
+																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																			{
+																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																				val: "mediumturquoise"
+																																																																																																																																																																																																			}
+																																																																																																																																																																																																		],
+																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																			{
+																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																					{
+																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																						val: "mediumvioletred"
+																																																																																																																																																																																																					}
+																																																																																																																																																																																																				],
+																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																					{
+																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																							{
+																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																								val: "midnightblue"
+																																																																																																																																																																																																							}
+																																																																																																																																																																																																						],
+																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																							{
+																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																									{
+																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																										val: "mintcream"
+																																																																																																																																																																																																									}
+																																																																																																																																																																																																								],
+																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																									{
+																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																											{
+																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																												val: "mistyrose"
+																																																																																																																																																																																																											}
+																																																																																																																																																																																																										],
+																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																											{
+																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																													{
+																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																														val: "moccasin"
+																																																																																																																																																																																																													}
+																																																																																																																																																																																																												],
+																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																													{
+																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																															{
+																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																val: "navajowhite"
+																																																																																																																																																																																																															}
+																																																																																																																																																																																																														],
+																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																															{
+																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																		val: "navy"
+																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																],
+																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																				val: "oldlace"
+																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																						val: "olive"
+																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																								val: "olivedrab"
+																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																										val: "orange"
+																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																												val: "orangered"
+																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																														val: "orchid"
+																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																												],
+																																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																																val: "palegoldenrod"
+																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																														],
+																																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																																		val: "palegreen"
+																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																],
+																																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																																				val: "paleturquoise"
+																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																																						val: "palevioletred"
+																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																																								val: "papayawhip"
+																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																																										val: "peachpuff"
+																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																																												val: "peru"
+																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																																														val: "pink"
+																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																												],
+																																																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																																																val: "plum"
+																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																														],
+																																																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																																																		val: "powderblue"
+																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																],
+																																																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																																																				val: "purple"
+																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																																																						val: "rebeccapurple"
+																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																																																								val: "red"
+																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																																																										val: "rosybrown"
+																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																																																												val: "royalblue"
+																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																																																														val: "saddlebrown"
+																																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																																												],
+																																																																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																																																																val: "salmon"
+																																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																																														],
+																																																																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																																																																		val: "sandybrown"
+																																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																																],
+																																																																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																																																																				val: "seagreen"
+																																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																																																																						val: "seashell"
+																																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																																																																								val: "sienna"
+																																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																																																																										val: "silver"
+																																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																																																																												val: "skyblue"
+																																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																																																																														val: "slateblue"
+																																																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																																																												],
+																																																																																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																																																																																val: "slategray"
+																																																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																																																														],
+																																																																																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																																																																																		val: "slategrey"
+																																																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																																																],
+																																																																																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																																																																																				val: "snow"
+																																																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																																																																																						val: "springgreen"
+																																																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																																																																																								val: "steelblue"
+																																																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																																																																																										val: "tan"
+																																																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																																																																																												val: "teal"
+																																																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																																																												typ: 28,
+																																																																																																																																																																																																																																																																																												l: [
+																																																																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																																																																														typ: 1,
+																																																																																																																																																																																																																																																																																														val: "thistle"
+																																																																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																																																																												],
+																																																																																																																																																																																																																																																																																												r: [
+																																																																																																																																																																																																																																																																																													{
+																																																																																																																																																																																																																																																																																														typ: 28,
+																																																																																																																																																																																																																																																																																														l: [
+																																																																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																																																																typ: 1,
+																																																																																																																																																																																																																																																																																																val: "tomato"
+																																																																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																																																																														],
+																																																																																																																																																																																																																																																																																														r: [
+																																																																																																																																																																																																																																																																																															{
+																																																																																																																																																																																																																																																																																																typ: 28,
+																																																																																																																																																																																																																																																																																																l: [
+																																																																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																																																																		typ: 1,
+																																																																																																																																																																																																																																																																																																		val: "turquoise"
+																																																																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																																																																],
+																																																																																																																																																																																																																																																																																																r: [
+																																																																																																																																																																																																																																																																																																	{
+																																																																																																																																																																																																																																																																																																		typ: 28,
+																																																																																																																																																																																																																																																																																																		l: [
+																																																																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																																																																				typ: 1,
+																																																																																																																																																																																																																																																																																																				val: "violet"
+																																																																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																																																																		],
+																																																																																																																																																																																																																																																																																																		r: [
+																																																																																																																																																																																																																																																																																																			{
+																																																																																																																																																																																																																																																																																																				typ: 28,
+																																																																																																																																																																																																																																																																																																				l: [
+																																																																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																																																																						typ: 1,
+																																																																																																																																																																																																																																																																																																						val: "wheat"
+																																																																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																																																																				],
+																																																																																																																																																																																																																																																																																																				r: [
+																																																																																																																																																																																																																																																																																																					{
+																																																																																																																																																																																																																																																																																																						typ: 28,
+																																																																																																																																																																																																																																																																																																						l: [
+																																																																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																																																																								typ: 1,
+																																																																																																																																																																																																																																																																																																								val: "white"
+																																																																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																																																																						],
+																																																																																																																																																																																																																																																																																																						r: [
+																																																																																																																																																																																																																																																																																																							{
+																																																																																																																																																																																																																																																																																																								typ: 28,
+																																																																																																																																																																																																																																																																																																								l: [
+																																																																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																																																																										typ: 1,
+																																																																																																																																																																																																																																																																																																										val: "whitesmoke"
+																																																																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																																																																								],
+																																																																																																																																																																																																																																																																																																								r: [
+																																																																																																																																																																																																																																																																																																									{
+																																																																																																																																																																																																																																																																																																										typ: 28,
+																																																																																																																																																																																																																																																																																																										l: [
+																																																																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																																																																																																												val: "yellow"
+																																																																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																																																																										],
+																																																																																																																																																																																																																																																																																																										r: [
+																																																																																																																																																																																																																																																																																																											{
+																																																																																																																																																																																																																																																																																																												typ: 1,
+																																																																																																																																																																																																																																																																																																												val: "yellowgreen"
+																																																																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																																																																]
+																																																																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																																																																														]
+																																																																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																																																																												]
+																																																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																																																]
+																																																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																																																														]
+																																																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																																																												]
+																																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																																]
+																																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																																														]
+																																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																																												]
+																																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																																]
+																																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																																														]
+																																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																																												]
+																																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																																]
+																																																																																																																																																																																																																															}
+																																																																																																																																																																																																																														]
+																																																																																																																																																																																																																													}
+																																																																																																																																																																																																																												]
+																																																																																																																																																																																																																											}
+																																																																																																																																																																																																																										]
+																																																																																																																																																																																																																									}
+																																																																																																																																																																																																																								]
+																																																																																																																																																																																																																							}
+																																																																																																																																																																																																																						]
+																																																																																																																																																																																																																					}
+																																																																																																																																																																																																																				]
+																																																																																																																																																																																																																			}
+																																																																																																																																																																																																																		]
+																																																																																																																																																																																																																	}
+																																																																																																																																																																																																																]
+																																																																																																																																																																																																															}
+																																																																																																																																																																																																														]
+																																																																																																																																																																																																													}
+																																																																																																																																																																																																												]
+																																																																																																																																																																																																											}
+																																																																																																																																																																																																										]
+																																																																																																																																																																																																									}
+																																																																																																																																																																																																								]
+																																																																																																																																																																																																							}
+																																																																																																																																																																																																						]
+																																																																																																																																																																																																					}
+																																																																																																																																																																																																				]
+																																																																																																																																																																																																			}
+																																																																																																																																																																																																		]
+																																																																																																																																																																																																	}
+																																																																																																																																																																																																]
+																																																																																																																																																																																															}
+																																																																																																																																																																																														]
+																																																																																																																																																																																													}
+																																																																																																																																																																																												]
+																																																																																																																																																																																											}
+																																																																																																																																																																																										]
+																																																																																																																																																																																									}
+																																																																																																																																																																																								]
+																																																																																																																																																																																							}
+																																																																																																																																																																																						]
+																																																																																																																																																																																					}
+																																																																																																																																																																																				]
+																																																																																																																																																																																			}
+																																																																																																																																																																																		]
+																																																																																																																																																																																	}
+																																																																																																																																																																																]
+																																																																																																																																																																															}
+																																																																																																																																																																														]
+																																																																																																																																																																													}
+																																																																																																																																																																												]
+																																																																																																																																																																											}
+																																																																																																																																																																										]
+																																																																																																																																																																									}
+																																																																																																																																																																								]
+																																																																																																																																																																							}
+																																																																																																																																																																						]
+																																																																																																																																																																					}
+																																																																																																																																																																				]
+																																																																																																																																																																			}
+																																																																																																																																																																		]
+																																																																																																																																																																	}
+																																																																																																																																																																]
+																																																																																																																																																															}
+																																																																																																																																																														]
+																																																																																																																																																													}
+																																																																																																																																																												]
+																																																																																																																																																											}
+																																																																																																																																																										]
+																																																																																																																																																									}
+																																																																																																																																																								]
+																																																																																																																																																							}
+																																																																																																																																																						]
+																																																																																																																																																					}
+																																																																																																																																																				]
+																																																																																																																																																			}
+																																																																																																																																																		]
+																																																																																																																																																	}
+																																																																																																																																																]
+																																																																																																																																															}
+																																																																																																																																														]
+																																																																																																																																													}
+																																																																																																																																												]
+																																																																																																																																											}
+																																																																																																																																										]
+																																																																																																																																									}
+																																																																																																																																								]
+																																																																																																																																							}
+																																																																																																																																						]
+																																																																																																																																					}
+																																																																																																																																				]
+																																																																																																																																			}
+																																																																																																																																		]
+																																																																																																																																	}
+																																																																																																																																]
+																																																																																																																															}
+																																																																																																																														]
+																																																																																																																													}
+																																																																																																																												]
+																																																																																																																											}
+																																																																																																																										]
+																																																																																																																									}
+																																																																																																																								]
+																																																																																																																							}
+																																																																																																																						]
+																																																																																																																					}
+																																																																																																																				]
+																																																																																																																			}
+																																																																																																																		]
+																																																																																																																	}
+																																																																																																																]
+																																																																																																															}
+																																																																																																														]
+																																																																																																													}
+																																																																																																												]
+																																																																																																											}
+																																																																																																										]
+																																																																																																									}
+																																																																																																								]
+																																																																																																							}
+																																																																																																						]
+																																																																																																					}
+																																																																																																				]
+																																																																																																			}
+																																																																																																		]
+																																																																																																	}
+																																																																																																]
+																																																																																															}
+																																																																																														]
+																																																																																													}
+																																																																																												]
+																																																																																											}
+																																																																																										]
+																																																																																									}
+																																																																																								]
+																																																																																							}
+																																																																																						]
+																																																																																					}
+																																																																																				]
+																																																																																			}
+																																																																																		]
+																																																																																	}
+																																																																																]
+																																																																															}
+																																																																														]
+																																																																													}
+																																																																												]
+																																																																											}
+																																																																										]
+																																																																									}
+																																																																								]
+																																																																							}
+																																																																						]
+																																																																					}
+																																																																				]
+																																																																			}
+																																																																		]
+																																																																	}
+																																																																]
+																																																															}
+																																																														]
+																																																													}
+																																																												]
+																																																											}
+																																																										]
+																																																									}
+																																																								]
+																																																							}
+																																																						]
+																																																					}
+																																																				]
+																																																			}
+																																																		]
+																																																	}
+																																																]
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"namespace-prefix": {
+		syntax: "<ident>",
+		ast: [
+			{
+				typ: 2,
+				val: "ident"
+			}
+		]
+	},
+	"ns-prefix": {
+		syntax: "[ <ident-token> | '*' ]? '|'",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "ident-token"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "'",
+								isRepeatable: true
+							}
+						]
+					},
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "'"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "'"
+					}
+				]
+			}
+		]
+	},
+	"number-percentage": {
+		syntax: "<number> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"numeric-figure-values": {
+		syntax: "[ lining-nums | oldstyle-nums ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "lining-nums"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "oldstyle-nums"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"numeric-fraction-values": {
+		syntax: "[ diagonal-fractions | stacked-fractions ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "diagonal-fractions"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "stacked-fractions"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"numeric-spacing-values": {
+		syntax: "[ proportional-nums | tabular-nums ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "proportional-nums"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "tabular-nums"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	nth: {
+		syntax: "<an-plus-b> | even | odd",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "an-plus-b"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "even"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "odd"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"opacity()": {
+		syntax: "opacity( [ <number-percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "opacity",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "number-percentage"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"overflow-position": {
+		syntax: "unsafe | safe",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "unsafe"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "safe"
+					}
+				]
+			}
+		]
+	},
+	"outline-radius": {
+		syntax: "<length> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"page-body": {
+		syntax: "<declaration>? [ ; <page-body> ]? | <page-margin-box> <page-body>",
+		ast: [
+			{
+				typ: 2,
+				val: "declaration",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: ";"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "page-body"
+							}
+						],
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "page-margin-box"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "page-body"
+			}
+		]
+	},
+	"page-margin-box": {
+		syntax: "<page-margin-box-type> '{' <declaration-list> '}'",
+		ast: [
+			{
+				typ: 2,
+				val: "page-margin-box-type"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			},
+			{
+				typ: 1,
+				val: "'"
+			}
+		]
+	},
+	"page-margin-box-type": {
+		syntax: "@top-left-corner | @top-left | @top-center | @top-right | @top-right-corner | @bottom-left-corner | @bottom-left | @bottom-center | @bottom-right | @bottom-right-corner | @left-top | @left-middle | @left-bottom | @right-top | @right-middle | @right-bottom",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "@top-left-corner"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "@top-left"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "@top-center"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "@top-right"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "@top-right-corner"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "@bottom-left-corner"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "@bottom-left"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "@bottom-center"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "@bottom-right"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "@bottom-right-corner"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "@left-top"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "@left-middle"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "@left-bottom"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "@right-top"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "@right-middle"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 1,
+																																		val: "@right-bottom"
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"page-selector-list": {
+		syntax: "[ <page-selector># ]?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "page-selector",
+						isList: true
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"page-selector": {
+		syntax: "<pseudo-page>+ | <ident> <pseudo-page>*",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "pseudo-page",
+						atLeastOnce: true
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "ident"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "pseudo-page",
+				isRepeatable: true
+			}
+		]
+	},
+	"page-size": {
+		syntax: "A5 | A4 | A3 | B5 | B4 | JIS-B5 | JIS-B4 | letter | legal | ledger",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "A5"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "A4"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "A3"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "B5"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "B4"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "JIS-B5"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "JIS-B4"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "letter"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "legal"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 1,
+																						val: "ledger"
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"path()": {
+		syntax: "path( [ <fill-rule>, ]? <string> )",
+		ast: [
+			{
+				typ: 19,
+				val: "path",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "fill-rule"
+							},
+							{
+								typ: 11
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "string"
+					}
+				]
+			}
+		]
+	},
+	"paint()": {
+		syntax: "paint( <ident>, <declaration-value>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "paint",
+				chi: [
+					{
+						typ: 2,
+						val: "ident"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "declaration-value",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"perspective()": {
+		syntax: "perspective( [ <length [0,∞]> | none ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "perspective",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "length",
+										range: [
+											0,
+											null
+										]
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"polygon()": {
+		syntax: "polygon( <fill-rule>? , [ <length-percentage> <length-percentage> ]# )",
+		ast: [
+			{
+				typ: 19,
+				val: "polygon",
+				chi: [
+					{
+						typ: 2,
+						val: "fill-rule",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "length-percentage"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "length-percentage"
+							}
+						],
+						isList: true
+					}
+				]
+			}
+		]
+	},
+	position: {
+		syntax: "[ [ left | center | right ] || [ top | center | bottom ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ]? | [ [ left | right ] <length-percentage> ] && [ [ top | bottom ] <length-percentage> ] ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "left"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "right"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "top"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "center"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "bottom"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "left"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "center"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "right"
+																	}
+																],
+																r: [
+																	{
+																		typ: 2,
+																		val: "length-percentage"
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "top"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "center"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "bottom"
+															}
+														],
+														r: [
+															{
+																typ: 2,
+																val: "length-percentage"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								isOptional: true
+							}
+						],
+						r: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "left"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "right"
+															}
+														]
+													}
+												]
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "length-percentage"
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "top"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "bottom"
+															}
+														]
+													}
+												]
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "length-percentage"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"pow()": {
+		syntax: "pow( <calc-sum>, <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "pow",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"pseudo-class-selector": {
+		syntax: "':' <ident-token> | ':' <function-token> <any-value> ')'",
+		ast: [
+			{
+				typ: 1,
+				val: "':'"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "ident-token"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "':'"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "function-token"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "any-value"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'"
+			},
+			{
+				typ: 1,
+				val: "'"
+			}
+		]
+	},
+	"pseudo-element-selector": {
+		syntax: "':' <pseudo-class-selector>",
+		ast: [
+			{
+				typ: 1,
+				val: "':'"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "pseudo-class-selector"
+			}
+		]
+	},
+	"pseudo-page": {
+		syntax: ": [ left | right | first | blank ]",
+		ast: [
+			{
+				typ: 1,
+				val: ":"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "left"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "right"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "first"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "blank"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	quote: {
+		syntax: "open-quote | close-quote | no-open-quote | no-close-quote",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "open-quote"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "close-quote"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "no-open-quote"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "no-close-quote"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"radial-gradient()": {
+		syntax: "radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "radial-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "ending-shape"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "size"
+									}
+								]
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		]
+	},
+	ratio: {
+		syntax: "<number [0,∞]> [ / <number [0,∞]> ]?",
+		ast: [
+			{
+				typ: 2,
+				val: "number",
+				range: [
+					0,
+					null
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 25
+					},
+					{
+						typ: 2,
+						val: "number",
+						range: [
+							0,
+							null
+						]
+					}
+				],
+				isOptional: true
+			}
+		]
+	},
+	"ray()": {
+		syntax: "ray( <angle> && <ray-size>? && contain? && [at <position>]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "ray",
+				chi: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						r: [
+							{
+								typ: 30,
+								l: [
+									{
+										typ: 2,
+										val: "ray-size",
+										isOptional: true
+									}
+								],
+								r: [
+									{
+										typ: 30,
+										l: [
+											{
+												typ: 1,
+												val: "contain",
+												isOptional: true
+											}
+										],
+										r: [
+											{
+												typ: 23,
+												chi: [
+													{
+														typ: 1,
+														val: "at"
+													},
+													{
+														typ: 21
+													},
+													{
+														typ: 2,
+														val: "position"
+													}
+												],
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"ray-size": {
+		syntax: "closest-side | closest-corner | farthest-side | farthest-corner | sides",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "closest-side"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "closest-corner"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "farthest-side"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "farthest-corner"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "sides"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"relative-selector": {
+		syntax: "<combinator>? <complex-selector>",
+		ast: [
+			{
+				typ: 2,
+				val: "combinator",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "complex-selector"
+			}
+		]
+	},
+	"relative-selector-list": {
+		syntax: "<relative-selector>#",
+		ast: [
+			{
+				typ: 2,
+				val: "relative-selector",
+				isList: true
+			}
+		]
+	},
+	"relative-size": {
+		syntax: "larger | smaller",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "larger"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "smaller"
+					}
+				]
+			}
+		]
+	},
+	"rem()": {
+		syntax: "rem( <calc-sum>, <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "rem",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"repeat-style": {
+		syntax: "repeat-x | repeat-y | [ repeat | space | round | no-repeat ]{1,2}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "repeat-x"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "repeat-y"
+							}
+						],
+						r: [
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "repeat"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "space"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "round"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "no-repeat"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								],
+								occurence: {
+									min: 1,
+									max: 2
+								}
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"repeating-conic-gradient()": {
+		syntax: "repeating-conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeating-conic-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "from"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "angle"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "angular-color-stop-list"
+					}
+				]
+			}
+		]
+	},
+	"repeating-linear-gradient()": {
+		syntax: "repeating-linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeating-linear-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "to"
+									}
+								]
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "side-or-corner"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		]
+	},
+	"repeating-radial-gradient()": {
+		syntax: "repeating-radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeating-radial-gradient",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "ending-shape"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "size"
+									}
+								]
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "at"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "position"
+							}
+						],
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "color-stop-list"
+					}
+				]
+			}
+		]
+	},
+	"reversed-counter-name": {
+		syntax: "reversed( <counter-name> )",
+		ast: [
+			{
+				typ: 19,
+				val: "reversed",
+				chi: [
+					{
+						typ: 2,
+						val: "counter-name"
+					}
+				]
+			}
+		]
+	},
+	"rgb()": {
+		syntax: "rgb( <percentage>{3} [ / <alpha-value> ]? ) | rgb( <number>{3} [ / <alpha-value> ]? ) | rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "rgb",
+						chi: [
+							{
+								typ: 2,
+								val: "percentage",
+								occurence: {
+									min: 3,
+									max: 0
+								}
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "rgb",
+								chi: [
+									{
+										typ: 2,
+										val: "number",
+										occurence: {
+											min: 3,
+											max: 0
+										}
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 25
+											},
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										isOptional: true
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 19,
+										val: "rgb",
+										chi: [
+											{
+												typ: 2,
+												val: "percentage",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 19,
+										val: "rgb",
+										chi: [
+											{
+												typ: 2,
+												val: "number",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"rgba()": {
+		syntax: "rgba( <percentage>{3} [ / <alpha-value> ]? ) | rgba( <number>{3} [ / <alpha-value> ]? ) | rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 19,
+						val: "rgba",
+						chi: [
+							{
+								typ: 2,
+								val: "percentage",
+								occurence: {
+									min: 3,
+									max: 0
+								}
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 23,
+								chi: [
+									{
+										typ: 25
+									},
+									{
+										typ: 2,
+										val: "alpha-value"
+									}
+								],
+								isOptional: true
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "rgba",
+								chi: [
+									{
+										typ: 2,
+										val: "number",
+										occurence: {
+											min: 3,
+											max: 0
+										}
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 25
+											},
+											{
+												typ: 2,
+												val: "alpha-value"
+											}
+										],
+										isOptional: true
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 19,
+										val: "rgba",
+										chi: [
+											{
+												typ: 2,
+												val: "percentage",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								],
+								r: [
+									{
+										typ: 19,
+										val: "rgba",
+										chi: [
+											{
+												typ: 2,
+												val: "number",
+												isList: true,
+												occurence: {
+													min: 3,
+													max: 0
+												}
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "alpha-value",
+												isOptional: true
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"rotate()": {
+		syntax: "rotate( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotate",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"rotate3d()": {
+		syntax: "rotate3d( <number> , <number> , <number> , [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotate3d",
+				chi: [
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "number"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"rotateX()": {
+		syntax: "rotateX( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotateX",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"rotateY()": {
+		syntax: "rotateY( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotateY",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"rotateZ()": {
+		syntax: "rotateZ( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "rotateZ",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"round()": {
+		syntax: "round( <rounding-strategy>?, <calc-sum>, <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "round",
+				chi: [
+					{
+						typ: 2,
+						val: "rounding-strategy",
+						isOptional: true
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"rounding-strategy": {
+		syntax: "nearest | up | down | to-zero",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "nearest"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "up"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "down"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "to-zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"saturate()": {
+		syntax: "saturate( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "saturate",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		]
+	},
+	"scale()": {
+		syntax: "scale( [ <number> | <percentage> ]#{1,2} )",
+		ast: [
+			{
+				typ: 19,
+				val: "scale",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						],
+						isList: true,
+						occurence: {
+							min: 1,
+							max: 2
+						}
+					}
+				]
+			}
+		]
+	},
+	"scale3d()": {
+		syntax: "scale3d( [ <number> | <percentage> ]#{3} )",
+		ast: [
+			{
+				typ: 19,
+				val: "scale3d",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						],
+						isList: true,
+						occurence: {
+							min: 3,
+							max: 0
+						}
+					}
+				]
+			}
+		]
+	},
+	"scaleX()": {
+		syntax: "scaleX( [ <number> | <percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "scaleX",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scaleY()": {
+		syntax: "scaleY( [ <number> | <percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "scaleY",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scaleZ()": {
+		syntax: "scaleZ( [ <number> | <percentage> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "scaleZ",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "number"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"scroll()": {
+		syntax: "scroll( [ <axis> || <scroller> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "scroll",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "axis"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "scroller"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	scroller: {
+		syntax: "root | nearest",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "root"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "nearest"
+					}
+				]
+			}
+		]
+	},
+	"self-position": {
+		syntax: "center | start | end | self-start | self-end | flex-start | flex-end",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "center"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "start"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "end"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "self-start"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "self-end"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "flex-start"
+															}
+														],
+														r: [
+															{
+																typ: 1,
+																val: "flex-end"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"shape-radius": {
+		syntax: "<length-percentage> | closest-side | farthest-side",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "closest-side"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "farthest-side"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"sign()": {
+		syntax: "sign( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "sign",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"skew()": {
+		syntax: "skew( [ <angle> | <zero> ] , [ <angle> | <zero> ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "skew",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"skewX()": {
+		syntax: "skewX( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "skewX",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"skewY()": {
+		syntax: "skewY( [ <angle> | <zero> ] )",
+		ast: [
+			{
+				typ: 19,
+				val: "skewY",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "angle"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "zero"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"sepia()": {
+		syntax: "sepia( <number-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "sepia",
+				chi: [
+					{
+						typ: 2,
+						val: "number-percentage"
+					}
+				]
+			}
+		]
+	},
+	shadow: {
+		syntax: "inset? && <length>{2,4} && <color>?",
+		ast: [
+			{
+				typ: 30,
+				l: [
+					{
+						typ: 1,
+						val: "inset",
+						isOptional: true
+					}
+				],
+				r: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 2,
+								val: "length",
+								occurence: {
+									min: 2,
+									max: 4
+								}
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"shadow-t": {
+		syntax: "[ <length>{2,3} && <color>? ]",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 30,
+						l: [
+							{
+								typ: 2,
+								val: "length",
+								occurence: {
+									min: 2,
+									max: 3
+								}
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "color",
+								isOptional: true
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	shape: {
+		syntax: "rect(<top>, <right>, <bottom>, <left>)",
+		ast: [
+			{
+				typ: 19,
+				val: "rect",
+				chi: [
+					{
+						typ: 2,
+						val: "top"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "right"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "bottom"
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "left"
+					}
+				]
+			}
+		]
+	},
+	"shape-box": {
+		syntax: "<box> | margin-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "box"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "margin-box"
+					}
+				]
+			}
+		]
+	},
+	"side-or-corner": {
+		syntax: "[ left | right ] || [ top | bottom ]",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "left"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "right"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "top"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "bottom"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"sin()": {
+		syntax: "sin( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "sin",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"single-animation": {
+		syntax: "<'animation-duration'> || <easing-function> || <'animation-delay'> || <single-animation-iteration-count> || <single-animation-direction> || <single-animation-fill-mode> || <single-animation-play-state> || [ none | <keyframes-name> ] || <single-animation-timeline>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 3,
+						val: "animation-duration"
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "easing-function"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 3,
+										val: "animation-delay"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "single-animation-iteration-count"
+											}
+										],
+										r: [
+											{
+												typ: 29,
+												l: [
+													{
+														typ: 2,
+														val: "single-animation-direction"
+													}
+												],
+												r: [
+													{
+														typ: 29,
+														l: [
+															{
+																typ: 2,
+																val: "single-animation-fill-mode"
+															}
+														],
+														r: [
+															{
+																typ: 29,
+																l: [
+																	{
+																		typ: 2,
+																		val: "single-animation-play-state"
+																	}
+																],
+																r: [
+																	{
+																		typ: 29,
+																		l: [
+																			{
+																				typ: 23,
+																				chi: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "none"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 2,
+																								val: "keyframes-name"
+																							}
+																						]
+																					}
+																				]
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 2,
+																				val: "single-animation-timeline"
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"single-animation-direction": {
+		syntax: "normal | reverse | alternate | alternate-reverse",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "reverse"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "alternate"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "alternate-reverse"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"single-animation-fill-mode": {
+		syntax: "none | forwards | backwards | both",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "forwards"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "backwards"
+									}
+								],
+								r: [
+									{
+										typ: 1,
+										val: "both"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"single-animation-iteration-count": {
+		syntax: "infinite | <number>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "infinite"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "number"
+					}
+				]
+			}
+		]
+	},
+	"single-animation-play-state": {
+		syntax: "running | paused",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "running"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "paused"
+					}
+				]
+			}
+		]
+	},
+	"single-animation-timeline": {
+		syntax: "auto | none | <dashed-ident> | <scroll()> | <view()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "none"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "dashed-ident"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "scroll"
+											}
+										],
+										r: [
+											{
+												typ: 6,
+												val: "view"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"single-transition": {
+		syntax: "[ none | <single-transition-property> ] || <time> || <easing-function> || <time> || <transition-behavior-value>",
+		ast: [
+			{
+				typ: 29,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "none"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "single-transition-property"
+									}
+								]
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 29,
+						l: [
+							{
+								typ: 2,
+								val: "time"
+							}
+						],
+						r: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "easing-function"
+									}
+								],
+								r: [
+									{
+										typ: 29,
+										l: [
+											{
+												typ: 2,
+												val: "time"
+											}
+										],
+										r: [
+											{
+												typ: 2,
+												val: "transition-behavior-value"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"single-transition-property": {
+		syntax: "all | <custom-ident>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "all"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "custom-ident"
+					}
+				]
+			}
+		]
+	},
+	size: {
+		syntax: "closest-side | farthest-side | closest-corner | farthest-corner | <length> | <length-percentage>{2}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "closest-side"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "farthest-side"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "closest-corner"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "farthest-corner"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 2,
+														val: "length"
+													}
+												],
+												r: [
+													{
+														typ: 2,
+														val: "length-percentage",
+														occurence: {
+															min: 2,
+															max: 0
+														}
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"sqrt()": {
+		syntax: "sqrt( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "sqrt",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	"step-position": {
+		syntax: "jump-start | jump-end | jump-none | jump-both | start | end",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "jump-start"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "jump-end"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "jump-none"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "jump-both"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "start"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "end"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"step-timing-function": {
+		syntax: "step-start | step-end | steps(<integer>[, <step-position>]?)",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "step-start"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "step-end"
+							}
+						],
+						r: [
+							{
+								typ: 19,
+								val: "steps",
+								chi: [
+									{
+										typ: 2,
+										val: "integer"
+									},
+									{
+										typ: 23,
+										chi: [
+											{
+												typ: 11
+											},
+											{
+												typ: 21
+											},
+											{
+												typ: 2,
+												val: "step-position"
+											}
+										],
+										isOptional: true
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"subclass-selector": {
+		syntax: "<id-selector> | <class-selector> | <attribute-selector> | <pseudo-class-selector>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "id-selector"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "class-selector"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "attribute-selector"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "pseudo-class-selector"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"supports-condition": {
+		syntax: "not <supports-in-parens> | <supports-in-parens> [ and <supports-in-parens> ]* | <supports-in-parens> [ or <supports-in-parens> ]*",
+		ast: [
+			{
+				typ: 1,
+				val: "not"
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "supports-in-parens"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "supports-in-parens"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 1,
+								val: "and"
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "supports-in-parens"
+							}
+						],
+						isRepeatable: true
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "supports-in-parens"
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 1,
+						val: "or"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "supports-in-parens"
+					}
+				],
+				isRepeatable: true
+			}
+		]
+	},
+	"supports-in-parens": {
+		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 31,
+						val: "",
+						chi: [
+							{
+								typ: 2,
+								val: "supports-condition"
+							}
+						]
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "supports-feature"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "general-enclosed"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"supports-feature": {
+		syntax: "<supports-decl> | <supports-selector-fn>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "supports-decl"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "supports-selector-fn"
+					}
+				]
+			}
+		]
+	},
+	"supports-decl": {
+		syntax: "( <declaration> )",
+		ast: [
+			{
+				typ: 31,
+				val: "",
+				chi: [
+					{
+						typ: 2,
+						val: "declaration"
+					}
+				]
+			}
+		]
+	},
+	"supports-selector-fn": {
+		syntax: "selector( <complex-selector> )",
+		ast: [
+			{
+				typ: 19,
+				val: "selector",
+				chi: [
+					{
+						typ: 2,
+						val: "complex-selector"
+					}
+				]
+			}
+		]
+	},
+	symbol: {
+		syntax: "<string> | <image> | <custom-ident>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "string"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "image"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "custom-ident"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"tan()": {
+		syntax: "tan( <calc-sum> )",
+		ast: [
+			{
+				typ: 19,
+				val: "tan",
+				chi: [
+					{
+						typ: 2,
+						val: "calc-sum"
+					}
+				]
+			}
+		]
+	},
+	target: {
+		syntax: "<target-counter()> | <target-counters()> | <target-text()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "target-counter"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "target-counters"
+							}
+						],
+						r: [
+							{
+								typ: 6,
+								val: "target-text"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"target-counter()": {
+		syntax: "target-counter( [ <string> | <url> ] , <custom-ident> , <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "target-counter",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "url"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"target-counters()": {
+		syntax: "target-counters( [ <string> | <url> ] , <custom-ident> , <string> , <counter-style>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "target-counters",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "url"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "custom-ident"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "string"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "counter-style",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"target-text()": {
+		syntax: "target-text( [ <string> | <url> ] , [ content | before | after | first-letter ]? )",
+		ast: [
+			{
+				typ: 19,
+				val: "target-text",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "string"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "url"
+									}
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "content"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "before"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "after"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "first-letter"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"time-percentage": {
+		syntax: "<time> | <percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "time"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "percentage"
+					}
+				]
+			}
+		]
+	},
+	"timeline-range-name": {
+		syntax: "cover | contain | entry | exit | entry-crossing | exit-crossing",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "cover"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "contain"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "entry"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "exit"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "entry-crossing"
+													}
+												],
+												r: [
+													{
+														typ: 1,
+														val: "exit-crossing"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"easing-function": {
+		syntax: "linear | <cubic-bezier-timing-function> | <step-timing-function>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "linear"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "cubic-bezier-timing-function"
+							}
+						],
+						r: [
+							{
+								typ: 2,
+								val: "step-timing-function"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"track-breadth": {
+		syntax: "<length-percentage> | <flex> | min-content | max-content | auto",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 2,
+								val: "flex"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "min-content"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "max-content"
+											}
+										],
+										r: [
+											{
+												typ: 1,
+												val: "auto"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"track-list": {
+		syntax: "[ <line-names>? [ <track-size> | <track-repeat> ] ]+ <line-names>?",
+		ast: [
+			{
+				typ: 23,
+				chi: [
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 2,
+										val: "track-size"
+									}
+								],
+								r: [
+									{
+										typ: 2,
+										val: "track-repeat"
+									}
+								]
+							}
+						]
+					}
+				],
+				atLeastOnce: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "line-names",
+				isOptional: true
+			}
+		]
+	},
+	"track-repeat": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <line-names>? <track-size> ]+ <line-names>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "repeat",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "integer",
+								range: [
+									1,
+									null
+								]
+							}
+						]
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 2,
+								val: "line-names",
+								isOptional: true
+							},
+							{
+								typ: 21
+							},
+							{
+								typ: 2,
+								val: "track-size"
+							}
+						],
+						atLeastOnce: true
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "line-names",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"track-size": {
+		syntax: "<track-breadth> | minmax( <inflexible-breadth> , <track-breadth> ) | fit-content( <length-percentage> )",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "track-breadth"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 19,
+								val: "minmax",
+								chi: [
+									{
+										typ: 2,
+										val: "inflexible-breadth"
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 11
+									},
+									{
+										typ: 21
+									},
+									{
+										typ: 2,
+										val: "track-breadth"
+									}
+								]
+							}
+						],
+						r: [
+							{
+								typ: 19,
+								val: "fit-content",
+								chi: [
+									{
+										typ: 2,
+										val: "length-percentage"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"transform-function": {
+		syntax: "<matrix()> | <translate()> | <translateX()> | <translateY()> | <scale()> | <scaleX()> | <scaleY()> | <rotate()> | <skew()> | <skewX()> | <skewY()> | <matrix3d()> | <translate3d()> | <translateZ()> | <scale3d()> | <scaleZ()> | <rotate3d()> | <rotateX()> | <rotateY()> | <rotateZ()> | <perspective()>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 6,
+						val: "matrix"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 6,
+								val: "translate"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 6,
+										val: "translateX"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 6,
+												val: "translateY"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 6,
+														val: "scale"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 6,
+																val: "scaleX"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 6,
+																		val: "scaleY"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 6,
+																				val: "rotate"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 6,
+																						val: "skew"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 6,
+																								val: "skewX"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 6,
+																										val: "skewY"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 6,
+																												val: "matrix3d"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 6,
+																														val: "translate3d"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 6,
+																																val: "translateZ"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 6,
+																																		val: "scale3d"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 6,
+																																				val: "scaleZ"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 6,
+																																						val: "rotate3d"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 6,
+																																								val: "rotateX"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 6,
+																																										val: "rotateY"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 6,
+																																												val: "rotateZ"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 6,
+																																												val: "perspective"
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"transform-list": {
+		syntax: "<transform-function>+",
+		ast: [
+			{
+				typ: 2,
+				val: "transform-function",
+				atLeastOnce: true
+			}
+		]
+	},
+	"transition-behavior-value": {
+		syntax: "normal | allow-discrete",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "normal"
+					}
+				],
+				r: [
+					{
+						typ: 1,
+						val: "allow-discrete"
+					}
+				]
+			}
+		]
+	},
+	"translate()": {
+		syntax: "translate( <length-percentage> , <length-percentage>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "translate",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"translate3d()": {
+		syntax: "translate3d( <length-percentage> , <length-percentage> , <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translate3d",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"translateX()": {
+		syntax: "translateX( <length-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translateX",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"translateY()": {
+		syntax: "translateY( <length-percentage> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translateY",
+				chi: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"translateZ()": {
+		syntax: "translateZ( <length> )",
+		ast: [
+			{
+				typ: 19,
+				val: "translateZ",
+				chi: [
+					{
+						typ: 2,
+						val: "length"
+					}
+				]
+			}
+		]
+	},
+	"type-or-unit": {
+		syntax: "string | color | url | integer | number | length | angle | time | frequency | cap | ch | em | ex | ic | lh | rlh | rem | vb | vi | vw | vh | vmin | vmax | mm | Q | cm | in | pt | pc | px | deg | grad | rad | turn | ms | s | Hz | kHz | %",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "string"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "color"
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 1,
+										val: "url"
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 1,
+												val: "integer"
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 1,
+														val: "number"
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 1,
+																val: "length"
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 1,
+																		val: "angle"
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 1,
+																				val: "time"
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 1,
+																						val: "frequency"
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 1,
+																								val: "cap"
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 1,
+																										val: "ch"
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 1,
+																												val: "em"
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 28,
+																												l: [
+																													{
+																														typ: 1,
+																														val: "ex"
+																													}
+																												],
+																												r: [
+																													{
+																														typ: 28,
+																														l: [
+																															{
+																																typ: 1,
+																																val: "ic"
+																															}
+																														],
+																														r: [
+																															{
+																																typ: 28,
+																																l: [
+																																	{
+																																		typ: 1,
+																																		val: "lh"
+																																	}
+																																],
+																																r: [
+																																	{
+																																		typ: 28,
+																																		l: [
+																																			{
+																																				typ: 1,
+																																				val: "rlh"
+																																			}
+																																		],
+																																		r: [
+																																			{
+																																				typ: 28,
+																																				l: [
+																																					{
+																																						typ: 1,
+																																						val: "rem"
+																																					}
+																																				],
+																																				r: [
+																																					{
+																																						typ: 28,
+																																						l: [
+																																							{
+																																								typ: 1,
+																																								val: "vb"
+																																							}
+																																						],
+																																						r: [
+																																							{
+																																								typ: 28,
+																																								l: [
+																																									{
+																																										typ: 1,
+																																										val: "vi"
+																																									}
+																																								],
+																																								r: [
+																																									{
+																																										typ: 28,
+																																										l: [
+																																											{
+																																												typ: 1,
+																																												val: "vw"
+																																											}
+																																										],
+																																										r: [
+																																											{
+																																												typ: 28,
+																																												l: [
+																																													{
+																																														typ: 1,
+																																														val: "vh"
+																																													}
+																																												],
+																																												r: [
+																																													{
+																																														typ: 28,
+																																														l: [
+																																															{
+																																																typ: 1,
+																																																val: "vmin"
+																																															}
+																																														],
+																																														r: [
+																																															{
+																																																typ: 28,
+																																																l: [
+																																																	{
+																																																		typ: 1,
+																																																		val: "vmax"
+																																																	}
+																																																],
+																																																r: [
+																																																	{
+																																																		typ: 28,
+																																																		l: [
+																																																			{
+																																																				typ: 1,
+																																																				val: "mm"
+																																																			}
+																																																		],
+																																																		r: [
+																																																			{
+																																																				typ: 28,
+																																																				l: [
+																																																					{
+																																																						typ: 1,
+																																																						val: "Q"
+																																																					}
+																																																				],
+																																																				r: [
+																																																					{
+																																																						typ: 28,
+																																																						l: [
+																																																							{
+																																																								typ: 1,
+																																																								val: "cm"
+																																																							}
+																																																						],
+																																																						r: [
+																																																							{
+																																																								typ: 28,
+																																																								l: [
+																																																									{
+																																																										typ: 1,
+																																																										val: "in"
+																																																									}
+																																																								],
+																																																								r: [
+																																																									{
+																																																										typ: 28,
+																																																										l: [
+																																																											{
+																																																												typ: 1,
+																																																												val: "pt"
+																																																											}
+																																																										],
+																																																										r: [
+																																																											{
+																																																												typ: 28,
+																																																												l: [
+																																																													{
+																																																														typ: 1,
+																																																														val: "pc"
+																																																													}
+																																																												],
+																																																												r: [
+																																																													{
+																																																														typ: 28,
+																																																														l: [
+																																																															{
+																																																																typ: 1,
+																																																																val: "px"
+																																																															}
+																																																														],
+																																																														r: [
+																																																															{
+																																																																typ: 28,
+																																																																l: [
+																																																																	{
+																																																																		typ: 1,
+																																																																		val: "deg"
+																																																																	}
+																																																																],
+																																																																r: [
+																																																																	{
+																																																																		typ: 28,
+																																																																		l: [
+																																																																			{
+																																																																				typ: 1,
+																																																																				val: "grad"
+																																																																			}
+																																																																		],
+																																																																		r: [
+																																																																			{
+																																																																				typ: 28,
+																																																																				l: [
+																																																																					{
+																																																																						typ: 1,
+																																																																						val: "rad"
+																																																																					}
+																																																																				],
+																																																																				r: [
+																																																																					{
+																																																																						typ: 28,
+																																																																						l: [
+																																																																							{
+																																																																								typ: 1,
+																																																																								val: "turn"
+																																																																							}
+																																																																						],
+																																																																						r: [
+																																																																							{
+																																																																								typ: 28,
+																																																																								l: [
+																																																																									{
+																																																																										typ: 1,
+																																																																										val: "ms"
+																																																																									}
+																																																																								],
+																																																																								r: [
+																																																																									{
+																																																																										typ: 28,
+																																																																										l: [
+																																																																											{
+																																																																												typ: 1,
+																																																																												val: "s"
+																																																																											}
+																																																																										],
+																																																																										r: [
+																																																																											{
+																																																																												typ: 28,
+																																																																												l: [
+																																																																													{
+																																																																														typ: 1,
+																																																																														val: "Hz"
+																																																																													}
+																																																																												],
+																																																																												r: [
+																																																																													{
+																																																																														typ: 28,
+																																																																														l: [
+																																																																															{
+																																																																																typ: 1,
+																																																																																val: "kHz"
+																																																																															}
+																																																																														],
+																																																																														r: [
+																																																																															{
+																																																																																typ: 1,
+																																																																																val: "%"
+																																																																															}
+																																																																														]
+																																																																													}
+																																																																												]
+																																																																											}
+																																																																										]
+																																																																									}
+																																																																								]
+																																																																							}
+																																																																						]
+																																																																					}
+																																																																				]
+																																																																			}
+																																																																		]
+																																																																	}
+																																																																]
+																																																															}
+																																																														]
+																																																													}
+																																																												]
+																																																											}
+																																																										]
+																																																									}
+																																																								]
+																																																							}
+																																																						]
+																																																					}
+																																																				]
+																																																			}
+																																																		]
+																																																	}
+																																																]
+																																															}
+																																														]
+																																													}
+																																												]
+																																											}
+																																										]
+																																									}
+																																								]
+																																							}
+																																						]
+																																					}
+																																				]
+																																			}
+																																		]
+																																	}
+																																]
+																															}
+																														]
+																													}
+																												]
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"type-selector": {
+		syntax: "<wq-name> | <ns-prefix>? '*'",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 2,
+						val: "wq-name"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "ns-prefix",
+						isOptional: true
+					}
+				]
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 1,
+				val: "'",
+				isRepeatable: true
+			},
+			{
+				typ: 1,
+				val: "'"
+			}
+		]
+	},
+	"var()": {
+		syntax: "var( <custom-property-name> , <declaration-value>? )",
+		ast: [
+			{
+				typ: 19,
+				val: "var",
+				chi: [
+					{
+						typ: 2,
+						val: "custom-property-name"
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 11
+					},
+					{
+						typ: 21
+					},
+					{
+						typ: 2,
+						val: "declaration-value",
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"view()": {
+		syntax: "view([<axis> || <'view-timeline-inset'>]?)",
+		ast: [
+			{
+				typ: 19,
+				val: "view",
+				chi: [
+					{
+						typ: 23,
+						chi: [
+							{
+								typ: 29,
+								l: [
+									{
+										typ: 2,
+										val: "axis"
+									}
+								],
+								r: [
+									{
+										typ: 3,
+										val: "view-timeline-inset"
+									}
+								]
+							}
+						],
+						isOptional: true
+					}
+				]
+			}
+		]
+	},
+	"viewport-length": {
+		syntax: "auto | <length-percentage>",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "auto"
+					}
+				],
+				r: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					}
+				]
+			}
+		]
+	},
+	"visual-box": {
+		syntax: "content-box | padding-box | border-box",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "content-box"
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 1,
+								val: "padding-box"
+							}
+						],
+						r: [
+							{
+								typ: 1,
+								val: "border-box"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"wq-name": {
+		syntax: "<ns-prefix>? <ident-token>",
+		ast: [
+			{
+				typ: 2,
+				val: "ns-prefix",
+				isOptional: true
+			},
+			{
+				typ: 21
+			},
+			{
+				typ: 2,
+				val: "ident-token"
+			}
+		]
+	}
+};
+var config = {
+	declarations: declarations,
+	functions: functions,
+	syntaxes: syntaxes
+};
+
+export { declarations, config as default, functions, syntaxes };

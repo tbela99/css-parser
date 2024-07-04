@@ -16,6 +16,6 @@ console.debug(JSON.stringify({
 );
 
 // console.debug(
-//     JSON.stringify(parseSyntax('normal | bold | <number [1,1000]>'), null, 1)
+//     JSON.stringify(parseSyntax('<display-outside>? && [ flow | flow-root ]? && list-item'), null, 1)
 // );
 

@@ -1,0 +1,37 @@
+var ValidationTokenEnum;
+(function (ValidationTokenEnum) {
+    ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
+    ValidationTokenEnum[ValidationTokenEnum["Keyword"] = 1] = "Keyword";
+    ValidationTokenEnum[ValidationTokenEnum["PropertyType"] = 2] = "PropertyType";
+    ValidationTokenEnum[ValidationTokenEnum["DeclarationType"] = 3] = "DeclarationType";
+    ValidationTokenEnum[ValidationTokenEnum["AtRule"] = 4] = "AtRule";
+    ValidationTokenEnum[ValidationTokenEnum["ValidationFunction"] = 5] = "ValidationFunction";
+    ValidationTokenEnum[ValidationTokenEnum["ValidationFunctionDefinition"] = 6] = "ValidationFunctionDefinition";
+    ValidationTokenEnum[ValidationTokenEnum["OpenBracket"] = 7] = "OpenBracket";
+    ValidationTokenEnum[ValidationTokenEnum["CloseBracket"] = 8] = "CloseBracket";
+    ValidationTokenEnum[ValidationTokenEnum["OpenParenthesis"] = 9] = "OpenParenthesis";
+    ValidationTokenEnum[ValidationTokenEnum["CloseParenthesis"] = 10] = "CloseParenthesis";
+    ValidationTokenEnum[ValidationTokenEnum["Comma"] = 11] = "Comma";
+    ValidationTokenEnum[ValidationTokenEnum["Pipe"] = 12] = "Pipe";
+    ValidationTokenEnum[ValidationTokenEnum["Column"] = 13] = "Column";
+    ValidationTokenEnum[ValidationTokenEnum["Star"] = 14] = "Star";
+    ValidationTokenEnum[ValidationTokenEnum["OpenCurlyBrace"] = 15] = "OpenCurlyBrace";
+    ValidationTokenEnum[ValidationTokenEnum["CloseCurlyBrace"] = 16] = "CloseCurlyBrace";
+    ValidationTokenEnum[ValidationTokenEnum["HashMark"] = 17] = "HashMark";
+    ValidationTokenEnum[ValidationTokenEnum["QuestionMark"] = 18] = "QuestionMark";
+    ValidationTokenEnum[ValidationTokenEnum["Function"] = 19] = "Function";
+    ValidationTokenEnum[ValidationTokenEnum["Number"] = 20] = "Number";
+    ValidationTokenEnum[ValidationTokenEnum["Whitespace"] = 21] = "Whitespace";
+    ValidationTokenEnum[ValidationTokenEnum["Parenthesis"] = 22] = "Parenthesis";
+    ValidationTokenEnum[ValidationTokenEnum["Bracket"] = 23] = "Bracket";
+    ValidationTokenEnum[ValidationTokenEnum["AtLeastOnce"] = 24] = "AtLeastOnce";
+    ValidationTokenEnum[ValidationTokenEnum["Separator"] = 25] = "Separator";
+    ValidationTokenEnum[ValidationTokenEnum["Exclamation"] = 26] = "Exclamation";
+    ValidationTokenEnum[ValidationTokenEnum["Ampersand"] = 27] = "Ampersand";
+    ValidationTokenEnum[ValidationTokenEnum["PipeToken"] = 28] = "PipeToken";
+    ValidationTokenEnum[ValidationTokenEnum["ColumnToken"] = 29] = "ColumnToken";
+    ValidationTokenEnum[ValidationTokenEnum["AmpersandToken"] = 30] = "AmpersandToken";
+    ValidationTokenEnum[ValidationTokenEnum["ParentsToken"] = 31] = "ParentsToken";
+})(ValidationTokenEnum || (ValidationTokenEnum = {}));
+
+export { ValidationTokenEnum };

@@ -15,8 +15,10 @@ export function validateDeclaration(ast: AstDeclaration, errors?: ErrorDescripti
 
     if (!(ast.nam in config.declarations)) {
 
+        const isShortHand: boolean = ast.nam.match(/^-[a-z]+-/) != null;
+
         errors?.push({
-            action: ValidationAction.Drop,
+            action: isShortHand ? ValidationAction.Ignore : ValidationAction.Drop,
             message: `unknown declaration '${ast.nam}'`,
             location: ast.loc == null ? null : {
                 src: ast.loc.src,
@@ -25,10 +27,12 @@ export function validateDeclaration(ast: AstDeclaration, errors?: ErrorDescripti
             }
         });
 
-        return false;
+        return isShortHand
     }
 
-    // console.error(JSON.stringify({ast}, null, 1));
+//    console.error(JSON.stringify(config.declarations[ast.nam], null, 1));
+    console.debug(ast);
+    console.debug(config.declarations[ast.nam].syntax);
 
     if (!validateSyntax(config.declarations[ast.nam].ast, ast.val, errors)) {
 

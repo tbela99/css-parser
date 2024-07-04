@@ -16,28 +16,28 @@ export default [
             }
         ]
     },
-    // {
-    //     input: 'src/node/index.ts',
-    //     plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
-    //     output: [
-    //         {
-    //             file: './dist/index.cjs',
-    //             format: 'cjs',
-    //             name: 'CSSParser'
-    //         }
-    //     ]
-    // },
-    // {
-    //     input: 'src/web/index.ts',
-    //     plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
-    //     output: [
-    //         {
-    //             file: './dist/index-umd-web.js',
-    //             format: 'umd',
-    //             name: 'CSSParser'
-    //         }
-    //     ]
-    // },
+    {
+        input: 'src/node/index.ts',
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
+        output: [
+            {
+                file: './dist/index.cjs',
+                format: 'cjs',
+                name: 'CSSParser'
+            }
+        ]
+    },
+    {
+        input: 'src/web/index.ts',
+        plugins: [nodeResolve(), commonjs({transformMixedEsModules: true}), json(), typescript()],
+        output: [
+            {
+                file: './dist/index-umd-web.js',
+                format: 'umd',
+                name: 'CSSParser'
+            }
+        ]
+    },
     {
         input: 'src/node/index.ts',
         plugins: [dts(), json()],

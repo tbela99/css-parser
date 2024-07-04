@@ -1,5 +1,10 @@
 # Changelog
 
+- [x] experimental css validation. 
+  - [ ] declaration validation
+  - [ ] at-rule
+  - [ ] rule
+
 ## V0.5.3
 
 - [x] incorrectly expand css nesting rules
