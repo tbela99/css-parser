@@ -7201,11 +7201,17 @@
                     const rule = ast.chi[i];
                     if (!rule.sel.includes('&')) {
                         const selRule = splitRule(rule.sel);
-                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
-                        rule.sel = selRule.reduce((acc, curr) => {
-                            acc.push(curr.join(''));
-                            return acc;
-                        }, []).join(',');
+                        if (selRule.length > 1) {
+                            const r = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
+                            rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), []).join(',');
+                        }
+                        else {
+                            selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
+                            rule.sel = selRule.reduce((acc, curr) => {
+                                acc.push(curr.join(''));
+                                return acc;
+                            }, []).join(',');
+                        }
                     }
                     else {
                         rule.sel = replaceCompound(rule.sel, ast.sel);
