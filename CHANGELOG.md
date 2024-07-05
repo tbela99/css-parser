@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.5.4
+
+- [x] incorrectly expand css nesting rules
+
 ## V0.5.3
 
 - [x] incorrectly expand css nesting rules
