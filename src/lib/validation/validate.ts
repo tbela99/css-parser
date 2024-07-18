@@ -1,7 +1,7 @@
-import {AstDeclaration, AstRuleList, Node} from "../../@types";
+import {AstDeclaration, AstRuleList, Node} from "../../@types/index.d";
 import {EnumToken} from "../ast";
 import {validateDeclaration} from "./declaration";
-import {ErrorDescription} from "../../@types/validation";
+import {ErrorDescription} from "../../@types/validation.d";
 
 
 export function validate(ast: Node, errors?: ErrorDescription[], parent?: AstRuleList): boolean {

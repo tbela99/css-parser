@@ -31,7 +31,8 @@ import {tokenize} from "./tokenize";
 import {
     AstAtRule,
     AstComment,
-    AstDeclaration, AstKeyFrameRule,
+    AstDeclaration,
+    AstKeyFrameRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -83,8 +84,8 @@ import {
     UnclosedStringToken,
     UrlToken,
     WhitespaceToken
-} from "../../@types";
-import {ErrorDescription} from "../../@types/validation";
+} from "../../@types/index.d";
+import {ErrorDescription} from "../../@types/validation.d";
 import {validate} from "../validation";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -430,10 +431,12 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
             // @ts-ignore
             context.chi.push(tokens[i]);
 
-            Object.defineProperty(tokens[i], 'loc', {...definedPropertySettings, value: <Location>{
+            Object.defineProperty(tokens[i], 'loc', {
+                ...definedPropertySettings, value: <Location>{
                     sta: position,
                     src
-                }, enumerable: options.sourcemap});
+                }, enumerable: options.sourcemap
+            });
 
         } else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
             break;
@@ -506,14 +509,22 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                         continue;
                     }
                     if (type != EnumToken.AtRuleNodeType) {
-                        errors.push({action: ValidationAction.Drop, message: 'invalid @import', location: {src, ...position}});
+                        errors.push({
+                            action: ValidationAction.Drop,
+                            message: 'invalid @import',
+                            location: {src, ...position}
+                        });
                         return null;
                     }
 
                     const name: string = (<AstAtRule>context.chi[i]).nam;
 
                     if (name != 'charset' && name != 'import' && name != 'layer') {
-                        errors.push({action: ValidationAction.Drop, message: 'invalid @import', location: {src, ...position}});
+                        errors.push({
+                            action: ValidationAction.Drop,
+                            message: 'invalid @import',
+                            location: {src, ...position}
+                        });
                         return null;
                     }
 
@@ -779,7 +790,12 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                 val: value
             }
 
-            Object.defineProperty(node, 'loc', {enumerable: false, configurable: true, writable: true, value: <Location>{sta: position, src}});
+            Object.defineProperty(node, 'loc', {
+                enumerable: false,
+                configurable: true,
+                writable: true,
+                value: <Location>{sta: position, src}
+            });
 
             const result: AstDeclaration | null = parseDeclaration(node, errors, src, position);
 
@@ -1025,7 +1041,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     };
 }
 
-export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
+export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
 
     for (let i = 0; i < tokens.length; i++) {
 

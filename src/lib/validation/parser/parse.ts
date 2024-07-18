@@ -24,7 +24,7 @@ import {
     ValidationDeclarationToken,
     ValidationFunctionDefinitionToken,
     ValidationFunctionToken,
-    ValidationKeywordToken,
+    ValidationKeywordToken, ValidationParensToken,
     ValidationPipeToken,
     ValidationPropertyToken,
     ValidationRootToken,
@@ -42,6 +42,22 @@ declare type ValidationContext =
 interface ValidationTokenIteratorValue {
     value: ValidationToken;
     done: boolean;
+}
+
+const skipped = [
+
+    ValidationTokenEnum.Star,
+    ValidationTokenEnum.HashMark,
+    ValidationTokenEnum.AtLeastOnce,
+    ValidationTokenEnum.Exclamation,
+    ValidationTokenEnum.QuestionMark,
+    ValidationTokenEnum.OpenCurlyBrace
+];
+
+const objectProperties = {
+    enumerable: false,
+    writable: true,
+    configurable: true
 }
 
 // syntax: keyword | <'property'> | <function>
@@ -162,20 +178,287 @@ function* tokenize(syntax: string): Generator<ValidationToken> {
 
 export function parseSyntax(syntax: string): ValidationRootToken {
 
-    const root: ValidationRootToken = {
+    const root: ValidationRootToken = Object.defineProperty({
         typ: ValidationTokenEnum.Root,
-        chi: [],
-        pos: {ind: 0, lin: 1, col: 0}
-    } as ValidationRootToken;
+        chi: [] as ValidationToken[]
+    }, 'pos', {...objectProperties, value: {ind: 0, lin: 1, col: 0}}) as ValidationRootToken;
 
     return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
 }
 
-function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIteratorValue> | Generator<ValidationToken>, context: ValidationContext): ValidationContext {
+function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorValue> | Generator<ValidationToken>): ValidationToken[] {
 
     let item: ValidationTokenIteratorValue;
-    let hasPipe: boolean = false;
-    let pipe: ValidationTokenEnum;
+    let func: ValidationFunctionToken | ValidationParensToken | null = null;
+    let items: ValidationToken[] = [];
+
+    let match: number = 0;
+
+    while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
+
+        switch (item.value.typ) {
+
+            case ValidationTokenEnum.OpenParenthesis:
+
+                if (match > 0) {
+
+                    func!.chi.push(item.value);
+                } else if (match == 0) {
+
+                    func = items.at(-1) as ValidationFunctionToken;
+
+                    if (func == null) {
+
+                        func = Object.defineProperty({
+
+                            typ: ValidationTokenEnum.Parens,
+                            val: '',
+                            chi: [] as ValidationToken[]
+                        }, 'pos', {...objectProperties, value: item.value.pos}) as ValidationParensToken;
+
+                        items.push(func);
+                    }
+
+                    else {
+
+                        func.typ = ValidationTokenEnum.Function;
+                        func.chi = [];
+                    }
+                }
+
+                match++;
+                break;
+
+            case ValidationTokenEnum.CloseParenthesis:
+
+                match--;
+
+                if (match > 0) {
+
+                    func!.chi.push(item.value);
+                }
+
+                break;
+
+            default:
+
+                if (match > 0) {
+
+                    func!.chi.push(item.value);
+
+                } else {
+
+                    items.push(item.value);
+                }
+
+                break;
+        }
+    }
+
+    for (const item of items) {
+
+        if ('chi' in item) {
+
+            // @ts-ignore
+            item.chi = matchParens(syntax, ((item as ValidationContext).chi as ValidationToken[])[Symbol.iterator]());
+        }
+    }
+
+    return items;
+}
+
+function matchBrackets(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>): ValidationToken[] {
+
+    let item: ValidationTokenIteratorValue;
+    let bracket: ValidationBracketToken | null = null;
+    let items: ValidationToken[] = [];
+
+    let match: number = 0;
+
+    while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
+
+        switch (item.value.typ) {
+
+            case ValidationTokenEnum.OpenBracket:
+
+                if (match > 0) {
+
+                    bracket!.chi.push(item.value);
+                } else if (match == 0) {
+
+                    bracket = Object.defineProperty({
+                        typ: ValidationTokenEnum.Bracket,
+                        chi: [] as ValidationToken[]
+                    }, 'pos', {...objectProperties, value: item.value.pos}) as ValidationBracketToken;
+
+                    items.push(bracket);
+                }
+
+                match++;
+                break;
+
+            case ValidationTokenEnum.CloseBracket:
+
+                match--;
+
+                if (match > 0) {
+
+                    bracket!.chi.push(item.value);
+                }
+
+                break;
+
+            default:
+
+                if (match > 0) {
+
+                    bracket!.chi.push(item.value);
+
+                } else {
+
+                    items.push(item.value);
+                }
+
+                break;
+        }
+    }
+
+    for (const item of items) {
+
+        if ('chi' in item) {
+
+            // @ts-ignore
+            item.chi = matchBrackets(syntax, ((item as ValidationContext).chi as ValidationToken[])[Symbol.iterator]());
+        }
+    }
+
+    return items;
+}
+
+function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>, validationToken: ValidationTokenEnum.Ampersand | ValidationTokenEnum.Pipe | ValidationTokenEnum.Column): ValidationToken[] {
+
+    let children: ValidationToken[] = [];
+    let item: ValidationTokenIteratorValue;
+    let token: ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken | null = null;
+    let i: number ;
+
+    if (validationToken == ValidationTokenEnum.Ampersand) {
+
+        // @ts-ignore
+        children = [...iterator] as ValidationToken[];
+
+        let offsetL: number;
+        let offsetR: number;
+
+        for (i = 0; i < children.length; i++) {
+
+            if (children[i].typ == ValidationTokenEnum.Ampersand) {
+
+                offsetR = i + 1;
+                offsetL = i - 1;
+
+                while (offsetR < children.length - 1 && children[offsetR].typ == ValidationTokenEnum.Whitespace) {
+
+                    offsetR++;
+                }
+
+                while (offsetR + 1 < children.length && skipped.includes(children[offsetR + 1].typ)) {
+
+                    offsetR++;
+                }
+
+                while (offsetL > 0 && (children[offsetL].typ == ValidationTokenEnum.Whitespace || skipped.includes(children[offsetL].typ))) {
+
+                    offsetL--;
+                }
+
+                token = Object.defineProperty({
+
+                    typ: ValidationTokenEnum.AmpersandToken,
+                    l: children.slice(offsetL, i),
+                    r: children.slice(i + 1, offsetR + 1)
+                }, 'pos', {...objectProperties, value: children[i].pos}) as ValidationAmpersandToken;
+
+                i = offsetL;
+
+                children.splice(offsetL, offsetR - offsetL + 1, token);
+            } else if ('chi' in children[i]) {
+
+                // @ts-ignore
+                children[i].chi = matchToken(syntax, children[i].chi[Symbol.iterator](), validationToken);
+            } else if ('l' in children[i]) {
+
+                // @ts-ignore
+                children[i].l = matchToken(syntax, children[i].l[Symbol.iterator](), validationToken);
+                // @ts-ignore
+                children[i].r = matchToken(syntax, children[i].r[Symbol.iterator](), validationToken);
+            }
+        }
+
+        return children;
+    }
+
+    while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
+
+        if (item.value.typ == validationToken) {
+
+            token = Object.defineProperty({
+
+                typ: item.value.typ == ValidationTokenEnum.Pipe ? ValidationTokenEnum.PipeToken : ValidationTokenEnum.ColumnToken,
+                // @ts-ignore
+                l: matchToken(syntax, children.slice()[Symbol.iterator](), validationToken),
+                r: matchToken(syntax, iterator, validationToken)
+            }, 'pos', {...objectProperties, value: item.value.pos}) as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken;
+
+            children.length = 0;
+            children.push(token);
+
+            while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
+
+                children.push(item.value as ValidationToken);
+
+                if ('chi' in item.value) {
+                    // @ts-ignore
+                    item.value.chi = matchToken(syntax, (item.value.chi as ValidationToken[])[Symbol.iterator](), validationToken);
+                }
+
+                else if ('l' in item.value) {
+                    // @ts-ignore
+                    item.value.l = matchToken(syntax, (item.value.l as ValidationToken[])[Symbol.iterator](), validationToken);
+                    // @ts-ignore
+                    item.value.r = matchToken(syntax, (item.value.r as ValidationToken[])[Symbol.iterator](), validationToken);
+                }
+            }
+
+            // @ts-ignore
+            return children;
+
+        } else {
+
+            children.push(item.value as ValidationToken);
+
+            if ('chi' in item.value) {
+
+                // @ts-ignore
+                item.value.chi = matchToken(syntax, (item.value.chi as ValidationToken[])[Symbol.iterator](), validationToken);
+            }
+
+            else if ('l' in item.value) {
+                // @ts-ignore
+                item.value.l = matchToken(syntax, (item.value.l as ValidationToken[])[Symbol.iterator](), validationToken);
+                // @ts-ignore
+                item.value.r = matchToken(syntax, (item.value.r as ValidationToken[])[Symbol.iterator](), validationToken);
+            }
+        }
+    }
+
+    return children;
+}
+
+function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>): ValidationToken[] {
+
+    const items: ValidationToken[] = [];
+    let item: ValidationTokenIteratorValue;
     let i: number;
 
     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
@@ -189,11 +472,11 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
             case ValidationTokenEnum.QuestionMark:
             case ValidationTokenEnum.OpenCurlyBrace:
 
-                i = context.chi.length;
+                i = items.length;
 
                 while (i--) {
 
-                    if (context.chi[i].typ != ValidationTokenEnum.Whitespace) {
+                    if (items[i].typ != ValidationTokenEnum.Whitespace) {
 
                         break;
                     }
@@ -201,22 +484,22 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
                 if (item.value.typ == ValidationTokenEnum.Exclamation) {
 
-                    (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isRepeatableGroup = true;
+                    (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isRepeatableGroup = true;
                 } else if (item.value.typ == ValidationTokenEnum.QuestionMark) {
 
-                    (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isOptional = true;
+                    (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isOptional = true;
                 } else if (item.value.typ == ValidationTokenEnum.Star) {
 
-                    (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isRepeatable = true;
+                    (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isRepeatable = true;
                 } else if (item.value.typ == ValidationTokenEnum.AtLeastOnce) {
 
-                    (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).atLeastOnce = true;
+                    (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).atLeastOnce = true;
                 } else if (item.value.typ == ValidationTokenEnum.HashMark) {
 
-                    (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isList = true;
+                    (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).isList = true;
                 } else if (item.value.typ == ValidationTokenEnum.OpenCurlyBrace) {
 
-                    (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence = {
+                    (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence = {
 
                         min: 0,
                         max: 0
@@ -226,14 +509,14 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
                         if (item.value.typ == ValidationTokenEnum.Number) {
                             // @ts-ignore
-                            if ((context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min == 0) {
+                            if ((items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min == 0) {
 
                                 // @ts-ignore
-                                (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min = +(item.value as NumberToken).val;
+                                (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min = +(item.value as NumberToken).val;
                             } else {
 
                                 // @ts-ignore
-                                (context.chi[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.max = +(item.value as NumberToken).val;
+                                (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.max = +(item.value as NumberToken).val;
                             }
                         }
 
@@ -246,186 +529,49 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
 
                 break;
 
-            case ValidationTokenEnum.ValidationFunctionDefinition:
-            case ValidationTokenEnum.DeclarationType:
-            case ValidationTokenEnum.PropertyType:
-            case ValidationTokenEnum.Whitespace:
-            case ValidationTokenEnum.Separator:
-            case ValidationTokenEnum.Keyword:
-            case ValidationTokenEnum.Number:
-            case ValidationTokenEnum.Comma:
-
-                context.chi.push(item.value);
-                break;
-
-            case ValidationTokenEnum.Pipe:
-            case ValidationTokenEnum.Column:
-            case ValidationTokenEnum.Ampersand:
-
-                hasPipe = true;
-                pipe = item.value.typ;
-                context.chi.push(item.value);
-                break;
-
-            case ValidationTokenEnum.OpenBracket:
-
-                context.chi.push(Object.assign(parseBrackets(syntax, iterator as Iterator<ValidationTokenIteratorValue>, {pos: item.value.pos}) as ValidationToken, {pos: item.value.pos}));
-                break;
-
-            case ValidationTokenEnum.OpenParenthesis:
-
-                const name: string = (context.chi.pop() as ValidationKeywordToken)?.val ?? '';
-
-                context.chi.push(
-                    Object.assign(parseParenthesis(syntax, iterator as Iterator<ValidationTokenIteratorValue>, {pos: item.value.pos}) as ValidationToken, {
-                        val: name,
-                        pos: item.value.pos
-                    }, name === '' ? {typ: ValidationTokenEnum.ParentsToken} : {}) as ValidationFunctionToken);
-
-                break;
-
-            case ValidationTokenEnum.CloseParenthesis:
-
-                break;
-
             default:
 
-                throw new Error(`unsupported token at ${item.value.pos.lin}:${item.value.pos.col} : unexpected token '${JSON.stringify(item.value)}'
-                '${syntax.slice(item.value.pos.ind + 1, item.value.pos.ind + 10)}...\n'${syntax}'`);
+                items.push(item.value);
+                break;
         }
     }
 
-    if (hasPipe) {
+    for (const item of items) {
 
-
-        // i = context.chi.length;
-
-        const token = {
+        if ('chi' in item) {
             // @ts-ignore
-            typ: pipe == ValidationTokenEnum.Pipe ? ValidationTokenEnum.PipeToken : (pipe == ValidationTokenEnum.Column ? ValidationTokenEnum.ColumnToken : ValidationTokenEnum.AmpersandToken),
-            chi: [[]] as ValidationToken[][]
-        } as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken;
-
-        const chi = context.chi;
-        context.chi = [token];
-
-        for (const c of chi) {
-
+            item.chi = parseTokens(syntax, (item.chi as ValidationToken[])[Symbol.iterator]());
+        } else if ('l' in item) {
             // @ts-ignore
-            if (c.typ == pipe) {
-
-                token.chi.push([]);
-            } else {
-
-                token.chi[token.chi.length - 1].push(c);
-            }
+            item.l = parseTokens(syntax, (item.l as ValidationToken[])[Symbol.iterator]());
+            // @ts-ignore
+            item.r = parseTokens(syntax, (item.r as ValidationToken[])[Symbol.iterator]());
         }
-
-        // while (i-- > 2) {
-        //
-        //     if (
-        //         [ValidationTokenEnum.Pipe, ValidationTokenEnum.Column, ValidationTokenEnum.Ampersand].includes(context.chi[i].typ)) {
-        //
-        //         l = i - 1;
-        //
-        //         // @ts-ignore
-        //         while (l > 0 && context.chi[l].typ != (pipe as ValidationTokenEnum)) {
-        //
-        //             l--;
-        //         }
-        //
-        //         r = i + 1;
-        //
-        //         // @ts-ignore
-        //         while (r < context.chi.length - 1 && context.chi[r].typ == (pipe as ValidationTokenEnum)) {
-        //
-        //             r++;
-        //         }
-        //
-        //         const token = {
-        //             typ: context.chi[i].typ == ValidationTokenEnum.Pipe ? ValidationTokenEnum.PipeToken : (context.chi[i].typ == ValidationTokenEnum.Ampersand ? ValidationTokenEnum.AmpersandToken : ValidationTokenEnum.ColumnToken),
-        //             l: context.chi.slice(l, i),
-        //             r: context.chi.slice(i + 1, r + 1)
-        //         }
-        //
-        //         context.chi.splice(l, r - l + 1, token as ValidationPipeToken);
-        //         i = l;
-        //     }
-        // }
     }
+
+    return items;
+}
+
+function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIteratorValue> | Generator<ValidationToken>, context: ValidationContext): ValidationContext {
+
+    context.chi = matchParens(syntax, iterator);
+
+    // @ts-ignore
+    context.chi = matchBrackets(syntax, context.chi[Symbol.iterator]());
+
+    // @ts-ignore
+    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column) as ValidationColumnToken[];
+
+    // @ts-ignore
+    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Pipe) as ValidationPipeToken[];
+
+    // @ts-ignore
+    context.chi = parseTokens(syntax, context.chi[Symbol.iterator]()) as ValidationSemicolonToken[];
+
+    // @ts-ignore
+    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Ampersand) as ValidationAmpersandToken[];
 
     return context;
-}
-
-function parseParenthesis(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>, startPosition: {
-    pos: Position
-}) {
-
-    const token = {
-        typ: ValidationTokenEnum.Function,
-        val: '',
-        chi: [] as ValidationToken[],
-        pos: startPosition.pos
-    }
-
-    let match: number = 1;
-    let tokens: ValidationToken[] = [];
-    let item: ValidationTokenIteratorValue;
-
-    while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
-
-        if (item.value.typ == ValidationTokenEnum.OpenParenthesis) {
-
-            match++;
-        } else if (item.value.typ == ValidationTokenEnum.CloseParenthesis) {
-
-            match--;
-        }
-
-        if (match == 0) {
-
-            break;
-        }
-
-        tokens.push(item.value);
-    }
-
-    return doParseSyntax(syntax, tokens[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, token as ValidationContext) as ValidationBracketToken;
-}
-
-function parseBrackets(syntax: string, iterator: Iterator<ValidationTokenIteratorValue> | Generator<ValidationTokenIteratorValue>, startPosition: {
-    pos: Position
-}): ValidationBracketToken {
-
-    const token = {
-        typ: ValidationTokenEnum.Bracket,
-        chi: [] as ValidationToken[],
-        pos: startPosition.pos
-    }
-
-    let match: number = 1;
-    let tokens: ValidationToken[] = [];
-    let item: ValidationTokenIteratorValue;
-
-    while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
-
-        if (item.value.typ == ValidationTokenEnum.OpenBracket) {
-
-            match++;
-        } else if (item.value.typ == ValidationTokenEnum.CloseBracket) {
-
-            match--;
-        }
-
-        if (match == 0) {
-
-            break;
-        }
-
-        tokens.push(item.value);
-    }
-
-    return doParseSyntax(syntax, tokens[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, token as ValidationContext) as ValidationBracketToken;
 }
 
 function getTokenType(token: string, position: Position, currentPosition: Position): ValidationToken {
@@ -436,156 +582,138 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
     if (token.match(/^\s+$/)) {
 
-        return <ValidationWhitespaceToken>{
+        return <ValidationWhitespaceToken>Object.defineProperty({
             typ: ValidationTokenEnum.Whitespace,
             pos
-        };
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token.match(/^\d+$/)) {
 
-        return <NumberToken>{
+        return <NumberToken>Object.defineProperty({
             typ: ValidationTokenEnum.Number,
-            val: Number(token),
-            pos
-        };
+            val: Number(token)
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '!') {
 
-        return <ExclamationToken>{
-            typ: ValidationTokenEnum.Exclamation,
-            pos
-        };
+        return <ExclamationToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Exclamation
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '#') {
 
-        return <FinalToken>{
-            typ: ValidationTokenEnum.HashMark,
-            pos
-        };
+        return <FinalToken>Object.defineProperty({
+            typ: ValidationTokenEnum.HashMark
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '/') {
 
-        return <SeparatorToken>{
-            typ: ValidationTokenEnum.Separator,
-            pos
-        };
+        return <SeparatorToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Separator
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '+') {
 
-        return <AtLeastOneToken>{
-            typ: ValidationTokenEnum.AtLeastOnce,
-            pos
-        };
+        return <AtLeastOneToken>Object.defineProperty({
+            typ: ValidationTokenEnum.AtLeastOnce
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '|') {
 
-        return <PipeToken>{
-            typ: ValidationTokenEnum.Pipe,
-            pos
-        };
+        return <PipeToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Pipe
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '&&') {
 
-        return <AmpersandToken>{
-            typ: ValidationTokenEnum.Ampersand,
-            pos
-        };
+        return <AmpersandToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Ampersand
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '||') {
 
-        return <ColumnToken>{
-            typ: ValidationTokenEnum.Column,
-            pos
-        };
+        return <ColumnToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Column
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == ',') {
 
-        return <ValidationCommaToken>{
-            typ: ValidationTokenEnum.Comma,
-            pos
-        };
+        return <ValidationCommaToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Comma
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '[') {
 
-        return <OpenBracketToken>{
-            typ: ValidationTokenEnum.OpenBracket,
-            pos
-        };
+        return <OpenBracketToken>Object.defineProperty({
+            typ: ValidationTokenEnum.OpenBracket
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == ']') {
 
-        return <CloseBracketToken>{
-            typ: ValidationTokenEnum.CloseBracket,
-            pos
-        };
+        return <CloseBracketToken>Object.defineProperty({
+            typ: ValidationTokenEnum.CloseBracket
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '(') {
 
-        return <OpenParenthesisToken>{
-            typ: ValidationTokenEnum.OpenParenthesis,
-            pos
-        };
+        return <OpenParenthesisToken>Object.defineProperty({
+            typ: ValidationTokenEnum.OpenParenthesis
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == ')') {
 
-        return <CloseParenthesisToken>{
-            typ: ValidationTokenEnum.CloseParenthesis,
-            pos
-        };
+        return <CloseParenthesisToken>Object.defineProperty({
+            typ: ValidationTokenEnum.CloseParenthesis
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '{') {
 
-        return <OpenCurlyBraceToken>{
-            typ: ValidationTokenEnum.OpenCurlyBrace,
-            pos
-        };
+        return <OpenCurlyBraceToken>Object.defineProperty({
+            typ: ValidationTokenEnum.OpenCurlyBrace
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '}') {
 
-        return <CloseCurlyBraceToken>{
-            typ: ValidationTokenEnum.CloseCurlyBrace,
-            pos
-        };
+        return <CloseCurlyBraceToken>Object.defineProperty({
+            typ: ValidationTokenEnum.CloseCurlyBrace
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '*') {
 
-        return <StarToken>{
-            typ: ValidationTokenEnum.Star,
-            pos
-        };
+        return <StarToken>Object.defineProperty({
+            typ: ValidationTokenEnum.Star
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token == '?') {
 
-        return <OptionalToken>{
-            typ: ValidationTokenEnum.QuestionMark,
-            pos
-        };
+        return <OptionalToken>Object.defineProperty({
+            typ: ValidationTokenEnum.QuestionMark
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token.startsWith("<'")) {
 
-        return <ValidationDeclarationToken>{
+        return <ValidationDeclarationToken>Object.defineProperty({
             typ: ValidationTokenEnum.DeclarationType,
-            val: token.slice(2, -2),
-            pos
-        };
+            val: token.slice(2, -2)
+        }, 'pos', {...objectProperties, value: pos});
     }
 
     if (token.startsWith('<')) {
@@ -600,11 +728,10 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
             if (match != null) {
 
-                return <ValidationFunctionDefinitionToken>{
+                return <ValidationFunctionDefinitionToken>Object.defineProperty({
                     typ: ValidationTokenEnum.ValidationFunctionDefinition,
-                    val: match[1],
-                    pos
-                };
+                    val: match[1]
+                }, 'pos', {...objectProperties, value: pos});
             }
 
 
@@ -613,26 +740,23 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
         if (match[2] != null) {
 
-            return <ValidationPropertyToken>{
+            return <ValidationPropertyToken>Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
                 val: match[1],
-                range: [+match[3], match[4] == '∞' ? Infinity : +match[4]],
-                pos
-            };
+                range: [+match[3], match[4] == '∞' ? Infinity : +match[4]]
+            }, 'pos', {...objectProperties, value: pos});
         }
 
-        return <ValidationPropertyToken>{
+        return <ValidationPropertyToken>Object.defineProperty({
             typ: ValidationTokenEnum.PropertyType,
-            val: token.slice(1, -1),
-            pos
-        };
+            val: token.slice(1, -1)
+        }, 'pos', {...objectProperties, value: pos});
     }
 
-    return <ValidationKeywordToken>{
+    return <ValidationKeywordToken>Object.defineProperty({
         typ: ValidationTokenEnum.Keyword,
-        val: token,
-        pos
-    };
+        val: token
+    }, 'pos', {...objectProperties, value: pos});
 }
 
 function move(position: Position, chr: string): Position {
@@ -679,12 +803,14 @@ export function render(token: ValidationToken): string {
         case ValidationTokenEnum.ColumnToken:
         case ValidationTokenEnum.AmpersandToken:
 
-            glue = token.typ == ValidationTokenEnum.PipeToken ? ' | ' : (token.typ == ValidationTokenEnum.ColumnToken ? ' || ' : ' && ');
+            glue = token.typ == ValidationTokenEnum.PipeToken ? '|' : (token.typ == ValidationTokenEnum.ColumnToken ? '||' : '&&');
 
-            return (token as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).chi.reduce((acc: string, curr: ValidationToken[]) => acc + (acc.length > 0 ?  glue : '') + curr.reduce((a, b) => a + render(b), ''), '');
+            return (token as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '') +
+                glue +
+                (token as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '');
 
         case ValidationTokenEnum.Function:
-        case ValidationTokenEnum.ParentsToken:
+        case ValidationTokenEnum.Parens:
 
             return (token as ValidationFunctionToken).val + '(' + (token as ValidationFunctionToken).chi.reduce((acc: string, curr: ValidationToken) => acc + render(curr), '') + ')' + renderAttributes(token);
 
@@ -699,6 +825,10 @@ export function render(token: ValidationToken): string {
         case ValidationTokenEnum.OpenBracket:
 
             return '[';
+
+        case ValidationTokenEnum.Ampersand:
+
+            return '&&';
 
         case ValidationTokenEnum.QuestionMark:
 
@@ -791,7 +921,12 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
             if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
 
-                for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).chi) {
+                for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
+
+                    minify(j);
+                }
+
+                for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
 
                     minify(j);
                 }
@@ -818,7 +953,12 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
         if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast.typ)) {
 
-            for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).chi) {
+            for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
+
+                minify(j);
+            }
+
+            for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
 
                 minify(j);
             }

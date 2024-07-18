@@ -1,4 +1,4 @@
-import {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d";
 import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser";
 import {EnumToken} from "../../ast";
 import {getNumber} from "./color";
@@ -9,8 +9,7 @@ import {srgb2hsl} from "./hsl";
 import {srgb2hwb} from "./hwb";
 import {srgb2lab} from "./lab";
 import {srgb2p3values} from "./p3";
-import {getComponents, powerlessColorComponent} from "./utils";
-import {eq} from "../../parser/utils/eq";
+import {getComponents} from "./utils";
 import {srgb2oklch} from "./oklch";
 import {srgb2oklab} from "./oklab";
 import {srgb2a98values} from "./a98rgb";

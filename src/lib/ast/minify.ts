@@ -18,9 +18,9 @@ import {
     OptimizedSelector,
     ParserOptions,
     RawSelectorTokens, Token
-} from "../../@types";
+} from "../../@types/index.d";
 import {EnumToken, ValidationAction} from "./types";
-import {ErrorDescription} from "../../@types/validation";
+import {ErrorDescription} from "../../@types/validation.d";
 
 export const combinators: string[] = ['+', '>', '~', '||'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};

@@ -8,60 +8,352 @@ import {
     ValidationFunctionDefinitionToken,
     ValidationFunctionToken,
     ValidationKeywordToken,
+    ValidationParensToken,
     ValidationPipeToken,
     ValidationPropertyToken,
     ValidationToken,
     ValidationTokenEnum
 } from "./parser";
-import {DimensionToken, FunctionToken, IdentToken, LiteralToken, NumberToken, Token} from "../../@types";
-import {ErrorDescription, ValidationConfiguration} from "../../@types/validation";
+import {
+    ColorToken,
+    DimensionToken,
+    FunctionToken,
+    IdentToken,
+    LiteralToken,
+    NumberToken,
+    Token
+} from "../../@types/index.d";
+import {ErrorDescription, ValidationConfiguration} from "../../@types/validation.d";
 import {EnumToken} from "../ast";
 import {isLength} from "../parser";
 import {getConfig} from "./config";
 
 const config: ValidationConfiguration = getConfig();
 
-export function validateSyntax(syntax: ValidationToken[], tokens: Token[], errors?: ErrorDescription[]): boolean {
+export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[], errors?: ErrorDescription[], parents?: ValidationToken[]): boolean {
 
     let token: Token | null;
+    let syntax: ValidationToken;
+    let result: boolean;
+    let prevSyntax: ValidationToken | null = null;
 
-    let children: ValidationToken[][];
-    let matches: ValidationToken[][][];
-    let found:  boolean;
+    let children: ValidationToken[];
+    let queue: ValidationToken[];
+    let matches: ValidationToken[];
+    let child: ValidationColumnToken;
+    let astNodes: Set<Token> = new Set;
 
-    tokens = tokens.slice();
+    // console.error('> ' + syntaxes.reduce((acc, curr) => acc + render(curr), ''));
 
-    // console.error(JSON.stringify({formula: syntax.reduce((acc, curr) => acc + render(curr), ''), syntax, tokens}, null, 1));
+    while (tokens.length > 0) {
 
-    for (let i = 0; i < syntax.length; i++) {
+        token = tokens[0];
 
-        token = getCurrentToken(tokens, false);
+        if (syntaxes.length == 0) {
 
-        console.error('-> ' + render(syntax[i]));
-        console.error(syntax[i], token);
-        console.error('--> ' + render(syntax[i]));
+            return true;
+        }
 
-        const isOptional = syntax[i].isOptional ?? syntax[i].isRepeatable ?? null;
+        syntax = syntaxes[0] as ValidationToken;
 
-        if (syntax[i].typ == ValidationTokenEnum.Whitespace) {
+        if (token.typ == EnumToken.WhitespaceTokenType) {
 
-            // if (token?.typ == EnumToken.WhitespaceTokenType) {
-            //
-            //     getNextToken(tokens, false);
-            // }
+            if (syntax.typ == ValidationTokenEnum.Whitespace) {
 
+                syntaxes.shift();
+            }
+
+            tokens.shift();
             continue;
         }
 
-        if (token == null) {
+        if (syntax.typ == ValidationTokenEnum.Whitespace) {
+
+            syntaxes.shift();
+            continue;
+        }
+
+        result = false;
+        // isOptional = syntax.isOptional ?? syntax.isRepeatable ?? null;
+
+        // throw new Error('foo');
+
+        // @ts-ignore
+        if (token.val != null && specialValues.includes(token.val as string)) {
+
+            result = true;
+        } else {
+
+            switch (syntax.typ) {
+
+                case ValidationTokenEnum.Comma:
+
+                    result = token.typ === EnumToken.CommaTokenType;
+                    break;
+
+                case ValidationTokenEnum.DeclarationType:
+
+                    result = validateSyntax(config.declarations[(syntax as ValidationDeclarationToken).val].ast.slice(), tokens, errors, (parents ?? []).concat(syntax));
+                    break;
+
+                case ValidationTokenEnum.Keyword:
+
+                    result = (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare((syntax as ValidationKeywordToken).val, 'en', {sensitivity: 'base'}) == 0) ||
+                        (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == 'lit' && (syntax as ValidationKeywordToken).val.localeCompare((token as ColorToken).val as string, 'en', {sensitivity: 'base'}) == 0);
+
+                    break;
+
+                case ValidationTokenEnum.Separator:
+
+                    result = token.typ == EnumToken.LiteralTokenType && (token as LiteralToken).val != '/';
+                    break;
+
+                case ValidationTokenEnum.PropertyType:
+
+                    if ('hex-color' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == 'hex';
+
+                    } else if ('resolution' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.ResolutionTokenType;
+
+                    } else if ('angle' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+
+                    } else if ('time' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.TimingFunctionTokenType;
+
+                    } else if ('ident' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.IdenTokenType;
+
+                    } else if ('hash-token' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.HashTokenType;
+
+                    } else if (['integer', 'number'].includes((syntax as ValidationPropertyToken).val)) {
+
+                        result = token.typ == EnumToken.NumberTokenType;
+                        result = token.typ == EnumToken.NumberTokenType && ('integer' != (syntax as ValidationPropertyToken).val || Number.isInteger(+token.val));
+
+                        if (result && 'range' in syntax) {
+
+                            const value: number = Number((token as NumberToken).val);
+                            const range: number[] = (syntax as ValidationPropertyToken).range as number[];
+
+                            result = value >= range[0] && (range[1] == null || value <= range[1]);
+                        }
+
+                    } else if ('length' == (syntax as ValidationPropertyToken).val) {
+
+                        result = isLength(token as DimensionToken) || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+
+                    } else if ('percentage' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+
+                    } else if ('dashed-ident' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.DashedIdenTokenType;
+
+                    } else if ('custom-ident' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.DashedIdenTokenType || token.typ == EnumToken.IdenTokenType;
+
+                    } else if ('custom-property-name' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.DashedIdenTokenType;
+
+                    } else if ('string' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.StringTokenType;
+
+                    } else if ('declaration-value' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ != EnumToken.LiteralTokenType;
+
+                    } else if ('url' == (syntax as ValidationPropertyToken).val) {
+
+                        result = token.typ == EnumToken.UrlFunctionTokenType || token.typ == EnumToken.StringTokenType;
+
+                    } else {
+
+                        const val = (syntax as ValidationPropertyToken).val as string;
+
+                        if (val in config.declarations || val in config.syntaxes) {
+
+                            result = validateSyntax((config.syntaxes[val] ?? config.declarations[val]).ast.slice(), tokens, errors, (parents ?? []).concat(syntax));
+
+                        } else {
+
+                            result = false;
+                        }
+                    }
+
+                    break;
 
 
-            if ((isOptional) || syntax[i].typ == ValidationTokenEnum.Comma) {
+                case ValidationTokenEnum.Parens:
+                case ValidationTokenEnum.Function:
 
-                // if (peekNextToken(tokens, false)?.typ == EnumToken.CommaTokenType) {
-                //
-                //     getNextToken(tokens, false);
-                // }
+                    if ((syntax as ValidationParensToken).typ == ValidationTokenEnum.Parens) {
+
+                        result = token.typ == EnumToken.ParensTokenType;
+
+                    } else {
+
+                        result = 'chi' in token && 'val' in token &&
+                            (token as FunctionToken).val.localeCompare((syntax as ValidationFunctionToken).val, 'en', {sensitivity: 'base'}) == 0;
+                    }
+
+                    if (result) {
+
+                        result = validateSyntax((syntax as ValidationFunctionToken).chi.slice(), (token as FunctionToken).chi.slice(), errors, parents);
+                    }
+
+                    break;
+
+                case ValidationTokenEnum.ValidationFunctionDefinition:
+
+                    result = 'val' in token && 'chi' in token;
+
+                    if (result) {
+
+                        result = (token as FunctionToken).val.localeCompare((syntax as ValidationFunctionDefinitionToken).val, 'en', {sensitivity: 'base'}) == 0;
+
+                        if (result) {
+
+                            const s = config.syntaxes[(syntax as ValidationFunctionDefinitionToken).val + '()'];
+                            result = validateSyntax(s.ast.slice(), [token], errors, parents);
+                        }
+                    }
+
+                    break;
+
+                case ValidationTokenEnum.Bracket:
+
+                    result = validateSyntax((syntax as ValidationBracketToken).chi.slice(), tokens, errors, (parents ?? []).concat(syntax));
+
+                    break;
+
+                case ValidationTokenEnum.PipeToken:
+
+                    result = validateSyntax((syntax as ValidationPipeToken).l.slice(), [token], errors, (parents ?? []).concat(syntax)) ||
+                        validateSyntax((syntax as ValidationPipeToken).r.slice(), tokens.slice(), errors, (parents ?? []).concat(syntax));
+
+                    break
+
+                case ValidationTokenEnum.AmpersandToken:
+
+                    children = [...(syntax as ValidationAmpersandToken).l.slice(), ...(syntax as ValidationAmpersandToken).r.slice()] as ValidationToken[];
+                    matches = [] as ValidationToken[];
+                    queue = [] as ValidationToken[];
+
+                    for (let j = 0; j < children.length; j++) {
+
+                        if (validateSyntax([children[j]], [token], errors, (parents ?? []).concat(syntax))) {
+
+                            matches.push(...children.splice(j, 1) as ValidationToken[]);
+                            j = 0;
+
+                            astNodes.delete(token);
+                            tokens.shift();
+                            token = tokens[0];
+
+                            if (token == null) {
+
+                                break;
+                            }
+
+                            astNodes.add(token);
+                        }
+                    }
+
+                    if (astNodes.size > 0) {
+
+                        tokens.unshift(...astNodes);
+                        astNodes = new Set();
+                    }
+
+                    result = matches.length > 0;
+                    break;
+
+
+                case ValidationTokenEnum.ColumnToken:
+
+                    children = [...(syntax as ValidationColumnToken).l.slice(), ...(syntax as ValidationColumnToken).r.slice()] as ValidationToken[];
+                    matches = [] as ValidationToken[];
+                    queue = [] as ValidationToken[];
+
+                    while ((child = children.shift() as ValidationColumnToken)) {
+
+                        if (validateSyntax([child], tokens, errors, (parents ?? []).concat(syntax))) {
+
+                            matches.push(child);
+
+                            tokens.shift();
+                            token = tokens[0];
+
+                            if (queue.length > 0) {
+
+                                children.unshift(...queue);
+                                queue = [];
+                            }
+
+                            if (token == null) {
+
+                                break;
+                            }
+
+                        } else {
+
+                            queue.push(child);
+                        }
+                    }
+
+                    result = matches.length > 0;
+                    break;
+
+                default:
+
+                    // result = doValidateSyntax(syntax, token, tokens.slice(), errors, parents);
+
+                    console.error({syntax, token});
+                    throw new Error('not implemented');
+            }
+        }
+
+        // @ts-ignore
+        // console.error(JSON.stringify({
+        //     prevSyntax: prevSyntax == null ? null : render(prevSyntax),
+        //     syntax,
+        //     s: render(syntax),
+        //     token,
+        //     result
+        // }, null, 1));
+
+        if (result) {
+
+            tokens.shift();
+        }
+
+        if (!result) {
+
+            if (syntax.isOptional ?? syntax.isRepeatable ?? false) {
+
+                syntaxes.shift();
+
+                if (syntaxes[0]?.typ == ValidationTokenEnum.Whitespace &&
+                    syntaxes[1]?.typ == ValidationTokenEnum.Comma) {
+
+                    syntaxes.splice(0, 2);
+                } else if (syntaxes[0]?.typ == ValidationTokenEnum.Comma) {
+
+                    syntaxes.shift();
+                }
 
                 continue;
             }
@@ -69,575 +361,51 @@ export function validateSyntax(syntax: ValidationToken[], tokens: Token[], error
             return false;
         }
 
-        if (token.typ == EnumToken.FunctionTokenType && token.val == 'var') {
+        if (syntax.isList || syntax.atLeastOnce) {
 
-            if (!validateSyntax(config.syntaxes['var()'].ast[0].chi, (token as FunctionToken).chi, errors)) {
+            const s = {...syntax, isList: false, atLeastOnce: false} as ValidationToken;
 
-                return false;
-            }
+            while (tokens.length > 0) {
 
-            getNextToken(tokens, false);
-            continue;
-        }
+                token = tokens[0] as Token;
 
-
-        // if (syntax[i].isList) {
-
-        // next is comma
-        // next passes validation
-        // console.error('is list', syntax[i].isList);
-        // }
-
-        // @ts-ignore
-        if (token.val != null && specialValues.includes(token.val as string)) {
-
-            getNextToken(tokens, false);
-            continue;
-        }
-
-        if (token.typ == EnumToken.FunctionTokenType && token.val == 'var') {
-
-            if (!validateSyntax(config.functions.var.ast[0].chi, (token as FunctionToken).chi, errors)) {
-
-                if (isOptional) {
-
-                    continue;
-                }
-
-                return false;
-            }
-
-            getNextToken(tokens, false);
-            continue;
-        }
-
-        switch (syntax[i].typ) {
-
-            // case ValidationTokenEnum.Whitespace:
-            //
-            //     if (token.typ == EnumToken.WhitespaceTokenType) {
-            //
-            //         getNextToken(tokens, true);
-            //     }
-            //
-            //     continue;
-
-            case ValidationTokenEnum.Comma:
-
-                if (token.typ != EnumToken.CommaTokenType) {
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.Separator:
-
-                if (token.typ != EnumToken.LiteralTokenType || (token as LiteralToken).val != '/') {
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.Keyword:
-
-                if (!(token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare((syntax[i] as ValidationKeywordToken).val, 'en', {sensitivity: 'base'}) == 0)) {
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.DeclarationType:
-
-                if (!validateSyntax(config.declarations[(syntax[i] as ValidationDeclarationToken).val].ast, [token], errors)) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.PropertyType:
-
-                if ('hex-color' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.ColorTokenType) {
-
-                        return false;
-                    }
-                } else if ('resolution' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.ResolutionTokenType) {
-
-                        return false;
-                    }
-                } else if ('angle' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.AngleTokenType) {
-
-                        if (token.typ != EnumToken.NumberTokenType || token.val != '0') {
-
-                            if (isOptional) {
-
-                                continue;
-                            }
-
-                            return false;
-                        }
-                    }
-
-                } else if ('time' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.TimingFunctionTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('ident' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.IdenTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('hash-token' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.HashTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if (['integer', 'number'].includes((syntax[i] as ValidationPropertyToken).val)) {
-
-                    if (token.typ != EnumToken.NumberTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                    if ('range' in syntax[i]) {
-
-                        const value: number = Number((token as NumberToken).val);
-                        const range: number[] = (syntax[i] as ValidationPropertyToken).range as number[];
-
-                        if (value < range[0] || (range[1] != null && value > range[1])) {
-
-                            if (isOptional) {
-
-                                continue;
-                            }
-
-                            return false;
-                        }
-                    }
-
-                } else if ('length' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (!isLength(token as DimensionToken)) {
-
-                        if (token.typ != EnumToken.NumberTokenType || token.val != '0') {
-
-                            if (isOptional) {
-
-                                continue;
-                            }
-
-                            return false;
-                        }
-                    }
-
-                } else if ('percentage' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ == EnumToken.PercentageTokenType) {
-
-                        break;
-                    }
-
-                    if ((token as NumberToken).val == '0' && token.typ != EnumToken.NumberTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('dashed-ident' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.DashedIdenTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('custom-ident' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.DashedIdenTokenType && token.typ != EnumToken.IdenTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('custom-property-name' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.DashedIdenTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('string' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (token.typ != EnumToken.DashedIdenTokenType &&
-                        token.typ != EnumToken.IdenTokenType &&
-                        token.typ != EnumToken.StringTokenType) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else if ('declaration-value' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    break;
-
-                } else if ('url' == (syntax[i] as ValidationPropertyToken).val) {
-
-                    if (![EnumToken.StringTokenType, EnumToken.UrlFunctionTokenType].includes(token.typ)) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-
-                } else {
-
-                    const s = (config.syntaxes[(syntax[i] as ValidationPropertyToken).val] ?? config.declarations[(syntax[i] as ValidationPropertyToken).val]);
-
-                    if (s == null) {
-
-                        console.error(s, syntax[i], token);
-
-                        throw new Error(`Invalid syntax: `);
-                    }
-
-                    if (!validateSyntax(s.ast, [token], errors)) {
-
-                        if (isOptional) {
-
-                            continue;
-                        }
-
-                        return false;
-                    }
-                }
-
-                break;
-
-            case ValidationTokenEnum.Function:
-
-                if (!validateSyntax((syntax[i] as ValidationFunctionToken).chi, [token], errors)) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.PipeToken:
-
-                 children = (syntax[i] as ValidationPipeToken).chi.slice() as ValidationToken[][];
-                 matches = [] as ValidationToken[][][];
-                 found = false;
-
-                for (let j = 0; j < children.length; j++) {
-
-                    if (validateSyntax(children[j], [token], errors)) {
-
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.ColumnToken:
-
-                children = (syntax[i] as ValidationColumnToken).chi.slice() as ValidationToken[][];
-                matches = [] as ValidationToken[][][];
-                found = false;
-
-                for (let j = 0; j < children.length; j++) {
-
-                    if (validateSyntax(children[j], [token], errors)) {
-
-                        matches.push(children.splice(j, 1));
-                        j = 0;
-
-                        getNextToken(tokens, false);
-                        token = getCurrentToken(tokens, false);
-
-                        if (token == null) {
-
-                            break;
-                        }
-                    }
-                }
-
-                if (matches.length == 0) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-
-                break;
-
-            case ValidationTokenEnum.ValidationFunctionDefinition:
-
-                if (![EnumToken.FunctionTokenType, EnumToken.ImageFunctionTokenType].includes(token.typ)) {
-
-                    return false;
-                }
-
-                const s = config.syntaxes[(syntax[i] as ValidationFunctionDefinitionToken).val + '()'];
-
-                if (s == null) {
-
-                    console.error(s, syntax[i], token);
-                    throw new Error(`Invalid syntax: `);
-                }
-
-                if (!validateSyntax(s.ast, (token as FunctionToken).chi, errors)) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.Bracket:
-
-                if (!validateSyntax((syntax[i] as ValidationBracketToken).chi, [token], errors)) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-                break;
-
-            case ValidationTokenEnum.AmpersandToken:
-
-                 children = (syntax[i] as ValidationAmpersandToken).chi.slice() as ValidationToken[][];
-                 matches = [] as ValidationToken[][][];
-
-                for (let j = 0; j < children.length; j++) {
-
-                    if (validateSyntax(children[j], [token], errors)) {
-
-                        matches.push(children.splice(j, 1));
-                        j = 0;
-
-                        getNextToken(tokens, false);
-                        token = getCurrentToken(tokens, false);
-
-                        if (token == null) {
-
-                            break;
-                        }
-                    }
-                }
-
-                if (matches.length == 0) {
-
-                    if (isOptional) {
-
-                        continue;
-                    }
-
-                    return false;
-                }
-
-                break;
-
-            default:
-
-                console.debug(token, syntax[i]);
-                throw new Error('not implemented');
-        }
-
-        getNextToken(tokens, false);
-
-        if (syntax[i].isList) {
-
-            const t = tokens.slice();
-            const s = {...syntax[i], isList: false};
-
-            while (t.length > 0) {
-
-                token = getCurrentToken(t, false);
-
-                if (token == null || token.typ != EnumToken.CommaTokenType) {
+                if (
+                    (!syntax.atLeastOnce && token.typ != EnumToken.CommaTokenType &&
+                        !validateSyntax([s] as ValidationToken[], tokens.slice(), errors))) {
 
                     break;
                 }
 
-                getNextToken(t, false);
-                token = getCurrentToken(t, false);
-
-                if (token == null || !validateSyntax([s] as ValidationToken[], [token], errors)) {
-
-                    break;
-                }
-
-                getNextToken(t, false);
-                tokens = [...t];
+                tokens.shift();
             }
         }
 
         // @ts-ignore
-        if (syntax[i].occurence != null && syntax[i].occurence.max != null) {
+        if (syntax.occurence != null && syntax.occurence.max != null) {
 
             // consume all tokens
-            let match = 1;
+            let match: number = 1;
 
             // @ts-ignore
-            const s = {...syntax[i], isList: false, occurence: null} as ValidationToken;
+            const s = {...syntax, isList: false, occurence: null} as ValidationToken;
 
             // @ts-ignore
-            while (match < syntax[i].occurence.max) {
+            while (match < syntax.occurence.max) {
 
-                token = getCurrentToken(tokens, false);
+                token = tokens[0] as Token;
 
-                if (token == null) {
+                if (token == null ||
+                    !validateSyntax([s] as ValidationToken[], tokens, errors)) {
 
                     break;
                 }
 
-                if (!validateSyntax([s] as ValidationToken[], [token], errors)) {
-
-                    break;
-                }
-
-                match++;
-                getNextToken(tokens, false);
+                tokens.shift();
             }
         }
+
+        syntaxes.shift();
     }
 
-    // consume current token
-    // getNextToken(tokens, false);
     return true;
-}
-
-function getCurrentToken(tokens: Token[], whiteSpace: boolean = true): Token | null {
-
-    let item: Token;
-    let index: number = -1;
-
-    while (++index < tokens.length) {
-
-        item = tokens[index];
-
-        if (!whiteSpace && item.typ == EnumToken.WhitespaceTokenType) {
-
-            continue;
-        }
-
-        return item;
-    }
-
-    return null;
-}
-
-function getNextToken(tokens: Token[], whiteSpace: boolean = true): Token | null {
-
-    let item: Token;
-    let index: number = -1;
-
-    while (++index < tokens.length) {
-
-        item = tokens[index];
-
-        if (!whiteSpace && item.typ == EnumToken.WhitespaceTokenType) {
-
-            continue;
-        }
-
-        tokens.splice(0, index + 1);
-        return item;
-    }
-
-    tokens.length = 0;
-    return null;
 }

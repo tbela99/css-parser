@@ -1,6 +1,7 @@
 # Changelog
 
-- [x] experimental css validation. 
+- [ ] add light-dark() css color support
+- [x] experimental css validation 
   - [ ] declaration validation
   - [ ] at-rule
   - [ ] rule

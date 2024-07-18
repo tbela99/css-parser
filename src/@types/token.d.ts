@@ -1,4 +1,4 @@
-import {Location} from "./ast";
+import {Location} from "./ast.d.ts";
 import {EnumToken} from "../lib";
 
 export declare interface BaseToken {

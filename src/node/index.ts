@@ -6,7 +6,7 @@ import {
     RenderResult,
     TransformOptions,
     TransformResult
-} from "../@types";
+} from "../@types/index.d";
 
 import {doParse, doRender} from "../lib";
 import {resolve, dirname} from "../lib/fs";

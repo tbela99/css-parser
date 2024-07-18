@@ -1,3 +1,4 @@
+const specialValues = ['inherit', 'initial', 'unset', 'revert', 'revert-layer'];
 var ValidationTokenEnum;
 (function (ValidationTokenEnum) {
     ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
@@ -31,7 +32,7 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["PipeToken"] = 28] = "PipeToken";
     ValidationTokenEnum[ValidationTokenEnum["ColumnToken"] = 29] = "ColumnToken";
     ValidationTokenEnum[ValidationTokenEnum["AmpersandToken"] = 30] = "AmpersandToken";
-    ValidationTokenEnum[ValidationTokenEnum["ParentsToken"] = 31] = "ParentsToken";
+    ValidationTokenEnum[ValidationTokenEnum["Parens"] = 31] = "Parens";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
 
-export { ValidationTokenEnum };
+export { ValidationTokenEnum, specialValues };

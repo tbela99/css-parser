@@ -1,7 +1,7 @@
-import {AstDeclaration, FunctionToken, ParensToken, Position, Token} from "../../../@types";
+import {AstDeclaration, FunctionToken, ParensToken, Position, Token} from "../../../@types/index.d";
 import {EnumToken, ValidationAction, walkValues} from "../../ast";
 import {isWhiteSpace} from "./syntax";
-import {ErrorDescription} from "../../../@types/validation";
+import {ErrorDescription} from "../../../@types/validation.d";
 
 export function parseDeclaration(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
 

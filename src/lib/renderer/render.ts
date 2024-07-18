@@ -19,7 +19,7 @@ import {
     RenderOptions,
     RenderResult,
     Token
-} from "../../@types";
+} from "../../@types/index.d";
 import {
     clamp,
     cmyk2hex,
@@ -43,7 +43,7 @@ import {EnumToken, expand, ValidationAction} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
-import {ErrorDescription} from "../../@types/validation";
+import {ErrorDescription} from "../../@types/validation.d";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
 

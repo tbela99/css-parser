@@ -9,7 +9,7 @@ import {
     WalkerOption,
     WalkerValueFilter,
     WalkResult
-} from "../../@types";
+} from "../../@types/index.d";
 import {EnumToken} from "./types";
 
 export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {

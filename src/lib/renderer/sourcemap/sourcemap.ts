@@ -1,4 +1,4 @@
-import {Location, SourceMapObject} from "../../../@types";
+import {Location, SourceMapObject} from "../../../@types/index.d";
 import {encode} from "./lib";
 
 export class SourceMap {

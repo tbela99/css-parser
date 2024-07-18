@@ -1,4 +1,4 @@
-import {ColorToken} from "../../../@types";
+import {ColorToken} from "../../../@types/index.d";
 import {minmax} from "./color";
 import {COLORS_NAMES} from "./utils";
 import {expandHexValue} from "./hex";

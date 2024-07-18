@@ -1,5 +1,5 @@
 import {EnumToken} from "../lib";
-import {Token} from "./token";
+import {Token} from "./token.d.ts";
 
 
 export declare interface Position {

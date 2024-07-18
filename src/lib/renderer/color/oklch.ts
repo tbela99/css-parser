@@ -1,5 +1,5 @@
-import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {getComponents, powerlessColorComponent} from "./utils";
+import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d";
+import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {lab2lchvalues} from "./lch";

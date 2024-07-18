@@ -1,5 +1,5 @@
 import {hsl2hsv} from "./hsv";
-import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d";
 import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";

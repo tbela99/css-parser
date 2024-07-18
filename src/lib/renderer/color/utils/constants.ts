@@ -1,4 +1,4 @@
-import {ColorSpace, IdentToken} from "../../../../@types";
+import {ColorSpace, IdentToken} from "../../../../@types/index.d";
 import {EnumToken} from "../../../ast";
 
 export const colorRange = {

@@ -6,7 +6,7 @@ import {
     LiteralToken,
     ParensToken,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d";
 import {EnumToken} from "../types";
 import {compute} from "./math";
 import {reduceNumber} from "../../renderer";
@@ -26,8 +26,6 @@ export function evaluate(tokens: Token[]): Token[] {
 
     catch (e) {
 
-        // console.error({tokens});
-        // console.error(e);
         return tokens;
     }
 

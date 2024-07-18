@@ -33,7 +33,7 @@ export enum ValidationTokenEnum {
     PipeToken,
     ColumnToken,
     AmpersandToken,
-    ParentsToken
+    Parens
 }
 
 export interface Position {
@@ -112,12 +112,20 @@ export interface PipeToken extends ValidationToken {
 export interface ValidationPipeToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PipeToken;
-    chi: ValidationToken[][]
+    l: ValidationToken[];
+    r: ValidationToken[];
 }
 
 export interface ValidationBracketToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Bracket,
+    chi: ValidationToken[];
+}
+
+export interface ValidationParensToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.Parens,
+    val: '',
     chi: ValidationToken[];
 }
 
@@ -129,13 +137,15 @@ export interface ColumnToken extends ValidationToken {
 export interface ValidationAmpersandToken extends ValidationToken {
 
     typ: ValidationTokenEnum.AmpersandToken
-    chi: ValidationToken[][]
+    l: ValidationToken[];
+    r: ValidationToken[];
 }
 
 export interface ValidationColumnToken extends ValidationToken {
 
     typ: ValidationTokenEnum.ColumnToken,
-    chi: ValidationToken[][]
+    l: ValidationToken[];
+    r: ValidationToken[];
 }
 
 

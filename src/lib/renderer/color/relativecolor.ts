@@ -1,9 +1,8 @@
-import {ColorToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, PercentageToken, Token} from "../../../@types/index.d";
 import {convert, getNumber} from "./color";
 import {EnumToken, walkValues} from "../../ast";
 import {reduceNumber} from "../render";
 import {evaluate} from "../../ast/math";
-import {eq} from "../../parser/utils/eq";
 import {colorRange} from "./utils";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';

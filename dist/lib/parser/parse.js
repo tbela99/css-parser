@@ -255,10 +255,12 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             }
             // @ts-ignore
             context.chi.push(tokens[i]);
-            Object.defineProperty(tokens[i], 'loc', { ...definedPropertySettings, value: {
+            Object.defineProperty(tokens[i], 'loc', {
+                ...definedPropertySettings, value: {
                     sta: position,
                     src
-                }, enumerable: options.sourcemap });
+                }, enumerable: options.sourcemap
+            });
         }
         else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
             break;
@@ -315,12 +317,20 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                         continue;
                     }
                     if (type != EnumToken.AtRuleNodeType) {
-                        errors.push({ action: ValidationAction.Drop, message: 'invalid @import', location: { src, ...position } });
+                        errors.push({
+                            action: ValidationAction.Drop,
+                            message: 'invalid @import',
+                            location: { src, ...position }
+                        });
                         return null;
                     }
                     const name = context.chi[i].nam;
                     if (name != 'charset' && name != 'import' && name != 'layer') {
-                        errors.push({ action: ValidationAction.Drop, message: 'invalid @import', location: { src, ...position } });
+                        errors.push({
+                            action: ValidationAction.Drop,
+                            message: 'invalid @import',
+                            location: { src, ...position }
+                        });
                         return null;
                     }
                     break;
@@ -524,7 +534,12 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 // @ts-ignore
                 val: value
             };
-            Object.defineProperty(node, 'loc', { enumerable: false, configurable: true, writable: true, value: { sta: position, src } });
+            Object.defineProperty(node, 'loc', {
+                enumerable: false,
+                configurable: true,
+                writable: true,
+                value: { sta: position, src }
+            });
             const result = parseDeclaration(node, errors, src, position);
             if (result != null) {
                 if (!validate(result, errors)) {

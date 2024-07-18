@@ -1,6 +1,6 @@
 import {getConfig} from "./config";
-import {AstDeclaration, AstRuleList} from "../../@types";
-import {ErrorDescription, ValidationConfiguration} from "../../@types/validation";
+import {AstDeclaration, AstRuleList} from "../../@types/index.d";
+import {ErrorDescription, ValidationConfiguration} from "../../@types/validation.d";
 import {ValidationAction} from "../ast";
 import {validateSyntax} from "./syntax";
 
@@ -30,11 +30,9 @@ export function validateDeclaration(ast: AstDeclaration, errors?: ErrorDescripti
         return isShortHand
     }
 
-//    console.error(JSON.stringify(config.declarations[ast.nam], null, 1));
-    console.debug(ast);
-    console.debug(config.declarations[ast.nam].syntax);
+    if (!validateSyntax(config.declarations[ast.nam].ast, ast.val.slice(), errors)) {
 
-    if (!validateSyntax(config.declarations[ast.nam].ast, ast.val, errors)) {
+        console.error(ast);
 
         errors?.push({
             action: ValidationAction.Drop,

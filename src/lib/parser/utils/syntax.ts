@@ -12,7 +12,7 @@ import {
     NumberToken,
     PercentageToken,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d";
 import {EnumToken} from "../../ast";
 
 // '\\'

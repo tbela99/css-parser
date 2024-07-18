@@ -12,8 +12,6 @@ function evaluate(tokens) {
         nodes = inlineExpression(evaluateExpression(buildExpression(tokens)));
     }
     catch (e) {
-        // console.error({tokens});
-        // console.error(e);
         return tokens;
     }
     if (nodes.length <= 1) {
