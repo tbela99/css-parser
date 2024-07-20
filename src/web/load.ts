@@ -26,5 +26,6 @@ export async function load(url: string, currentFile: string): Promise<string> {
         t = new URL(path, self.origin);
     }
 
+    // @ts-ignore
     return fetch(t, t.origin != self.origin ? {mode: 'cors'} : {}).then(parseResponse);
 }

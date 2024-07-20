@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.6.0
+- [x] light-dark() color
+- [x] system color
+
 ## V0.5.4
 
 - [x] incorrectly expand css nesting rules

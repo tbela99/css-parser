@@ -1,4 +1,4 @@
-import {AstDeclaration, ErrorDescription, FunctionToken, ParensToken, Position, Token} from "../../../@types";
+import {AstDeclaration, ErrorDescription, FunctionToken, ParensToken, Position, Token} from "../../../@types/index.d.ts";
 import {EnumToken, walkValues} from "../../ast";
 import {isWhiteSpace} from "./syntax";
 

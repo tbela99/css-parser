@@ -2,7 +2,7 @@ import {combinators, splitRule} from "./minify";
 import {parseString} from "../parser";
 import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
-import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
+import {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types/index.d.ts";
 import {EnumToken} from "./types";
 
 export function expand(ast: AstNode): AstNode {

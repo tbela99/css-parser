@@ -1,5 +1,5 @@
 import {EnumToken} from "./types";
-import {AstNode} from "../../@types";
+import {AstNode} from "../../@types/index.d.ts";
 
 export function validateNode(node: AstNode, expected?: EnumToken): boolean {
 

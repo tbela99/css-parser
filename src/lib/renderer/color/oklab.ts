@@ -1,6 +1,6 @@
-import {getComponents, multiplyMatrices, powerlessColorComponent} from "./utils";
+import {getComponents, multiplyMatrices} from "./utils";
 import {srgb2lsrgbvalues, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgbvalues} from "./srgb";
-import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getOKLCHComponents} from "./oklch";

@@ -182,6 +182,10 @@ const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb'
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
 const k = Math.pow(29, 3) / Math.pow(3, 3);
 const e = Math.pow(6, 3) / Math.pow(29, 3);
+// color module v4
+const systemColors = new Set(['ActiveText', 'ButtonBorder', 'ButtonFace', 'ButtonText', 'Canvas', 'CanvasText', 'Field', 'FieldText', 'GrayText', 'Highlight', 'HighlightText', 'LinkText', 'Mark', 'MarkText', 'VisitedText'].map(m => m.toLowerCase()));
+// deprecated
+const deprecatedSystemColors = new Set(['ActiveBorder', 'ActiveCaption', 'AppWorkspace', 'Background', 'ButtonFace', 'ButtonHighlight', 'ButtonShadow', 'ButtonText', 'CaptionText', 'GrayText', 'Highlight', 'HighlightText', 'InactiveBorder', 'InactiveCaption', 'InactiveCaptionText', 'InfoBackground', 'InfoText', 'Menu', 'MenuText', 'Scrollbar', 'ThreeDDarkShadow', 'ThreeDFace', 'ThreeDHighlight', 'ThreeDLightShadow', 'ThreeDShadow', 'Window', 'WindowFrame', 'WindowText'].map(t => t.toLowerCase()));
 // name to color
 const COLORS_NAMES = Object.seal({
     'aliceblue': '#f0f8ff',
@@ -2956,7 +2960,7 @@ class SourceMap {
     }
 }
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -3224,6 +3228,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.Div:
             return '/';
         case exports.EnumToken.ColorTokenType:
+            if (token.kin == 'light-dark') {
+                return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + ')';
+            }
             if (options.convertColor) {
                 if (token.cal == 'mix' && token.val == 'color-mix') {
                     const children = token.chi.reduce((acc, t) => {
@@ -3317,7 +3324,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return reduceHexValue(value);
                 }
             }
-            if (token.kin == 'hex' || token.kin == 'lit') {
+            if (['hex', 'lit', 'sys', 'dpsys'].includes(token.kin)) {
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
@@ -3583,6 +3590,15 @@ function isColor(token) {
     }
     let isLegacySyntax = false;
     if (token.typ == exports.EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+        if (token.val == 'light-dark') {
+            const children = token.chi.filter((t) => [exports.EnumToken.IdenTokenType, exports.EnumToken.NumberTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.ColorTokenType, exports.EnumToken.FunctionTokenType, exports.EnumToken.PercentageTokenType].includes(t.typ));
+            if (children.length != 2) {
+                return false;
+            }
+            if (isColor(children[0]) && isColor(children[1])) {
+                return true;
+            }
+        }
         if (token.val == 'color') {
             const children = token.chi.filter((t) => [exports.EnumToken.IdenTokenType, exports.EnumToken.NumberTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.ColorTokenType, exports.EnumToken.FunctionTokenType, exports.EnumToken.PercentageTokenType].includes(t.typ));
             const isRelative = children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'from';
@@ -6572,9 +6588,9 @@ function parseString(src, options = { location: false }) {
     }));
 }
 function getTokenType(val, hint) {
-    if (val === '' && hint == null) {
-        throw new Error('empty string?');
-    }
+    // if (val === '' && hint == null) {
+    //     throw new Error('empty string?');
+    // }
     if (hint != null) {
         return enumTokenHints.has(hint) ? { typ: hint } : { typ: hint, val };
     }
@@ -6703,6 +6719,20 @@ function getTokenType(val, hint) {
         };
     }
     if (isIdent(val)) {
+        if (systemColors.has(val.toLowerCase())) {
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val,
+                kin: 'sys'
+            };
+        }
+        if (deprecatedSystemColors.has(val.toLowerCase())) {
+            return {
+                typ: exports.EnumToken.ColorTokenType,
+                val,
+                kin: 'dpsys'
+            };
+        }
         return {
             typ: val.startsWith('--') ? exports.EnumToken.DashedIdenTokenType : exports.EnumToken.IdenTokenType,
             val
@@ -6984,7 +7014,11 @@ function parseTokens(tokens, options = {}) {
                         // t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(t.typ));
                     }
                 }
-                t.chi = t.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommaTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
+                const filter = [exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType];
+                if (t.val != 'light-dark') {
+                    filter.push(exports.EnumToken.CommaTokenType);
+                }
+                t.chi = t.chi.filter((t) => !filter.includes(t.typ));
                 continue;
             }
             if (t.typ == exports.EnumToken.UrlFunctionTokenType) {

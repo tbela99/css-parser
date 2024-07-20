@@ -63,6 +63,15 @@ function isColor(token) {
     }
     let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+        if (token.val == 'light-dark') {
+            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+            if (children.length != 2) {
+                return false;
+            }
+            if (isColor(children[0]) && isColor(children[1])) {
+                return true;
+            }
+        }
         if (token.val == 'color') {
             const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
             const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';

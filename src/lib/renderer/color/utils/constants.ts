@@ -1,4 +1,4 @@
-import {ColorSpace, IdentToken} from "../../../../@types";
+import {ColorSpace, IdentToken} from "../../../../@types/index.d.ts";
 import {EnumToken} from "../../../ast";
 
 export const colorRange = {
@@ -36,6 +36,12 @@ export const D50: number[] = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) 
 
 export const k: number = Math.pow(29, 3) / Math.pow(3, 3);
 export const e: number = Math.pow(6, 3) / Math.pow(29, 3);
+
+// color module v4
+export const systemColors: Set<string> = new Set(['ActiveText', 'ButtonBorder', 'ButtonFace', 'ButtonText', 'Canvas', 'CanvasText', 'Field', 'FieldText', 'GrayText', 'Highlight', 'HighlightText', 'LinkText', 'Mark', 'MarkText', 'VisitedText'].map(m => m.toLowerCase()));
+// deprecated
+export const deprecatedSystemColors: Set<string> = new Set(['ActiveBorder', 'ActiveCaption', 'AppWorkspace', 'Background', 'ButtonFace', 'ButtonHighlight', 'ButtonShadow', 'ButtonText', 'CaptionText', 'GrayText', 'Highlight', 'HighlightText', 'InactiveBorder', 'InactiveCaption', 'InactiveCaptionText', 'InfoBackground', 'InfoText', 'Menu', 'MenuText', 'Scrollbar', 'ThreeDDarkShadow', 'ThreeDFace', 'ThreeDHighlight', 'ThreeDLightShadow', 'ThreeDShadow', 'Window', 'WindowFrame', 'WindowText'].map(t => t.toLowerCase()));
+
 // name to color
 export const COLORS_NAMES: { [key: string]: string } = Object.seal({
     'aliceblue': '#f0f8ff',

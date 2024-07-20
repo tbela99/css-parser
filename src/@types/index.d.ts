@@ -1,13 +1,13 @@
-import {VisitorNodeMap} from "./visitor";
-import {AstAtRule, AstRule, AstRuleStyleSheet} from "./ast";
+import {VisitorNodeMap} from "./visitor.d.ts";
+import {AstAtRule, AstRule, AstRuleStyleSheet} from "./ast.d.ts";
 
-export * from './ast';
-export * from './token';
-export * from './shorthand';
-export * from './config';
-export * from './visitor';
-export * from './walker';
-export * from './parse';
+export * from './ast.d.ts';
+export * from './token.d.ts';
+export * from './shorthand.d.ts';
+export * from './config.d.ts';
+export * from './visitor.d.ts';
+export * from './walker.d.ts';
+export * from './parse.d.ts';
 
 export declare interface ErrorDescription {
 
@@ -26,11 +26,11 @@ export declare interface MinifyFeature {
 
     ordering: number;
 
-    register: (options: MinifyOptions | ParserOptions) => void;
-    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
-        [key: string]: any
-    }) => void;
-    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
+    register(options: MinifyOptions | ParserOptions): void;
+
+    // run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: { [key: string]: any }): void;
+
+    // cleanup?(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }): void;
 }
 
 export declare interface ParserOptions extends PropertyListOptions {

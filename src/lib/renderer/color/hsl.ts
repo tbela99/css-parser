@@ -1,9 +1,8 @@
 import {hwb2hsv} from "./hsv";
-import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getNumber} from "./color";
 import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
 import {getComponents} from "./utils";
-import {eq} from "../../parser/utils/eq";
 import {EnumToken} from "../../ast";
 import {hslvalues} from './srgb';
 

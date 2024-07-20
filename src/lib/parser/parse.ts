@@ -21,7 +21,8 @@ import {tokenize} from "./tokenize";
 import {
     AstAtRule,
     AstComment,
-    AstDeclaration, AstKeyFrameRule,
+    AstDeclaration,
+    AstKeyFrameRule,
     AstNode,
     AstRule,
     AstRuleList,
@@ -74,7 +75,8 @@ import {
     UnclosedStringToken,
     UrlToken,
     WhitespaceToken
-} from "../../@types";
+} from "../../@types/index.d.ts";
+import {deprecatedSystemColors, systemColors} from "../renderer/color/utils";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -798,9 +800,9 @@ export function parseString(src: string, options: { location: boolean } = {locat
 
 function getTokenType(val: string, hint?: EnumToken): Token {
 
-    if (val === '' && hint == null) {
-        throw new Error('empty string?');
-    }
+    // if (val === '' && hint == null) {
+    //     throw new Error('empty string?');
+    // }
 
     if (hint != null) {
 
@@ -969,6 +971,23 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (isIdent(val)) {
 
+        if (systemColors.has(val.toLowerCase())) {
+            return <ColorToken>{
+                typ: EnumToken.ColorTokenType,
+                val,
+                kin: 'sys'
+            };
+        }
+
+        if (deprecatedSystemColors.has(val.toLowerCase())) {
+            return <ColorToken>{
+                typ: EnumToken.ColorTokenType,
+                val,
+                kin: 'dpsys'
+            };
+        }
+
+
         return <IdentToken>{
             typ: val.startsWith('--') ? EnumToken.DashedIdenTokenType : EnumToken.IdenTokenType,
             val
@@ -1003,7 +1022,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     };
 }
 
-export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
+export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
 
     for (let i = 0; i < tokens.length; i++) {
 
@@ -1337,7 +1356,14 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}) {
                     }
                 }
 
-                t.chi = t.chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+                const filter = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
+
+                if (t.val != 'light-dark') {
+
+                    filter.push(EnumToken.CommaTokenType);
+                }
+
+                t.chi = t.chi.filter((t: Token) => !filter.includes(t.typ));
                 continue;
             }
 

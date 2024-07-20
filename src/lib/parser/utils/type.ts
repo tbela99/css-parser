@@ -1,5 +1,5 @@
 import {EnumToken} from "../../ast";
-import {IdentToken, PropertyMapType, Token} from "../../../@types";
+import {IdentToken, PropertyMapType, Token} from "../../../@types/index.d.ts";
 
 // https://www.w3.org/TR/css-values-4/#math-function
 export const funcList: string[] = ['clamp', 'calc'];

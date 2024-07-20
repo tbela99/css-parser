@@ -5,7 +5,7 @@ import {
     FunctionToken,
     MinifyOptions,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
 import {evaluate} from "../math";

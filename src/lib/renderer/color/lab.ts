@@ -1,6 +1,6 @@
 import {D50, e, getComponents, k} from "./utils";
 import {srgb2xyz, xyzd502srgb} from "./xyz";
-import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb";
 import {getLCHComponents} from "./lch";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab";
