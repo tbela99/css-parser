@@ -3,7 +3,7 @@
 
 import {colorsFunc} from "../../renderer";
 import {COLORS_NAMES} from "../../renderer/color";
-import {
+import type {
     AngleToken,
     DimensionToken,
     FunctionToken,

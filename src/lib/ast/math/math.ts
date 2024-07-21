@@ -1,4 +1,4 @@
-import {FractionToken} from "../../../@types/index.d.ts";
+import type {FractionToken} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
 import {reduceNumber} from "../../renderer";
 

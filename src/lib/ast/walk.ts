@@ -1,4 +1,4 @@
-import {
+import type {
     AstNode,
     AstRuleList, BinaryExpressionToken,
     FunctionToken,

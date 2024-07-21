@@ -1,4 +1,4 @@
-import {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser";
 import {EnumToken} from "../../ast";
 import {getNumber} from "./color";

@@ -5,7 +5,7 @@ import {replaceCompound} from './expand';
 import {doRender, renderToken} from "../renderer";
 import * as allFeatures from "./features";
 import {walkValues} from "./walk";
-import {
+import type {
     AstAtRule,
     AstDeclaration,
     AstNode,

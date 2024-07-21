@@ -1,4 +1,4 @@
-import {Location, SourceMapObject} from "../../../@types/index.d.ts";
+import type {Location, SourceMapObject} from "../../../@types/index.d.ts";
 import {encode} from "./lib";
 
 export class SourceMap {

@@ -18,7 +18,7 @@ import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/color";
 import {combinators, definedPropertySettings, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
 import {tokenize} from "./tokenize";
-import {
+import type {
     AstAtRule,
     AstComment,
     AstDeclaration,

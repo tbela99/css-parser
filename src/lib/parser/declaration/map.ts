@@ -1,4 +1,4 @@
-import {
+import type {
     AstDeclaration,
     IdentToken, PropertiesConfig,
     PropertyMapType,

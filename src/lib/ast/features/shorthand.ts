@@ -1,6 +1,6 @@
 import {PropertyList} from "../../parser/declaration";
 import {EnumToken} from "../types";
-import {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types/index.d.ts";
+import type {AstAtRule, AstRule, AstRuleStyleSheet, MinifyOptions, PropertyListOptions} from "../../../@types/index.d.ts";
 
 export class ComputeShorthandFeature {
 

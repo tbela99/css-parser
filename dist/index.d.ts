@@ -820,11 +820,11 @@ export declare interface MinifyFeature {
 
     ordering: number;
 
-    register: (options: MinifyOptions | ParserOptions) => void;
-    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
-        [key: string]: any
-    }) => void;
-    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
+    register(options: MinifyOptions | ParserOptions): void;
+
+    // run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: { [key: string]: any }): void;
+
+    // cleanup?(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }): void;
 }
 
 export declare interface MinifyFeature {

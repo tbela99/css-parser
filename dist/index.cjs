@@ -1,5 +1,6 @@
 'use strict';
 
+var process = require('node:process');
 var promises = require('node:fs/promises');
 
 exports.EnumToken = void 0;

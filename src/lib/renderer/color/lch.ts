@@ -1,4 +1,4 @@
-import {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";

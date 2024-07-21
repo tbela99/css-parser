@@ -1,5 +1,5 @@
 import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "./utils";
-import {Position, TokenizeResult} from "../../@types/index.d.ts";
+import type {Position, TokenizeResult} from "../../@types/index.d.ts";
 import {EnumToken} from "../ast";
 
 declare type InputStream = string;

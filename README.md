@@ -76,7 +76,7 @@ import {transform} from '@tbela99/css-parser/web';
 
 Javascript module from cdn
 
-```javascript
+```html
 
 <script type="module">
 

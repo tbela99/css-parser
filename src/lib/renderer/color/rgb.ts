@@ -1,4 +1,4 @@
-import {ColorToken} from "../../../@types/index.d.ts";
+import type {ColorToken} from "../../../@types/index.d.ts";
 import {minmax} from "./color";
 import {COLORS_NAMES} from "./utils";
 import {expandHexValue} from "./hex";

@@ -1,4 +1,4 @@
-import {ColorToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {ColorToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {convert, getNumber} from "./color";
 import {EnumToken, walkValues} from "../../ast";
 import {reduceNumber} from "../render";

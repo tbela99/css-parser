@@ -2,7 +2,7 @@
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
 import {COLORS_NAMES, getComponents} from "./utils";
-import {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {color2srgbvalues, getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab";

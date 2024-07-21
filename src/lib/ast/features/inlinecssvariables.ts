@@ -1,4 +1,4 @@
-import {
+import type {
     AstAtRule, AstComment,
     AstDeclaration,
     AstRule, AstRuleList,
