@@ -18,6 +18,7 @@ async function load(url, currentFile) {
         const path = resolve(url, currentFile).absolute;
         t = new URL(path, self.origin);
     }
+    // @ts-ignore
     return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(parseResponse);
 }
 

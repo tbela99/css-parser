@@ -1,4 +1,4 @@
-import {
+import type {
     AstNode,
     AstRuleList, BinaryExpressionToken,
     FunctionToken,
@@ -9,7 +9,7 @@ import {
     WalkerOption,
     WalkerValueFilter,
     WalkResult
-} from "../../@types";
+} from "../../@types/index.d.ts";
 import {EnumToken} from "./types";
 
 export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {

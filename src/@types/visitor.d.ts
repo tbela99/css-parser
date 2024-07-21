@@ -1,5 +1,5 @@
-import {AstRule, AstDeclaration, AstAtRule} from "./ast";
-import {Token} from "./token";
+import {AstRule, AstDeclaration, AstAtRule} from "./ast.d.ts";
+import {Token} from "./token.d.ts";
 import {EnumToken} from "../lib";
 
 /**

@@ -459,7 +459,7 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
-export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch' | 'color';
+export declare type ColorKind = 'sys' | 'dpsys' | 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch' | 'color' | 'light-dark';
 
 // export declare type HueInterpolationMethod = 'shorter' | 'longer' | 'increasing' | 'decreasing';
 
@@ -820,11 +820,11 @@ export declare interface MinifyFeature {
 
     ordering: number;
 
-    register: (options: MinifyOptions | ParserOptions) => void;
-    run: (ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
-        [key: string]: any
-    }) => void;
-    cleanup?: (ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) => void;
+    register(options: MinifyOptions | ParserOptions): void;
+
+    // run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: { [key: string]: any }): void;
+
+    // cleanup?(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }): void;
 }
 
 export declare interface MinifyFeature {

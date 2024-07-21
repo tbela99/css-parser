@@ -1,4 +1,4 @@
-import {
+import type {
     AngleToken,
     AstAtRule,
     AstComment,
@@ -20,7 +20,7 @@ import {
     RenderOptions,
     RenderResult,
     Token
-} from "../../@types";
+} from "../../@types/index.d.ts";
 import {
     clamp,
     cmyk2hex,
@@ -45,7 +45,7 @@ import {SourceMap} from "./sourcemap";
 import {isColor, isNewLine} from "../parser";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
 
-export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
+export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 
 export function reduceNumber(val: string | number): string {
 
@@ -460,6 +460,11 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.ColorTokenType:
 
+            if (token.kin == 'light-dark') {
+
+                return token.val + '(' + (token.chi as Token[]).reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ')';
+            }
+
             if (options.convertColor) {
 
                 if (token.cal == 'mix' && token.val == 'color-mix') {
@@ -599,7 +604,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 }
             }
 
-            if ((<ColorToken>token).kin == 'hex' || (<ColorToken>token).kin == 'lit') {
+            if (['hex', 'lit', 'sys', 'dpsys'].includes(token.kin)) {
 
                 return token.val;
             }

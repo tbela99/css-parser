@@ -1,0 +1,29 @@
+{
+  "name": "@tbela99/css-parser",
+  "version": "0.6.0",
+  "publish": {
+    "exclude": [
+      "dist",
+      "test",
+      ".gitattributes",
+      ".github",
+      ".idea",
+      ".npmignore",
+      ".npmrc",
+      "tsconfig.json",
+      "Writerside",
+      "build.sh",
+      "docs",
+      "package-lock.json",
+      "CHANGELOG.md",
+      "ROADMAP.md",
+      "rollup.config.js",
+      "tools"
+    ]
+  },
+  "exports": {
+    ".": "./src/node/index.ts",
+    "./node": "./src/node/index.ts",
+    "./web":  "./src/web/index.ts"
+  }
+}

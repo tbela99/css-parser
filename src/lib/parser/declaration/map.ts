@@ -1,4 +1,4 @@
-import {
+import type {
     AstDeclaration,
     IdentToken, PropertiesConfig,
     PropertyMapType,
@@ -6,7 +6,7 @@ import {
     ShorthandPropertyType, StringToken,
     Token,
     WhitespaceToken
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {eq} from "../utils/eq";
 import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";

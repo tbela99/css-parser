@@ -1,4 +1,4 @@
-import {
+import type {
     AngleToken,
     ColorKind,
     ColorSpace,
@@ -7,7 +7,7 @@ import {
     NumberToken,
     PercentageToken,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {EnumToken} from "../../ast";
 import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb";
 import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl";

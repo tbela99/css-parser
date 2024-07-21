@@ -11,7 +11,7 @@ import { SourceMap } from './sourcemap/sourcemap.js';
 import '../parser/parse.js';
 import { isColor, isNewLine } from '../parser/utils/syntax.js';
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch'];
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -279,6 +279,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.Div:
             return '/';
         case EnumToken.ColorTokenType:
+            if (token.kin == 'light-dark') {
+                return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + ')';
+            }
             if (options.convertColor) {
                 if (token.cal == 'mix' && token.val == 'color-mix') {
                     const children = token.chi.reduce((acc, t) => {
@@ -372,7 +375,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return reduceHexValue(value);
                 }
             }
-            if (token.kin == 'hex' || token.kin == 'lit') {
+            if (['hex', 'lit', 'sys', 'dpsys'].includes(token.kin)) {
                 return token.val;
             }
             if (Array.isArray(token.chi)) {

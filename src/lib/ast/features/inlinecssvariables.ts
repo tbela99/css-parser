@@ -1,4 +1,4 @@
-import {
+import type {
     AstAtRule, AstComment,
     AstDeclaration,
     AstRule, AstRuleList,
@@ -6,7 +6,7 @@ import {
     FunctionToken, MinifyOptions,
     ParserOptions,
     VariableScopeInfo
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
 

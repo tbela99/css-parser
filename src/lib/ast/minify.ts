@@ -5,7 +5,7 @@ import {replaceCompound} from './expand';
 import {doRender, renderToken} from "../renderer";
 import * as allFeatures from "./features";
 import {walkValues} from "./walk";
-import {
+import type {
     AstAtRule,
     AstDeclaration,
     AstNode,
@@ -19,7 +19,7 @@ import {
     OptimizedSelector,
     ParserOptions,
     RawSelectorTokens, Token
-} from "../../@types";
+} from "../../@types/index.d.ts";
 import {EnumToken} from "./types";
 
 export const combinators: string[] = ['+', '>', '~', '||'];
@@ -121,6 +121,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             if (node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face') {
                 continue;
             }
+
             if (node.typ == EnumToken.AtRuleNodeType) {
 
                 if ((<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
@@ -467,7 +468,6 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     if (ast.typ == EnumToken.StyleSheetNodeType) {
 
         let parent: AstRule | AstAtRule | AstRuleStyleSheet;
-
         let parents: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [<AstRuleStyleSheet>ast];
 
         while (parents.length > 0) {

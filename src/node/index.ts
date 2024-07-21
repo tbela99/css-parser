@@ -1,4 +1,4 @@
-import {
+import type {
     AstNode,
     ParseResult,
     ParserOptions,
@@ -6,8 +6,8 @@ import {
     RenderResult,
     TransformOptions,
     TransformResult
-} from "../@types";
-
+} from "../@types/index.d.ts";
+import process from 'node:process';
 import {doParse, doRender} from "../lib";
 import {resolve, dirname} from "../lib/fs";
 import {load} from "./load";

@@ -1180,6 +1180,53 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
  background: #ff00f6
 }`));
     });
-    //
-    // color-mix(in lch, white, black)
+
+    it('light-dark() #126', function () {
+        return parse(`
+:root {
+--light: #fff;
+--dark: #000;
+}
+/* Named color values */
+.a {
+color: light-dark(black, white);
+}
+
+/* RGB color values */
+.b {
+color: light-dark(rgb(0 0 0), rgb(255 255 255));
+}
+
+/* Custom properties */
+.c {
+    color: light-dark(var(--dark), var(--light));
+    }
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`/* Named color values */
+.a {
+ color: light-dark(#000,#fff)
+}
+/* RGB color values */
+.b {
+ color: light-dark(#000,#fff)
+}
+/* Custom properties */
+.c {
+ color: light-dark(#000,#fff)
+}`));
+    });
+
+    it('system color #127', function () {
+        return parse(`
+ .button {
+    /* Use a border instead, since box-shadow
+    is forced to 'none' in forced-colors mode */
+    border: 2px ButtonBorder solid;
+    border-color:  ButtonBorder ;
+  }
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.button {
+ /* Use a border instead, since box-shadow
+    is forced to 'none' in forced-colors mode */
+ border: ButtonBorder solid 2px
+}`));
+    });
 }

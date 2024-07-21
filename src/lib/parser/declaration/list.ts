@@ -1,4 +1,4 @@
-import {
+import type {
     AstDeclaration,
     AstNode,
     PropertyListOptions,
@@ -6,7 +6,7 @@ import {
     ShorthandPropertyType,
     PropertiesConfig,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {PropertySet} from "./set";
 import {getConfig} from "../utils";
 import {PropertyMap} from "./map";

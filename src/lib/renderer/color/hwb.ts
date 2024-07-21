@@ -1,9 +1,8 @@
 import {hsl2hsv} from "./hsv";
-import {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getComponents} from "./utils";
 import {getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
-import {eq} from "../../parser/utils/eq";
 import {lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb";
 
 export function rgb2hwb(token: ColorToken): number[] {

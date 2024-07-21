@@ -5,7 +5,7 @@ import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclaration } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
 import { tokenize } from './tokenize.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -539,9 +539,9 @@ function parseString(src, options = { location: false }) {
     }));
 }
 function getTokenType(val, hint) {
-    if (val === '' && hint == null) {
-        throw new Error('empty string?');
-    }
+    // if (val === '' && hint == null) {
+    //     throw new Error('empty string?');
+    // }
     if (hint != null) {
         return enumTokenHints.has(hint) ? { typ: hint } : { typ: hint, val };
     }
@@ -670,6 +670,20 @@ function getTokenType(val, hint) {
         };
     }
     if (isIdent(val)) {
+        if (systemColors.has(val.toLowerCase())) {
+            return {
+                typ: EnumToken.ColorTokenType,
+                val,
+                kin: 'sys'
+            };
+        }
+        if (deprecatedSystemColors.has(val.toLowerCase())) {
+            return {
+                typ: EnumToken.ColorTokenType,
+                val,
+                kin: 'dpsys'
+            };
+        }
         return {
             typ: val.startsWith('--') ? EnumToken.DashedIdenTokenType : EnumToken.IdenTokenType,
             val
@@ -951,7 +965,11 @@ function parseTokens(tokens, options = {}) {
                         // t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(t.typ));
                     }
                 }
-                t.chi = t.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+                const filter = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
+                if (t.val != 'light-dark') {
+                    filter.push(EnumToken.CommaTokenType);
+                }
+                t.chi = t.chi.filter((t) => !filter.includes(t.typ));
                 continue;
             }
             if (t.typ == EnumToken.UrlFunctionTokenType) {

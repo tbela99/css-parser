@@ -2,7 +2,7 @@
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
 import {COLORS_NAMES, getComponents} from "./utils";
-import {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import type {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {color2srgbvalues, getAngle, getNumber} from "./color";
 import {EnumToken} from "../../ast";
 import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab";
@@ -11,7 +11,6 @@ import {getOKLABComponents, OKLab_to_sRGB} from "./oklab";
 import {getLCHComponents} from "./lch";
 import {getOKLCHComponents} from "./oklch";
 import {XYZ_to_lin_sRGB} from "./xyz";
-import {eq} from "../../parser/utils/eq";
 
 export function srgbvalues(token: ColorToken): number[] | null {
 

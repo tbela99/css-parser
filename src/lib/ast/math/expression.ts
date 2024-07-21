@@ -1,4 +1,4 @@
-import {
+import type {
     BinaryExpressionNode,
     BinaryExpressionToken,
     FractionToken,
@@ -6,7 +6,7 @@ import {
     LiteralToken,
     ParensToken,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
 import {compute} from "./math";
 import {reduceNumber} from "../../renderer";

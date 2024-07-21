@@ -1,4 +1,4 @@
-import {Location} from "./ast";
+import {Location} from "./ast.d.ts";
 import {EnumToken} from "../lib";
 
 export declare interface BaseToken {
@@ -341,7 +341,7 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
-export declare type ColorKind = 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch' | 'color';
+export declare type ColorKind = 'sys' | 'dpsys' | 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch' | 'color' | 'light-dark';
 // xyz-d65 is an alias for xyz
 // display-p3 is an alias for srgb
 export declare type ColorSpace =
