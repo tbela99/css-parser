@@ -648,7 +648,7 @@ function parseSelector(tokens) {
                 }
             }
             else if (value.typ == EnumToken.ColorTokenType) {
-                if (value.kin == 'lit' || value.kin == 'hex') {
+                if (value.kin == 'lit' || value.kin == 'hex' || value.kin == 'sys' || value.kin == 'dpsys') {
                     if (value.kin == 'hex') {
                         if (!isIdent(value.val.slice(1))) {
                             continue;

@@ -17,6 +17,7 @@ function doValidateSelector(selector, root) {
     let result = null;
     while ((selector?.length ?? 0) > 0) {
         result = validateSimpleSelector(selector, root);
+        // console.error([0, result], selector);
         if (result == null) {
             return null;
         }
@@ -25,9 +26,11 @@ function doValidateSelector(selector, root) {
             break;
         }
         result = validateCombinator(selector);
+        // console.error([1, result], selector);
         if (result == null) {
             if (selector[0].typ == EnumToken.CommaTokenType) {
                 result = validateSimpleSelector(selector.slice(1), root);
+                // console.error([2, result], selector);
                 if (result == null || result.length == selector.length) {
                     // console.error({result, selector});
                     // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
@@ -42,10 +45,12 @@ function doValidateSelector(selector, root) {
             selector = result;
         }
         result = validateSimpleSelector(consumeWhitespace(selector), root);
+        // console.error([3, result], selector);
         if (result == null) {
             return null;
         }
         if (result.length > 0 && result.length == selector.length) {
+            // console.error([4, result], selector);
             // console.error('unexpected token: ', JSON.stringify(result[0], null, 1));
             // console.error(new Error('unexpected token:\n' + JSON.stringify(result[0], null, 1)));
             return null;
@@ -72,6 +77,10 @@ function validateSimpleSelector(selector, root) {
     if (root?.typ == EnumToken.AtRuleNodeType && null != root.nam.match(/(-[a-zA-Z]+-)?keyframes/)) {
         while (i < selector.length) {
             if ([EnumToken.PercentageTokenType, EnumToken.CommentTokenType].includes(selector[i].typ)) {
+                i++;
+                continue;
+            }
+            if ((selector[i].typ == EnumToken.IdenTokenType && ['from', 'to'].includes(selector[i].val))) {
                 i++;
                 continue;
             }

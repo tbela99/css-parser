@@ -946,7 +946,7 @@ export function parseSelector(tokens: Token[]): Token[] {
 
             } else if (value.typ == EnumToken.ColorTokenType) {
 
-                if (value.kin == 'lit' || value.kin == 'hex') {
+                if (value.kin == 'lit' || value.kin == 'hex' || value.kin == 'sys' || value.kin == 'dpsys' ) {
 
                     if (value.kin == 'hex') {
 
