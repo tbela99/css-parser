@@ -1,6 +1,6 @@
-import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "./utils";
 import type {Position, TokenizeResult} from "../../@types/index.d.ts";
 import {EnumToken} from "../ast";
+import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "../syntax";
 
 declare type InputStream = string;
 declare interface ParseInfo {
@@ -88,7 +88,7 @@ function* consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: ParseInf
 
             if (escapeSequence.trimEnd().length > 0) {
 
-                const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
+                const codepoint = parseInt(escapeSequence, 16);
 
                 if (codepoint == 0 ||
                     // leading surrogate
@@ -340,10 +340,32 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
             case '|':
             case '$':
 
-                if (value == '|' && peek(parseInfo) == '|') {
+                if (buffer.length > 0) {
 
-                    next(parseInfo);
-                    yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+
+                if (value == '|') {
+
+                    if (peek(parseInfo) == '|') {
+
+                        next(parseInfo);
+
+                        yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
+                    }
+
+                    else if (peek(parseInfo) == '=') {
+
+                        buffer += next(parseInfo);
+                        yield pushToken(buffer, parseInfo);
+                    }
+
+                    else {
+
+                        yield pushToken('|', parseInfo);
+                    }
+
                     buffer = '';
                     break;
                 }

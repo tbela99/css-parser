@@ -45,6 +45,15 @@ export declare interface AstRule extends Node {
     raw?: RawSelectorTokens;
 }
 
+export declare interface AstInvalidRule extends Node {
+
+    typ: EnumToken.InvalidRuleTokenType;
+    sel: Token[];
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+}
+
+
+
 export declare interface AstKeyFrameRule extends Node {
 
     typ: EnumToken.KeyFrameRuleNodeType;

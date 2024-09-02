@@ -1,5 +1,21 @@
 # Changelog
 
+#v0.7.0
+
+- [x] fix merging rules
+- [ ] experimental CSS prefix removal
+  - [x] declarations
+  - [ ] declaration values
+  - [ ] exclude -webkit-* gradients
+- [x] css selector validation
+  - [x] pseudo element
+  - [x] partial pseudo class validation. does not validate parameters
+  - [x] attribute selector
+  - [x] combinator
+  - [x] simple selector
+  - [ ] nested selector
+- [ ] strip universal selector when possible
+
 # v0.6.0
 - [x] light-dark() color
 - [x] system color

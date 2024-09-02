@@ -28,6 +28,8 @@ export declare interface WalkResult {
 
 export declare interface WalkAttributesResult {
     value: Token;
+    previousValue: Token | null;
+    nextValue: AstNode | null;
     root?: AstNode;
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
 }

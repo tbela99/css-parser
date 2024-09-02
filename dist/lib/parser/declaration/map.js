@@ -1,11 +1,11 @@
 import { eq } from '../utils/eq.js';
-import { renderToken } from '../../renderer/render.js';
+import { getConfig } from '../utils/config.js';
+import { matchType } from '../utils/type.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { parseString } from '../parse.js';
+import { renderToken } from '../../renderer/render.js';
 import '../../renderer/color/utils/constants.js';
-import { getConfig } from '../utils/config.js';
-import { matchType } from '../utils/type.js';
 import { PropertySet } from './set.js';
 
 const propertiesConfig = getConfig();
@@ -248,7 +248,9 @@ class PropertyMap {
                     // @ts-ignore
                     let typ = (EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
                     // @ts-ignore
-                    let separator = this.config.separator ? renderToken(this.config.separator) : ',';
+                    const sep = this.config.separator == null ? null : { ...this.config.separator, typ: EnumToken[this.config.separator.typ] };
+                    // @ts-ignore
+                    const separator = this.config.separator ? renderToken({ ...this.config.separator, typ: EnumToken[this.config.separator.typ] }) : ',';
                     this.matchTypes(declaration);
                     values.push(value);
                     for (i = 0; i < declaration.val.length; i++) {
@@ -281,6 +283,9 @@ class PropertyMap {
                     }
                     this.removeDefaults(map, value);
                     declaration.val = values.reduce((acc, curr) => {
+                        if (sep != null && acc.length > 0) {
+                            acc.push({ ...sep });
+                        }
                         for (const cr of curr) {
                             if (cr.typ == EnumToken.WhitespaceTokenType && acc.at(-1)?.typ == cr.typ) {
                                 continue;

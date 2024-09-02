@@ -32,6 +32,7 @@ function* walkValues(values, root = null, filter) {
     const stack = values.slice();
     const map = new Map;
     let value;
+    let previous = null;
     while ((value = stack.shift())) {
         let option = null;
         if (filter != null) {
@@ -46,7 +47,7 @@ function* walkValues(values, root = null, filter) {
         // @ts-ignore
         if (option !== 'children') {
             // @ts-ignore
-            yield { value, parent: map.get(value), root };
+            yield { value, parent: map.get(value), previousValue: previous, nextValue: stack[0] ?? null, root };
         }
         if (option !== 'ignore-children' && 'chi' in value) {
             for (const child of value.chi.slice()) {
@@ -59,6 +60,7 @@ function* walkValues(values, root = null, filter) {
             map.set(value.r, value);
             stack.unshift(value.l, value.r);
         }
+        previous = value;
     }
 }
 

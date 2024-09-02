@@ -55,7 +55,6 @@ export declare interface ValidationRuleSet {
     [key: string]: ValidationRule;
 }
 
-
 export declare interface SyntaxRuleSet {
 
     syntax: string;
@@ -65,4 +64,18 @@ export declare interface SyntaxRuleSet {
             syntax?: string
         }
     }
+}
+
+export declare interface ValidationSyntaxNode {
+    syntax: string;
+    ast: ValidationToken[];
+
+}
+
+export declare interface ValidationConfiguration {
+
+    declarations: Record<string, ValidationSyntaxNode>;
+    functions: Record<string, ValidationSyntaxNode>;
+    syntaxes: Record<string, ValidationSyntaxNode>;
+    selectors: Record<string, ValidationSyntaxNode>;
 }

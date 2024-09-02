@@ -6,7 +6,7 @@ import type {
     ShorthandPropertyType, StringToken,
     Token,
     WhitespaceToken
-} from "../../../@types/index.d.ts";
+} from "../../../@types";
 import {eq} from "../utils/eq";
 import {getConfig, matchType} from "../utils";
 import {renderToken} from "../../renderer";
@@ -363,8 +363,11 @@ export class PropertyMap {
 
                     // @ts-ignore
                     let typ: EnumToken = <EnumToken>(EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
+
                     // @ts-ignore
-                    let separator: string | null = this.config.separator ? renderToken(this.config.separator) : ',';
+                    const sep: Token | null = this.config.separator == null ? null :  {...this.config.separator, typ: EnumToken[this.config.separator.typ]} as Token;
+                    // @ts-ignore
+                    const separator: string = this.config.separator ? renderToken({...this.config.separator, typ: EnumToken[this.config.separator.typ]}) : ',';
 
                     this.matchTypes(declaration);
 
@@ -414,6 +417,11 @@ export class PropertyMap {
                     this.removeDefaults(map, value);
 
                     declaration.val = values.reduce((acc: Token[], curr: Token[]) => {
+
+                        if (sep != null && acc.length > 0) {
+
+                            acc.push({...sep});
+                        }
 
                         for (const cr of curr) {
 

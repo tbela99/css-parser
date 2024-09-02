@@ -1,7 +1,8 @@
-import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from './utils/syntax.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import './parse.js';
+import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from '../syntax/syntax.js';
+import './utils/config.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 
@@ -55,7 +56,7 @@ function* consumeString(quoteStr, buffer, parseInfo) {
                 continue;
             }
             if (escapeSequence.trimEnd().length > 0) {
-                const codepoint = Number(`0x${escapeSequence.trimEnd()}`);
+                const codepoint = parseInt(escapeSequence, 16);
                 if (codepoint == 0 ||
                     // leading surrogate
                     (0xD800 <= codepoint && codepoint <= 0xDBFF) ||
@@ -235,9 +236,22 @@ function* tokenize(stream) {
             case '~':
             case '|':
             case '$':
-                if (value == '|' && peek(parseInfo) == '|') {
-                    next(parseInfo);
-                    yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                if (value == '|') {
+                    if (peek(parseInfo) == '|') {
+                        next(parseInfo);
+                        yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
+                    }
+                    else if (peek(parseInfo) == '=') {
+                        buffer += next(parseInfo);
+                        yield pushToken(buffer, parseInfo);
+                    }
+                    else {
+                        yield pushToken('|', parseInfo);
+                    }
                     buffer = '';
                     break;
                 }

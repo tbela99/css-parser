@@ -2,7 +2,8 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../parse.js';
-import { isWhiteSpace } from './syntax.js';
+import { isWhiteSpace } from '../../syntax/syntax.js';
+import './config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 

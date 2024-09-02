@@ -1,7 +1,8 @@
-import '../../parser/parse.js';
-import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../parser/utils/syntax.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../parser/parse.js';
+import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../syntax/syntax.js';
+import '../../parser/utils/config.js';
 import { getNumber } from './color.js';
 import { srgb2rgb } from './rgb.js';
 import './utils/constants.js';

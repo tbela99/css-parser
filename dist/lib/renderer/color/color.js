@@ -18,6 +18,7 @@ import { xyzd502srgb, srgb2xyz } from './xyz.js';
 import { p32srgbvalues, srgb2p3values } from './p3.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function convert(token, to) {
     if (token.kin == to) {

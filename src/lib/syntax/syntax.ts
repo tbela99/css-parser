@@ -1,8 +1,8 @@
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {colorsFunc} from "../../renderer";
-import {COLORS_NAMES} from "../../renderer/color";
+import {colorsFunc} from "../renderer";
+import {COLORS_NAMES} from "../renderer/color";
 import type {
     AngleToken,
     DimensionToken,
@@ -12,8 +12,8 @@ import type {
     NumberToken,
     PercentageToken,
     Token
-} from "../../../@types/index.d.ts";
-import {EnumToken} from "../../ast";
+} from "../../@types";
+import {EnumToken} from "../ast";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
@@ -371,6 +371,15 @@ export function isIdent(name: string): boolean {
 
         i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
         codepoint = <number>name.charCodeAt(i);
+
+        if (codepoint == REVERSE_SOLIDUS) {
+
+            i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+            codepoint = <number>name.charCodeAt(i);
+            i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
+
+            continue;
+        }
 
         if (!isIdentCodepoint(codepoint)) {
 

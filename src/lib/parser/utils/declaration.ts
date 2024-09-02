@@ -1,6 +1,6 @@
 import type {AstDeclaration, ErrorDescription, FunctionToken, ParensToken, Position, Token} from "../../../@types/index.d.ts";
 import {EnumToken, walkValues} from "../../ast";
-import {isWhiteSpace} from "./syntax";
+import {isWhiteSpace} from "../../syntax/syntax";
 
 export function parseDeclaration(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
 

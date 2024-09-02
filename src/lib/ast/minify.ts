@@ -1,5 +1,4 @@
-import {isFunction, isIdent, isIdentStart, isWhiteSpace, parseString} from "../parser";
-
+import {parseString} from "../parser";
 import {eq} from "../parser/utils/eq";
 import {replaceCompound} from './expand';
 import {doRender, renderToken} from "../renderer";
@@ -18,11 +17,13 @@ import type {
     MinifyOptions,
     OptimizedSelector,
     ParserOptions,
-    RawSelectorTokens, Token
-} from "../../@types/index.d.ts";
+    RawSelectorTokens,
+    Token
+} from "../../@types";
 import {EnumToken} from "./types";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax";
 
-export const combinators: string[] = ['+', '>', '~', '||'];
+export const combinators: string[] = ['+', '>', '~', '||', '|'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 const notEndingWith: string[] = ['(', '['].concat(combinators);
 // @ts-ignore
@@ -51,6 +52,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
+            removePrefix: false,
             features: <Function[]>[], ...options
         };
 
@@ -106,6 +108,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             if (ast.chi[i].typ == EnumToken.CommentNodeType) {
                 continue;
             }
+
             // @ts-ignore
             node = ast.chi[i];
 
@@ -374,13 +377,22 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                         // node = ast.chi[i];
                                     } else {
                                         // @ts-ignore
-                                        ast.chi.splice(i, 1, intersect.node1);
+                                        ast.chi.splice(i--, 1, intersect.node1);
                                         // node = ast.chi intersect.node1;
                                     }
 
                                     if (intersect.node2.chi.length == 0) {
                                         // @ts-ignore
                                         ast.chi.splice(nodeIndex, 1, intersect.result);
+
+                                        i--;
+
+                                        // @ts-ignore
+                                        if (nodeIndex == i) {
+
+                                            nodeIndex = i;
+                                        }
+
                                     } else {
 
                                         // @ts-ignore
@@ -390,6 +402,13 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                                     }
 
                                     reduceRuleSelector(intersect.result);
+
+                                    // @ts-ignore
+                                    if (node != ast.chi[i]) {
+
+                                        // @ts-ignore
+                                        node = ast.chi[i];
+                                    }
 
                                     previous = intersect.result;
                                     nodeIndex = i;
@@ -526,6 +545,39 @@ export function reduceSelector(selector: string[][]) {
     if (selector.length == 0) {
         return null;
     }
+
+    selector = selector.reduce((acc: string[][], curr: string[]) => {
+
+        // trim :is()
+        // @ts-ignore
+        if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
+
+            // @ts-ignore
+            const rules = splitRule(curr.at(-1).slice(4, -1)).map(x => {
+
+                if (x[0] == '&' && x.length > 1) {
+
+                    return x.slice(x[1] == ' ' ? 2 : 1);
+                }
+
+                return x;
+            });
+
+            const part = curr.slice(0, -1);
+
+            for (const rule of rules) {
+
+                acc.push(part.concat(rule));
+            }
+
+            return acc;
+        }
+
+        acc.push(curr);
+        return acc;
+
+
+    }, [] as string[][]);
 
     const optimized: string[] = [];
     const k: number = selector.reduce((acc: number, curr: string[]): number => acc == 0 ? curr.length : (curr.length == 0 ? acc : Math.min(acc, curr.length)), 0);
@@ -914,7 +966,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
             return null;
         }
 
-        let hasCompoundSelector:    boolean = true;
+        let hasCompoundSelector: boolean = true;
 
         curr = curr.slice(match[0].length);
 
@@ -1269,7 +1321,6 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
     return {result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2};
 }
 
-
 function reduceRuleSelector(node: AstRule) {
 
     if (node.raw == null) {
@@ -1293,24 +1344,35 @@ function reduceRuleSelector(node: AstRule) {
 
         for (const selector of optimized.selector) {
 
-            if (selector.length > 1 && selector[0] == '&' && combinators.includes(selector[1])) {
+            if (selector.length > 1 && selector[0] == '&' &&
+                (combinators.includes(selector[1]) || !/^[a-zA-Z:]/.test(selector[1]))) {
 
                 selector.shift();
             }
         }
 
+        const unique: Set<string> = new Set;
+
         const raw: string[][] = [
             [
                 optimized.optimized[0], ':is('
-            ].concat(optimized.selector.reduce((acc, curr) => {
-                if (acc.length > 0) {
-                    acc.push(',');
+            ].concat(optimized.selector.reduce((acc: string[], curr: string[]) => {
+
+                const sig = curr.join('');
+
+                if (!unique.has(sig)) {
+
+                    if (acc.length > 0) {
+                        acc.push(',');
+                    }
+
+                    unique.add(sig);
+                    acc.push(...curr);
                 }
-                acc.push(...curr);
+
                 return acc;
             }, [])).concat(')')
         ];
-
 
         const sel: string = raw[0].join('');
 

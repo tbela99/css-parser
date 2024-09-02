@@ -7,6 +7,7 @@ import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { lab2srgb, lch2srgb, oklab2srgb, oklch2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function rgb2hwb(token) {
     // @ts-ignore

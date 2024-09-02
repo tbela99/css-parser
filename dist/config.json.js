@@ -450,7 +450,9 @@ var map = {
 	transition: {
 		shorthand: "transition",
 		multiple: true,
-		separator: ",",
+		separator: {
+			typ: "Comma"
+		},
 		pattern: "transition-property transition-duration transition-timing-function transition-delay transition-behavior",
 		keywords: [
 			"none",

@@ -6,6 +6,7 @@ import {
     ShorthandPropertyType,
     ShorthandType
 } from "../src/@types";
+import {writeFile} from "node:fs/promises";
 
 function createProperties(data: ShorthandPropertyType) {
 
@@ -259,7 +260,9 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
         {
             shorthand: 'transition',
             multiple: true,
-            separator: ',',
+            separator: {
+                typ: 'Comma'
+            },
             pattern: 'transition-property transition-duration transition-timing-function transition-delay transition-behavior',
             keywords: ['none', 'all'],
             default: ['0s', '0ms', 'all', 'ease', 'none', 'normal'],
@@ -845,7 +848,10 @@ export const properties: PropertySetType = [
         properties: ['border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius'],
         types: ['Length', 'Perc'],
         multiple: true,
-        separator: '/',
+        separator: {
+            typ: 'Literal',
+            val: '/'
+        },
         keywords: []
     },
     {
@@ -906,4 +912,8 @@ export const properties: PropertySetType = [
     return Object.assign(acc, createProperties(<ShorthandPropertyType>data));
 }, <PropertySetType>{});
 
-console.debug(JSON.stringify({properties, map}, null, 1));
+const result = JSON.stringify({properties, map}, null, 1);
+
+await writeFile(import.meta.dirname + '/../src/config.json', result);
+
+console.debug(result);

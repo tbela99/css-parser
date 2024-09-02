@@ -389,7 +389,7 @@ table.colortable {
   }
  }
 }
-.error,#404 {
+.error,#f404 {
  &:hover>.baz {
   color: red
  }
@@ -430,7 +430,7 @@ table.colortable td,table.colortable th {
 .foo.foo {
  padding: 2ch
 }
-:is(.error,#404):hover>.baz {
+:is(.error,#f404):hover>.baz {
  color: red
 }`));
         });

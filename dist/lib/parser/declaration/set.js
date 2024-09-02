@@ -1,8 +1,9 @@
 import { eq } from '../utils/eq.js';
-import { isLength } from '../utils/syntax.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../parse.js';
+import { isLength } from '../../syntax/syntax.js';
+import '../utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 

@@ -25,6 +25,7 @@ $ npm install @tbela99/css-parser
 - inline css variables
 - remove duplicate properties
 - flatten @import rules
+- partial css validation: only css selector is validated
 
 ## Playground
 
@@ -147,7 +148,7 @@ Include ParseOptions and RenderOptions
 
 > Sourcemap Options
 
-- src: string, optional. original css file location to be used with sourcemap.
+- src: string, optional. original css file location to be used with sourcemap, also used to resolve url().
 - sourcemap: boolean, optional. preserve node location data.
 
 > Misc Options
@@ -155,7 +156,7 @@ Include ParseOptions and RenderOptions
 - resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
 - resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
 - removeCharset: boolean, optional. remove @charset.
-- cwd: string, optional. the current working directory. when specified url() are resolved using this value
+- cwd: string, optional. destination directory used to resolve url().
 - visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
@@ -179,7 +180,7 @@ Include ParseOptions and RenderOptions
 - indent: string, optional. css indention string. uses space character by default.
 - newLine: string, optional. new line character.
 - output: string, optional. file where to store css. url() are resolved according to the specified value. no file is created though.
-- cwd: string, optional. value used as current working directory. when output is not provided, urls are resolved according to this value.
+- cwd: string, optional. destination directory used to resolve url().
 
 ## Parsing
 
