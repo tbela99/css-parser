@@ -28,7 +28,44 @@ const enumTokenHints = new Set([
 const webkitPseudoAliasMap = {
     '-webkit-autofill': 'autofill',
     '-webkit-any': 'is',
-    '-moz-any': 'is'
+    '-moz-any': 'is',
+    '-webkit-border-after': 'border-block-end',
+    '-webkit-border-after-color': 'border-block-end-color',
+    '-webkit-border-after-style': 'border-block-end-style',
+    '-webkit-border-after-width': 'border-block-end-width',
+    '-webkit-border-before': 'border-block-start',
+    '-webkit-border-before-color': 'border-block-start-color',
+    '-webkit-border-before-style': 'border-block-start-style',
+    '-webkit-border-before-width': 'border-block-start-width',
+    '-webkit-border-end': 'border-inline-end',
+    '-webkit-border-end-color': 'border-inline-end-color',
+    '-webkit-border-end-style': 'border-inline-end-style',
+    '-webkit-border-end-width': 'border-inline-end-width',
+    '-webkit-border-start': 'border-inline-start',
+    '-webkit-border-start-color': 'border-inline-start-color',
+    '-webkit-border-start-style': 'border-inline-start-style',
+    '-webkit-border-start-width': 'border-inline-start-width',
+    '-webkit-box-align': 'align-items',
+    '-webkit-box-direction': 'flex-direction',
+    '-webkit-box-flex': 'flex-grow',
+    '-webkit-box-lines': 'flex-flow',
+    '-webkit-box-ordinal-group': 'order',
+    '-webkit-box-orient': 'flex-direction',
+    '-webkit-box-pack': 'justify-content',
+    '-webkit-column-break-after': 'break-after',
+    '-webkit-column-break-before': 'break-before',
+    '-webkit-column-break-inside': 'break-inside',
+    '-webkit-font-feature-settings': 'font-feature-settings',
+    '-webkit-hyphenate-character': 'hyphenate-character',
+    '-webkit-initial-letter': 'initial-letter',
+    '-webkit-margin-end': 'margin-block-end',
+    '-webkit-margin-start': 'margin-block-start',
+    '-webkit-padding-after': 'padding-block-end',
+    '-webkit-padding-before': 'padding-block-start',
+    '-webkit-padding-end': 'padding-inline-end',
+    '-webkit-padding-start': 'padding-inline-start',
+    '-webkit-min-device-pixel-ratio': 'min-resolution',
+    '-webkit-max-device-pixel-ratio': 'max-resolution'
 };
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
@@ -469,24 +506,28 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 return acc;
             }, uniq);
             const ruleType = context.typ == EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
+            if (ruleType == EnumToken.RuleNodeType) {
+                parseSelector(tokens);
+                const valid = validateSelector(tokens, context);
+                if (!valid) {
+                    const node = {
+                        typ: EnumToken.InvalidRuleTokenType,
+                        // @ts-ignore
+                        sel: tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''),
+                        chi: []
+                    };
+                    errors.push({ action: 'drop', message: 'invalid selector', location: { src, ...position } });
+                    // @ts-ignore
+                    context.chi.push(node);
+                    return node;
+                }
+            }
             const node = {
                 typ: ruleType,
                 // @ts-ignore
                 sel: [...uniq.keys()].join(','),
                 chi: []
             };
-            if (ruleType == EnumToken.RuleNodeType) {
-                parseSelector(tokens);
-                const valid = validateSelector(tokens, context);
-                if (!valid) {
-                    errors.push({ action: 'drop', message: 'invalid selector', location: { src, ...position } });
-                    node.typ = EnumToken.InvalidRuleTokenType;
-                    node.sel = tokens;
-                    // @ts-ignore
-                    context.chi.push(node);
-                    return node;
-                }
-            }
             let raw = [...uniq.values()];
             Object.defineProperty(node, 'raw', {
                 enumerable: false,
@@ -583,7 +624,23 @@ function parseSelector(tokens) {
             // @ts-ignore
             else if (value.typ == EnumToken.WhitespaceTokenType) {
                 if (nextValue != null && nextValue.typ == EnumToken.LiteralTokenType) {
-                    if (['>', '+', '~'].includes(value.val)) {
+                    if (['>', '+', '~'].includes(nextValue.val)) {
+                        switch (value.val) {
+                            case '>':
+                                // @ts-ignore
+                                nextValue.typ = EnumToken.ChildCombinatorTokenType;
+                                break;
+                            case '+':
+                                // @ts-ignore
+                                nextValue.typ = EnumToken.NextSiblingCombinatorTokenType;
+                                break;
+                            case '~':
+                                // @ts-ignore
+                                nextValue.typ = EnumToken.SubsequentSiblingCombinatorTokenType;
+                                break;
+                        }
+                        // @ts-ignore
+                        delete nextValue.val;
                         continue;
                     }
                 }
@@ -664,6 +721,26 @@ function parseSelector(tokens) {
                     delete value.kin;
                 }
             }
+        }
+    }
+    let i = 0;
+    for (; i < tokens.length; i++) {
+        if ([
+            EnumToken.ChildCombinatorTokenType,
+            EnumToken.NextSiblingCombinatorTokenType,
+            EnumToken.SubsequentSiblingCombinatorTokenType
+        ].includes(tokens[i].typ)) {
+            if (i + 1 < tokens.length && [EnumToken.WhitespaceTokenType, EnumToken.DescendantCombinatorTokenType].includes(tokens[i + 1].typ)) {
+                tokens.splice(i + 1, 1);
+            }
+            if (i > 0 && [EnumToken.WhitespaceTokenType, EnumToken.DescendantCombinatorTokenType].includes(tokens[i - 1].typ)) {
+                tokens.splice(i - 1, 1);
+                i--;
+                continue;
+            }
+        }
+        if (tokens[i].typ == EnumToken.WhitespaceTokenType) {
+            tokens[i].typ = EnumToken.DescendantCombinatorTokenType;
         }
     }
     return tokens;

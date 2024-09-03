@@ -75,7 +75,7 @@ declare enum EnumToken {
     ClassSelectorTokenType = 73,
     UniversalSelectorTokenType = 74,
     ChildCombinatorTokenType = 75,
-    DescendantCombinatorTokenType = 76,
+    DescendantCombinatorTokenType = 76,// whitespace
     NextSiblingCombinatorTokenType = 77,
     SubsequentSiblingCombinatorTokenType = 78,
     NestingSelectorTokenType = 79,

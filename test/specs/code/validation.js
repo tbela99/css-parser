@@ -127,6 +127,66 @@ html, body, div, span, applet, object, iframe,
         });
 
 
+        it('nested selector validation #4', function () {
+            return transform(`
+
+.foo-bar {
+ width: 12px;
+ height: 25%;
+ >a {
+  color: #fff
+ }
+ >a, + a, ~ a b {
+  color: #fff
+ }
+& b {
+  color: #fff
+ }
+}
+
+ >a {
+  color: #fff
+ }
+ >a, + a, ~ a b {
+  color: #fff
+ }
+& b {
+  colo: #fff
+ }
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo-bar {
+ width: 12px;
+ height: 25%;
+ >a {
+  color: #fff
+ }
+ >a,+a,~a b {
+  color: #fff
+ }
+ & b {
+  color: #fff
+ }
+}`));
+        });
+
+        it('nested selector validation #5', function () {
+            return transform(`
+
+.pure-table-bordered tbody > tr:last-child > td {
+    border-bottom-width: 0;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-color: #34edc7;
+    border-style: medium;
+}
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border-width: 0;
+ border-color: #34edc7;
+ border-style: medium
+}`));
+        });
+
+
 
     });
 }

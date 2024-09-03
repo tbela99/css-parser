@@ -3396,6 +3396,10 @@
                 return '<';
             case exports.EnumToken.LteTokenType:
                 return '<=';
+            case exports.EnumToken.SubsequentSiblingCombinatorTokenType:
+                return '~';
+            case exports.EnumToken.NextSiblingCombinatorTokenType:
+                return '+';
             case exports.EnumToken.GtTokenType:
             case exports.EnumToken.ChildCombinatorTokenType:
                 return '>';
@@ -3409,6 +3413,7 @@
                 return '[';
             case exports.EnumToken.AttrEndTokenType:
                 return ']';
+            case exports.EnumToken.DescendantCombinatorTokenType:
             case exports.EnumToken.WhitespaceTokenType:
                 return ' ';
             case exports.EnumToken.ColonTokenType:
@@ -58999,58 +59004,86 @@
         exports.EnumToken.DelimTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.DashMatchTokenType,
         exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.ContainMatchTokenType
     ];
+    const selectorTokens = [
+        exports.EnumToken.IdenTokenType, exports.EnumToken.ClassSelectorTokenType, exports.EnumToken.AttrTokenType,
+        exports.EnumToken.PseudoClassTokenType, exports.EnumToken.PseudoClassFuncTokenType, exports.EnumToken.HashTokenType,
+        exports.EnumToken.UniversalSelectorTokenType
+    ];
+    const combinatorTokens = [
+        exports.EnumToken.ChildCombinatorTokenType, exports.EnumToken.NextSiblingCombinatorTokenType,
+        exports.EnumToken.SubsequentSiblingCombinatorTokenType
+    ];
     function validateSelector(selector, root) {
         return selector.length > 0 && doValidateSelector(selector, root) != null;
     }
     function doValidateSelector(selector, root) {
         let result = null;
+        if (selector.length == 0) {
+            return selector;
+        }
+        if (combinatorTokens.includes(selector[0].typ)) {
+            if (root == null || root.typ == exports.EnumToken.StyleSheetNodeType) {
+                return null;
+            }
+            selector = selector.slice(1);
+        }
         while ((selector?.length ?? 0) > 0) {
             result = validateSimpleSelector(selector, root);
-            // console.error([0, result], selector);
+            // console.error(0, {result, selector});
             if (result == null) {
                 return null;
             }
-            selector = consumeWhitespace(result);
-            if (selector.length == 0) {
-                break;
+            if (result.length == 0) {
+                return result;
             }
+            selector = result;
             result = validateCombinator(selector);
-            // console.error([1, result], selector);
+            // console.error(1, {result, selector});
             if (result == null) {
-                if (selector[0].typ == exports.EnumToken.CommaTokenType) {
-                    result = validateSimpleSelector(selector.slice(1), root);
-                    // console.error([2, result], selector);
-                    if (result == null || result.length == selector.length) {
-                        // console.error({result, selector});
-                        // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
-                        // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
-                        return null;
+                while (result == null && selector.length > 0) {
+                    if (selector[0].typ == exports.EnumToken.CommaTokenType) {
+                        selector = selector.slice(1);
+                        // console.error(2, {result, selector});
+                        if (selector.length > 0 && combinatorTokens.includes(selector[0].typ)) {
+                            if (root == null || root.typ == exports.EnumToken.StyleSheetNodeType) {
+                                return null;
+                            }
+                            selector = selector.slice(1);
+                            // console.error(3, {result, selector});
+                        }
+                        result = validateSimpleSelector(selector, root);
+                        // console.error(4, {result, selector});
+                        if (result == null) {
+                            // console.error({result, selector});
+                            // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
+                            // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
+                            return null;
+                        }
+                        selector = result;
+                        result = validateCombinator(selector);
+                        if (result != null) {
+                            if (result.length == 0) {
+                                return result;
+                            }
+                            selector = result;
+                        }
                     }
-                    selector = result;
-                    continue;
+                    else {
+                        break;
+                    }
                 }
             }
             else {
                 selector = result;
             }
-            result = validateSimpleSelector(consumeWhitespace(selector), root);
-            // console.error([3, result], selector);
-            if (result == null) {
-                return null;
-            }
-            if (result.length > 0 && result.length == selector.length) {
-                // console.error([4, result], selector);
-                // console.error('unexpected token: ', JSON.stringify(result[0], null, 1));
-                // console.error(new Error('unexpected token:\n' + JSON.stringify(result[0], null, 1)));
-                return null;
-            }
-            selector = result;
         }
         return selector;
     }
     function consumeWhitespace(selector) {
         let i = 0;
-        while (i < selector.length && (selector[i].typ == exports.EnumToken.WhitespaceTokenType || selector[i].typ == exports.EnumToken.CommentTokenType)) {
+        while (i < selector.length &&
+            (selector[i].typ == exports.EnumToken.WhitespaceTokenType ||
+                selector[i].typ == exports.EnumToken.CommentTokenType)) {
             i++;
         }
         return selector.slice(i);
@@ -59080,36 +59113,31 @@
             }
             return selector.slice(i);
         }
-        if (selector[i].typ == exports.EnumToken.IdenTokenType) {
+        while (i < selector.length && [exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(selector[i].typ)) {
             i++;
         }
-        while (i < selector.length) {
-            if ([
-                exports.EnumToken.HashTokenType,
-                exports.EnumToken.AttrTokenType,
-                exports.EnumToken.LiteralTokenType,
-                exports.EnumToken.CommentTokenType,
-                exports.EnumToken.PseudoClassTokenType,
-                exports.EnumToken.ClassSelectorTokenType,
-                exports.EnumToken.PseudoClassFuncTokenType,
-                exports.EnumToken.UniversalSelectorTokenType
-            ].includes(selector[i].typ) || (selector[i].typ == exports.EnumToken.NestingSelectorTokenType && root != null)) {
-                if (selector[i].typ == exports.EnumToken.AttrTokenType && !validateAttributeSelector(selector[i])) {
-                    return null;
-                }
-                if (selector[i].typ == exports.EnumToken.PseudoClassTokenType && !validatePseudoClass(selector[i])) {
-                    return null;
-                }
-                if (selector[i].typ == exports.EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(selector[i])) {
-                    return null;
-                }
-                i++;
-            }
-            else {
-                break;
-            }
+        if (i >= selector.length) {
+            return selector.slice(i);
         }
-        return selector.slice(i);
+        if (selectorTokens.includes(selector[i].typ)) {
+            if (selector[i].typ == exports.EnumToken.PseudoClassTokenType && !validatePseudoClass(selector[i])) {
+                return null;
+            }
+            if (selector[i].typ == exports.EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(selector[i])) {
+                return null;
+            }
+            if (selector[i].typ == exports.EnumToken.AttrTokenType && !validateAttributeSelector(selector[i])) {
+                return null;
+            }
+            return selector.slice(i + 1);
+        }
+        if (selector[i].typ == exports.EnumToken.LiteralTokenType && selector[i].val.startsWith('\\')) {
+            return selector.slice(i + 1);
+        }
+        if (selector[i].typ == exports.EnumToken.NestingSelectorTokenType && root != null && root.typ != exports.EnumToken.StyleSheetNodeType) {
+            return selector.slice(i + 1);
+        }
+        return null;
     }
     function validatePseudoClass(selector) {
         const name = selector.val.slice(selector.val[1] == ':' ? 2 : 1);
@@ -59275,7 +59303,44 @@
     const webkitPseudoAliasMap = {
         '-webkit-autofill': 'autofill',
         '-webkit-any': 'is',
-        '-moz-any': 'is'
+        '-moz-any': 'is',
+        '-webkit-border-after': 'border-block-end',
+        '-webkit-border-after-color': 'border-block-end-color',
+        '-webkit-border-after-style': 'border-block-end-style',
+        '-webkit-border-after-width': 'border-block-end-width',
+        '-webkit-border-before': 'border-block-start',
+        '-webkit-border-before-color': 'border-block-start-color',
+        '-webkit-border-before-style': 'border-block-start-style',
+        '-webkit-border-before-width': 'border-block-start-width',
+        '-webkit-border-end': 'border-inline-end',
+        '-webkit-border-end-color': 'border-inline-end-color',
+        '-webkit-border-end-style': 'border-inline-end-style',
+        '-webkit-border-end-width': 'border-inline-end-width',
+        '-webkit-border-start': 'border-inline-start',
+        '-webkit-border-start-color': 'border-inline-start-color',
+        '-webkit-border-start-style': 'border-inline-start-style',
+        '-webkit-border-start-width': 'border-inline-start-width',
+        '-webkit-box-align': 'align-items',
+        '-webkit-box-direction': 'flex-direction',
+        '-webkit-box-flex': 'flex-grow',
+        '-webkit-box-lines': 'flex-flow',
+        '-webkit-box-ordinal-group': 'order',
+        '-webkit-box-orient': 'flex-direction',
+        '-webkit-box-pack': 'justify-content',
+        '-webkit-column-break-after': 'break-after',
+        '-webkit-column-break-before': 'break-before',
+        '-webkit-column-break-inside': 'break-inside',
+        '-webkit-font-feature-settings': 'font-feature-settings',
+        '-webkit-hyphenate-character': 'hyphenate-character',
+        '-webkit-initial-letter': 'initial-letter',
+        '-webkit-margin-end': 'margin-block-end',
+        '-webkit-margin-start': 'margin-block-start',
+        '-webkit-padding-after': 'padding-block-end',
+        '-webkit-padding-before': 'padding-block-start',
+        '-webkit-padding-end': 'padding-inline-end',
+        '-webkit-padding-start': 'padding-inline-start',
+        '-webkit-min-device-pixel-ratio': 'min-resolution',
+        '-webkit-max-device-pixel-ratio': 'max-resolution'
     };
     function reject(reason) {
         throw new Error(reason ?? 'Parsing aborted');
@@ -59716,24 +59781,28 @@
                     return acc;
                 }, uniq);
                 const ruleType = context.typ == exports.EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? exports.EnumToken.KeyFrameRuleNodeType : exports.EnumToken.RuleNodeType;
+                if (ruleType == exports.EnumToken.RuleNodeType) {
+                    parseSelector(tokens);
+                    const valid = validateSelector(tokens, context);
+                    if (!valid) {
+                        const node = {
+                            typ: exports.EnumToken.InvalidRuleTokenType,
+                            // @ts-ignore
+                            sel: tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''),
+                            chi: []
+                        };
+                        errors.push({ action: 'drop', message: 'invalid selector', location: { src, ...position } });
+                        // @ts-ignore
+                        context.chi.push(node);
+                        return node;
+                    }
+                }
                 const node = {
                     typ: ruleType,
                     // @ts-ignore
                     sel: [...uniq.keys()].join(','),
                     chi: []
                 };
-                if (ruleType == exports.EnumToken.RuleNodeType) {
-                    parseSelector(tokens);
-                    const valid = validateSelector(tokens, context);
-                    if (!valid) {
-                        errors.push({ action: 'drop', message: 'invalid selector', location: { src, ...position } });
-                        node.typ = exports.EnumToken.InvalidRuleTokenType;
-                        node.sel = tokens;
-                        // @ts-ignore
-                        context.chi.push(node);
-                        return node;
-                    }
-                }
                 let raw = [...uniq.values()];
                 Object.defineProperty(node, 'raw', {
                     enumerable: false,
@@ -59830,7 +59899,23 @@
                 // @ts-ignore
                 else if (value.typ == exports.EnumToken.WhitespaceTokenType) {
                     if (nextValue != null && nextValue.typ == exports.EnumToken.LiteralTokenType) {
-                        if (['>', '+', '~'].includes(value.val)) {
+                        if (['>', '+', '~'].includes(nextValue.val)) {
+                            switch (value.val) {
+                                case '>':
+                                    // @ts-ignore
+                                    nextValue.typ = exports.EnumToken.ChildCombinatorTokenType;
+                                    break;
+                                case '+':
+                                    // @ts-ignore
+                                    nextValue.typ = exports.EnumToken.NextSiblingCombinatorTokenType;
+                                    break;
+                                case '~':
+                                    // @ts-ignore
+                                    nextValue.typ = exports.EnumToken.SubsequentSiblingCombinatorTokenType;
+                                    break;
+                            }
+                            // @ts-ignore
+                            delete nextValue.val;
                             continue;
                         }
                     }
@@ -59911,6 +59996,26 @@
                         delete value.kin;
                     }
                 }
+            }
+        }
+        let i = 0;
+        for (; i < tokens.length; i++) {
+            if ([
+                exports.EnumToken.ChildCombinatorTokenType,
+                exports.EnumToken.NextSiblingCombinatorTokenType,
+                exports.EnumToken.SubsequentSiblingCombinatorTokenType
+            ].includes(tokens[i].typ)) {
+                if (i + 1 < tokens.length && [exports.EnumToken.WhitespaceTokenType, exports.EnumToken.DescendantCombinatorTokenType].includes(tokens[i + 1].typ)) {
+                    tokens.splice(i + 1, 1);
+                }
+                if (i > 0 && [exports.EnumToken.WhitespaceTokenType, exports.EnumToken.DescendantCombinatorTokenType].includes(tokens[i - 1].typ)) {
+                    tokens.splice(i - 1, 1);
+                    i--;
+                    continue;
+                }
+            }
+            if (tokens[i].typ == exports.EnumToken.WhitespaceTokenType) {
+                tokens[i].typ = exports.EnumToken.DescendantCombinatorTokenType;
             }
         }
         return tokens;

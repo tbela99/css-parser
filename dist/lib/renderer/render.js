@@ -434,6 +434,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '<';
         case EnumToken.LteTokenType:
             return '<=';
+        case EnumToken.SubsequentSiblingCombinatorTokenType:
+            return '~';
+        case EnumToken.NextSiblingCombinatorTokenType:
+            return '+';
         case EnumToken.GtTokenType:
         case EnumToken.ChildCombinatorTokenType:
             return '>';
@@ -447,6 +451,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '[';
         case EnumToken.AttrEndTokenType:
             return ']';
+        case EnumToken.DescendantCombinatorTokenType:
         case EnumToken.WhitespaceTokenType:
             return ' ';
         case EnumToken.ColonTokenType:

@@ -80,7 +80,7 @@ export enum EnumToken {
     ClassSelectorTokenType,
     UniversalSelectorTokenType,
     ChildCombinatorTokenType,
-    DescendantCombinatorTokenType,
+    DescendantCombinatorTokenType, // whitespace
     NextSiblingCombinatorTokenType,
     SubsequentSiblingCombinatorTokenType,
     NestingSelectorTokenType,

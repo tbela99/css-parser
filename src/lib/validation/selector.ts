@@ -1,7 +1,8 @@
 import type {
     AstAtRule,
     AstNode,
-    AttrToken, IdentToken,
+    AttrToken,
+    IdentToken,
     LiteralToken,
     MatchExpressionToken,
     NameSpaceAttributeToken,
@@ -17,6 +18,17 @@ const expressions: EnumToken[] = [
     EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.ContainMatchTokenType
 ];
 
+const selectorTokens: EnumToken[] = [
+    EnumToken.IdenTokenType, EnumToken.ClassSelectorTokenType, EnumToken.AttrTokenType,
+    EnumToken.PseudoClassTokenType, EnumToken.PseudoClassFuncTokenType, EnumToken.HashTokenType,
+    EnumToken.UniversalSelectorTokenType
+];
+
+const combinatorTokens: EnumToken[] = [
+    EnumToken.ChildCombinatorTokenType, EnumToken.NextSiblingCombinatorTokenType,
+    EnumToken.SubsequentSiblingCombinatorTokenType
+];
+
 export function validateSelector(selector: Token[], root?: AstNode): boolean {
 
     return selector.length > 0 && doValidateSelector(selector, root) != null;
@@ -26,73 +38,97 @@ function doValidateSelector(selector: Token[], root?: AstNode): Token[] | null {
 
     let result: Token[] | null = null;
 
+    if (selector.length == 0) {
+
+        return selector;
+    }
+
+    if (combinatorTokens.includes(selector[0].typ)) {
+
+        if (root == null || root.typ == EnumToken.StyleSheetNodeType) {
+
+            return null;
+        }
+
+        selector = selector.slice(1);
+    }
+
     while ((selector?.length ?? 0) > 0) {
 
         result = validateSimpleSelector(selector, root);
 
-        // console.error([0, result], selector);
+        // console.error(0, {result, selector});
 
         if (result == null) {
 
             return null;
         }
 
-        selector = consumeWhitespace(result);
+        if (result.length == 0) {
 
-        if (selector.length == 0) {
-
-            break;
+            return result;
         }
 
+        selector = result;
         result = validateCombinator(selector, root);
 
-        // console.error([1, result], selector);
+        // console.error(1, {result, selector});
 
         if (result == null) {
 
-            if (selector[0].typ == EnumToken.CommaTokenType) {
+            while (result == null && selector.length > 0) {
 
-                result = validateSimpleSelector(selector.slice(1), root);
+                if (selector[0].typ == EnumToken.CommaTokenType) {
 
-                // console.error([2, result], selector);
+                    selector = selector.slice(1);
 
-                if (result == null || result.length == selector.length) {
+                    // console.error(2, {result, selector});
+                    if (selector.length > 0 && combinatorTokens.includes(selector[0].typ)) {
 
-                    // console.error({result, selector});
-                    // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
-                    // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
+                        if (root == null || root.typ == EnumToken.StyleSheetNodeType) {
 
-                    return null;
+                            return null;
+                        }
+
+                        selector = selector.slice(1);
+                        // console.error(3, {result, selector});
+                    }
+
+                    result = validateSimpleSelector(selector, root);
+
+                    // console.error(4, {result, selector});
+
+                    if (result == null) {
+
+                        // console.error({result, selector});
+                        // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
+                        // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
+
+                        return null;
+                    }
+
+                    selector = result;
+                    result = validateCombinator(selector, root);
+
+                    if (result != null) {
+
+                        if (result.length == 0) {
+
+                            return result;
+                        }
+
+                        selector = result;
+                    }
+                } else {
+
+                    break;
                 }
-
-                selector = result;
-                continue;
             }
 
         } else {
 
             selector = result;
         }
-
-        result = validateSimpleSelector(consumeWhitespace(selector), root);
-
-        // console.error([3, result], selector);
-
-        if (result == null) {
-
-            return null;
-        }
-
-        if (result.length > 0 && result.length == selector.length) {
-
-            // console.error([4, result], selector);
-            // console.error('unexpected token: ', JSON.stringify(result[0], null, 1));
-            // console.error(new Error('unexpected token:\n' + JSON.stringify(result[0], null, 1)));
-
-            return null;
-        }
-
-        selector = result;
     }
 
     return selector;
@@ -102,7 +138,11 @@ function consumeWhitespace(selector: Token[]): Token[] {
 
     let i = 0;
 
-    while (i < selector.length && (selector[i].typ == EnumToken.WhitespaceTokenType || selector[i].typ == EnumToken.CommentTokenType)) {
+    while (i < selector.length &&
+        (
+            selector[i].typ == EnumToken.WhitespaceTokenType ||
+            selector[i].typ == EnumToken.CommentTokenType)
+        ) {
 
         i++;
     }
@@ -151,47 +191,47 @@ function validateSimpleSelector(selector: Token[] | null, root?: AstNode): Token
         return selector.slice(i);
     }
 
-    if (selector[i].typ == EnumToken.IdenTokenType) {
+    while (i < selector.length && [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(selector[i].typ)) {
 
         i++;
     }
 
-    while (i < selector.length) {
+    if (i >= selector.length) {
 
-        if ([
-            EnumToken.HashTokenType,
-            EnumToken.AttrTokenType,
-            EnumToken.LiteralTokenType,
-            EnumToken.CommentTokenType,
-            EnumToken.PseudoClassTokenType,
-            EnumToken.ClassSelectorTokenType,
-            EnumToken.PseudoClassFuncTokenType,
-            EnumToken.UniversalSelectorTokenType
-        ].includes(selector[i].typ) || (selector[i].typ == EnumToken.NestingSelectorTokenType && root != null)) {
-
-            if (selector[i].typ == EnumToken.AttrTokenType && !validateAttributeSelector(<AttrToken>selector[i])) {
-
-                return null;
-            }
-
-            if (selector[i].typ == EnumToken.PseudoClassTokenType && !validatePseudoClass(<PseudoClassToken>selector[i])) {
-
-                return null;
-            }
-
-            if (selector[i].typ == EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(<PseudoClassFunctionToken>selector[i])) {
-
-                return null;
-            }
-
-            i++
-        } else {
-
-            break;
-        }
+        return selector.slice(i);
     }
 
-    return selector.slice(i);
+    if (selectorTokens.includes(selector[i].typ)) {
+
+        if (selector[i].typ == EnumToken.PseudoClassTokenType && !validatePseudoClass(<PseudoClassToken>selector[i])) {
+
+            return null;
+        }
+
+        if (selector[i].typ == EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(<PseudoClassFunctionToken>selector[i])) {
+
+            return null;
+        }
+
+        if (selector[i].typ == EnumToken.AttrTokenType && !validateAttributeSelector(<AttrToken>selector[i])) {
+
+            return null;
+        }
+
+        return selector.slice(i + 1);
+    }
+
+    if (selector[i].typ == EnumToken.LiteralTokenType && (<LiteralToken> selector[i]).val.startsWith('\\')) {
+
+        return selector.slice(i + 1);
+    }
+
+    if (selector[i].typ == EnumToken.NestingSelectorTokenType && root != null && root.typ != EnumToken.StyleSheetNodeType) {
+
+        return selector.slice(i + 1);
+    }
+
+    return null;
 }
 
 function validatePseudoClass(selector: PseudoClassToken): boolean {
@@ -213,7 +253,7 @@ function validatePseudoClassFunction(selector: PseudoClassFunctionToken): boolea
 
     if (name.match(/^-[a-zA-Z]+-/)) {
 
-        return name == '-webkit-any' || name == '-moz-any' ;
+        return name == '-webkit-any' || name == '-moz-any';
     }
 
     const config = getConfig();
@@ -224,9 +264,7 @@ function validatePseudoClassFunction(selector: PseudoClassFunctionToken): boolea
 
             return false;
         }
-    }
-
-    else if (!(selector.val + '()' in config.selectors)) {
+    } else if (!(selector.val + '()' in config.selectors)) {
 
         return false;
     }

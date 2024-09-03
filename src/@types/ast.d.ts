@@ -48,7 +48,7 @@ export declare interface AstRule extends Node {
 export declare interface AstInvalidRule extends Node {
 
     typ: EnumToken.InvalidRuleTokenType;
-    sel: Token[];
+    sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
 }
 

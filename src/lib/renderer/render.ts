@@ -692,6 +692,14 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.LteTokenType:
             return '<=';
 
+        case EnumToken.SubsequentSiblingCombinatorTokenType:
+
+            return '~';
+
+        case EnumToken.NextSiblingCombinatorTokenType:
+
+            return '+';
+
         case EnumToken.GtTokenType:
         case EnumToken.ChildCombinatorTokenType:
             return '>';
@@ -711,6 +719,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.AttrEndTokenType:
             return ']';
 
+        case EnumToken.DescendantCombinatorTokenType:
         case EnumToken.WhitespaceTokenType:
             return ' ';
 
@@ -923,7 +932,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.ClassSelectorTokenType:
 
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
-
 
         case EnumToken.NestingSelectorTokenType:
 

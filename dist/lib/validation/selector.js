@@ -10,58 +10,86 @@ const expressions = [
     EnumToken.DelimTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType,
     EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.ContainMatchTokenType
 ];
+const selectorTokens = [
+    EnumToken.IdenTokenType, EnumToken.ClassSelectorTokenType, EnumToken.AttrTokenType,
+    EnumToken.PseudoClassTokenType, EnumToken.PseudoClassFuncTokenType, EnumToken.HashTokenType,
+    EnumToken.UniversalSelectorTokenType
+];
+const combinatorTokens = [
+    EnumToken.ChildCombinatorTokenType, EnumToken.NextSiblingCombinatorTokenType,
+    EnumToken.SubsequentSiblingCombinatorTokenType
+];
 function validateSelector(selector, root) {
     return selector.length > 0 && doValidateSelector(selector, root) != null;
 }
 function doValidateSelector(selector, root) {
     let result = null;
+    if (selector.length == 0) {
+        return selector;
+    }
+    if (combinatorTokens.includes(selector[0].typ)) {
+        if (root == null || root.typ == EnumToken.StyleSheetNodeType) {
+            return null;
+        }
+        selector = selector.slice(1);
+    }
     while ((selector?.length ?? 0) > 0) {
         result = validateSimpleSelector(selector, root);
-        // console.error([0, result], selector);
+        // console.error(0, {result, selector});
         if (result == null) {
             return null;
         }
-        selector = consumeWhitespace(result);
-        if (selector.length == 0) {
-            break;
+        if (result.length == 0) {
+            return result;
         }
+        selector = result;
         result = validateCombinator(selector);
-        // console.error([1, result], selector);
+        // console.error(1, {result, selector});
         if (result == null) {
-            if (selector[0].typ == EnumToken.CommaTokenType) {
-                result = validateSimpleSelector(selector.slice(1), root);
-                // console.error([2, result], selector);
-                if (result == null || result.length == selector.length) {
-                    // console.error({result, selector});
-                    // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
-                    // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
-                    return null;
+            while (result == null && selector.length > 0) {
+                if (selector[0].typ == EnumToken.CommaTokenType) {
+                    selector = selector.slice(1);
+                    // console.error(2, {result, selector});
+                    if (selector.length > 0 && combinatorTokens.includes(selector[0].typ)) {
+                        if (root == null || root.typ == EnumToken.StyleSheetNodeType) {
+                            return null;
+                        }
+                        selector = selector.slice(1);
+                        // console.error(3, {result, selector});
+                    }
+                    result = validateSimpleSelector(selector, root);
+                    // console.error(4, {result, selector});
+                    if (result == null) {
+                        // console.error({result, selector});
+                        // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
+                        // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
+                        return null;
+                    }
+                    selector = result;
+                    result = validateCombinator(selector);
+                    if (result != null) {
+                        if (result.length == 0) {
+                            return result;
+                        }
+                        selector = result;
+                    }
                 }
-                selector = result;
-                continue;
+                else {
+                    break;
+                }
             }
         }
         else {
             selector = result;
         }
-        result = validateSimpleSelector(consumeWhitespace(selector), root);
-        // console.error([3, result], selector);
-        if (result == null) {
-            return null;
-        }
-        if (result.length > 0 && result.length == selector.length) {
-            // console.error([4, result], selector);
-            // console.error('unexpected token: ', JSON.stringify(result[0], null, 1));
-            // console.error(new Error('unexpected token:\n' + JSON.stringify(result[0], null, 1)));
-            return null;
-        }
-        selector = result;
     }
     return selector;
 }
 function consumeWhitespace(selector) {
     let i = 0;
-    while (i < selector.length && (selector[i].typ == EnumToken.WhitespaceTokenType || selector[i].typ == EnumToken.CommentTokenType)) {
+    while (i < selector.length &&
+        (selector[i].typ == EnumToken.WhitespaceTokenType ||
+            selector[i].typ == EnumToken.CommentTokenType)) {
         i++;
     }
     return selector.slice(i);
@@ -91,36 +119,31 @@ function validateSimpleSelector(selector, root) {
         }
         return selector.slice(i);
     }
-    if (selector[i].typ == EnumToken.IdenTokenType) {
+    while (i < selector.length && [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(selector[i].typ)) {
         i++;
     }
-    while (i < selector.length) {
-        if ([
-            EnumToken.HashTokenType,
-            EnumToken.AttrTokenType,
-            EnumToken.LiteralTokenType,
-            EnumToken.CommentTokenType,
-            EnumToken.PseudoClassTokenType,
-            EnumToken.ClassSelectorTokenType,
-            EnumToken.PseudoClassFuncTokenType,
-            EnumToken.UniversalSelectorTokenType
-        ].includes(selector[i].typ) || (selector[i].typ == EnumToken.NestingSelectorTokenType && root != null)) {
-            if (selector[i].typ == EnumToken.AttrTokenType && !validateAttributeSelector(selector[i])) {
-                return null;
-            }
-            if (selector[i].typ == EnumToken.PseudoClassTokenType && !validatePseudoClass(selector[i])) {
-                return null;
-            }
-            if (selector[i].typ == EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(selector[i])) {
-                return null;
-            }
-            i++;
-        }
-        else {
-            break;
-        }
+    if (i >= selector.length) {
+        return selector.slice(i);
     }
-    return selector.slice(i);
+    if (selectorTokens.includes(selector[i].typ)) {
+        if (selector[i].typ == EnumToken.PseudoClassTokenType && !validatePseudoClass(selector[i])) {
+            return null;
+        }
+        if (selector[i].typ == EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(selector[i])) {
+            return null;
+        }
+        if (selector[i].typ == EnumToken.AttrTokenType && !validateAttributeSelector(selector[i])) {
+            return null;
+        }
+        return selector.slice(i + 1);
+    }
+    if (selector[i].typ == EnumToken.LiteralTokenType && selector[i].val.startsWith('\\')) {
+        return selector.slice(i + 1);
+    }
+    if (selector[i].typ == EnumToken.NestingSelectorTokenType && root != null && root.typ != EnumToken.StyleSheetNodeType) {
+        return selector.slice(i + 1);
+    }
+    return null;
 }
 function validatePseudoClass(selector) {
     const name = selector.val.slice(selector.val[1] == ':' ? 2 : 1);
