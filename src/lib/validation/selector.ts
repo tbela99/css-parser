@@ -1,4 +1,4 @@
-import type {
+import {
     AstAtRule,
     AstNode,
     AttrToken,
@@ -8,10 +8,12 @@ import type {
     NameSpaceAttributeToken,
     PseudoClassFunctionToken,
     PseudoClassToken,
-    Token
+    Token,
+    ValidationOptions
 } from "../../@types";
-import {EnumToken} from "../ast";
+import {EnumToken, ValidationLevel} from "../ast";
 import {getConfig} from "./config";
+import {ValidationResult} from "../../@types/validation";
 
 const expressions: EnumToken[] = [
     EnumToken.DelimTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType,
@@ -29,25 +31,42 @@ const combinatorTokens: EnumToken[] = [
     EnumToken.SubsequentSiblingCombinatorTokenType
 ];
 
-export function validateSelector(selector: Token[], root?: AstNode): boolean {
+interface ValidationResultItem {
 
-    return selector.length > 0 && doValidateSelector(selector, root) != null;
+    valid: ValidationLevel;
+    nodes: Token[];
+    error: string;
 }
 
-function doValidateSelector(selector: Token[], root?: AstNode): Token[] | null {
-
-    let result: Token[] | null = null;
+export function validateSelector(selector: Token[], options: ValidationOptions, root?: AstNode): ValidationResult {
 
     if (selector.length == 0) {
 
-        return selector;
+        return {
+
+            valid: ValidationLevel.Drop,
+            node: null,
+            error: 'The selector is empty.'
+        }
     }
+
+    return doValidateSelector(selector, options, root);
+}
+
+function doValidateSelector(selector: Token[], options: ValidationOptions, root?: AstNode): ValidationResult {
+
+    let result: ValidationResultItem;
 
     if (combinatorTokens.includes(selector[0].typ)) {
 
         if (root == null || root.typ == EnumToken.StyleSheetNodeType) {
 
-            return null;
+            return {
+
+                valid: ValidationLevel.Drop,
+                node: null,
+                error: 'The selector cannot start with a combinator.'
+            };
         }
 
         selector = selector.slice(1);
@@ -55,70 +74,101 @@ function doValidateSelector(selector: Token[], root?: AstNode): Token[] | null {
 
     while ((selector?.length ?? 0) > 0) {
 
-        result = validateSimpleSelector(selector, root);
+        result = validateSimpleSelector(selector, options, root);
 
-        // console.error(0, {result, selector});
+        if (result.valid == ValidationLevel.Drop) {
 
-        if (result == null) {
+            return {
 
-            return null;
+                valid: ValidationLevel.Drop,
+                node: result.nodes[0] ?? null,
+                error: result.error
+            };
         }
 
-        if (result.length == 0) {
+        if (result.nodes.length == 0) {
 
-            return result;
+            return {
+
+                valid: result.valid,
+                node: result.nodes[0] ?? null,
+                error: result.error
+            };
         }
 
-        selector = result;
-        result = validateCombinator(selector, root);
+        selector = result.nodes;
+        result = validateCombinator(selector, options, root);
 
-        // console.error(1, {result, selector});
+        if (result.valid == ValidationLevel.Drop) {
 
-        if (result == null) {
-
-            while (result == null && selector.length > 0) {
+            while (result.valid == ValidationLevel.Drop && selector.length > 0) {
 
                 if (selector[0].typ == EnumToken.CommaTokenType) {
 
-                    selector = selector.slice(1);
+                    selector = consumeWhitespace(selector.slice(1));
 
-                    // console.error(2, {result, selector});
+                    if (selector.length == 0) {
+
+                        return {
+
+                            valid: ValidationLevel.Drop,
+                            node: selector[0],
+                            error: 'unexpected token'
+                        }
+                    }
+
                     if (selector.length > 0 && combinatorTokens.includes(selector[0].typ)) {
 
                         if (root == null || root.typ == EnumToken.StyleSheetNodeType) {
 
-                            return null;
+                            return {
+
+                                valid: ValidationLevel.Drop,
+                                node: selector[0],
+                                error: 'Unexpected token'
+                            };
                         }
 
                         selector = selector.slice(1);
-                        // console.error(3, {result, selector});
                     }
 
-                    result = validateSimpleSelector(selector, root);
+                    result = validateSimpleSelector(selector, options, root);
 
-                    // console.error(4, {result, selector});
+                    if (result.valid == ValidationLevel.Drop) {
 
-                    if (result == null) {
+                        return {
 
-                        // console.error({result, selector});
-                        // console.error('unexpected token: ', JSON.stringify(selector[0], null, 1));
-                        // console.error(new Error('unexpected token:\n' + JSON.stringify(selector[0], null, 1)));
-
-                        return null;
+                            valid: ValidationLevel.Drop,
+                            node: null,
+                            error: 'Invalid selector'
+                        };
                     }
 
-                    selector = result;
-                    result = validateCombinator(selector, root);
+                    if (result.nodes.length == 0) {
 
-                    if (result != null) {
+                        return {
 
-                        if (result.length == 0) {
-
-                            return result;
-                        }
-
-                        selector = result;
+                            valid: result.valid,
+                            node: null,
+                            error: result.error
+                        };
                     }
+
+                    selector = result.nodes;
+                    result = validateCombinator(selector, options, root);
+
+                    if (result.nodes.length == 0) {
+
+                        return {
+
+                            valid: result.valid,
+                            node: null,
+                            error: result.error
+                        };
+                    }
+
+                    selector = result.nodes;
+
                 } else {
 
                     break;
@@ -127,11 +177,16 @@ function doValidateSelector(selector: Token[], root?: AstNode): Token[] | null {
 
         } else {
 
-            selector = result;
+            selector = result.nodes;
         }
     }
 
-    return selector;
+    return {
+
+        valid: ValidationLevel.Valid,
+        node: null,
+        error: ''
+    };
 }
 
 function consumeWhitespace(selector: Token[]): Token[] {
@@ -150,18 +205,18 @@ function consumeWhitespace(selector: Token[]): Token[] {
     return selector.slice(i);
 }
 
-function validateSimpleSelector(selector: Token[] | null, root?: AstNode): Token[] | null {
-
-    if (selector == null) {
-
-        return null;
-    }
+function validateSimpleSelector(selector: Token[], options: ValidationOptions, root?: AstNode): ValidationResultItem {
 
     let i = 0;
 
     if (i >= selector.length) {
 
-        return selector.slice(i);
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: selector.slice(i),
+            error: 'empty selector'
+        }
     }
 
     if (root?.typ == EnumToken.AtRuleNodeType && null != (<AstAtRule>root).nam.match(/(-[a-zA-Z]+-)?keyframes/)) {
@@ -185,10 +240,20 @@ function validateSimpleSelector(selector: Token[] | null, root?: AstNode): Token
                 break;
             }
 
-            return null;
+            return {
+
+                valid: ValidationLevel.Drop,
+                nodes: selector.slice(i),
+                error: 'invalid selector'
+            };
         }
 
-        return selector.slice(i);
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: selector.slice(i),
+            error: 'empty selector'
+        }
     }
 
     while (i < selector.length && [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(selector[i].typ)) {
@@ -198,62 +263,121 @@ function validateSimpleSelector(selector: Token[] | null, root?: AstNode): Token
 
     if (i >= selector.length) {
 
-        return selector.slice(i);
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: selector.slice(i),
+            error: 'empty selector'
+        }
     }
 
     if (selectorTokens.includes(selector[i].typ)) {
 
-        if (selector[i].typ == EnumToken.PseudoClassTokenType && !validatePseudoClass(<PseudoClassToken>selector[i])) {
+        let result: ValidationResultItem
 
-            return null;
+        if (selector[i].typ == EnumToken.PseudoClassTokenType) {
+            result = validatePseudoClass(<PseudoClassToken>selector[i], options);
+
+            if (result.valid != ValidationLevel.Valid) {
+
+                return result;
+            }
         }
 
-        if (selector[i].typ == EnumToken.PseudoClassFuncTokenType && !validatePseudoClassFunction(<PseudoClassFunctionToken>selector[i])) {
+        if (selector[i].typ == EnumToken.PseudoClassFuncTokenType) {
 
-            return null;
+            result = validatePseudoClassFunction(<PseudoClassFunctionToken>selector[i], options);
+
+            if (result.valid != ValidationLevel.Valid) {
+
+                return result;
+            }
         }
 
-        if (selector[i].typ == EnumToken.AttrTokenType && !validateAttributeSelector(<AttrToken>selector[i])) {
+        if (selector[i].typ == EnumToken.AttrTokenType) {
 
-            return null;
+            result = validateAttributeSelector(<AttrToken>selector[i], options);
+
+            if (result.valid != ValidationLevel.Valid) {
+
+                return result;
+            }
         }
 
-        return selector.slice(i + 1);
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: selector.slice(i + 1),
+            error: ''
+        }
     }
 
-    if (selector[i].typ == EnumToken.LiteralTokenType && (<LiteralToken> selector[i]).val.startsWith('\\')) {
+    if (selector[i].typ == EnumToken.LiteralTokenType && (<LiteralToken>selector[i]).val.startsWith('\\')) {
 
-        return selector.slice(i + 1);
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: selector.slice(i + 1),
+            error: ''
+        }
     }
 
     if (selector[i].typ == EnumToken.NestingSelectorTokenType && root != null && root.typ != EnumToken.StyleSheetNodeType) {
 
-        return selector.slice(i + 1);
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: selector.slice(i + 1),
+            error: 'Compound selector not allowed here'
+        }
     }
 
-    return null;
+    return {
+
+        valid: ValidationLevel.Drop,
+        nodes: selector.slice(i + 1, 1),
+        error: 'unexpected token'
+    }
 }
 
-function validatePseudoClass(selector: PseudoClassToken): boolean {
+function validatePseudoClass(selector: PseudoClassToken, options: ValidationOptions): ValidationResultItem {
 
     const name: string = selector.val.slice(selector.val[1] == ':' ? 2 : 1);
 
-    if (name.match(/^-[a-zA-Z]+-/)) {
+    if (name.match(/^-[a-zA-Z]+-/) || selector.val == ':before' || selector.val == ':after') {
 
-        return true;
+        return {
+
+            valid: ValidationLevel.Valid,
+            nodes: [selector],
+            error: ''
+        };
     }
 
     const config = getConfig();
-    return selector.val in config.selectors || selector.val == ':before' || selector.val == ':after';
+    const isValid: boolean = selector.val in config.selectors;
+
+    return {
+
+        valid: isValid || !options.validation  ? ValidationLevel.Valid : ValidationLevel.Drop,
+        nodes: [selector],
+        error: isValid ? '' : 'invalid selector'
+    }
 }
 
-function validatePseudoClassFunction(selector: PseudoClassFunctionToken): boolean {
+function validatePseudoClassFunction(selector: PseudoClassFunctionToken, options: ValidationOptions): ValidationResultItem {
 
     const name: string = selector.val.slice(1);
 
     if (name.match(/^-[a-zA-Z]+-/)) {
 
-        return name == '-webkit-any' || name == '-moz-any';
+        const isValid: boolean = name == '-webkit-any' || name == '-moz-any';
+
+        return {
+            valid: isValid ? ValidationLevel.Valid : ValidationLevel.Drop,
+            nodes: [selector],
+            error: isValid ? '' : 'invalid pseudo class'
+        }
     }
 
     const config = getConfig();
@@ -262,19 +386,31 @@ function validatePseudoClassFunction(selector: PseudoClassFunctionToken): boolea
 
         if (!('chi' in config.selectors[selector.val].ast[0])) {
 
-            return false;
+            return {
+                valid: !options.validation  ? ValidationLevel.Valid : ValidationLevel.Drop,
+                nodes: [selector],
+                error: ''
+            }
         }
+
     } else if (!(selector.val + '()' in config.selectors)) {
 
-        return false;
+        return {
+            valid: !options.validation  ? ValidationLevel.Valid : ValidationLevel.Drop,
+            nodes: [selector],
+            error: ''
+        }
     }
 
     // TODO: validate params
-
-    return true;
+    return {
+        valid: ValidationLevel.Valid,
+        nodes: [selector],
+        error: ''
+    }
 }
 
-function validateAttributeSelector(selector: AttrToken): boolean {
+function validateAttributeSelector(selector: AttrToken, options: ValidationOptions): ValidationResultItem {
 
     let i: number = 0;
     let isMatchExpression: boolean = false;
@@ -305,7 +441,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
 
                 if ((<NameSpaceAttributeToken>selector.chi[i]).r.typ != EnumToken.IdenTokenType) {
 
-                    return false;
+                    return {
+                        valid: ValidationLevel.Drop,
+                        nodes: [selector],
+                        error: 'identifier expected'
+                    }
                 }
 
                 if ((<NameSpaceAttributeToken>selector.chi[i]).l != null) {
@@ -315,7 +455,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
                         // @ts-ignore
                         (<NameSpaceAttributeToken>selector.chi[i]).l.typ != EnumToken.LiteralTokenType) {
 
-                        return false;
+                        return {
+                            valid: ValidationLevel.Drop,
+                            nodes: [selector],
+                            error: 'invalid namespace prefix'
+                        }
                     }
 
                     if (
@@ -324,7 +468,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
                         (<LiteralToken>(<NameSpaceAttributeToken>selector.chi[i]).l).val != '*'
                     ) {
 
-                        return false;
+                        return {
+                            valid: ValidationLevel.Drop,
+                            nodes: [selector],
+                            error: 'exoected universal selector or namespace prefix'
+                        }
                     }
                 }
             }
@@ -333,7 +481,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
             break;
         }
 
-        return false;
+        return {
+            valid: ValidationLevel.Drop,
+            nodes: [selector],
+            error: 'invalid selector'
+        }
     }
 
     if (!isMatchExpression) {
@@ -353,7 +505,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
 
             if (!expressions.includes(selector.chi[i].typ)) {
 
-                return false;
+                return {
+                    valid: ValidationLevel.Drop,
+                    nodes: [selector],
+                    error: 'invalid selector'
+                }
             }
 
             i++;
@@ -371,7 +527,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
 
             if (i >= selector.chi.length || ![EnumToken.IdenTokenType, EnumToken.StringTokenType].includes(selector.chi[i].typ)) {
 
-                return false;
+                return {
+                    valid: ValidationLevel.Drop,
+                    nodes: [selector],
+                    error: 'expected identifier or string'
+                }
             }
 
             i++;
@@ -383,7 +543,11 @@ function validateAttributeSelector(selector: AttrToken): boolean {
             ![EnumToken.IdenTokenType, EnumToken.StringTokenType].includes(expression!.r.typ) ||
             !expressions.includes(expression!.op)) {
 
-            return false;
+            return {
+                valid: ValidationLevel.Drop,
+                nodes: [selector],
+                error: 'expected identifier or string'
+            }
         }
     }
 
@@ -411,7 +575,12 @@ function validateAttributeSelector(selector: AttrToken): boolean {
         // @ts-ignore
         if (!hasWhitespace || i >= selector.chi.length || selector.chi[i].typ != EnumToken.IdenTokenType || !['i', 's'].includes((<EnumToken.IdenTokenType>selector.chi[i]).val)) {
 
-            return false;
+            const valid = !options.validation  && selector.chi[i].typ == EnumToken.IdenTokenType && (<IdentToken>selector.chi[i]).val.match(/^[a-z]$/);
+            return {
+                valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                nodes: [selector],
+                error: valid ? '' : 'invalid attribute selector'
+            }
         }
 
         i++;
@@ -420,23 +589,35 @@ function validateAttributeSelector(selector: AttrToken): boolean {
 
             if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(selector.chi[i].typ)) {
 
-                return false;
+                return {
+                    valid: ValidationLevel.Drop,
+                    nodes: [selector],
+                    error: 'invalid attribute selector'
+                }
             }
 
             i++;
         }
     }
 
-    return true;
+    return {
+        valid: ValidationLevel.Valid,
+        nodes: [selector],
+        error: ''
+    }
 }
 
-function validateCombinator(selector: Token[], root?: AstNode): Token[] | null {
+function validateCombinator(selector: Token[], options: ValidationOptions, root?: AstNode): ValidationResultItem {
 
     selector = consumeWhitespace(selector);
 
     if (selector.length == 0) {
 
-        return null;
+        return {
+            valid: ValidationLevel.Drop,
+            nodes: selector,
+            error: 'expecting combinator'
+        }
     }
 
     const combinatorTypes = [
@@ -449,15 +630,36 @@ function validateCombinator(selector: Token[], root?: AstNode): Token[] | null {
 
     if (!combinatorTypes.includes(selector[0].typ)) {
 
-        return null;
+        return {
+            valid: ValidationLevel.Drop,
+            nodes: selector,
+            error: 'Expecting combinator'
+        };
     }
 
     selector = consumeWhitespace(selector.slice(1));
 
-    if (combinatorTypes.includes(selector[0].typ)) {
+    if (selector.length == 0) {
 
-        return null;
+        return {
+            valid: ValidationLevel.Drop,
+            nodes: selector,
+            error: 'Unexpected combinator'
+        };
     }
 
-    return selector;
+    if (combinatorTypes.includes(selector[0].typ)) {
+
+        return {
+            valid: ValidationLevel.Drop,
+            nodes: selector,
+            error: 'Unexpected combinator'
+        };
+    }
+
+    return {
+        valid: ValidationLevel.Valid,
+        nodes: selector,
+        error: ''
+    };
 }

@@ -1,4 +1,10 @@
 
+export enum ValidationLevel {
+
+    None,
+    Valid,
+    Drop
+}
 
 export enum EnumToken {
     CommentTokenType,

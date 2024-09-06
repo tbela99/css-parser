@@ -1,11 +1,5 @@
-import {Location} from "./ast.d.ts";
+import type {BaseToken} from "./ast";
 import {EnumToken} from "../lib";
-
-export declare interface BaseToken {
-
-    typ: EnumToken;
-    loc?: Location;
-}
 
 export declare interface LiteralToken extends BaseToken {
 

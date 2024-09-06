@@ -146,6 +146,10 @@ Include ParseOptions and RenderOptions
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
+> Minify Options
+
+- validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the selector is validated at this time.
+
 > Sourcemap Options
 
 - src: string, optional. original css file location to be used with sourcemap, also used to resolve url().
@@ -314,6 +318,104 @@ table.colortable {
   background: #000;
   color: #fff
  }
+}
+```
+
+### CSS Validation
+
+CSS
+
+```css
+
+#404 {
+--animate-duration: 1s;
+}
+
+.s, #404 {
+--animate-duration: 1s;
+}
+
+.s [type="text" {
+--animate-duration: 1s;
+}
+
+.s [type="text"]] {
+--animate-duration: 1s;
+}
+
+.s [type="text"] {
+--animate-duration: 1s;
+}
+
+.s [type="text" i] {
+--animate-duration: 1s;
+}
+
+.s [type="text" s] {
+--animate-duration: 1s;
+}
+
+.s [type="text" b] {
+--animate-duration: 1s;
+}
+
+.s [type="text" b], {
+--animate-duration: 1s;
+}
+
+.s [type="text" b]+ {
+--animate-duration: 1s;
+}
+
+.s [type="text" b]+ b {
+--animate-duration: 1s;
+}
+
+.s [type="text" i]+ b {
+--animate-duration: 1s;
+}
+
+
+.s [type="text"())] {
+--animate-duration: 1s;
+}
+.s() {
+--animate-duration: 1s;
+}
+.s:focus {
+--animate-duration: 1s;
+}
+```
+
+with validation enabled
+
+```javascript
+import {parse, render} from '@tbela99/css-parser';
+const options = {minify: true, validate: true};
+const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
+//
+console.debug(code);
+```
+
+```css
+.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+ --animate-duration: 1s
+}
+```
+
+with validation disabled
+
+```javascript   
+import {parse, render} from '@tbela99/css-parser';
+const options = {minify: true, validate: false};
+const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
+//
+console.debug(code);
+```
+
+```css
+.s:is([type=text],[type=text i],[type=text s],[type=text b],[type=text b]+b,[type=text i]+b,:focus) {
+    --animate-duration: 1s
 }
 ```
 

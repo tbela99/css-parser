@@ -13,7 +13,10 @@
   - [x] attribute selector
   - [x] combinator
   - [x] simple selector
-  - [ ] nested selector
+  - [x] nested selector
+  - [ ] strict mode: allow unknown items such as pseudo classes
+    - [x] allow unknown pseudo classes
+    - [x] allow unknown attribute selectors
 - [ ] strip universal selector when possible
 
 # v0.6.0

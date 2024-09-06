@@ -1,6 +1,6 @@
 import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, isColor } from '../syntax/syntax.js';
 import './utils/config.js';
-import { EnumToken, funcLike } from '../ast/types.js';
+import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -90,6 +90,7 @@ async function doParse(iterator, options = {}) {
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
+        validation: false,
         ...options
     };
     if (options.expandNestingRules) {
@@ -508,15 +509,19 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             const ruleType = context.typ == EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
             if (ruleType == EnumToken.RuleNodeType) {
                 parseSelector(tokens);
-                const valid = validateSelector(tokens, context);
-                if (!valid) {
+                const valid = validateSelector(tokens, options, context);
+                if (valid.valid != ValidationLevel.Valid) {
                     const node = {
                         typ: EnumToken.InvalidRuleTokenType,
                         // @ts-ignore
                         sel: tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''),
                         chi: []
                     };
-                    errors.push({ action: 'drop', message: 'invalid selector', location: { src, ...position } });
+                    errors.push({
+                        action: 'drop',
+                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                        location: { src, ...(map.get(valid.node) ?? position) }
+                    });
                     // @ts-ignore
                     context.chi.push(node);
                     return node;

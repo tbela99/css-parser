@@ -129,12 +129,6 @@ declare function parseString(src: string, options?: {
 }): Token[];
 declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
 
-export declare interface BaseToken {
-
-    typ: EnumToken;
-    loc?: Location;
-}
-
 export declare interface LiteralToken extends BaseToken {
 
     typ: EnumToken.LiteralTokenType;
@@ -731,19 +725,19 @@ export declare interface Location {
     src: string;
 }
 
-export declare interface Node {
+export declare interface BaseToken {
 
     typ: EnumToken;
     loc?: Location;
 }
 
-export declare interface AstComment extends Node {
+export declare interface AstComment extends BaseToken {
 
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
     val: string;
 }
 
-export declare interface AstDeclaration extends Node {
+export declare interface AstDeclaration extends BaseToken {
 
     nam: string,
     val: Token[];
@@ -751,7 +745,7 @@ export declare interface AstDeclaration extends Node {
 }
 
 
-export declare interface AstRule extends Node {
+export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
     sel: string;
@@ -769,7 +763,7 @@ export declare interface OptimizedSelector {
     reducible: boolean;
 }
 
-export declare interface AstAtRule extends Node {
+export declare interface AstAtRule extends BaseToken {
 
     typ: AtRuleNodeType,
     nam: string;
@@ -777,10 +771,10 @@ export declare interface AstAtRule extends Node {
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
-export declare interface AstRuleList extends Node {
+export declare interface AstRuleList extends BaseToken {
 
     typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
-    chi: Array<Node | AstComment>
+    chi: Array<BaseToken | AstComment>
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {
@@ -878,7 +872,12 @@ export declare interface ErrorDescription {
     error?: Error;
 }
 
-export declare interface ParserOptions extends PropertyListOptions {
+interface ValidationOptions {
+
+    validation?: boolean;
+}
+
+export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
 
     minify?: boolean;
     src?: string;

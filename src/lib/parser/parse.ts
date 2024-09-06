@@ -16,7 +16,17 @@ import {
 import {parseDeclaration} from './utils';
 import {renderToken} from "../renderer";
 import {COLORS_NAMES} from "../renderer/color";
-import {combinators, definedPropertySettings, EnumToken, expand, funcLike, minify, walk, walkValues} from "../ast";
+import {
+    combinators,
+    definedPropertySettings,
+    EnumToken,
+    expand,
+    funcLike,
+    minify,
+    ValidationLevel,
+    walk,
+    walkValues
+} from "../ast";
 import {tokenize} from "./tokenize";
 import {
     AstAtRule,
@@ -175,6 +185,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
+        validation: false,
         ...options
     };
 
@@ -753,9 +764,9 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
                 parseSelector(tokens);
 
-                const valid = validateSelector(tokens, context);
+                const valid = validateSelector(tokens, options, context);
 
-                if (!valid) {
+                if (valid.valid != ValidationLevel.Valid) {
 
                     const node: AstInvalidRule = {
                         typ: EnumToken.InvalidRuleTokenType,
@@ -764,7 +775,11 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                         chi: []
                     };
 
-                    errors.push({action: 'drop', message: 'invalid selector', location: {src, ...position}});
+                    errors.push({
+                        action: 'drop',
+                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                        location: {src, ...(map.get(valid.node) ?? position)}
+                    });
 
                     // @ts-ignore
                     context.chi.push(node);

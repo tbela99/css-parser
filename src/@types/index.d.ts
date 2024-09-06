@@ -1,6 +1,7 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
 import {AstAtRule, AstRule, AstRuleStyleSheet} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap";
+import {ValidationLevel} from "../lib";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
@@ -34,7 +35,12 @@ export declare interface MinifyFeature {
     // cleanup?(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }): void;
 }
 
-export declare interface ParserOptions extends PropertyListOptions {
+export interface ValidationOptions {
+
+    validation?: boolean;
+}
+
+export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
 
     minify?: boolean;
     src?: string;
