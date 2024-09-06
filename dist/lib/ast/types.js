@@ -1,8 +1,7 @@
 var ValidationLevel;
 (function (ValidationLevel) {
-    ValidationLevel[ValidationLevel["None"] = 0] = "None";
-    ValidationLevel[ValidationLevel["Valid"] = 1] = "Valid";
-    ValidationLevel[ValidationLevel["Drop"] = 2] = "Drop";
+    ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
+    ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
 })(ValidationLevel || (ValidationLevel = {}));
 var EnumToken;
 (function (EnumToken) {

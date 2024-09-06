@@ -715,6 +715,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
             const position: Position = <Position>map.get(tokens[0]);
 
             const uniq = new Map<string, string[]>;
+            // const uniqTokens: Token[][] = [[]];
 
             parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
 
@@ -738,21 +739,34 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                 let t: string = renderToken(curr, {minify: false});
 
                 if (t == ',') {
+
                     acc.push([]);
+                    // uniqTokens.push([]);
                 } else {
+
                     acc[acc.length - 1].push(t);
+                    // uniqTokens[uniqTokens.length - 1].push(curr);
                 }
                 return acc;
             }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
 
-                // for (let i = 0; i < curr.length; i++) {
-                //
-                //     if (curr[i] == '*' && i + 1 < curr.length) {
-                //
-                //         curr.splice(i, curr[i + 1] == ' ' ? 2 : 1);
-                //         i--;
-                //     }
-                // }
+                let i: number = 0;
+
+                for (; i < curr.length; i++) {
+
+                    if (i + 1 < curr.length && curr[i] == '*') {
+
+                        if (curr[i] == '*') {
+
+                            let index: number = curr[i + 1] == ' ' ? 2 : 1;
+
+                            if (!['>', '~', '+'].includes(curr[index])) {
+
+                                curr.splice(i, index);
+                            }
+                        }
+                    }
+                }
 
                 acc.set(curr.join(''), curr);
                 return acc;
@@ -762,9 +776,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
             if (ruleType == EnumToken.RuleNodeType) {
 
-                parseSelector(tokens);
-
-                const valid = validateSelector(tokens, options, context);
+                const valid = validateSelector(parseSelector(tokens), options, context);
 
                 if (valid.valid != ValidationLevel.Valid) {
 
@@ -781,7 +793,6 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
                         location: {src, ...(map.get(valid.node) ?? position)}
                     });
 
-                    // @ts-ignore
                     context.chi.push(node);
                     return node;
                 }
@@ -789,7 +800,6 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList, stats:
 
             const node: AstRule | AstKeyFrameRule = {
                 typ: ruleType,
-                // @ts-ignore
                 sel: [...uniq.keys()].join(','),
                 chi: []
             };
@@ -1048,14 +1058,15 @@ export function parseSelector(tokens: Token[]): Token[] {
     }
 
     let i: number = 0;
+    const combinators: EnumToken[] = [
+        EnumToken.ChildCombinatorTokenType,
+        EnumToken.NextSiblingCombinatorTokenType,
+        EnumToken.SubsequentSiblingCombinatorTokenType
+    ];
 
     for (; i < tokens.length; i++) {
 
-        if ([
-            EnumToken.ChildCombinatorTokenType,
-            EnumToken.NextSiblingCombinatorTokenType,
-            EnumToken.SubsequentSiblingCombinatorTokenType
-        ].includes(tokens[i].typ)) {
+        if (combinators.includes(tokens[i].typ)) {
 
             if (i + 1 < tokens.length && [EnumToken.WhitespaceTokenType, EnumToken.DescendantCombinatorTokenType].includes(tokens[i + 1].typ)) {
 

@@ -38,9 +38,9 @@ export declare type ValidationToken = ValidationTokenFunction | ValidationTokenG
 export declare type ValidationTokenList = Array<ValidationToken>;
 
 export declare interface ValidationSyntaxNode {
+
     syntax: string;
     ast: ValidationToken[];
-
 }
 
 export declare interface ValidationConfiguration {

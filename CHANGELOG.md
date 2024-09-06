@@ -7,17 +7,17 @@
   - [x] declarations
   - [ ] declaration values
   - [ ] exclude -webkit-* gradients
-- [x] css selector validation
-  - [x] pseudo element
-  - [x] partial pseudo class validation. does not validate parameters
-  - [x] attribute selector
-  - [x] combinator
-  - [x] simple selector
-  - [x] nested selector
-  - [ ] strict mode: allow unknown items such as pseudo classes
-    - [x] allow unknown pseudo classes
-    - [x] allow unknown attribute selectors
-- [ ] strip universal selector when possible
+  - [x] css selector validation
+    - [x] pseudo element
+    - [x] partial pseudo class validation. does not validate parameters
+    - [x] attribute selector
+    - [x] combinator
+    - [x] simple selector
+    - [x] nested selector
+    - [ ] strict mode: allow unknown items such as pseudo classes
+      - [x] allow unknown pseudo classes
+      - [x] allow unknown attribute selectors
+- [x] strip universal selector when possible
 
 # v0.6.0
 - [x] light-dark() color

@@ -1,7 +1,5 @@
 
 export enum ValidationLevel {
-
-    None,
     Valid,
     Drop
 }

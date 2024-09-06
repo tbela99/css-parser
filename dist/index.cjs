@@ -5,9 +5,8 @@ var promises = require('node:fs/promises');
 
 var ValidationLevel;
 (function (ValidationLevel) {
-    ValidationLevel[ValidationLevel["None"] = 0] = "None";
-    ValidationLevel[ValidationLevel["Valid"] = 1] = "Valid";
-    ValidationLevel[ValidationLevel["Drop"] = 2] = "Drop";
+    ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
+    ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
 })(ValidationLevel || (ValidationLevel = {}));
 exports.EnumToken = void 0;
 (function (EnumToken) {
@@ -59919,6 +59918,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         if (delim.typ == exports.EnumToken.BlockStartTokenType) {
             const position = map.get(tokens[0]);
             const uniq = new Map;
+            // const uniqTokens: Token[][] = [[]];
             parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
                 if (curr.typ == exports.EnumToken.CommentTokenType) {
                     return acc;
@@ -59934,27 +59934,31 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 let t = renderToken(curr, { minify: false });
                 if (t == ',') {
                     acc.push([]);
+                    // uniqTokens.push([]);
                 }
                 else {
                     acc[acc.length - 1].push(t);
+                    // uniqTokens[uniqTokens.length - 1].push(curr);
                 }
                 return acc;
             }, [[]]).reduce((acc, curr) => {
-                // for (let i = 0; i < curr.length; i++) {
-                //
-                //     if (curr[i] == '*' && i + 1 < curr.length) {
-                //
-                //         curr.splice(i, curr[i + 1] == ' ' ? 2 : 1);
-                //         i--;
-                //     }
-                // }
+                let i = 0;
+                for (; i < curr.length; i++) {
+                    if (i + 1 < curr.length && curr[i] == '*') {
+                        if (curr[i] == '*') {
+                            let index = curr[i + 1] == ' ' ? 2 : 1;
+                            if (!['>', '~', '+'].includes(curr[index])) {
+                                curr.splice(i, index);
+                            }
+                        }
+                    }
+                }
                 acc.set(curr.join(''), curr);
                 return acc;
             }, uniq);
             const ruleType = context.typ == exports.EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? exports.EnumToken.KeyFrameRuleNodeType : exports.EnumToken.RuleNodeType;
             if (ruleType == exports.EnumToken.RuleNodeType) {
-                parseSelector(tokens);
-                const valid = validateSelector(tokens, options, context);
+                const valid = validateSelector(parseSelector(tokens), options, context);
                 if (valid.valid != ValidationLevel.Valid) {
                     const node = {
                         typ: exports.EnumToken.InvalidRuleTokenType,
@@ -59967,14 +59971,12 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                         message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
                         location: { src, ...(map.get(valid.node) ?? position) }
                     });
-                    // @ts-ignore
                     context.chi.push(node);
                     return node;
                 }
             }
             const node = {
                 typ: ruleType,
-                // @ts-ignore
                 sel: [...uniq.keys()].join(','),
                 chi: []
             };
@@ -60174,12 +60176,13 @@ function parseSelector(tokens) {
         }
     }
     let i = 0;
+    const combinators = [
+        exports.EnumToken.ChildCombinatorTokenType,
+        exports.EnumToken.NextSiblingCombinatorTokenType,
+        exports.EnumToken.SubsequentSiblingCombinatorTokenType
+    ];
     for (; i < tokens.length; i++) {
-        if ([
-            exports.EnumToken.ChildCombinatorTokenType,
-            exports.EnumToken.NextSiblingCombinatorTokenType,
-            exports.EnumToken.SubsequentSiblingCombinatorTokenType
-        ].includes(tokens[i].typ)) {
+        if (combinators.includes(tokens[i].typ)) {
             if (i + 1 < tokens.length && [exports.EnumToken.WhitespaceTokenType, exports.EnumToken.DescendantCombinatorTokenType].includes(tokens[i + 1].typ)) {
                 tokens.splice(i + 1, 1);
             }
@@ -60951,7 +60954,12 @@ function replaceCompoundLiteral(selector, replace) {
             return 1;
         }
         return b == '&' ? -1 : 0;
-    }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
+    }).reduce((acc, curr) => {
+        if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+            return acc + ':is(' + replace + ')';
+        }
+        return acc + (curr == '&' ? replace : curr);
+    }, '');
 }
 
 var ValidationTokenEnum;
@@ -62631,7 +62639,6 @@ function reduceSelector(selector) {
         return null;
     }
     selector = selector.reduce((acc, curr) => {
-        // trim :is()
         // @ts-ignore
         if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
             // @ts-ignore
@@ -62688,9 +62695,6 @@ function reduceSelector(selector) {
         if (optimized[1] == ' ') {
             optimized.splice(0, 2);
         }
-        // else if (combinators.includes(optimized[1])) {
-        //
-        // }
     }
     if (optimized.length == 0 ||
         (optimized[0].charAt(0) == '&' ||

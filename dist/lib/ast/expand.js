@@ -155,7 +155,12 @@ function replaceCompoundLiteral(selector, replace) {
             return 1;
         }
         return b == '&' ? -1 : 0;
-    }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
+    }).reduce((acc, curr) => {
+        if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+            return acc + ':is(' + replace + ')';
+        }
+        return acc + (curr == '&' ? replace : curr);
+    }, '');
 }
 
 export { expand, replaceCompound };

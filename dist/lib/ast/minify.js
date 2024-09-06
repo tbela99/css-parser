@@ -402,7 +402,6 @@ function reduceSelector(selector) {
         return null;
     }
     selector = selector.reduce((acc, curr) => {
-        // trim :is()
         // @ts-ignore
         if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
             // @ts-ignore
@@ -459,9 +458,6 @@ function reduceSelector(selector) {
         if (optimized[1] == ' ') {
             optimized.splice(0, 2);
         }
-        // else if (combinators.includes(optimized[1])) {
-        //
-        // }
     }
     if (optimized.length == 0 ||
         (optimized[0].charAt(0) == '&' ||

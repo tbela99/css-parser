@@ -474,6 +474,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         if (delim.typ == EnumToken.BlockStartTokenType) {
             const position = map.get(tokens[0]);
             const uniq = new Map;
+            // const uniqTokens: Token[][] = [[]];
             parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
                 if (curr.typ == EnumToken.CommentTokenType) {
                     return acc;
@@ -489,27 +490,31 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 let t = renderToken(curr, { minify: false });
                 if (t == ',') {
                     acc.push([]);
+                    // uniqTokens.push([]);
                 }
                 else {
                     acc[acc.length - 1].push(t);
+                    // uniqTokens[uniqTokens.length - 1].push(curr);
                 }
                 return acc;
             }, [[]]).reduce((acc, curr) => {
-                // for (let i = 0; i < curr.length; i++) {
-                //
-                //     if (curr[i] == '*' && i + 1 < curr.length) {
-                //
-                //         curr.splice(i, curr[i + 1] == ' ' ? 2 : 1);
-                //         i--;
-                //     }
-                // }
+                let i = 0;
+                for (; i < curr.length; i++) {
+                    if (i + 1 < curr.length && curr[i] == '*') {
+                        if (curr[i] == '*') {
+                            let index = curr[i + 1] == ' ' ? 2 : 1;
+                            if (!['>', '~', '+'].includes(curr[index])) {
+                                curr.splice(i, index);
+                            }
+                        }
+                    }
+                }
                 acc.set(curr.join(''), curr);
                 return acc;
             }, uniq);
             const ruleType = context.typ == EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
             if (ruleType == EnumToken.RuleNodeType) {
-                parseSelector(tokens);
-                const valid = validateSelector(tokens, options, context);
+                const valid = validateSelector(parseSelector(tokens), options, context);
                 if (valid.valid != ValidationLevel.Valid) {
                     const node = {
                         typ: EnumToken.InvalidRuleTokenType,
@@ -522,14 +527,12 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                         message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
                         location: { src, ...(map.get(valid.node) ?? position) }
                     });
-                    // @ts-ignore
                     context.chi.push(node);
                     return node;
                 }
             }
             const node = {
                 typ: ruleType,
-                // @ts-ignore
                 sel: [...uniq.keys()].join(','),
                 chi: []
             };
@@ -729,12 +732,13 @@ function parseSelector(tokens) {
         }
     }
     let i = 0;
+    const combinators = [
+        EnumToken.ChildCombinatorTokenType,
+        EnumToken.NextSiblingCombinatorTokenType,
+        EnumToken.SubsequentSiblingCombinatorTokenType
+    ];
     for (; i < tokens.length; i++) {
-        if ([
-            EnumToken.ChildCombinatorTokenType,
-            EnumToken.NextSiblingCombinatorTokenType,
-            EnumToken.SubsequentSiblingCombinatorTokenType
-        ].includes(tokens[i].typ)) {
+        if (combinators.includes(tokens[i].typ)) {
             if (i + 1 < tokens.length && [EnumToken.WhitespaceTokenType, EnumToken.DescendantCombinatorTokenType].includes(tokens[i + 1].typ)) {
                 tokens.splice(i + 1, 1);
             }

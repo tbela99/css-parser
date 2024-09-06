@@ -435,6 +435,63 @@ table.colortable td,table.colortable th {
 }`));
         });
 
+
+        it('expand rules #18', function () {
+            const file = `
+.a .foo {
+        color: blue;
+        &Bar { color: red; }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`.a .foo {
+ color: blue
+}
+Bar:is(.a .foo) {
+ color: red
+}`));
+        });
+
+        it('expand rules #19', function () {
+            const file = `
+a .foo {
+        color: blue;
+        &Bar { color: red; }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`a .foo {
+ color: blue
+}
+Bar:is(a .foo) {
+ color: red
+}`));
+        });
+
+
+        it('trim universal selector #20', function () {
+            const file = `
+
+* span, a *, * ~ a {
+        color: blue;
+        &Bar { color: red; }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`span,a *,*~a {
+ color: blue
+}
+Bar:is(span,a *,*~a) {
+ color: red
+}`));
+        });
+
         // see https://www.w3.org/TR/css-nesting-1/#conditionals
         /*
         .header {

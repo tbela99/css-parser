@@ -548,7 +548,6 @@ export function reduceSelector(selector: string[][]) {
 
     selector = selector.reduce((acc: string[][], curr: string[]) => {
 
-        // trim :is()
         // @ts-ignore
         if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
 
@@ -629,10 +628,6 @@ export function reduceSelector(selector: string[][]) {
 
             optimized.splice(0, 2);
         }
-
-        // else if (combinators.includes(optimized[1])) {
-        //
-        // }
     }
 
     if (optimized.length == 0 ||
