@@ -359,7 +359,7 @@ function validatePseudoClass(selector: PseudoClassToken, options: ValidationOpti
 
     return {
 
-        valid: isValid || !options.validation  ? ValidationLevel.Valid : ValidationLevel.Drop,
+        valid: isValid || !options.validation ? ValidationLevel.Valid : ValidationLevel.Drop,
         nodes: [selector],
         error: isValid ? '' : 'invalid selector'
     }
@@ -387,7 +387,7 @@ function validatePseudoClassFunction(selector: PseudoClassFunctionToken, options
         if (!('chi' in config.selectors[selector.val].ast[0])) {
 
             return {
-                valid: !options.validation  ? ValidationLevel.Valid : ValidationLevel.Drop,
+                valid: !options.validation ? ValidationLevel.Valid : ValidationLevel.Drop,
                 nodes: [selector],
                 error: ''
             }
@@ -396,7 +396,7 @@ function validatePseudoClassFunction(selector: PseudoClassFunctionToken, options
     } else if (!(selector.val + '()' in config.selectors)) {
 
         return {
-            valid: !options.validation  ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: !options.validation ? ValidationLevel.Valid : ValidationLevel.Drop,
             nodes: [selector],
             error: ''
         }
@@ -575,7 +575,7 @@ function validateAttributeSelector(selector: AttrToken, options: ValidationOptio
         // @ts-ignore
         if (!hasWhitespace || i >= selector.chi.length || selector.chi[i].typ != EnumToken.IdenTokenType || !['i', 's'].includes((<EnumToken.IdenTokenType>selector.chi[i]).val)) {
 
-            const valid = !options.validation  && selector.chi[i].typ == EnumToken.IdenTokenType && (<IdentToken>selector.chi[i]).val.match(/^[a-z]$/);
+            const valid = !options.validation && selector.chi[i].typ == EnumToken.IdenTokenType && (<IdentToken>selector.chi[i]).val.match(/^[a-z]$/);
             return {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 nodes: [selector],

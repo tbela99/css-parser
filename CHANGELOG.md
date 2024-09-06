@@ -4,22 +4,23 @@
 
 - [x] fix merging rules
 - [ ] experimental CSS prefix removal
-  - [x] declarations
-  - [ ] declaration values
-  - [ ] exclude -webkit-* gradients
-  - [x] css selector validation
-    - [x] pseudo element
-    - [x] partial pseudo class validation. does not validate parameters
-    - [x] attribute selector
-    - [x] combinator
-    - [x] simple selector
-    - [x] nested selector
-    - [ ] strict mode: allow unknown items such as pseudo classes
-      - [x] allow unknown pseudo classes
-      - [x] allow unknown attribute selectors
+    - [x] declaration name
+    - [ ] declaration value
+    - [ ] exclude -webkit-* gradients
+    - [x] css selector validation
+        - [x] pseudo element
+        - [x] partial pseudo class validation. does not validate parameters
+        - [x] attribute selector
+        - [x] combinator
+        - [x] simple selector
+        - [x] nested selector
+        - [x] strict vs permissive validation: allow unknown items such as pseudo classes
+            - [x] allow unknown pseudo classes
+            - [x] allow unknown attribute selectors
 - [x] strip universal selector when possible
 
 # v0.6.0
+
 - [x] light-dark() color
 - [x] system color
 
@@ -77,15 +78,16 @@ CSS color level 4 & 5
 - [x] gap
 
 ### Other
+
 - [x] renamed RenderOptions.colorConvert to RenderOptions.convertColor
 - [x] support none keyword in color
 - [x] css relative color syntax for rgb(), hsl() and hwb() colors https://www.w3.org/TR/css-color-5/#relative-colors
-  - [x] rgb
-  - [x] hex
-  - [x] hsl
-  - [x] hwb
-  - [x] calc()
-  - [x] calc() and inline var()
+    - [x] rgb
+    - [x] hex
+    - [x] hsl
+    - [x] hwb
+    - [x] calc()
+    - [x] calc() and inline var()
 
 ## v0.2.0
 
@@ -112,7 +114,7 @@ CSS color level 4 & 5
 ## v0.1.0
 
 - [x] sourcemap generation
-- [x] reduce calc(): 
+- [x] reduce calc():
 - [x] inline css variables
 - [x] configure duplicate declarations removal
 - [x] configure shorthand properties computation
@@ -123,7 +125,7 @@ CSS color level 4 & 5
 
 - [x] merge identical rules
 - [x] merge adjacent rules
-- [x] minify colors 
+- [x] minify colors
 - [x] minify numbers and Dimensions tokens
 - [x] compute shorthand: see the list below
 - [x] remove redundant declarations
@@ -132,12 +134,14 @@ CSS color level 4 & 5
 - [x] conditionally unwrap :is()
 - [x] automatic css nesting
 - [x] automatically wrap selectors using :is()
-- [x] multi-level shorthand properties (border - [border-width, border-color, border-style, etc.]) https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties
+- [x] multi-level shorthand properties (
+  border - [border-width, border-color, border-style, etc.]) https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties
 - [x] avoid reparsing (declarations, selectors, at-rule)
 - [x] node and browser versions
 - [x] decode and replace utf-8 escape sequence
 
 ### Computed shorthands
+
 - [x] background
 - [x] border
 - [x] border-bottom
