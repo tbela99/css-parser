@@ -1,4 +1,4 @@
-import {
+import type {
     AstAtRule,
     AstNode,
     AttrToken,
@@ -13,7 +13,7 @@ import {
 } from "../../@types";
 import {EnumToken, ValidationLevel} from "../ast";
 import {getConfig} from "./config";
-import {ValidationResult} from "../../@types/validation";
+import type {ValidationResult} from "../../@types/validation";
 
 const expressions: EnumToken[] = [
     EnumToken.DelimTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType,

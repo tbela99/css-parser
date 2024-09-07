@@ -28,7 +28,7 @@ import {
     walkValues
 } from "../ast";
 import {tokenize} from "./tokenize";
-import {
+import type {
     AstAtRule,
     AstComment,
     AstDeclaration,
