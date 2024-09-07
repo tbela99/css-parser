@@ -1,6 +1,17 @@
 /errors.txt
 /syntax.txt
 /ROADMAP.draft.md
+/.idea
+/.DS_Store
+/ROADMAP.md
+/docs
+/package-lock.json
+test/*.ts
+test/*.js
+test/*.css
+test/*.html
+test/*.json
+test/*.md
 
 # Logs
 logs
