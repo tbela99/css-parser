@@ -1,7 +1,15 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publish": {
+    "include": [
+      "src",
+      "README.md",
+      "package.json",
+      "LICENSE.md",
+      "CHANGELOG.md",
+      "tsconfig.json"
+    ],
     "exclude": [
       "dist",
       "test",
@@ -10,7 +18,6 @@
       ".idea",
       ".npmignore",
       ".npmrc",
-      "tsconfig.json",
       "Writerside",
       "build.sh",
       "docs",
@@ -18,7 +25,12 @@
       "CHANGELOG.md",
       "ROADMAP.md",
       "rollup.config.js",
-      "tools"
+      "tools",
+      ".DS_Store",
+      ".idea",
+      "ROADMAP.md",
+      "docs",
+      "package-lock.json"
     ]
   },
   "exports": {

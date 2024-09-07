@@ -1,7 +1,6 @@
 import {EnumToken} from "../lib";
 import {Token} from "./token.d.ts";
 
-
 export declare interface Position {
 
     ind: number;
@@ -16,19 +15,19 @@ export declare interface Location {
     src: string;
 }
 
-export declare interface Node {
+export declare interface BaseToken {
 
     typ: EnumToken;
     loc?: Location;
 }
 
-export declare interface AstComment extends Node {
+export declare interface AstComment extends BaseToken {
 
     typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType,
     val: string;
 }
 
-export declare interface AstDeclaration extends Node {
+export declare interface AstDeclaration extends BaseToken {
 
     nam: string,
     val: Token[];
@@ -36,7 +35,7 @@ export declare interface AstDeclaration extends Node {
 }
 
 
-export declare interface AstRule extends Node {
+export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
     sel: string;
@@ -45,7 +44,16 @@ export declare interface AstRule extends Node {
     raw?: RawSelectorTokens;
 }
 
-export declare interface AstKeyFrameRule extends Node {
+export declare interface AstInvalidRule extends BaseToken {
+
+    typ: EnumToken.InvalidRuleTokenType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+}
+
+
+
+export declare interface AstKeyFrameRule extends BaseToken {
 
     typ: EnumToken.KeyFrameRuleNodeType;
     sel: string;
@@ -63,7 +71,7 @@ export declare interface OptimizedSelector {
     reducible: boolean;
 }
 
-export declare interface AstAtRule extends Node {
+export declare interface AstAtRule extends BaseToken {
 
     typ: AtRuleNodeType,
     nam: string;
@@ -71,10 +79,10 @@ export declare interface AstAtRule extends Node {
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
-export declare interface AstRuleList extends Node {
+export declare interface AstRuleList extends BaseToken {
 
     typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
-    chi: Array<Node | AstComment>
+    chi: Array<BaseToken | AstComment>
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {

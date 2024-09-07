@@ -8,6 +8,7 @@ import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { hslvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function hex2hsl(token) {
     // @ts-ignore

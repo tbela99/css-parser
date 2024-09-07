@@ -5,6 +5,7 @@ import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function xyzd502srgb(x, y, z) {
     // @ts-ignore

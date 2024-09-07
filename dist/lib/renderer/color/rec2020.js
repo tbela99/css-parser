@@ -6,6 +6,7 @@ import '../../ast/minify.js';
 import '../../parser/parse.js';
 import { srgb2xyz } from './xyz.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function rec20202srgb(r, g, b, a) {
     // @ts-ignore

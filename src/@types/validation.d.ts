@@ -1,3 +1,5 @@
+import {ValidationLevel} from "../lib";
+
 export declare interface ValidationConstrains {
 
     optional?: boolean;
@@ -35,34 +37,23 @@ export declare interface ValidationTokenFunction extends ValidationConstrains {
 export declare type ValidationToken = ValidationTokenFunction | ValidationTokenGeneric | ValidationTokenGroup;
 export declare type ValidationTokenList = Array<ValidationToken>;
 
-export declare interface ValidationRuleDescriptor {
-
-    syntax?: ValidationTokenList;
-    initial?: string;
-}
-
-export declare interface ValidationRule {
-
-    syntax: ValidationTokenList;
-    pattern: string;
-    descriptors?: {
-        [key: string]: ValidationRuleDescriptor
-    }
-}
-
-export declare interface ValidationRuleSet {
-
-    [key: string]: ValidationRule;
-}
-
-
-export declare interface SyntaxRuleSet {
+export declare interface ValidationSyntaxNode {
 
     syntax: string;
-    descriptors?: {
-        [key: string]: {
+    ast: ValidationToken[];
+}
 
-            syntax?: string
-        }
-    }
+export declare interface ValidationConfiguration {
+
+    declarations: Record<string, ValidationSyntaxNode>;
+    functions: Record<string, ValidationSyntaxNode>;
+    syntaxes: Record<string, ValidationSyntaxNode>;
+    selectors: Record<string, ValidationSyntaxNode>;
+}
+
+export interface ValidationResult {
+
+    valid: ValidationLevel;
+    node: AstNode | Token | null;
+    error: string;
 }

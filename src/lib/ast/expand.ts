@@ -4,6 +4,7 @@ import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
 import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types/index.d.ts";
 import {EnumToken} from "./types";
+import * as repl from "node:repl";
 
 export function expand(ast: AstNode): AstNode {
     //
@@ -221,5 +222,13 @@ function replaceCompoundLiteral(selector: string, replace: string) {
         }
 
         return b == '&' ? -1 : 0;
-    }).reduce((acc: string, curr: string) => acc + (curr == '&' ? replace : curr), '');
+    }).reduce((acc: string, curr: string) => {
+
+        if (acc.length > 0 &&curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+
+            return acc + ':is(' + replace + ')';
+        }
+
+        return acc + (curr == '&' ? replace : curr)
+    }, '');
 }

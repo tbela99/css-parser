@@ -9,6 +9,7 @@ import '../../parser/parse.js';
 import { lch2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function hex2oklab(token) {
     // @ts-ignore

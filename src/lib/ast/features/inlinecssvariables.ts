@@ -6,7 +6,7 @@ import type {
     FunctionToken, MinifyOptions,
     ParserOptions,
     VariableScopeInfo
-} from "../../../@types/index.d.ts";
+} from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
 

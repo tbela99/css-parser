@@ -1,9 +1,10 @@
 import { splitRule, combinators } from './minify.js';
 import { parseString } from '../parser/parse.js';
-import { renderToken } from '../renderer/render.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
+import { renderToken } from '../renderer/render.js';
 import '../renderer/color/utils/constants.js';
+import '../parser/utils/config.js';
 
 function expand(ast) {
     //
@@ -154,7 +155,12 @@ function replaceCompoundLiteral(selector, replace) {
             return 1;
         }
         return b == '&' ? -1 : 0;
-    }).reduce((acc, curr) => acc + (curr == '&' ? replace : curr), '');
+    }).reduce((acc, curr) => {
+        if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+            return acc + ':is(' + replace + ')';
+        }
+        return acc + (curr == '&' ? replace : curr);
+    }, '');
 }
 
 export { expand, replaceCompound };

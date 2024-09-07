@@ -6,6 +6,7 @@ import '../../parser/parse.js';
 import { reduceNumber } from '../render.js';
 import { colorRange } from './utils/constants.js';
 import { evaluate } from '../../ast/math/expression.js';
+import '../../parser/utils/config.js';
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let r;

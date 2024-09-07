@@ -7,10 +7,10 @@ import type {
     ShorthandPropertyType,
     Token,
     WhitespaceToken
-} from "../../../@types/index.d.ts";
+} from "../../../@types";
 import {eq} from "../utils/eq";
-import {isLength} from "../utils";
 import {EnumToken} from "../../ast";
+import {isLength} from "../../syntax";
 
 function dedup(values: Token[][]) {
 

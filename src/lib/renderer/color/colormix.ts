@@ -1,5 +1,4 @@
-import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../parser";
+import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
 import {EnumToken} from "../../ast";
 import {getNumber} from "./color";
 import {srgb2lsrgbvalues, srgbvalues} from "./srgb";
@@ -18,6 +17,7 @@ import {srgb2prophotorgbvalues} from "./prophotorgb";
 import {srgb2xyz} from "./xyz";
 import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50";
 import {srgb2rec2020values} from "./rec2020";
+import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../syntax";
 
 function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
 

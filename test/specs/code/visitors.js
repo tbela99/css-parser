@@ -1,4 +1,3 @@
-import {expect} from "@esm-bundle/chai";
 import {EnumToken} from "../../../dist/lib/ast/types.js";
 
 export function run(describe, expect, transform, parse, render, dirname, readFile) {

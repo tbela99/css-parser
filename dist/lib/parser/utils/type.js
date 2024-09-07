@@ -3,6 +3,7 @@ import '../../ast/minify.js';
 import '../parse.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
+import './config.js';
 
 // https://www.w3.org/TR/css-values-4/#math-function
 const funcList = ['clamp', 'calc'];

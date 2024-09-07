@@ -1,4 +1,8 @@
 
+export enum ValidationLevel {
+    Valid,
+    Drop
+}
 
 export enum EnumToken {
     CommentTokenType,
@@ -77,6 +81,16 @@ export enum EnumToken {
     IdenListTokenType,
     GridTemplateFuncTokenType,
     KeyFrameRuleNodeType,
+    ClassSelectorTokenType,
+    UniversalSelectorTokenType,
+    ChildCombinatorTokenType,
+    DescendantCombinatorTokenType, // whitespace
+    NextSiblingCombinatorTokenType,
+    SubsequentSiblingCombinatorTokenType,
+    NestingSelectorTokenType,
+    InvalidRuleTokenType,
+    InvalidClassSelectorTokenType,
+    InvalidAttrTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,

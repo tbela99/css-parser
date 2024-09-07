@@ -1,5 +1,7 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
 import {AstAtRule, AstRule, AstRuleStyleSheet} from "./ast.d.ts";
+import {SourceMap} from "../lib/renderer/sourcemap";
+import {ValidationLevel} from "../lib";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
@@ -33,7 +35,12 @@ export declare interface MinifyFeature {
     // cleanup?(ast: AstRuleStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }): void;
 }
 
-export declare interface ParserOptions extends PropertyListOptions {
+export interface ValidationOptions {
+
+    validation?: boolean;
+}
+
+export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
 
     minify?: boolean;
     src?: string;
@@ -48,6 +55,7 @@ export declare interface ParserOptions extends PropertyListOptions {
     parseColor?: boolean;
     removeDuplicateDeclarations?: boolean;
     computeShorthand?: boolean;
+    removePrefix?: boolean;
     inlineCssVariables?: boolean;
     computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
@@ -121,7 +129,7 @@ export declare interface RenderResult {
     stats: {
         total: string;
     },
-    map?: SourceMapObject
+    map?: SourceMap
 }
 
 export declare interface TransformResult extends ParseResult, RenderResult {

@@ -63,6 +63,7 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
     const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map;
 
     let value: Token;
+    let previous: Token | null = null;
 
     while ((value = <Token>stack.shift())) {
 
@@ -87,7 +88,7 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
         if (option !== 'children') {
 
             // @ts-ignore
-            yield {value, parent: <FunctionToken | ParensToken>map.get(value), root};
+            yield {value, parent: <FunctionToken | ParensToken>map.get(value), previousValue: previous, nextValue: <Token>stack[0] ?? null, root};
         }
 
         if (option !== 'ignore-children' && 'chi' in value) {
@@ -106,5 +107,7 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
             map.set(value.r, <FunctionToken | ParensToken | BinaryExpressionToken>value);
             stack.unshift(value.l, value.r);
         }
+
+        previous = value;
     }
 }

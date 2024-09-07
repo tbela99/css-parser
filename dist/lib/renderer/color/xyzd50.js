@@ -7,6 +7,7 @@ import { xyz2lab } from './lab.js';
 import { lab2lchvalues } from './lch.js';
 import { XYZ_D50_to_D65 } from './xyz.js';
 import '../sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 function xyzd502lch(x, y, z, alpha) {
     // @ts-ignore

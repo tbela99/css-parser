@@ -389,7 +389,7 @@ table.colortable {
   }
  }
 }
-.error,#404 {
+.error,#f404 {
  &:hover>.baz {
   color: red
  }
@@ -430,7 +430,64 @@ table.colortable td,table.colortable th {
 .foo.foo {
  padding: 2ch
 }
-:is(.error,#404):hover>.baz {
+:is(.error,#f404):hover>.baz {
+ color: red
+}`));
+        });
+
+
+        it('expand rules #18', function () {
+            const file = `
+.a .foo {
+        color: blue;
+        &Bar { color: red; }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`.a .foo {
+ color: blue
+}
+Bar:is(.a .foo) {
+ color: red
+}`));
+        });
+
+        it('expand rules #19', function () {
+            const file = `
+a .foo {
+        color: blue;
+        &Bar { color: red; }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`a .foo {
+ color: blue
+}
+Bar:is(a .foo) {
+ color: red
+}`));
+        });
+
+
+        it('trim universal selector #20', function () {
+            const file = `
+
+* span, a *, * ~ a {
+        color: blue;
+        &Bar { color: red; }
+}
+`;
+            return transform(file, {
+                expandNestingRules: true,
+                minify: false
+            }).then(result => expect(result.code).equals(`span,a *,*~a {
+ color: blue
+}
+Bar:is(span,a *,*~a) {
  color: red
 }`));
         });

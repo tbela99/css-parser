@@ -518,7 +518,7 @@ content: '\\21 now\\21';
 [*|att] {
  color: #ff0
 }
-[att] {
+[|att],[att] {
  color: green
 }`));
         });
@@ -648,7 +648,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar:is(:has(::-moz-range-thumb),::-moz-range-thumb){display:none}`));
+        return parse(file).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
     });
 
     it('do not merge pseudo class selectors #32', function () {
@@ -669,6 +669,6 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file, {nestingRules: true}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar{&::-webkit-scrollbar{display:none}&:has(::-moz-range-thumb),&::-moz-range-thumb{display:none}}`));
+        return parse(file, {nestingRules: true}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar{&::-webkit-scrollbar{display:none}&::-moz-range-thumb,&:has(::-moz-range-thumb){display:none}}`));
     });
 }

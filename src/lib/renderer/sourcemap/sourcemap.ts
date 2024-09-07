@@ -1,4 +1,4 @@
-import type {Location, SourceMapObject} from "../../../@types/index.d.ts";
+import type {Location, SourceMapObject} from "../../../@types";
 import {encode} from "./lib";
 
 export class SourceMap {
@@ -51,7 +51,7 @@ export class SourceMap {
         }
     }
 
-    toUrl() {
+    toUrl(): string {
 
         // /*# sourceMappingURL = ${url} */
         return `data:application/json,${encodeURIComponent(JSON.stringify(this.toJSON()))}`;

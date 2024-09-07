@@ -25,6 +25,7 @@ $ npm install @tbela99/css-parser
 - inline css variables
 - remove duplicate properties
 - flatten @import rules
+- partial css validation: only css selector is validated
 
 ## Playground
 
@@ -145,9 +146,13 @@ Include ParseOptions and RenderOptions
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
+> Minify Options
+
+- validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the selector is validated at this time.
+
 > Sourcemap Options
 
-- src: string, optional. original css file location to be used with sourcemap.
+- src: string, optional. original css file location to be used with sourcemap, also used to resolve url().
 - sourcemap: boolean, optional. preserve node location data.
 
 > Misc Options
@@ -155,7 +160,7 @@ Include ParseOptions and RenderOptions
 - resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
 - resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
 - removeCharset: boolean, optional. remove @charset.
-- cwd: string, optional. the current working directory. when specified url() are resolved using this value
+- cwd: string, optional. destination directory used to resolve url().
 - visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
@@ -179,7 +184,7 @@ Include ParseOptions and RenderOptions
 - indent: string, optional. css indention string. uses space character by default.
 - newLine: string, optional. new line character.
 - output: string, optional. file where to store css. url() are resolved according to the specified value. no file is created though.
-- cwd: string, optional. value used as current working directory. when output is not provided, urls are resolved according to this value.
+- cwd: string, optional. destination directory used to resolve url().
 
 ## Parsing
 
@@ -313,6 +318,104 @@ table.colortable {
   background: #000;
   color: #fff
  }
+}
+```
+
+### CSS Validation
+
+CSS
+
+```css
+
+#404 {
+--animate-duration: 1s;
+}
+
+.s, #404 {
+--animate-duration: 1s;
+}
+
+.s [type="text" {
+--animate-duration: 1s;
+}
+
+.s [type="text"]] {
+--animate-duration: 1s;
+}
+
+.s [type="text"] {
+--animate-duration: 1s;
+}
+
+.s [type="text" i] {
+--animate-duration: 1s;
+}
+
+.s [type="text" s] {
+--animate-duration: 1s;
+}
+
+.s [type="text" b] {
+--animate-duration: 1s;
+}
+
+.s [type="text" b], {
+--animate-duration: 1s;
+}
+
+.s [type="text" b]+ {
+--animate-duration: 1s;
+}
+
+.s [type="text" b]+ b {
+--animate-duration: 1s;
+}
+
+.s [type="text" i]+ b {
+--animate-duration: 1s;
+}
+
+
+.s [type="text"())] {
+--animate-duration: 1s;
+}
+.s() {
+--animate-duration: 1s;
+}
+.s:focus {
+--animate-duration: 1s;
+}
+```
+
+with validation enabled
+
+```javascript
+import {parse, render} from '@tbela99/css-parser';
+const options = {minify: true, validate: true};
+const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
+//
+console.debug(code);
+```
+
+```css
+.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+ --animate-duration: 1s
+}
+```
+
+with validation disabled
+
+```javascript   
+import {parse, render} from '@tbela99/css-parser';
+const options = {minify: true, validate: false};
+const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
+//
+console.debug(code);
+```
+
+```css
+.s:is([type=text],[type=text i],[type=text s],[type=text b],[type=text b]+b,[type=text i]+b,:focus) {
+    --animate-duration: 1s
 }
 ```
 

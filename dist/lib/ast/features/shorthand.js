@@ -4,6 +4,7 @@ import '../minify.js';
 import '../../parser/parse.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 class ComputeShorthandFeature {
     static get ordering() {

@@ -1,4 +1,3 @@
-import {expect} from "@esm-bundle/chai";
 import {EnumToken} from "../../../dist/lib/ast/types.js";
 import {walk} from "../../../dist/lib//ast/walk.js";
 

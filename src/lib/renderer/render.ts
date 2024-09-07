@@ -12,7 +12,7 @@ import type {
     ColorToken,
     ErrorDescription,
     FractionToken,
-    IdentToken,
+    IdentToken, InvalidAttrToken,
     Location,
     NumberToken,
     PercentageToken,
@@ -20,7 +20,7 @@ import type {
     RenderOptions,
     RenderResult,
     Token
-} from "../../@types/index.d.ts";
+} from "../../@types";
 import {
     clamp,
     cmyk2hex,
@@ -42,8 +42,8 @@ import {
 } from "./color";
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
-import {isColor, isNewLine} from "../parser";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
+import {isColor, isNewLine} from "../syntax";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 
@@ -168,7 +168,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 
     if (sourcemap != null) {
 
-        result.map = sourcemap.toJSON();
+        result.map = sourcemap;
     }
 
     return result;
@@ -333,7 +333,15 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
 
-            return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
+            return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+
+        case EnumToken.InvalidRuleTokenType:
+
+            return '';
+
+        default:
+
+            throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
 
     return '';
@@ -452,6 +460,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.Sub:
             return ' - ';
 
+        case EnumToken.UniversalSelectorTokenType:
         case EnumToken.Mul:
             return '*';
 
@@ -645,7 +654,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 (token.attr ? ' ' + token.attr : '');
 
         case EnumToken.NameSpaceAttributeTokenType:
-            return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors) + '|') +
+
+            return (token.l == null ? '' : renderToken(token.l, options, cache, reducer, errors)) + '|' +
                 renderToken(token.r, options, cache, reducer, errors);
 
         case EnumToken.BlockStartTokenType:
@@ -656,6 +666,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.StartParensTokenType:
             return '(';
+
+        case EnumToken.DelimTokenType:
+
+            return '=';
 
         case EnumToken.IncludeMatchTokenType:
             return '~=';
@@ -678,7 +692,16 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.LteTokenType:
             return '<=';
 
+        case EnumToken.SubsequentSiblingCombinatorTokenType:
+
+            return '~';
+
+        case EnumToken.NextSiblingCombinatorTokenType:
+
+            return '+';
+
         case EnumToken.GtTokenType:
+        case EnumToken.ChildCombinatorTokenType:
             return '>';
 
         case EnumToken.GteTokenType:
@@ -696,6 +719,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.AttrEndTokenType:
             return ']';
 
+        case EnumToken.DescendantCombinatorTokenType:
         case EnumToken.WhitespaceTokenType:
             return ' ';
 
@@ -901,13 +925,29 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.HashTokenType:
         case EnumToken.IdenTokenType:
-        case EnumToken.DelimTokenType:
         case EnumToken.AtRuleTokenType:
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.DashedIdenTokenType:
+        case EnumToken.ClassSelectorTokenType:
 
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
+
+        case EnumToken.NestingSelectorTokenType:
+
+            return '&';
+
+        case EnumToken.InvalidAttrTokenType:
+
+            return '[' + (<InvalidAttrToken>token).chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+
+        case EnumToken.InvalidClassSelectorTokenType:
+
+            return token.val;
+
+        default:
+
+            throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }
 
     errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});

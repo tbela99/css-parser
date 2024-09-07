@@ -1,16 +1,27 @@
-import {Location} from "./ast.d.ts";
+import type {BaseToken} from "./ast";
 import {EnumToken} from "../lib";
-
-export declare interface BaseToken {
-
-    typ: EnumToken;
-    loc?: Location;
-}
 
 export declare interface LiteralToken extends BaseToken {
 
     typ: EnumToken.LiteralTokenType;
     val: string;
+}
+
+export declare interface ClassSelectorToken extends BaseToken {
+
+    typ: EnumToken.ClassSelectorTokenType;
+    val: string;
+}
+
+export declare interface InvalidClassSelectorToken extends BaseToken {
+
+    typ: EnumToken.InvalidClassSelectorTokenType;
+    val: string;
+}
+
+export declare interface UniversalSelectorToken extends BaseToken {
+
+    typ: EnumToken.UniversalSelectorTokenType;
 }
 
 
@@ -45,6 +56,11 @@ export declare interface ColonToken extends BaseToken {
 export declare interface SemiColonToken extends BaseToken {
 
     typ: EnumToken.SemiColonTokenType
+}
+
+export declare interface NestingSelectorToken extends BaseToken {
+
+    typ: EnumToken.NestingSelectorTokenType
 }
 
 export declare interface NumberToken extends BaseToken {
@@ -316,7 +332,6 @@ export declare interface PseudoClassFunctionToken extends BaseToken {
 export declare interface DelimToken extends BaseToken {
 
     typ: EnumToken.DelimTokenType;
-    val: '=';
 }
 
 export declare interface BadUrlToken extends BaseToken {
@@ -341,7 +356,23 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
-export declare type ColorKind = 'sys' | 'dpsys' | 'lit' | 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'hwb' | 'device-cmyk' | 'oklab' | 'oklch' | 'lab' | 'lch' | 'color' | 'light-dark';
+export declare type ColorKind =
+    'sys'
+    | 'dpsys'
+    | 'lit'
+    | 'hex'
+    | 'rgb'
+    | 'rgba'
+    | 'hsl'
+    | 'hsla'
+    | 'hwb'
+    | 'device-cmyk'
+    | 'oklab'
+    | 'oklch'
+    | 'lab'
+    | 'lch'
+    | 'color'
+    | 'light-dark';
 // xyz-d65 is an alias for xyz
 // display-p3 is an alias for srgb
 export declare type ColorSpace =
@@ -374,6 +405,32 @@ export declare interface AttrToken extends BaseToken {
 
     typ: EnumToken.AttrTokenType,
     chi: Token[]
+}
+
+export declare interface InvalidAttrToken extends BaseToken {
+
+    typ: EnumToken.InvalidAttrTokenType,
+    chi: Token[]
+}
+
+export declare interface ChildCombinatorToken extends BaseToken {
+
+    typ: EnumToken.ChildCombinatorTokenType
+}
+
+export declare interface DescendantCombinatorToken extends BaseToken {
+
+    typ: EnumToken.DescendantCombinatorTokenType
+}
+
+export declare interface NextSiblingCombinatorToken extends BaseToken {
+
+    typ: EnumToken.NextSiblingCombinatorTokenType
+}
+
+export declare interface SubsequentCombinatorToken extends BaseToken {
+
+    typ: EnumToken.SubsequentSiblingCombinatorTokenType
 }
 
 export declare interface AddToken extends BaseToken {
@@ -453,6 +510,9 @@ export declare type BinaryExpressionNode = NumberToken | DimensionToken | Percen
     AngleToken | LengthToken | FrequencyToken | BinaryExpressionToken | FunctionToken | ParensToken;
 
 export declare type Token =
+    InvalidClassSelectorToken
+    | InvalidAttrToken
+    |
     LiteralToken
     | IdentToken
     | IdentListToken
@@ -460,6 +520,14 @@ export declare type Token =
     | CommaToken
     | ColonToken
     | SemiColonToken
+    | ClassSelectorToken
+    | UniversalSelectorToken
+    | ChildCombinatorToken
+    | DescendantCombinatorToken
+    | NextSiblingCombinatorToken
+    | SubsequentCombinatorToken
+    | ColumnCombinatorToken
+    | NestingSelectorToken
     |
     NumberToken
     | AtRuleToken
@@ -500,14 +568,15 @@ export declare type Token =
     | IncludeMatchToken
     | StartMatchToken
     | EndMatchToken
-    | ContainMatchToken | MatchExpressionToken | NameSpaceAttributeToken
+    | ContainMatchToken
+    | MatchExpressionToken
+    | NameSpaceAttributeToken
     |
     DashMatchToken
     | LessThanToken
     | LessThanOrEqualToken
     | GreaterThanToken
     | GreaterThanOrEqualToken
-    | ColumnCombinatorToken
     |
     ListToken
     | PseudoClassToken

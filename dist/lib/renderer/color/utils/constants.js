@@ -2,6 +2,7 @@ import { EnumToken } from '../../../ast/types.js';
 import '../../../ast/minify.js';
 import '../../../parser/parse.js';
 import '../../sourcemap/lib/encode.js';
+import '../../../parser/utils/config.js';
 
 const colorRange = {
     lab: {

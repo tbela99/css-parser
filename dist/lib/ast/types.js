@@ -1,3 +1,8 @@
+var ValidationLevel;
+(function (ValidationLevel) {
+    ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
+    ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
+})(ValidationLevel || (ValidationLevel = {}));
 var EnumToken;
 (function (EnumToken) {
     EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";
@@ -76,6 +81,16 @@ var EnumToken;
     EnumToken[EnumToken["IdenListTokenType"] = 70] = "IdenListTokenType";
     EnumToken[EnumToken["GridTemplateFuncTokenType"] = 71] = "GridTemplateFuncTokenType";
     EnumToken[EnumToken["KeyFrameRuleNodeType"] = 72] = "KeyFrameRuleNodeType";
+    EnumToken[EnumToken["ClassSelectorTokenType"] = 73] = "ClassSelectorTokenType";
+    EnumToken[EnumToken["UniversalSelectorTokenType"] = 74] = "UniversalSelectorTokenType";
+    EnumToken[EnumToken["ChildCombinatorTokenType"] = 75] = "ChildCombinatorTokenType";
+    EnumToken[EnumToken["DescendantCombinatorTokenType"] = 76] = "DescendantCombinatorTokenType";
+    EnumToken[EnumToken["NextSiblingCombinatorTokenType"] = 77] = "NextSiblingCombinatorTokenType";
+    EnumToken[EnumToken["SubsequentSiblingCombinatorTokenType"] = 78] = "SubsequentSiblingCombinatorTokenType";
+    EnumToken[EnumToken["NestingSelectorTokenType"] = 79] = "NestingSelectorTokenType";
+    EnumToken[EnumToken["InvalidRuleTokenType"] = 80] = "InvalidRuleTokenType";
+    EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 81] = "InvalidClassSelectorTokenType";
+    EnumToken[EnumToken["InvalidAttrTokenType"] = 82] = "InvalidAttrTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -117,4 +132,4 @@ const funcLike = [
     EnumToken.GridTemplateFuncTokenType
 ];
 
-export { EnumToken, funcLike };
+export { EnumToken, ValidationLevel, funcLike };
