@@ -254,6 +254,7 @@
                                     <select name="preset" class="form-select form-control">
                                         <option value="">None</option>
                                         <option value="calc" selected>Calc</option>
+                                        <option value="validation" >Validation</option>
                                         <option value="bootstrap">Import Bootstrap</option>
                                         <option value="tailwind">Import Tailwind CSS</option>
                                     </select>
@@ -630,6 +631,68 @@ console.debug({parsed, rendered});`;
     width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
     height: calc(100% / 4);}`;
 
+        } else if (event.target.value === 'validation') {
+
+            parseoptionsValidation.checked = true;
+            css.value = `
+#404 {
+    --animate-duration: 1s;
+}
+
+.s, #404 {
+    --animate-duration: 1s;
+}
+
+.s [type="text" {
+    --animate-duration: 1s;
+}
+
+.s [type="text"]] {
+    --animate-duration: 1s;
+}
+
+.s [type="text"] {
+    --animate-duration: 1s;
+}
+
+.s [type="text" i] {
+    --animate-duration: 1s;
+}
+
+.s [type="text" s] {
+    --animate-duration: 1s;
+}
+
+.s [type="text" b] {
+    --animate-duration: 1s;
+}
+
+.s [type="text" b], {
+    --animate-duration: 1s;
+}
+
+.s [type="text" b]+ {
+    --animate-duration: 1s;
+}
+
+.s [type="text" b]+ b {
+    --animate-duration: 1s;
+}
+
+.s [type="text" i]+ b {
+    --animate-duration: 1s;
+}
+
+
+.s [type="text"())] {
+    --animate-duration: 1s;
+}
+.s() {
+    --animate-duration: 1s;
+}
+.s:focus {
+    --animate-duration: 1s;
+}`;
         } else if (event.target.value === 'bootstrap') {
 
             parseoptionsresolveImport.checked = true;
