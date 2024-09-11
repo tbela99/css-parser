@@ -1013,8 +1013,22 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 
 declare function load(url: string, currentFile: string): Promise<string>;
 
+/**
+ * entry point for node and other runtimes
+ * @module
+ */
+
+/**
+ * render ast node
+ */
 declare function render(data: AstNode, options?: RenderOptions): RenderResult;
+/**
+ * parse css
+ */
 declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
+/**
+ * parse and render css
+ */
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
 export { EnumToken, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };

@@ -21,7 +21,7 @@ const json = JSON.stringify({
     functions: await parseFunctionsSyntax(),
     syntaxes: await parseAllSyntaxes(),
     selectors: await parseSelectorsSyntax()
-}, null, 1);
+});
 
 await writeFile(import.meta.dirname + '/../src/lib/validation/config.json', json);
 console.debug(json);

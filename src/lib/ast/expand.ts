@@ -2,9 +2,8 @@ import {combinators, splitRule} from "./minify";
 import {parseString} from "../parser";
 import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
-import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types/index.d.ts";
+import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
 import {EnumToken} from "./types";
-import * as repl from "node:repl";
 
 export function expand(ast: AstNode): AstNode {
     //
@@ -87,11 +86,9 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     if (selRule.length > 1) {
 
                         const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
-
                         rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), <string[]>[]).join(',');
-                    }
 
-                    else {
+                    } else {
 
                         selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
                         rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
@@ -104,7 +101,93 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 } else {
 
-                    rule.sel = replaceCompound(rule.sel, ast.sel);
+                    let childSelectorCompund: string[] = [];
+                    let withCompound: string[] = [];
+                    let withoutCompound: string[] = [];
+
+                    const rules: string[][] = splitRule(ast.sel);
+
+                    for (const sel of (rule.raw ?? splitRule(rule.sel))) {
+
+                        const s = sel.join('');
+
+                        if (s.includes('&')) {
+
+                            if (s.indexOf('&', 1) == -1) {
+
+                                if (s.at(0) == '&') {
+
+                                    if (s.at(1) == ' ') {
+
+                                        childSelectorCompund.push(s.slice(2));
+                                    } else {
+
+                                        if (s == '&') {
+
+                                            withCompound.push(s);
+                                        } else {
+
+                                            withoutCompound.push(s.slice(1));
+                                        }
+                                    }
+                                }
+
+                            } else {
+
+                                withCompound.push(s);
+                            }
+
+                        } else {
+
+                            withoutCompound.push(s);
+                        }
+                    }
+
+                    const selectors: string[] = [];
+                    const selector = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
+
+                    if (childSelectorCompund.length > 0) {
+
+                        if (childSelectorCompund.length == 1) {
+
+                            selectors.push(replaceCompound('& ' + childSelectorCompund[0].trim(), selector));
+                        } else {
+
+                            selectors.push(replaceCompound('& :is(' + childSelectorCompund.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                        }
+                    }
+
+                    if (withoutCompound.length > 0) {
+
+                        if (withoutCompound.length == 1) {
+
+                            const useIs: boolean = rules.length == 1 && selector.match(/^[a-zA-Z.:]/) != null && selector.includes(' ') && withoutCompound.length == 1 && withoutCompound[0].match(/^[a-zA-Z]+$/) != null;
+                            const compound = useIs ? ':is(&)' : '&';
+
+                            selectors.push(replaceCompound(rules.length == 1 ? (useIs ? withoutCompound[0] + ':is(&)' : (selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/) ? withoutCompound[0] + compound : compound  + withoutCompound[0])): (withoutCompound[0].match(/^[a-zA-Z:]+$/) ? withoutCompound[0].trim() + compound : '&' + (withoutCompound[0].match(/^\S+$/) ? withoutCompound[0].trim() : ':is(' + withoutCompound[0].trim() + ')')), selector));
+
+                        } else {
+
+                            selectors.push(replaceCompound('&:is(' + withoutCompound.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                        }
+                    }
+
+                    if (withCompound.length > 0) {
+
+                        if (withCompound.length == 1) {
+
+                            selectors.push(replaceCompound(withCompound[0], selector));
+
+                        } else {
+
+                            for (const w of withCompound) {
+
+                                selectors.push(replaceCompound(w, selector));
+                            }
+                        }
+                    }
+
+                    rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
                 }
 
                 ast.chi.splice(i--, 1);
@@ -163,7 +246,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 // @ts-ignore
                 result.push(...(astAtRule.chi.length > 0 ? [astAtRule].concat(values) : values));
-
                 ast.chi.splice(i--, 1);
             }
         }
@@ -224,7 +306,7 @@ function replaceCompoundLiteral(selector: string, replace: string) {
         return b == '&' ? -1 : 0;
     }).reduce((acc: string, curr: string) => {
 
-        if (acc.length > 0 &&curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+        if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
 
             return acc + ':is(' + replace + ')';
         }

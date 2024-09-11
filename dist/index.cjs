@@ -5759,6 +5759,13 @@ function* tokenize(stream) {
                     buffer = '';
                 }
                 break;
+            case '&':
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                yield pushToken(value, parseInfo);
+                break;
             case '<':
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);
@@ -60871,7 +60878,67 @@ function expandRule(node) {
                     }
                 }
                 else {
-                    rule.sel = replaceCompound(rule.sel, ast.sel);
+                    let childSelectorCompund = [];
+                    let withCompound = [];
+                    let withoutCompound = [];
+                    const rules = splitRule(ast.sel);
+                    for (const sel of (rule.raw ?? splitRule(rule.sel))) {
+                        const s = sel.join('');
+                        if (s.includes('&')) {
+                            if (s.indexOf('&', 1) == -1) {
+                                if (s.at(0) == '&') {
+                                    if (s.at(1) == ' ') {
+                                        childSelectorCompund.push(s.slice(2));
+                                    }
+                                    else {
+                                        if (s == '&') {
+                                            withCompound.push(s);
+                                        }
+                                        else {
+                                            withoutCompound.push(s.slice(1));
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                withCompound.push(s);
+                            }
+                        }
+                        else {
+                            withoutCompound.push(s);
+                        }
+                    }
+                    const selectors = [];
+                    const selector = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
+                    if (childSelectorCompund.length > 0) {
+                        if (childSelectorCompund.length == 1) {
+                            selectors.push(replaceCompound('& ' + childSelectorCompund[0].trim(), selector));
+                        }
+                        else {
+                            selectors.push(replaceCompound('& :is(' + childSelectorCompund.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                        }
+                    }
+                    if (withoutCompound.length > 0) {
+                        if (withoutCompound.length == 1) {
+                            const useIs = rules.length == 1 && selector.match(/^[a-zA-Z.:]/) != null && selector.includes(' ') && withoutCompound.length == 1 && withoutCompound[0].match(/^[a-zA-Z]+$/) != null;
+                            const compound = useIs ? ':is(&)' : '&';
+                            selectors.push(replaceCompound(rules.length == 1 ? (useIs ? withoutCompound[0] + ':is(&)' : (selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/) ? withoutCompound[0] + compound : compound + withoutCompound[0])) : (withoutCompound[0].match(/^[a-zA-Z:]+$/) ? withoutCompound[0].trim() + compound : '&' + (withoutCompound[0].match(/^\S+$/) ? withoutCompound[0].trim() : ':is(' + withoutCompound[0].trim() + ')')), selector));
+                        }
+                        else {
+                            selectors.push(replaceCompound('&:is(' + withoutCompound.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                        }
+                    }
+                    if (withCompound.length > 0) {
+                        if (withCompound.length == 1) {
+                            selectors.push(replaceCompound(withCompound[0], selector));
+                        }
+                        else {
+                            for (const w of withCompound) {
+                                selectors.push(replaceCompound(w, selector));
+                            }
+                        }
+                    }
+                    rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
                 }
                 ast.chi.splice(i--, 1);
                 result.push(...expandRule(rule));
@@ -63343,12 +63410,25 @@ async function load(url, currentFile) {
     return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : promises.readFile(resolved.absolute, { encoding: 'utf-8' });
 }
 
+/**
+ * entry point for node and other runtimes
+ * @module
+ */
+/**
+ * render ast node
+ */
 function render(data, options = {}) {
     return doRender(data, Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
 }
+/**
+ * parse css
+ */
 async function parse(iterator, opt = {}) {
     return doParse(iterator, Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
 }
+/**
+ * parse and render css
+ */
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();

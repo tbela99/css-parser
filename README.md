@@ -6,9 +6,15 @@ CSS parser and minifier for node and the browser
 
 ## Installation
 
+From npm
 ```shell
 $ npm install @tbela99/css-parser
 ```
+from jsr
+```shell
+$ deno add @tbela99/css-parser
+```
+
 
 ## Features
 
