@@ -1,10 +1,10 @@
 import { EnumToken } from '../types.js';
-import { getConfig } from '../../validation/config.js';
-import { walkValues } from '../walk.js';
+import { getSyntaxConfig } from '../../validation/config.js';
 import { ValidationTokenEnum } from '../../validation/parser/types.js';
 import '../../validation/parser/parse.js';
+import { walkValues } from '../walk.js';
 
-const config = getConfig();
+const config = getSyntaxConfig();
 class ComputePrefixFeature {
     static get ordering() {
         return 2;

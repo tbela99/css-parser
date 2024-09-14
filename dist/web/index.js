@@ -8,6 +8,9 @@ import { doParse } from '../lib/parser/parse.js';
 export { parseString, parseTokens } from '../lib/parser/parse.js';
 import '../lib/renderer/color/utils/constants.js';
 import '../lib/parser/utils/config.js';
+import '../lib/validation/config.js';
+import '../lib/validation/parser/types.js';
+import '../lib/validation/parser/parse.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
 import { load } from './load.js';
 

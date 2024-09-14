@@ -4,7 +4,7 @@ import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import '../parser/utils/config.js';
-import { getConfig } from './config.js';
+import { getSyntaxConfig } from './config.js';
 
 const expressions = [
     EnumToken.DelimTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType,
@@ -229,7 +229,7 @@ function validatePseudoClass(selector, options) {
             error: ''
         };
     }
-    const config = getConfig();
+    const config = getSyntaxConfig();
     const isValid = selector.val in config.selectors;
     return {
         valid: isValid || !options.validation ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -247,7 +247,7 @@ function validatePseudoClassFunction(selector, options) {
             error: isValid ? '' : 'invalid pseudo class'
         };
     }
-    const config = getConfig();
+    const config = getSyntaxConfig();
     if (selector.val in config.selectors) {
         if (!('chi' in config.selectors[selector.val].ast[0])) {
             return {

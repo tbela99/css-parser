@@ -5492,7 +5492,7 @@ var config$3 = {
 };
 
 Object.freeze(config$3);
-const getConfig$1 = () => config$3;
+const getConfig = () => config$3;
 
 // https://www.w3.org/TR/css-values-4/#math-function
 const funcList = ['clamp', 'calc'];
@@ -29583,6 +29583,227 @@ var declarations = {
 								]
 							}
 						]
+					}
+				]
+			}
+		]
+	},
+	stroke: {
+		syntax: "",
+		ast: [
+		]
+	},
+	"stroke-dasharray": {
+		syntax: "none | <dasharray>",
+		ast: [
+			{
+				typ: 27,
+				l: [
+					{
+						typ: 1,
+						val: "none"
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 20
+					},
+					{
+						typ: 2,
+						val: "dasharray"
+					}
+				]
+			}
+		]
+	},
+	"stroke-dashoffset": {
+		syntax: "<length-percentage> | <number>",
+		ast: [
+			{
+				typ: 27,
+				l: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 20
+					},
+					{
+						typ: 2,
+						val: "number"
+					}
+				]
+			}
+		]
+	},
+	"stroke-linecap": {
+		syntax: "butt | round | square",
+		ast: [
+			{
+				typ: 27,
+				l: [
+					{
+						typ: 1,
+						val: "butt"
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 1,
+								val: "round"
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 20
+							},
+							{
+								typ: 1,
+								val: "square"
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"stroke-linejoin": {
+		syntax: "miter | miter-clip | round | bevel | arcs",
+		ast: [
+			{
+				typ: 27,
+				l: [
+					{
+						typ: 1,
+						val: "miter"
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 1,
+								val: "miter-clip"
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 27,
+								l: [
+									{
+										typ: 20
+									},
+									{
+										typ: 1,
+										val: "round"
+									},
+									{
+										typ: 20
+									}
+								],
+								r: [
+									{
+										typ: 27,
+										l: [
+											{
+												typ: 20
+											},
+											{
+												typ: 1,
+												val: "bevel"
+											},
+											{
+												typ: 20
+											}
+										],
+										r: [
+											{
+												typ: 20
+											},
+											{
+												typ: 1,
+												val: "arcs"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"stroke-miterlimit": {
+		syntax: "<number>",
+		ast: [
+			{
+				typ: 2,
+				val: "number"
+			}
+		]
+	},
+	"stroke-opacity": {
+		syntax: "<opacity>",
+		ast: [
+			{
+				typ: 2,
+				val: "opacity"
+			}
+		]
+	},
+	"stroke-width": {
+		syntax: "<length-percentage> | <number>",
+		ast: [
+			{
+				typ: 27,
+				l: [
+					{
+						typ: 2,
+						val: "length-percentage"
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 20
+					},
+					{
+						typ: 2,
+						val: "number"
 					}
 				]
 			}
@@ -58998,15 +59219,1598 @@ var selectors = {
 		]
 	}
 };
+var atRules = {
+	"@charset": {
+		syntax: "@charset \"<charset>\";",
+		ast: [
+			{
+				typ: 1,
+				val: "@charset"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 33,
+				val: "\"<charset>\""
+			},
+			{
+				typ: 1,
+				val: ";"
+			}
+		]
+	},
+	"@counter-style": {
+		syntax: "@counter-style <counter-style-name> {\n  [ system: <counter-system>; ] ||\n  [ symbols: <counter-symbols>; ] ||\n  [ additive-symbols: <additive-symbols>; ] ||\n  [ negative: <negative-symbol>; ] ||\n  [ prefix: <prefix>; ] ||\n  [ suffix: <suffix>; ] ||\n  [ range: <range>; ] ||\n  [ pad: <padding>; ] ||\n  [ speak-as: <speak-as>; ] ||\n  [ fallback: <counter-style-name>; ]\n}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "@counter-style"
+					},
+					{
+						typ: 20
+					},
+					{
+						typ: 2,
+						val: "counter-style-name",
+						occurence: {
+							min: 0,
+							max: 0
+						}
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 20
+							},
+							{
+								typ: 20
+							},
+							{
+								typ: 22,
+								chi: [
+									{
+										typ: 1,
+										val: "symbols:"
+									},
+									{
+										typ: 20
+									},
+									{
+										typ: 2,
+										val: "counter-symbols"
+									},
+									{
+										typ: 1,
+										val: ";"
+									}
+								]
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 20
+									},
+									{
+										typ: 20
+									},
+									{
+										typ: 20
+									},
+									{
+										typ: 22,
+										chi: [
+											{
+												typ: 1,
+												val: "additive-symbols:"
+											},
+											{
+												typ: 20
+											},
+											{
+												typ: 2,
+												val: "additive-symbols"
+											},
+											{
+												typ: 1,
+												val: ";"
+											}
+										]
+									},
+									{
+										typ: 20
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 20
+											},
+											{
+												typ: 20
+											},
+											{
+												typ: 20
+											},
+											{
+												typ: 22,
+												chi: [
+													{
+														typ: 1,
+														val: "negative:"
+													},
+													{
+														typ: 20
+													},
+													{
+														typ: 2,
+														val: "negative-symbol"
+													},
+													{
+														typ: 1,
+														val: ";"
+													}
+												]
+											},
+											{
+												typ: 20
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 20
+													},
+													{
+														typ: 20
+													},
+													{
+														typ: 20
+													},
+													{
+														typ: 22,
+														chi: [
+															{
+																typ: 1,
+																val: "prefix:"
+															},
+															{
+																typ: 20
+															},
+															{
+																typ: 2,
+																val: "prefix"
+															},
+															{
+																typ: 1,
+																val: ";"
+															}
+														]
+													},
+													{
+														typ: 20
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 20
+															},
+															{
+																typ: 20
+															},
+															{
+																typ: 20
+															},
+															{
+																typ: 22,
+																chi: [
+																	{
+																		typ: 1,
+																		val: "suffix:"
+																	},
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 2,
+																		val: "suffix"
+																	},
+																	{
+																		typ: 1,
+																		val: ";"
+																	}
+																]
+															},
+															{
+																typ: 20
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 22,
+																		chi: [
+																			{
+																				typ: 1,
+																				val: "range:"
+																			},
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 2,
+																				val: "range"
+																			},
+																			{
+																				typ: 1,
+																				val: ";"
+																			}
+																		]
+																	},
+																	{
+																		typ: 20
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 22,
+																				chi: [
+																					{
+																						typ: 1,
+																						val: "pad:"
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 2,
+																						val: "padding"
+																					},
+																					{
+																						typ: 1,
+																						val: ";"
+																					}
+																				]
+																			},
+																			{
+																				typ: 20
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 22,
+																						chi: [
+																							{
+																								typ: 1,
+																								val: "speak-as:"
+																							},
+																							{
+																								typ: 20
+																							},
+																							{
+																								typ: 2,
+																								val: "speak-as"
+																							},
+																							{
+																								typ: 1,
+																								val: ";"
+																							}
+																						]
+																					},
+																					{
+																						typ: 20
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 22,
+																						chi: [
+																							{
+																								typ: 1,
+																								val: "fallback:"
+																							},
+																							{
+																								typ: 20
+																							},
+																							{
+																								typ: 2,
+																								val: "counter-style-name"
+																							},
+																							{
+																								typ: 1,
+																								val: ";"
+																							}
+																						]
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 15
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"@document": {
+		syntax: "@document [ <url> | url-prefix(<string>) | domain(<string>) | media-document(<string>) | regexp(<string>) ]# {\n  <group-rule-body>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@document"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 22,
+				chi: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "url"
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 27,
+								l: [
+									{
+										typ: 20
+									},
+									{
+										typ: 18,
+										val: "url-prefix",
+										chi: [
+											{
+												typ: 2,
+												val: "string"
+											}
+										]
+									},
+									{
+										typ: 20
+									}
+								],
+								r: [
+									{
+										typ: 27,
+										l: [
+											{
+												typ: 20
+											},
+											{
+												typ: 18,
+												val: "domain",
+												chi: [
+													{
+														typ: 2,
+														val: "string"
+													}
+												]
+											},
+											{
+												typ: 20
+											}
+										],
+										r: [
+											{
+												typ: 27,
+												l: [
+													{
+														typ: 20
+													},
+													{
+														typ: 18,
+														val: "media-document",
+														chi: [
+															{
+																typ: 2,
+																val: "string"
+															}
+														]
+													},
+													{
+														typ: 20
+													}
+												],
+												r: [
+													{
+														typ: 20
+													},
+													{
+														typ: 18,
+														val: "regexp",
+														chi: [
+															{
+																typ: 2,
+																val: "string"
+															}
+														]
+													},
+													{
+														typ: 20
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isList: true,
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@font-palette-values": {
+		syntax: "@font-palette-values <dashed-ident> {  <declaration-list> }",
+		ast: [
+			{
+				typ: 1,
+				val: "@font-palette-values"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "dashed-ident",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@font-face": {
+		syntax: "@font-face {\n  [ font-family: <family-name>; ] ||\n  [ src: <src>; ] ||\n  [ unicode-range: <unicode-range>; ] ||\n  [ font-variant: <font-variant>; ] ||\n  [ font-feature-settings: <font-feature-settings>; ] ||\n  [ font-variation-settings: <font-variation-settings>; ] ||\n  [ font-stretch: <font-stretch>; ] ||\n  [ font-weight: <font-weight>; ] ||\n  [ font-style: <font-style>; ] ||\n  [ size-adjust: <size-adjust>; ] ||\n  [ ascent-override: <ascent-override>; ] ||\n  [ descent-override: <descent-override>; ] ||\n  [ line-gap-override: <line-gap-override>; ]\n}",
+		ast: [
+			{
+				typ: 28,
+				l: [
+					{
+						typ: 1,
+						val: "@font-face",
+						occurence: {
+							min: 0,
+							max: 0
+						}
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 28,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 20
+							},
+							{
+								typ: 20
+							},
+							{
+								typ: 22,
+								chi: [
+									{
+										typ: 1,
+										val: "src:"
+									},
+									{
+										typ: 20
+									},
+									{
+										typ: 2,
+										val: "src"
+									},
+									{
+										typ: 1,
+										val: ";"
+									}
+								]
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 28,
+								l: [
+									{
+										typ: 20
+									},
+									{
+										typ: 20
+									},
+									{
+										typ: 20
+									},
+									{
+										typ: 22,
+										chi: [
+											{
+												typ: 1,
+												val: "unicode-range:"
+											},
+											{
+												typ: 20
+											},
+											{
+												typ: 2,
+												val: "unicode-range"
+											},
+											{
+												typ: 1,
+												val: ";"
+											}
+										]
+									},
+									{
+										typ: 20
+									}
+								],
+								r: [
+									{
+										typ: 28,
+										l: [
+											{
+												typ: 20
+											},
+											{
+												typ: 20
+											},
+											{
+												typ: 20
+											},
+											{
+												typ: 22,
+												chi: [
+													{
+														typ: 1,
+														val: "font-variant:"
+													},
+													{
+														typ: 20
+													},
+													{
+														typ: 2,
+														val: "font-variant"
+													},
+													{
+														typ: 1,
+														val: ";"
+													}
+												]
+											},
+											{
+												typ: 20
+											}
+										],
+										r: [
+											{
+												typ: 28,
+												l: [
+													{
+														typ: 20
+													},
+													{
+														typ: 20
+													},
+													{
+														typ: 20
+													},
+													{
+														typ: 22,
+														chi: [
+															{
+																typ: 1,
+																val: "font-feature-settings:"
+															},
+															{
+																typ: 20
+															},
+															{
+																typ: 2,
+																val: "font-feature-settings"
+															},
+															{
+																typ: 1,
+																val: ";"
+															}
+														]
+													},
+													{
+														typ: 20
+													}
+												],
+												r: [
+													{
+														typ: 28,
+														l: [
+															{
+																typ: 20
+															},
+															{
+																typ: 20
+															},
+															{
+																typ: 20
+															},
+															{
+																typ: 22,
+																chi: [
+																	{
+																		typ: 1,
+																		val: "font-variation-settings:"
+																	},
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 2,
+																		val: "font-variation-settings"
+																	},
+																	{
+																		typ: 1,
+																		val: ";"
+																	}
+																]
+															},
+															{
+																typ: 20
+															}
+														],
+														r: [
+															{
+																typ: 28,
+																l: [
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 20
+																	},
+																	{
+																		typ: 22,
+																		chi: [
+																			{
+																				typ: 1,
+																				val: "font-stretch:"
+																			},
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 2,
+																				val: "font-stretch"
+																			},
+																			{
+																				typ: 1,
+																				val: ";"
+																			}
+																		]
+																	},
+																	{
+																		typ: 20
+																	}
+																],
+																r: [
+																	{
+																		typ: 28,
+																		l: [
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 20
+																			},
+																			{
+																				typ: 22,
+																				chi: [
+																					{
+																						typ: 1,
+																						val: "font-weight:"
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 2,
+																						val: "font-weight"
+																					},
+																					{
+																						typ: 1,
+																						val: ";"
+																					}
+																				]
+																			},
+																			{
+																				typ: 20
+																			}
+																		],
+																		r: [
+																			{
+																				typ: 28,
+																				l: [
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 20
+																					},
+																					{
+																						typ: 22,
+																						chi: [
+																							{
+																								typ: 1,
+																								val: "font-style:"
+																							},
+																							{
+																								typ: 20
+																							},
+																							{
+																								typ: 2,
+																								val: "font-style"
+																							},
+																							{
+																								typ: 1,
+																								val: ";"
+																							}
+																						]
+																					},
+																					{
+																						typ: 20
+																					}
+																				],
+																				r: [
+																					{
+																						typ: 28,
+																						l: [
+																							{
+																								typ: 20
+																							},
+																							{
+																								typ: 20
+																							},
+																							{
+																								typ: 20
+																							},
+																							{
+																								typ: 22,
+																								chi: [
+																									{
+																										typ: 1,
+																										val: "size-adjust:"
+																									},
+																									{
+																										typ: 20
+																									},
+																									{
+																										typ: 2,
+																										val: "size-adjust"
+																									},
+																									{
+																										typ: 1,
+																										val: ";"
+																									}
+																								]
+																							},
+																							{
+																								typ: 20
+																							}
+																						],
+																						r: [
+																							{
+																								typ: 28,
+																								l: [
+																									{
+																										typ: 20
+																									},
+																									{
+																										typ: 20
+																									},
+																									{
+																										typ: 20
+																									},
+																									{
+																										typ: 22,
+																										chi: [
+																											{
+																												typ: 1,
+																												val: "ascent-override:"
+																											},
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 2,
+																												val: "ascent-override"
+																											},
+																											{
+																												typ: 1,
+																												val: ";"
+																											}
+																										]
+																									},
+																									{
+																										typ: 20
+																									}
+																								],
+																								r: [
+																									{
+																										typ: 28,
+																										l: [
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 22,
+																												chi: [
+																													{
+																														typ: 1,
+																														val: "descent-override:"
+																													},
+																													{
+																														typ: 20
+																													},
+																													{
+																														typ: 2,
+																														val: "descent-override"
+																													},
+																													{
+																														typ: 1,
+																														val: ";"
+																													}
+																												]
+																											},
+																											{
+																												typ: 20
+																											}
+																										],
+																										r: [
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 22,
+																												chi: [
+																													{
+																														typ: 1,
+																														val: "line-gap-override:"
+																													},
+																													{
+																														typ: 20
+																													},
+																													{
+																														typ: 2,
+																														val: "line-gap-override"
+																													},
+																													{
+																														typ: 1,
+																														val: ";"
+																													}
+																												]
+																											},
+																											{
+																												typ: 20
+																											},
+																											{
+																												typ: 15
+																											}
+																										]
+																									}
+																								]
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"@font-feature-values": {
+		syntax: "@font-feature-values <family-name># {\n  <feature-value-block-list>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@font-feature-values"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "family-name",
+				isList: true,
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@import": {
+		syntax: "@import [ <string> | <url> ]\n        [ layer | layer(<layer-name>) ]?\n        [ supports( [ <supports-condition> | <declaration> ] ) ]?\n        <media-query-list>? ;",
+		ast: [
+			{
+				typ: 1,
+				val: "@import"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 22,
+				chi: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "string"
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "url"
+							},
+							{
+								typ: 20
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 22,
+				chi: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 1,
+								val: "layer"
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 20
+							},
+							{
+								typ: 18,
+								val: "layer",
+								chi: [
+									{
+										typ: 2,
+										val: "layer-name"
+									}
+								]
+							},
+							{
+								typ: 20
+							}
+						]
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 22,
+				chi: [
+					{
+						typ: 18,
+						val: "supports",
+						chi: [
+							{
+								typ: 22,
+								chi: [
+									{
+										typ: 27,
+										l: [
+											{
+												typ: 20
+											},
+											{
+												typ: 2,
+												val: "supports-condition"
+											},
+											{
+												typ: 20
+											}
+										],
+										r: [
+											{
+												typ: 20
+											},
+											{
+												typ: 2,
+												val: "declaration"
+											},
+											{
+												typ: 20
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "media-query-list",
+				isOptional: true
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 1,
+				val: ";"
+			}
+		]
+	},
+	"@keyframes": {
+		syntax: "@keyframes <keyframes-name> {\n  <keyframe-block-list>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@keyframes"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "keyframes-name",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@layer": {
+		syntax: "@layer [ <layer-name># | <layer-name>?  {\n  <stylesheet>\n} ]",
+		ast: [
+			{
+				typ: 1,
+				val: "@layer"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 22,
+				chi: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "layer-name",
+								isList: true
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "layer-name",
+								isOptional: true,
+								occurence: {
+									min: 0,
+									max: 0
+								}
+							},
+							{
+								typ: 20
+							},
+							{
+								typ: 20
+							},
+							{
+								typ: 20
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"@media": {
+		syntax: "@media <media-query-list> {\n  <group-rule-body>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@media"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "media-query-list",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@namespace": {
+		syntax: "@namespace <namespace-prefix>? [ <string> | <url> ];",
+		ast: [
+			{
+				typ: 1,
+				val: "@namespace"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "namespace-prefix",
+				isOptional: true
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 22,
+				chi: [
+					{
+						typ: 27,
+						l: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "string"
+							},
+							{
+								typ: 20
+							}
+						],
+						r: [
+							{
+								typ: 20
+							},
+							{
+								typ: 2,
+								val: "url"
+							},
+							{
+								typ: 20
+							}
+						]
+					}
+				]
+			},
+			{
+				typ: 1,
+				val: ";"
+			}
+		]
+	},
+	"@page": {
+		syntax: "@page <page-selector-list> {\n  <page-body>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@page"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "page-selector-list",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@position-try": {
+		syntax: "@position-try <dashed-ident> {\n  <declaration-list>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@position-try"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "dashed-ident",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@property": {
+		syntax: "@property <custom-property-name> {\n  <declaration-list>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@property"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "custom-property-name",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@scope": {
+		syntax: "@scope [(<scope-start>)]? [to (<scope-end>)]? {\n  <rule-list>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@scope"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 18,
+				chi: [
+					{
+						typ: 2,
+						val: "scope-start"
+					}
+				],
+				isOptional: true
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 1,
+				val: "to"
+			},
+			{
+				typ: 18,
+				chi: [
+					{
+						typ: 2,
+						val: "scope-end"
+					}
+				],
+				isOptional: true,
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	},
+	"@starting-style": {
+		syntax: "@starting-style {\n  <declaration-list> | <group-rule-body>\n}",
+		ast: [
+			{
+				typ: 27,
+				l: [
+					{
+						typ: 1,
+						val: "@starting-style",
+						occurence: {
+							min: 0,
+							max: 0
+						}
+					},
+					{
+						typ: 20
+					}
+				],
+				r: [
+					{
+						typ: 20
+					},
+					{
+						typ: 2,
+						val: "group-rule-body"
+					},
+					{
+						typ: 20
+					},
+					{
+						typ: 15
+					}
+				]
+			}
+		]
+	},
+	"@supports": {
+		syntax: "@supports <supports-condition> {\n  <group-rule-body>\n}",
+		ast: [
+			{
+				typ: 1,
+				val: "@supports"
+			},
+			{
+				typ: 20
+			},
+			{
+				typ: 2,
+				val: "supports-condition",
+				occurence: {
+					min: 0,
+					max: 0
+				}
+			}
+		]
+	}
+};
 var config$2 = {
 	declarations: declarations,
 	functions: functions,
 	syntaxes: syntaxes,
-	selectors: selectors
+	selectors: selectors,
+	atRules: atRules
 };
 
 Object.freeze(config$2);
-function getConfig() {
+function getSyntaxConfig() {
     // @ts-ignore
     return config$2;
 }
@@ -59234,7 +61038,7 @@ function validatePseudoClass(selector, options) {
             error: ''
         };
     }
-    const config = getConfig();
+    const config = getSyntaxConfig();
     const isValid = selector.val in config.selectors;
     return {
         valid: isValid || !options.validation ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -59252,7 +61056,7 @@ function validatePseudoClassFunction(selector, options) {
             error: isValid ? '' : 'invalid pseudo class'
         };
     }
-    const config = getConfig();
+    const config = getSyntaxConfig();
     if (selector.val in config.selectors) {
         if (!('chi' in config.selectors[selector.val].ast[0])) {
             return {
@@ -61065,6 +62869,11 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["PseudoClassToken"] = 31] = "PseudoClassToken";
     ValidationTokenEnum[ValidationTokenEnum["PseudoClassFunctionToken"] = 32] = "PseudoClassFunctionToken";
     ValidationTokenEnum[ValidationTokenEnum["StringToken"] = 33] = "StringToken";
+    ValidationTokenEnum[ValidationTokenEnum["AtRuleDefinition"] = 34] = "AtRuleDefinition";
+    ValidationTokenEnum[ValidationTokenEnum["DeclarationNameToken"] = 35] = "DeclarationNameToken";
+    ValidationTokenEnum[ValidationTokenEnum["DeclarationDefinitionToken"] = 36] = "DeclarationDefinitionToken";
+    ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 37] = "SemiColon";
+    ValidationTokenEnum[ValidationTokenEnum["Character"] = 38] = "Character";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
 
 [
@@ -61076,7 +62885,7 @@ var ValidationTokenEnum;
     ValidationTokenEnum.OpenCurlyBrace
 ];
 
-const config$1 = getConfig();
+const config$1 = getSyntaxConfig();
 class ComputePrefixFeature {
     static get ordering() {
         return 2;
@@ -61504,7 +63313,7 @@ class PropertySet {
     }
 }
 
-const propertiesConfig = getConfig$1();
+const propertiesConfig = getConfig();
 class PropertyMap {
     config;
     declarations;
@@ -62112,7 +63921,7 @@ class PropertyMap {
     }
 }
 
-const config = getConfig$1();
+const config = getConfig();
 class PropertyList {
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     declarations;

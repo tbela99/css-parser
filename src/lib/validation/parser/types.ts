@@ -35,7 +35,12 @@ export enum ValidationTokenEnum {
     Parens,
     PseudoClassToken,
     PseudoClassFunctionToken,
-    StringToken
+    StringToken,
+    AtRuleDefinition,
+    DeclarationNameToken,
+    DeclarationDefinitionToken,
+    SemiColon,
+    Character
 }
 
 export interface Position {
@@ -65,16 +70,40 @@ export interface AtLeastOneToken extends ValidationToken {
     typ: ValidationTokenEnum.AtLeastOnce;
 }
 
+export interface ValidationCharacterToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.Character;
+    val: string;
+}
+
 export interface ValidationStringToken extends ValidationToken {
 
     typ: ValidationTokenEnum.StringToken;
     val: string;
 }
 
+export interface ValidationSemiColonToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.SemiColon;
+}
+
 export interface ValidationPseudoClassToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PseudoClassToken;
     val: string;
+}
+
+export interface ValidationDeclarationNameToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.DeclarationNameToken;
+    val: string;
+}
+
+export interface ValidationDeclarationDefinitionToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.DeclarationDefinitionToken;
+    nam: string;
+    val: ValidationToken;
 }
 
 export interface ValidationPseudoClassFunctionToken extends ValidationToken {
@@ -100,6 +129,20 @@ export interface NumberToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Number;
     val: number;
+}
+
+export interface ValidationAtRuleToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRule;
+    val: string;
+}
+
+export interface ValidationAtRuleDefinitionToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRuleDefinition;
+    val: string;
+    prelude?: ValidationToken[];
+    chi?: ValidationToken[];
 }
 
 export interface ValidationKeywordToken extends ValidationToken {

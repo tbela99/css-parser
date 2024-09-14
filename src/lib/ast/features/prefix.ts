@@ -1,8 +1,7 @@
 import {EnumToken} from "../types";
 import type {AstAtRule, AstDeclaration, AstRule, MinifyOptions, Token} from "../../../@types";
-import {getConfig} from '../../validation'
-import {walkValues} from "../walk";
 import {
+    getSyntaxConfig,
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
@@ -11,9 +10,10 @@ import {
     ValidationPropertyToken,
     ValidationToken,
     ValidationTokenEnum
-} from "../../validation/parser";
+} from '../../validation'
+import {walkValues} from "../walk";
 
-const config = getConfig();
+const config = getSyntaxConfig();
 
 export class ComputePrefixFeature {
 

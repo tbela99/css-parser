@@ -34,6 +34,11 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["PseudoClassToken"] = 31] = "PseudoClassToken";
     ValidationTokenEnum[ValidationTokenEnum["PseudoClassFunctionToken"] = 32] = "PseudoClassFunctionToken";
     ValidationTokenEnum[ValidationTokenEnum["StringToken"] = 33] = "StringToken";
+    ValidationTokenEnum[ValidationTokenEnum["AtRuleDefinition"] = 34] = "AtRuleDefinition";
+    ValidationTokenEnum[ValidationTokenEnum["DeclarationNameToken"] = 35] = "DeclarationNameToken";
+    ValidationTokenEnum[ValidationTokenEnum["DeclarationDefinitionToken"] = 36] = "DeclarationDefinitionToken";
+    ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 37] = "SemiColon";
+    ValidationTokenEnum[ValidationTokenEnum["Character"] = 38] = "Character";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
 
 export { ValidationTokenEnum };

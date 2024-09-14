@@ -12,7 +12,7 @@ import type {
     ValidationOptions
 } from "../../@types";
 import {EnumToken, ValidationLevel} from "../ast";
-import {getConfig} from "./config";
+import {getSyntaxConfig} from "./config";
 import type {ValidationResult} from "../../@types/validation";
 
 const expressions: EnumToken[] = [
@@ -354,7 +354,7 @@ function validatePseudoClass(selector: PseudoClassToken, options: ValidationOpti
         };
     }
 
-    const config = getConfig();
+    const config = getSyntaxConfig();
     const isValid: boolean = selector.val in config.selectors;
 
     return {
@@ -380,7 +380,7 @@ function validatePseudoClassFunction(selector: PseudoClassFunctionToken, options
         }
     }
 
-    const config = getConfig();
+    const config = getSyntaxConfig();
 
     if (selector.val in config.selectors) {
 
