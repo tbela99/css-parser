@@ -1,12 +1,8 @@
 # Changelog
 
-# v0.8.0
+# v0.7.1
 
 - [x] fix nesting rules expansion #45
-- [ ] at-rules prefix removal
-- [ ] at rules validation
-  - [ ] prelude
-  - [ ] body
 
 #v0.7.0
 
