@@ -416,7 +416,7 @@ table.colortable th {
  font-weight: 400;
  padding: 2px 3px
 }
-table.colortable td,table.colortable th {
+table.colortable :is(td,th) {
  border: 1px solid #d9dadd;
  padding: 5px
 }
@@ -472,7 +472,6 @@ Bar:is(a .foo) {
 }`));
         });
 
-
         it('trim universal selector #20', function () {
             const file = `
 
@@ -489,6 +488,40 @@ Bar:is(a .foo) {
 }
 Bar:is(span,a *,*~a) {
  color: red
+}`));
+        });
+
+        it('trim universal selector #21', function () {
+            const file = `
+
+.s {
+ [type=text],[type=text i],[type=text s],[type=text i]+b,&:focus {
+  --animate-duration: 1s
+ }
+}
+`;
+            return parse(file, {
+                minify: true, nestingRules: true, validation: true
+            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+ --animate-duration: 1s
+}`));
+        });
+
+        it('trim universal selector #22', function () {
+            const file = `
+
+table.colortable {
+ & td,& th {
+  border: 1px solid #d9dadd;
+  padding: 5px
+ }
+}
+`;
+            return parse(file, {
+                minify: true, nestingRules: true, validation: true
+            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`table.colortable :is(td,th) {
+ border: 1px solid #d9dadd;
+ padding: 5px
 }`));
         });
 

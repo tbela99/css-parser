@@ -3,6 +3,7 @@ import {EnumToken} from "../ast";
 import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "../syntax";
 
 declare type InputStream = string;
+
 declare interface ParseInfo {
 
     stream: InputStream;
@@ -274,6 +275,16 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                 break;
 
+            case '&':
+
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+
+                yield pushToken(value, parseInfo);
+                break;
+
             case '<':
 
                 if (buffer.length > 0) {
@@ -353,15 +364,11 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                         next(parseInfo);
 
                         yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
-                    }
-
-                    else if (peek(parseInfo) == '=') {
+                    } else if (peek(parseInfo) == '=') {
 
                         buffer += next(parseInfo);
                         yield pushToken(buffer, parseInfo);
-                    }
-
-                    else {
+                    } else {
 
                         yield pushToken('|', parseInfo);
                     }

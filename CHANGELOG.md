@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.7.1
+
+- [x] fix nesting rules expansion #45
+
 #v0.7.0
 
 - [x] fix merging rules
@@ -7,16 +11,16 @@
     - [x] declaration name
     - [ ] declaration value
     - [ ] exclude -webkit-* gradients
-    - [x] css selector validation
-        - [x] pseudo element
-        - [x] partial pseudo class validation. does not validate parameters
-        - [x] attribute selector
-        - [x] combinator
-        - [x] simple selector
-        - [x] nested selector
-        - [x] strict vs permissive validation: allow unknown items such as pseudo classes
-            - [x] allow unknown pseudo classes
-            - [x] allow unknown attribute selectors
+- [x] css selector validation
+    - [x] pseudo element
+    - [x] partial pseudo class validation. does not validate parameters
+    - [x] attribute selector
+    - [x] combinator
+    - [x] simple selector
+    - [x] nested selector
+    - [x] strict vs permissive validation: allow unknown items such as pseudo classes
+        - [x] allow unknown pseudo classes
+        - [x] allow unknown attribute selectors
 - [x] strip universal selector when possible
 
 # v0.6.0
@@ -28,15 +32,15 @@
 
 - [x] incorrectly expand css nesting rules
 
-## V0.5.3
+## v0.5.3
 
 - [x] incorrectly expand css nesting rules
 
-## V0.5.1
+## v0.5.1
 
 - [x] failed to flatten @import when using url() syntax
 
-## V0.5.0
+## v0.5.0
 
 - [x] render node with parents
 - [x] fix relative color from xyz
@@ -44,11 +48,11 @@
 - [x] compute more shorthands
 - [x] (web) fetch imported css files from external domains using cors
 
-## V0.4.1
+## v0.4.1
 
 no code change
 
-## V0.4.0
+## v0.4.0
 
 Parsing
 
@@ -66,7 +70,7 @@ CSS color level 4 & 5
 - [x] oklab()
 - [x] oklch()
 
-## V0.3.0
+## v0.3.0
 
 ### shorthands
 

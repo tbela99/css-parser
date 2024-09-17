@@ -187,6 +187,13 @@ function* tokenize(stream) {
                     buffer = '';
                 }
                 break;
+            case '&':
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                yield pushToken(value, parseInfo);
+                break;
             case '<':
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);

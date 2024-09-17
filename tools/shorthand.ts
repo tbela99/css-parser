@@ -912,7 +912,7 @@ export const properties: PropertySetType = [
     return Object.assign(acc, createProperties(<ShorthandPropertyType>data));
 }, <PropertySetType>{});
 
-const result = JSON.stringify({properties, map}, null, 1);
+const result = JSON.stringify({properties, map});
 
 await writeFile(import.meta.dirname + '/../src/config.json', result);
 

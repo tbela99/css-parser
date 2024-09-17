@@ -12,12 +12,25 @@ import '../lib/parser/utils/config.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
 import { load } from './load.js';
 
+/**
+ * entry point for node and other runtimes
+ * @module
+ */
+/**
+ * render ast node
+ */
 function render(data, options = {}) {
     return doRender(data, Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
 }
+/**
+ * parse css
+ */
 async function parse(iterator, opt = {}) {
     return doParse(iterator, Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
 }
+/**
+ * parse and render css
+ */
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();

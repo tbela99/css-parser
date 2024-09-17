@@ -11,6 +11,9 @@ import '../lib/parser/utils/config.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
 import { load } from './load.js';
 
+/**
+ * render ast node
+ */
 function render(data, options = {}) {
     return doRender(data, Object.assign(options, {
         load,
@@ -19,6 +22,9 @@ function render(data, options = {}) {
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
+/**
+ * parse css
+ */
 async function parse(iterator, opt = {}) {
     return doParse(iterator, Object.assign(opt, {
         load,
@@ -27,6 +33,9 @@ async function parse(iterator, opt = {}) {
         cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
+/**
+ * parse and render css
+ */
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
