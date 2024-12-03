@@ -2,7 +2,12 @@ import { EnumToken } from '../types.js';
 import { getSyntaxConfig } from '../../validation/config.js';
 import { ValidationTokenEnum } from '../../validation/parser/types.js';
 import '../../validation/parser/parse.js';
+import '../minify.js';
 import { walkValues } from '../walk.js';
+import '../../parser/parse.js';
+import '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
 
 const config = getSyntaxConfig();
 class ComputePrefixFeature {

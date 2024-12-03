@@ -7,7 +7,7 @@ import './config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-function parseDeclaration(node, errors, src, position) {
+function parseDeclarationNode(node, errors, src, position) {
     while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
         node.val.shift();
     }
@@ -65,4 +65,4 @@ function parseGridTemplate(template) {
     return buffer.length > 0 ? result + buffer : result;
 }
 
-export { parseDeclaration };
+export { parseDeclarationNode };

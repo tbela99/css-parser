@@ -60,8 +60,9 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 export function* walkValues(values: Token[], root: AstNode | null = null, filter?: WalkerValueFilter): Generator<WalkAttributesResult> {
 
     const stack: Token[] = values.slice();
-    const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map;
 
+    const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map;
+    const parentMap: Map<Token, Token[]> = new Map;
     let value: Token;
     let previous: Token | null = null;
 
@@ -87,14 +88,30 @@ export function* walkValues(values: Token[], root: AstNode | null = null, filter
         // @ts-ignore
         if (option !== 'children') {
 
+            let list: Token[] | null = parentMap.get(value) as Token[] ?? null;
+
+            if (Array.isArray(list)) {
+
+                list.shift();
+
+                if (list.length === 0) {
+
+                    parentMap.delete(value);
+                    list = null;
+                }
+            }
+
             // @ts-ignore
-            yield {value, parent: <FunctionToken | ParensToken>map.get(value), previousValue: previous, nextValue: <Token>stack[0] ?? null, root};
+            yield {value, parent: <FunctionToken | ParensToken>map.get(value), previousValue: previous, nextValue: <Token>stack[0] ?? null, root, list};
         }
 
         if (option !== 'ignore-children' && 'chi' in value) {
 
-            for (const child of (<FunctionToken | ParensToken>value).chi.slice()) {
+            const parents: Token[] = (<FunctionToken | ParensToken>value).chi.slice();
 
+            for (const child of parents.slice()) {
+
+                parentMap.set(child, parents);
                 map.set(child, <FunctionToken | ParensToken>value);
             }
 

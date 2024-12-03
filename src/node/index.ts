@@ -1,7 +1,3 @@
-/**
- * entry point for node and other runtimes
- * @module
- */
 
 import type {
     AstNode,
@@ -11,7 +7,7 @@ import type {
     RenderResult,
     TransformOptions,
     TransformResult
-} from "../@types";
+} from "../@types/index.d.ts";
 import process from 'node:process';
 import {doParse, doRender} from "../lib";
 import {resolve, dirname} from "../lib/fs";

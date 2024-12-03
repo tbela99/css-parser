@@ -10,17 +10,17 @@ export declare type DeclarationVisitorHandler = (node: AstDeclaration) => AstDec
  * Rule visitor handler
  */
 export declare type RuleVisitorHandler = (node: AstRule) => AstRule | AstRule[] | null | Promise<AstRule | AstRule[] | null>;
-;
+
 /**
  * AtRule visitor handler
  */
 export declare type AtRuleVisitorHandler = (node: AstAtRule) => AstAtRule | AstAtRule[] | null | Promise<AstAtRule | AstAtRule[] | null>;
-;
+
 /**
  * Value visitor handler
  */
 export declare type ValueVisitorHandler = (node: Token) => Token | Token[] | null | Promise<Token | Token[] | null>;
-;
+
 
 export declare interface VisitorNodeMap {
 

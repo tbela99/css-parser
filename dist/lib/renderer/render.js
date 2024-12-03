@@ -201,6 +201,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
         case EnumToken.InvalidRuleTokenType:
+        case EnumToken.InvalidAtRuleTokenType:
             return '';
         default:
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
@@ -406,7 +407,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.MatchExpressionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) +
-                renderToken({ typ: token.op }, options, cache, reducer, errors) +
+                renderToken(token.op, options, cache, reducer, errors) +
                 renderToken(token.r, options, cache, reducer, errors) +
                 (token.attr ? ' ' + token.attr : '');
         case EnumToken.NameSpaceAttributeTokenType:
@@ -595,6 +596,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '[' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.InvalidClassSelectorTokenType:
             return token.val;
+        case EnumToken.DeclarationNodeType:
+            return token.nam + ':' + token.val.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+        case EnumToken.MediaQueryConditionTokenType:
+            return renderToken(token.l, options, cache, reducer, errors) + renderToken({ typ: token.op }, options, cache, reducer, errors) + token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         default:
             throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }

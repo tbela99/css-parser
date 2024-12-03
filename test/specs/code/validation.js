@@ -191,7 +191,6 @@ html, body, div, span, applet, object, iframe,
 }`));
         });
 
-
         it('selector without validation #6', function () {
             return transform(`
 
@@ -253,7 +252,7 @@ html, body, div, span, applet, object, iframe,
 .s:focus {
     --animate-duration: 1s;
 }
-`).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text b],[type=text b]+b,[type=text i]+b,:focus) {
+`).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
  --animate-duration: 1s
 }`));
         });
@@ -261,4 +260,85 @@ html, body, div, span, applet, object, iframe,
 
 
     });
+
+
+    describe('at-rule validation', function () {
+
+        it('media validation #1', function () {
+            return parse(`@import "styles.css"  screen
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@import "styles.css" screen;`));
+        });
+
+        it('media validation #2', function () {
+            return parse(`@import "styles.css"  "screen"
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(``));
+        });
+
+        it('media validation #3', function () {
+            return parse(`@import "styles.css" bar,baz"
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@import "styles.css" bar,baz;`));
+        });
+
+        it('support validation #4', function () {
+            return parse(`
+@supports (display: grid) {
+  div {
+    display: grid;
+  }
 }
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@supports (display:grid) {
+ div {
+  display: grid
+ }
+}`));
+        });
+
+        it('support validation #5', function () {
+            return parse(`
+@supports not (display: grid) {
+  div {
+    float: right;
+  }
+}
+
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@supports not (display:grid) {
+ div {
+  float: right
+ }
+}`));
+
+        });
+
+        it('support validation #6', function () {
+            return parse(`
+@supports (display: grid) and (not (display: inline-grid)) {
+  div {
+    float: right;
+  }
+}
+
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@supports (display:grid) and (not (display:inline-grid)) {
+ div {
+  float: right
+ }
+}`));
+        });
+
+
+        it('support validation #7', function () {
+            return parse(`
+@supports not (not (transform-origin: 2px)) {
+  div {
+    float: right;
+  }
+}
+
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@supports not (not (transform-origin:2px)) {
+ div {
+  float: right
+ }
+}`));
+        });
+
+    });
+    }

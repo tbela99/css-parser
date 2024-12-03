@@ -82,6 +82,8 @@ declare enum EnumToken {
     InvalidRuleTokenType = 80,
     InvalidClassSelectorTokenType = 81,
     InvalidAttrTokenType = 82,
+    InvalidAtRuleTokenType = 83,
+    MediaQueryConditionTokenType = 84,
     Time = 25,
     Iden = 7,
     EOF = 47,
@@ -201,6 +203,7 @@ export declare interface AtRuleToken extends BaseToken {
 
     typ: EnumToken.AtRuleTokenType,
     val: string;
+    pre: string;
 }
 
 export declare interface PercentageToken extends BaseToken {
@@ -531,6 +534,14 @@ export declare interface ChildCombinatorToken extends BaseToken {
     typ: EnumToken.ChildCombinatorTokenType
 }
 
+export declare interface MediaQueryConditionToken extends BaseToken {
+
+    typ: EnumToken.MediaQueryConditionTokenType,
+    l: Token,
+    op: EnumToken.GtTokenType | EnumToken.LtTokenType | EnumToken.GteTokenType | EnumToken.LteTokenType,
+    r: Token[]
+}
+
 export declare interface DescendantCombinatorToken extends BaseToken {
 
     typ: EnumToken.DescendantCombinatorTokenType
@@ -591,7 +602,7 @@ export declare interface BinaryExpressionToken extends BaseToken {
 export declare interface MatchExpressionToken extends BaseToken {
 
     typ: EnumToken.MatchExpressionTokenType
-    op: EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType | EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType;
+    op: DelimToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
     l: Token;
     r: Token;
     attr?: 'i' | 's';
@@ -641,6 +652,9 @@ export declare type Token =
     | SubsequentCombinatorToken
     | ColumnCombinatorToken
     | NestingSelectorToken
+    |
+    MediaQueryConditionToken
+    | AstDeclaration
     |
     NumberToken
     | AtRuleToken
@@ -729,6 +743,8 @@ export declare interface BaseToken {
 
     typ: EnumToken;
     loc?: Location;
+    tokens?: Token[];
+    parent?: AstRuleList;
 }
 
 export declare interface AstComment extends BaseToken {
@@ -754,6 +770,31 @@ export declare interface AstRule extends BaseToken {
     raw?: RawSelectorTokens;
 }
 
+export declare interface AstInvalidRule extends BaseToken {
+
+    typ: EnumToken.InvalidRuleTokenType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+}
+
+export declare interface AstInvalidAtRule extends BaseToken {
+
+    typ: EnumToken.InvalidAtRuleTokenType;
+    val: string;
+    chi?: Array<AstNode>;
+}
+
+
+
+export declare interface AstKeyFrameRule extends BaseToken {
+
+    typ: EnumToken.KeyFrameRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
 export declare type RawSelectorTokens = string[][];
 
 export declare interface OptimizedSelector {
@@ -765,7 +806,7 @@ export declare interface OptimizedSelector {
 
 export declare interface AstAtRule extends BaseToken {
 
-    typ: AtRuleNodeType,
+    typ: EnumToken.AtRuleNodeType,
     nam: string;
     val: string;
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
@@ -773,12 +814,12 @@ export declare interface AstAtRule extends BaseToken {
 
 export declare interface AstRuleList extends BaseToken {
 
-    typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
-    chi: Array<BaseToken | AstComment>
+    typ:  EnumToken.StyleSheetNodeType |  EnumToken.RuleNodeType |  EnumToken.AtRuleNodeType,
+    chi: Array<BaseToken | AstComment>;
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {
-    typ: StyleSheetNodeType,
+    typ:  EnumToken.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
@@ -788,7 +829,10 @@ export declare type AstNode =
     | AstComment
     | AstAtRule
     | AstRule
-    | AstDeclaration;
+    | AstDeclaration
+    | AstKeyFrameRule
+    | AstInvalidRule
+    | AstInvalidAtRule;
 
 /**
  * Declaration visitor handler
@@ -826,6 +870,12 @@ declare class SourceMap {
     toJSON(): SourceMapObject;
 }
 
+export declare interface PropertyListOptions {
+
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
+}
+
 export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | null;
 /**
  * returned value:
@@ -854,9 +904,10 @@ export declare interface WalkResult {
 export declare interface WalkAttributesResult {
     value: Token;
     previousValue: Token | null;
-    nextValue: AstNode | null;
+    nextValue: Token | null;
     root?: AstNode;
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
+    list: Token[] | null;
 }
 
 export declare interface ErrorDescription {
@@ -1012,11 +1063,6 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 };
 
 declare function load(url: string, currentFile: string): Promise<string>;
-
-/**
- * entry point for node and other runtimes
- * @module
- */
 
 /**
  * render ast node

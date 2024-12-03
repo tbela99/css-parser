@@ -457,7 +457,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
             case ',':
             case '=':
 
-                if (buffer.length > 0) {
+                if (buffer.length > 0 && buffer != ':') {
 
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
@@ -473,9 +473,16 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                     break;
                 }
 
-                if (value == ':' && ':' == val) {
+                if (value == ':') {
 
-                    buffer += value + next(parseInfo);
+                    if (isWhiteSpace(val.codePointAt(0) as number)) {
+
+                        yield pushToken(value, parseInfo, EnumToken.ColonTokenType);
+                        buffer = '';
+                        break;
+                    }
+
+                    buffer += value;
                     break;
                 }
 

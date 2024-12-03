@@ -318,7 +318,7 @@ function isNonAscii(codepoint: number): boolean {
 export function isIdentStart(codepoint: number): boolean {
 
     // _
-    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint);
+    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint == REVERSE_SOLIDUS;
 }
 
 export function isDigit(codepoint: number): boolean {
@@ -365,6 +365,27 @@ export function isIdent(name: string): boolean {
     if (!isIdentStart(codepoint)) {
 
         return false;
+    }
+
+    if (codepoint == REVERSE_SOLIDUS) {
+
+        codepoint = name.codePointAt(i + 1) as number;
+
+        if (!isIdentCodepoint(codepoint)) {
+
+            return false;
+        }
+        i += String.fromCodePoint(codepoint).length;
+
+        if (i < j) {
+
+            codepoint = name.codePointAt(i) as number;
+
+            if (!isIdentCodepoint(codepoint)) {
+
+                return false;
+            }
+        }
     }
 
     while (i < j) {

@@ -91,6 +91,8 @@ export enum EnumToken {
     InvalidRuleTokenType,
     InvalidClassSelectorTokenType,
     InvalidAttrTokenType,
+    InvalidAtRuleTokenType,
+    MediaQueryConditionTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,
@@ -118,7 +120,7 @@ export enum EnumToken {
     CommentNodeType = CommentTokenType,
     CDOCOMMNodeType = CDOCOMMTokenType,
     TimingFunction = TimingFunctionTokenType,
-    TimelineFunction = TimelineFunctionTokenType
+    TimelineFunction = TimelineFunctionTokenType,
 }
 
 export const funcLike: EnumToken[] = [

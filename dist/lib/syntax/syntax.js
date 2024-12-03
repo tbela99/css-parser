@@ -207,7 +207,7 @@ function isNonAscii(codepoint) {
 }
 function isIdentStart(codepoint) {
     // _
-    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint);
+    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint == REVERSE_SOLIDUS;
 }
 function isDigit(codepoint) {
     return codepoint >= 0x30 && codepoint <= 0x39;
@@ -237,6 +237,19 @@ function isIdent(name) {
     }
     if (!isIdentStart(codepoint)) {
         return false;
+    }
+    if (codepoint == REVERSE_SOLIDUS) {
+        codepoint = name.codePointAt(i + 1);
+        if (!isIdentCodepoint(codepoint)) {
+            return false;
+        }
+        i += String.fromCodePoint(codepoint).length;
+        if (i < j) {
+            codepoint = name.codePointAt(i);
+            if (!isIdentCodepoint(codepoint)) {
+                return false;
+            }
+        }
     }
     while (i < j) {
         i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;

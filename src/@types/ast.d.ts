@@ -19,6 +19,8 @@ export declare interface BaseToken {
 
     typ: EnumToken;
     loc?: Location;
+    tokens?: Token[];
+    parent?: AstRuleList;
 }
 
 export declare interface AstComment extends BaseToken {
@@ -51,6 +53,13 @@ export declare interface AstInvalidRule extends BaseToken {
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
 }
 
+export declare interface AstInvalidAtRule extends BaseToken {
+
+    typ: EnumToken.InvalidAtRuleTokenType;
+    val: string;
+    chi?: Array<AstNode>;
+}
+
 
 
 export declare interface AstKeyFrameRule extends BaseToken {
@@ -73,7 +82,7 @@ export declare interface OptimizedSelector {
 
 export declare interface AstAtRule extends BaseToken {
 
-    typ: AtRuleNodeType,
+    typ: EnumToken.AtRuleNodeType,
     nam: string;
     val: string;
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
@@ -81,12 +90,12 @@ export declare interface AstAtRule extends BaseToken {
 
 export declare interface AstRuleList extends BaseToken {
 
-    typ: StyleSheetNodeType | RuleNodeType | AtRuleNodeType,
-    chi: Array<BaseToken | AstComment>
+    typ:  EnumToken.StyleSheetNodeType |  EnumToken.RuleNodeType |  EnumToken.AtRuleNodeType,
+    chi: Array<BaseToken | AstComment>;
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {
-    typ: StyleSheetNodeType,
+    typ:  EnumToken.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
@@ -96,4 +105,7 @@ export declare type AstNode =
     | AstComment
     | AstAtRule
     | AstRule
-    | AstDeclaration;
+    | AstDeclaration
+    | AstKeyFrameRule
+    | AstInvalidRule
+    | AstInvalidAtRule;

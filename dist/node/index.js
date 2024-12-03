@@ -16,10 +16,6 @@ import { resolve, dirname } from '../lib/fs/resolve.js';
 import { load } from './load.js';
 
 /**
- * entry point for node and other runtimes
- * @module
- */
-/**
  * render ast node
  */
 function render(data, options = {}) {

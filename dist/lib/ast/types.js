@@ -91,6 +91,8 @@ var EnumToken;
     EnumToken[EnumToken["InvalidRuleTokenType"] = 80] = "InvalidRuleTokenType";
     EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 81] = "InvalidClassSelectorTokenType";
     EnumToken[EnumToken["InvalidAttrTokenType"] = 82] = "InvalidAttrTokenType";
+    EnumToken[EnumToken["InvalidAtRuleTokenType"] = 83] = "InvalidAtRuleTokenType";
+    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 84] = "MediaQueryConditionTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";

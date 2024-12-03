@@ -995,4 +995,4 @@ function reduceRuleSelector(node) {
     }
 }
 
-export { combinators, definedPropertySettings, hasDeclaration, minify, reduceSelector, splitRule };
+export { combinators, definedPropertySettings, hasDeclaration, matchSelectors, minify, reduceSelector, splitRule };

@@ -453,7 +453,7 @@ function matchAtRule(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
 
-        if (item.value.typ == ValidationTokenEnum.AtRule) {
+        if (item.value.typ == ValidationTokenEnum.AtRule || item.value.typ == ValidationTokenEnum.AtRuleDefinition) {
 
             token = Object.defineProperty({
                 ...item.value,
@@ -481,11 +481,11 @@ function matchAtRule(syntax: string, iterator: Iterator<ValidationTokenIteratorV
                 break;
             }
 
-            if ([ValidationTokenEnum.Pipe, ValidationTokenEnum.OpenBracket].includes(item.value.typ)) {
-
-                children.push(item.value);
-                continue;
-            }
+            // if ([ValidationTokenEnum.Pipe, ValidationTokenEnum.OpenBracket].includes(item.value.typ)) {
+            //
+            //     children.push(item.value);
+            //     continue;
+            // }
 
             if (item.value.typ != ValidationTokenEnum.OpenCurlyBrace) {
 
@@ -832,12 +832,11 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
                     if (items[k].typ == ValidationTokenEnum.Comma) {
 
-                        items.splice(i, k - i + 1, {
+                        items.splice(i, k - i + 1, Object.defineProperty({
 
                             typ: ValidationTokenEnum.Bracket,
-                            chi: items.slice(i, k + 1),
-                            pos: items[i].pos,
-                        } as ValidationBracketToken);
+                            chi: items.slice(i, k + 1)
+                        }, 'pos', {...objectProperties, value: items[i].pos}) as ValidationBracketToken);
                     }
 
                     break;
@@ -856,12 +855,11 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
                     if (items[k].typ == ValidationTokenEnum.Comma) {
 
-                        items.splice(k, i - k + 1, {
+                        items.splice(k, i - k + 1, Object.defineProperty({
 
                             typ: ValidationTokenEnum.Bracket,
-                            chi: items.slice(k, i + 1),
-                            pos: items[k].pos
-                        } as ValidationBracketToken);
+                            chi: items.slice(k, i + 1)
+                        }, 'pos', {...objectProperties, value: items[k].pos}) as ValidationBracketToken);
                         i = k - 1;
                     }
 
@@ -917,7 +915,6 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
         return <ValidationWhitespaceToken>Object.defineProperty({
             typ: ValidationTokenEnum.Whitespace,
-            pos
         }, 'pos', {...objectProperties, value: pos});
     }
 
@@ -1205,6 +1202,14 @@ export function renderSyntax(token: ValidationToken): string {
 
             return (token as NumberToken).val + '';
 
+        case ValidationTokenEnum.SemiColon:
+
+            return ';';
+
+        case ValidationTokenEnum.AtRuleDefinition:
+
+            return '@' + (token as ValidationAtRuleDefinitionToken).val + ((token as ValidationAtRuleDefinitionToken).prelude == null ? '' : ' ' + ((token as ValidationAtRuleDefinitionToken).prelude as ValidationToken[]).reduce((acc: string, curr: ValidationToken) => acc + renderSyntax(curr), ''));
+
         default:
 
             throw new Error('Unhandled token: ' + JSON.stringify(token));
@@ -1275,15 +1280,15 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
             // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
 
-                // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
+            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
 
-                    minify(ast[i]);
-                // }
+            minify(ast[i]);
+            // }
 
-                // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
-                //
-                //     minify(j);
-                // }
+            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
+            //
+            //     minify(j);
+            // }
 
             // } else
 
@@ -1293,7 +1298,14 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
             //
             // } else
 
-                if (ast[i].typ == ValidationTokenEnum.Separator) {
+            if (ast[i].typ == ValidationTokenEnum.Whitespace && ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
+
+                ast.splice(i + 1, 1);
+                i--;
+                continue;
+            }
+
+            if (ast[i].typ == ValidationTokenEnum.Separator) {
 
                 if (ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
 
@@ -1338,47 +1350,21 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
         minify((ast as ValidationAtRuleDefinitionToken).prelude as ValidationToken[]);
     }
-    // }/
+
     return ast;
 }
 
 export function cleanup(ast: { [key: string]: any }) {
 
     return ast;
-
-    // if (typeof ast != 'object') {
-    //
-    //     return ast;
-    // }
-    //
-    // const {pos, ...response} = ast;
-    //
-    // for (const [key, value] of Object.entries(response)) {
-    //
-    //     if (Array.isArray(value)) {
-    //
-    //         response[key] = value.map(e => cleanup(e));
-    //     } else if (typeof value == 'object') {
-    //
-    //         response[key] = cleanup(value);
-    //     }
-    // }
-    //
-    // return response;
 }
 
 interface ParsedSyntax {
     syntax: string
-    ast: ValidationToken[]
+    ast?: ValidationToken[]
 }
 
 type ParsedSyntaxes = Record<string, ParsedSyntax>
-
-// interface ParsedFunctionSyntax {
-//     syntax: string;
-//     ast: ValidationToken[];
-//     // mdn_url: string;
-// }
 
 export async function parseDeclarationsSyntax(): Promise<ParsedSyntaxes> {
 
@@ -1399,7 +1385,7 @@ export async function parseDeclarationsSyntax(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax,
-            ast: parseSyntax(values.syntax).chi
+            // ast: parseSyntax(values.syntax).chi
         };
     }
 
@@ -1426,7 +1412,7 @@ export async function parseFunctionsSyntax(): Promise<ParsedSyntaxes> {
 
         json[key.slice(0, -2)] = {
             syntax: values.syntax,
-            ast: parseSyntax(values.syntax).chi,
+            // ast: parseSyntax(values.syntax).chi,
             // mdn_url: values.mdn_url
         };
     }
@@ -1454,7 +1440,7 @@ export async function parseSelectorsSyntax(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax.startsWith('/*') ? key : values.syntax,
-            ast: parseSyntax(values.syntax.startsWith('/*') ? key : values.syntax).chi,
+            // ast: parseSyntax(values.syntax.startsWith('/*') ? key : values.syntax).chi,
             // mdn_url: values.mdn_url
         };
     }
@@ -1466,7 +1452,7 @@ export async function parseSelectorsSyntax(): Promise<ParsedSyntaxes> {
 
             json[k] = {
                 syntax: k,
-                ast: parseSyntax(k).chi
+                // ast: parseSyntax(k).chi
             };
         }
     }
@@ -1489,7 +1475,7 @@ export async function parseAtRulesSyntax(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax,
-            ast: parseSyntax(values.syntax).chi,
+            // ast: parseSyntax(values.syntax).chi,
             // mdn_url: values.mdn_url
         };
     }
@@ -1511,7 +1497,7 @@ export async function parseAllSyntaxes(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax,
-            ast: parseSyntax(values.syntax).chi
+            // ast: parseSyntax(values.syntax).chi
         };
     }
 

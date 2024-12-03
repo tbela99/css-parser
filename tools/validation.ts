@@ -3,7 +3,7 @@ import {
     parseDeclarationsSyntax,
     parseFunctionsSyntax,
     parseSelectorsSyntax
-} from "../src/lib/validation/parser";
+} from "../src/lib";
 import process   from "node:process";
 import {writeFile} from "node:fs/promises";
 

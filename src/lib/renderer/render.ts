@@ -12,7 +12,8 @@ import type {
     ColorToken,
     ErrorDescription,
     FractionToken,
-    IdentToken, InvalidAttrToken,
+    IdentToken,
+    InvalidAttrToken,
     Location,
     NumberToken,
     PercentageToken,
@@ -135,6 +136,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     const cache: {
         [key: string]: any
     } = Object.create(null);
+
     const result: RenderResult = {
         code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
 
@@ -336,6 +338,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
 
         case EnumToken.InvalidRuleTokenType:
+        case EnumToken.InvalidAtRuleTokenType:
 
             return '';
 
@@ -649,7 +652,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.MatchExpressionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) +
-                renderToken({typ: token.op}, options, cache, reducer, errors) +
+                renderToken(token.op, options, cache, reducer, errors) +
                 renderToken(token.r, options, cache, reducer, errors) +
                 (token.attr ? ' ' + token.attr : '');
 
@@ -944,6 +947,14 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.InvalidClassSelectorTokenType:
 
             return token.val;
+
+        case EnumToken.DeclarationNodeType:
+
+            return (<AstDeclaration>token).nam + ':' + (<AstDeclaration>token).val.reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
+
+        case EnumToken.MediaQueryConditionTokenType:
+
+            return  renderToken(token.l, options, cache, reducer, errors) + renderToken({typ: token.op} as Token, options, cache, reducer, errors) + token.r.reduce((acc: string, curr: Token):    string => acc + renderToken(curr, options, cache), '');
 
         default:
 

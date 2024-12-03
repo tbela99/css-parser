@@ -2,7 +2,7 @@ import type {AstDeclaration, ErrorDescription, FunctionToken, ParensToken, Posit
 import {EnumToken, walkValues} from "../../ast";
 import {isWhiteSpace} from "../../syntax/syntax";
 
-export function parseDeclaration(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
+export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
 
     while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
         node.val.shift();

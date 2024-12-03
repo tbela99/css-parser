@@ -43,6 +43,15 @@ export enum ValidationTokenEnum {
     Character
 }
 
+export const enum ValidationSyntaxGroupEnum {
+
+    Declarations = 'declarations',
+    Functions = 'functions',
+    Syntaxes = 'syntaxes',
+    Selectors = 'selectors',
+    AtRules = 'atRules'
+}
+
 export interface Position {
 
     ind: number;
@@ -211,7 +220,6 @@ export interface ValidationColumnToken extends ValidationToken {
     l: ValidationToken[];
     r: ValidationToken[];
 }
-
 
 export interface ValidationDeclarationToken extends ValidationToken {
 

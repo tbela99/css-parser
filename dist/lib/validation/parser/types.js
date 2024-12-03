@@ -1,3 +1,4 @@
+const specialValues = ['inherit', 'initial', 'unset', 'revert', 'revert-layer'];
 var ValidationTokenEnum;
 (function (ValidationTokenEnum) {
     ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
@@ -40,5 +41,13 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 37] = "SemiColon";
     ValidationTokenEnum[ValidationTokenEnum["Character"] = 38] = "Character";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
+var ValidationSyntaxGroupEnum;
+(function (ValidationSyntaxGroupEnum) {
+    ValidationSyntaxGroupEnum["Declarations"] = "declarations";
+    ValidationSyntaxGroupEnum["Functions"] = "functions";
+    ValidationSyntaxGroupEnum["Syntaxes"] = "syntaxes";
+    ValidationSyntaxGroupEnum["Selectors"] = "selectors";
+    ValidationSyntaxGroupEnum["AtRules"] = "atRules";
+})(ValidationSyntaxGroupEnum || (ValidationSyntaxGroupEnum = {}));
 
-export { ValidationTokenEnum };
+export { ValidationSyntaxGroupEnum, ValidationTokenEnum, specialValues };

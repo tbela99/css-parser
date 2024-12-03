@@ -1,10 +1,22 @@
 # Changelog
 
+# v0.8.0
+
+- [x] validate selectors using mdn data
+- [ ] at-rules prefix removal
+- [x] at rules validation
+  - [x] at-rule prelude
+  - [x] at-rule body
+  - [x] keyframe validation
+  - [ ] :not() does not accept pseudo classes
+  - [ ] do not validate declarations in @supports
+- [ ] declarations validation
+
 # v0.7.1
 
 - [x] fix nesting rules expansion #45
 
-#v0.7.0
+# v0.7.0
 
 - [x] fix merging rules
 - [ ] experimental CSS prefix removal

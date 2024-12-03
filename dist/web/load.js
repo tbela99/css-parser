@@ -16,6 +16,7 @@ async function load(url, currentFile) {
     }
     else {
         const path = resolve(url, currentFile).absolute;
+        // @ts-ignore
         t = new URL(path, self.origin);
     }
     // @ts-ignore
