@@ -1,6 +1,6 @@
 import { ValidationTokenEnum, specialValues } from './parser/types.js';
 import './parser/parse.js';
-import { EnumToken, ValidationLevel, funcLike } from '../ast/types.js';
+import { ValidationLevel, EnumToken, funcLike } from '../ast/types.js';
 import '../ast/minify.js';
 import '../parser/parse.js';
 import { isLength } from '../syntax/syntax.js';
@@ -29,23 +29,35 @@ function splice(tokens, matches) {
     return tokens;
 }
 function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
+    if (syntaxes == null) {
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: tokens[0] ?? null,
+            syntax: null,
+            error: 'no matching syntax found',
+            tokens
+        };
+    }
     let token = null;
     let syntax;
     let result = null;
     let validSyntax = false;
     let matched = false;
     const matches = [];
-    tokens.slice();
+    tokens = tokens.slice();
     syntaxes = syntaxes.slice();
     tokens = tokens.slice();
-    // let position: number = -1;
+    if (context.cache == null) {
+        context.cache = new WeakMap;
+    }
     if (context.tokens == null) {
         context.tokens = tokens.slice();
     }
     context = { ...context };
     main: while (tokens.length > 0) {
-        // console.error({syntaxes2: syntaxes, tokens2: tokens});
-        // console.error({syntaxes, tokens});
+        // console.error('len = ' + tokens.length, 'sln = ' + syntaxes.length, 'mlen = ' + matches.length);
+        // console.error(new Error('debug'));
         if (syntaxes.length == 0) {
             break;
         }
@@ -53,11 +65,15 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
         syntax = syntaxes[0];
         // @ts-ignore
         context.position = context.tokens.indexOf(token);
-        // console.error({
-        //
-        //     syntax, token,
-        //     r: renderSyntax(syntax)
-        // });
+        const cached = context.cache.get(token)?.get(syntax.text) ?? null;
+        if (cached != null) {
+            if (cached.error.length > 0) {
+                return { ...cached, tokens, node: cached.valid == ValidationLevel.Valid ? null : token };
+            }
+            syntaxes.shift();
+            tokens.shift();
+            continue;
+        }
         if (token.typ == EnumToken.DescendantCombinatorTokenType) {
             tokens.shift();
             if (syntax.typ == ValidationTokenEnum.Whitespace) {
@@ -65,18 +81,48 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             }
             continue;
         }
+        else if (syntax.typ == ValidationTokenEnum.Whitespace) {
+            syntaxes.shift();
+            if (token.typ == EnumToken.WhitespaceTokenType) {
+                tokens.shift();
+            }
+            continue;
+        }
+        // console.error({
+        //
+        //     root,
+        //     syntaxes,
+        //     tokens,
+        //     syntax, token,
+        //     r: renderSyntax(syntax),
+        //     a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
+        // });
         if (syntax.isOptional) {
+            if (!context.cache.has(token)) {
+                context.cache.set(token, new Map);
+            }
+            if (context.cache.get(token).has(syntax.text)) {
+                result = context.cache.get(token).get(syntax.text);
+                return { ...result, tokens, node: result.valid == ValidationLevel.Valid ? null : token };
+            }
             // @ts-ignore
             const { isOptional, ...c } = syntax;
             // @ts-ignore
-            let result2 = validateSyntax([c], tokens, root, options, context);
+            let result2;
+            // @ts-ignore
+            result2 = validateSyntax([c], tokens, root, options, context);
             if (result2.valid == ValidationLevel.Valid && result2.matches.length > 0) {
-                splice(tokens, result2.matches);
+                tokens = result2.tokens;
+                // splice(tokens, result2.matches);
                 // tokens = result2.tokens;
                 // @ts-ignore
                 matches.push(...result2.matches);
                 matched = true;
                 result = result2;
+            }
+            else {
+                syntaxes.shift();
+                continue;
             }
             syntaxes.shift();
             if (syntaxes.length == 0) {
@@ -84,6 +130,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                     valid: ValidationLevel.Valid,
                     matches: result2.matches,
                     node: result2.node,
+                    syntax: result2.syntax,
                     error: result2.error,
                     tokens
                 };
@@ -107,8 +154,9 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                 if (tokens[index + 1]?.typ == EnumToken.CommaTokenType) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        matches,
                         node: tokens[0],
+                        syntax,
                         error: 'unexpected token',
                         tokens
                     };
@@ -125,16 +173,20 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                 if (matched) {
                     const l = tokens.length;
                     validSyntax = true;
-                    splice(tokens, result2.matches);
+                    // @ts-ignore
+                    // matches.push(...result2.matches);
+                    // splice(tokens, result2.matches);
                     if (tokens.length == 1 && tokens[0].typ == EnumToken.CommaTokenType) {
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            matches,
                             node: tokens[0],
+                            syntax,
                             error: 'unexpected token',
                             tokens
                         };
                     }
+                    tokens = tokens.slice(index);
                     result = result2;
                     // @ts-ignore
                     matches.push(...result2.matches);
@@ -161,11 +213,12 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             // if (level == 0) {
             // }
             if (!matched) {
-                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    // @ts-ignore
+                    matches: [...new Set(matches)],
                     node: token,
+                    syntax,
                     error: 'unexpected token',
                     tokens
                 };
@@ -176,31 +229,19 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
         if (syntax.isRepeatable) {
             // @ts-ignore
             let { isRepeatable, ...c } = syntax;
-            // const c: ValidationToken = {...syntax, isList: false} as ValidationToken;
             let result2 = null;
             validSyntax = false;
             let l = tokens.length;
-            let lastResult = null;
             let tok = null;
             do {
                 // @ts-ignore
                 result2 = validateSyntax([c], tokens, root, options, context);
-                // console.error({syntax, token, result2});
                 if (result2.matches.length == 0 && result2.error.length > 0) {
                     syntaxes.shift();
                     break main;
-                    // return {
-                    //     valid: ValidationLevel.Valid,
-                    //     matches: [],
-                    //     node: tokens[0],
-                    //     error: '',
-                    //     tokens
-                    // }
                 }
                 if (result2.valid == ValidationLevel.Valid) {
-                    splice(tokens, result2.matches);
-                    // tokens = result2.tokens;
-                    lastResult = result2;
+                    tokens = result2.tokens;
                     // @ts-ignore
                     matches.push(...result2.matches);
                     result = result2;
@@ -210,12 +251,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                         }
                         if (result2.matches.length == 0 && tokens.length > 0) {
                             tokens = result2.tokens;
-                            // console.error(JSON.stringify({result3: result2, syntaxes, tokens, v: 1}, null, 1));
                             tok = tokens[0];
-                            // console.error(123);
-                            // console.error(new Error(`bar abar`))
-                            // break main;
-                            // console.error(456);
                             continue;
                         }
                         break;
@@ -228,10 +264,11 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                 }
                 break;
             } while (result2.valid == ValidationLevel.Valid && tokens.length > 0);
-            if (lastResult != null) {
-                splice(tokens, lastResult.matches);
-                // tokens = lastResult.tokens;
-            }
+            // if (lastResult != null) {
+            //
+            //     splice(tokens, lastResult.matches);
+            //     // tokens = lastResult.tokens;
+            // }
             syntaxes.shift();
             continue;
         }
@@ -240,20 +277,17 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             validSyntax = false;
             let count = 0;
             let l = tokens.length;
-            let lastResult = null;
             let result2 = null;
             do {
                 // @ts-ignore
                 const { isRepeatableGroup, ...c } = syntax;
                 // @ts-ignore
                 result2 = validateSyntax([c], tokens, root, options, context);
-                // console.error({syntaxes, syntax, token, result2, count});
-                if (result2.matches.length == 0) {
+                if (result2.valid == ValidationLevel.Drop || result2.matches.length == 0) {
                     if (count > 0) {
                         syntaxes.shift();
                         // if (result2.matches.length == 0) {
                         tokens = result2.tokens;
-                        // console.error(JSON.stringify({result2, syntaxes, tokens, v: 2}, null, 1));
                         // break main;
                         if (syntaxes.length == 0) {
                             return result2;
@@ -264,9 +298,10 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                 }
                 if (result2.valid == ValidationLevel.Valid && result2.matches.length > 0) {
                     count++;
-                    lastResult = result;
+                    // lastResult = result;
                     validSyntax = true;
-                    splice(tokens, result2.matches);
+                    tokens = result2.tokens;
+                    // splice(tokens, result2.matches);
                     // tokens = result2.tokens;
                     // @ts-ignore
                     matches.push(...result2.matches);
@@ -280,16 +315,18 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                     break;
                 }
             } while (tokens.length > 0 && result.valid == ValidationLevel.Valid);
-            if (lastResult != null) {
-                splice(tokens, lastResult.matches);
-                // tokens = lastResult.tokens;
-            }
+            // if (lastResult != null) {
+            //
+            //     splice(tokens, lastResult.matches);
+            //     // tokens = lastResult.tokens;
+            // }
             // at least one match is expected
             if (!validSyntax /* || result.matches.length == 0 */) {
                 return {
                     valid: ValidationLevel.Drop,
                     node: token,
                     tokens,
+                    syntax,
                     error: 'unexpected token',
                     matches: []
                 };
@@ -341,33 +378,40 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                 syntaxes.shift();
                 continue;
             }
-            splice(tokens, result.matches);
+            // splice(tokens, result.matches);
             // tokens = result.tokens;
             // @ts-ignore
             matches.push(...result.matches);
             matched = true;
-            if (occurence.max == null || occurence.max < match) {
+            tokens = result.tokens;
+            while (occurence.max == null || match < occurence.max) {
+                // trim whitespace
+                if (tokens[0]?.typ == EnumToken.WhitespaceTokenType) {
+                    tokens.shift();
+                }
                 // @ts-ignore
                 let r = validateSyntax([c], tokens, root, options, context);
-                while (r.valid == ValidationLevel.Valid) {
-                    if (r.matches.length == 0) {
-                        break;
-                    }
-                    splice(tokens, r.matches);
-                    // tokens = r.tokens;
-                    // @ts-ignore
-                    matches.push(...result.matches);
-                    match++;
-                    if (occurence.max != null && occurence.max <= match) {
-                        break;
-                    }
-                    // @ts-ignore
-                    r = validateSyntax([c], tokens, root, options, context);
+                if (r.valid != ValidationLevel.Valid || r.matches.length == 0) {
+                    break;
                 }
+                result = r;
+                // splice(tokens, r.matches);
+                // tokens = r.tokens;
+                // @ts-ignore
+                matches.push(...result.matches);
+                match++;
+                tokens = r.tokens;
+                result = r;
+                if (tokens.length == 0 || (occurence.max != null && match >= occurence.max)) {
+                    break;
+                }
+                // @ts-ignore
+                // r = validateSyntax([c], tokens, root, options, context);
             }
             syntaxes.shift();
             continue;
         }
+        // @ts-ignore
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
             if (token.typ == EnumToken.WhitespaceTokenType) {
                 tokens.shift();
@@ -382,6 +426,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
                 valid: ValidationLevel.Valid,
                 matches: [token],
                 node: null,
+                syntax,
                 error: '',
                 tokens
             };
@@ -392,13 +437,15 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             result = doValidateSyntax(syntax, token, tokens, root, options, context);
             matched = result.valid == ValidationLevel.Valid && result.matches.length > 0;
             if (matched) {
-                splice(tokens, result.matches);
+                // splice(tokens, result.matches);
+                tokens = result.tokens;
                 // @ts-ignore
                 matches.push(...result.matches);
             }
         }
         if (result.valid == ValidationLevel.Drop) {
-            return result;
+            // @ts-ignore
+            return { ...result, matches, tokens, node: result.valid == ValidationLevel.Valid ? null : token };
         }
         consumeSyntax(syntaxes);
         if (tokens.length == 0) {
@@ -406,36 +453,39 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
         }
     }
     if (result?.valid == ValidationLevel.Valid) {
-        splice(tokens, result.matches);
-        // tokens = result.tokens;
+        // splice(tokens, result.matches);
+        tokens = result.tokens;
         // @ts-ignore
         matches.push(...result.matches);
     }
-    if (result == null && syntaxes.length > 0) {
-        validSyntax = syntaxes.every(t => t.typ == ValidationTokenEnum.Whitespace || t.isOptional || t.isRepeatable);
+    if ( /* result == null && */tokens.length == 0 && syntaxes.length > 0) {
+        validSyntax = isOptionalSyntax(syntaxes);
     }
-    // if (context.level == 0) {
-    //
-    //     console.error(result);
-    // }
-    // if (level == 0 && result!?.tokens?.length > 0) {
-    //
-    //     return {
-    //
-    //         valid: ValidationLevel.Drop,
-    //         matches,
-    //         node: result!.node ?? result!.tokens.shift() ?? null,
-    //         error: result!.error.length > 0 ? result!.error : 'unexpected token',
-    //         tokens: result!.tokens
-    //     }
-    // }
-    return result ?? {
-        valid: validSyntax ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches,
-        node: validSyntax ? null : tokens[0] ?? null,
-        error: validSyntax ? '' : 'unexpected token',
-        tokens
-    };
+    if (result == null) {
+        result = {
+            valid: validSyntax ? ValidationLevel.Valid : ValidationLevel.Drop,
+            matches,
+            node: validSyntax ? null : tokens[0] ?? null,
+            // @ts-ignore
+            syntax,
+            error: validSyntax ? '' : 'unexpected token',
+            tokens
+        };
+    }
+    if (token != null) {
+        if (!context.cache.has(token)) {
+            context.cache.set(token, new Map);
+        }
+        context.cache.get(token).set(syntax.text, result);
+    }
+    if (result != null) {
+        // @ts-ignore
+        return { ...result, matches: [...(new Set(matches))] };
+    }
+    return result;
+}
+function isOptionalSyntax(syntaxes) {
+    return syntaxes.every(t => t.typ == ValidationTokenEnum.Whitespace || t.isOptional || t.isRepeatable || (t.typ == ValidationTokenEnum.PropertyType && isOptionalSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, t.val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, t.val))));
 }
 function doValidateSyntax(syntax, token, tokens, root, options, context) {
     let valid = false;
@@ -451,6 +501,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
             matches: valid ? [token] : [],
             node: valid ? null : token,
+            syntax,
             error: valid ? '' : 'unexpected token',
             tokens
         };
@@ -462,9 +513,79 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'unexpected token',
                 tokens
             };
+            break;
+        case ValidationTokenEnum.AtRule:
+            if (token.typ != EnumToken.AtRuleNodeType) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: 'expecting at-rule',
+                    tokens
+                };
+            }
+            if (token.nam != syntax.val) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: `expecting '@${syntax.val}' but found '@${token.nam}'`,
+                    tokens
+                };
+            }
+            if (root == null) {
+                return {
+                    valid: ValidationLevel.Valid,
+                    matches: [token],
+                    node: null,
+                    syntax,
+                    error: '',
+                    tokens
+                };
+            }
+            if (root.typ != EnumToken.AtRuleNodeType) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: 'not allowed here',
+                    tokens
+                };
+            }
+            {
+                const parentSyntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + root.nam);
+                if ('chi' in parentSyntax) {
+                    if (!('chi' in token)) {
+                        return {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: token,
+                            syntax,
+                            error: '@at-rule must have children',
+                            tokens
+                        };
+                    }
+                    // @ts-ignore
+                    return validateSyntax(parentSyntax.chi, token.chi, root, options, context);
+                }
+                else if ('chi' in token) {
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: token,
+                        syntax,
+                        error: '@at-rule must not have children',
+                        tokens
+                    };
+                }
+            }
             break;
         case ValidationTokenEnum.AtRuleDefinition:
             if (token.typ != EnumToken.AtRuleNodeType) {
@@ -472,21 +593,50 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: token,
+                    syntax,
                     error: 'expecting at-rule',
                     tokens
                 };
             }
+            if ('chi' in syntax && !('chi' in token)) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: '@at-rule must have children',
+                    tokens
+                };
+            }
+            if ('chi' in token && !('chi' in token)) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: 'children not allowed here',
+                    tokens
+                };
+            }
             const s = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + token.nam);
-            if ('tokens' in token) {
-                if ('prelude' in s[0]) {
-                    result = validateSyntax(s[0].prelude, token.tokens, root, options, {
-                        ...context,
-                        tokens: null,
-                        level: context.level + 1
-                    });
-                    if (result.valid == ValidationLevel.Drop) {
-                        return result;
-                    }
+            if ('prelude' in syntax) {
+                if (!('tokens' in token)) {
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: token,
+                        syntax,
+                        error: 'expected at-rule prelude',
+                        tokens
+                    };
+                }
+                result = validateSyntax(s[0].prelude, token.tokens, root, options, {
+                    ...context,
+                    tokens: null,
+                    level: context.level + 1
+                });
+                if (result.valid == ValidationLevel.Drop) {
+                    return result;
                 }
             }
             const hasBody = 'chi' in s[0];
@@ -496,6 +646,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: token,
+                        syntax,
                         error: 'unexpected at-rule body',
                         tokens
                     };
@@ -506,6 +657,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: token,
+                    syntax,
                     error: 'expecting at-rule body',
                     tokens
                 };
@@ -513,7 +665,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             break;
         case ValidationTokenEnum.DeclarationType:
             // @ts-ignore
-            result = validateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, syntax.val), token, root, options, context);
+            result = validateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, syntax.val), [token], root, options, context);
             break;
         case ValidationTokenEnum.Keyword:
             valid = (token.typ == EnumToken.IdenTokenType && token.val.localeCompare(syntax.val, 'en', { sensitivity: 'base' }) == 0) ||
@@ -522,16 +674,18 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'unexpected token',
                 tokens
             };
             break;
         case ValidationTokenEnum.SemiColon:
-            valid = tokens.filter(t => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType).length == 0 || token.typ == EnumToken.SemiColonTokenType;
+            valid = root == null || [EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.StyleSheetNodeType].includes(root.typ);
             result = {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'unexpected token',
                 tokens
             };
@@ -542,17 +696,62 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'unexpected token',
                 tokens
             };
             break;
         case ValidationTokenEnum.PropertyType:
-            if (EnumToken.UniversalSelectorTokenType == token.typ && 'subclass-selector' == syntax.val) {
+            if (syntax.val == 'group-rule-body') {
+                valid = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(token.typ);
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: [],
+                    node: valid ? null : token,
+                    syntax,
+                    error: valid ? '' : 'token is not allowed as a child',
+                    tokens
+                };
+                if (!valid) {
+                    return result;
+                }
+            }
+            //
+            else if ('type-selector' == syntax.val) {
+                valid = (token.typ == EnumToken.UniversalSelectorTokenType) ||
+                    token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.NameSpaceAttributeTokenType &&
+                    (token.l == null || token.l.typ == EnumToken.IdenTokenType ||
+                        (token.l.typ == EnumToken.LiteralTokenType && token.l.val == '*')) &&
+                    token.r.typ == EnumToken.IdenTokenType);
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] : [],
+                    node: token,
+                    syntax,
+                    error: valid ? '' : 'unexpected token',
+                    tokens
+                };
+            }
+            else if ('wq-name' == syntax.val) {
+                valid = token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.NameSpaceAttributeTokenType &&
+                    (token.l == null || token.l.typ == EnumToken.IdenTokenType || (token.l.typ == EnumToken.LiteralTokenType && token.l.val == '*')) &&
+                    token.r.typ == EnumToken.IdenTokenType);
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] : [],
+                    node: token,
+                    syntax,
+                    error: valid ? '' : 'unexpected token',
+                    tokens
+                };
+            }
+            else if (EnumToken.UniversalSelectorTokenType == token.typ && 'subclass-selector' == syntax.val) {
                 valid = true;
                 result = {
                     valid: ValidationLevel.Valid,
                     matches: [token],
                     node: null,
+                    syntax,
                     error: '',
                     tokens
                 };
@@ -584,7 +783,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                                 ].includes(t.r.typ)));
                         if (valid && t.attr != null) {
                             const s = getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, 'attr-modifier')[0];
-                            valid = s.l.concat(s.r).some((r) => r.val == t.attr);
+                            valid = s.chi.some((l) => l.some((r) => r.val == t.attr));
                         }
                     }
                 }
@@ -592,6 +791,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -618,6 +818,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -631,6 +832,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -641,6 +843,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -651,6 +854,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -661,6 +865,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -671,6 +876,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -681,6 +887,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -691,6 +898,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -707,6 +915,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -717,6 +926,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -727,6 +937,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -737,6 +948,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -747,6 +959,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -757,6 +970,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -767,6 +981,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -777,6 +992,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -787,28 +1003,42 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
             }
             else if ('declaration' == syntax.val) {
-                valid = token.typ == EnumToken.DeclarationNodeType && token.nam in config.declarations;
+                valid = token.typ == EnumToken.DeclarationNodeType && (token.nam.startsWith(('--')) || token.nam in config.declarations || token.nam in config.syntaxes);
                 if (!valid) {
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: token,
+                        syntax,
                         error: 'unexpected token',
                         tokens
                     };
                 }
+                if (token.nam.startsWith(('--'))) {
+                    result = {
+                        valid: ValidationLevel.Valid,
+                        matches: [token],
+                        node: null,
+                        syntax,
+                        error: '',
+                        tokens
+                    };
+                }
                 else {
-                    result = validateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, token.nam), token.val, root, options, {
+                    result = validateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, token.nam) ?? getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, token.nam), token.val, token, options, {
                         ...context,
                         tokens: null,
-                        level: context.level + 1
+                        level: 0
                     });
-                    result.tokens = tokens;
+                    if (result.valid == ValidationLevel.Valid && result.error.length == 0) {
+                        tokens = result.tokens;
+                    }
                 }
             }
             else if ('class-selector' == syntax.val) {
@@ -817,6 +1047,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -844,6 +1075,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                         valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                         matches: valid ? [token] : [],
                         node: valid ? null : token,
+                        syntax,
                         error: valid ? '' : 'invalid pseudo class',
                         tokens
                     };
@@ -878,6 +1110,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -890,6 +1123,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                         valid: ValidationLevel.Valid,
                         matches: [token],
                         node: token,
+                        syntax,
                         error: '',
                         tokens
                     };
@@ -926,6 +1160,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -938,6 +1173,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
                     node: token,
+                    syntax,
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
@@ -950,6 +1186,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                         valid: ValidationLevel.Valid,
                         matches: [token],
                         node: null,
+                        syntax,
                         error: '',
                         tokens
                     };
@@ -962,6 +1199,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: token,
+                        syntax,
                         error: 'unexpected token',
                         tokens
                     };
@@ -982,6 +1220,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: token,
+                    syntax,
                     error: 'unexpected token',
                     tokens
                 } : validateSyntax(syntax.chi, token.chi, root, options, {
@@ -996,6 +1235,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: '',
                 tokens
             };
@@ -1006,6 +1246,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     matches: valid ? [token] : [],
                     node: valid ? null : token,
                     error: '',
+                    syntax,
                     tokens
                 };
                 if (result.valid == ValidationLevel.Valid) {
@@ -1018,9 +1259,11 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             result = validateSyntax(syntax.chi, tokens, root, options, context);
             break;
         case ValidationTokenEnum.PipeToken:
-            result = validateSyntax(syntax.l, tokens, root, options, context);
-            if (result.valid != ValidationLevel.Valid) {
-                result = validateSyntax(syntax.r, tokens, root, options, context);
+            for (const lines of syntax.chi) {
+                result = validateSyntax(lines, tokens, root, options, context);
+                if (result.valid == ValidationLevel.Valid) {
+                    break;
+                }
             }
             break;
         case ValidationTokenEnum.AmpersandToken:
@@ -1056,6 +1299,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: m,
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'expecting token',
                 tokens
             };
@@ -1087,20 +1331,21 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'expecting token',
                 tokens
             };
             break;
         case ValidationTokenEnum.StringToken:
             valid = token.typ == EnumToken.StringTokenType && syntax.val.slice(1, -1) == token.val.slice(1, -1);
-            result = {
+            return {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'expecting token',
                 tokens
             };
-            break;
         case ValidationTokenEnum.PseudoClassFunctionToken:
             valid = token.typ == EnumToken.PseudoClassFuncTokenType;
             if (valid) {
@@ -1116,13 +1361,15 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
                 node: valid ? null : token,
+                syntax,
                 error: valid ? '' : 'invalid token',
                 tokens
             };
             break;
         default:
-            console.error({ syntax, token });
-            throw new Error('not implemented: ' + JSON.stringify({ syntax }, null, 1));
+            // console.error({syntax, token});
+            // throw new Error('not implemented: ' + JSON.stringify({syntax}, null, 1));
+            console.error('syntax not implemented: ' + JSON.stringify({ syntax }, null, 1));
     }
     // @ts-ignore
     return result;

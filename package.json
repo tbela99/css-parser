@@ -20,6 +20,7 @@
     "test:cov": "c8 --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
     "test:web-cov": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage",
     "profile": "node --enable-source-maps --inspect-brk test/inspect.js",
+    "syntax-update": "esno tools/validation.ts",
     "debug": "web-test-runner \"test/**/web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
   "repository": {
@@ -60,10 +61,10 @@
     "@web/test-runner": "^0.19.0",
     "@web/test-runner-playwright": "^0.11.0",
     "c8": "^10.1.2",
-    "mocha": "^10.7.3",
-    "playwright": "^1.47.1",
-    "rollup": "^4.21.3",
+    "mocha": "^11.0.1",
+    "playwright": "^1.49.0",
+    "rollup": "^4.28.0",
     "rollup-plugin-dts": "^6.1.1",
-    "tslib": "^2.7.0"
+    "tslib": "^2.8.1"
   }
 }

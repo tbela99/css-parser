@@ -13,6 +13,7 @@ import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
 import { validateSelector } from '../validation/selector.js';
 import { validateAtRule } from '../validation/atrule.js';
+import { validateDeclaration } from '../validation/declaration.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -498,7 +499,8 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         if (options.sourcemap) {
             node.loc = loc;
         }
-        const valid = validateAtRule(node, options);
+        const valid = validateAtRule(node, options, context);
+        // console.error({valid});
         if (valid.valid == ValidationLevel.Drop) {
             // @ts-ignore
             node.typ = EnumToken.InvalidAtRuleTokenType;
@@ -553,6 +555,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             const ruleType = context.typ == EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
             if (ruleType == EnumToken.RuleNodeType) {
                 const valid = validateSelector(parseSelector(tokens), options, context);
+                // console.error({valid});
                 if (valid.valid != ValidationLevel.Valid) {
                     const node = {
                         typ: EnumToken.InvalidRuleTokenType,
@@ -671,11 +674,20 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 val: value
             };
             const result = parseDeclarationNode(node, errors, src, position);
+            // console.error({result});
             if (result != null) {
+                if (options.validation) {
+                    const valid = validateDeclaration(result, options, context);
+                    // console.error({valid});
+                    if (valid.valid == ValidationLevel.Drop) {
+                        return null;
+                    }
+                }
+                // console.error({result});
                 // @ts-ignore
                 context.chi.push(result);
+                Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             }
-            Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             return null;
         }
     }

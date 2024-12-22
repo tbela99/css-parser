@@ -3,7 +3,7 @@
 # v0.8.0
 
 - [x] validate selectors using mdn data
-- [ ] at-rules prefix removal
+- [x] at-rules prefix removal
 - [x] at rules validation
   - [x] at-rule prelude
   - [x] at-rule body

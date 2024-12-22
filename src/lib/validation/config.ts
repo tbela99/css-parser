@@ -1,6 +1,6 @@
 import config from './config.json' with {type: 'json'};
 import type {ValidationConfiguration} from "../../@types/validation";
-import {parseSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
+import {parseSyntax, renderSyntax, ValidationSyntaxGroupEnum, ValidationToken, walkValidationToken} from "./parser";
 
 const parsedSyntaxes = new Map<string, ValidationToken[]>();
 
@@ -40,8 +40,21 @@ export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string): 
     if (!parsedSyntaxes.has(index)) {
 
         // @ts-ignore
-        parsedSyntaxes.set(index, parseSyntax(config[group][key].syntax).chi);
+        const syntax = parseSyntax(config[group][key].syntax);
+
+        for (const node of syntax.chi as ValidationToken[]) {
+
+            for (const {token, parent} of walkValidationToken(node)) {
+
+                token.text = renderSyntax(token, parent);
+            }
+        }
+
+        // @ts-ignore
+        parsedSyntaxes.set(index, syntax.chi);
     }
+
+    // console.error(JSON.stringify(parsedSyntaxes.get(index), null, 1));
 
     return parsedSyntaxes.get(index) as ValidationToken[];
 }

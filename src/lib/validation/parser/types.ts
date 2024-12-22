@@ -25,6 +25,7 @@ export enum ValidationTokenEnum {
     Whitespace,
     Parenthesis,
     Bracket,
+    Block,
     AtLeastOnce,
     Separator,
     Exclamation,
@@ -64,6 +65,7 @@ export interface ValidationToken {
     typ: ValidationTokenEnum;
     pos: Position;
     isList?: boolean;
+    text?: string;
     isRepeatable?: boolean;
     atLeastOnce?: boolean;
     isOptional?: boolean;
@@ -146,6 +148,12 @@ export interface ValidationAtRuleToken extends ValidationToken {
     val: string;
 }
 
+export interface ValidationAtRule extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRule;
+    val: string;
+}
+
 export interface ValidationAtRuleDefinitionToken extends ValidationToken {
 
     typ: ValidationTokenEnum.AtRuleDefinition;
@@ -185,13 +193,18 @@ export interface PipeToken extends ValidationToken {
 export interface ValidationPipeToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PipeToken;
-    l: ValidationToken[];
-    r: ValidationToken[];
+    chi: ValidationToken[][];
 }
 
 export interface ValidationBracketToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Bracket,
+    chi: ValidationToken[];
+}
+
+export interface ValidationBlockToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.Block,
     chi: ValidationToken[];
 }
 

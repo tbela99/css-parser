@@ -156,7 +156,7 @@ html, body, div, span, applet, object, iframe,
   color: #fff
  }
 & b {
-  colo: #fff
+  color: #fff
  }
 `, { validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo-bar {
  width: 12px;
@@ -341,4 +341,97 @@ html, body, div, span, applet, object, iframe,
         });
 
     });
+
+
+    describe('declaration validation', function () {
+
+        it('@page #8', function () {
+            return parse(`
+@page {
+  size: 8.5in 9in;
+  margin-top: 4in;
+    animation: view;
+}
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@page {
+ size: 8.5in 9in;
+ margin-top: 4in;
+ animation: view
+}`));
+        });
+
+        it('@page #9', function () {
+            return parse(`
+@page {
+  size: 8.5in 9in;
+  margin-top: 4in;
+    animation: view;
+    foo: bar;
+}
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@page {
+ size: 8.5in 9in;
+ margin-top: 4in;
+ animation: view
+}`));
+        });
+
+        it('@page #10', function () {
+            return parse(`
+
+/* Targets all even-numbered pages */
+@page :left {
+  margin-top: 4in;
+}
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`/* Targets all even-numbered pages */
+@page :left {
+ margin-top: 4in
+}`));
+        });
+
+        it('@page #11', function () {
+            return parse(`
+
+@page :right {
+  size: 11in;
+  margin-top: 4in;
+}
+
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@page :right {
+ size: 11in;
+ margin-top: 4in
+}`));
+        });
+
+        it('@page #12', function () {
+            return parse(`
+
+@page wide {
+  size: a4 landscape;
+}
+
+
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@page wide {
+ size: a4 landscape
+}`));
+        });
+
+        it('@page #13', function () {
+            return parse(`
+
+@page {
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@page {
+ /* margin box at top right showing page number */
+ @top-right {
+  content: "Page " counter(pageNumber)
+ }
+}`));
+        });
+
+    });
+
     }

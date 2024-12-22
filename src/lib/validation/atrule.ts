@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../@types";
 import type {ValidationConfiguration, ValidationResult} from "../../@types/validation";
-import {ValidationLevel} from "../ast";
+import {EnumToken, ValidationLevel} from "../ast";
 import {getParsedSyntax, getSyntaxConfig} from "./config";
 import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 import {validateSyntax} from "./syntax";
@@ -15,19 +15,21 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
             valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
             node: atRule,
+            syntax: null,
             error: ''
         }
     }
 
-    if (!options.validation) {
-
-        return {
-
-            valid: ValidationLevel.Valid,
-            node: atRule,
-            error: ''
-        }
-    }
+    // if (!options.validation) {
+    //
+    //     return {
+    //
+    //         valid: ValidationLevel.Valid,
+    //         node: atRule,
+    //         syntax: null,
+    //         error: ''
+    //     }
+    // }
 
     // handle keyframe as special case
     // check if the node exists
@@ -41,17 +43,29 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
             name = name.replace(/@-[a-zA-Z]+-([a-zA-Z][a-zA-Z0-9_-]*)/, '@$1');
         }
+    }
 
-        if (!(name in config.atRules)) {
+    if (!(name in config.atRules)) {
 
-            return {
+        if (root?.typ == EnumToken.AtRuleNodeType) {
 
-                valid: ValidationLevel.Drop,
-                node: atRule,
-                error: 'unknown at-rule'
+            const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
+
+            if ('chi' in syntax) {
+
+                return validateSyntax(syntax.chi as ValidationToken[], [atRule], root, options);
             }
+        }
+
+        return {
+
+            valid: ValidationLevel.Drop,
+            node: atRule,
+            syntax: null,
+            error: 'unknown at-rule'
         }
     }
 
-    return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, name) as ValidationToken[], [atRule]);
+
+    return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, name) as ValidationToken[], [atRule], root, options);
 }

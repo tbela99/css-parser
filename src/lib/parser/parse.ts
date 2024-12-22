@@ -51,7 +51,6 @@ import {
     ColorToken,
     CommaToken,
     ContainMatchToken,
-    DashedIdentToken,
     DashMatchToken,
     DeclarationVisitorHandler,
     DelimToken,
@@ -98,7 +97,7 @@ import {
     WhitespaceToken
 } from "../../@types";
 import {deprecatedSystemColors, systemColors} from "../renderer/color/utils";
-import {validateAtRule, validateSelector} from "../validation";
+import {validateAtRule, validateDeclaration, validateSelector} from "../validation";
 import {ValidationResult} from "../../@types/validation";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -740,6 +739,8 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
         const valid: ValidationResult = validateAtRule(node, options, context);
 
+        // console.error({valid});
+
         if (valid.valid == ValidationLevel.Drop) {
 
             // @ts-ignore
@@ -820,6 +821,8 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
                 const valid: ValidationResult = validateSelector(parseSelector(tokens), options, context);
 
+                // console.error({valid});
+
                 if (valid.valid != ValidationLevel.Valid) {
 
                     const node: AstInvalidRule = {
@@ -827,7 +830,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                         // @ts-ignore
                         sel: tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), ''),
                         chi: []
-                    };
+                    }
 
                     errors.push({
                         action: 'drop',
@@ -899,7 +902,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
                     if ((<IdentToken>tokens[i]).val.charAt(0) == ':') {
 
-                        Object.assign(tokens[i], getTokenType( (<IdentToken>tokens[i]).val.slice(1)));
+                        Object.assign(tokens[i], getTokenType((<IdentToken>tokens[i]).val.slice(1)));
                     }
 
                     if ('chi' in tokens[i]) {
@@ -976,13 +979,27 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
             const result: AstDeclaration | null = parseDeclarationNode(node, errors, src, position);
 
+            // console.error({result});
             if (result != null) {
 
+                if (options.validation) {
+
+                    const valid: ValidationResult = validateDeclaration(result, options, context);
+
+                    // console.error({valid});
+
+                    if (valid.valid == ValidationLevel.Drop) {
+
+                        return null;
+                    }
+                }
+
+                // console.error({result});
                 // @ts-ignore
                 context.chi.push(result);
+                Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
             }
 
-            Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
             return null;
         }
     }

@@ -1,6 +1,6 @@
 import config from './config.json.js';
 import './parser/types.js';
-import { parseSyntax } from './parser/parse.js';
+import { parseSyntax, walkValidationToken, renderSyntax } from './parser/parse.js';
 
 const parsedSyntaxes = new Map();
 Object.freeze(config);
@@ -26,8 +26,16 @@ function getParsedSyntax(group, key) {
     // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
         // @ts-ignore
-        parsedSyntaxes.set(index, parseSyntax(config[group][key].syntax).chi);
+        const syntax = parseSyntax(config[group][key].syntax);
+        for (const node of syntax.chi) {
+            for (const { token, parent } of walkValidationToken(node)) {
+                token.text = renderSyntax(token);
+            }
+        }
+        // @ts-ignore
+        parsedSyntaxes.set(index, syntax.chi);
     }
+    // console.error(JSON.stringify(parsedSyntaxes.get(index), null, 1));
     return parsedSyntaxes.get(index);
 }
 
