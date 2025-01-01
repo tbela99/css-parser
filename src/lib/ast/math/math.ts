@@ -127,6 +127,16 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
     };
 }
 
+export function rem(...a: number[]): number {
+
+    if (a.some((i) => !Number.isInteger(i))) {
+
+        return a.reduce((a, b) => Math.max(a, String(b).split('.')[1]?.length ?? 0), 0);
+    }
+
+    return 0;
+}
+
 export function simplify(a: number, b: number): [number, number] {
 
     const g: number = gcd(a, b);

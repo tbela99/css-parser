@@ -5,6 +5,7 @@ import { srgb2lsrgbvalues, hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch
 import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { lch2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';

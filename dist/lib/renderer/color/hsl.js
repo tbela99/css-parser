@@ -5,6 +5,7 @@ import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { hslvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';

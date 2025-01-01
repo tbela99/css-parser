@@ -94,7 +94,7 @@ import type {
     UrlToken,
     WhitespaceToken
 } from "../../@types";
-import {deprecatedSystemColors, systemColors} from "../renderer/color/utils";
+import {deprecatedSystemColors, mathFuncs, systemColors} from "../renderer/color/utils";
 import {validateSelector} from "../validation/selector";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -1112,10 +1112,6 @@ export function parseString(src: string, options: { location: boolean } = {locat
 
 function getTokenType(val: string, hint?: EnumToken): Token {
 
-    // if (val === '' && hint == null) {
-    //     throw new Error('empty string?');
-    // }
-
     if (hint != null) {
 
         return enumTokenHints.has(hint) ? <Token>{typ: hint} : <Token>{typ: hint, val};
@@ -1343,11 +1339,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
                 i + 1 == tokens.length ||
                 [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType].includes(tokens[i + 1].typ)) ||
-            (i > 0 &&
-                // tokens[i + 1]?.typ != Literal ||
-                // funcLike.includes(tokens[i - 1].typ) &&
-                // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
-                trimWhiteSpace.includes(tokens[i - 1].typ)))) {
+            (i > 0 && trimWhiteSpace.includes(tokens[i - 1].typ)))) {
 
             tokens.splice(i--, 1);
             continue;
@@ -1356,7 +1348,9 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
         if (t.typ == EnumToken.ColonTokenType) {
 
             const typ: EnumToken = tokens[i + 1]?.typ;
+
             if (typ != null) {
+
                 if (typ == EnumToken.FunctionTokenType) {
 
                     (<PseudoClassFunctionToken>tokens[i + 1]).val = ':' + ((<PseudoClassFunctionToken>tokens[i + 1]).val in webkitPseudoAliasMap ? webkitPseudoAliasMap[(<PseudoClassFunctionToken>tokens[i + 1]).val] : (<PseudoClassFunctionToken>tokens[i + 1]).val);
@@ -1603,7 +1597,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 parseTokens(t.chi, options);
             }
 
-            if (t.typ == EnumToken.FunctionTokenType && (<FunctionToken>t).val == 'calc') {
+            if (t.typ == EnumToken.FunctionTokenType && mathFuncs.includes((<FunctionToken>t).val)) {
 
                 for (const {value, parent} of walkValues((<FunctionToken>t).chi)) {
 

@@ -1,6 +1,11 @@
 import { EnumToken } from '../types.js';
-import { walkValues } from '../walk.js';
+import { walkValues, WalkerValueEvent } from '../walk.js';
 import { evaluate } from '../math/expression.js';
+import { mathFuncs } from '../../renderer/color/utils/constants.js';
+import '../minify.js';
+import '../../parser/parse.js';
+import { renderToken } from '../../renderer/render.js';
+import '../../parser/utils/config.js';
 
 class ComputeCalcExpressionFeature {
     static get ordering() {
@@ -27,27 +32,88 @@ class ComputeCalcExpressionFeature {
                 continue;
             }
             const set = new Set;
-            for (const { value, parent } of walkValues(node.val)) {
-                if (value != null && value.typ == EnumToken.FunctionTokenType && value.val == 'calc') {
-                    if (!set.has(parent)) {
+            for (const { value, parent } of walkValues(node.val, node, {
+                event: WalkerValueEvent.Enter,
+                fn(node, parent, event) {
+                    if (parent != null &&
+                        parent.typ == EnumToken.DeclarationNodeType &&
+                        parent.val.length == 1 &&
+                        node.typ == EnumToken.FunctionTokenType &&
+                        mathFuncs.includes(node.val) &&
+                        node.chi.length == 1 &&
+                        node.chi[0].typ == EnumToken.IdenTokenType) {
+                        return 'ignore';
+                    }
+                    if ((node.typ == EnumToken.FunctionTokenType && node.val == 'var') || (!mathFuncs.includes(parent.val) && [EnumToken.ColorTokenType, EnumToken.DeclarationNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.StyleSheetNodeType].includes(parent?.typ))) {
+                        return null;
+                    }
+                    const slice = (node.typ == EnumToken.FunctionTokenType ? node.chi : (node.typ == EnumToken.DeclarationNodeType ? node.val : node.chi))?.slice();
+                    if (slice != null && node.typ == EnumToken.FunctionTokenType && mathFuncs.includes(node.val)) {
+                        // @ts-ignore
+                        const cp = (node.typ == EnumToken.FunctionTokenType && mathFuncs.includes(node.val) && node.val != 'calc' ? [node] : (node.typ == EnumToken.DeclarationNodeType ? node.val : node.chi)).slice();
+                        const values = evaluate(cp);
+                        const key = 'chi' in node ? 'chi' : 'val';
+                        const str1 = renderToken({ ...node, [key]: slice });
+                        const str2 = renderToken(node); // values.reduce((acc: string, curr: Token): string => acc + renderToken(curr), '');
+                        if (str1.length <= str2.length) {
+                            // @ts-ignore
+                            node[key] = slice;
+                        }
+                        else {
+                            // @ts-ignore
+                            node[key] = values;
+                        }
+                        return 'ignore';
+                    }
+                    return null;
+                }
+            })) {
+                if (value != null && value.typ == EnumToken.FunctionTokenType && mathFuncs.includes(value.val)) {
+                    if (!set.has(value)) {
                         set.add(value);
-                        value.chi = evaluate(value.chi);
-                        if (value.chi.length == 1 && value.chi[0].typ != EnumToken.BinaryExpressionTokenType) {
-                            if (parent != null) {
+                        if (parent != null) {
+                            // @ts-ignore
+                            const cp = value.typ == EnumToken.FunctionTokenType && mathFuncs.includes(value.val) && value.val != 'calc' ? [value] : (value.typ == EnumToken.DeclarationNodeType ? value.val : value.chi);
+                            const values = evaluate(cp);
+                            // @ts-ignore
+                            const children = parent.typ == EnumToken.DeclarationNodeType ? parent.val : parent.chi;
+                            if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
                                 if (parent.typ == EnumToken.BinaryExpressionTokenType) {
                                     if (parent.l == value) {
-                                        parent.l = value.chi[0];
+                                        parent.l = values[0];
                                     }
                                     else {
-                                        parent.r = value.chi[0];
+                                        parent.r = values[0];
                                     }
                                 }
                                 else {
-                                    for (let i = 0; i < parent.chi.length; i++) {
-                                        if (parent.chi[i] == value) {
-                                            parent.chi.splice(i, 1, value.chi[0]);
+                                    for (let i = 0; i < children.length; i++) {
+                                        if (children[i] == value) {
+                                            // @ts-ignore
+                                            children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') && typeof values[0].val != 'string' ? {
+                                                typ: EnumToken.FunctionTokenType,
+                                                val: 'calc',
+                                                chi: values
+                                            } : values[0]);
                                             break;
                                         }
+                                    }
+                                }
+                            }
+                            else {
+                                for (let i = 0; i < children.length; i++) {
+                                    if (children[i] == value) {
+                                        if (parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') {
+                                            children.splice(i, 1, ...values);
+                                        }
+                                        else {
+                                            children.splice(i, 1, {
+                                                typ: EnumToken.FunctionTokenType,
+                                                val: 'calc',
+                                                chi: values
+                                            });
+                                        }
+                                        break;
                                     }
                                 }
                             }

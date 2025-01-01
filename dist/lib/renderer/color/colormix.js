@@ -1,12 +1,13 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../syntax/syntax.js';
 import '../../parser/utils/config.js';
-import { getNumber } from './color.js';
-import { srgb2rgb } from './rgb.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
+import { getNumber } from './color.js';
+import { srgb2rgb } from './rgb.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
 import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';

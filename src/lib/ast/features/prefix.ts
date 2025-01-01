@@ -110,7 +110,6 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
 
             case ValidationTokenEnum.Keyword:
 
-                console.error(matches[i], token);
                 if (token.typ == EnumToken.IdenTokenType && token.val == (matches[i] as ValidationKeywordToken).val) {
 
                     return token;
@@ -172,12 +171,6 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
                 }
 
                 break;
-
-            // default:
-            //
-            //     console.error(token, matches[i]);
-            //     throw new Error('bar bar');
-
         }
     }
 

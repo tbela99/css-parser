@@ -14,6 +14,7 @@ import type {
     Token
 } from "../../@types";
 import {EnumToken} from "../ast";
+import {mathFuncs} from "../renderer/color/utils";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
@@ -146,7 +147,7 @@ export function isColor(token: Token): boolean {
                     }
                 }
 
-                if (children[i].typ == EnumToken.FunctionTokenType && !['calc'].includes((<FunctionToken>children[i]).val)) {
+                if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes((<FunctionToken>children[i]).val)) {
 
                     return false;
                 }
@@ -284,7 +285,7 @@ export function isColor(token: Token): boolean {
                     continue;
                 }
 
-                if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || v.val == 'var' || colorsFunc.includes(v.val))) {
+                if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
 
                     continue;
                 }

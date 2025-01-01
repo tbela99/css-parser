@@ -115,8 +115,16 @@ declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, r
     [key: string]: any;
 }): AstNode;
 
+declare enum WalkerValueEvent$1 {
+    Enter = 0,
+    Leave = 1
+}
 declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
-declare function walkValues(values: Token[], root?: AstNode | null, filter?: WalkerValueFilter): Generator<WalkAttributesResult>;
+declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
+    event: WalkerValueEvent$1;
+    fn?: WalkerValueFilter;
+    type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
+}): Generator<WalkAttributesResult>;
 
 declare function expand(ast: AstNode): AstNode;
 
@@ -826,7 +834,7 @@ declare class SourceMap {
     toJSON(): SourceMapObject;
 }
 
-export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | null;
+export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | Token | null;
 /**
  * returned value:
  * - 'ignore': ignore this node and its children
@@ -843,18 +851,18 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - 'children': walk the children and ignore the node itself
  * - 'ignore-children': walk the node and ignore children
  */
-export declare type WalkerValueFilter = (node: Token) => WalkerOption;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
     parent?: AstRuleList;
-    root?: AstRuleList;
+    root?: AstNode;
 }
 
 export declare interface WalkAttributesResult {
     value: Token;
     previousValue: Token | null;
-    nextValue: AstNode | null;
+    nextValue: Token | null;
     root?: AstNode;
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
 }
@@ -941,6 +949,7 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     minify?: boolean;
+    removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
     sourcemap?: boolean;

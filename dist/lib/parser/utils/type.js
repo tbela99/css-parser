@@ -1,12 +1,11 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../parse.js';
-import '../../renderer/color/utils/constants.js';
+import { mathFuncs } from '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import './config.js';
 
-// https://www.w3.org/TR/css-values-4/#math-function
-const funcList = ['clamp', 'calc'];
 function matchType(val, properties) {
     if (val.typ == EnumToken.IdenTokenType && properties.keywords.includes(val.val) ||
         // @ts-ignore
@@ -22,8 +21,8 @@ function matchType(val, properties) {
         });
     }
     if (val.typ == EnumToken.FunctionTokenType) {
-        if (funcList.includes(val.val)) {
-            return val.chi.every(((t) => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+        if (mathFuncs.includes(val.val)) {
+            return val.chi.every(((t) => [EnumToken.Add, EnumToken.Mul, EnumToken.Div, EnumToken.Sub, EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.DimensionTokenType, EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.ResolutionTokenType, EnumToken.TimeTokenType, EnumToken.BinaryExpressionTokenType].includes(t.typ) || matchType(t, properties)));
         }
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.
         // return properties.types.includes((<FunctionToken>val).val + '()')
@@ -31,4 +30,4 @@ function matchType(val, properties) {
     return false;
 }
 
-export { funcList, matchType };
+export { matchType };

@@ -1,5 +1,6 @@
 import { EnumToken, ValidationLevel } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';

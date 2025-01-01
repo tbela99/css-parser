@@ -4,6 +4,7 @@ import { getComponents } from './utils/components.js';
 import { getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { lab2srgb, lch2srgb, oklab2srgb, oklch2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';

@@ -1,5 +1,6 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
+import { renderToken } from '../../renderer/render.js';
 
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
@@ -108,7 +109,8 @@ class InlineCssVariablesFeature {
                     i = parent.chi?.length ?? 0;
                     while (i--) {
                         if (parent.chi[i].typ == EnumToken.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
-                            parent.chi.splice(i, 1);
+                            // @ts-ignore
+                            parent.chi.splice(i++, 1, { typ: EnumToken.CommentTokenType, val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */` });
                         }
                     }
                     if (parent.chi?.length == 0 && 'parent' in parent) {

@@ -4,8 +4,8 @@ import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../../parser/parse.js';
 import { reduceNumber } from '../render.js';
-import { colorRange } from './utils/constants.js';
-import { evaluate } from '../../ast/math/expression.js';
+import { colorRange, mathFuncs } from './utils/constants.js';
+import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
 import '../../parser/utils/config.js';
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
@@ -47,7 +47,7 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
             val: '1'
         } : aExp)
     };
-    return computeComponentValue(keys, values);
+    return computeComponentValue(keys, converted, values);
 }
 function getValue(t, converted, component) {
     if (t == null) {
@@ -66,7 +66,7 @@ function getValue(t, converted, component) {
     }
     return t;
 }
-function computeComponentValue(expr, values) {
+function computeComponentValue(expr, converted, values) {
     for (const object of [values, expr]) {
         if ('h' in object) {
             // normalize hue
@@ -107,34 +107,29 @@ function computeComponentValue(expr, values) {
                 expr[key] = values[exp.val];
             }
         }
-        else if (exp.typ == EnumToken.FunctionTokenType && exp.val == 'calc') {
-            for (let { value, parent } of walkValues(exp.chi)) {
-                if (value.typ == EnumToken.IdenTokenType) {
-                    if (!(value.val in values)) {
+        else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val)) {
+            for (let { value, parent } of walkValues(exp.chi, exp)) {
+                if (parent == null) {
+                    parent = exp;
+                }
+                if (value.typ == EnumToken.PercentageTokenType) {
+                    replaceValue(parent, value, getValue(value, converted, key));
+                }
+                else if (value.typ == EnumToken.IdenTokenType) {
+                    // @ts-ignore
+                    if (!(value.val in values || typeof Math[value.val.toUpperCase()] == 'number')) {
                         return null;
                     }
-                    if (parent == null) {
-                        parent = exp;
-                    }
-                    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-                        if (parent.l == value) {
-                            parent.l = values[value.val];
-                        }
-                        else {
-                            parent.r = values[value.val];
-                        }
-                    }
-                    else {
-                        for (let i = 0; i < parent.chi.length; i++) {
-                            if (parent.chi[i] == value) {
-                                parent.chi.splice(i, 1, values[value.val]);
-                                break;
-                            }
-                        }
-                    }
+                    // @ts-ignore
+                    replaceValue(parent, value, values[value.val] ?? {
+                        typ: EnumToken.NumberTokenType,
+                        // @ts-ignore
+                        val: '' + Math[value.val.toUpperCase()]
+                        // @ts-ignore
+                    });
                 }
             }
-            const result = evaluate(exp.chi);
+            const result = exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val) && exp.val != 'calc' ? evaluateFunc(exp) : evaluate(exp.chi);
             if (result.length == 1 && result[0].typ != EnumToken.BinaryExpressionTokenType) {
                 expr[key] = result[0];
             }
@@ -144,6 +139,34 @@ function computeComponentValue(expr, values) {
         }
     }
     return expr;
+}
+function replaceValue(parent, value, newValue) {
+    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
+        if (parent.l == value) {
+            parent.l = newValue;
+        }
+        else {
+            parent.r = newValue;
+        }
+    }
+    else {
+        for (let i = 0; i < parent.chi.length; i++) {
+            if (parent.chi[i] == value) {
+                parent.chi.splice(i, 1, newValue);
+                break;
+            }
+            if (parent.chi[i].typ == EnumToken.BinaryExpressionTokenType) {
+                if (parent.chi[i].l == value) {
+                    parent.chi[i].l = newValue;
+                    break;
+                }
+                else if (parent.chi[i].r == value) {
+                    parent.chi[i].r = newValue;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 export { parseRelativeColor };

@@ -1,6 +1,7 @@
 import type {
     AstNode,
-    AstRuleList, BinaryExpressionToken,
+    AstRuleList,
+    BinaryExpressionToken,
     FunctionToken,
     ParensToken,
     Token,
@@ -11,6 +12,12 @@ import type {
     WalkResult
 } from "../../@types/index.d.ts";
 import {EnumToken} from "./types";
+import {renderToken} from "../renderer";
+
+export enum WalkerValueEvent {
+    Enter,
+    Leave
+}
 
 export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {
 
@@ -57,55 +64,126 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
     }
 }
 
-export function* walkValues(values: Token[], root: AstNode | null = null, filter?: WalkerValueFilter): Generator<WalkAttributesResult> {
+export function* walkValues(values: Token[], root: AstNode | Token | null = null, filter?: WalkerValueFilter | {
+    event: WalkerValueEvent,
+    fn?: WalkerValueFilter,
+    type?: EnumToken | EnumToken[] | ((token: Token) => boolean)
+}): Generator<WalkAttributesResult> {
 
+    // const set = new Set<Token>();
     const stack: Token[] = values.slice();
     const map: Map<Token, FunctionToken | ParensToken | BinaryExpressionToken> = new Map;
 
-    let value: Token;
     let previous: Token | null = null;
+    // let parent: FunctionToken | ParensToken | BinaryExpressionToken | null = null;
 
-    while ((value = <Token>stack.shift())) {
+    if (filter != null && typeof filter == 'function') {
 
+        filter = {
+            event: WalkerValueEvent.Enter,
+            fn: filter
+        }
+
+    } else if (filter == null) {
+
+        filter = {
+            event: WalkerValueEvent.Enter
+        }
+    }
+
+    while (stack.length > 0) {
+
+        let value: Token = <Token>stack.shift();
         let option: WalkerOption = null;
 
-        if (filter != null) {
+        if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
 
-            option = filter(value);
+            const isValid: boolean = filter.type == null || value.typ == filter.type ||
+                (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
+                (typeof filter.type == 'function' && filter.type(value));
 
-            if (option === 'ignore') {
+            if (isValid) {
 
-                continue;
-            }
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root, WalkerValueEvent.Enter);
 
-            if (option === 'stop') {
+                if (option === 'ignore') {
 
-                break;
+                    continue;
+                }
+
+                if (option === 'stop') {
+
+                    break;
+                }
+
+                // @ts-ignore
+                if (option != null && typeof option == 'object' && 'typ' in option) {
+
+                    map.set(option, map.get(value) ?? root as FunctionToken | ParensToken);
+                }
             }
         }
 
         // @ts-ignore
-        if (option !== 'children') {
+        if (filter.event == WalkerValueEvent.Enter && option !== 'children') {
 
-            // @ts-ignore
-            yield {value, parent: <FunctionToken | ParensToken>map.get(value), previousValue: previous, nextValue: <Token>stack[0] ?? null, root};
+            yield {
+                value,
+                parent: <FunctionToken | ParensToken>map.get(value) ?? root,
+                previousValue: previous,
+                nextValue: <Token>stack[0] ?? null,
+                // @ts-ignore
+                root: root ?? null
+            };
         }
 
         if (option !== 'ignore-children' && 'chi' in value) {
 
-            for (const child of (<FunctionToken | ParensToken>value).chi.slice()) {
+            const sliced = (<FunctionToken | ParensToken>value).chi.slice();
+
+            for (const child of sliced) {
 
                 map.set(child, <FunctionToken | ParensToken>value);
             }
 
-            stack.unshift(...(<FunctionToken | ParensToken>value).chi);
+            stack.unshift(...sliced);
+        } else if (value.typ == EnumToken.BinaryExpressionTokenType) {
+
+            map.set(value.l, map.get(value) ?? root as FunctionToken | ParensToken);
+            map.set(value.r, map.get(value) ?? root as FunctionToken | ParensToken);
+
+            stack.unshift(value.l, value.r);
         }
 
-        else if (value.typ == EnumToken.BinaryExpressionTokenType) {
+        if (filter.event == WalkerValueEvent.Leave && filter.fn != null) {
 
-            map.set(value.l, <FunctionToken | ParensToken | BinaryExpressionToken>value);
-            map.set(value.r, <FunctionToken | ParensToken | BinaryExpressionToken>value);
-            stack.unshift(value.l, value.r);
+            const isValid: boolean = filter.type == null || value.typ == filter.type ||
+                (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
+                (typeof filter.type == 'function' && filter.type(value));
+
+            if (isValid) {
+
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerValueEvent.Leave);
+
+                // @ts-ignore
+                if (option != null && 'typ' in option) {
+
+                    map.set(option, map.get(value) ?? root as FunctionToken | ParensToken);
+                }
+            }
+        }
+
+        // @ts-ignore
+        if (filter.event == WalkerValueEvent.Leave && option !== 'children') {
+
+            yield {
+                value,
+                parent: <FunctionToken | ParensToken>map.get(value) ?? root,
+                previousValue: previous,
+                nextValue: <Token>stack[0] ?? null,
+                // @ts-ignore
+                root: root ?? null
+            };
         }
 
         previous = value;

@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.8.0
+
+- [x] evaluate math functions: calc, clamp, min, max, round, mod, rem, sin, cos, tan, asin, acos, atan, atan2, pow, sqrt, hypot, log, exp, abs, sign #49
+
 # v0.7.1
 
 - [x] fix nesting rules expansion #45

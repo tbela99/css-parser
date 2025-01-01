@@ -1,6 +1,7 @@
 import { ValidationTokenEnum } from './types.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';

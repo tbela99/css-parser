@@ -4,9 +4,9 @@ import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
+import { COLORS_NAMES, systemColors, deprecatedSystemColors, mathFuncs } from '../renderer/color/utils/constants.js';
 import { parseDeclaration } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { COLORS_NAMES, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
 import { tokenize } from './tokenize.js';
 import { validateSelector } from '../validation/selector.js';
 
@@ -764,9 +764,6 @@ function parseString(src, options = { location: false }) {
     }));
 }
 function getTokenType(val, hint) {
-    // if (val === '' && hint == null) {
-    //     throw new Error('empty string?');
-    // }
     if (hint != null) {
         return enumTokenHints.has(hint) ? { typ: hint } : { typ: hint, val };
     }
@@ -944,11 +941,7 @@ function parseTokens(tokens, options = {}) {
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
             i + 1 == tokens.length ||
             [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType].includes(tokens[i + 1].typ)) ||
-            (i > 0 &&
-                // tokens[i + 1]?.typ != Literal ||
-                // funcLike.includes(tokens[i - 1].typ) &&
-                // !['var', 'calc'].includes((<FunctionToken>tokens[i - 1]).val)))) &&
-                trimWhiteSpace.includes(tokens[i - 1].typ)))) {
+            (i > 0 && trimWhiteSpace.includes(tokens[i - 1].typ)))) {
             tokens.splice(i--, 1);
             continue;
         }
@@ -1141,7 +1134,7 @@ function parseTokens(tokens, options = {}) {
                 // @ts-ignore
                 parseTokens(t.chi, options);
             }
-            if (t.typ == EnumToken.FunctionTokenType && t.val == 'calc') {
+            if (t.typ == EnumToken.FunctionTokenType && mathFuncs.includes(t.val)) {
                 for (const { value, parent } of walkValues(t.chi)) {
                     if (value.typ == EnumToken.WhitespaceTokenType) {
                         const p = (parent ?? t);
