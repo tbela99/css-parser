@@ -37,11 +37,6 @@ function* walkValues(values, root = null, filter) {
     // const set = new Set<Token>();
     const stack = values.slice();
     const map = new Map;
-<<<<<<< HEAD
-    const parentMap = new Map;
-    let value;
-=======
->>>>>>> math_functions
     let previous = null;
     // let parent: FunctionToken | ParensToken | BinaryExpressionToken | null = null;
     if (filter != null && typeof filter == 'function') {
@@ -77,24 +72,6 @@ function* walkValues(values, root = null, filter) {
             }
         }
         // @ts-ignore
-<<<<<<< HEAD
-        if (option !== 'children') {
-            let list = parentMap.get(value) ?? null;
-            if (Array.isArray(list)) {
-                list.shift();
-                if (list.length === 0) {
-                    parentMap.delete(value);
-                    list = null;
-                }
-            }
-            // @ts-ignore
-            yield { value, parent: map.get(value), previousValue: previous, nextValue: stack[0] ?? null, root, list };
-        }
-        if (option !== 'ignore-children' && 'chi' in value) {
-            const parents = value.chi.slice();
-            for (const child of parents.slice()) {
-                parentMap.set(child, parents);
-=======
         if (filter.event == WalkerValueEvent.Enter && option !== 'children') {
             yield {
                 value,
@@ -108,7 +85,6 @@ function* walkValues(values, root = null, filter) {
         if (option !== 'ignore-children' && 'chi' in value) {
             const sliced = value.chi.slice();
             for (const child of sliced) {
->>>>>>> math_functions
                 map.set(child, value);
             }
             stack.unshift(...sliced);

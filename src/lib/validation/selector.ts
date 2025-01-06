@@ -1,4 +1,4 @@
-import type {AstNode, Token, ValidationOptions} from "../../@types";
+import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types";
 import {EnumToken} from "../ast";
 import {getParsedSyntax} from "./config";
 import type {ValidationResult} from "../../@types/validation";
@@ -7,9 +7,10 @@ import {validateSyntax} from "./syntax";
 
 export function validateSelector(selector: Token[], options: ValidationOptions, root?: AstNode): ValidationResult {
 
+    const isKeyframe: boolean = root?.typ == EnumToken.AtRuleNodeType && /^(-[a-zA-Z]+-)?keyframes/i.test((root as AstAtRule).nam);
     let isNested: boolean = false;
 
-    if (root != null) {
+    if (!isKeyframe && root != null) {
 
         let node = root;
 
@@ -27,6 +28,5 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     }
 
     // @ts-ignore
-    return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, root?.typ == EnumToken.AtRuleNodeType && root.nam.match(/(-[a-zA-Z]+-)?keyframes/i) ? 'keyframe-block-list' : (isNested ? 'relative-selector-list' : 'complex-selector-list')) as ValidationToken[], selector, isNested ? root : null, options);
-
+    return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, isKeyframe ? 'keyframe-selector' : (isNested ? 'relative-selector-list' : 'complex-selector-list')) as ValidationToken[], selector, isNested ? root : null, options);
 }

@@ -878,17 +878,13 @@ declare class SourceMap {
     toJSON(): SourceMapObject;
 }
 
-<<<<<<< HEAD
 export declare interface PropertyListOptions {
 
     removeDuplicateDeclarations?: boolean;
     computeShorthand?: boolean;
 }
 
-export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | null;
-=======
 export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | Token | null;
->>>>>>> math_functions
 /**
  * returned value:
  * - 'ignore': ignore this node and its children

@@ -345,7 +345,6 @@ function evaluateFunc(token) {
                 }
                 if (valuesMap.size == 1) {
                     const values = valuesMap.values().next().value;
-                    console.error({ values });
                     if (token.val == 'log') {
                         if (values[0].typ != EnumToken.NumberTokenType || values.length > 2) {
                             return [token];

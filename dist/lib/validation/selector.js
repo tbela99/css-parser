@@ -9,8 +9,9 @@ import { getParsedSyntax } from './config.js';
 import { validateSyntax } from './syntax.js';
 
 function validateSelector(selector, options, root) {
+    const isKeyframe = root?.typ == EnumToken.AtRuleNodeType && /^(-[a-zA-Z]+-)?keyframes/i.test(root.nam);
     let isNested = false;
-    if (root != null) {
+    if (!isKeyframe && root != null) {
         let node = root;
         while (node != null) {
             if (node.typ == EnumToken.RuleNodeType) {
@@ -22,7 +23,7 @@ function validateSelector(selector, options, root) {
         }
     }
     // @ts-ignore
-    return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, root?.typ == EnumToken.AtRuleNodeType && root.nam.match(/(-[a-zA-Z]+-)?keyframes/i) ? 'keyframe-block-list' : (isNested ? 'relative-selector-list' : 'complex-selector-list')), selector, isNested ? root : null, options);
+    return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, isKeyframe ? 'keyframe-selector' : (isNested ? 'relative-selector-list' : 'complex-selector-list')), selector, isNested ? root : null, options);
 }
 
 export { validateSelector };

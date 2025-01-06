@@ -1,6 +1,6 @@
-import type {AstAtRule, AstNode, ValidationOptions} from "../../@types";
-import type {ValidationConfiguration, ValidationResult} from "../../@types/validation";
-import {EnumToken, ValidationLevel} from "../ast";
+import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types";
+import type {ValidationConfiguration, ValidationResult, ValidationSyntaxResult} from "../../@types/validation";
+import {ValidationLevel} from "../ast";
 import {getParsedSyntax, getSyntaxConfig} from "./config";
 import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 import {validateSyntax} from "./syntax";
@@ -47,15 +47,15 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
     if (!(name in config.atRules)) {
 
-        if (root?.typ == EnumToken.AtRuleNodeType) {
-
-            const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
-
-            if ('chi' in syntax) {
-
-                return validateSyntax(syntax.chi as ValidationToken[], [atRule], root, options);
-            }
-        }
+    //     if (root?.typ == EnumToken.AtRuleNodeType) {
+    //
+    //         const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
+    //
+    //         if ('chi' in syntax) {
+    //
+    //             return validateSyntax(syntax.chi as ValidationToken[], [atRule], root, options);
+    //         }
+    //     }
 
         return {
 
@@ -66,6 +66,29 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
         }
     }
 
+    let result: ValidationSyntaxResult;
+    const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, name) as ValidationToken[])?.[0];
 
-    return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, name) as ValidationToken[], [atRule], root, options);
+    if ('chi' in syntax && !('chi' in atRule)) {
+
+        return {
+            valid: ValidationLevel.Drop,
+            node: atRule,
+            syntax,
+            error: 'missing at-rule body'
+        }
+    }
+
+    if ('prelude' in syntax) {
+
+        return validateSyntax(syntax.prelude as ValidationToken[], atRule.tokens as Token[], root, options);
+    }
+
+    return {
+
+        valid: ValidationLevel.Valid,
+        node: null,
+        syntax,
+        error: ''
+    }
 }

@@ -1,7 +1,8 @@
 import { ValidationTokenEnum, specialValues } from './parser/types.js';
-import './parser/parse.js';
+import { renderSyntax } from './parser/parse.js';
 import { ValidationLevel, EnumToken, funcLike } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import '../parser/parse.js';
 import { isLength } from '../syntax/syntax.js';
 import '../parser/utils/config.js';
@@ -56,8 +57,6 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
     }
     context = { ...context };
     main: while (tokens.length > 0) {
-        // console.error('len = ' + tokens.length, 'sln = ' + syntaxes.length, 'mlen = ' + matches.length);
-        // console.error(new Error('debug'));
         if (syntaxes.length == 0) {
             break;
         }
@@ -88,15 +87,21 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             }
             continue;
         }
-        // console.error({
-        //
-        //     root,
-        //     syntaxes,
-        //     tokens,
-        //     syntax, token,
-        //     r: renderSyntax(syntax),
-        //     a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
-        // });
+        else if (syntax.typ == ValidationTokenEnum.Block && EnumToken.AtRuleTokenType == token.typ && ('chi' in token)) {
+            syntaxes.shift();
+            tokens.shift();
+            // @ts-ignore
+            matches.push(token);
+            continue;
+        }
+        console.error({
+            root,
+            syntaxes,
+            tokens,
+            syntax, token,
+            r: renderSyntax(syntax),
+            a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
+        });
         if (syntax.isOptional) {
             if (!context.cache.has(token)) {
                 context.cache.set(token, new Map);
@@ -559,33 +564,24 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     tokens
                 };
             }
-            {
-                const parentSyntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + root.nam);
-                if ('chi' in parentSyntax) {
-                    if (!('chi' in token)) {
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: token,
-                            syntax,
-                            error: '@at-rule must have children',
-                            tokens
-                        };
-                    }
-                    // @ts-ignore
-                    return validateSyntax(parentSyntax.chi, token.chi, root, options, context);
-                }
-                else if ('chi' in token) {
-                    return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        node: token,
-                        syntax,
-                        error: '@at-rule must not have children',
-                        tokens
-                    };
-                }
+            if (!('chi' in token)) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: '@at-rule must have children',
+                    tokens
+                };
             }
+            result = {
+                valid: ValidationLevel.Valid,
+                matches: [token],
+                node: null,
+                syntax,
+                error: '',
+                tokens
+            };
             break;
         case ValidationTokenEnum.AtRuleDefinition:
             if (token.typ != EnumToken.AtRuleNodeType) {
@@ -702,7 +698,51 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             };
             break;
         case ValidationTokenEnum.PropertyType:
-            if (syntax.val == 'group-rule-body') {
+            //
+            if (['media-feature', 'mf-plain'].includes(syntax.val)) {
+                valid = token.typ == EnumToken.DeclarationNodeType;
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] : [],
+                    node: valid ? null : token,
+                    syntax,
+                    error: valid ? '' : 'unexpected token',
+                    tokens
+                };
+                console.error({ valid, result });
+            }
+            else if (syntax.val == 'pseudo-page') {
+                valid = token.typ == EnumToken.PseudoClassTokenType && [':left', ':right', ':first', ':blank'].includes(token.val);
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] : [],
+                    node: valid ? null : token,
+                    syntax,
+                    error: valid ? '' : 'unexpected token',
+                    tokens
+                };
+            }
+            else if (syntax.val == 'page-body') {
+                if (token.typ == EnumToken.DeclarationNodeType) {
+                    valid = true;
+                    result = {
+                        valid: ValidationLevel.Valid,
+                        matches: [token],
+                        node: null,
+                        syntax,
+                        error: '',
+                        tokens
+                    };
+                    while (tokens.length > 0 && [EnumToken.DeclarationNodeType].includes(tokens[0].typ)) {
+                        // @ts-ignore
+                        result.matches.push(tokens.shift());
+                    }
+                }
+                else if (token.typ == EnumToken.AtRuleNodeType) {
+                    result = validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, 'page-margin-box-type'), [token], root, options, context);
+                }
+            }
+            else if (syntax.val == 'group-rule-body') {
                 valid = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(token.typ);
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -1020,7 +1060,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                         tokens
                     };
                 }
-                if (token.nam.startsWith(('--'))) {
+                else if (token.nam.startsWith(('--'))) {
                     result = {
                         valid: ValidationLevel.Valid,
                         matches: [token],
@@ -1367,9 +1407,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             };
             break;
         default:
-            // console.error({syntax, token});
-            // throw new Error('not implemented: ' + JSON.stringify({syntax}, null, 1));
-            console.error('syntax not implemented: ' + JSON.stringify({ syntax }, null, 1));
+            throw new Error('not implemented: ' + JSON.stringify({ syntax, token, tokens }, null, 1));
     }
     // @ts-ignore
     return result;

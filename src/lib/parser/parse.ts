@@ -737,14 +737,17 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
             node.loc = loc;
         }
 
-        const valid: ValidationResult = validateAtRule(node, options, context);
+        if (options.validation) {
 
-        // console.error({valid});
+            const valid: ValidationResult = validateAtRule(node, options, context);
 
-        if (valid.valid == ValidationLevel.Drop) {
+            console.error({valid});
 
-            // @ts-ignore
-            node.typ = EnumToken.InvalidAtRuleTokenType;
+            if (valid.valid == ValidationLevel.Drop) {
+
+                // @ts-ignore
+                node.typ = EnumToken.InvalidAtRuleTokenType;
+            }
         }
 
         // @ts-ignore
@@ -819,31 +822,38 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
             if (ruleType == EnumToken.RuleNodeType) {
 
-                const valid: ValidationResult = validateSelector(parseSelector(tokens), options, context);
+                parseSelector(tokens);
 
-                // console.error({valid});
+                console.error({options});
 
-                if (valid.valid != ValidationLevel.Valid) {
+                if (options.validation) {
 
-                    const node: AstInvalidRule = {
-                        typ: EnumToken.InvalidRuleTokenType,
+                    const valid: ValidationResult = validateSelector(tokens, options, context);
+
+                    console.error({valid});
+
+                    if (valid.valid != ValidationLevel.Valid) {
+
+                        const node: AstInvalidRule = {
+                            typ: EnumToken.InvalidRuleTokenType,
+                            // @ts-ignore
+                            sel: tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), ''),
+                            chi: []
+                        }
+
+                        errors.push({
+                            action: 'drop',
+                            message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                            // @ts-ignore
+                            location: {src, ...(map.get(valid.node) ?? position)}
+                        });
+
                         // @ts-ignore
-                        sel: tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), ''),
-                        chi: []
+                        context.chi.push(node);
+                        Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
+
+                        return node;
                     }
-
-                    errors.push({
-                        action: 'drop',
-                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
-                        // @ts-ignore
-                        location: {src, ...(map.get(valid.node) ?? position)}
-                    });
-
-                    // @ts-ignore
-                    context.chi.push(node);
-                    Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
-
-                    return node;
                 }
             }
 
@@ -1019,6 +1029,7 @@ export function parseAtRulePrelude(tokens: Token[]): Token[] {
 
         if (parent?.typ == EnumToken.ParensTokenType) {
 
+            // @todo parse range and declarations
             parseDeclaration(parent.chi);
         }
     }

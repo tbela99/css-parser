@@ -1,5 +1,6 @@
-import { ValidationLevel, EnumToken } from '../ast/types.js';
+import { ValidationLevel } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
@@ -37,12 +38,15 @@ function validateAtRule(atRule, options, root) {
         }
     }
     if (!(name in config.atRules)) {
-        if (root?.typ == EnumToken.AtRuleNodeType) {
-            const syntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + root.nam)?.[0];
-            if ('chi' in syntax) {
-                return validateSyntax(syntax.chi, [atRule], root, options);
-            }
-        }
+        //     if (root?.typ == EnumToken.AtRuleNodeType) {
+        //
+        //         const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
+        //
+        //         if ('chi' in syntax) {
+        //
+        //             return validateSyntax(syntax.chi as ValidationToken[], [atRule], root, options);
+        //         }
+        //     }
         return {
             valid: ValidationLevel.Drop,
             node: atRule,
@@ -50,7 +54,24 @@ function validateAtRule(atRule, options, root) {
             error: 'unknown at-rule'
         };
     }
-    return validateSyntax(getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, name), [atRule], root, options);
+    const syntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, name)?.[0];
+    if ('chi' in syntax && !('chi' in atRule)) {
+        return {
+            valid: ValidationLevel.Drop,
+            node: atRule,
+            syntax,
+            error: 'missing at-rule body'
+        };
+    }
+    if ('prelude' in syntax) {
+        return validateSyntax(syntax.prelude, atRule.tokens, root, options);
+    }
+    return {
+        valid: ValidationLevel.Valid,
+        node: null,
+        syntax,
+        error: ''
+    };
 }
 
 export { validateAtRule };

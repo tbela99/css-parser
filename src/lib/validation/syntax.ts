@@ -1,4 +1,5 @@
 import {
+    renderSyntax,
     specialValues,
     ValidationAmpersandToken,
     ValidationAtRule,
@@ -32,6 +33,7 @@ import type {
     MatchExpressionToken,
     NumberToken,
     PseudoClassFunctionToken,
+    PseudoClassToken,
     StringToken,
     Token,
     ValidationOptions
@@ -118,9 +120,6 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
     main:
         while (tokens.length > 0) {
 
-            // console.error('len = ' + tokens.length, 'sln = ' + syntaxes.length, 'mlen = ' + matches.length);
-            // console.error(new Error('debug'));
-
             if (syntaxes.length == 0) {
 
                 break;
@@ -164,17 +163,25 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
                 }
 
                 continue;
+            } else if (syntax.typ == ValidationTokenEnum.Block && EnumToken.AtRuleTokenType == token.typ && ('chi' in token)) {
+
+                syntaxes.shift();
+                tokens.shift();
+                // @ts-ignore
+                matches.push(token);
+
+                continue;
             }
 
-            // console.error({
-            //
-            //     root,
-            //     syntaxes,
-            //     tokens,
-            //     syntax, token,
-            //     r: renderSyntax(syntax),
-            //     a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
-            // });
+            console.error({
+
+                root,
+                syntaxes,
+                tokens,
+                syntax, token,
+                r: renderSyntax(syntax),
+                a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
+            });
 
             if (syntax.isOptional) {
 
@@ -848,38 +855,26 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                 }
             }
 
-        {
-
-            const parentSyntax = getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[];
-
-            if ('chi' in parentSyntax) {
-
-                if (!('chi' in token)) {
-
-                    return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        node: token,
-                        syntax,
-                        error: '@at-rule must have children',
-                        tokens
-                    }
-                }
-
-                // @ts-ignore
-                return validateSyntax(parentSyntax.chi, (token as AstAtRule).chi, root, options, context);
-            } else if ('chi' in token) {
+            if (!('chi' in token)) {
 
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: token,
                     syntax,
-                    error: '@at-rule must not have children',
+                    error: '@at-rule must have children',
                     tokens
                 }
             }
-        }
+
+            result = {
+                valid: ValidationLevel.Valid,
+                matches: [token],
+                node: null,
+                syntax,
+                error: '',
+                tokens
+            }
 
             break;
 
@@ -1032,7 +1027,62 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
         case ValidationTokenEnum.PropertyType:
 
-            if ((syntax as ValidationPropertyToken).val == 'group-rule-body') {
+            //
+
+            if (['media-feature', 'mf-plain'].includes((syntax as ValidationPropertyToken).val)) {
+
+                valid = token.typ == EnumToken.DeclarationNodeType;
+
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] as Token[] : [],
+                    node: valid ? null : token,
+                    syntax,
+                    error: valid ? '' : 'unexpected token',
+                    tokens
+                } as ValidationSyntaxResult;
+
+                console.error({valid, result});
+
+            } else            if ((syntax as ValidationPropertyToken).val == 'pseudo-page') {
+
+                valid = token.typ == EnumToken.PseudoClassTokenType && [':left', ':right', ':first', ':blank'].includes((token as PseudoClassToken).val);
+
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] as Token[] : [],
+                    node: valid ? null : token,
+                    syntax,
+                    error: valid ? '' : 'unexpected token',
+                    tokens
+                } as ValidationSyntaxResult;
+
+            } else if ((syntax as ValidationPropertyToken).val == 'page-body') {
+
+                if (token.typ == EnumToken.DeclarationNodeType) {
+
+                    valid = true;
+                    result = {
+
+                        valid: ValidationLevel.Valid,
+                        matches: [token],
+                        node: null,
+                        syntax,
+                        error: '',
+                        tokens
+                    }
+
+                    while (tokens.length > 0 && [EnumToken.DeclarationNodeType].includes(tokens[0].typ)) {
+
+                        // @ts-ignore
+                        result.matches.push(tokens.shift() as Token);
+                    }
+                } else if (token.typ == EnumToken.AtRuleNodeType) {
+
+                    result = validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, 'page-margin-box-type') as ValidationToken[], [token], root!, options, context);
+                }
+
+            } else if ((syntax as ValidationPropertyToken).val == 'group-rule-body') {
 
                 valid = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(token.typ);
 
@@ -1410,9 +1460,6 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 valid = token.typ == EnumToken.DeclarationNodeType && ((<AstDeclaration>token).nam.startsWith(('--')) || (<AstDeclaration>token).nam in config.declarations || (<AstDeclaration>token).nam in config.syntaxes);
 
-                console.error({token, syntax});
-                console.error(123);
-
                 if (!valid) {
 
                     result = {
@@ -1440,8 +1487,6 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                         tokens: null,
                         level: 0
                     });
-
-                    console.error(12498);
 
                     if (result.valid == ValidationLevel.Valid && result.error.length == 0) {
 
@@ -1664,8 +1709,12 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.Parens:
-        case ValidationTokenEnum.Function:
+        case
+        ValidationTokenEnum.Parens
+        :
+        case
+        ValidationTokenEnum.Function
+        :
 
             if ((syntax as ValidationParensToken).typ == ValidationTokenEnum.Parens) {
 
@@ -1693,7 +1742,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.ValidationFunctionDefinition:
+        case
+        ValidationTokenEnum.ValidationFunctionDefinition
+        :
 
             valid = 'val' in token && 'chi' in token;
 
@@ -1728,12 +1779,16 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.Bracket:
+        case
+        ValidationTokenEnum.Bracket
+        :
 
             result = validateSyntax((syntax as ValidationBracketToken).chi, tokens, root as AstNode, options, context);
             break;
 
-        case ValidationTokenEnum.PipeToken:
+        case
+        ValidationTokenEnum.PipeToken
+        :
 
             for (const lines of (syntax as ValidationPipeToken).chi) {
 
@@ -1747,7 +1802,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.AmpersandToken:
+        case
+        ValidationTokenEnum.AmpersandToken
+        :
 
             children = [...(syntax as ValidationAmpersandToken).l.slice(), ...(syntax as ValidationAmpersandToken).r.slice()] as ValidationToken[];
             matches = [] as ValidationToken[];
@@ -1802,7 +1859,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.ColumnToken:
+        case
+        ValidationTokenEnum.ColumnToken
+        :
 
             children = [...(syntax as ValidationColumnToken).l.slice(), ...(syntax as ValidationColumnToken).r.slice()] as ValidationToken[];
             matches = [] as ValidationToken[];
@@ -1849,7 +1908,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.StringToken:
+        case
+        ValidationTokenEnum.StringToken
+        :
 
             valid = token.typ == EnumToken.StringTokenType && (syntax as ValidationStringToken).val.slice(1, -1) == (token as StringToken).val.slice(1, -1);
 
@@ -1865,7 +1926,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case ValidationTokenEnum.PseudoClassFunctionToken:
+        case
+        ValidationTokenEnum.PseudoClassFunctionToken
+        :
 
             valid = token.typ == EnumToken.PseudoClassFuncTokenType;
 
@@ -1895,11 +1958,10 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
         default:
 
-            // console.error({syntax, token});
-            // throw new Error('not implemented: ' + JSON.stringify({syntax}, null, 1));
-            console.error('syntax not implemented: ' + JSON.stringify({syntax}, null, 1));
+            throw new Error('not implemented: ' + JSON.stringify({syntax, token, tokens}, null, 1));
+            console.error(new Error('syntax not implemented: ' + JSON.stringify({syntax, token, tokens}, null, 1)));
     }
 
-    // @ts-ignore
+// @ts-ignore
     return result as ValidationSyntaxResult;
 }
