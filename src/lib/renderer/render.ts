@@ -43,7 +43,7 @@ import {
 } from "./color";
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
-import {colorFuncColorSpace, getComponents} from "./color/utils";
+import {colorFuncColorSpace, getComponents, mathFuncs} from "./color/utils";
 import {isColor, isNewLine} from "../syntax";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
@@ -101,6 +101,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         ...(options.minify ?? true ? {
             indent: '',
             newLine: '',
+            removeEmpty: true,
             removeComments: true
         } : {
             indent: ' ',
@@ -325,6 +326,11 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
 
+            if (options.removeEmpty && children === '') {
+
+                return '';
+            }
+
             if (children.endsWith(';')) {
 
                 children = children.slice(0, -1);
@@ -344,6 +350,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         default:
 
+            // return renderToken(data as Token, options, cache, reducer, errors);
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
 
@@ -512,7 +519,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                     // @ts-ignore
                     const color: ColorToken = chi[1];
-
                     const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(token.val == 'color' ? (<IdentToken>chi[offset]).val : <string>token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
 
                     if (components != null) {
@@ -637,13 +643,12 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (
                 token.typ == EnumToken.FunctionTokenType &&
-                token.val == 'calc' &&
+                mathFuncs.includes(token.val) &&
                 token.chi.length == 1 &&
-                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
-                token.chi[0].typ != EnumToken.FractionTokenType &&
+                ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
+                // @ts-ignore
                 (<FractionToken>(<NumberToken>token.chi[0]).val)?.typ != EnumToken.FractionTokenType) {
 
-                // calc(200px) => 200px
                 return token.chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
             }
 

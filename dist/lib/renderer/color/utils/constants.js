@@ -1,5 +1,6 @@
 import { EnumToken } from '../../../ast/types.js';
 import '../../../ast/minify.js';
+import '../../../ast/walk.js';
 import '../../../parser/parse.js';
 import '../../sourcemap/lib/encode.js';
 import '../../../parser/utils/config.js';
@@ -26,6 +27,8 @@ const colorRange = {
         b: [0, 0.4]
     }
 };
+// https://www.w3.org/TR/css-values-4/#math-function
+const mathFuncs = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
 const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 ({ typ: EnumToken.IdenTokenType, val: 'none' });
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
@@ -193,4 +196,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, deprecatedSystemColors, e, k, systemColors };
+export { COLORS_NAMES, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, deprecatedSystemColors, e, k, mathFuncs, systemColors };

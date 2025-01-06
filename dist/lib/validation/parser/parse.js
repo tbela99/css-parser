@@ -1,5 +1,15 @@
 import { ValidationTokenEnum } from './types.js';
+<<<<<<< HEAD
 import { isIdent, isPseudo } from '../../syntax/syntax.js';
+=======
+import '../../ast/types.js';
+import '../../ast/minify.js';
+import '../../ast/walk.js';
+import '../../parser/parse.js';
+import '../../parser/utils/config.js';
+import '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
+>>>>>>> math_functions
 
 const skipped = [
     ValidationTokenEnum.Star,

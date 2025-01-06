@@ -72,7 +72,6 @@ function matchToken(token, matches) {
             case ValidationTokenEnum.Comma:
                 break;
             case ValidationTokenEnum.Keyword:
-                console.error(matches[i], token);
                 if (token.typ == EnumToken.IdenTokenType && token.val == matches[i].val) {
                     return token;
                 }
@@ -111,10 +110,6 @@ function matchToken(token, matches) {
                     return result;
                 }
                 break;
-            // default:
-            //
-            //     console.error(token, matches[i]);
-            //     throw new Error('bar bar');
         }
     }
     return null;

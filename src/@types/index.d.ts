@@ -94,6 +94,7 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     minify?: boolean;
+    removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
     sourcemap?: boolean;

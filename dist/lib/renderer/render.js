@@ -1,9 +1,10 @@
 import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
+import { mathFuncs, colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
@@ -45,6 +46,7 @@ function doRender(data, options = {}) {
         ...(options.minify ?? true ? {
             indent: '',
             newLine: '',
+            removeEmpty: true,
             removeComments: true
         } : {
             indent: ' ',
@@ -193,6 +195,9 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 }
                 return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
+            if (options.removeEmpty && children === '') {
+                return '';
+            }
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
@@ -204,6 +209,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
         case EnumToken.InvalidAtRuleTokenType:
             return '';
         default:
+            // return renderToken(data as Token, options, cache, reducer, errors);
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
     return '';
@@ -395,12 +401,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.TimelineFunctionTokenType:
         case EnumToken.GridTemplateFuncTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
-                token.val == 'calc' &&
+                mathFuncs.includes(token.val) &&
                 token.chi.length == 1 &&
-                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
-                token.chi[0].typ != EnumToken.FractionTokenType &&
+                ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
+                // @ts-ignore
                 token.chi[0].val?.typ != EnumToken.FractionTokenType) {
-                // calc(200px) => 200px
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
             // @ts-ignore

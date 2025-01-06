@@ -3,6 +3,7 @@ import { getComponents } from './utils/components.js';
 import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { expandHexValue } from './hex.js';
 import { lch2labvalues, getLABComponents, Lab_to_sRGB } from './lab.js';

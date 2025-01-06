@@ -28,7 +28,7 @@ $ deno add @tbela99/css-parser
 - convert nested css rules to legacy syntax
 - generate sourcemap
 - compute css shorthands. see supported properties list below
-- evaluate calc()
+- evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign() #49
 - inline css variables
 - remove duplicate properties
 - flatten @import rules
@@ -177,6 +177,7 @@ Include ParseOptions and RenderOptions
 
 - minify: boolean, optional. default to _true_. minify css output.
 - withParents: boolean, optional. render this node and its parents.
+- removeEmpty: boolean, optional. remove empty rule lists from the ast.
 - expandNestingRules: boolean, optional. expand nesting rules.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
 - removeComments: boolean, remove comments in generated css.

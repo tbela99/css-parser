@@ -11,6 +11,7 @@
   - [ ] :not() does not accept pseudo classes
   - [ ] do not validate declarations in @supports
 - [ ] declarations validation
+- [x] evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign() #49
 
 # v0.7.1
 

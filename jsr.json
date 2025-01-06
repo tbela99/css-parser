@@ -1,6 +1,10 @@
 {
   "name": "@tbela99/css-parser",
+<<<<<<< HEAD
   "version": "0.8.0-alpha2",
+=======
+  "version": "0.8.0",
+>>>>>>> math_functions
   "publish": {
     "include": [
       "src",

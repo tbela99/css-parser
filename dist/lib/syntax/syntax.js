@@ -1,9 +1,10 @@
 import { colorsFunc } from '../renderer/render.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import '../parser/parse.js';
+import { COLORS_NAMES, mathFuncs } from '../renderer/color/utils/constants.js';
 import '../parser/utils/config.js';
-import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -89,7 +90,7 @@ function isColor(token) {
                         return false;
                     }
                 }
-                if (children[i].typ == EnumToken.FunctionTokenType && !['calc'].includes(children[i].val)) {
+                if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes(children[i].val)) {
                     return false;
                 }
             }
@@ -184,7 +185,7 @@ function isColor(token) {
                     }
                     continue;
                 }
-                if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || v.val == 'var' || colorsFunc.includes(v.val))) {
+                if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
                     continue;
                 }
                 if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {

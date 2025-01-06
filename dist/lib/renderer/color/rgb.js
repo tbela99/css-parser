@@ -2,6 +2,7 @@ import { minmax } from './color.js';
 import { COLORS_NAMES } from './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { expandHexValue } from './hex.js';
 import { hwb2srgb, hslvalues, hsl2srgbvalues, cmyk2srgb, oklab2srgb, oklch2srgb, lab2srgb, lch2srgb } from './srgb.js';

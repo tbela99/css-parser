@@ -1,6 +1,7 @@
 import { PropertyList } from '../../parser/declaration/list.js';
 import { EnumToken } from '../types.js';
 import '../minify.js';
+import '../walk.js';
 import '../../parser/parse.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
