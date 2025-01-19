@@ -1,19 +1,18 @@
-import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, isColor } from '../syntax/syntax.js';
+import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, mathFuncs, isColor, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
-import { COLORS_NAMES, systemColors, deprecatedSystemColors, mathFuncs } from '../renderer/color/utils/constants.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
+import { COLORS_NAMES, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
 import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
 import { validateSelector } from '../validation/selector.js';
 import { validateAtRule } from '../validation/atrule.js';
-import { validateDeclaration } from '../validation/declaration.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -95,7 +94,7 @@ async function doParse(iterator, options = {}) {
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: false,
+        validation: true,
         ...options
     };
     if (options.expandNestingRules) {
@@ -474,7 +473,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         if (atRule.val == 'charset' && options.removeCharset) {
             return null;
         }
-        const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }));
+        const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }), atRule);
         const raw = t.reduce((acc, curr) => {
             acc.push(renderToken(curr, { removeComments: true }));
             return acc;
@@ -486,7 +485,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             val: raw.join('')
         };
         Object.defineProperties(node, {
-            tokens: { ...definedPropertySettings, value: tokens.slice() },
+            tokens: { ...definedPropertySettings, enumerable: true, value: tokens.slice() },
             raw: { ...definedPropertySettings, value: raw }
         });
         if (delim.typ == EnumToken.BlockStartTokenType) {
@@ -501,7 +500,6 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         }
         if (options.validation) {
             const valid = validateAtRule(node, options, context);
-            console.error({ valid });
             if (valid.valid == ValidationLevel.Drop) {
                 // @ts-ignore
                 node.typ = EnumToken.InvalidAtRuleTokenType;
@@ -557,10 +555,9 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             const ruleType = context.typ == EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
             if (ruleType == EnumToken.RuleNodeType) {
                 parseSelector(tokens);
-                console.error({ options });
                 if (options.validation) {
+                    // @ts-ignore
                     const valid = validateSelector(tokens, options, context);
-                    console.error({ valid });
                     if (valid.valid != ValidationLevel.Valid) {
                         const node = {
                             typ: EnumToken.InvalidRuleTokenType,
@@ -586,7 +583,11 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 sel: [...uniq.keys()].join(','),
                 chi: []
             };
-            Object.defineProperty(node, 'tokens', { ...definedPropertySettings, value: tokens.slice() });
+            Object.defineProperty(node, 'tokens', {
+                ...definedPropertySettings,
+                enumerable: true,
+                value: tokens.slice()
+            });
             let raw = [...uniq.values()];
             Object.defineProperty(node, 'raw', {
                 enumerable: false,
@@ -680,16 +681,8 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 val: value
             };
             const result = parseDeclarationNode(node, errors, src, position);
-            // console.error({result});
             if (result != null) {
-                if (options.validation) {
-                    const valid = validateDeclaration(result, options, context);
-                    // console.error({valid});
-                    if (valid.valid == ValidationLevel.Drop) {
-                        return null;
-                    }
-                }
-                // console.error({result});
+                if (options.validation) ;
                 // @ts-ignore
                 context.chi.push(result);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
@@ -698,104 +691,127 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         }
     }
 }
-function parseAtRulePrelude(tokens) {
-    for (const { value, parent } of walkValues(tokens)) {
+function parseAtRulePrelude(tokens, atRule) {
+    // @ts-ignore
+    for (const { value, parent } of walkValues(tokens, null, null, true)) {
         if (value.typ == EnumToken.CommentTokenType ||
             value.typ == EnumToken.WhitespaceTokenType ||
             value.typ == EnumToken.CommaTokenType) {
             continue;
         }
-        if (parent?.typ == EnumToken.ParensTokenType) {
+        if (atRule.val == 'page' && value.typ == EnumToken.PseudoClassTokenType) {
+            if ([':left', ':right', ':first', ':blank'].includes(value.val)) {
+                // @ts-ignore
+                value.typ = EnumToken.PseudoPageTokenType;
+            }
+        }
+        if (atRule.val == 'layer') {
+            if (parent == null && value.typ == EnumToken.LiteralTokenType) {
+                if (value.val.charAt(0) == '.') {
+                    if (isIdent(value.val.slice(1))) {
+                        // @ts-ignore
+                        value.typ = EnumToken.ClassSelectorTokenType;
+                    }
+                }
+            }
+        }
+        if (value.typ == EnumToken.IdenTokenType) {
+            if (parent == null && mediaTypes.some((t) => {
+                if (value.val.localeCompare(t, 'en', { sensitivity: 'base' }) == 0) {
+                    // @ts-ignore
+                    value.typ = EnumToken.MediaFeatureTokenType;
+                    return true;
+                }
+                return false;
+            })) {
+                continue;
+            }
+            if (value.typ == EnumToken.IdenTokenType && 'and'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+                // @ts-ignore
+                value.typ = EnumToken.MediaFeatureAndTokenType;
+                continue;
+            }
+            if (value.typ == EnumToken.IdenTokenType && 'or'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+                // @ts-ignore
+                value.typ = EnumToken.MediaFeatureOrTokenType;
+                continue;
+            }
+            if (value.typ == EnumToken.IdenTokenType &&
+                ['not', 'only'].some((t) => t.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0)) {
+                // @ts-ignore
+                const array = parent?.chi ?? tokens;
+                const startIndex = array.indexOf(value);
+                let index = startIndex + 1;
+                if (index == 0) {
+                    continue;
+                }
+                while (index < array.length && [EnumToken.CommentTokenType, EnumToken.WhitespaceTokenType].includes(array[index].typ)) {
+                    index++;
+                }
+                if (array[index] == null || array[index].typ == EnumToken.CommaTokenType) {
+                    continue;
+                }
+                Object.assign(array[startIndex], {
+                    typ: value.val.toLowerCase() == 'not' ? EnumToken.MediaFeatureNotTokenType : EnumToken.MediaFeatureOnlyTokenType,
+                    val: array[index]
+                });
+                array.splice(startIndex + 1, index - startIndex);
+                continue;
+            }
+        }
+        if (value.typ == EnumToken.ParensTokenType) {
             // @todo parse range and declarations
-            parseDeclaration(parent.chi);
+            // parseDeclaration(parent.chi);
+            let i;
+            let nameIndex = -1;
+            let valueIndex = -1;
+            for (let i = 0; i < value.chi.length; i++) {
+                if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
+                    continue;
+                }
+                if (value.chi[i].typ == EnumToken.IdenTokenType) {
+                    nameIndex = i;
+                }
+                break;
+            }
+            if (nameIndex == -1) {
+                continue;
+            }
+            for (let i = nameIndex + 1; i < value.chi.length; i++) {
+                if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
+                    continue;
+                }
+                valueIndex = i;
+                break;
+            }
+            if (valueIndex == -1) {
+                // @ts-ignore
+                // value.chi[nameIndex].typ = EnumToken.MediaFeatureTokenType;
+                continue;
+                // return tokens;
+            }
+            for (i = nameIndex + 1; i < value.chi.length; i++) {
+                if ([
+                    EnumToken.GtTokenType, EnumToken.LtTokenType,
+                    EnumToken.GteTokenType, EnumToken.LteTokenType,
+                    EnumToken.ColonTokenType
+                ].includes(value.chi[valueIndex].typ)) {
+                    const val = value.chi.splice(valueIndex, 1)[0];
+                    const node = value.chi.splice(nameIndex, 1)[0];
+                    while (value.chi[0]?.typ == EnumToken.WhitespaceTokenType) {
+                        value.chi.shift();
+                    }
+                    const t = [{
+                            typ: EnumToken.MediaQueryConditionTokenType,
+                            l: node,
+                            op: { typ: val.typ },
+                            r: value.chi.slice()
+                        }];
+                    value.chi.length = 0;
+                    value.chi.push(...t);
+                }
+            }
         }
-    }
-    return tokens;
-}
-function parseDeclaration(tokens) {
-    let nameIndex = -1, valueIndex = -1;
-    for (let i = 0; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.WhitespaceTokenType) {
-            continue;
-        }
-        if (tokens[i].typ == EnumToken.IdenTokenType) {
-            nameIndex = i;
-        }
-        break;
-    }
-    if (nameIndex == -1) {
-        return tokens;
-    }
-    for (let i = nameIndex + 1; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.WhitespaceTokenType) {
-            continue;
-        }
-        valueIndex = i;
-        break;
-    }
-    if (valueIndex == -1) {
-        return tokens;
-    }
-    if (tokens[valueIndex].typ == EnumToken.PseudoClassTokenType) {
-        const node = tokens.splice(nameIndex, 1)[0];
-        const value = tokens[valueIndex];
-        value.typ = EnumToken.IdenTokenType;
-        value.val = value.val.slice(1);
-        while (tokens[0]?.typ == EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        const t = [Object.assign(node, {
-                typ: EnumToken.DeclarationNodeType,
-                nam: node.val,
-                val: tokens.slice()
-            })];
-        tokens.length = 0;
-        tokens.push(...t);
-    }
-    else if (tokens[valueIndex].typ == EnumToken.PseudoClassFuncTokenType) {
-        const node = tokens.splice(nameIndex, 1)[0];
-        const value = tokens[valueIndex];
-        value.typ = EnumToken.FunctionTokenType;
-        value.val = value.val.slice(1);
-        while (tokens[0]?.typ == EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        const t = [Object.assign(node, {
-                typ: EnumToken.DeclarationNodeType,
-                nam: node.val,
-                val: tokens.slice()
-            })];
-        tokens.length = 0;
-        tokens.push(...t);
-    }
-    else if (tokens[valueIndex].typ == EnumToken.ColonTokenType) {
-        tokens.splice(valueIndex, 1);
-        const node = tokens.splice(nameIndex, 1)[0];
-        while (tokens[0]?.typ == EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        const t = [Object.assign(node, {
-                typ: EnumToken.DeclarationNodeType,
-                nam: node.val,
-                val: tokens.slice()
-            })];
-        tokens.length = 0;
-        tokens.push(...t);
-    }
-    else if ([EnumToken.GtTokenType, EnumToken.LtTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType].includes(tokens[valueIndex].typ)) {
-        const value = tokens.splice(valueIndex, 1)[0];
-        const node = tokens.splice(nameIndex, 1)[0];
-        while (tokens[0]?.typ == EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        const t = [{
-                typ: EnumToken.MediaQueryConditionTokenType,
-                l: node,
-                op: value.typ,
-                r: tokens.slice()
-            }];
-        tokens.length = 0;
-        tokens.push(...t);
     }
     return tokens;
 }
@@ -1126,6 +1142,16 @@ function getTokenType(val, hint) {
 function parseTokens(tokens, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];
+        if (t.typ == EnumToken.PseudoClassFuncTokenType) {
+            if (t.val.slice(1) in webkitPseudoAliasMap) {
+                t.val = ':' + webkitPseudoAliasMap[t.val.slice(1)];
+            }
+        }
+        else if (t.typ == EnumToken.PseudoClassTokenType) {
+            if (t.val.slice(1) in webkitPseudoAliasMap) {
+                t.val = ':' + webkitPseudoAliasMap[t.val.slice(1)];
+            }
+        }
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
             i + 1 == tokens.length ||
             [EnumToken.CommaTokenType, EnumToken.GteTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType].includes(tokens[i + 1].typ)) ||
@@ -1221,7 +1247,7 @@ function parseTokens(tokens, options = {}) {
                     }
                 }
                 else if ([
-                    EnumToken.DashMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType
+                    EnumToken.DashMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DelimTokenType
                 ].includes(t.chi[m].typ)) {
                     let upper = m;
                     let lower = m;
@@ -1252,9 +1278,14 @@ function parseTokens(tokens, options = {}) {
                         }
                     }
                     // @ts-ignore
+                    const typ = t.chi[m].typ;
+                    // @ts-ignore
                     t.chi[m] = {
                         typ: EnumToken.MatchExpressionTokenType,
-                        op: t.chi[m].typ,
+                        op: {
+                            // @ts-ignore
+                            typ: typ == EnumToken.DelimTokenType ? EnumToken.EqualMatchTokenType : typ
+                        },
                         l: t.chi[lower],
                         r: t.chi[upper]
                     };
@@ -1443,4 +1474,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, parseAtRulePrelude, parseDeclaration, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };

@@ -14,7 +14,7 @@ const objectProperties = {
     writable: true,
     configurable: true
 };
-// syntax: keyword | <'property'> | <function>
+// syntaxes: keyword | <'property'> | <function>
 // "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
 // ""
 // : "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?
@@ -172,7 +172,7 @@ function parseSyntax(syntax) {
         typ: ValidationTokenEnum.Root,
         chi: []
     }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
-    // return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
+    // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
     return minify(doParseSyntax(syntax, tokenize(syntax), root));
 }
 function matchParens(syntax, iterator) {
@@ -487,10 +487,10 @@ function matchToken(syntax, iterator, validationToken) {
             if (item.value.typ == ValidationTokenEnum.Pipe) {
                 token = Object.defineProperty({
                     typ: ValidationTokenEnum.PipeToken,
-                    chi: [matchToken(syntax, children.slice()[Symbol.iterator](), validationToken)], //.concat(matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntax, iterator, validationToken)),
+                    chi: [matchToken(syntax, children.slice()[Symbol.iterator](), validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
                     // @ts-ignore
-                    // l: matchToken(syntax, children.slice()[Symbol.iterator](), validationToken),
-                    // r: matchToken(syntax, iterator, validationToken)
+                    // l: matchToken(syntaxes, children.slice()[Symbol.iterator](), validationToken),
+                    // r: matchToken(syntaxes, iterator, validationToken)
                 }, 'pos', {
                     ...objectProperties,
                     value: item.value.pos

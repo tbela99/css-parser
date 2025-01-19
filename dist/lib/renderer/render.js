@@ -1,5 +1,5 @@
 import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { mathFuncs, colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
+import { colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
 import { EnumToken } from '../ast/types.js';
@@ -9,7 +9,7 @@ import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { isColor, isNewLine } from '../syntax/syntax.js';
+import { isColor, mathFuncs, isNewLine } from '../syntax/syntax.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
@@ -425,6 +425,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.StartParensTokenType:
             return '(';
         case EnumToken.DelimTokenType:
+        case EnumToken.EqualMatchTokenType:
             return '=';
         case EnumToken.IncludeMatchTokenType:
             return '~=';
@@ -593,6 +594,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.DashedIdenTokenType:
+        case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
         case EnumToken.NestingSelectorTokenType:
@@ -604,7 +606,17 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DeclarationNodeType:
             return token.nam + ':' + token.val.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.MediaQueryConditionTokenType:
-            return renderToken(token.l, options, cache, reducer, errors) + renderToken({ typ: token.op }, options, cache, reducer, errors) + token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+            return renderToken(token.l, options, cache, reducer, errors) + renderToken(token.op, options, cache, reducer, errors) + token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+        case EnumToken.MediaFeatureTokenType:
+            return token.val;
+        case EnumToken.MediaFeatureNotTokenType:
+            return 'not ' + renderToken(token.val, options, cache, reducer, errors);
+        case EnumToken.MediaFeatureOnlyTokenType:
+            return 'only ' + renderToken(token.val, options, cache, reducer, errors);
+        case EnumToken.MediaFeatureAndTokenType:
+            return 'and';
+        case EnumToken.MediaFeatureOrTokenType:
+            return 'or';
         default:
             throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }

@@ -4,7 +4,6 @@ import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import '../parser/utils/config.js';
-import '../renderer/color/utils/constants.js';
 import { eq } from '../parser/utils/eq.js';
 import { renderToken, doRender } from '../renderer/render.js';
 import * as index from './features/index.js';

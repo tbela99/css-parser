@@ -5,25 +5,34 @@ import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import '../parser/utils/config.js';
-import { getParsedSyntax } from './config.js';
-import { validateSyntax } from './syntax.js';
+import { validateRelativeSelectorList } from './syntaxes/relative-selector-list.js';
+import './syntaxes/complex-selector.js';
+import { validateKeyframeBlockList } from './syntaxes/keyframe-block-list.js';
+import { validateSelectorList } from './syntaxes/selector-list.js';
 
 function validateSelector(selector, options, root) {
-    const isKeyframe = root?.typ == EnumToken.AtRuleNodeType && /^(-[a-zA-Z]+-)?keyframes/i.test(root.nam);
-    let isNested = false;
-    if (!isKeyframe && root != null) {
-        let node = root;
-        while (node != null) {
-            if (node.typ == EnumToken.RuleNodeType) {
-                isNested = true;
-                break;
-            }
-            // @ts-ignore
-            node = node.parent;
-        }
+    if (root == null) {
+        return validateRelativeSelectorList(selector, root);
     }
     // @ts-ignore
-    return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, isKeyframe ? 'keyframe-selector' : (isNested ? 'relative-selector-list' : 'complex-selector-list')), selector, isNested ? root : null, options);
+    if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
+        return validateKeyframeBlockList(selector, root);
+    }
+    let isNested = root.typ == EnumToken.RuleNodeType ? 1 : 0;
+    let currentRoot = root.parent;
+    while (currentRoot != null && isNested == 0) {
+        if (currentRoot.typ == EnumToken.RuleNodeType) {
+            isNested++;
+            if (isNested > 0) {
+                // @ts-ignore
+                return validateRelativeSelectorList(selector, root, { nestedSelector: true });
+            }
+        }
+        currentRoot = currentRoot.parent;
+    }
+    const nestedSelector = isNested > 0;
+    // @ts-ignore
+    return nestedSelector ? validateRelativeSelectorList(selector, root, { nestedSelector }) : validateSelectorList(selector, root, { nestedSelector });
 }
 
 export { validateSelector };

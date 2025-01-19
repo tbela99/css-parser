@@ -1843,6 +1843,12 @@ var functions = {
 	clamp: {
 		syntax: "clamp( <calc-sum>#{3} )"
 	},
+	color: {
+		syntax: "color( [ from <color> ]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+	},
+	"color-mix": {
+		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2})"
+	},
 	"conic-gradient": {
 		syntax: "conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )"
 	},
@@ -1891,11 +1897,11 @@ var functions = {
 	"hue-rotate": {
 		syntax: "hue-rotate( <angle> )"
 	},
-	hypot: {
-		syntax: "hypot( <calc-sum># )"
-	},
 	hwb: {
 		syntax: "hwb( [<hue> | none] [<percentage> | none] [<percentage> | none] [ / [<alpha-value> | none] ]? )"
+	},
+	hypot: {
+		syntax: "hypot( <calc-sum># )"
 	},
 	image: {
 		syntax: "image( <image-tags>? [ <image-src>? , <color>? ]! )"
@@ -2059,6 +2065,9 @@ var functions = {
 	sqrt: {
 		syntax: "sqrt( <calc-sum> )"
 	},
+	tan: {
+		syntax: "tan( <calc-sum> )"
+	},
 	"target-counter": {
 		syntax: "target-counter( [ <string> | <url> ] , <custom-ident> , <counter-style>? )"
 	},
@@ -2067,9 +2076,6 @@ var functions = {
 	},
 	"target-text": {
 		syntax: "target-text( [ <string> | <url> ] , [ content | before | after | first-letter ]? )"
-	},
-	tan: {
-		syntax: "tan( <calc-sum> )"
 	},
 	translate: {
 		syntax: "translate( <length-percentage> , <length-percentage>? )"
@@ -2241,8 +2247,14 @@ var syntaxes = {
 	color: {
 		syntax: "<rgb()> | <rgba()> | <hsl()> | <hsla()> | <hwb()> | <lab()> | <lch()> | <oklab()> | <oklch()> | <color()> | <hex-color> | <named-color> | <system-color> | <deprecated-system-color> | currentcolor | transparent"
 	},
+	"color()": {
+		syntax: "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+	},
 	"color-interpolation-method": {
-		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? ]"
+		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
+	},
+	"color-mix()": {
+		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2})"
 	},
 	"color-stop": {
 		syntax: "<color-stop-length> | <color-stop-angle>"
@@ -2255,6 +2267,9 @@ var syntaxes = {
 	},
 	"color-stop-list": {
 		syntax: "[ <linear-color-stop> [, <linear-color-hint>]? ]# , <linear-color-stop>"
+	},
+	"colorspace-params": {
+		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
 	},
 	combinator: {
 		syntax: "'>' | '+' | '~' | [ '||' ]"
@@ -2333,6 +2348,12 @@ var syntaxes = {
 	},
 	"cubic-bezier-timing-function": {
 		syntax: "ease | ease-in | ease-out | ease-in-out | cubic-bezier(<number [0,1]>, <number>, <number [0,1]>, <number>)"
+	},
+	"custom-color-space": {
+		syntax: "<dashed-ident>"
+	},
+	"custom-params": {
+		syntax: "<dashed-ident> [ <number> | <percentage> | none ]+"
 	},
 	dasharray: {
 		syntax: "[ [ <length-percentage> | <number> ]+ ]#"
@@ -2509,7 +2530,7 @@ var syntaxes = {
 		syntax: "image-set( <image-set-option># )"
 	},
 	"image-set-option": {
-		syntax: "[ <image> | <string> ] [ <resolution> || type(<string>) ]"
+		syntax: "[ <image> | <string> ]x [ <resolution> || type(<string>) ]"
 	},
 	"image-src": {
 		syntax: "<url> | <string>"
@@ -2768,6 +2789,12 @@ var syntaxes = {
 	},
 	"pow()": {
 		syntax: "pow( <calc-sum>, <calc-sum> )"
+	},
+	"predefined-rgb": {
+		syntax: "srgb | srgb-linear | display-p3 | a98-rgb | prophoto-rgb | rec2020"
+	},
+	"predefined-rgb-params": {
+		syntax: "<predefined-rgb> [ <number> | <percentage> | none ]{3}"
 	},
 	"pseudo-class-selector": {
 		syntax: "':' <ident-token> | ':' <function-token> <any-value> ')'"
@@ -3071,6 +3098,12 @@ var syntaxes = {
 	},
 	"wq-name": {
 		syntax: "<ns-prefix>? <ident-token>"
+	},
+	xyz: {
+		syntax: "xyz | xyz-d50 | xyz-d65"
+	},
+	"xyz-params": {
+		syntax: "<xyz> [ <number> | <percentage> | none ]{3}"
 	}
 };
 var selectors = {

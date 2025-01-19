@@ -9,8 +9,6 @@ function getSyntaxConfig() {
     return config;
 }
 function getParsedSyntax(group, key) {
-    //
-    // console.error({group, key});
     if (!(key in config[group])) {
         const matches = key.match(/(@?)(-[a-zA-Z]+)-(.*?)$/);
         if (matches != null) {
@@ -21,8 +19,6 @@ function getParsedSyntax(group, key) {
         }
     }
     const index = group + '.' + key;
-    // @ts-ignore
-    // console.error(`> group: '${group}' | key: '${key}' | syntax: "${config[group][key].syntax}"`);
     // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
         // @ts-ignore
@@ -35,7 +31,6 @@ function getParsedSyntax(group, key) {
         // @ts-ignore
         parsedSyntaxes.set(index, syntax.chi);
     }
-    // console.error(JSON.stringify(parsedSyntaxes.get(index), null, 1));
     return parsedSyntaxes.get(index);
 }
 

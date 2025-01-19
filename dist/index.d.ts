@@ -38,59 +38,66 @@ declare enum EnumToken {
     WhitespaceTokenType = 36,
     IncludeMatchTokenType = 37,
     DashMatchTokenType = 38,
-    LtTokenType = 39,
-    LteTokenType = 40,
-    GtTokenType = 41,
-    GteTokenType = 42,
-    PseudoClassTokenType = 43,
-    PseudoClassFuncTokenType = 44,
-    DelimTokenType = 45,
-    UrlTokenTokenType = 46,
-    EOFTokenType = 47,
-    ImportantTokenType = 48,
-    ColorTokenType = 49,
-    AttrTokenType = 50,
-    BadCommentTokenType = 51,
-    BadCdoTokenType = 52,
-    BadUrlTokenType = 53,
-    BadStringTokenType = 54,
-    BinaryExpressionTokenType = 55,
-    UnaryExpressionTokenType = 56,
-    FlexTokenType = 57,
-    ListToken = 58,
-    Add = 59,
-    Mul = 60,
-    Div = 61,
-    Sub = 62,
-    ColumnCombinatorTokenType = 63,
-    ContainMatchTokenType = 64,
-    StartMatchTokenType = 65,
-    EndMatchTokenType = 66,
-    MatchExpressionTokenType = 67,
-    NameSpaceAttributeTokenType = 68,
-    FractionTokenType = 69,
-    IdenListTokenType = 70,
-    GridTemplateFuncTokenType = 71,
-    KeyFrameRuleNodeType = 72,
-    ClassSelectorTokenType = 73,
-    UniversalSelectorTokenType = 74,
-    ChildCombinatorTokenType = 75,
-    DescendantCombinatorTokenType = 76,// whitespace
-    NextSiblingCombinatorTokenType = 77,
-    SubsequentSiblingCombinatorTokenType = 78,
-    NestingSelectorTokenType = 79,
-    InvalidRuleTokenType = 80,
-    InvalidClassSelectorTokenType = 81,
-    InvalidAttrTokenType = 82,
-    InvalidAtRuleTokenType = 83,
-    MediaQueryConditionTokenType = 84,
+    EqualMatchTokenType = 39,
+    LtTokenType = 40,
+    LteTokenType = 41,
+    GtTokenType = 42,
+    GteTokenType = 43,
+    PseudoClassTokenType = 44,
+    PseudoClassFuncTokenType = 45,
+    DelimTokenType = 46,
+    UrlTokenTokenType = 47,
+    EOFTokenType = 48,
+    ImportantTokenType = 49,
+    ColorTokenType = 50,
+    AttrTokenType = 51,
+    BadCommentTokenType = 52,
+    BadCdoTokenType = 53,
+    BadUrlTokenType = 54,
+    BadStringTokenType = 55,
+    BinaryExpressionTokenType = 56,
+    UnaryExpressionTokenType = 57,
+    FlexTokenType = 58,
+    ListToken = 59,
+    Add = 60,
+    Mul = 61,
+    Div = 62,
+    Sub = 63,
+    ColumnCombinatorTokenType = 64,
+    ContainMatchTokenType = 65,
+    StartMatchTokenType = 66,
+    EndMatchTokenType = 67,
+    MatchExpressionTokenType = 68,
+    NameSpaceAttributeTokenType = 69,
+    FractionTokenType = 70,
+    IdenListTokenType = 71,
+    GridTemplateFuncTokenType = 72,
+    KeyFrameRuleNodeType = 73,
+    ClassSelectorTokenType = 74,
+    UniversalSelectorTokenType = 75,
+    ChildCombinatorTokenType = 76,// >
+    DescendantCombinatorTokenType = 77,// whitespace
+    NextSiblingCombinatorTokenType = 78,// +
+    SubsequentSiblingCombinatorTokenType = 79,// ~
+    NestingSelectorTokenType = 80,// &
+    InvalidRuleTokenType = 81,
+    InvalidClassSelectorTokenType = 82,
+    InvalidAttrTokenType = 83,
+    InvalidAtRuleTokenType = 84,
+    MediaQueryConditionTokenType = 85,
+    MediaFeatureTokenType = 86,
+    MediaFeatureOnlyTokenType = 87,
+    MediaFeatureNotTokenType = 88,
+    MediaFeatureAndTokenType = 89,
+    MediaFeatureOrTokenType = 90,
+    PseudoPageTokenType = 91,
     Time = 25,
     Iden = 7,
-    EOF = 47,
+    EOF = 48,
     Hash = 28,
-    Flex = 57,
+    Flex = 58,
     Angle = 24,
-    Color = 49,
+    Color = 50,
     Comma = 9,
     String = 20,
     Length = 23,
@@ -103,9 +110,9 @@ declare enum EnumToken {
     Frequency = 26,
     Resolution = 27,
     Whitespace = 36,
-    IdenList = 70,
+    IdenList = 71,
     DashedIden = 8,
-    GridTemplateFunc = 71,
+    GridTemplateFunc = 72,
     ImageFunc = 19,
     CommentNodeType = 0,
     CDOCOMMNodeType = 1,
@@ -126,7 +133,7 @@ declare function walkValues(values: Token[], root?: AstNode | Token | null, filt
     event: WalkerValueEvent$1;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
-}): Generator<WalkAttributesResult>;
+}, reverse?: boolean): Generator<WalkAttributesResult>;
 
 declare function expand(ast: AstNode): AstNode;
 
@@ -412,6 +419,12 @@ export declare interface DashMatchToken extends BaseToken {
     // val: '|=';
 }
 
+export declare interface EqualMatchToken extends BaseToken {
+
+    typ: EnumToken.EqualMatchTokenType;
+    // val: '|=';
+}
+
 export declare interface StartMatchToken extends BaseToken {
 
     typ: EnumToken.StartMatchTokenType;
@@ -458,6 +471,12 @@ export declare interface ColumnCombinatorToken extends BaseToken {
 export declare interface PseudoClassToken extends BaseToken {
 
     typ: EnumToken.PseudoClassTokenType;
+    val: string;
+}
+
+export declare interface PseudoPageToken extends BaseToken {
+
+    typ: EnumToken.PseudoPageTokenType;
     val: string;
 }
 
@@ -542,11 +561,45 @@ export declare interface ChildCombinatorToken extends BaseToken {
     typ: EnumToken.ChildCombinatorTokenType
 }
 
+export declare interface MediaFeatureToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureTokenType,
+    val: string;
+}
+
+export declare interface MediaFeatureOnlyToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureOnlyTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureAndToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureAndTokenType;
+}
+
+export declare interface MediaFeatureOrToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureOrTokenType;
+}
+
 export declare interface MediaQueryConditionToken extends BaseToken {
 
     typ: EnumToken.MediaQueryConditionTokenType,
     l: Token,
-    op: EnumToken.GtTokenType | EnumToken.LtTokenType | EnumToken.GteTokenType | EnumToken.LteTokenType,
+    op: ColonToken | GreaterThanToken | LessThanToken | GreaterThanOrEqualToken | LessThanOrEqualToken,
     r: Token[]
 }
 
@@ -610,7 +663,7 @@ export declare interface BinaryExpressionToken extends BaseToken {
 export declare interface MatchExpressionToken extends BaseToken {
 
     typ: EnumToken.MatchExpressionTokenType
-    op: DelimToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
+    op: EqualMatchToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
     l: Token;
     r: Token;
     attr?: 'i' | 's';
@@ -662,6 +715,11 @@ export declare type Token =
     | NestingSelectorToken
     |
     MediaQueryConditionToken
+    | MediaFeatureToken
+    | MediaFeatureNotToken
+    | MediaFeatureOnlyToken
+    | MediaFeatureAndToken
+    | MediaFeatureOrToken
     | AstDeclaration
     |
     NumberToken
@@ -708,6 +766,7 @@ export declare type Token =
     | NameSpaceAttributeToken
     |
     DashMatchToken
+    | EqualMatchToken
     | LessThanToken
     | LessThanOrEqualToken
     | GreaterThanToken
@@ -715,6 +774,7 @@ export declare type Token =
     |
     ListToken
     | PseudoClassToken
+    | PseudoPageToken
     | PseudoClassFunctionToken
     | DelimToken
     | BinaryExpressionToken

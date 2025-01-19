@@ -33,7 +33,7 @@ function* walk(node, filter) {
         }
     }
 }
-function* walkValues(values, root = null, filter) {
+function* walkValues(values, root = null, filter, reverse) {
     // const set = new Set<Token>();
     const stack = values.slice();
     const map = new Map;
@@ -51,7 +51,7 @@ function* walkValues(values, root = null, filter) {
         };
     }
     while (stack.length > 0) {
-        let value = stack.shift();
+        let value = reverse ? stack.pop() : stack.shift();
         let option = null;
         if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
             const isValid = filter.type == null || value.typ == filter.type ||
@@ -87,7 +87,12 @@ function* walkValues(values, root = null, filter) {
             for (const child of sliced) {
                 map.set(child, value);
             }
-            stack.unshift(...sliced);
+            if (reverse) {
+                stack.push(...sliced);
+            }
+            else {
+                stack.unshift(...sliced);
+            }
         }
         else if (value.typ == EnumToken.BinaryExpressionTokenType) {
             map.set(value.l, map.get(value) ?? root);

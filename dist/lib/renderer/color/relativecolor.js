@@ -3,10 +3,11 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../../parser/parse.js';
-import { reduceNumber } from '../render.js';
-import { colorRange, mathFuncs } from './utils/constants.js';
-import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 import '../../parser/utils/config.js';
+import { reduceNumber } from '../render.js';
+import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
+import { colorRange } from './utils/constants.js';
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let r;

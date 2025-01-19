@@ -14,7 +14,6 @@ import type {
     Token
 } from "../../@types";
 import {EnumToken} from "../ast";
-import {mathFuncs} from "../renderer/color/utils";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;
@@ -24,6 +23,18 @@ const dimensionUnits: Set<string> = new Set([
     'lvh', 'lvi', 'lvmax', 'lvw', 'mm', 'pc', 'pt', 'px', 'rem', 'rlh', 'svb',
     'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
 ]);
+
+export const fontFormat: string[] = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];
+export const colorFontTech: string[] = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
+export const fontFeaturesTech: string[] = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
+
+// https://drafts.csswg.org/mediaqueries/#media-types
+export const mediaTypes: string[] = ['all', 'print', 'screen',
+    /* deprecated */
+    'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
+
+// https://www.w3.org/TR/css-values-4/#math-function
+export const mathFuncs: string[] = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
 
 export function isLength(dimension: DimensionToken): boolean {
 

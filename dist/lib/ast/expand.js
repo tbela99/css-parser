@@ -143,10 +143,6 @@ function expandRule(node, parent) {
                             }
                         }
                     }
-                    // if (selectors.length == 2){
-                    // console.error(matchSelectors([[selectors[0]]], [[selectors[1]]]));
-                    // }
-                    // console.error({selectors: selectors.reduce((a: string[][], curr: string[][]) => , [] as string[][])});
                     rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
                 }
                 ast.chi.splice(i--, 1);
@@ -201,9 +197,6 @@ function expandRule(node, parent) {
 function replaceCompound(input, replace) {
     const tokens = parseString(input);
     let replacement = null;
-    //parseString(replace);
-    // console.error({ tokens, replace, input});
-    // console.error(new Error('bar bar'));
     for (const t of walkValues(tokens)) {
         if (t.value.typ == EnumToken.LiteralTokenType) {
             if (t.value.val == '&') {
@@ -221,7 +214,6 @@ function replaceCompound(input, replace) {
                     continue;
                 }
                 const rule = splitRule(replace);
-                // console.error({rule});
                 t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             }
             else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {

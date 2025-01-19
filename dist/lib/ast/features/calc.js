@@ -1,11 +1,8 @@
 import { EnumToken } from '../types.js';
 import { walkValues, WalkerValueEvent } from '../walk.js';
 import { evaluate } from '../math/expression.js';
-import { mathFuncs } from '../../renderer/color/utils/constants.js';
-import '../minify.js';
-import '../../parser/parse.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../parser/utils/config.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 
 class ComputeCalcExpressionFeature {
     static get ordering() {

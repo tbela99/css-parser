@@ -1,10 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-<<<<<<< HEAD
-  "version": "0.8.0-alpha2",
-=======
-  "version": "0.8.0",
->>>>>>> math_functions
+  "version": "0.8.0-alpha4",
   "publish": {
     "include": [
       "src",
@@ -40,6 +36,6 @@
   "exports": {
     ".": "./src/node/index.ts",
     "./node": "./src/node/index.ts",
-    "./web":  "./src/web/index.ts"
+    "./web": "./src/web/index.ts"
   }
 }

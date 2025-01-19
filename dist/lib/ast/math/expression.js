@@ -1,11 +1,7 @@
 import { EnumToken } from '../types.js';
 import { compute, rem } from './math.js';
 import { reduceNumber } from '../../renderer/render.js';
-import { mathFuncs } from '../../renderer/color/utils/constants.js';
-import '../minify.js';
-import '../walk.js';
-import '../../parser/parse.js';
-import '../../parser/utils/config.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 
 /**
  * evaluate an array of tokens

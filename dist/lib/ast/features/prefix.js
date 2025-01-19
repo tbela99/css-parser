@@ -8,6 +8,7 @@ import '../../parser/parse.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
+import '../../validation/syntaxes/complex-selector.js';
 
 const config = getSyntaxConfig();
 class ComputePrefixFeature {
@@ -94,6 +95,13 @@ function matchToken(token, matches) {
                 }
                 break;
             case ValidationTokenEnum.PipeToken:
+                for (let j = 0; j < matches[i].chi.length; j++) {
+                    result = matchToken(token, matches[i].chi[j]);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+                break;
             case ValidationTokenEnum.ColumnToken:
             case ValidationTokenEnum.AmpersandToken:
                 result = matchToken(token, matches[i].l);

@@ -29,8 +29,6 @@ export const colorRange = {
     }
 }
 
-// https://www.w3.org/TR/css-values-4/#math-function
-export const mathFuncs = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
 export const colorFuncColorSpace: ColorSpace[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 export const powerlessColorComponent: IdentToken = {typ: EnumToken.IdenTokenType, val: 'none'};
 

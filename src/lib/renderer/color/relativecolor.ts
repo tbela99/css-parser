@@ -11,8 +11,9 @@ import {convert, getNumber} from "./color";
 import {EnumToken, walkValues} from "../../ast";
 import {reduceNumber} from "../render";
 import {evaluate, evaluateFunc} from "../../ast/math";
-import {colorRange, mathFuncs} from "./utils";
+import {colorRange} from "./utils";
 import {eq} from "../../parser/utils/eq";
+import {mathFuncs} from "../../syntax";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';
 type HSLKeyType = 'h' | 's' | 'l' | 'alpha';

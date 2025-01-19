@@ -1,5 +1,4 @@
 import {
-    renderSyntax,
     specialValues,
     ValidationAmpersandToken,
     ValidationAtRule,
@@ -90,7 +89,7 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
             matches: [],
             node: tokens[0] ?? null,
             syntax: null,
-            error: 'no matching syntax found',
+            error: 'no matching syntaxes found',
             tokens
         } as ValidationSyntaxResult;
     }
@@ -173,16 +172,6 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
                 continue;
             }
 
-            console.error({
-
-                root,
-                syntaxes,
-                tokens,
-                syntax, token,
-                r: renderSyntax(syntax),
-                a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
-            });
-
             if (syntax.isOptional) {
 
 
@@ -246,7 +235,7 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
                 let index: number = -1;
                 // @ts-ignore
                 let {isList, ...c}: { isList: boolean, c: ValidationToken } = syntax;
-                // const c: ValidationToken = {...syntax, isList: false} as ValidationToken;
+                // const c: ValidationToken = {...syntaxes, isList: false} as ValidationToken;
 
                 let result2: ValidationSyntaxResult | null = null;
                 validSyntax = false;
@@ -588,7 +577,7 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
                     }, c: ValidationToken
                 } = syntax;
 
-                // && syntax.occurence.max != null
+                // && syntaxes.occurence.max != null
                 // consume all tokens
                 let match: number = 1;
 
@@ -1042,9 +1031,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                     tokens
                 } as ValidationSyntaxResult;
 
-                console.error({valid, result});
-
-            } else            if ((syntax as ValidationPropertyToken).val == 'pseudo-page') {
+            } else if ((syntax as ValidationPropertyToken).val == 'pseudo-page') {
 
                 valid = token.typ == EnumToken.PseudoClassTokenType && [':left', ':right', ':first', ':blank'].includes((token as PseudoClassToken).val);
 
@@ -1506,9 +1493,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                     tokens
                 } as ValidationSyntaxResult
             }
-                // else if ('complex-selector' == (syntax as ValidationPropertyToken).val) {
+                // else if ('complex-selector' == (syntaxes as ValidationPropertyToken).val) {
                 //
-                //     result = validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationPropertyToken).val) as ValidationToken[], tokens, root as AstNode, options, context);
+                //     result = validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntaxes as ValidationPropertyToken).val) as ValidationToken[], tokens, root as AstNode, options, context);
                 //
             // }
             else if (['pseudo-element-selector', 'pseudo-class-selector'].includes((syntax as ValidationPropertyToken).val)) {
@@ -1772,7 +1759,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 if (result.valid == ValidationLevel.Valid) {
 
-                    const s: ValidationToken[] = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()') as ValidationToken[]; // config[ValidationSyntaxGroupEnum.Syntaxes][(syntax as ValidationFunctionDefinitionToken).val + '()'] as ValidationSyntaxNode;
+                    const s: ValidationToken[] = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()') as ValidationToken[]; // config[ValidationSyntaxGroupEnum.Syntaxes][(syntaxes as ValidationFunctionDefinitionToken).val + '()'] as ValidationSyntaxNode;
                     result = validateSyntax(s as ValidationToken[], tokens, root as AstNode, options, context);
                 }
             }
@@ -1959,7 +1946,6 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
         default:
 
             throw new Error('not implemented: ' + JSON.stringify({syntax, token, tokens}, null, 1));
-            console.error(new Error('syntax not implemented: ' + JSON.stringify({syntax, token, tokens}, null, 1)));
     }
 
 // @ts-ignore

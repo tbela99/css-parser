@@ -274,6 +274,12 @@ export declare interface DashMatchToken extends BaseToken {
     // val: '|=';
 }
 
+export declare interface EqualMatchToken extends BaseToken {
+
+    typ: EnumToken.EqualMatchTokenType;
+    // val: '|=';
+}
+
 export declare interface StartMatchToken extends BaseToken {
 
     typ: EnumToken.StartMatchTokenType;
@@ -320,6 +326,12 @@ export declare interface ColumnCombinatorToken extends BaseToken {
 export declare interface PseudoClassToken extends BaseToken {
 
     typ: EnumToken.PseudoClassTokenType;
+    val: string;
+}
+
+export declare interface PseudoPageToken extends BaseToken {
+
+    typ: EnumToken.PseudoPageTokenType;
     val: string;
 }
 
@@ -419,11 +431,45 @@ export declare interface ChildCombinatorToken extends BaseToken {
     typ: EnumToken.ChildCombinatorTokenType
 }
 
+export declare interface MediaFeatureToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureTokenType,
+    val: string;
+}
+
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureOnlyToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureOnlyTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureAndToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureAndTokenType;
+}
+
+export declare interface MediaFeatureOrToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureOrTokenType;
+}
+
 export declare interface MediaQueryConditionToken extends BaseToken {
 
     typ: EnumToken.MediaQueryConditionTokenType,
     l: Token,
-    op: EnumToken.GtTokenType | EnumToken.LtTokenType | EnumToken.GteTokenType | EnumToken.LteTokenType,
+    op: ColonToken | GreaterThanToken | LessThanToken | GreaterThanOrEqualToken | LessThanOrEqualToken,
     r: Token[]
 }
 
@@ -487,7 +533,7 @@ export declare interface BinaryExpressionToken extends BaseToken {
 export declare interface MatchExpressionToken extends BaseToken {
 
     typ: EnumToken.MatchExpressionTokenType
-    op: DelimToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
+    op: EqualMatchToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
     l: Token;
     r: Token;
     attr?: 'i' | 's';
@@ -539,6 +585,11 @@ export declare type Token =
     | NestingSelectorToken
     |
     MediaQueryConditionToken
+    | MediaFeatureToken
+    | MediaFeatureNotToken
+    | MediaFeatureOnlyToken
+    | MediaFeatureAndToken
+    | MediaFeatureOrToken
     | AstDeclaration
     |
     NumberToken
@@ -585,6 +636,7 @@ export declare type Token =
     | NameSpaceAttributeToken
     |
     DashMatchToken
+    | EqualMatchToken
     | LessThanToken
     | LessThanOrEqualToken
     | GreaterThanToken
@@ -592,6 +644,7 @@ export declare type Token =
     |
     ListToken
     | PseudoClassToken
+    | PseudoPageToken
     | PseudoClassFunctionToken
     | DelimToken
     | BinaryExpressionToken

@@ -1,5 +1,5 @@
 import { ValidationTokenEnum, specialValues } from './parser/types.js';
-import { renderSyntax } from './parser/parse.js';
+import './parser/parse.js';
 import { ValidationLevel, EnumToken, funcLike } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
@@ -36,7 +36,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             matches: [],
             node: tokens[0] ?? null,
             syntax: null,
-            error: 'no matching syntax found',
+            error: 'no matching syntaxes found',
             tokens
         };
     }
@@ -94,14 +94,6 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             matches.push(token);
             continue;
         }
-        console.error({
-            root,
-            syntaxes,
-            tokens,
-            syntax, token,
-            r: renderSyntax(syntax),
-            a: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')
-        });
         if (syntax.isOptional) {
             if (!context.cache.has(token)) {
                 context.cache.set(token, new Map);
@@ -146,7 +138,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             let index = -1;
             // @ts-ignore
             let { isList, ...c } = syntax;
-            // const c: ValidationToken = {...syntax, isList: false} as ValidationToken;
+            // const c: ValidationToken = {...syntaxes, isList: false} as ValidationToken;
             let result2 = null;
             validSyntax = false;
             do {
@@ -371,7 +363,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
         if (syntax.occurence != null) {
             // @ts-ignore
             const { occurence, ...c } = syntax;
-            // && syntax.occurence.max != null
+            // && syntaxes.occurence.max != null
             // consume all tokens
             let match = 1;
             // @ts-ignore
@@ -709,7 +701,6 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     error: valid ? '' : 'unexpected token',
                     tokens
                 };
-                console.error({ valid, result });
             }
             else if (syntax.val == 'pseudo-page') {
                 valid = token.typ == EnumToken.PseudoClassTokenType && [':left', ':right', ':first', ':blank'].includes(token.val);
@@ -1092,9 +1083,9 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     tokens
                 };
             }
-            // else if ('complex-selector' == (syntax as ValidationPropertyToken).val) {
+            // else if ('complex-selector' == (syntaxes as ValidationPropertyToken).val) {
             //
-            //     result = validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationPropertyToken).val) as ValidationToken[], tokens, root as AstNode, options, context);
+            //     result = validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntaxes as ValidationPropertyToken).val) as ValidationToken[], tokens, root as AstNode, options, context);
             //
             // }
             else if (['pseudo-element-selector', 'pseudo-class-selector'].includes(syntax.val)) {
@@ -1290,7 +1281,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     tokens
                 };
                 if (result.valid == ValidationLevel.Valid) {
-                    const s = getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()'); // config[ValidationSyntaxGroupEnum.Syntaxes][(syntax as ValidationFunctionDefinitionToken).val + '()'] as ValidationSyntaxNode;
+                    const s = getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()'); // config[ValidationSyntaxGroupEnum.Syntaxes][(syntaxes as ValidationFunctionDefinitionToken).val + '()'] as ValidationSyntaxNode;
                     result = validateSyntax(s, tokens, root, options, context);
                 }
             }

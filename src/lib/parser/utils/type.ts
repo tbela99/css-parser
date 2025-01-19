@@ -1,6 +1,7 @@
 import {EnumToken} from "../../ast";
 import type {IdentToken, PropertyMapType, Token} from "../../../@types/index.d.ts";
-import {mathFuncs} from "../../renderer/color/utils";
+
+import {mathFuncs} from "../../syntax";
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
 

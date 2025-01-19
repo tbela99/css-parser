@@ -144,14 +144,26 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
                 break;
 
             case ValidationTokenEnum.PipeToken:
+
+                for (let j = 0; j < (<ValidationPipeToken>matches[i]).chi.length; j++) {
+
+                    result = matchToken(token, (<ValidationPipeToken>matches[i]).chi[j]);
+
+                    if (result != null) {
+
+                        return result;
+                    }
+                }
+
+                break;
             case ValidationTokenEnum.ColumnToken:
             case ValidationTokenEnum.AmpersandToken:
 
-                result = matchToken(token, (<ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken>matches[i]).l);
+                result = matchToken(token, (<ValidationColumnToken | ValidationAmpersandToken>matches[i]).l);
 
                 if (result == null) {
 
-                    result = matchToken(token, (<ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken>matches[i]).r);
+                    result = matchToken(token, (<ValidationColumnToken | ValidationAmpersandToken>matches[i]).r);
                 }
 
                 if (result != null) {

@@ -2,9 +2,10 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../parse.js';
-import { mathFuncs } from '../../renderer/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 import './config.js';
+import '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
 
 function matchType(val, properties) {
     if (val.typ == EnumToken.IdenTokenType && properties.keywords.includes(val.val) ||

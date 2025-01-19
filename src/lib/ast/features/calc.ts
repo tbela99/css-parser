@@ -14,8 +14,8 @@ import type {
 import {EnumToken} from "../types";
 import {WalkerValueEvent, walkValues} from "../walk";
 import {evaluate} from "../math";
-import {mathFuncs} from "../../renderer/color/utils";
 import {renderToken} from "../../renderer";
+import {mathFuncs} from "../../syntax";
 
 export class ComputeCalcExpressionFeature {
 

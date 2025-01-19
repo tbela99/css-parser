@@ -12,6 +12,7 @@ import '../lib/parser/utils/config.js';
 import '../lib/validation/config.js';
 import '../lib/validation/parser/types.js';
 import '../lib/validation/parser/parse.js';
+import '../lib/validation/syntaxes/complex-selector.js';
 import { resolve, dirname } from '../lib/fs/resolve.js';
 import { load } from './load.js';
 

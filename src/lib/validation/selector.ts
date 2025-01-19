@@ -1,32 +1,44 @@
-import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types";
+import type {AstAtRule, AstRule, AstRuleStyleSheet, Token, ValidationOptions} from "../../@types";
 import {EnumToken} from "../ast";
-import {getParsedSyntax} from "./config";
 import type {ValidationResult} from "../../@types/validation";
-import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
-import {validateSyntax} from "./syntax";
+import {validateKeyframeBlockList, validateRelativeSelectorList} from "./syntaxes";
+import {validateSelectorList} from "./syntaxes/selector-list";
 
-export function validateSelector(selector: Token[], options: ValidationOptions, root?: AstNode): ValidationResult {
+export function validateSelector(selector: Token[], options: ValidationOptions, root?: AstAtRule | AstRule | AstRuleStyleSheet): ValidationResult {
 
-    const isKeyframe: boolean = root?.typ == EnumToken.AtRuleNodeType && /^(-[a-zA-Z]+-)?keyframes/i.test((root as AstAtRule).nam);
-    let isNested: boolean = false;
+    if (root == null) {
 
-    if (!isKeyframe && root != null) {
-
-        let node = root;
-
-        while (node != null) {
-
-            if (node.typ == EnumToken.RuleNodeType) {
-
-                isNested = true;
-                break;
-            }
-
-            // @ts-ignore
-            node = node.parent;
-        }
+        return validateRelativeSelectorList(selector, root);
     }
 
     // @ts-ignore
-    return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, isKeyframe ? 'keyframe-selector' : (isNested ? 'relative-selector-list' : 'complex-selector-list')) as ValidationToken[], selector, isNested ? root : null, options);
+    if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
+
+        return validateKeyframeBlockList(selector, root);
+    }
+
+    let isNested: number = root.typ == EnumToken.RuleNodeType ? 1 : 0;
+
+    let currentRoot = root.parent;
+
+    while (currentRoot != null && isNested == 0) {
+
+        if (currentRoot.typ == EnumToken.RuleNodeType) {
+
+            isNested++;
+
+            if (isNested > 0) {
+
+                // @ts-ignore
+                return validateRelativeSelectorList(selector, root, {nestedSelector: true});
+            }
+        }
+
+        currentRoot = currentRoot.parent;
+    }
+
+    const nestedSelector: boolean = isNested > 0;
+
+    // @ts-ignore
+    return nestedSelector ? validateRelativeSelectorList(selector, root, {nestedSelector}) : validateSelectorList(selector, root, {nestedSelector});
 }

@@ -1,10 +1,16 @@
 import {ValidationLevel, ValidationSyntaxGroupEnum} from "../lib";
 import {AstNode} from "./ast.d.ts";
 import {Token} from "./token.d.ts";
+
 export declare interface ValidationSyntaxNode {
 
     syntax: string;
     ast?: ValidationToken[];
+}
+
+export interface ValidationSelectorOptions {
+
+    nestedSelector?: boolean;
 }
 
 export declare interface ValidationConfiguration {
@@ -26,7 +32,7 @@ export interface ValidationResult {
 
 export interface ValidationSyntaxResult extends ValidationResult {
 
-    syntax: ValidationToken ;
+    syntax: ValidationToken;
     tokens: Token[] | AstNode[];
     matches: Token[] | AstNode[];
 }

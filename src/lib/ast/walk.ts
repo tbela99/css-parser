@@ -68,7 +68,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
     event: WalkerValueEvent,
     fn?: WalkerValueFilter,
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean)
-}): Generator<WalkAttributesResult> {
+}, reverse?: boolean): Generator<WalkAttributesResult> {
 
     // const set = new Set<Token>();
     const stack: Token[] = values.slice();
@@ -93,7 +93,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
     while (stack.length > 0) {
 
-        let value: Token = <Token>stack.shift();
+        let value: Token =  reverse ? <Token> stack.pop() : <Token> stack.shift();
         let option: WalkerOption = null;
 
         if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
@@ -146,7 +146,15 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                 map.set(child, <FunctionToken | ParensToken>value);
             }
 
-            stack.unshift(...sliced);
+            if (reverse) {
+
+                stack.push(...sliced);
+            }
+            else {
+
+                stack.unshift(...sliced);
+            }
+
         } else if (value.typ == EnumToken.BinaryExpressionTokenType) {
 
             map.set(value.l, map.get(value) ?? root as FunctionToken | ParensToken);

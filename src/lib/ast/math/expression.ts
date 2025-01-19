@@ -18,7 +18,8 @@ import type {
 import {EnumToken} from "../types";
 import {compute, rem} from "./math";
 import {reduceNumber} from "../../renderer";
-import {mathFuncs} from "../../renderer/color/utils";
+
+import {mathFuncs} from "../../syntax";
 
 /**
  * evaluate an array of tokens

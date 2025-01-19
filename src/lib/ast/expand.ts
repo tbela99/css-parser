@@ -1,4 +1,4 @@
-import {combinators, matchSelectors, splitRule} from "./minify";
+import {combinators, splitRule} from "./minify";
 import {parseString} from "../parser";
 import {walkValues} from "./walk";
 import {renderToken} from "../renderer";
@@ -100,9 +100,7 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                         }, <string[]>[]).join(',');
                     }
 
-                }
-
-                else {
+                } else {
 
                     let childSelectorCompound: string[] = [];
                     let withCompound: string[] = [];
@@ -134,9 +132,7 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                                             withoutCompound.push(s.slice(1));
                                         }
                                     }
-                                }
-
-                                else {
+                                } else {
 
                                     withoutCompound.push(s);
                                 }
@@ -182,7 +178,7 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                             const useIs: boolean = rules.length == 1 && selector.match(/^[a-zA-Z.:]/) != null && selector.includes(' ') && withoutCompound.length == 1 && withoutCompound[0].match(/^[a-zA-Z]+$/) != null;
                             const compound = useIs ? ':is(&)' : '&';
 
-                            selectors.push(replaceCompound(rules.length == 1 ? (useIs ? withoutCompound[0] + ':is(&)' : (selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/) ? withoutCompound[0] + compound : compound  + withoutCompound[0])): (withoutCompound[0].match(/^[a-zA-Z:]+$/) ? withoutCompound[0].trim() + compound : '&' + (withoutCompound[0].match(/^\S+$/) ? withoutCompound[0].trim() : ':is(' + withoutCompound[0].trim() + ')')), selector));
+                            selectors.push(replaceCompound(rules.length == 1 ? (useIs ? withoutCompound[0] + ':is(&)' : (selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/) ? withoutCompound[0] + compound : compound + withoutCompound[0])) : (withoutCompound[0].match(/^[a-zA-Z:]+$/) ? withoutCompound[0].trim() + compound : '&' + (withoutCompound[0].match(/^\S+$/) ? withoutCompound[0].trim() : ':is(' + withoutCompound[0].trim() + ')')), selector));
 
                         } else {
 
@@ -204,13 +200,6 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                             }
                         }
                     }
-
-                    // if (selectors.length == 2){
-
-                        // console.error(matchSelectors([[selectors[0]]], [[selectors[1]]]));
-                    // }
-
-                    // console.error({selectors: selectors.reduce((a: string[][], curr: string[][]) => , [] as string[][])});
 
                     rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
                 }
@@ -285,10 +274,6 @@ export function replaceCompound(input: string, replace: string): string {
     const tokens: Token[] = parseString(input);
     let replacement: Token[] | null = null;
 
-    //parseString(replace);
-    // console.error({ tokens, replace, input});
-    // console.error(new Error('bar bar'));
-
     for (const t of walkValues(tokens)) {
 
         if (t.value.typ == EnumToken.LiteralTokenType) {
@@ -305,11 +290,9 @@ export function replaceCompound(input: string, replace: string): string {
                     if (tokens[1].typ == EnumToken.IdenTokenType) {
 
 
-                        t.value.val = replacement.length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/) )? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
+                        t.value.val = replacement.length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
                         tokens.splice(1, 1);
-                    }
-
-                    else {
+                    } else {
 
                         t.value.val = replaceCompoundLiteral(t.value.val, replace);
                     }
@@ -318,8 +301,6 @@ export function replaceCompound(input: string, replace: string): string {
                 }
 
                 const rule: string[][] = splitRule(replace);
-
-                // console.error({rule});
 
                 t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             } else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {

@@ -13,9 +13,6 @@ export function getSyntaxConfig(): ValidationConfiguration {
 
 export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string): null | ValidationToken[] {
 
-    //
-    // console.error({group, key});
-
     if (!(key in config[group])) {
 
         const matches: RegExpMatchArray = key.match(/(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
@@ -34,9 +31,6 @@ export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string): 
     const index: string = group + '.' + key;
 
     // @ts-ignore
-    // console.error(`> group: '${group}' | key: '${key}' | syntax: "${config[group][key].syntax}"`);
-
-    // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
 
         // @ts-ignore
@@ -53,8 +47,6 @@ export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string): 
         // @ts-ignore
         parsedSyntaxes.set(index, syntax.chi);
     }
-
-    // console.error(JSON.stringify(parsedSyntaxes.get(index), null, 1));
 
     return parsedSyntaxes.get(index) as ValidationToken[];
 }

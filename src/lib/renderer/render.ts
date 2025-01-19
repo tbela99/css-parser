@@ -15,6 +15,9 @@ import type {
     IdentToken,
     InvalidAttrToken,
     Location,
+    MediaFeatureNotToken,
+    MediaFeatureOnlyToken,
+    MediaFeatureToken,
     NumberToken,
     PercentageToken,
     Position,
@@ -43,8 +46,8 @@ import {
 } from "./color";
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
-import {colorFuncColorSpace, getComponents, mathFuncs} from "./color/utils";
-import {isColor, isNewLine} from "../syntax";
+import {colorFuncColorSpace, getComponents} from "./color/utils";
+import {isColor, isNewLine, mathFuncs} from "../syntax";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 
@@ -676,6 +679,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return '(';
 
         case EnumToken.DelimTokenType:
+        case EnumToken.EqualMatchTokenType:
 
             return '=';
 
@@ -937,6 +941,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.DashedIdenTokenType:
+        case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:
 
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
@@ -959,7 +964,24 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.MediaQueryConditionTokenType:
 
-            return  renderToken(token.l, options, cache, reducer, errors) + renderToken({typ: token.op} as Token, options, cache, reducer, errors) + token.r.reduce((acc: string, curr: Token):    string => acc + renderToken(curr, options, cache), '');
+            return renderToken(token.l, options, cache, reducer, errors) + renderToken(token.op, options, cache, reducer, errors) + token.r.reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
+
+        case EnumToken.MediaFeatureTokenType:
+
+            return (token as MediaFeatureToken).val;
+
+        case EnumToken.MediaFeatureNotTokenType:
+
+            return 'not ' + renderToken((token as MediaFeatureNotToken).val, options, cache, reducer, errors);
+
+        case EnumToken.MediaFeatureOnlyTokenType:
+            return 'only ' + renderToken((token as MediaFeatureOnlyToken).val, options, cache, reducer, errors);
+
+        case EnumToken.MediaFeatureAndTokenType:
+            return 'and';
+
+        case EnumToken.MediaFeatureOrTokenType:
+            return 'or';
 
         default:
 

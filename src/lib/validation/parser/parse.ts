@@ -74,7 +74,7 @@ const objectProperties = {
 }
 
 const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:129.0) Gecko/20100101 Firefox/129.0'}}
-// syntax: keyword | <'property'> | <function>
+// syntaxes: keyword | <'property'> | <function>
 
 // "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
 // ""
@@ -295,7 +295,7 @@ export function parseSyntax(syntax: string): ValidationRootToken {
         chi: [] as ValidationToken[]
     }, 'pos', {...objectProperties, value: {ind: 0, lin: 1, col: 0}}) as ValidationRootToken;
 
-    // return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
+    // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
     return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
 }
 
@@ -768,10 +768,10 @@ function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorVa
                 token = Object.defineProperty({
 
                     typ: ValidationTokenEnum.PipeToken,
-                    chi: [matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken)], //.concat(matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntax, iterator, validationToken)),
+                    chi: [matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
                     // @ts-ignore
-                    // l: matchToken(syntax, children.slice()[Symbol.iterator](), validationToken),
-                    // r: matchToken(syntax, iterator, validationToken)
+                    // l: matchToken(syntaxes, children.slice()[Symbol.iterator](), validationToken),
+                    // r: matchToken(syntaxes, iterator, validationToken)
                 }, 'pos', {
                     ...objectProperties,
                     value: item.value.pos
@@ -1406,7 +1406,7 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
 
             return ';';
 
-            case ValidationTokenEnum.AtRule:
+        case ValidationTokenEnum.AtRule:
 
             return '@' + (token as ValidationAtRuleToken).val;
 
@@ -1565,7 +1565,10 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
     return ast;
 }
 
-export function* walkValidationToken(token: ValidationToken | ValidationToken[], parent?: ValidationToken, callback?: (token: ValidationToken, parent?: ValidationToken) => void): Generator<{token: ValidationToken, parent?: ValidationToken}> {
+export function* walkValidationToken(token: ValidationToken | ValidationToken[], parent?: ValidationToken, callback?: (token: ValidationToken, parent?: ValidationToken) => void): Generator<{
+    token: ValidationToken,
+    parent?: ValidationToken
+}> {
 
     if (Array.isArray(token)) {
 
@@ -1652,7 +1655,7 @@ export async function parseDeclarationsSyntax(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax,
-            // ast: parseSyntax(values.syntax).chi
+            // ast: parseSyntax(values.syntaxes).chi
         };
     }
 
@@ -1679,7 +1682,7 @@ export async function parseFunctionsSyntax(): Promise<ParsedSyntaxes> {
 
         json[key.slice(0, -2)] = {
             syntax: values.syntax,
-            // ast: parseSyntax(values.syntax).chi,
+            // ast: parseSyntax(values.syntaxes).chi,
             // mdn_url: values.mdn_url
         };
     }
@@ -1707,7 +1710,7 @@ export async function parseSelectorsSyntax(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax.startsWith('/*') ? key : values.syntax,
-            // ast: parseSyntax(values.syntax.startsWith('/*') ? key : values.syntax).chi,
+            // ast: parseSyntax(values.syntaxes.startsWith('/*') ? key : values.syntaxes).chi,
             // mdn_url: values.mdn_url
         };
     }
@@ -1742,7 +1745,7 @@ export async function parseAtRulesSyntax(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax,
-            // ast: parseSyntax(values.syntax).chi,
+            // ast: parseSyntax(values.syntaxes).chi,
             // mdn_url: values.mdn_url
         };
     }
@@ -1764,7 +1767,7 @@ export async function parseAllSyntaxes(): Promise<ParsedSyntaxes> {
 
         json[key] = {
             syntax: values.syntax,
-            // ast: parseSyntax(values.syntax).chi
+            // ast: parseSyntax(values.syntaxes).chi
         };
     }
 

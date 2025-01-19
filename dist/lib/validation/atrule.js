@@ -1,4 +1,4 @@
-import { ValidationLevel } from '../ast/types.js';
+import { ValidationLevel, EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
@@ -6,7 +6,17 @@ import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import '../parser/utils/config.js';
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
-import { validateSyntax } from './syntax.js';
+import { validateAtRuleMedia } from './at-rules/media.js';
+import { validateAtRuleCounterStyle } from './at-rules/counter-style.js';
+import { validateAtRulePage } from './at-rules/page.js';
+import { validateAtRulePageMarginBox } from './at-rules/page-margin-box.js';
+import { validateAtRuleSupports } from './at-rules/supports.js';
+import { validateAtRuleImport } from './at-rules/import.js';
+import { validateAtRuleLayer } from './at-rules/layer.js';
+import { validateAtRuleFontFeatureValues } from './at-rules/font-feature-values.js';
+import { validateAtRuleNamespace } from './at-rules/namespace.js';
+import { validateAtRuleDocument } from './at-rules/document.js';
+import { validateAtRuleKeyframes } from './at-rules/keyframes.js';
 
 function validateAtRule(atRule, options, root) {
     if (atRule.nam == 'charset') {
@@ -18,16 +28,97 @@ function validateAtRule(atRule, options, root) {
             error: ''
         };
     }
-    // if (!options.validation) {
-    //
-    //     return {
-    //
-    //         valid: ValidationLevel.Valid,
-    //         node: atRule,
-    //         syntax: null,
-    //         error: ''
-    //     }
-    // }
+    if (atRule.nam == 'keyframes') {
+        return validateAtRuleKeyframes(atRule);
+    }
+    if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {
+        return {
+            valid: ValidationLevel.Valid,
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: ''
+        };
+    }
+    if (atRule.nam == 'media') {
+        return validateAtRuleMedia(atRule);
+    }
+    if (atRule.nam == 'import') {
+        return validateAtRuleImport(atRule);
+    }
+    if (atRule.nam == 'supports') {
+        return validateAtRuleSupports(atRule);
+    }
+    if (atRule.nam == 'counter-style') {
+        return validateAtRuleCounterStyle(atRule);
+    }
+    if (atRule.nam == 'layer') {
+        return validateAtRuleLayer(atRule);
+    }
+    if (atRule.nam == 'font-feature-values') {
+        return validateAtRuleFontFeatureValues(atRule);
+    }
+    if (atRule.nam == 'namespace') {
+        return validateAtRuleNamespace(atRule);
+    }
+    if (atRule.nam == 'document') {
+        return validateAtRuleDocument(atRule);
+    }
+    if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
+        if (!('tokens' in atRule)) {
+            return {
+                valid: ValidationLevel.Drop,
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected prelude'
+            };
+        }
+        if (!('chi' in atRule)) {
+            return {
+                valid: ValidationLevel.Drop,
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected body'
+            };
+        }
+        const chi = atRule.tokens.filter((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType);
+        if (chi.length != 1) {
+            return {
+                valid: ValidationLevel.Drop,
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
+            };
+        }
+        if (chi[0].typ != EnumToken.DashedIdenTokenType) {
+            return {
+                valid: ValidationLevel.Drop,
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
+            };
+        }
+        return {
+            valid: ValidationLevel.Valid,
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: ''
+        };
+    }
+    // scope
+    if (atRule.nam == 'page') {
+        return validateAtRulePage(atRule);
+    }
+    if (['top-left-corner', 'top-left', 'top-center', 'top-right', 'top-right-corner', 'bottom-left-corner', 'bottom-left', 'bottom-center', 'bottom-right', 'bottom-right-corner', 'left-top', 'left-middle', 'left-bottom', 'right-top', 'right-middle', 'right-bottom'].includes(atRule.nam)) {
+        if (!(root == null || (root.typ == EnumToken.AtRuleNodeType && root.nam == 'page'))) {
+            return {
+                valid: ValidationLevel.Drop,
+                node: atRule,
+                syntax: '@page',
+                error: 'not allowed here'
+            };
+        }
+        return validateAtRulePageMarginBox(atRule);
+    }
     // handle keyframe as special case
     // check if the node exists
     const config = getSyntaxConfig();
@@ -40,11 +131,11 @@ function validateAtRule(atRule, options, root) {
     if (!(name in config.atRules)) {
         //     if (root?.typ == EnumToken.AtRuleNodeType) {
         //
-        //         const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
+        //         const syntaxes: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
         //
-        //         if ('chi' in syntax) {
+        //         if ('chi' in syntaxes) {
         //
-        //             return validateSyntax(syntax.chi as ValidationToken[], [atRule], root, options);
+        //             return validateSyntax(syntaxes.chi as ValidationToken[], [atRule], root, options);
         //         }
         //     }
         return {
@@ -63,9 +154,10 @@ function validateAtRule(atRule, options, root) {
             error: 'missing at-rule body'
         };
     }
-    if ('prelude' in syntax) {
-        return validateSyntax(syntax.prelude, atRule.tokens, root, options);
-    }
+    // if ('prelude' in syntax) {
+    //
+    //     return validateSyntax(syntax.prelude as ValidationToken[], atRule.tokens as Token[], root, options);
+    // }
     return {
         valid: ValidationLevel.Valid,
         node: null,
