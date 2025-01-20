@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace} from "../utils";
 
@@ -7,6 +7,7 @@ export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOp
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -23,6 +24,7 @@ export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOp
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -35,6 +37,7 @@ export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOp
 
     if (![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -50,6 +53,7 @@ export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOp
 
     if (tokens.length > 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -60,6 +64,7 @@ export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOp
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

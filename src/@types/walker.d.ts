@@ -1,5 +1,6 @@
 import {AstNode, AstRuleList} from "./ast.d.ts";
 import {BinaryExpressionToken, FunctionToken, ParensToken, Token} from "./token.d.ts";
+import {WalkerValueEvent} from '../lib/ast/walk';
 
 export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | Token | null;
 /**

@@ -101,7 +101,7 @@ import type {
 } from "../../@types";
 import {deprecatedSystemColors, systemColors} from "../renderer/color/utils";
 import {validateAtRule, validateSelector} from "../validation";
-import {ValidationResult} from "../../@types/validation";
+import type {ValidationResult} from "../../@types/validation.d.ts";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];

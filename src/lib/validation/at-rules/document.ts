@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace} from "../utils";
 import {validateURL} from "../syntaxes/url";
@@ -9,6 +9,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -26,6 +27,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -38,6 +40,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
     if (tokens[0].typ == EnumToken.CommaTokenType) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -69,6 +72,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             if (!['url-prefix', 'domain', 'media-document', 'regexp'].some((t) => t.localeCompare((tokens[0] as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -85,6 +89,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             if (children.length == 0) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -103,6 +108,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             if (children.length > 0) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -118,6 +124,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

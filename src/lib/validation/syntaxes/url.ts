@@ -1,5 +1,5 @@
 import type {Token} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace} from "../utils";
 
@@ -8,10 +8,12 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
     if (token.typ == EnumToken.UrlTokenTokenType) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
             node: token,
+            // @ts-ignore
             syntax: 'url()',
             error: '',
             tokens: []
@@ -20,10 +22,12 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
     if (token.typ != EnumToken.UrlFunctionTokenType) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: token,
+            // @ts-ignore
             syntax: 'url()',
             error: 'expected url()',
             tokens: []
@@ -36,10 +40,12 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
     if (children.length == 0 || ![EnumToken.UrlTokenTokenType, EnumToken.StringTokenType, EnumToken.HashTokenType].includes(children[0].typ)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: children[0] ?? token,
+            // @ts-ignore
             syntax: 'url()',
             error: 'expected url-token',
             tokens: children
@@ -52,20 +58,24 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
     if (children.length > 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: children[0] ?? token,
+            // @ts-ignore
             syntax: 'url()',
             error: 'unexpected token',
             tokens: children
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
         node: token,
+        // @ts-ignore
         syntax: 'url()',
         error: '',
         tokens: []

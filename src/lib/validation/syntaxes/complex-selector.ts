@@ -1,5 +1,5 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types";
-import {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {consumeWhitespace} from "../utils";
 import {EnumToken, ValidationLevel} from "../../ast";
 
@@ -30,6 +30,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
         if (combinatorsTokens.includes(tokens[0].typ)) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -45,6 +46,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
             if (!options?.nestedSelector) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -91,6 +93,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
                 if (tokens[0].val.startsWith(':-webkit-')) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -118,6 +121,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
                 if (!options?.nestedSelector) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -140,6 +144,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
                 if (!((tokens[0].l == null || tokens[0].l.typ == EnumToken.IdenTokenType || (tokens[0].l.typ == EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
                     tokens[0].r.typ == EnumToken.IdenTokenType)) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -163,6 +168,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
                 if (children.length == 0) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -178,6 +184,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
                     EnumToken.NameSpaceAttributeTokenType,
                     EnumToken.MatchExpressionTokenType].includes(children[0].typ)) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -199,6 +206,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
                         ![EnumToken.StringTokenType,
                             EnumToken.IdenTokenType].includes(children[0].r.typ)) {
 
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -211,6 +219,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
                     if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
 
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -227,6 +236,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
                 if (children.length > 0) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -257,6 +267,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
                 if (!options?.nestedSelector) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -287,6 +298,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
                 continue
             }
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -302,6 +314,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
         if (tokens.length == 0) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -313,6 +326,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

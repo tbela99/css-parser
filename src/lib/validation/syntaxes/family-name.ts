@@ -1,5 +1,5 @@
 import type {AstAtRule, Token} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace} from "../utils";
 
@@ -13,6 +13,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -20,11 +21,12 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
             syntax: null,
             error: 'expected at-rule prelude',
             tokens
-        }
+        } as ValidationSyntaxResult;
     }
 
     if (tokens[0].typ == EnumToken.CommaTokenType) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -32,7 +34,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
             syntax: null,
             error: 'unexpected token',
             tokens
-        }
+        } as ValidationSyntaxResult;
     }
 
     while (tokens.length > 0) {
@@ -46,6 +48,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
             if (tokens.length == 0) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -53,7 +56,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
                     syntax: null,
                     error: 'unexpected token',
                     tokens
-                }
+                } as ValidationSyntaxResult;
             }
         }
 
@@ -61,6 +64,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
         if (![EnumToken.IdenTokenType, EnumToken.StringTokenType].includes(node.typ)) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -68,7 +72,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
                 syntax: null,
                 error: 'unexpected token',
                 tokens
-            }
+            } as ValidationSyntaxResult;
         }
 
         tokens.shift();
@@ -77,6 +81,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
         // @ts-ignore
         if (tokens.length > 0 && node.typ == EnumToken.BadStringTokenType && tokens[0].typ != EnumToken.CommaTokenType) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -84,10 +89,11 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
                 syntax: null,
                 error: 'expected comma token',
                 tokens
-            }
+            } as ValidationSyntaxResult;
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
@@ -95,5 +101,5 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
         syntax: null,
         error: '',
         tokens
-    }
+    } as ValidationSyntaxResult;
 }

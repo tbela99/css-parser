@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace, splitTokenList} from "../utils";
 
@@ -8,6 +8,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -27,6 +28,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
     if (!('chi' in atRule)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -37,6 +39,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
@@ -53,6 +56,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
         if (tokens.length == 0) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -89,6 +93,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -102,6 +107,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
             if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -114,6 +120,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
             if (tokens.length == 1) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -128,6 +135,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
             if (!consumeWhitespace(tokens)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -140,6 +148,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

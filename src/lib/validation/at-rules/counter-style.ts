@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 
 export function validateAtRuleCounterStyle(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -7,6 +7,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -17,10 +18,11 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
         } as ValidationSyntaxResult;
     }
 
-    const tokens: Token[] = atRule.tokens.filter((t: Token):boolean => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+    const tokens: Token[] = atRule.tokens.filter((t: Token): boolean => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -33,6 +35,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
     if (tokens.length > 1) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -45,6 +48,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
     if (![EnumToken.IdenTokenType, EnumToken.DashedIdenTokenType].includes(tokens[0].typ)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -57,6 +61,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
     if (!('chi' in atRule)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -67,6 +72,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
         } as ValidationSyntaxResult;
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

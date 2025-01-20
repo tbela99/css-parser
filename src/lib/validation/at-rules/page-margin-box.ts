@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 
 
@@ -7,6 +7,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
     if (Array.isArray(atRule.tokens) && atRule.tokens.length > 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -19,6 +20,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
     if (!('chi' in atRule)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -33,6 +35,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
         if (![EnumToken.DeclarationNodeType, EnumToken.CommentNodeType, EnumToken.WhitespaceTokenType].includes(token.typ)) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -44,6 +47,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {splitTokenList} from "../utils";
 
@@ -8,6 +8,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -23,6 +24,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
 
         if (tokens.length == 0) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -48,6 +50,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
             // @ts-ignore
             if (tokens[0].typ != EnumToken.WhitespaceTokenType) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -73,6 +76,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
                 // @ts-ignore
                 if (tokens[0].typ != EnumToken.WhitespaceTokenType) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -86,6 +90,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

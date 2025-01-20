@@ -1,5 +1,5 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types";
-import {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {consumeWhitespace} from "../utils";
 import {ValidationLevel} from "../../ast";
 import {validateSelector} from "./selector";
@@ -14,11 +14,13 @@ export function validateRelativeSelector(tokens: Token[], root?: AstAtRule | Ast
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             // @ts-ignore
             node: root,
+            // @ts-ignore
             syntax: null,
             error: 'expected selector',
             tokens

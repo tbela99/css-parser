@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {validateAtRuleSupports} from "./supports";
 import {validateAtRuleMediaQueryList} from "./media";
@@ -10,6 +10,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -22,6 +23,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
     if ('chi' in atRule) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -36,6 +38,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -57,6 +60,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
         if (slice.length != 1 || ![EnumToken.StringTokenType, EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -71,6 +75,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
             // @ts-ignore
             if (!consumeWhitespace(tokens)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -83,6 +88,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         }
     } else {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -106,6 +112,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -124,6 +131,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
             // @ts-ignore
             if ('layer'.localeCompare(tokens[0].val, undefined, {sensitivity: 'base'}) != 0) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -147,6 +155,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
             // @ts-ignore
             if (!consumeWhitespace(tokens)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -166,6 +175,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
             if ((tokens[0] as AstAtRule).nam != 'supports') {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -189,6 +199,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
             // @ts-ignore
             if (!consumeWhitespace(tokens)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -206,6 +217,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         return validateAtRuleMediaQueryList(tokens, atRule);
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

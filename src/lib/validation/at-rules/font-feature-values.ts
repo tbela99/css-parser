@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {ValidationLevel} from "../../ast";
 import {validateFamilyName} from "../syntaxes";
 
@@ -8,6 +8,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -27,6 +28,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
 
     if (!('chi' in atRule)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -37,6 +39,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
         } as ValidationSyntaxResult;
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

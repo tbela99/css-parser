@@ -84,6 +84,7 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
 
     if (syntaxes == null) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -217,6 +218,7 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
 
                 if (syntaxes.length == 0) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Valid,
                         matches: result2.matches,
@@ -509,6 +511,7 @@ export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | As
                 // at least one match is expected
                 if (!validSyntax /* || result.matches.length == 0 */) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         node: token,
@@ -783,6 +786,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             valid = token.typ === EnumToken.CommaTokenType;
 
+            // @ts-ignore
             result = {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] as Token[] : [],
@@ -798,6 +802,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if (token.typ != EnumToken.AtRuleNodeType) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -810,6 +815,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if ((token as AstAtRule).nam != (syntax as ValidationAtRule).val) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -834,6 +840,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if (root.typ != EnumToken.AtRuleNodeType) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -846,6 +853,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if (!('chi' in token)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -856,6 +864,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                 }
             }
 
+            // @ts-ignore
             result = {
                 valid: ValidationLevel.Valid,
                 matches: [token],
@@ -871,6 +880,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if (token.typ != EnumToken.AtRuleNodeType) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -883,6 +893,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if ('chi' in syntax && !('chi' in token)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -895,6 +906,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             if ('chi' in token && !('chi' in token)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -911,6 +923,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 if (!('tokens' in token)) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -939,6 +952,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 if (!hasBody) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -950,6 +964,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                 }
             } else if (hasBody) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -1049,6 +1064,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                 if (token.typ == EnumToken.DeclarationNodeType) {
 
                     valid = true;
+                    // @ts-ignore
                     result = {
 
                         valid: ValidationLevel.Valid,
@@ -1073,6 +1089,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 valid = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(token.typ);
 
+                // @ts-ignore
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: [],
@@ -1343,6 +1360,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 valid = isLength(token as DimensionToken) || (token.typ == EnumToken.NumberTokenType && token.val == '0');
 
+                // @ts-ignore
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] as Token[] : [],
@@ -1449,6 +1467,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 if (!valid) {
 
+                    // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -1604,6 +1623,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
             // <complex-selector-list>
             else if (['forgiving-selector-list', 'forgiving-relative-selector-list'].includes((syntax as ValidationPropertyToken).val)) {
 
+                // @ts-ignore
                 result = {tokens: tokens.slice(), ...validateSelector(tokens as Token[], options as ValidationOptions, root as AstNode)} as ValidationSyntaxResult;
             }
 
@@ -1683,6 +1703,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 } else {
 
+                    // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -1714,6 +1735,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
             }
 
             result = !valid ?
+                // @ts-ignore
                 {
                     valid: ValidationLevel.Drop,
                     matches: [],

@@ -1,5 +1,5 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types";
-import {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {validateSelector} from "./selector";
 import {consumeWhitespace} from "../utils";

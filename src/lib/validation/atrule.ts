@@ -123,6 +123,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
         if (chi[0].typ != EnumToken.DashedIdenTokenType) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 node: atRule,
@@ -131,6 +132,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
             }
         }
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             node: atRule,
@@ -150,6 +152,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
         if (!(root == null || (root.typ == EnumToken.AtRuleNodeType && (root as AstAtRule).nam == 'page'))) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 node: atRule,

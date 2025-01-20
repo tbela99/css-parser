@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace} from "../utils";
 import {validateURL} from "../syntaxes/url";
@@ -9,6 +9,7 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -21,6 +22,7 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
     if ('chi' in atRule) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -43,6 +45,7 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
     if (tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -72,6 +75,7 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
     if (tokens.length > 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -82,6 +86,7 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
         } as ValidationSyntaxResult;
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

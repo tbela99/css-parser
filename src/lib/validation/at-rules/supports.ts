@@ -1,5 +1,5 @@
 import type {AstAtRule, AstNode, IdentToken, MediaQueryConditionToken, Token, ValidationOptions} from "../../../@types";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace, splitTokenList} from "../utils";
 import {validateSyntax} from "../syntax";
@@ -12,6 +12,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -36,6 +37,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
 
     if (!('chi' in atRule)) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -46,6 +48,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
@@ -62,6 +65,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
         if (tokens.length == 0) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -92,9 +96,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                     previousToken = tokens[0];
                     tokens.shift();
-                }
-
-                else {
+                } else {
 
                     return result;
                 }
@@ -109,6 +111,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
 
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -122,6 +125,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
             if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -134,6 +138,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
             if (tokens.length == 1) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -148,6 +153,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
             if (!consumeWhitespace(tokens)) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -172,6 +178,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     if (token.typ != EnumToken.ParensTokenType) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -190,6 +197,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     if (chi[0].typ == EnumToken.IdenTokenType) {
 
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -207,6 +215,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
 
+        // @ts-ignore
         return chi[0].l.typ == EnumToken.IdenTokenType && (chi[0] as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType ?
 
             {
@@ -226,6 +235,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
             };
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Drop,
         matches: [],
@@ -248,6 +258,7 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
         if (token.val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {
 
             const chi: Token[] = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
                 {
@@ -271,6 +282,7 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
         if (token.val.localeCompare('font-format', undefined, {sensitivity: 'base'}) == 0) {
 
             const chi: Token[] = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
                 {
@@ -292,6 +304,7 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Drop,
         matches: [],

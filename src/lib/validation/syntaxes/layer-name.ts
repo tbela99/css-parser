@@ -1,6 +1,6 @@
 import type {Token} from "../../../@types";
 import {EnumToken, ValidationLevel} from "../../ast";
-import {ValidationSyntaxResult} from "../../../@types/validation";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 
 export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
 
@@ -21,6 +21,7 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
 
         if (slice[i].length == 0) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: tokens,
@@ -28,11 +29,12 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
                 syntax: null,
                 error: 'Invalid ident',
                 tokens
-            }
+            } as ValidationSyntaxResult
         }
 
         if (slice[i][0].typ != EnumToken.IdenTokenType) {
 
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: tokens,
@@ -40,13 +42,14 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
                 syntax: 'ident',
                 error: 'expecting ident',
                 tokens
-            }
+            } as ValidationSyntaxResult
         }
 
         for (let j = 1; j < slice[i].length; j++) {
 
             if (slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
 
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: tokens,
@@ -54,11 +57,12 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
                     syntax: 'layer-name',
                     error: 'expecting class selector',
                     tokens
-                }
+                } as ValidationSyntaxResult
             }
         }
     }
 
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: tokens,
@@ -66,5 +70,5 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
         syntax: null,
         error: '',
         tokens
-    }
+    } as ValidationSyntaxResult
 }

@@ -78,6 +78,7 @@ export class ComputeCalcExpressionFeature {
                             return null;
                         }
 
+                        // @ts-ignore
                         const slice: Token[] = (node.typ == EnumToken.FunctionTokenType ? (node as FunctionToken).chi : (node.typ == EnumToken.DeclarationNodeType ? (<AstDeclaration>node).val : (node as FunctionToken).chi))?.slice();
 
                         if (slice != null && node.typ == EnumToken.FunctionTokenType && mathFuncs.includes((node as FunctionToken).val)) {
