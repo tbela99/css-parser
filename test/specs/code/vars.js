@@ -52,7 +52,12 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
     animation-delay: calc(var(--animate-delay)*4)
 }
 
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.animate__animated.animate__repeat-1 {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ /* --animate-duration: 1s */
+ /* --animate-delay: 1s */
+ /* --animate-repeat: 1 */
+}
+.animate__animated.animate__repeat-1 {
  -webkit-animation-iteration-count: 1;
  animation-iteration-count: 1
 }
@@ -87,7 +92,10 @@ html { --color: green; }
   --darker-accent: lch(from var(--color) calc(l / 2) c h);
 }
 
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+ /* --color: green */
+}
+.foo {
  --darker-accent: #004500
 }`));
     });

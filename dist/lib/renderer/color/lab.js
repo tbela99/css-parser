@@ -7,6 +7,7 @@ import { OKLab_to_XYZ, getOKLABComponents } from './oklab.js';
 import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';

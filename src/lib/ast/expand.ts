@@ -41,10 +41,11 @@ export function expand(ast: AstNode): AstNode {
         } else if (node.typ == EnumToken.AtRuleNodeType && 'chi' in node) {
 
             let hasRule = false;
-            let j = node.chi.length;
+            let j = node!.chi!.length;
 
             while (j--) {
 
+                // @ts-ignore
                 if (node.chi[j].typ == EnumToken.RuleNodeType || node.chi[j].typ == EnumToken.AtRuleNodeType) {
 
                     hasRule = true;
@@ -64,7 +65,7 @@ export function expand(ast: AstNode): AstNode {
     return result;
 }
 
-function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
+function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule> {
 
     const ast: AstRule = <AstRule>{...node, chi: node.chi.slice()};
     const result: Array<AstRule | AstAtRule> = [];
@@ -101,17 +102,18 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 } else {
 
-                    let childSelectorCompund: string[] = [];
+                    let childSelectorCompound: string[] = [];
                     let withCompound: string[] = [];
                     let withoutCompound: string[] = [];
 
                     const rules: string[][] = splitRule(ast.sel);
+                    const parentSelector: boolean = !node.sel.includes('&');
 
                     for (const sel of (rule.raw ?? splitRule(rule.sel))) {
 
-                        const s = sel.join('');
+                        const s: string = sel.join('');
 
-                        if (s.includes('&')) {
+                        if (s.includes('&') || parentSelector) {
 
                             if (s.indexOf('&', 1) == -1) {
 
@@ -119,10 +121,10 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                                     if (s.at(1) == ' ') {
 
-                                        childSelectorCompund.push(s.slice(2));
+                                        childSelectorCompound.push(s.slice(2));
                                     } else {
 
-                                        if (s == '&') {
+                                        if (s == '&' || parentSelector) {
 
                                             withCompound.push(s);
                                         } else {
@@ -130,6 +132,9 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                                             withoutCompound.push(s.slice(1));
                                         }
                                     }
+                                } else {
+
+                                    withoutCompound.push(s);
                                 }
 
                             } else {
@@ -144,16 +149,25 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     }
 
                     const selectors: string[] = [];
-                    const selector = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
+                    const selector: string = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
 
-                    if (childSelectorCompund.length > 0) {
+                    if (childSelectorCompound.length > 0) {
 
-                        if (childSelectorCompund.length == 1) {
+                        if (childSelectorCompound.length == 1) {
 
-                            selectors.push(replaceCompound('& ' + childSelectorCompund[0].trim(), selector));
+                            selectors.push(replaceCompound('& ' + childSelectorCompound[0].trim(), selector));
                         } else {
 
-                            selectors.push(replaceCompound('& :is(' + childSelectorCompund.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                            selectors.push(replaceCompound('& :is(' + childSelectorCompound.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                        }
+                    }
+
+                    if (withCompound.length > 0) {
+
+                        if (withCompound.every((t) => t[0] == '&' && t.indexOf('&', 1) == -1)) {
+
+                            withoutCompound.push(...withCompound.map(t => t.slice(1)));
+                            withCompound.length = 0;
                         }
                     }
 
@@ -164,7 +178,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                             const useIs: boolean = rules.length == 1 && selector.match(/^[a-zA-Z.:]/) != null && selector.includes(' ') && withoutCompound.length == 1 && withoutCompound[0].match(/^[a-zA-Z]+$/) != null;
                             const compound = useIs ? ':is(&)' : '&';
 
-                            selectors.push(replaceCompound(rules.length == 1 ? (useIs ? withoutCompound[0] + ':is(&)' : (selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/) ? withoutCompound[0] + compound : compound  + withoutCompound[0])): (withoutCompound[0].match(/^[a-zA-Z:]+$/) ? withoutCompound[0].trim() + compound : '&' + (withoutCompound[0].match(/^\S+$/) ? withoutCompound[0].trim() : ':is(' + withoutCompound[0].trim() + ')')), selector));
+                            selectors.push(replaceCompound(rules.length == 1 ? (useIs ? withoutCompound[0] + ':is(&)' : (selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/) ? withoutCompound[0] + compound : compound + withoutCompound[0])) : (withoutCompound[0].match(/^[a-zA-Z:]+$/) ? withoutCompound[0].trim() + compound : '&' + (withoutCompound[0].match(/^\S+$/) ? withoutCompound[0].trim() : ':is(' + withoutCompound[0].trim() + ')')), selector));
 
                         } else {
 
@@ -192,7 +206,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 ast.chi.splice(i--, 1);
 
-                result.push(...<AstRule[]>expandRule(rule));
+                result.push(...<AstRule[]>expandRule(rule, node));
             } else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
 
 
@@ -215,7 +229,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     // @ts-ignore
                     astAtRule.chi.length = 0;
 
-                    for (const r of (<Array<AstRule | AstAtRule>>expandRule(clone))) {
+                    for (const r of (<Array<AstRule | AstAtRule>>expandRule(clone, node))) {
 
                         if (r.typ == EnumToken.AtRuleNodeType && 'chi' in r) {
 
@@ -235,7 +249,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         } else if (r.typ == EnumToken.RuleNodeType) {
 
                             // @ts-ignore
-                            astAtRule.chi.push(...expandRule(r));
+                            astAtRule.chi.push(...expandRule(r, node));
                         } else {
 
                             // @ts-ignore
@@ -255,9 +269,10 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
     return ast.chi.length > 0 ? [ast].concat(result) : result;
 }
 
-export function replaceCompound(input: string, replace: string) {
+export function replaceCompound(input: string, replace: string): string {
 
     const tokens: Token[] = parseString(input);
+    let replacement: Token[] | null = null;
 
     for (const t of walkValues(tokens)) {
 
@@ -265,7 +280,27 @@ export function replaceCompound(input: string, replace: string) {
 
             if (t.value.val == '&') {
 
-                const rule = splitRule(replace);
+                if (tokens.length == 2) {
+
+                    if (replacement == null) {
+
+                        replacement = parseString(replace);
+                    }
+
+                    if (tokens[1].typ == EnumToken.IdenTokenType) {
+
+
+                        t.value.val = replacement.length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
+                        tokens.splice(1, 1);
+                    } else {
+
+                        t.value.val = replaceCompoundLiteral(t.value.val, replace);
+                    }
+
+                    continue;
+                }
+
+                const rule: string[][] = splitRule(replace);
 
                 t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             } else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {

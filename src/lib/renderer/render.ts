@@ -12,8 +12,12 @@ import type {
     ColorToken,
     ErrorDescription,
     FractionToken,
-    IdentToken, InvalidAttrToken,
+    IdentToken,
+    InvalidAttrToken,
     Location,
+    MediaFeatureNotToken,
+    MediaFeatureOnlyToken,
+    MediaFeatureToken,
     NumberToken,
     PercentageToken,
     Position,
@@ -43,7 +47,7 @@ import {
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
-import {isColor, isNewLine} from "../syntax";
+import {isColor, isNewLine, mathFuncs} from "../syntax";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 
@@ -100,6 +104,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         ...(options.minify ?? true ? {
             indent: '',
             newLine: '',
+            removeEmpty: true,
             removeComments: true
         } : {
             indent: ' ',
@@ -135,6 +140,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     const cache: {
         [key: string]: any
     } = Object.create(null);
+
     const result: RenderResult = {
         code: renderAstNode(options.expandNestingRules ? expand(data) : data, options, sourcemap, <Position>{
 
@@ -323,6 +329,11 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
 
+            if (options.removeEmpty && children === '') {
+
+                return '';
+            }
+
             if (children.endsWith(';')) {
 
                 children = children.slice(0, -1);
@@ -336,11 +347,13 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
 
         case EnumToken.InvalidRuleTokenType:
+        case EnumToken.InvalidAtRuleTokenType:
 
             return '';
 
         default:
 
+            // return renderToken(data as Token, options, cache, reducer, errors);
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
 
@@ -509,7 +522,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                     // @ts-ignore
                     const color: ColorToken = chi[1];
-
                     const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor(token.val == 'color' ? (<IdentToken>chi[offset]).val : <string>token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
 
                     if (components != null) {
@@ -634,13 +646,12 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (
                 token.typ == EnumToken.FunctionTokenType &&
-                token.val == 'calc' &&
+                mathFuncs.includes(token.val) &&
                 token.chi.length == 1 &&
-                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
-                token.chi[0].typ != EnumToken.FractionTokenType &&
+                ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
+                // @ts-ignore
                 (<FractionToken>(<NumberToken>token.chi[0]).val)?.typ != EnumToken.FractionTokenType) {
 
-                // calc(200px) => 200px
                 return token.chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
             }
 
@@ -649,7 +660,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.MatchExpressionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) +
-                renderToken({typ: token.op}, options, cache, reducer, errors) +
+                renderToken(token.op, options, cache, reducer, errors) +
                 renderToken(token.r, options, cache, reducer, errors) +
                 (token.attr ? ' ' + token.attr : '');
 
@@ -668,6 +679,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             return '(';
 
         case EnumToken.DelimTokenType:
+        case EnumToken.EqualMatchTokenType:
 
             return '=';
 
@@ -929,6 +941,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.DashedIdenTokenType:
+        case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:
 
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */token.val;
@@ -944,6 +957,31 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.InvalidClassSelectorTokenType:
 
             return token.val;
+
+        case EnumToken.DeclarationNodeType:
+
+            return (<AstDeclaration>token).nam + ':' + (<AstDeclaration>token).val.reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
+
+        case EnumToken.MediaQueryConditionTokenType:
+
+            return renderToken(token.l, options, cache, reducer, errors) + renderToken(token.op, options, cache, reducer, errors) + token.r.reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
+
+        case EnumToken.MediaFeatureTokenType:
+
+            return (token as MediaFeatureToken).val;
+
+        case EnumToken.MediaFeatureNotTokenType:
+
+            return 'not ' + renderToken((token as MediaFeatureNotToken).val, options, cache, reducer, errors);
+
+        case EnumToken.MediaFeatureOnlyTokenType:
+            return 'only ' + renderToken((token as MediaFeatureOnlyToken).val, options, cache, reducer, errors);
+
+        case EnumToken.MediaFeatureAndTokenType:
+            return 'and';
+
+        case EnumToken.MediaFeatureOrTokenType:
+            return 'or';
 
         default:
 

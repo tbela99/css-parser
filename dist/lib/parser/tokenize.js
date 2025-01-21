@@ -1,5 +1,6 @@
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import './parse.js';
 import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from '../syntax/syntax.js';
 import './utils/config.js';
@@ -222,6 +223,13 @@ function* tokenize(stream) {
                     buffer = '';
                 }
                 break;
+            case '#':
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                buffer += value;
+                break;
             case '\\':
                 // EOF
                 if (!(value = next(parseInfo))) {
@@ -326,7 +334,7 @@ function* tokenize(stream) {
             case ':':
             case ',':
             case '=':
-                if (buffer.length > 0) {
+                if (buffer.length > 0 && buffer != ':') {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
@@ -336,8 +344,13 @@ function* tokenize(stream) {
                     yield pushToken(value + val, parseInfo, EnumToken.ContainMatchTokenType);
                     break;
                 }
-                if (value == ':' && ':' == val) {
-                    buffer += value + next(parseInfo);
+                if (value == ':') {
+                    if (isWhiteSpace(val.codePointAt(0))) {
+                        yield pushToken(value, parseInfo, EnumToken.ColonTokenType);
+                        buffer = '';
+                        break;
+                    }
+                    buffer += value;
                     break;
                 }
                 yield pushToken(value, parseInfo);

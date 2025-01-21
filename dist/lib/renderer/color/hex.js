@@ -1,5 +1,6 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { getNumber, minmax } from './color.js';
 import { hsl2rgb, hwb2rgb, cmyk2rgb, oklab2rgb, oklch2rgb, lab2rgb, lch2rgb } from './rgb.js';

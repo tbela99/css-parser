@@ -1,5 +1,6 @@
 import { EnumToken } from '../../../ast/types.js';
 import '../../../ast/minify.js';
+import '../../../ast/walk.js';
 import '../../../parser/parse.js';
 import { COLORS_NAMES } from './constants.js';
 import { expandHexValue } from '../hex.js';

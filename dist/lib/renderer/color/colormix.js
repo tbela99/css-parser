@@ -1,5 +1,6 @@
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../syntax/syntax.js';
 import '../../parser/utils/config.js';

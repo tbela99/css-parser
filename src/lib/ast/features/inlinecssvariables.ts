@@ -1,14 +1,19 @@
 import type {
-    AstAtRule, AstComment,
+    AstAtRule,
+    AstComment,
     AstDeclaration,
-    AstRule, AstRuleList,
+    AstRule,
+    AstRuleList,
     AstRuleStyleSheet,
-    FunctionToken, MinifyOptions,
+    CommentToken,
+    FunctionToken,
+    MinifyOptions,
     ParserOptions,
     VariableScopeInfo
 } from "../../../@types";
 import {EnumToken} from "../types";
 import {walkValues} from "../walk";
+import {renderToken} from "../../renderer";
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
 
@@ -178,7 +183,11 @@ export class InlineCssVariablesFeature {
 
                         if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == EnumToken.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
 
-                            (<AstDeclaration[]>parent.chi).splice(i, 1);
+                            // @ts-ignore
+                            (<AstDeclaration[]>parent.chi).splice(i++, 1, {
+                                typ: EnumToken.CommentTokenType,
+                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                            } as CommentToken);
                         }
                     }
 

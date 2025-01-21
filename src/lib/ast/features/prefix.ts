@@ -1,8 +1,7 @@
 import {EnumToken} from "../types";
 import type {AstAtRule, AstDeclaration, AstRule, MinifyOptions, Token} from "../../../@types";
-import {getConfig} from '../../validation'
-import {walkValues} from "../walk";
 import {
+    getSyntaxConfig,
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
@@ -11,9 +10,10 @@ import {
     ValidationPropertyToken,
     ValidationToken,
     ValidationTokenEnum
-} from "../../validation/parser";
+} from '../../validation'
+import {walkValues} from "../walk";
 
-const config = getConfig();
+const config = getSyntaxConfig();
 
 export class ComputePrefixFeature {
 
@@ -53,7 +53,7 @@ export class ComputePrefixFeature {
 
                 if ((<AstDeclaration>node).nam.charAt(0) == '-') {
 
-                    const match = (<AstDeclaration>node).nam.match(/^-(.*?)-(.*)$/);
+                    const match = (<AstDeclaration>node).nam.match(/^-([^-]+)-(.+)$/);
 
                     if (match != null) {
 
@@ -110,7 +110,6 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
 
             case ValidationTokenEnum.Keyword:
 
-                console.error(matches[i], token);
                 if (token.typ == EnumToken.IdenTokenType && token.val == (matches[i] as ValidationKeywordToken).val) {
 
                     return token;
@@ -145,14 +144,26 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
                 break;
 
             case ValidationTokenEnum.PipeToken:
+
+                for (let j = 0; j < (<ValidationPipeToken>matches[i]).chi.length; j++) {
+
+                    result = matchToken(token, (<ValidationPipeToken>matches[i]).chi[j]);
+
+                    if (result != null) {
+
+                        return result;
+                    }
+                }
+
+                break;
             case ValidationTokenEnum.ColumnToken:
             case ValidationTokenEnum.AmpersandToken:
 
-                result = matchToken(token, (<ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken>matches[i]).l);
+                result = matchToken(token, (<ValidationColumnToken | ValidationAmpersandToken>matches[i]).l);
 
                 if (result == null) {
 
-                    result = matchToken(token, (<ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken>matches[i]).r);
+                    result = matchToken(token, (<ValidationColumnToken | ValidationAmpersandToken>matches[i]).r);
                 }
 
                 if (result != null) {
@@ -172,12 +183,6 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
                 }
 
                 break;
-
-            // default:
-            //
-            //     console.error(token, matches[i]);
-            //     throw new Error('bar bar');
-
         }
     }
 

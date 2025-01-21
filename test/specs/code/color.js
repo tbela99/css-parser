@@ -234,7 +234,10 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 
 `, {
                 inlineCssVariables: true
-            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`._19_u :focus {
+            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ /* --color: green */
+}
+._19_u :focus {
  color: navy
 }`));
         });
@@ -251,7 +254,10 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 
 `, {
                 inlineCssVariables: true
-            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
+            }).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ /* --color: 255 0 0 */
+}
+.selector {
  background-color: #ff000080
 }`));
         });
@@ -1100,7 +1106,10 @@ html { --color: green; }
 .foo {
   --darker-accent: lch(from var(--color) calc(l / 2) c h);
 }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+ /* --color: green */
+}
+.foo {
  --darker-accent: #004500
 }`));
     });
@@ -1111,7 +1120,10 @@ html { --base:  oklch(52.6% 0.115 44.6deg) }
 .summary {
   background:  oklch(from var(--base) l c  calc(h + 90));
 }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.summary {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+ /* --base: oklch(52.6% .115 44.6deg) */
+}
+.summary {
  background: #4d792f
 }`));
     });
@@ -1125,7 +1137,11 @@ html {
 .foo {
 background: var(--darker-accent);
 }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.foo {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+ /* --color: green */
+ /* --darker-accent: lch(from green calc(l/2) c h) */
+}
+.foo {
  background: #004500
 }`));
     });
@@ -1156,7 +1172,10 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
 .overlay {
   background:  oklab(from var(--bluegreen) calc(1.0 - l) calc(a * 0.8) b);
 }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.overlay {
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+ /* --bluegreen: oklab(54.3% -22.5% -5%) */
+}
+.overlay {
  background: #0c6464
 }`));
     });
@@ -1201,7 +1220,11 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
 .c {
     color: light-dark(var(--dark), var(--light));
     }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`/* Named color values */
+`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ /* --light: #fff */
+ /* --dark: #000 */
+}
+/* Named color values */
 .a {
  color: light-dark(#000,#fff)
 }
@@ -1227,6 +1250,26 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
  /* Use a border instead, since box-shadow
     is forced to 'none' in forced-colors mode */
  border: ButtonBorder solid 2px
+}`));
+    });
+
+    it('percentage in calc() #128', function () {
+        return parse(`
+ 
+a {color:lch(from slateblue calc(l + 10%) c h) ;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #8673ea
+}`));
+    });
+
+    it('percentage in calc() #129', function () {
+        return parse(`
+ 
+a {
+color: lch(from slateblue calc(l * sin(pi / 4)) c h);
+;
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
+ color: #453ba9
 }`));
     });
 }

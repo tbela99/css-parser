@@ -23,6 +23,7 @@ export async function load(url: string, currentFile: string): Promise<string> {
     } else {
 
         const path: string = resolve(url, currentFile).absolute;
+        // @ts-ignore
         t = new URL(path, self.origin);
     }
 

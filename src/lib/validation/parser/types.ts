@@ -25,6 +25,7 @@ export enum ValidationTokenEnum {
     Whitespace,
     Parenthesis,
     Bracket,
+    Block,
     AtLeastOnce,
     Separator,
     Exclamation,
@@ -35,7 +36,21 @@ export enum ValidationTokenEnum {
     Parens,
     PseudoClassToken,
     PseudoClassFunctionToken,
-    StringToken
+    StringToken,
+    AtRuleDefinition,
+    DeclarationNameToken,
+    DeclarationDefinitionToken,
+    SemiColon,
+    Character
+}
+
+export const enum ValidationSyntaxGroupEnum {
+
+    Declarations = 'declarations',
+    Functions = 'functions',
+    Syntaxes = 'syntaxes',
+    Selectors = 'selectors',
+    AtRules = 'atRules'
 }
 
 export interface Position {
@@ -50,6 +65,7 @@ export interface ValidationToken {
     typ: ValidationTokenEnum;
     pos: Position;
     isList?: boolean;
+    text?: string;
     isRepeatable?: boolean;
     atLeastOnce?: boolean;
     isOptional?: boolean;
@@ -65,16 +81,40 @@ export interface AtLeastOneToken extends ValidationToken {
     typ: ValidationTokenEnum.AtLeastOnce;
 }
 
+export interface ValidationCharacterToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.Character;
+    val: string;
+}
+
 export interface ValidationStringToken extends ValidationToken {
 
     typ: ValidationTokenEnum.StringToken;
     val: string;
 }
 
+export interface ValidationSemiColonToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.SemiColon;
+}
+
 export interface ValidationPseudoClassToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PseudoClassToken;
     val: string;
+}
+
+export interface ValidationDeclarationNameToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.DeclarationNameToken;
+    val: string;
+}
+
+export interface ValidationDeclarationDefinitionToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.DeclarationDefinitionToken;
+    nam: string;
+    val: ValidationToken;
 }
 
 export interface ValidationPseudoClassFunctionToken extends ValidationToken {
@@ -100,6 +140,26 @@ export interface NumberToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Number;
     val: number;
+}
+
+export interface ValidationAtRuleToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRule;
+    val: string;
+}
+
+export interface ValidationAtRule extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRule;
+    val: string;
+}
+
+export interface ValidationAtRuleDefinitionToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.AtRuleDefinition;
+    val: string;
+    prelude?: ValidationToken[];
+    chi?: ValidationToken[];
 }
 
 export interface ValidationKeywordToken extends ValidationToken {
@@ -133,13 +193,18 @@ export interface PipeToken extends ValidationToken {
 export interface ValidationPipeToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PipeToken;
-    l: ValidationToken[];
-    r: ValidationToken[];
+    chi: ValidationToken[][];
 }
 
 export interface ValidationBracketToken extends ValidationToken {
 
     typ: ValidationTokenEnum.Bracket,
+    chi: ValidationToken[];
+}
+
+export interface ValidationBlockToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.Block,
     chi: ValidationToken[];
 }
 
@@ -168,7 +233,6 @@ export interface ValidationColumnToken extends ValidationToken {
     l: ValidationToken[];
     r: ValidationToken[];
 }
-
 
 export interface ValidationDeclarationToken extends ValidationToken {
 

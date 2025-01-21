@@ -2,6 +2,7 @@ import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';

@@ -1,7 +1,8 @@
 import {AstNode, AstRuleList} from "./ast.d.ts";
 import {BinaryExpressionToken, FunctionToken, ParensToken, Token} from "./token.d.ts";
+import {WalkerValueEvent} from '../lib/ast/walk';
 
-export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | null;
+export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | Token | null;
 /**
  * returned value:
  * - 'ignore': ignore this node and its children
@@ -18,18 +19,19 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - 'children': walk the children and ignore the node itself
  * - 'ignore-children': walk the node and ignore children
  */
-export declare type WalkerValueFilter = (node: Token) => WalkerOption;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
     parent?: AstRuleList;
-    root?: AstRuleList;
+    root?: AstNode;
 }
 
 export declare interface WalkAttributesResult {
     value: Token;
     previousValue: Token | null;
-    nextValue: AstNode | null;
+    nextValue: Token | null;
     root?: AstNode;
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
+    list: Token[] | null;
 }

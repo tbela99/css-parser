@@ -2,6 +2,7 @@ import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
+import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { xyz2lab } from './lab.js';
 import { lab2lchvalues } from './lch.js';

@@ -34,6 +34,7 @@ function expand(ast) {
             let hasRule = false;
             let j = node.chi.length;
             while (j--) {
+                // @ts-ignore
                 if (node.chi[j].typ == EnumToken.RuleNodeType || node.chi[j].typ == EnumToken.AtRuleNodeType) {
                     hasRule = true;
                     break;
@@ -49,7 +50,7 @@ function expand(ast) {
     }
     return result;
 }
-function expandRule(node) {
+function expandRule(node, parent) {
     const ast = { ...node, chi: node.chi.slice() };
     const result = [];
     if (ast.typ == EnumToken.RuleNodeType) {
@@ -72,26 +73,30 @@ function expandRule(node) {
                     }
                 }
                 else {
-                    let childSelectorCompund = [];
+                    let childSelectorCompound = [];
                     let withCompound = [];
                     let withoutCompound = [];
                     const rules = splitRule(ast.sel);
+                    const parentSelector = !node.sel.includes('&');
                     for (const sel of (rule.raw ?? splitRule(rule.sel))) {
                         const s = sel.join('');
-                        if (s.includes('&')) {
+                        if (s.includes('&') || parentSelector) {
                             if (s.indexOf('&', 1) == -1) {
                                 if (s.at(0) == '&') {
                                     if (s.at(1) == ' ') {
-                                        childSelectorCompund.push(s.slice(2));
+                                        childSelectorCompound.push(s.slice(2));
                                     }
                                     else {
-                                        if (s == '&') {
+                                        if (s == '&' || parentSelector) {
                                             withCompound.push(s);
                                         }
                                         else {
                                             withoutCompound.push(s.slice(1));
                                         }
                                     }
+                                }
+                                else {
+                                    withoutCompound.push(s);
                                 }
                             }
                             else {
@@ -104,12 +109,18 @@ function expandRule(node) {
                     }
                     const selectors = [];
                     const selector = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
-                    if (childSelectorCompund.length > 0) {
-                        if (childSelectorCompund.length == 1) {
-                            selectors.push(replaceCompound('& ' + childSelectorCompund[0].trim(), selector));
+                    if (childSelectorCompound.length > 0) {
+                        if (childSelectorCompound.length == 1) {
+                            selectors.push(replaceCompound('& ' + childSelectorCompound[0].trim(), selector));
                         }
                         else {
-                            selectors.push(replaceCompound('& :is(' + childSelectorCompund.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                            selectors.push(replaceCompound('& :is(' + childSelectorCompound.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.trim(), '') + ')', selector));
+                        }
+                    }
+                    if (withCompound.length > 0) {
+                        if (withCompound.every((t) => t[0] == '&' && t.indexOf('&', 1) == -1)) {
+                            withoutCompound.push(...withCompound.map(t => t.slice(1)));
+                            withCompound.length = 0;
                         }
                     }
                     if (withoutCompound.length > 0) {
@@ -185,9 +196,23 @@ function expandRule(node) {
 }
 function replaceCompound(input, replace) {
     const tokens = parseString(input);
+    let replacement = null;
     for (const t of walkValues(tokens)) {
         if (t.value.typ == EnumToken.LiteralTokenType) {
             if (t.value.val == '&') {
+                if (tokens.length == 2) {
+                    if (replacement == null) {
+                        replacement = parseString(replace);
+                    }
+                    if (tokens[1].typ == EnumToken.IdenTokenType) {
+                        t.value.val = replacement.length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
+                        tokens.splice(1, 1);
+                    }
+                    else {
+                        t.value.val = replaceCompoundLiteral(t.value.val, replace);
+                    }
+                    continue;
+                }
                 const rule = splitRule(replace);
                 t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             }

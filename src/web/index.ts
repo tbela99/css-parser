@@ -1,7 +1,4 @@
-/**
- * entry point for web
- * @module
- */
+
 import type {
     AstNode,
     ParseResult,
@@ -10,7 +7,7 @@ import type {
     RenderResult,
     TransformOptions,
     TransformResult
-} from "../@types";
+} from "../@types/index.d.ts";
 
 import {doParse, doRender} from "../lib";
 import {resolve, dirname} from "../lib/fs";

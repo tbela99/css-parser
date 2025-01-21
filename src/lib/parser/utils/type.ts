@@ -1,8 +1,7 @@
 import {EnumToken} from "../../ast";
 import type {IdentToken, PropertyMapType, Token} from "../../../@types/index.d.ts";
 
-// https://www.w3.org/TR/css-values-4/#math-function
-export const funcList: string[] = ['clamp', 'calc'];
+import {mathFuncs} from "../../syntax";
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
 
@@ -26,8 +25,9 @@ export function matchType(val: Token, properties: PropertyMapType): boolean {
 
     if (val.typ == EnumToken.FunctionTokenType) {
 
-        if (funcList.includes(val.val)) {
-            return val.chi.every(((t: Token) => [EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.StartParensTokenType, EnumToken.EndParensTokenType].includes(t.typ) || matchType(t, properties)));
+        if (mathFuncs.includes(val.val)) {
+
+            return val.chi.every(((t: Token) => [EnumToken.Add,EnumToken.Mul,EnumToken.Div,EnumToken.Sub,EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.DimensionTokenType, EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.ResolutionTokenType, EnumToken.TimeTokenType, EnumToken.BinaryExpressionTokenType].includes(t.typ) || matchType(t, properties)));
         }
 
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.

@@ -1,10 +1,16 @@
 import { EnumToken } from '../types.js';
-import { getConfig } from '../../validation/config.js';
-import { walkValues } from '../walk.js';
+import { getSyntaxConfig } from '../../validation/config.js';
 import { ValidationTokenEnum } from '../../validation/parser/types.js';
 import '../../validation/parser/parse.js';
+import '../minify.js';
+import { walkValues } from '../walk.js';
+import '../../parser/parse.js';
+import '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
+import '../../parser/utils/config.js';
+import '../../validation/syntaxes/complex-selector.js';
 
-const config = getConfig();
+const config = getSyntaxConfig();
 class ComputePrefixFeature {
     static get ordering() {
         return 2;
@@ -30,7 +36,7 @@ class ComputePrefixFeature {
             const node = ast.chi[k];
             if (node.typ == EnumToken.DeclarationNodeType) {
                 if (node.nam.charAt(0) == '-') {
-                    const match = node.nam.match(/^-(.*?)-(.*)$/);
+                    const match = node.nam.match(/^-([^-]+)-(.+)$/);
                     if (match != null) {
                         const nam = match[2];
                         if (nam.toLowerCase() in config.declarations) {
@@ -67,7 +73,6 @@ function matchToken(token, matches) {
             case ValidationTokenEnum.Comma:
                 break;
             case ValidationTokenEnum.Keyword:
-                console.error(matches[i], token);
                 if (token.typ == EnumToken.IdenTokenType && token.val == matches[i].val) {
                     return token;
                 }
@@ -90,6 +95,13 @@ function matchToken(token, matches) {
                 }
                 break;
             case ValidationTokenEnum.PipeToken:
+                for (let j = 0; j < matches[i].chi.length; j++) {
+                    result = matchToken(token, matches[i].chi[j]);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+                break;
             case ValidationTokenEnum.ColumnToken:
             case ValidationTokenEnum.AmpersandToken:
                 result = matchToken(token, matches[i].l);
@@ -106,10 +118,6 @@ function matchToken(token, matches) {
                     return result;
                 }
                 break;
-            // default:
-            //
-            //     console.error(token, matches[i]);
-            //     throw new Error('bar bar');
         }
     }
     return null;

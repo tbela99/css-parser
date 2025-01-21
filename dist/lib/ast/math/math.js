@@ -87,9 +87,15 @@ function compute(a, b, op) {
         r: { typ: EnumToken.NumberTokenType, val: reduceNumber(a2[1]) }
     };
 }
+function rem(...a) {
+    if (a.some((i) => !Number.isInteger(i))) {
+        return a.reduce((a, b) => Math.max(a, String(b).split('.')[1]?.length ?? 0), 0);
+    }
+    return 0;
+}
 function simplify(a, b) {
     const g = gcd(a, b);
     return g > 1 ? [a / g, b / g] : [a, b];
 }
 
-export { compute, gcd, simplify };
+export { compute, gcd, rem, simplify };

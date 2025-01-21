@@ -1,4 +1,3 @@
-
 export enum ValidationLevel {
     Valid,
     Drop
@@ -44,6 +43,7 @@ export enum EnumToken {
     WhitespaceTokenType,
     IncludeMatchTokenType,
     DashMatchTokenType,
+    EqualMatchTokenType,
     LtTokenType,
     LteTokenType,
     GtTokenType,
@@ -83,14 +83,22 @@ export enum EnumToken {
     KeyFrameRuleNodeType,
     ClassSelectorTokenType,
     UniversalSelectorTokenType,
-    ChildCombinatorTokenType,
+    ChildCombinatorTokenType, // >
     DescendantCombinatorTokenType, // whitespace
-    NextSiblingCombinatorTokenType,
-    SubsequentSiblingCombinatorTokenType,
-    NestingSelectorTokenType,
+    NextSiblingCombinatorTokenType, // +
+    SubsequentSiblingCombinatorTokenType, // ~
+    NestingSelectorTokenType, // &
     InvalidRuleTokenType,
     InvalidClassSelectorTokenType,
     InvalidAttrTokenType,
+    InvalidAtRuleTokenType,
+    MediaQueryConditionTokenType,
+    MediaFeatureTokenType,
+    MediaFeatureOnlyTokenType,
+    MediaFeatureNotTokenType,
+    MediaFeatureAndTokenType,
+    MediaFeatureOrTokenType,
+    PseudoPageTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,
@@ -118,7 +126,7 @@ export enum EnumToken {
     CommentNodeType = CommentTokenType,
     CDOCOMMNodeType = CDOCOMMTokenType,
     TimingFunction = TimingFunctionTokenType,
-    TimelineFunction = TimelineFunctionTokenType
+    TimelineFunction = TimelineFunctionTokenType,
 }
 
 export const funcLike: EnumToken[] = [

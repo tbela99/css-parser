@@ -525,6 +525,35 @@ table.colortable {
 }`));
         });
 
+
+        it('merge #23', function () {
+            const file = `
+
+.foo-bar {
+
+ >a, + a, ~ a b {
+  color: #fff
+ }
+ >a {
+  color: #fff
+ }
++ a {
+  color: #fff
+ }
+ >a {
+  color: #fff
+ }
+& b {
+  color: #fff
+ }
+`;
+            return parse(file, {
+                minify: true, nestingRules: true, validation: true
+            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo-bar b,.foo-bar:is(>a,+a,~a b) {
+ color: #fff
+}`));
+        });
+
         // see https://www.w3.org/TR/css-nesting-1/#conditionals
         /*
         .header {

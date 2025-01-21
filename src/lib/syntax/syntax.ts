@@ -24,6 +24,18 @@ const dimensionUnits: Set<string> = new Set([
     'svh', 'svi', 'svmin', 'svw', 'vb', 'vh', 'vi', 'vmax', 'vmin', 'vw'
 ]);
 
+export const fontFormat: string[] = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];
+export const colorFontTech: string[] = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
+export const fontFeaturesTech: string[] = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
+
+// https://drafts.csswg.org/mediaqueries/#media-types
+export const mediaTypes: string[] = ['all', 'print', 'screen',
+    /* deprecated */
+    'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
+
+// https://www.w3.org/TR/css-values-4/#math-function
+export const mathFuncs: string[] = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+
 export function isLength(dimension: DimensionToken): boolean {
 
     return 'unit' in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
@@ -146,7 +158,7 @@ export function isColor(token: Token): boolean {
                     }
                 }
 
-                if (children[i].typ == EnumToken.FunctionTokenType && !['calc'].includes((<FunctionToken>children[i]).val)) {
+                if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes((<FunctionToken>children[i]).val)) {
 
                     return false;
                 }
@@ -284,7 +296,7 @@ export function isColor(token: Token): boolean {
                     continue;
                 }
 
-                if (v.typ == EnumToken.FunctionTokenType && (v.val == 'calc' || v.val == 'var' || colorsFunc.includes(v.val))) {
+                if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
 
                     continue;
                 }
@@ -318,7 +330,7 @@ function isNonAscii(codepoint: number): boolean {
 export function isIdentStart(codepoint: number): boolean {
 
     // _
-    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint);
+    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint == REVERSE_SOLIDUS;
 }
 
 export function isDigit(codepoint: number): boolean {
@@ -365,6 +377,27 @@ export function isIdent(name: string): boolean {
     if (!isIdentStart(codepoint)) {
 
         return false;
+    }
+
+    if (codepoint == REVERSE_SOLIDUS) {
+
+        codepoint = name.codePointAt(i + 1) as number;
+
+        if (!isIdentCodepoint(codepoint)) {
+
+            return false;
+        }
+        i += String.fromCodePoint(codepoint).length;
+
+        if (i < j) {
+
+            codepoint = name.codePointAt(i) as number;
+
+            if (!isIdentCodepoint(codepoint)) {
+
+                return false;
+            }
+        }
     }
 
     while (i < j) {

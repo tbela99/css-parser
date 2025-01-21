@@ -53,7 +53,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         });
 
 
-        it('selector invalid prefix #2', function () {
+        it('selector invalid prefix #4', function () {
             return transform(`
 
 @media screen {

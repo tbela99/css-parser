@@ -1,4 +1,4 @@
-import type {BaseToken} from "./ast";
+import type {AstDeclaration, BaseToken} from "./ast";
 import {EnumToken} from "../lib";
 
 export declare interface LiteralToken extends BaseToken {
@@ -73,6 +73,7 @@ export declare interface AtRuleToken extends BaseToken {
 
     typ: EnumToken.AtRuleTokenType,
     val: string;
+    pre: string;
 }
 
 export declare interface PercentageToken extends BaseToken {
@@ -273,6 +274,12 @@ export declare interface DashMatchToken extends BaseToken {
     // val: '|=';
 }
 
+export declare interface EqualMatchToken extends BaseToken {
+
+    typ: EnumToken.EqualMatchTokenType;
+    // val: '|=';
+}
+
 export declare interface StartMatchToken extends BaseToken {
 
     typ: EnumToken.StartMatchTokenType;
@@ -319,6 +326,12 @@ export declare interface ColumnCombinatorToken extends BaseToken {
 export declare interface PseudoClassToken extends BaseToken {
 
     typ: EnumToken.PseudoClassTokenType;
+    val: string;
+}
+
+export declare interface PseudoPageToken extends BaseToken {
+
+    typ: EnumToken.PseudoPageTokenType;
     val: string;
 }
 
@@ -418,6 +431,48 @@ export declare interface ChildCombinatorToken extends BaseToken {
     typ: EnumToken.ChildCombinatorTokenType
 }
 
+export declare interface MediaFeatureToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureTokenType,
+    val: string;
+}
+
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureOnlyToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureOnlyTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
+export declare interface MediaFeatureAndToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureAndTokenType;
+}
+
+export declare interface MediaFeatureOrToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureOrTokenType;
+}
+
+export declare interface MediaQueryConditionToken extends BaseToken {
+
+    typ: EnumToken.MediaQueryConditionTokenType,
+    l: Token,
+    op: ColonToken | GreaterThanToken | LessThanToken | GreaterThanOrEqualToken | LessThanOrEqualToken,
+    r: Token[]
+}
+
 export declare interface DescendantCombinatorToken extends BaseToken {
 
     typ: EnumToken.DescendantCombinatorTokenType
@@ -478,7 +533,7 @@ export declare interface BinaryExpressionToken extends BaseToken {
 export declare interface MatchExpressionToken extends BaseToken {
 
     typ: EnumToken.MatchExpressionTokenType
-    op: EnumToken.DashMatchTokenType | EnumToken.StartMatchTokenType | EnumToken.ContainMatchTokenType | EnumToken.EndMatchTokenType | EnumToken.IncludeMatchTokenType;
+    op: EqualMatchToken | DashMatchToken | StartMatchToken | ContainMatchToken | EndMatchToken | IncludeMatchToken;
     l: Token;
     r: Token;
     attr?: 'i' | 's';
@@ -529,6 +584,14 @@ export declare type Token =
     | ColumnCombinatorToken
     | NestingSelectorToken
     |
+    MediaQueryConditionToken
+    | MediaFeatureToken
+    | MediaFeatureNotToken
+    | MediaFeatureOnlyToken
+    | MediaFeatureAndToken
+    | MediaFeatureOrToken
+    | AstDeclaration
+    |
     NumberToken
     | AtRuleToken
     | PercentageToken
@@ -573,6 +636,7 @@ export declare type Token =
     | NameSpaceAttributeToken
     |
     DashMatchToken
+    | EqualMatchToken
     | LessThanToken
     | LessThanOrEqualToken
     | GreaterThanToken
@@ -580,6 +644,7 @@ export declare type Token =
     |
     ListToken
     | PseudoClassToken
+    | PseudoPageToken
     | PseudoClassFunctionToken
     | DelimToken
     | BinaryExpressionToken

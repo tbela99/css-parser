@@ -1,9 +1,19 @@
-import type {ColorToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {
+    BinaryExpressionToken,
+    ColorToken,
+    FunctionToken,
+    IdentToken,
+    ParensToken,
+    PercentageToken,
+    Token
+} from "../../../@types/index.d.ts";
 import {convert, getNumber} from "./color";
 import {EnumToken, walkValues} from "../../ast";
 import {reduceNumber} from "../render";
-import {evaluate} from "../../ast/math";
+import {evaluate, evaluateFunc} from "../../ast/math";
 import {colorRange} from "./utils";
+import {eq} from "../../parser/utils/eq";
+import {mathFuncs} from "../../syntax";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';
 type HSLKeyType = 'h' | 's' | 'l' | 'alpha';
@@ -72,7 +82,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
         } : aExp)
     };
 
-    return computeComponentValue(keys, values);
+    return computeComponentValue(keys, converted, values);
 }
 
 function getValue(t: Token, converted: ColorToken, component: string): Token {
@@ -101,7 +111,7 @@ function getValue(t: Token, converted: ColorToken, component: string): Token {
     return t;
 }
 
-function computeComponentValue(expr: Record<RelativeColorTypes, Token>, values: Record<RelativeColorTypes, number | Token | null>): Record<RelativeColorTypes, Token> | null {
+function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converted: ColorToken, values: Record<RelativeColorTypes, number | Token | null>): Record<RelativeColorTypes, Token> | null {
 
     for (const object of [values, expr]) {
 
@@ -154,46 +164,37 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, values: 
 
                 expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
             }
-        } else if (exp.typ == EnumToken.FunctionTokenType && exp.val == 'calc') {
+        } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val)) {
 
-            for (let {value, parent} of walkValues(exp.chi)) {
+            for (let {value, parent} of walkValues(exp.chi, exp)) {
 
-                if (value.typ == EnumToken.IdenTokenType) {
+                if (parent == null) {
 
-                    if (!(value.val in values)) {
+                    parent = exp;
+                }
+
+                if (value.typ == EnumToken.PercentageTokenType) {
+
+                    replaceValue(parent as BinaryExpressionToken | FunctionToken | ParensToken, value, getValue(value, converted, <RelativeColorTypes>key));
+                } else if (value.typ == EnumToken.IdenTokenType) {
+
+                    // @ts-ignore
+                    if (!(value.val in values || typeof Math[(value as IdentToken).val.toUpperCase()] == 'number')) {
 
                         return null;
                     }
 
-                    if (parent == null) {
-
-                        parent = exp;
-                    }
-
-                    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-
-                        if (parent.l == value) {
-
-                            parent.l = <Token>values[<RelativeColorTypes>value.val];
-                        } else {
-
-                            parent.r = <Token>values[<RelativeColorTypes>value.val];
-                        }
-                    } else {
-
-                        for (let i = 0; i < parent.chi.length; i++) {
-
-                            if (parent.chi[i] == value) {
-
-                                parent.chi.splice(i, 1, <Token>values[<RelativeColorTypes>value.val]);
-                                break;
-                            }
-                        }
-                    }
+                    // @ts-ignore
+                    replaceValue(parent as BinaryExpressionToken | FunctionToken | ParensToken, value, values[value.val] ?? {
+                        typ: EnumToken.NumberTokenType,
+                        // @ts-ignore
+                        val: '' + Math[(value as IdentToken).val.toUpperCase()]
+                        // @ts-ignore
+                    } as Token);
                 }
             }
 
-            const result: Token[] = evaluate(exp.chi);
+            const result: Token[] = exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val) && exp.val != 'calc' ? evaluateFunc(exp) : evaluate(exp.chi);
 
             if (result.length == 1 && result[0].typ != EnumToken.BinaryExpressionTokenType) {
 
@@ -206,4 +207,40 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, values: 
     }
 
     return <Record<RelativeColorTypes, Token>>expr;
+}
+
+function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
+    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
+
+        if (parent.l == value) {
+
+            parent.l = newValue;
+        } else {
+
+            parent.r = newValue;
+        }
+    } else {
+
+        for (let i = 0; i < parent.chi.length; i++) {
+
+            if (parent.chi[i] == value) {
+
+                parent.chi.splice(i, 1, newValue);
+                break;
+            }
+
+            if (parent.chi[i].typ == EnumToken.BinaryExpressionTokenType) {
+
+                if ((parent.chi[i] as BinaryExpressionToken).l == value) {
+
+                    (parent.chi[i] as BinaryExpressionToken).l = newValue;
+                    break;
+                } else if ((parent.chi[i] as BinaryExpressionToken).r == value) {
+
+                    (parent.chi[i] as BinaryExpressionToken).r = newValue;
+                    break
+                }
+            }
+        }
+    }
 }

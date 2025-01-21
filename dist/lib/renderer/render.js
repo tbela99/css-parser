@@ -4,11 +4,12 @@ import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
+import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { isColor, isNewLine } from '../syntax/syntax.js';
+import { isColor, mathFuncs, isNewLine } from '../syntax/syntax.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
@@ -45,6 +46,7 @@ function doRender(data, options = {}) {
         ...(options.minify ?? true ? {
             indent: '',
             newLine: '',
+            removeEmpty: true,
             removeComments: true
         } : {
             indent: ' ',
@@ -193,6 +195,9 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 }
                 return `${css}${options.newLine}${indentSub}${str}`;
             }, '');
+            if (options.removeEmpty && children === '') {
+                return '';
+            }
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
@@ -201,8 +206,10 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
         case EnumToken.InvalidRuleTokenType:
+        case EnumToken.InvalidAtRuleTokenType:
             return '';
         default:
+            // return renderToken(data as Token, options, cache, reducer, errors);
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
     return '';
@@ -394,19 +401,18 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.TimelineFunctionTokenType:
         case EnumToken.GridTemplateFuncTokenType:
             if (token.typ == EnumToken.FunctionTokenType &&
-                token.val == 'calc' &&
+                mathFuncs.includes(token.val) &&
                 token.chi.length == 1 &&
-                token.chi[0].typ != EnumToken.BinaryExpressionTokenType &&
-                token.chi[0].typ != EnumToken.FractionTokenType &&
+                ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
+                // @ts-ignore
                 token.chi[0].val?.typ != EnumToken.FractionTokenType) {
-                // calc(200px) => 200px
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.MatchExpressionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) +
-                renderToken({ typ: token.op }, options, cache, reducer, errors) +
+                renderToken(token.op, options, cache, reducer, errors) +
                 renderToken(token.r, options, cache, reducer, errors) +
                 (token.attr ? ' ' + token.attr : '');
         case EnumToken.NameSpaceAttributeTokenType:
@@ -419,6 +425,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.StartParensTokenType:
             return '(';
         case EnumToken.DelimTokenType:
+        case EnumToken.EqualMatchTokenType:
             return '=';
         case EnumToken.IncludeMatchTokenType:
             return '~=';
@@ -587,6 +594,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
         case EnumToken.DashedIdenTokenType:
+        case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:
             return /* options.minify && 'Pseudo-class' == token.typ && '::' == token.val.slice(0, 2) ? token.val.slice(1) :  */ token.val;
         case EnumToken.NestingSelectorTokenType:
@@ -595,6 +603,20 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return '[' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.InvalidClassSelectorTokenType:
             return token.val;
+        case EnumToken.DeclarationNodeType:
+            return token.nam + ':' + token.val.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+        case EnumToken.MediaQueryConditionTokenType:
+            return renderToken(token.l, options, cache, reducer, errors) + renderToken(token.op, options, cache, reducer, errors) + token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+        case EnumToken.MediaFeatureTokenType:
+            return token.val;
+        case EnumToken.MediaFeatureNotTokenType:
+            return 'not ' + renderToken(token.val, options, cache, reducer, errors);
+        case EnumToken.MediaFeatureOnlyTokenType:
+            return 'only ' + renderToken(token.val, options, cache, reducer, errors);
+        case EnumToken.MediaFeatureAndTokenType:
+            return 'and';
+        case EnumToken.MediaFeatureOrTokenType:
+            return 'or';
         default:
             throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }

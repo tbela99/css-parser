@@ -1,7 +1,8 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
-import {AstAtRule, AstRule, AstRuleStyleSheet} from "./ast.d.ts";
+import {AstAtRule, AstRule, AstRuleStyleSheet, Position, AstDeclaration} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap";
-import {ValidationLevel} from "../lib";
+import {PropertyListOptions} from "./parse.d.ts";
+import {EnumToken} from "../lib";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
@@ -93,6 +94,7 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     minify?: boolean;
+    removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
     sourcemap?: boolean;

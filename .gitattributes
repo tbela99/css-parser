@@ -12,9 +12,9 @@
 /coverage/ export-ignore
 /rollup.config.mjs export-ignore
 /tsconfig.json export-ignore
+/.github/** linguist-vendored
 # exclude all files in test/ from stats
 /rollup.config.js linguist-vendored
-/test/** linguist-vendored
 /docs/** linguist-vendored
 /tools/** linguist-vendored
 /dist/** linguist-vendored

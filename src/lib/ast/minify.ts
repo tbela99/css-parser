@@ -825,7 +825,7 @@ export function splitRule(buffer: string): string[][] {
     return result;
 }
 
-function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
+export function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
 
     let match: string[][] = [[]];
     const j: number = Math.min(
