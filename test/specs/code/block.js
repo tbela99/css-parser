@@ -1,5 +1,3 @@
-
-
 export function run(describe, expect, transform, parse, render) {
 
     describe('doParse block', function () {
@@ -254,7 +252,11 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             return parse(file, {
                 minify: true,
                 nestingRules: true
-            }).then(result => expect(render(result.ast, {minify: false, removeComments: true, preserveLicense: true}).code).equals(`.nav-pills {
+            }).then(result => expect(render(result.ast, {
+                minify: false,
+                removeComments: true,
+                preserveLicense: true
+            }).code).equals(`.nav-pills {
  .nav-link.active,.show>.nav-link {
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
@@ -275,7 +277,11 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             return parse(file, {
                 minify: true,
                 nestingRules: true
-            }).then(result => expect(render(result.ast, {minify: false, removeComments: true, preserveLicense: true}).code).equals(`.nav-pills {
+            }).then(result => expect(render(result.ast, {
+                minify: false,
+                removeComments: true,
+                preserveLicense: true
+            }).code).equals(`.nav-pills {
  .nav-link.active,.show>.nav-link {
   color: var(--bs-nav-pills-link-active-color);
   background-color: var(--bs-nav-pills-link-active-bg)
@@ -300,7 +306,8 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             }).then(result => expect(render(result.ast, {
                 minify: false,
                 removeComments: false,
-                preserveLicense: true}).code).equals(`/* this is a comment */
+                preserveLicense: true
+            }).code).equals(`/* this is a comment */
 .nav-pills {
  .nav-link.active,.show>.nav-link {
   /* this is a comment */
@@ -326,7 +333,8 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             }).then(result => expect(render(result.ast, {
                 minify: false,
                 removeComments: false,
-                preserveLicense: true}).code).equals(`/*! this is a comment */
+                preserveLicense: true
+            }).code).equals(`/*! this is a comment */
 .nav-pills {
  .nav-link.active,.show>.nav-link {
   /*! this is a comment */
@@ -470,7 +478,7 @@ overflow-y: hidden;
         });
 
         it('selector attributes #21', function () {
-            const file =`
+            const file = `
 
 :root || E[foo$="bar" i] {
 
@@ -496,7 +504,7 @@ content: '\\21 now\\21';
         });
 
         it('namespace selector attribute #22', function () {
-            const file =`
+            const file = `
 
 @namespace foo "http://www.example.com";
 [foo|att="val"] { color: blue }
@@ -525,7 +533,7 @@ content: '\\21 now\\21';
     });
 
     it('namespace selector attribute #23', function () {
-        const file =`
+        const file = `
 
 .selector {
   background: repeat scroll 0% 0% / auto padding-box border-box none #0000;
@@ -537,7 +545,7 @@ content: '\\21 now\\21';
     });
 
     it('namespace selector attribute #24', function () {
-        const file =`
+        const file = `
 
 .selector {
   background: repeat scroll 0% 0% / auto padding-box border-box none red;
@@ -549,7 +557,7 @@ content: '\\21 now\\21';
     });
 
     it('namespace selector attribute #25', function () {
-        const file =`
+        const file = `
 
 .selector {
   background: repeat scroll 0% 0% / auto padding-box none red;
@@ -561,7 +569,7 @@ content: '\\21 now\\21';
     });
 
     it('namespace selector attribute #26', function () {
-        const file =`
+        const file = `
 
 .selector {
   background: repeat scroll 0% 0% / auto border-box padding-box none red;
@@ -573,7 +581,7 @@ content: '\\21 now\\21';
     });
 
     it('namespace selector attribute #27', function () {
-        const file =`
+        const file = `
 
 .selector {
   background: repeat scroll 0% 0% / auto border-box none red;
@@ -585,7 +593,7 @@ content: '\\21 now\\21';
     });
 
     it('render with parents #28', function () {
-        const file =`
+        const file = `
 
 @media screen and (min-width: 40em) {
     .featurette-heading {
@@ -601,7 +609,7 @@ content: '\\21 now\\21';
     });
 
     it('render without parents #29', function () {
-        const file =`
+        const file = `
 
 @media screen and (min-width: 40em) {
     .featurette-heading {
@@ -617,7 +625,7 @@ content: '\\21 now\\21';
     });
 
     it('do not merge pseudo class selectors #30', function () {
-        const file =`
+        const file = `
 
 .invisible-scrollbar::-webkit-scrollbar {
   display: none;
@@ -634,7 +642,7 @@ content: '\\21 now\\21';
     });
 
     it('do not merge pseudo class selectors #31', function () {
-        const file =`
+        const file = `
 
 .invisible-scrollbar::-moz-range-thumb {
   display: none;
@@ -652,7 +660,7 @@ content: '\\21 now\\21';
     });
 
     it('do not merge pseudo class selectors #32', function () {
-        const file =`
+        const file = `
 
 .invisible-scrollbar::-webkit-scrollbar {
   display: none;
@@ -670,5 +678,36 @@ content: '\\21 now\\21';
 
 `;
         return parse(file, {nestingRules: true}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar{&::-webkit-scrollbar{display:none}&::-moz-range-thumb,&:has(::-moz-range-thumb){display:none}}`));
+    });
+
+    it('compound selector #33', function () {
+        const file = `
+
+:root {
+--color: green;
+}
+._19_u :focus {
+    color:  hsl(from var(--color) calc(h * 2) s l);
+}
+:root {
+--preferred-width: 20px;
+}
+.foo-bar, div#flavor {
+    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);}
+`;
+        return parse(file, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+ /* --color: green */
+}
+._19_u :focus {
+ color: navy
+}
+:root {
+ /* --preferred-width: 20px */
+}
+.foo-bar,div#flavor {
+ width: 12px;
+ height: 25%
+}`));
     });
 }

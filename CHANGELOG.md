@@ -5,13 +5,15 @@
 - [x] validate selectors using mdn data
 - [x] at-rules prefix removal
 - [x] at rules validation
-  - [x] at-rule prelude
-  - [x] at-rule body
-  - [x] keyframe validation
-  - [ ] :not() does not accept pseudo classes
-  - [ ] do not validate declarations in @supports
+    - [x] at-rule prelude
+    - [x] at-rule body
+    - [x] keyframe validation
+    - [ ] :not() does not accept pseudo classes
+    - [ ] do not validate declarations in @supports
 - [ ] declarations validation
-- [x] evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign() #49
+- [x] evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
+  acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign() #49
+- [x] incorrectly parse compound selector #51
 
 # v0.7.1
 

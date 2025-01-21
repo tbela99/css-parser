@@ -10,6 +10,7 @@ import '../syntaxes/complex-selector.js';
 
 function validateAtRuleFontFeatureValues(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -24,6 +25,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
         return result;
     }
     if (!('chi' in atRule)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -33,6 +35,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
             tokens: []
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

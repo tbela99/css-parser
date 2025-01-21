@@ -13,6 +13,7 @@ import '../syntaxes/complex-selector.js';
 
 function validateAtRuleImport(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -23,6 +24,7 @@ function validateAtRuleImport(atRule, options, root) {
         };
     }
     if ('chi' in atRule) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -34,6 +36,7 @@ function validateAtRuleImport(atRule, options, root) {
     }
     const tokens = atRule.tokens.filter((t) => ![EnumToken.CommentTokenType].includes(t.typ));
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -51,6 +54,7 @@ function validateAtRuleImport(atRule, options, root) {
     else if (tokens[0].typ == EnumToken.UrlFunctionTokenType) {
         const slice = tokens[0].chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
         if (slice.length != 1 || ![EnumToken.StringTokenType, EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -64,6 +68,7 @@ function validateAtRuleImport(atRule, options, root) {
             tokens.shift();
             // @ts-ignore
             if (!consumeWhitespace(tokens)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -76,6 +81,7 @@ function validateAtRuleImport(atRule, options, root) {
         }
     }
     else {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -93,6 +99,7 @@ function validateAtRuleImport(atRule, options, root) {
                 tokens.shift();
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -108,6 +115,7 @@ function validateAtRuleImport(atRule, options, root) {
         else if (tokens[0].typ == EnumToken.FunctionTokenType) {
             // @ts-ignore
             if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) != 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -125,6 +133,7 @@ function validateAtRuleImport(atRule, options, root) {
             tokens.shift();
             // @ts-ignore
             if (!consumeWhitespace(tokens)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -140,6 +149,7 @@ function validateAtRuleImport(atRule, options, root) {
         // @ts-ignore
         if (tokens[0].typ == EnumToken.AtRuleTokenType) {
             if (tokens[0].nam != 'supports') {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -157,6 +167,7 @@ function validateAtRuleImport(atRule, options, root) {
             tokens.shift();
             // @ts-ignore
             if (!consumeWhitespace(tokens)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -171,6 +182,7 @@ function validateAtRuleImport(atRule, options, root) {
     if (tokens.length > 0) {
         return validateAtRuleMediaQueryList(tokens, atRule);
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

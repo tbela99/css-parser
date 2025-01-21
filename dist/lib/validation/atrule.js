@@ -90,6 +90,7 @@ function validateAtRule(atRule, options, root) {
             };
         }
         if (chi[0].typ != EnumToken.DashedIdenTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 node: atRule,
@@ -97,6 +98,7 @@ function validateAtRule(atRule, options, root) {
                 error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             node: atRule,
@@ -110,6 +112,7 @@ function validateAtRule(atRule, options, root) {
     }
     if (['top-left-corner', 'top-left', 'top-center', 'top-right', 'top-right-corner', 'bottom-left-corner', 'bottom-left', 'bottom-center', 'bottom-right', 'bottom-right-corner', 'left-top', 'left-middle', 'left-bottom', 'right-top', 'right-middle', 'right-bottom'].includes(atRule.nam)) {
         if (!(root == null || (root.typ == EnumToken.AtRuleNodeType && root.nam == 'page'))) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 node: atRule,

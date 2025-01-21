@@ -6161,6 +6161,13 @@
                         buffer = '';
                     }
                     break;
+                case '#':
+                    if (buffer.length > 0) {
+                        yield pushToken(buffer, parseInfo);
+                        buffer = '';
+                    }
+                    buffer += value;
+                    break;
                 case '\\':
                     // EOF
                     if (!(value = next(parseInfo))) {
@@ -11196,6 +11203,7 @@
         }, [[]]).slice(1);
         for (let i = 0; i < slice.length; i++) {
             if (slice[i].length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: tokens,
@@ -11206,6 +11214,7 @@
                 };
             }
             if (slice[i][0].typ != exports.EnumToken.IdenTokenType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: tokens,
@@ -11217,6 +11226,7 @@
             }
             for (let j = 1; j < slice[i].length; j++) {
                 if (slice[i][j].typ != exports.EnumToken.ClassSelectorTokenType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: tokens,
@@ -11228,6 +11238,7 @@
                 }
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: tokens,
@@ -11271,6 +11282,7 @@
         tokens = tokens.slice();
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11281,6 +11293,7 @@
             };
         }
         if (tokens[0].typ == exports.EnumToken.CommaTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11296,6 +11309,7 @@
                 node = tokens.shift();
                 consumeWhitespace(tokens);
                 if (tokens.length == 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -11308,6 +11322,7 @@
             }
             node = tokens[0];
             if (![exports.EnumToken.IdenTokenType, exports.EnumToken.StringTokenType].includes(node.typ)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11321,6 +11336,7 @@
             consumeWhitespace(tokens);
             // @ts-ignore
             if (tokens.length > 0 && node.typ == exports.EnumToken.BadStringTokenType && tokens[0].typ != exports.EnumToken.CommaTokenType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11331,6 +11347,7 @@
                 };
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -11361,6 +11378,7 @@
         }
         while (tokens.length > 0) {
             if (combinatorsTokens.includes(tokens[0].typ)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11373,6 +11391,7 @@
             }
             if (tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
                 if (!options?.nestedSelector) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -11405,6 +11424,7 @@
             while (tokens.length > 0) {
                 if (tokens[0].typ == exports.EnumToken.PseudoClassFuncTokenType) {
                     if (tokens[0].val.startsWith(':-webkit-')) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11428,6 +11448,7 @@
                 }
                 if (tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
                     if (!options?.nestedSelector) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11446,6 +11467,7 @@
                 if (tokens[0].typ == exports.EnumToken.NameSpaceAttributeTokenType) {
                     if (!((tokens[0].l == null || tokens[0].l.typ == exports.EnumToken.IdenTokenType || (tokens[0].l.typ == exports.EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
                         tokens[0].r.typ == exports.EnumToken.IdenTokenType)) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11464,6 +11486,7 @@
                     const children = tokens[0].chi.slice();
                     consumeWhitespace(children);
                     if (children.length == 0) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11478,6 +11501,7 @@
                         exports.EnumToken.NameSpaceAttributeTokenType,
                         exports.EnumToken.MatchExpressionTokenType
                     ].includes(children[0].typ)) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11497,6 +11521,7 @@
                             ].includes(children[0].op.typ) ||
                             ![exports.EnumToken.StringTokenType,
                                 exports.EnumToken.IdenTokenType].includes(children[0].r.typ)) {
+                            // @ts-ignore
                             return {
                                 valid: ValidationLevel.Drop,
                                 matches: [],
@@ -11507,6 +11532,7 @@
                             };
                         }
                         if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+                            // @ts-ignore
                             return {
                                 valid: ValidationLevel.Drop,
                                 matches: [],
@@ -11520,6 +11546,7 @@
                     children.shift();
                     consumeWhitespace(children);
                     if (children.length > 0) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11542,6 +11569,7 @@
             if (!combinatorsTokens.includes(tokens[0].typ)) {
                 if (tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
                     if (!options?.nestedSelector) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11568,6 +11596,7 @@
                     ].includes(tokens[0].typ)) {
                     continue;
                 }
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11580,6 +11609,7 @@
             const token = tokens.shift();
             consumeWhitespace(tokens);
             if (tokens.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11590,6 +11620,7 @@
                 };
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -11606,11 +11637,13 @@
         tokens = tokens.slice();
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 // @ts-ignore
                 node: root,
+                // @ts-ignore
                 syntax: null,
                 error: 'expected selector',
                 tokens
@@ -11674,6 +11707,7 @@
     function validateKeyframeSelector(tokens, atRule) {
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11687,6 +11721,7 @@
             tokens.shift();
             consumeWhitespace(tokens);
             if (tokens.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Valid,
                     matches: [],
@@ -11696,6 +11731,7 @@
                     tokens
                 };
             }
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11706,10 +11742,12 @@
             };
         }
         if (tokens[0].typ != exports.EnumToken.IdenTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0],
+                // @ts-ignore
                 syntax: null,
                 error: 'expected keyframe selector',
                 tokens
@@ -11719,6 +11757,7 @@
             tokens.shift();
             consumeWhitespace(tokens);
             if (tokens.length > 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11728,20 +11767,24 @@
                     tokens
                 };
             }
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
                 node: null,
+                // @ts-ignore
                 syntax: null,
                 error: '',
                 tokens
             };
         }
         if (!['cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(tokens[0].val)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0],
+                // @ts-ignore
                 syntax: null,
                 error: 'unexpected token',
                 tokens
@@ -11751,10 +11794,12 @@
         consumeWhitespace(tokens);
         // @ts-ignore
         if (tokens.length == 0 || tokens[0].typ != exports.EnumToken.PercentageTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0],
+                // @ts-ignore
                 syntax: null,
                 error: 'expecting percentage token',
                 tokens
@@ -11763,19 +11808,23 @@
         tokens.shift();
         consumeWhitespace(tokens);
         if (tokens.length > 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0],
+                // @ts-ignore
                 syntax: null,
                 error: 'unexpected token',
                 tokens
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
             node: null,
+            // @ts-ignore
             syntax: null,
             error: '',
             tokens
@@ -11829,6 +11878,7 @@
     function validateAtRuleMedia(atRule, options, root) {
         // media-query-list
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11843,6 +11893,7 @@
             return result;
         }
         if (!('chi' in atRule)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11852,6 +11903,7 @@
                 tokens: []
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -11864,6 +11916,7 @@
     function validateAtRuleMediaQueryList(tokenList, atRule) {
         for (const tokens of splitTokenList(tokenList)) {
             if (tokens.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -11890,6 +11943,7 @@
                 }
                 if (!consumeWhitespace(tokens)) {
                     if (previousToken?.typ != exports.EnumToken.ParensTokenType) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -11901,6 +11955,7 @@
                     }
                 }
                 if (![exports.EnumToken.MediaFeatureOrTokenType, exports.EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -11911,6 +11966,7 @@
                     };
                 }
                 if (tokens.length == 1) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -11922,6 +11978,7 @@
                 }
                 tokens.shift();
                 if (!consumeWhitespace(tokens)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -11933,6 +11990,7 @@
                 }
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -11975,6 +12033,7 @@
     function validateAtRuleCounterStyle(atRule, options, root) {
         // media-query-list
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -11986,6 +12045,7 @@
         }
         const tokens = atRule.tokens.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
@@ -11996,6 +12056,7 @@
             };
         }
         if (tokens.length > 1) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -12006,6 +12067,7 @@
             };
         }
         if (![exports.EnumToken.IdenTokenType, exports.EnumToken.DashedIdenTokenType].includes(tokens[0].typ)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -12016,6 +12078,7 @@
             };
         }
         if (!('chi' in atRule)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -12025,6 +12088,7 @@
                 tokens
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -12038,6 +12102,7 @@
     function validateAtRulePage(atRule, options, root) {
         // media-query-list
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
@@ -12050,6 +12115,7 @@
         // page-selector-list
         for (const tokens of splitTokenList(atRule.tokens)) {
             if (tokens.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -12068,6 +12134,7 @@
                 }
                 // @ts-ignore
                 if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12086,6 +12153,7 @@
                     }
                     // @ts-ignore
                     if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -12098,6 +12166,7 @@
                 }
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -12110,6 +12179,7 @@
 
     function validateAtRulePageMarginBox(atRule, options, root) {
         if (Array.isArray(atRule.tokens) && atRule.tokens.length > 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
@@ -12120,6 +12190,7 @@
             };
         }
         if (!('chi' in atRule)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -12131,6 +12202,7 @@
         }
         for (const token of atRule.chi) {
             if (![exports.EnumToken.DeclarationNodeType, exports.EnumToken.CommentNodeType, exports.EnumToken.WhitespaceTokenType].includes(token.typ)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -12141,6 +12213,7 @@
                 };
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -12171,6 +12244,7 @@
     }
     function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
         if (syntaxes == null) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -12263,6 +12337,7 @@
                 }
                 syntaxes.shift();
                 if (syntaxes.length == 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Valid,
                         matches: result2.matches,
@@ -12459,6 +12534,7 @@
                 // }
                 // at least one match is expected
                 if (!validSyntax /* || result.matches.length == 0 */) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         node: token,
@@ -12646,6 +12722,7 @@
         switch (syntax.typ) {
             case ValidationTokenEnum.Comma:
                 valid = token.typ === exports.EnumToken.CommaTokenType;
+                // @ts-ignore
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
@@ -12657,6 +12734,7 @@
                 break;
             case ValidationTokenEnum.AtRule:
                 if (token.typ != exports.EnumToken.AtRuleNodeType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12667,6 +12745,7 @@
                     };
                 }
                 if (token.nam != syntax.val) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12687,6 +12766,7 @@
                     };
                 }
                 if (root.typ != exports.EnumToken.AtRuleNodeType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12697,6 +12777,7 @@
                     };
                 }
                 if (!('chi' in token)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12706,6 +12787,7 @@
                         tokens
                     };
                 }
+                // @ts-ignore
                 result = {
                     valid: ValidationLevel.Valid,
                     matches: [token],
@@ -12717,6 +12799,7 @@
                 break;
             case ValidationTokenEnum.AtRuleDefinition:
                 if (token.typ != exports.EnumToken.AtRuleNodeType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12727,6 +12810,7 @@
                     };
                 }
                 if ('chi' in syntax && !('chi' in token)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12737,6 +12821,7 @@
                     };
                 }
                 if ('chi' in token && !('chi' in token)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12749,6 +12834,7 @@
                 const s = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + token.nam);
                 if ('prelude' in syntax) {
                     if (!('tokens' in token)) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -12770,6 +12856,7 @@
                 const hasBody = 'chi' in s[0];
                 if ('chi' in token) {
                     if (!hasBody) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -12781,6 +12868,7 @@
                     }
                 }
                 else if (hasBody) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -12856,6 +12944,7 @@
                 else if (syntax.val == 'page-body') {
                     if (token.typ == exports.EnumToken.DeclarationNodeType) {
                         valid = true;
+                        // @ts-ignore
                         result = {
                             valid: ValidationLevel.Valid,
                             matches: [token],
@@ -12875,6 +12964,7 @@
                 }
                 else if (syntax.val == 'group-rule-body') {
                     valid = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.RuleNodeType].includes(token.typ);
+                    // @ts-ignore
                     result = {
                         valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                         matches: [],
@@ -13093,6 +13183,7 @@
                 }
                 else if ('length' == syntax.val) {
                     valid = isLength(token) || (token.typ == exports.EnumToken.NumberTokenType && token.val == '0');
+                    // @ts-ignore
                     result = {
                         valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                         matches: valid ? [token] : [],
@@ -13182,6 +13273,7 @@
                 else if ('declaration' == syntax.val) {
                     valid = token.typ == exports.EnumToken.DeclarationNodeType && (token.nam.startsWith(('--')) || token.nam in config$2.declarations || token.nam in config$2.syntaxes);
                     if (!valid) {
+                        // @ts-ignore
                         result = {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -13304,6 +13396,7 @@
                 // <relative-selector-list>
                 // <complex-selector-list>
                 else if (['forgiving-selector-list', 'forgiving-relative-selector-list'].includes(syntax.val)) {
+                    // @ts-ignore
                     result = { tokens: tokens.slice(), ...validateSelector(tokens, options, root) };
                 }
                 // https://github.com/mdn/data/pull/186#issuecomment-369604537
@@ -13366,6 +13459,7 @@
                         result = validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, val), tokens, root, options, context);
                     }
                     else {
+                        // @ts-ignore
                         result = {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -13387,6 +13481,7 @@
                         token.val.localeCompare(syntax.val, 'en', { sensitivity: 'base' }) == 0;
                 }
                 result = !valid ?
+                    // @ts-ignore
                     {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13547,6 +13642,7 @@
     function validateAtRuleSupports(atRule, options, root) {
         // media-query-list
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13564,6 +13660,7 @@
             return result;
         }
         if (!('chi' in atRule)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13573,6 +13670,7 @@
                 tokens: []
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -13585,6 +13683,7 @@
     function validateAtRuleSupportsConditions(atRule, tokenList) {
         for (const tokens of splitTokenList(tokenList)) {
             if (tokens.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -13618,6 +13717,7 @@
                 }
                 if (!consumeWhitespace(tokens)) {
                     if (previousToken?.typ != exports.EnumToken.ParensTokenType) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -13629,6 +13729,7 @@
                     }
                 }
                 if (![exports.EnumToken.MediaFeatureOrTokenType, exports.EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13639,6 +13740,7 @@
                     };
                 }
                 if (tokens.length == 1) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13650,6 +13752,7 @@
                 }
                 tokens.shift();
                 if (!consumeWhitespace(tokens)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13668,6 +13771,7 @@
             return validateSupportCondition(atRule, token.val);
         }
         if (token.typ != exports.EnumToken.ParensTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13682,6 +13786,7 @@
             return validateAtRuleSupportsConditions(atRule, token.chi);
         }
         if (chi[0].typ == exports.EnumToken.IdenTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
@@ -13695,6 +13800,7 @@
             return validateSupportCondition(atRule, chi[0].val);
         }
         if (chi[0].typ == exports.EnumToken.MediaQueryConditionTokenType) {
+            // @ts-ignore
             return chi[0].l.typ == exports.EnumToken.IdenTokenType && chi[0].op.typ == exports.EnumToken.ColonTokenType ?
                 {
                     valid: ValidationLevel.Valid,
@@ -13712,6 +13818,7 @@
                 tokens: []
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -13728,6 +13835,7 @@
             }
             if (token.val.localeCompare('font-tech', undefined, { sensitivity: 'base' }) == 0) {
                 const chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
+                // @ts-ignore
                 return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                     {
                         valid: ValidationLevel.Valid,
@@ -13748,6 +13856,7 @@
             }
             if (token.val.localeCompare('font-format', undefined, { sensitivity: 'base' }) == 0) {
                 const chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
+                // @ts-ignore
                 return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                     {
                         valid: ValidationLevel.Valid,
@@ -13767,6 +13876,7 @@
                     };
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -13779,6 +13889,7 @@
 
     function validateAtRuleImport(atRule, options, root) {
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13789,6 +13900,7 @@
             };
         }
         if ('chi' in atRule) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13800,6 +13912,7 @@
         }
         const tokens = atRule.tokens.filter((t) => ![exports.EnumToken.CommentTokenType].includes(t.typ));
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13817,6 +13930,7 @@
         else if (tokens[0].typ == exports.EnumToken.UrlFunctionTokenType) {
             const slice = tokens[0].chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
             if (slice.length != 1 || ![exports.EnumToken.StringTokenType, exports.EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -13830,6 +13944,7 @@
                 tokens.shift();
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13842,6 +13957,7 @@
             }
         }
         else {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13859,6 +13975,7 @@
                     tokens.shift();
                     // @ts-ignore
                     if (!consumeWhitespace(tokens)) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -13874,6 +13991,7 @@
             else if (tokens[0].typ == exports.EnumToken.FunctionTokenType) {
                 // @ts-ignore
                 if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) != 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13891,6 +14009,7 @@
                 tokens.shift();
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13906,6 +14025,7 @@
             // @ts-ignore
             if (tokens[0].typ == exports.EnumToken.AtRuleTokenType) {
                 if (tokens[0].nam != 'supports') {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13923,6 +14043,7 @@
                 tokens.shift();
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -13937,6 +14058,7 @@
         if (tokens.length > 0) {
             return validateAtRuleMediaQueryList(tokens, atRule);
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -13950,6 +14072,7 @@
     function validateAtRuleLayer(atRule, options, root) {
         // media-query-list
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
@@ -13964,6 +14087,7 @@
 
     function validateAtRuleFontFeatureValues(atRule, options, root) {
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13978,6 +14102,7 @@
             return result;
         }
         if (!('chi' in atRule)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -13987,6 +14112,7 @@
                 tokens: []
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -13999,20 +14125,24 @@
 
     function validateURL(token) {
         if (token.typ == exports.EnumToken.UrlTokenTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
                 node: token,
+                // @ts-ignore
                 syntax: 'url()',
                 error: '',
                 tokens: []
             };
         }
         if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: token,
+                // @ts-ignore
                 syntax: 'url()',
                 error: 'expected url()',
                 tokens: []
@@ -14021,10 +14151,12 @@
         const children = token.chi.slice();
         consumeWhitespace(children);
         if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: children[0] ?? token,
+                // @ts-ignore
                 syntax: 'url()',
                 error: 'expected url-token',
                 tokens: children
@@ -14033,19 +14165,23 @@
         children.shift();
         consumeWhitespace(children);
         if (children.length > 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: children[0] ?? token,
+                // @ts-ignore
                 syntax: 'url()',
                 error: 'unexpected token',
                 tokens: children
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
             node: token,
+            // @ts-ignore
             syntax: 'url()',
             error: '',
             tokens: []
@@ -14054,6 +14190,7 @@
 
     function validateAtRuleNamespace(atRule, options, root) {
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14064,6 +14201,7 @@
             };
         }
         if ('chi' in atRule) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14080,6 +14218,7 @@
             consumeWhitespace(tokens);
         }
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14102,6 +14241,7 @@
             consumeWhitespace(tokens);
         }
         if (tokens.length > 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14111,6 +14251,7 @@
                 tokens
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -14123,6 +14264,7 @@
 
     function validateAtRuleDocument(atRule, options, root) {
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14136,6 +14278,7 @@
         let result = null;
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14146,6 +14289,7 @@
             };
         }
         if (tokens[0].typ == exports.EnumToken.CommaTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14168,6 +14312,7 @@
             }
             if (tokens[0].typ == exports.EnumToken.FunctionTokenType) {
                 if (!['url-prefix', 'domain', 'media-document', 'regexp'].some((t) => t.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -14180,6 +14325,7 @@
                 const children = tokens[0].chi.slice();
                 consumeWhitespace(children);
                 if (children.length == 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -14194,6 +14340,7 @@
                     consumeWhitespace(children);
                 }
                 if (children.length > 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -14207,6 +14354,7 @@
                 consumeWhitespace(tokens);
             }
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -14219,6 +14367,7 @@
 
     function validateAtRuleKeyframes(atRule, options, root) {
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14231,6 +14380,7 @@
         const tokens = atRule.tokens.slice();
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14241,6 +14391,7 @@
             };
         }
         if (![exports.EnumToken.StringTokenType, exports.EnumToken.IdenTokenType].includes(tokens[0].typ)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14253,6 +14404,7 @@
         tokens.shift();
         consumeWhitespace(tokens);
         if (tokens.length > 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -14262,6 +14414,7 @@
                 tokens
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -14344,6 +14497,7 @@
                 };
             }
             if (chi[0].typ != exports.EnumToken.DashedIdenTokenType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     node: atRule,
@@ -14351,6 +14505,7 @@
                     error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
                 };
             }
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 node: atRule,
@@ -14364,6 +14519,7 @@
         }
         if (['top-left-corner', 'top-left', 'top-center', 'top-right', 'top-right-corner', 'bottom-left-corner', 'bottom-left', 'bottom-center', 'bottom-right', 'bottom-right-corner', 'left-top', 'left-middle', 'left-bottom', 'right-top', 'right-middle', 'right-bottom'].includes(atRule.nam)) {
             if (!(root == null || (root.typ == exports.EnumToken.AtRuleNodeType && root.nam == 'page'))) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     node: atRule,
@@ -16310,7 +16466,7 @@
                 const node = ast.chi[k];
                 if (node.typ == exports.EnumToken.DeclarationNodeType) {
                     if (node.nam.charAt(0) == '-') {
-                        const match = node.nam.match(/^-(.*?)-(.*)$/);
+                        const match = node.nam.match(/^-([^-]+)-(.+)$/);
                         if (match != null) {
                             const nam = match[2];
                             if (nam.toLowerCase() in config$1.declarations) {
@@ -16505,7 +16661,10 @@
                         while (i--) {
                             if (parent.chi[i].typ == exports.EnumToken.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
                                 // @ts-ignore
-                                parent.chi.splice(i++, 1, { typ: exports.EnumToken.CommentTokenType, val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */` });
+                                parent.chi.splice(i++, 1, {
+                                    typ: exports.EnumToken.CommentTokenType,
+                                    val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                                });
                             }
                         }
                         if (parent.chi?.length == 0 && 'parent' in parent) {
@@ -17498,6 +17657,7 @@
                         if ((node.typ == exports.EnumToken.FunctionTokenType && node.val == 'var') || (!mathFuncs.includes(parent.val) && [exports.EnumToken.ColorTokenType, exports.EnumToken.DeclarationNodeType, exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.StyleSheetNodeType].includes(parent?.typ))) {
                             return null;
                         }
+                        // @ts-ignore
                         const slice = (node.typ == exports.EnumToken.FunctionTokenType ? node.chi : (node.typ == exports.EnumToken.DeclarationNodeType ? node.val : node.chi))?.slice();
                         if (slice != null && node.typ == exports.EnumToken.FunctionTokenType && mathFuncs.includes(node.val)) {
                             // @ts-ignore

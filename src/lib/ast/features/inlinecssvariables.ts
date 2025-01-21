@@ -1,9 +1,13 @@
 import type {
-    AstAtRule, AstComment,
+    AstAtRule,
+    AstComment,
     AstDeclaration,
-    AstRule, AstRuleList,
-    AstRuleStyleSheet, CommentToken,
-    FunctionToken, MinifyOptions,
+    AstRule,
+    AstRuleList,
+    AstRuleStyleSheet,
+    CommentToken,
+    FunctionToken,
+    MinifyOptions,
     ParserOptions,
     VariableScopeInfo
 } from "../../../@types";
@@ -180,7 +184,10 @@ export class InlineCssVariablesFeature {
                         if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == EnumToken.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
 
                             // @ts-ignore
-                            (<AstDeclaration[]>parent.chi).splice(i++, 1, {typ: EnumToken.CommentTokenType, val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`} as CommentToken );
+                            (<AstDeclaration[]>parent.chi).splice(i++, 1, {
+                                typ: EnumToken.CommentTokenType,
+                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                            } as CommentToken);
                         }
                     }
 

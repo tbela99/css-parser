@@ -53,7 +53,7 @@ export class ComputePrefixFeature {
 
                 if ((<AstDeclaration>node).nam.charAt(0) == '-') {
 
-                    const match = (<AstDeclaration>node).nam.match(/^-(.*?)-(.*)$/);
+                    const match = (<AstDeclaration>node).nam.match(/^-([^-]+)-(.+)$/);
 
                     if (match != null) {
 

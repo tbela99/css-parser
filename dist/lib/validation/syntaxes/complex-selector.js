@@ -27,6 +27,7 @@ function validateComplexSelector(tokens, root, options) {
     }
     while (tokens.length > 0) {
         if (combinatorsTokens.includes(tokens[0].typ)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -39,6 +40,7 @@ function validateComplexSelector(tokens, root, options) {
         }
         if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
             if (!options?.nestedSelector) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -71,6 +73,7 @@ function validateComplexSelector(tokens, root, options) {
         while (tokens.length > 0) {
             if (tokens[0].typ == EnumToken.PseudoClassFuncTokenType) {
                 if (tokens[0].val.startsWith(':-webkit-')) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -94,6 +97,7 @@ function validateComplexSelector(tokens, root, options) {
             }
             if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
                 if (!options?.nestedSelector) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -112,6 +116,7 @@ function validateComplexSelector(tokens, root, options) {
             if (tokens[0].typ == EnumToken.NameSpaceAttributeTokenType) {
                 if (!((tokens[0].l == null || tokens[0].l.typ == EnumToken.IdenTokenType || (tokens[0].l.typ == EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
                     tokens[0].r.typ == EnumToken.IdenTokenType)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -130,6 +135,7 @@ function validateComplexSelector(tokens, root, options) {
                 const children = tokens[0].chi.slice();
                 consumeWhitespace(children);
                 if (children.length == 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -144,6 +150,7 @@ function validateComplexSelector(tokens, root, options) {
                     EnumToken.NameSpaceAttributeTokenType,
                     EnumToken.MatchExpressionTokenType
                 ].includes(children[0].typ)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -163,6 +170,7 @@ function validateComplexSelector(tokens, root, options) {
                         ].includes(children[0].op.typ) ||
                         ![EnumToken.StringTokenType,
                             EnumToken.IdenTokenType].includes(children[0].r.typ)) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -173,6 +181,7 @@ function validateComplexSelector(tokens, root, options) {
                         };
                     }
                     if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+                        // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
                             matches: [],
@@ -186,6 +195,7 @@ function validateComplexSelector(tokens, root, options) {
                 children.shift();
                 consumeWhitespace(children);
                 if (children.length > 0) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -208,6 +218,7 @@ function validateComplexSelector(tokens, root, options) {
         if (!combinatorsTokens.includes(tokens[0].typ)) {
             if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
                 if (!options?.nestedSelector) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -234,6 +245,7 @@ function validateComplexSelector(tokens, root, options) {
                 ].includes(tokens[0].typ)) {
                 continue;
             }
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -246,6 +258,7 @@ function validateComplexSelector(tokens, root, options) {
         const token = tokens.shift();
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -256,6 +269,7 @@ function validateComplexSelector(tokens, root, options) {
             };
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

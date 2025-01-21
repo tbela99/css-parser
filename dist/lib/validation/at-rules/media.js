@@ -11,6 +11,7 @@ import { splitTokenList } from '../utils/list.js';
 function validateAtRuleMedia(atRule, options, root) {
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -25,6 +26,7 @@ function validateAtRuleMedia(atRule, options, root) {
         return result;
     }
     if (!('chi' in atRule)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -34,6 +36,7 @@ function validateAtRuleMedia(atRule, options, root) {
             tokens: []
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
@@ -46,6 +49,7 @@ function validateAtRuleMedia(atRule, options, root) {
 function validateAtRuleMediaQueryList(tokenList, atRule) {
     for (const tokens of splitTokenList(tokenList)) {
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -72,6 +76,7 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             }
             if (!consumeWhitespace(tokens)) {
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -83,6 +88,7 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 }
             }
             if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -93,6 +99,7 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 };
             }
             if (tokens.length == 1) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -104,6 +111,7 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             }
             tokens.shift();
             if (!consumeWhitespace(tokens)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -115,6 +123,7 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             }
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

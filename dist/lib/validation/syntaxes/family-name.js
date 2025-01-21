@@ -12,6 +12,7 @@ function validateFamilyName(tokens, atRule) {
     tokens = tokens.slice();
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -22,6 +23,7 @@ function validateFamilyName(tokens, atRule) {
         };
     }
     if (tokens[0].typ == EnumToken.CommaTokenType) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -37,6 +39,7 @@ function validateFamilyName(tokens, atRule) {
             node = tokens.shift();
             consumeWhitespace(tokens);
             if (tokens.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -49,6 +52,7 @@ function validateFamilyName(tokens, atRule) {
         }
         node = tokens[0];
         if (![EnumToken.IdenTokenType, EnumToken.StringTokenType].includes(node.typ)) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -62,6 +66,7 @@ function validateFamilyName(tokens, atRule) {
         consumeWhitespace(tokens);
         // @ts-ignore
         if (tokens.length > 0 && node.typ == EnumToken.BadStringTokenType && tokens[0].typ != EnumToken.CommaTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -72,6 +77,7 @@ function validateFamilyName(tokens, atRule) {
             };
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

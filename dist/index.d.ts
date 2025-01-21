@@ -124,13 +124,13 @@ declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, r
     [key: string]: any;
 }): AstNode;
 
-declare enum WalkerValueEvent$1 {
+declare enum WalkerValueEvent {
     Enter = 0,
     Leave = 1
 }
 declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
 declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
-    event: WalkerValueEvent$1;
+    event: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
 }, reverse?: boolean): Generator<WalkAttributesResult>;

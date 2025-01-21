@@ -10,6 +10,7 @@ import { validateURL } from '../syntaxes/url.js';
 
 function validateAtRuleDocument(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -23,6 +24,7 @@ function validateAtRuleDocument(atRule, options, root) {
     let result = null;
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -33,6 +35,7 @@ function validateAtRuleDocument(atRule, options, root) {
         };
     }
     if (tokens[0].typ == EnumToken.CommaTokenType) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -55,6 +58,7 @@ function validateAtRuleDocument(atRule, options, root) {
         }
         if (tokens[0].typ == EnumToken.FunctionTokenType) {
             if (!['url-prefix', 'domain', 'media-document', 'regexp'].some((t) => t.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -67,6 +71,7 @@ function validateAtRuleDocument(atRule, options, root) {
             const children = tokens[0].chi.slice();
             consumeWhitespace(children);
             if (children.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -81,6 +86,7 @@ function validateAtRuleDocument(atRule, options, root) {
                 consumeWhitespace(children);
             }
             if (children.length > 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -94,6 +100,7 @@ function validateAtRuleDocument(atRule, options, root) {
             consumeWhitespace(tokens);
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

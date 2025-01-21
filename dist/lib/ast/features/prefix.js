@@ -36,7 +36,7 @@ class ComputePrefixFeature {
             const node = ast.chi[k];
             if (node.typ == EnumToken.DeclarationNodeType) {
                 if (node.nam.charAt(0) == '-') {
-                    const match = node.nam.match(/^-(.*?)-(.*)$/);
+                    const match = node.nam.match(/^-([^-]+)-(.+)$/);
                     if (match != null) {
                         const nam = match[2];
                         if (nam.toLowerCase() in config.declarations) {

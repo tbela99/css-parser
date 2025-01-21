@@ -9,6 +9,7 @@ import '../../parser/utils/config.js';
 function validateAtRuleCounterStyle(atRule, options, root) {
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -20,6 +21,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
     }
     const tokens = atRule.tokens.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -30,6 +32,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
         };
     }
     if (tokens.length > 1) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -40,6 +43,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
         };
     }
     if (![EnumToken.IdenTokenType, EnumToken.DashedIdenTokenType].includes(tokens[0].typ)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -50,6 +54,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
         };
     }
     if (!('chi' in atRule)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -59,6 +64,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
             tokens
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

@@ -44,6 +44,7 @@ class ComputeCalcExpressionFeature {
                     if ((node.typ == EnumToken.FunctionTokenType && node.val == 'var') || (!mathFuncs.includes(parent.val) && [EnumToken.ColorTokenType, EnumToken.DeclarationNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.StyleSheetNodeType].includes(parent?.typ))) {
                         return null;
                     }
+                    // @ts-ignore
                     const slice = (node.typ == EnumToken.FunctionTokenType ? node.chi : (node.typ == EnumToken.DeclarationNodeType ? node.val : node.chi))?.slice();
                     if (slice != null && node.typ == EnumToken.FunctionTokenType && mathFuncs.includes(node.val)) {
                         // @ts-ignore

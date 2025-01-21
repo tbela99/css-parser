@@ -31,6 +31,7 @@ function splice(tokens, matches) {
 }
 function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
     if (syntaxes == null) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -123,6 +124,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             }
             syntaxes.shift();
             if (syntaxes.length == 0) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Valid,
                     matches: result2.matches,
@@ -319,6 +321,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
             // }
             // at least one match is expected
             if (!validSyntax /* || result.matches.length == 0 */) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     node: token,
@@ -506,6 +509,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
     switch (syntax.typ) {
         case ValidationTokenEnum.Comma:
             valid = token.typ === EnumToken.CommaTokenType;
+            // @ts-ignore
             result = {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                 matches: valid ? [token] : [],
@@ -517,6 +521,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             break;
         case ValidationTokenEnum.AtRule:
             if (token.typ != EnumToken.AtRuleNodeType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -527,6 +532,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 };
             }
             if (token.nam != syntax.val) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -547,6 +553,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 };
             }
             if (root.typ != EnumToken.AtRuleNodeType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -557,6 +564,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 };
             }
             if (!('chi' in token)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -566,6 +574,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     tokens
                 };
             }
+            // @ts-ignore
             result = {
                 valid: ValidationLevel.Valid,
                 matches: [token],
@@ -577,6 +586,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             break;
         case ValidationTokenEnum.AtRuleDefinition:
             if (token.typ != EnumToken.AtRuleNodeType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -587,6 +597,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 };
             }
             if ('chi' in syntax && !('chi' in token)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -597,6 +608,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 };
             }
             if ('chi' in token && !('chi' in token)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -609,6 +621,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             const s = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + token.nam);
             if ('prelude' in syntax) {
                 if (!('tokens' in token)) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -630,6 +643,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             const hasBody = 'chi' in s[0];
             if ('chi' in token) {
                 if (!hasBody) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -641,6 +655,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 }
             }
             else if (hasBody) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -716,6 +731,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             else if (syntax.val == 'page-body') {
                 if (token.typ == EnumToken.DeclarationNodeType) {
                     valid = true;
+                    // @ts-ignore
                     result = {
                         valid: ValidationLevel.Valid,
                         matches: [token],
@@ -735,6 +751,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             }
             else if (syntax.val == 'group-rule-body') {
                 valid = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(token.typ);
+                // @ts-ignore
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: [],
@@ -953,6 +970,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             }
             else if ('length' == syntax.val) {
                 valid = isLength(token) || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+                // @ts-ignore
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
                     matches: valid ? [token] : [],
@@ -1042,6 +1060,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             else if ('declaration' == syntax.val) {
                 valid = token.typ == EnumToken.DeclarationNodeType && (token.nam.startsWith(('--')) || token.nam in config.declarations || token.nam in config.syntaxes);
                 if (!valid) {
+                    // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -1164,6 +1183,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             // <relative-selector-list>
             // <complex-selector-list>
             else if (['forgiving-selector-list', 'forgiving-relative-selector-list'].includes(syntax.val)) {
+                // @ts-ignore
                 result = { tokens: tokens.slice(), ...validateSelector(tokens, options, root) };
             }
             // https://github.com/mdn/data/pull/186#issuecomment-369604537
@@ -1226,6 +1246,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     result = validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, val), tokens, root, options, context);
                 }
                 else {
+                    // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -1247,6 +1268,7 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                     token.val.localeCompare(syntax.val, 'en', { sensitivity: 'base' }) == 0;
             }
             result = !valid ?
+                // @ts-ignore
                 {
                     valid: ValidationLevel.Drop,
                     matches: [],

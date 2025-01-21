@@ -14,6 +14,7 @@ import { getParsedSyntax } from '../config.js';
 function validateAtRuleSupports(atRule, options, root) {
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -31,6 +32,7 @@ function validateAtRuleSupports(atRule, options, root) {
         return result;
     }
     if (!('chi' in atRule)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -40,6 +42,7 @@ function validateAtRuleSupports(atRule, options, root) {
             tokens: []
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
@@ -52,6 +55,7 @@ function validateAtRuleSupports(atRule, options, root) {
 function validateAtRuleSupportsConditions(atRule, tokenList) {
     for (const tokens of splitTokenList(tokenList)) {
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -85,6 +89,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             }
             if (!consumeWhitespace(tokens)) {
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -96,6 +101,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                 }
             }
             if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -106,6 +112,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                 };
             }
             if (tokens.length == 1) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -117,6 +124,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             }
             tokens.shift();
             if (!consumeWhitespace(tokens)) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -135,6 +143,7 @@ function validateSupportCondition(atRule, token) {
         return validateSupportCondition(atRule, token.val);
     }
     if (token.typ != EnumToken.ParensTokenType) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -149,6 +158,7 @@ function validateSupportCondition(atRule, token) {
         return validateAtRuleSupportsConditions(atRule, token.chi);
     }
     if (chi[0].typ == EnumToken.IdenTokenType) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -162,6 +172,7 @@ function validateSupportCondition(atRule, token) {
         return validateSupportCondition(atRule, chi[0].val);
     }
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
+        // @ts-ignore
         return chi[0].l.typ == EnumToken.IdenTokenType && chi[0].op.typ == EnumToken.ColonTokenType ?
             {
                 valid: ValidationLevel.Valid,
@@ -179,6 +190,7 @@ function validateSupportCondition(atRule, token) {
             tokens: []
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Drop,
         matches: [],
@@ -195,6 +207,7 @@ function validateSupportFeature(token) {
         }
         if (token.val.localeCompare('font-tech', undefined, { sensitivity: 'base' }) == 0) {
             const chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                 {
                     valid: ValidationLevel.Valid,
@@ -215,6 +228,7 @@ function validateSupportFeature(token) {
         }
         if (token.val.localeCompare('font-format', undefined, { sensitivity: 'base' }) == 0) {
             const chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                 {
                     valid: ValidationLevel.Valid,
@@ -234,6 +248,7 @@ function validateSupportFeature(token) {
                 };
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Drop,
         matches: [],

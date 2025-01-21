@@ -9,6 +9,7 @@ import { consumeWhitespace } from '../utils/whitespace.js';
 
 function validateAtRuleKeyframes(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -21,6 +22,7 @@ function validateAtRuleKeyframes(atRule, options, root) {
     const tokens = atRule.tokens.slice();
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -31,6 +33,7 @@ function validateAtRuleKeyframes(atRule, options, root) {
         };
     }
     if (![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -43,6 +46,7 @@ function validateAtRuleKeyframes(atRule, options, root) {
     tokens.shift();
     consumeWhitespace(tokens);
     if (tokens.length > 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -52,6 +56,7 @@ function validateAtRuleKeyframes(atRule, options, root) {
             tokens
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

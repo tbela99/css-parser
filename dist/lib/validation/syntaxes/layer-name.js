@@ -18,6 +18,7 @@ function validateLayerName(tokens) {
     }, [[]]).slice(1);
     for (let i = 0; i < slice.length; i++) {
         if (slice[i].length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: tokens,
@@ -28,6 +29,7 @@ function validateLayerName(tokens) {
             };
         }
         if (slice[i][0].typ != EnumToken.IdenTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: tokens,
@@ -39,6 +41,7 @@ function validateLayerName(tokens) {
         }
         for (let j = 1; j < slice[i].length; j++) {
             if (slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: tokens,
@@ -50,6 +53,7 @@ function validateLayerName(tokens) {
             }
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: tokens,

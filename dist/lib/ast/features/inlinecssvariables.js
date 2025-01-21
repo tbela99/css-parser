@@ -110,7 +110,10 @@ class InlineCssVariablesFeature {
                     while (i--) {
                         if (parent.chi[i].typ == EnumToken.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
                             // @ts-ignore
-                            parent.chi.splice(i++, 1, { typ: EnumToken.CommentTokenType, val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */` });
+                            parent.chi.splice(i++, 1, {
+                                typ: EnumToken.CommentTokenType,
+                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                            });
                         }
                     }
                     if (parent.chi?.length == 0 && 'parent' in parent) {

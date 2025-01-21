@@ -223,6 +223,13 @@ function* tokenize(stream) {
                     buffer = '';
                 }
                 break;
+            case '#':
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                buffer += value;
+                break;
             case '\\':
                 // EOF
                 if (!(value = next(parseInfo))) {

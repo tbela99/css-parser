@@ -13,11 +13,13 @@ function validateRelativeSelector(tokens, root, options) {
     tokens = tokens.slice();
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             // @ts-ignore
             node: root,
+            // @ts-ignore
             syntax: null,
             error: 'expected selector',
             tokens

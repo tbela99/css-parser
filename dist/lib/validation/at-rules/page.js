@@ -10,6 +10,7 @@ import { splitTokenList } from '../utils/list.js';
 function validateAtRulePage(atRule, options, root) {
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
@@ -22,6 +23,7 @@ function validateAtRulePage(atRule, options, root) {
     // page-selector-list
     for (const tokens of splitTokenList(atRule.tokens)) {
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -40,6 +42,7 @@ function validateAtRulePage(atRule, options, root) {
             }
             // @ts-ignore
             if (tokens[0].typ != EnumToken.WhitespaceTokenType) {
+                // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -58,6 +61,7 @@ function validateAtRulePage(atRule, options, root) {
                 }
                 // @ts-ignore
                 if (tokens[0].typ != EnumToken.WhitespaceTokenType) {
+                    // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -70,6 +74,7 @@ function validateAtRulePage(atRule, options, root) {
             }
         }
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],

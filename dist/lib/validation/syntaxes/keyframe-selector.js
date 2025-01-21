@@ -10,6 +10,7 @@ import '../../parser/utils/config.js';
 function validateKeyframeSelector(tokens, atRule) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -23,6 +24,7 @@ function validateKeyframeSelector(tokens, atRule) {
         tokens.shift();
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
@@ -32,6 +34,7 @@ function validateKeyframeSelector(tokens, atRule) {
                 tokens
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
@@ -42,10 +45,12 @@ function validateKeyframeSelector(tokens, atRule) {
         };
     }
     if (tokens[0].typ != EnumToken.IdenTokenType) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: tokens[0],
+            // @ts-ignore
             syntax: null,
             error: 'expected keyframe selector',
             tokens
@@ -55,6 +60,7 @@ function validateKeyframeSelector(tokens, atRule) {
         tokens.shift();
         consumeWhitespace(tokens);
         if (tokens.length > 0) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
@@ -64,20 +70,24 @@ function validateKeyframeSelector(tokens, atRule) {
                 tokens
             };
         }
+        // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
             matches: [],
             node: null,
+            // @ts-ignore
             syntax: null,
             error: '',
             tokens
         };
     }
     if (!['cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(tokens[0].val)) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: tokens[0],
+            // @ts-ignore
             syntax: null,
             error: 'unexpected token',
             tokens
@@ -87,10 +97,12 @@ function validateKeyframeSelector(tokens, atRule) {
     consumeWhitespace(tokens);
     // @ts-ignore
     if (tokens.length == 0 || tokens[0].typ != EnumToken.PercentageTokenType) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: tokens[0],
+            // @ts-ignore
             syntax: null,
             error: 'expecting percentage token',
             tokens
@@ -99,19 +111,23 @@ function validateKeyframeSelector(tokens, atRule) {
     tokens.shift();
     consumeWhitespace(tokens);
     if (tokens.length > 0) {
+        // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: tokens[0],
+            // @ts-ignore
             syntax: null,
             error: 'unexpected token',
             tokens
         };
     }
+    // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
         matches: [],
         node: null,
+        // @ts-ignore
         syntax: null,
         error: '',
         tokens

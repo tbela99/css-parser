@@ -326,6 +326,18 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 }
 
                 break;
+                
+            case '#':
+
+                if (buffer.length > 0) {
+
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+
+                buffer += value;
+                break;
+
             case '\\':
 
                 // EOF
