@@ -1,4 +1,5 @@
-[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
+[![playground](https://img.shields.io/badge/playground-try%20it%20now-%230a7398
+)](https://tbela99.github.io/css-parser/playground/)[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
 )](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
@@ -8,31 +9,36 @@ CSS parser and minifier for node and the browser
 ## Installation
 
 From npm
+
 ```shell
 $ npm install @tbela99/css-parser
 ```
+
 from jsr
+
 ```shell
 $ deno add @tbela99/css-parser
 ```
 
-
 ## Features
 
 - no dependency
+- partial css validation based upon mdn-data: at-rules and selectors validation
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
-- fast and efficient minification without unsafe transforms, see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+- fast and efficient minification without unsafe transforms,
+  see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 - minify colors.
-- support css color level 4 & 5: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and relative color
+- support css color level 4 & 5: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
+  relative color
 - generate nested css rules
 - convert nested css rules to legacy syntax
 - generate sourcemap
 - compute css shorthands. see supported properties list below
-- evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign() #49
+- evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(),
+  atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
 - inline css variables
 - remove duplicate properties
 - flatten @import rules
-- partial css validation: only css selector is validated
 
 ## Playground
 
@@ -52,6 +58,7 @@ import {transform} from '@tbela99/css-parser';
 
 // ...
 ```
+
 ### Deno exports
 
 import as a module
@@ -62,6 +69,7 @@ import {transform} from 'npm:@tbela99/css-parser';
 
 // ...
 ```
+
 import as a CommonJS module
 
 ```javascript
@@ -144,18 +152,22 @@ Include ParseOptions and RenderOptions
 #### ParseOptions
 
 > Minify Options
+
 - minify: boolean, optional. default to _true_. optimize ast.
 - nestingRules: boolean, optional. automatically generated nested rules.
-- expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules to false.
+- expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
+  to false.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
 - computeShorthand: boolean, optional. compute shorthand properties.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
-- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once in the :root {} or html {} rule.
+- inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once
+  in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
 > Minify Options
 
-- validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the selector is validated at this time.
+- validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the
+  selector is validated at this time.
 
 > Sourcemap Options
 
@@ -191,7 +203,8 @@ Include ParseOptions and RenderOptions
 
 - indent: string, optional. css indention string. uses space character by default.
 - newLine: string, optional. new line character.
-- output: string, optional. file where to store css. url() are resolved according to the specified value. no file is created though.
+- output: string, optional. file where to store css. url() are resolved according to the specified value. no file is
+  created though.
 - cwd: string, optional. destination directory used to resolve url().
 
 ## Parsing
@@ -256,15 +269,15 @@ CSS
 ```css
 
 .clear {
-  width: 0;
-  height: 0;
-  color: transparent;
+    width: 0;
+    height: 0;
+    color: transparent;
 }
 
 .clearfix:before {
 
-  height: 0;
-  width: 0;
+    height: 0;
+    width: 0;
 }
 ```
 
@@ -279,7 +292,14 @@ const result = await transform(css);
 Result
 
 ```css
-.clear,.clearfix:before{height:0;width:0}.clear{color:#0000}
+.clear, .clearfix:before {
+    height: 0;
+    width: 0
+}
+
+.clear {
+    color: #0000
+}
 ```
 
 ### Automatic CSS Nesting
@@ -306,26 +326,30 @@ table.colortable th {
 }
 `;
 
-const result = await parse(css, {nestingRules:true}).then(result => render(result.ast, {minify:false}).code);
+const result = await parse(css, {nestingRules: true}).then(result => render(result.ast, {minify: false}).code);
 ```
 
 Result
+
 ```css
 table.colortable {
- & td {
-  text-align: center;
-  &.c {
-   text-transform: uppercase
-  }
-  &:first-child,&:first-child+td {
-   border: 1px solid #000
-  }
- }
- & th {
-  text-align: center;
-  background: #000;
-  color: #fff
- }
+    & td {
+        text-align: center;
+
+        &.c {
+            text-transform: uppercase
+        }
+
+        &:first-child, &:first-child + td {
+            border: 1px solid #000
+        }
+    }
+
+    & th {
+        text-align: center;
+        background: #000;
+        color: #fff
+    }
 }
 ```
 
@@ -336,62 +360,69 @@ CSS
 ```css
 
 #404 {
---animate-duration: 1s;
+    --animate-duration: 1s;
 }
 
 .s, #404 {
---animate-duration: 1s;
+    --animate-duration: 1s;
 }
 
 .s [type="text" {
---animate-duration: 1s;
+    --animate-duration: 1s;
 }
 
-.s [type="text"]] {
---animate-duration: 1s;
+.s [type="text"]]
+{
+    --animate-duration: 1s;
 }
 
 .s [type="text"] {
---animate-duration: 1s;
+    --animate-duration: 1s;
 }
 
 .s [type="text" i] {
---animate-duration: 1s;
+    --animate-duration: 1s;
 }
 
-.s [type="text" s] {
---animate-duration: 1s;
+.s [type="text" s]
+{
+    --animate-duration: 1s
+;
 }
 
-.s [type="text" b] {
---animate-duration: 1s;
+.s [type="text" b]
+{
+    --animate-duration: 1s;
 }
 
-.s [type="text" b], {
---animate-duration: 1s;
+.s [type="text" b],{
+    --animate-duration: 1s
+;
 }
 
-.s [type="text" b]+ {
---animate-duration: 1s;
+.s [type="text" b]
++ {
+    --animate-duration: 1s;
 }
 
-.s [type="text" b]+ b {
---animate-duration: 1s;
+.s [type="text" b]
++ b {
+    --animate-duration: 1s;
 }
 
-.s [type="text" i]+ b {
---animate-duration: 1s;
+.s [type="text" i] + b {
+    --animate-duration: 1s;
 }
 
 
-.s [type="text"())] {
---animate-duration: 1s;
+.s [type="text"())]{
+    --animate-duration: 1s;
 }
-.s() {
---animate-duration: 1s;
+.s(){
+    --animate-duration: 1s;
 }
 .s:focus {
---animate-duration: 1s;
+    --animate-duration: 1s;
 }
 ```
 
@@ -399,6 +430,7 @@ with validation enabled
 
 ```javascript
 import {parse, render} from '@tbela99/css-parser';
+
 const options = {minify: true, validate: true};
 const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
 //
@@ -407,7 +439,7 @@ console.debug(code);
 
 ```css
 .s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
- --animate-duration: 1s
+    --animate-duration: 1s
 }
 ```
 
@@ -415,6 +447,7 @@ with validation disabled
 
 ```javascript   
 import {parse, render} from '@tbela99/css-parser';
+
 const options = {minify: true, validate: false};
 const {code} = await parse(css, options).then(result => render(result.ast, {minify: false}));
 //
@@ -433,22 +466,26 @@ CSS
 
 ```css
 table.colortable {
- & td {
-  text-align: center;
-  &.c {
-   text-transform: uppercase
-  }
-  &:first-child,&:first-child+td {
-   border: 1px solid #000
-  }
- }
- & th {
-  text-align: center;
-  background: #000;
-  color: #fff
- }
+    & td {
+        text-align: center;
+
+        &.c {
+            text-transform: uppercase
+        }
+
+        &:first-child, &:first-child + td {
+            border: 1px solid #000
+        }
+    }
+
+    & th {
+        text-align: center;
+        background: #000;
+        color: #fff
+    }
 }
 ```
+
 Javascript
 
 ```javascript
@@ -465,18 +502,21 @@ Result
 ```css
 
 table.colortable td {
-  text-align:center;
+    text-align: center;
 }
+
 table.colortable td.c {
-  text-transform:uppercase;
+    text-transform: uppercase;
 }
-table.colortable td:first-child, table.colortable td:first-child+td {
-  border:1px solid black;
+
+table.colortable td:first-child, table.colortable td:first-child + td {
+    border: 1px solid black;
 }
+
 table.colortable th {
-  text-align:center;
-  background:black;
-  color:white;
+    text-align: center;
+    background: black;
+    color: white;
 }
 ```
 
@@ -487,7 +527,10 @@ table.colortable th {
 import {parse, render} from '@tbela99/css-parser';
 
 const css = `
+a {
 
+width: calc(100px * log(625, 5));
+}
 .foo-bar {
     width: calc(100px * 2);
     height: calc(((75.37% - 63.5px) - 900px) + (2 * 100px));
@@ -498,13 +541,18 @@ const css = `
 const prettyPrint = await parse(css).then(result => render(result.ast, {minify: false}).code);
 
 ```
+
 result
 
 ```css
+a {
+    width: 400px;
+}
+
 .foo-bar {
     width: 200px;
     height: calc(75.37% - 763.5px);
-    max-width: calc(3.5rem + var(--bs-border-width)*2)
+    max-width: calc(3.5rem + var(--bs-border-width) * 2)
 }
 ```
 
@@ -529,6 +577,7 @@ const css = `
 const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
 
 ```
+
 result
 
 ```css
@@ -559,6 +608,7 @@ const css = `
 const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
 
 ```
+
 result
 
 ```css
@@ -567,6 +617,7 @@ result
 }
 
 ```
+
 ### CSS variable inlining and relative color
 
 ```javascript
@@ -584,6 +635,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
 const prettyPrint = await parse(css, {inlineCssVariables: true}).then(result => render(result.ast, {minify: false}).code);
 
 ```
+
 result
 
 ```css
@@ -599,7 +651,7 @@ result
 import {walk} from '@tbela99/css-parser';
 
 for (const {node, parent, root} of walk(ast)) {
-    
+
     // do something
 }
 ```
@@ -608,7 +660,7 @@ for (const {node, parent, root} of walk(ast)) {
 
 ### Comment
 
-- typ: number 
+- typ: number
 - val: string, the comment
 
 ### Declaration
@@ -826,7 +878,7 @@ const options: ParserOptions = {
     visitor: {
 
         AtRule: (node: AstAtRule): AstAtRule => {
-            
+
             if (node.nam == 'media') {
 
                 return {...node, val: 'all'}
@@ -906,7 +958,7 @@ const options: ParserOptions = {
     visitor: {
 
 
-        Rule (node: AstRule): AstRule {
+        Rule(node: AstRule): AstRule {
 
             return {...node, sel: '.foo,.bar,.fubar'};
         }
@@ -926,6 +978,7 @@ console.debug(await transform(css, options));
 // .foo,.bar,.fubar{height:calc(40px/3)}
 
 ```
+
 ### Exemple 6: Rule
 
 Adding declarations to any rule
