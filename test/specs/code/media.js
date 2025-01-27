@@ -84,7 +84,70 @@ export function run(describe, expect, transform, parse, render, dirname) {
 }`));
         });
 
-        it('custom-media #7', function () {
+        it('support font-tech, font-format #7', function () {
+            return transform(`
+
+@when font-tech(color-COLRv1) and font-tech(variations) {
+  @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
+}
+@else font-tech(color-SVG) {
+  @font-face { font-family: icons; src: url(icons-gradient.woff2); }
+}
+@else font-tech(color-COLRv0) {
+  @font-face { font-family: icons; src: url(icons-flat.woff2); }
+}
+@else {
+  @font-face { font-family: icons; src: url(icons-fallback.woff2); }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@when font-tech(color-COLRv1) and font-tech(variations) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-gradient-var.woff2)
+ }
+}
+@else font-tech(color-SVG) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-gradient.woff2)
+ }
+}
+@else font-tech(color-COLRv0) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-flat.woff2)
+ }
+}
+@else {
+ @font-face {
+  font-family: icons;
+  src: url(icons-fallback.woff2)
+ }
+}`));
+        });
+
+        it('font-face #8', function () {
+
+            return transform(`
+
+@font-face { font-family: icons; src: url(icons-fallback.woff2);
+@supports font-tech(color-COLRv1) {
+  @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@font-face {
+ font-family: icons;
+ src: url(icons-fallback.woff2);
+ @supports font-tech(color-COLRv1) {
+  @font-face {
+   font-family: icons;
+   src: url(icons-gradient-var.woff2)
+  }
+ }
+}`));
+        });
+
+        it('custom-media #9', function () {
 
             return transform(`
  /* --modern targets modern devices that support color or hover */
@@ -97,7 +160,7 @@ export function run(describe, expect, transform, parse, render, dirname) {
 `).then((result) => expect(result.code).equals(`@custom-media --modern (color),(hover);@media (--modern) and (width>1024px){.a{color:green}}`));
         });
 
-        it('when-else #8', function () {
+        it('when-else #10', function () {
 
             return transform(`
 @when media(width >= 400px) and media(pointer: fine) and supports(display: flex) {

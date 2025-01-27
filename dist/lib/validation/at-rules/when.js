@@ -8,6 +8,7 @@ import '../../parser/utils/config.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
 import { validateMediaFeature, validateMediaCondition } from './media.js';
+import { validateSupportCondition } from './supports.js';
 
 function validateAtRuleWhen(atRule, options, root) {
     const slice = Array.isArray(atRule.tokens) ? atRule.tokens.slice() : [];
@@ -60,7 +61,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             continue;
         }
         while (split.length > 0) {
-            if (split[0].typ != EnumToken.FunctionTokenType || !['media', 'supports'].includes(split[0].val)) {
+            if (split[0].typ != EnumToken.FunctionTokenType || !['media', 'supports', 'font-tech', 'font-format'].includes(split[0].val)) {
                 result = {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -87,9 +88,9 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                     break;
                 }
             }
-            else if (split[0].val == 'supports') {
+            else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)) {
                 // result = valida
-                if (!validateMediaCondition(split[0], atRule)) {
+                if (!validateSupportCondition(atRule, split[0])) {
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],

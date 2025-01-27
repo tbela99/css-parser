@@ -2,9 +2,20 @@
 
 # v0.9.0
 
-- [ ] at-rule custom-media
-- [ ] when-else custom media
-- [ ] media query error handling
+media query level 5
+- [x] at-rule custom-media
+- [x] at-rule when-else custom media
+- [x] media query error handling
+- [ ] at-rule container
+- [ ] expand at-rule custom-media
+- [ ] expand at-rule when-else
+
+selector validation
+- [ ] pseudo class arguments validation
+- [ ] pseudo class validation
+
+declaration validation
+- [ ] validate declaration
 
 # v0.8.0
 

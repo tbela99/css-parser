@@ -13740,7 +13740,7 @@
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: atRule,
-                syntax: '@supports',
+                syntax: '@' + atRule.nam,
                 error: 'expected supports query list',
                 tokens: []
             };
@@ -13758,7 +13758,7 @@
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: atRule,
-                syntax: '@supports',
+                syntax: '@' + atRule.nam,
                 error: 'expected at-rule body',
                 tokens: []
             };
@@ -13768,7 +13768,7 @@
             valid: ValidationLevel.Valid,
             matches: [],
             node: atRule,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: '',
             tokens: []
         };
@@ -13781,7 +13781,7 @@
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'unexpected token',
                     tokens: []
                 };
@@ -13815,7 +13815,7 @@
                             valid: ValidationLevel.Drop,
                             matches: [],
                             node: tokens[0] ?? previousToken ?? atRule,
-                            syntax: '@supports',
+                            syntax: '@' + atRule.nam,
                             error: 'expected whitespace',
                             tokens: []
                         };
@@ -13827,7 +13827,7 @@
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
-                        syntax: '@supports',
+                        syntax: '@' + atRule.nam,
                         error: 'expected and/or',
                         tokens: []
                     };
@@ -13838,7 +13838,7 @@
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
-                        syntax: '@supports',
+                        syntax: '@' + atRule.nam,
                         error: 'expected supports-condition',
                         tokens: []
                     };
@@ -13850,7 +13850,7 @@
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
-                        syntax: '@supports',
+                        syntax: '@' + atRule.nam,
                         error: 'expected whitespace',
                         tokens: []
                     };
@@ -13863,13 +13863,13 @@
         if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
             return validateSupportCondition(atRule, token.val);
         }
-        if (token.typ != exports.EnumToken.ParensTokenType) {
+        if (token.typ != exports.EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == exports.EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes(token.val))) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: token,
-                syntax: '@supports',
+                syntax: '@' + atRule.nam,
                 error: 'expected supports condition-in-parens',
                 tokens: []
             };
@@ -13884,7 +13884,7 @@
                 valid: ValidationLevel.Valid,
                 matches: [],
                 node: null,
-                syntax: '@supports',
+                syntax: '@' + atRule.nam,
                 error: '',
                 tokens: []
             };
@@ -14569,7 +14569,7 @@
                 continue;
             }
             while (split.length > 0) {
-                if (split[0].typ != exports.EnumToken.FunctionTokenType || !['media', 'supports'].includes(split[0].val)) {
+                if (split[0].typ != exports.EnumToken.FunctionTokenType || !['media', 'supports', 'font-tech', 'font-format'].includes(split[0].val)) {
                     result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
@@ -14596,9 +14596,9 @@
                         break;
                     }
                 }
-                else if (split[0].val == 'supports') {
+                else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)) {
                     // result = valida
-                    if (!validateMediaCondition(split[0], atRule)) {
+                    if (!validateSupportCondition(atRule, split[0])) {
                         result = {
                             valid: ValidationLevel.Drop,
                             matches: [],

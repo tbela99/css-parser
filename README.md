@@ -187,8 +187,8 @@ Include ParseOptions and RenderOptions
 
 > Minify Options
 
-- minify: boolean, optional. default to _true_. minify css values.
 - beautify: boolean, optional. default to _false_. beautify css output.
+- minify: boolean, optional. default to _true_. minify css values.
 - withParents: boolean, optional. render this node and its parents.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 - expandNestingRules: boolean, optional. expand nesting rules.
