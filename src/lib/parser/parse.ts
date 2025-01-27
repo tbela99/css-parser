@@ -472,6 +472,23 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
     }
 }
 
+ function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): AstNode | null {
+
+    let i: number = (context.chi as AstNode[]).length;
+
+    while (i--) {
+
+        if ([EnumToken.CommentTokenType, EnumToken.CDOCOMMTokenType, EnumToken.WhitespaceTokenType].includes((context.chi as AstNode[])[i].typ)) {
+
+            continue;
+        }
+
+        return (context.chi as AstNode[])[i];
+    }
+
+    return null;
+}
+
 async function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, stats: {
     bytesIn: number;
     importedBytesIn: number;
@@ -554,25 +571,6 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
         const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
         const position: Position = <Position>map.get(atRule);
-
-        // if (atRule.val == 'charset') {
-        //
-        //     if (context.typ  != EnumToken.StyleSheetNodeType || context.chi.some(t => t.typ != EnumToken.CDOCOMMTokenType && t.typ != EnumToken.CommentNodeType)) {
-        //
-        //         errors.push({
-        //             action: 'drop',
-        //             message: 'doParse: invalid @charset',
-        //             location: {src, ...position}
-        //         });
-        //
-        //         return null;
-        //     }
-        //
-        //     if (options.removeCharset) {
-        //
-        //         return null;
-        //     }
-        // }
 
         // @ts-ignore
         while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
@@ -741,12 +739,49 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
         if (options.validation) {
 
-            const valid: ValidationResult = validateAtRule(node, options, context);
+            let isValid : boolean = true;
+
+            if (node.nam == 'else') {
+
+                const prev = getLastNode(context);
+
+                if (prev != null&& prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes((<AstAtRule>prev).nam)) {
+
+                    if ((<AstAtRule>prev).nam == 'else') {
+
+                        isValid = Array.isArray((<AstAtRule>prev).tokens ) && ( (<AstAtRule>prev).tokens as Token[]).length > 0;
+                    }
+                }
+
+                else {
+
+                    isValid = false;
+                }
+            }
+
+            const valid: ValidationResult = isValid ? validateAtRule(node, options, context) : {
+                valid: ValidationLevel.Drop,
+                node,
+                matches: [] as Token[],
+                syntax: '@' + node.nam,
+                error: '@' + node.nam + ' not allowed here',
+                tokens
+            } as ValidationResult;
 
             if (valid.valid == ValidationLevel.Drop) {
 
+                errors.push({
+                    action: 'drop',
+                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                    // @ts-ignore
+                    location: {src, ...(map.get(valid.node) ?? position)}
+                });
+
                 // @ts-ignore
                 node.typ = EnumToken.InvalidAtRuleTokenType;
+            } else {
+
+                node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '');
             }
         }
 
@@ -1113,7 +1148,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
             }
         }
 
-        if (value.typ == EnumToken.ParensTokenType) {
+        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes((<FunctionToken>value).val))) {
 
             // @todo parse range and declarations
             // parseDeclaration(parent.chi);
@@ -1129,7 +1164,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
                     continue;
                 }
 
-                if (value.chi[i].typ == EnumToken.IdenTokenType) {
+                if (value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
 
                     nameIndex = i;
                 }
@@ -1171,6 +1206,15 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
 
                     const val = value.chi.splice(valueIndex, 1)[0] as Token;
                     const node = value.chi.splice(nameIndex, 1)[0] as IdentToken;
+
+                    // 'background'
+                    // @ts-ignore
+                    if (node.typ == EnumToken.ColorTokenType && (node as ColorToken).kin == 'dpsys') {
+
+                        // @ts-ignore
+                        delete node.kin;
+                        node.typ = EnumToken.IdenTokenType;
+                    }
 
                     while (value.chi[0]?.typ == EnumToken.WhitespaceTokenType) {
 

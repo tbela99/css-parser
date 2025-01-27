@@ -17,6 +17,9 @@ import { validateAtRuleFontFeatureValues } from './at-rules/font-feature-values.
 import { validateAtRuleNamespace } from './at-rules/namespace.js';
 import { validateAtRuleDocument } from './at-rules/document.js';
 import { validateAtRuleKeyframes } from './at-rules/keyframes.js';
+import { validateAtRuleWhen } from './at-rules/when.js';
+import { validateAtRuleElse } from './at-rules/else.js';
+import { validateAtRuleCustomMedia } from './at-rules/custom-media.js';
 
 function validateAtRule(atRule, options, root) {
     if (atRule.nam == 'charset') {
@@ -60,8 +63,17 @@ function validateAtRule(atRule, options, root) {
     if (atRule.nam == 'namespace') {
         return validateAtRuleNamespace(atRule);
     }
+    if (atRule.nam == 'when') {
+        return validateAtRuleWhen(atRule);
+    }
+    if (atRule.nam == 'else') {
+        return validateAtRuleElse(atRule);
+    }
     if (atRule.nam == 'document') {
         return validateAtRuleDocument(atRule);
+    }
+    if (atRule.nam == 'custom-media') {
+        return validateAtRuleCustomMedia(atRule);
     }
     if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
         if (!('tokens' in atRule)) {

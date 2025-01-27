@@ -1,5 +1,5 @@
 [![playground](https://img.shields.io/badge/playground-try%20it%20now-%230a7398
-)](https://tbela99.github.io/css-parser/playground/)[![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
+)](https://tbela99.github.io/css-parser/playground/) [![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
 )](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
@@ -187,7 +187,8 @@ Include ParseOptions and RenderOptions
 
 > Minify Options
 
-- minify: boolean, optional. default to _true_. minify css output.
+- minify: boolean, optional. default to _true_. minify css values.
+- beautify: boolean, optional. default to _false_. beautify css output.
 - withParents: boolean, optional. render this node and its parents.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 - expandNestingRules: boolean, optional. expand nesting rules.

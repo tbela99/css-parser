@@ -89,6 +89,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
         return acc;
     }
 
+
     // @ts-ignore
     if ('chi' in ast && ast.chi.length > 0) {
 
@@ -127,7 +128,8 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
             if (node.typ == EnumToken.AtRuleNodeType) {
 
-                if ((<AstAtRule>node).nam == 'media' && (<AstAtRule>node).val == 'all') {
+                // @ts-ignore
+                if ((<AstAtRule>node).nam == 'media' && ['all', '', null].includes((<AstAtRule>node).val)) {
 
                     // @ts-ignore
                     ast.chi?.splice(i, 1, ...node.chi);
@@ -165,6 +167,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             if (node.typ == EnumToken.RuleNodeType) {
 
                 reduceRuleSelector(<AstRule>node);
+
                 let wrapper: AstRule;
                 let match;
 
@@ -540,7 +543,24 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     return ast;
 }
 
-export function reduceSelector(selector: string[][]) {
+export function hasDeclaration(node: AstRule): boolean {
+
+    // @ts-ignore
+    for (let i = 0; i < node.chi?.length; i++) {
+
+        // @ts-ignore
+        if (node.chi[i].typ == EnumToken.CommentNodeType) {
+
+            continue;
+        }
+        // @ts-ignore
+        return node.chi[i].typ == EnumToken.DeclarationNodeType;
+    }
+
+    return true;
+}
+
+export function reduceSelector(selector: string[][]): OptimizedSelector | null {
 
     if (selector.length == 0) {
         return null;
@@ -677,23 +697,6 @@ export function reduceSelector(selector: string[][]) {
         }, <string[][]>[]),
         reducible: selector.every((selector: string[]) => !['>', '+', '~', '&'].includes(selector[0]))
     };
-}
-
-export function hasDeclaration(node: AstRule): boolean {
-
-    // @ts-ignore
-    for (let i = 0; i < node.chi?.length; i++) {
-
-        // @ts-ignore
-        if (node.chi[i].typ == EnumToken.CommentNodeType) {
-
-            continue;
-        }
-        // @ts-ignore
-        return node.chi[i].typ == EnumToken.DeclarationNodeType;
-    }
-
-    return true;
 }
 
 export function splitRule(buffer: string): string[][] {

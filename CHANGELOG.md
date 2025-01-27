@@ -1,5 +1,11 @@
 # Changelog
 
+# v0.9.0
+
+- [ ] at-rule custom-media
+- [ ] when-else custom media
+- [ ] media query error handling
+
 # v0.8.0
 
 - [x] validate selectors using mdn data
