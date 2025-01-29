@@ -19,7 +19,7 @@ function validateAtRuleSupports(atRule, options, root) {
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: 'expected supports query list',
             tokens: []
         };
@@ -37,7 +37,7 @@ function validateAtRuleSupports(atRule, options, root) {
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: 'expected at-rule body',
             tokens: []
         };
@@ -47,7 +47,7 @@ function validateAtRuleSupports(atRule, options, root) {
         valid: ValidationLevel.Valid,
         matches: [],
         node: atRule,
-        syntax: '@supports',
+        syntax: '@' + atRule.nam,
         error: '',
         tokens: []
     };
@@ -60,7 +60,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0] ?? atRule,
-                syntax: '@supports',
+                syntax: '@' + atRule.nam,
                 error: 'unexpected token',
                 tokens: []
             };
@@ -94,7 +94,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: tokens[0] ?? previousToken ?? atRule,
-                        syntax: '@supports',
+                        syntax: '@' + atRule.nam,
                         error: 'expected whitespace',
                         tokens: []
                     };
@@ -106,7 +106,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'expected and/or',
                     tokens: []
                 };
@@ -117,7 +117,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'expected supports-condition',
                     tokens: []
                 };
@@ -129,7 +129,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'expected whitespace',
                     tokens: []
                 };
@@ -142,13 +142,13 @@ function validateSupportCondition(atRule, token) {
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
         return validateSupportCondition(atRule, token.val);
     }
-    if (token.typ != EnumToken.ParensTokenType) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes(token.val))) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: token,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: 'expected supports condition-in-parens',
             tokens: []
         };
@@ -163,7 +163,7 @@ function validateSupportCondition(atRule, token) {
             valid: ValidationLevel.Valid,
             matches: [],
             node: null,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: '',
             tokens: []
         };

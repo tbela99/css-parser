@@ -13,15 +13,28 @@ function validateAtRuleMedia(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: ValidationLevel.Valid,
             matches: [],
-            node: atRule,
-            syntax: '@media',
-            error: 'expected media query list',
+            node: null,
+            syntax: null,
+            error: '',
             tokens: []
         };
     }
-    const result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
+    let result = null;
+    const slice = atRule.tokens.slice();
+    consumeWhitespace(slice);
+    if (slice.length == 0) {
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: atRule,
+            syntax: '@media',
+            error: '',
+            tokens: []
+        };
+    }
+    result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
     if (result.valid == ValidationLevel.Drop) {
         return result;
     }
@@ -47,10 +60,20 @@ function validateAtRuleMedia(atRule, options, root) {
     };
 }
 function validateAtRuleMediaQueryList(tokenList, atRule) {
-    for (const tokens of splitTokenList(tokenList)) {
+    const split = splitTokenList(tokenList);
+    const matched = [];
+    let result = null;
+    let previousToken;
+    let mediaFeatureType;
+    for (let i = 0; i < split.length; i++) {
+        const tokens = split[i].slice();
+        const match = [];
+        result = null;
+        mediaFeatureType = null;
+        previousToken = null;
         if (tokens.length == 0) {
             // @ts-ignore
-            return {
+            result = {
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0] ?? atRule,
@@ -58,26 +81,38 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 error: 'unexpected token',
                 tokens: []
             };
+            continue;
         }
-        let previousToken = null;
         while (tokens.length > 0) {
-            // media-condition
-            if (validateMediaCondition(tokens[0])) {
-                previousToken = tokens[0];
-                tokens.shift();
+            previousToken = tokens[0];
+            // media-condition | media-type | custom-media
+            if (!(validateMediaCondition(tokens[0], atRule) || validateMediaFeature(tokens[0]) || validateCustomMediaCondition(tokens[0], atRule))) {
+                if (tokens[0].typ == EnumToken.ParensTokenType) {
+                    result = validateAtRuleMediaQueryList(tokens[0].chi, atRule);
+                }
+                else {
+                    result = {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0] ?? atRule,
+                        syntax: '@media',
+                        error: 'expecting media feature or media condition',
+                        tokens: []
+                    };
+                }
+                if (result.valid == ValidationLevel.Drop) {
+                    break;
+                }
+                result = null;
             }
-            // media-type
-            else if (validateMediaFeature(tokens[0])) {
-                previousToken = tokens[0];
-                tokens.shift();
-            }
+            match.push(tokens.shift());
             if (tokens.length == 0) {
                 break;
             }
             if (!consumeWhitespace(tokens)) {
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
                     // @ts-ignore
-                    return {
+                    result = {
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
@@ -85,11 +120,12 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                         error: 'expected media query list',
                         tokens: []
                     };
+                    break;
                 }
             }
-            if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+            else if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
                 // @ts-ignore
-                return {
+                result = {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
@@ -97,10 +133,28 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                     error: 'expected and/or',
                     tokens: []
                 };
+                break;
             }
-            if (tokens.length == 1) {
+            if (mediaFeatureType == null) {
+                mediaFeatureType = tokens[0];
+            }
+            if (mediaFeatureType.typ != tokens[0].typ) {
                 // @ts-ignore
-                return {
+                result = {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: tokens[0] ?? atRule,
+                    syntax: '@media',
+                    error: 'mixing and/or not allowed at the same level',
+                    tokens: []
+                };
+                break;
+            }
+            match.push({ typ: EnumToken.WhitespaceTokenType }, tokens.shift());
+            consumeWhitespace(tokens);
+            if (tokens.length == 0) {
+                // @ts-ignore
+                result = {
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
@@ -108,20 +162,41 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                     error: 'expected media-condition',
                     tokens: []
                 };
+                break;
             }
-            tokens.shift();
-            if (!consumeWhitespace(tokens)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0] ?? atRule,
-                    syntax: '@media',
-                    error: 'expected whitespace',
-                    tokens: []
-                };
-            }
+            match.push({ typ: EnumToken.WhitespaceTokenType });
         }
+        if (result == null && match.length > 0) {
+            matched.push(match);
+        }
+    }
+    if (result != null) {
+        return result;
+    }
+    if (matched.length == 0) {
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@media',
+            error: 'expected media query list',
+            tokens: []
+        };
+    }
+    tokenList.length = 0;
+    let hasAll = false;
+    for (let i = 0; i < matched.length; i++) {
+        if (tokenList.length > 0) {
+            tokenList.push({ typ: EnumToken.CommaTokenType });
+        }
+        if (matched[i].length == 1 && matched.length > 1 && matched[i][0].typ == EnumToken.MediaFeatureTokenType && matched[i][0].val == 'all') {
+            hasAll = true;
+            continue;
+        }
+        tokenList.push(...matched[i]);
+    }
+    if (hasAll && tokenList.length == 0) {
+        tokenList.push({ typ: EnumToken.MediaFeatureTokenType, val: 'all' });
     }
     // @ts-ignore
     return {
@@ -133,11 +208,24 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
         tokens: []
     };
 }
-function validateMediaCondition(token) {
+function validateCustomMediaCondition(token, atRule) {
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
-        return validateMediaCondition(token.val);
+        return validateMediaCondition(token.val, atRule);
     }
     if (token.typ != EnumToken.ParensTokenType) {
+        return false;
+    }
+    const chi = token.chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
+    if (chi.length != 1) {
+        return false;
+    }
+    return chi[0].typ == EnumToken.DashedIdenTokenType;
+}
+function validateMediaCondition(token, atRule) {
+    if (token.typ == EnumToken.MediaFeatureNotTokenType) {
+        return validateMediaCondition(token.val, atRule);
+    }
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val))) {
         return false;
     }
     const chi = token.chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
@@ -148,7 +236,7 @@ function validateMediaCondition(token) {
         return true;
     }
     if (chi[0].typ == EnumToken.MediaFeatureNotTokenType) {
-        return validateMediaCondition(chi[0].val);
+        return validateMediaCondition(chi[0].val, atRule);
     }
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
         return chi[0].l.typ == EnumToken.IdenTokenType;
@@ -163,4 +251,4 @@ function validateMediaFeature(token) {
     return val.typ == EnumToken.MediaFeatureTokenType;
 }
 
-export { validateAtRuleMedia, validateAtRuleMediaQueryList };
+export { validateAtRuleMedia, validateAtRuleMediaQueryList, validateMediaCondition, validateMediaFeature };

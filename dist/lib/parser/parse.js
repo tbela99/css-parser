@@ -301,6 +301,16 @@ async function doParse(iterator, options = {}) {
         }
     };
 }
+function getLastNode(context) {
+    let i = context.chi.length;
+    while (i--) {
+        if ([EnumToken.CommentTokenType, EnumToken.CDOCOMMTokenType, EnumToken.WhitespaceTokenType].includes(context.chi[i].typ)) {
+            continue;
+        }
+        return context.chi[i];
+    }
+    return null;
+}
 async function parseNode(results, context, stats, options, errors, src, map) {
     let tokens = [];
     for (const t of results) {
@@ -356,24 +366,6 @@ async function parseNode(results, context, stats, options, errors, src, map) {
     if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
         const atRule = tokens.shift();
         const position = map.get(atRule);
-        // if (atRule.val == 'charset') {
-        //
-        //     if (context.typ  != EnumToken.StyleSheetNodeType || context.chi.some(t => t.typ != EnumToken.CDOCOMMTokenType && t.typ != EnumToken.CommentNodeType)) {
-        //
-        //         errors.push({
-        //             action: 'drop',
-        //             message: 'doParse: invalid @charset',
-        //             location: {src, ...position}
-        //         });
-        //
-        //         return null;
-        //     }
-        //
-        //     if (options.removeCharset) {
-        //
-        //         return null;
-        //     }
-        // }
         // @ts-ignore
         while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
             tokens.shift();
@@ -499,10 +491,39 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             node.loc = loc;
         }
         if (options.validation) {
-            const valid = validateAtRule(node, options, context);
+            let isValid = true;
+            if (node.nam == 'else') {
+                const prev = getLastNode(context);
+                if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes(prev.nam)) {
+                    if (prev.nam == 'else') {
+                        isValid = Array.isArray(prev.tokens) && prev.tokens.length > 0;
+                    }
+                }
+                else {
+                    isValid = false;
+                }
+            }
+            const valid = isValid ? validateAtRule(node, options, context) : {
+                valid: ValidationLevel.Drop,
+                node,
+                matches: [],
+                syntax: '@' + node.nam,
+                error: '@' + node.nam + ' not allowed here',
+                tokens
+            };
+            // console.error({valid, isValid});
             if (valid.valid == ValidationLevel.Drop) {
+                errors.push({
+                    action: 'drop',
+                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                    // @ts-ignore
+                    location: { src, ...(map.get(valid.node) ?? position) }
+                });
                 // @ts-ignore
                 node.typ = EnumToken.InvalidAtRuleTokenType;
+            }
+            else {
+                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
             }
         }
         // @ts-ignore
@@ -759,17 +780,18 @@ function parseAtRulePrelude(tokens, atRule) {
                 continue;
             }
         }
-        if (value.typ == EnumToken.ParensTokenType) {
+        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
             // @todo parse range and declarations
             // parseDeclaration(parent.chi);
             let i;
             let nameIndex = -1;
             let valueIndex = -1;
+            const dashedIdent = value.typ == EnumToken.FunctionTokenType && value.val == 'style';
             for (let i = 0; i < value.chi.length; i++) {
                 if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
                     continue;
                 }
-                if (value.chi[i].typ == EnumToken.IdenTokenType) {
+                if ((dashedIdent && value.chi[i].typ == EnumToken.DashedIdenTokenType) || value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
                     nameIndex = i;
                 }
                 break;
@@ -798,6 +820,13 @@ function parseAtRulePrelude(tokens, atRule) {
                 ].includes(value.chi[valueIndex].typ)) {
                     const val = value.chi.splice(valueIndex, 1)[0];
                     const node = value.chi.splice(nameIndex, 1)[0];
+                    // 'background'
+                    // @ts-ignore
+                    if (node.typ == EnumToken.ColorTokenType && node.kin == 'dpsys') {
+                        // @ts-ignore
+                        delete node.kin;
+                        node.typ = EnumToken.IdenTokenType;
+                    }
                     while (value.chi[0]?.typ == EnumToken.WhitespaceTokenType) {
                         value.chi.shift();
                     }

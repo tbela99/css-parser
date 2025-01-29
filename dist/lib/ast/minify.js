@@ -82,7 +82,8 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 continue;
             }
             if (node.typ == EnumToken.AtRuleNodeType) {
-                if (node.nam == 'media' && node.val == 'all') {
+                // @ts-ignore
+                if (node.nam == 'media' && ['all', '', null].includes(node.val)) {
                     // @ts-ignore
                     ast.chi?.splice(i, 1, ...node.chi);
                     i--;
@@ -397,6 +398,18 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     }
     return ast;
 }
+function hasDeclaration(node) {
+    // @ts-ignore
+    for (let i = 0; i < node.chi?.length; i++) {
+        // @ts-ignore
+        if (node.chi[i].typ == EnumToken.CommentNodeType) {
+            continue;
+        }
+        // @ts-ignore
+        return node.chi[i].typ == EnumToken.DeclarationNodeType;
+    }
+    return true;
+}
 function reduceSelector(selector) {
     if (selector.length == 0) {
         return null;
@@ -496,18 +509,6 @@ function reduceSelector(selector) {
         }, []),
         reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
     };
-}
-function hasDeclaration(node) {
-    // @ts-ignore
-    for (let i = 0; i < node.chi?.length; i++) {
-        // @ts-ignore
-        if (node.chi[i].typ == EnumToken.CommentNodeType) {
-            continue;
-        }
-        // @ts-ignore
-        return node.chi[i].typ == EnumToken.DeclarationNodeType;
-    }
-    return true;
 }
 function splitRule(buffer) {
     const result = [[]];

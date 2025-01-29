@@ -1,21 +1,21 @@
-// https://www.w3.org/TR/CSS21/syndata.html#syntax
+    // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {colorsFunc} from "../renderer";
-import {COLORS_NAMES} from "../renderer/color";
-import type {
-    AngleToken,
-    DimensionToken,
-    FunctionToken,
-    IdentToken,
-    LengthToken,
-    NumberToken,
-    PercentageToken,
-    Token
-} from "../../@types";
-import {EnumToken} from "../ast";
+    import {colorsFunc} from "../renderer";
+    import {COLORS_NAMES} from "../renderer/color";
+    import type {
+        AngleToken,
+        DimensionToken,
+        FunctionToken,
+        IdentToken,
+        LengthToken,
+        NumberToken,
+        PercentageToken,
+        Token
+    } from "../../@types";
+    import {EnumToken} from "../ast";
 
-// '\\'
+    // '\\'
 const REVERSE_SOLIDUS = 0x5c;
 const dimensionUnits: Set<string> = new Set([
     'q', 'cap', 'ch', 'cm', 'cqb', 'cqh', 'cqi', 'cqmax', 'cqmin', 'cqw', 'dvb',

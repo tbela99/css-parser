@@ -69,6 +69,7 @@ export declare interface AstKeyFrameRule extends BaseToken {
     chi: Array<AstDeclaration | AstComment>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
+    tokens?: Token[]
 }
 
 export declare type RawSelectorTokens = string[][];
@@ -77,6 +78,13 @@ export declare interface OptimizedSelector {
     match: boolean;
     optimized: string[];
     selector: string[][],
+    reducible: boolean;
+}
+
+export declare interface OptimizedSelectorToken {
+    match: boolean;
+    optimized: Token[];
+    selector: Token[][],
     reducible: boolean;
 }
 
