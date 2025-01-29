@@ -14684,6 +14684,348 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
 
 const validateAtRuleElse = validateAtRuleWhen;
 
+const validateContainerScrollStateFeature = validateContainerSizeFeature;
+function validateAtRuleContainer(atRule, options, root) {
+    // media-query-list
+    if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected supports query list',
+            tokens: []
+        };
+    }
+    const result = validateAtRuleContainerQueryList(atRule.tokens, atRule);
+    if (result.valid == ValidationLevel.Drop) {
+        return result;
+    }
+    if (!('chi' in atRule)) {
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected at-rule body',
+            tokens: []
+        };
+    }
+    return {
+        valid: ValidationLevel.Valid,
+        matches: [],
+        node: atRule,
+        syntax: '@' + atRule.nam,
+        error: '',
+        tokens: []
+    };
+}
+function validateAtRuleContainerQueryList(tokens, atRule) {
+    if (tokens.length == 0) {
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected container query list',
+            tokens
+        };
+    }
+    let result = null;
+    let tokenType = null;
+    for (const queries of splitTokenList(tokens)) {
+        consumeWhitespace(queries);
+        if (queries.length == 0) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected container query list',
+                tokens
+            };
+        }
+        result = null;
+        const match = [];
+        let token = null;
+        tokenType = null;
+        while (queries.length > 0) {
+            if (queries.length == 0) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: atRule,
+                    syntax: '@' + atRule.nam,
+                    error: 'expected container query list',
+                    tokens
+                };
+            }
+            if (queries[0].typ == exports.EnumToken.IdenTokenType) {
+                match.push(queries.shift());
+                consumeWhitespace(queries);
+            }
+            if (queries.length == 0) {
+                break;
+            }
+            token = queries[0];
+            if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
+                token = token.val;
+            }
+            if (token.typ != exports.EnumToken.ParensTokenType && (token.typ != exports.EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: queries[0],
+                    syntax: '@' + atRule.nam,
+                    error: 'expected container query-in-parens',
+                    tokens
+                };
+            }
+            if (token.typ == exports.EnumToken.ParensTokenType) {
+                result = validateContainerSizeFeature(token.chi, atRule);
+            }
+            else if (token.val == 'scroll-state') {
+                result = validateContainerScrollStateFeature(token.chi, atRule);
+            }
+            else {
+                result = validateContainerStyleFeature(token.chi, atRule);
+            }
+            if (result.valid == ValidationLevel.Drop) {
+                return result;
+            }
+            queries.shift();
+            consumeWhitespace(queries);
+            if (queries.length == 0) {
+                break;
+            }
+            token = queries[0];
+            if (token.typ != exports.EnumToken.MediaFeatureAndTokenType && token.typ != exports.EnumToken.MediaFeatureOrTokenType) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: queries[0],
+                    syntax: '@' + atRule.nam,
+                    error: 'expecting and/or container query token',
+                    tokens
+                };
+            }
+            if (tokenType == null) {
+                tokenType = token.typ;
+            }
+            if (tokenType != token.typ) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: queries[0],
+                    syntax: '@' + atRule.nam,
+                    error: 'mixing and/or not allowed at the same level',
+                    tokens
+                };
+            }
+            queries.shift();
+            consumeWhitespace(queries);
+            if (queries.length == 0) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: queries[0],
+                    syntax: '@' + atRule.nam,
+                    error: 'expected container query-in-parens',
+                    tokens
+                };
+            }
+        }
+    }
+    return {
+        valid: ValidationLevel.Valid,
+        matches: [],
+        node: atRule,
+        syntax: '@' + atRule.nam,
+        error: '',
+        tokens
+    };
+}
+function validateContainerStyleFeature(tokens, atRule) {
+    tokens = tokens.slice();
+    consumeWhitespace(tokens);
+    if (tokens.length == 1) {
+        if (tokens[0].typ == exports.EnumToken.ParensTokenType) {
+            return validateContainerStyleFeature(tokens[0].chi, atRule);
+        }
+        if ([exports.EnumToken.DashedIdenTokenType, exports.EnumToken.IdenTokenType].includes(tokens[0].typ) ||
+            (tokens[0].typ == exports.EnumToken.MediaQueryConditionTokenType && tokens[0].op.typ == exports.EnumToken.ColonTokenType)) {
+            return {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: '',
+                tokens
+            };
+        }
+    }
+    return {
+        valid: ValidationLevel.Drop,
+        matches: [],
+        node: atRule,
+        syntax: '@' + atRule.nam,
+        error: 'expected container query features',
+        tokens
+    };
+}
+function validateContainerSizeFeature(tokens, atRule) {
+    tokens = tokens.slice();
+    consumeWhitespace(tokens);
+    if (tokens.length == 0) {
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected container query features',
+            tokens
+        };
+    }
+    if (tokens.length == 1) {
+        const token = tokens[0];
+        if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
+            return validateContainerSizeFeature([token.val], atRule);
+        }
+        if (token.typ == exports.EnumToken.ParensTokenType) {
+            return validateAtRuleContainerQueryStyleInParams(token.chi, atRule);
+        }
+        if (![exports.EnumToken.DashedIdenTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(tokens[0].typ)) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected container query features',
+                tokens
+            };
+        }
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: '',
+            tokens
+        };
+    }
+    return validateAtRuleContainerQueryStyleInParams(tokens, atRule);
+}
+function validateAtRuleContainerQueryStyleInParams(tokens, atRule) {
+    tokens = tokens.slice();
+    consumeWhitespace(tokens);
+    if (tokens.length == 0) {
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: atRule,
+            syntax: '@' + atRule.nam,
+            error: 'expected container query features',
+            tokens
+        };
+    }
+    let token = tokens[0];
+    let tokenType = null;
+    let result = null;
+    while (tokens.length > 0) {
+        token = tokens[0];
+        if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
+            token = token.val;
+        }
+        if (tokens[0].typ != exports.EnumToken.ParensTokenType) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected container query-in-parens',
+                tokens
+            };
+        }
+        const slices = tokens[0].chi.slice();
+        consumeWhitespace(slices);
+        if (slices.length == 1) {
+            if ([exports.EnumToken.MediaFeatureNotTokenType, exports.EnumToken.ParensTokenType].includes(slices[0].typ)) {
+                result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
+                if (result.valid == ValidationLevel.Drop) {
+                    return result;
+                }
+            }
+            else if (![exports.EnumToken.DashedIdenTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(slices[0].typ)) {
+                result = {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: atRule,
+                    syntax: '@' + atRule.nam,
+                    error: 'expected container query features',
+                    tokens
+                };
+            }
+        }
+        else {
+            result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
+            if (result.valid == ValidationLevel.Drop) {
+                return result;
+            }
+        }
+        tokens.shift();
+        consumeWhitespace(tokens);
+        if (tokens.length == 0) {
+            break;
+        }
+        if (![exports.EnumToken.MediaFeatureAndTokenType, exports.EnumToken.MediaFeatureOrTokenType].includes(tokens[0].typ)) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[0],
+                syntax: '@' + atRule.nam,
+                error: 'expecting and/or container query token',
+                tokens
+            };
+        }
+        if (tokenType == null) {
+            tokenType = tokens[0].typ;
+        }
+        if (tokenType != tokens[0].typ) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[0],
+                syntax: '@' + atRule.nam,
+                error: 'mixing and/or not allowed at the same level',
+                tokens
+            };
+        }
+        tokens.shift();
+        consumeWhitespace(tokens);
+        if (tokens.length == 0) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[0],
+                syntax: '@' + atRule.nam,
+                error: 'expected container query-in-parens',
+                tokens
+            };
+        }
+    }
+    return {
+        valid: ValidationLevel.Valid,
+        matches: [],
+        node: atRule,
+        syntax: '@' + atRule.nam,
+        error: '',
+        tokens
+    };
+}
+
 function validateAtRuleCustomMedia(atRule, options, root) {
     // media-query-list
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
@@ -14772,6 +15114,9 @@ function validateAtRule(atRule, options, root) {
     }
     if (atRule.nam == 'else') {
         return validateAtRuleElse(atRule);
+    }
+    if (atRule.nam == 'container') {
+        return validateAtRuleContainer(atRule);
     }
     if (atRule.nam == 'document') {
         return validateAtRuleDocument(atRule);
@@ -15382,6 +15727,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 error: '@' + node.nam + ' not allowed here',
                 tokens
             };
+            // console.error({valid, isValid});
             if (valid.valid == ValidationLevel.Drop) {
                 errors.push({
                     action: 'drop',
@@ -15650,17 +15996,18 @@ function parseAtRulePrelude(tokens, atRule) {
                 continue;
             }
         }
-        if (value.typ == exports.EnumToken.ParensTokenType || (value.typ == exports.EnumToken.FunctionTokenType && ['media', 'supports'].includes(value.val))) {
+        if (value.typ == exports.EnumToken.ParensTokenType || (value.typ == exports.EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
             // @todo parse range and declarations
             // parseDeclaration(parent.chi);
             let i;
             let nameIndex = -1;
             let valueIndex = -1;
+            const dashedIdent = value.typ == exports.EnumToken.FunctionTokenType && value.val == 'style';
             for (let i = 0; i < value.chi.length; i++) {
                 if (value.chi[i].typ == exports.EnumToken.CommentTokenType || value.chi[i].typ == exports.EnumToken.WhitespaceTokenType) {
                     continue;
                 }
-                if (value.chi[i].typ == exports.EnumToken.IdenTokenType || value.chi[i].typ == exports.EnumToken.FunctionTokenType || value.chi[i].typ == exports.EnumToken.ColorTokenType) {
+                if ((dashedIdent && value.chi[i].typ == exports.EnumToken.DashedIdenTokenType) || value.chi[i].typ == exports.EnumToken.IdenTokenType || value.chi[i].typ == exports.EnumToken.FunctionTokenType || value.chi[i].typ == exports.EnumToken.ColorTokenType) {
                     nameIndex = i;
                 }
                 break;

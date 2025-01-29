@@ -511,6 +511,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 error: '@' + node.nam + ' not allowed here',
                 tokens
             };
+            // console.error({valid, isValid});
             if (valid.valid == ValidationLevel.Drop) {
                 errors.push({
                     action: 'drop',
@@ -779,17 +780,18 @@ function parseAtRulePrelude(tokens, atRule) {
                 continue;
             }
         }
-        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes(value.val))) {
+        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
             // @todo parse range and declarations
             // parseDeclaration(parent.chi);
             let i;
             let nameIndex = -1;
             let valueIndex = -1;
+            const dashedIdent = value.typ == EnumToken.FunctionTokenType && value.val == 'style';
             for (let i = 0; i < value.chi.length; i++) {
                 if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
                     continue;
                 }
-                if (value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
+                if ((dashedIdent && value.chi[i].typ == EnumToken.DashedIdenTokenType) || value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
                     nameIndex = i;
                 }
                 break;

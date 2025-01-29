@@ -11,3 +11,4 @@ export * from './document';
 export * from './keyframes';
 export * from './when';
 export * from './else';
+export * from './container';

@@ -567,21 +567,15 @@ export declare interface MediaFeatureToken extends BaseToken {
     val: string;
 }
 
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
 export declare interface MediaFeatureOnlyToken extends BaseToken {
 
     typ: EnumToken.MediaFeatureOnlyTokenType,
-    val: Token;
-}
-
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
-    val: Token;
-}
-
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
     val: Token;
 }
 

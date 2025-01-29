@@ -19,6 +19,7 @@ import { validateAtRuleDocument } from './at-rules/document.js';
 import { validateAtRuleKeyframes } from './at-rules/keyframes.js';
 import { validateAtRuleWhen } from './at-rules/when.js';
 import { validateAtRuleElse } from './at-rules/else.js';
+import { validateAtRuleContainer } from './at-rules/container.js';
 import { validateAtRuleCustomMedia } from './at-rules/custom-media.js';
 
 function validateAtRule(atRule, options, root) {
@@ -68,6 +69,9 @@ function validateAtRule(atRule, options, root) {
     }
     if (atRule.nam == 'else') {
         return validateAtRuleElse(atRule);
+    }
+    if (atRule.nam == 'container') {
+        return validateAtRuleContainer(atRule);
     }
     if (atRule.nam == 'document') {
         return validateAtRuleDocument(atRule);

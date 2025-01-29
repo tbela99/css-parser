@@ -4,6 +4,7 @@ import {EnumToken, ValidationLevel} from "../ast";
 import {getParsedSyntax, getSyntaxConfig} from "./config";
 import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 import {
+    validateAtRuleContainer,
     validateAtRuleCounterStyle,
     validateAtRuleDocument,
     validateAtRuleElse,
@@ -93,6 +94,11 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
     if (atRule.nam == 'else') {
 
         return validateAtRuleElse(atRule, options, root);
+    }
+
+    if (atRule.nam == 'container') {
+
+        return validateAtRuleContainer(atRule, options, root);
     }
 
     if (atRule.nam == 'document') {

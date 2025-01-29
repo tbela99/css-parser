@@ -768,6 +768,8 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 tokens
             } as ValidationResult;
 
+            // console.error({valid, isValid});
+
             if (valid.valid == ValidationLevel.Drop) {
 
                 errors.push({
@@ -1148,7 +1150,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
             }
         }
 
-        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes((<FunctionToken>value).val))) {
+        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes((<FunctionToken>value).val))) {
 
             // @todo parse range and declarations
             // parseDeclaration(parent.chi);
@@ -1157,6 +1159,8 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
             let nameIndex: number = -1;
             let valueIndex: number = -1;
 
+            const dashedIdent: boolean = value.typ == EnumToken.FunctionTokenType && value.val == 'style';
+
             for (let i = 0; i < value.chi.length; i++) {
 
                 if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
@@ -1164,7 +1168,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
                     continue;
                 }
 
-                if (value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
+                if ((dashedIdent && value.chi[i].typ == EnumToken.DashedIdenTokenType) || value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
 
                     nameIndex = i;
                 }

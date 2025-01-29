@@ -147,6 +147,28 @@ export function run(describe, expect, transform, parse, render, dirname) {
 }`));
         });
 
+        it('container #9', function () {
+
+            return transform(`
+
+/* condition list */
+@container card scroll-state(stuck: top) and
+    style(--themeBackground),
+    not style(background-color: red),
+     style(color: green) and style(background-color: transparent),
+     style(--themeColor: blue) or style(--themeColor: purple){
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@container card scroll-state(stuck:top) and style(--themeBackground),not style(background-color:red),style(color:green) and style(background-color:transparent),style(--themeColor:blue) or style(--themeColor:purple) {
+ h2 {
+  font-size: 1.5em
+ }
+}`));
+        });
+
         it('custom-media #9', function () {
 
             return transform(`
