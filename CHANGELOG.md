@@ -5,8 +5,9 @@
 media query level 5
 - [x] at-rule custom-media
 - [x] at-rule when-else custom media
+- [x] at-rule charset validation
 - [x] media query error handling
-- [ ] at-rule container
+- [x] at-rule container
 - [ ] expand at-rule custom-media
 - [ ] expand at-rule when-else
 

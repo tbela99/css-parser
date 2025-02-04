@@ -169,7 +169,85 @@ export function run(describe, expect, transform, parse, render, dirname) {
 }`));
         });
 
-        it('custom-media #9', function () {
+        it('container #10', function () {
+
+            return transform(`
+
+/* condition list */
+@container {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('container #11', function () {
+
+            return transform(`
+
+/* condition list */
+@container card {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@container card {
+ h2 {
+  font-size: 1.5em
+ }
+}`));
+        });
+
+        it('container #12', function () {
+
+            return transform(`
+
+/* condition list */
+@container card  card{
+  h2 {
+    font-size: 1.5em;
+  }
+}
+@container card  style() {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+@container card  (()) {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+@container card  ((--themeBackground) and (--themeColor),) {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+@container card  ((--themeBackground) not (--themeColor)) {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('container #13', function () {
+
+            return transform(`
+
+/* condition list */
+@container card ;
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('custom-media #14', function () {
 
             return transform(`
  /* --modern targets modern devices that support color or hover */
@@ -182,7 +260,7 @@ export function run(describe, expect, transform, parse, render, dirname) {
 `).then((result) => expect(result.code).equals(`@custom-media --modern (color),(hover);@media (--modern) and (width>1024px){.a{color:green}}`));
         });
 
-        it('when-else #10', function () {
+        it('when-else #15', function () {
 
             return transform(`
 @when media(width >= 400px) and media(pointer: fine) and supports(display: flex) {
@@ -215,6 +293,78 @@ export function run(describe, expect, transform, parse, render, dirname) {
   color: green
  }
 }`));
+        });
+
+        it('counter-syle #16', function () {
+
+            return transform(`
+
+/* condition list */@counter-style thumbs {
+  system: cyclic;
+  symbols: "\\1F44D";
+  suffix: " ";
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@counter-style thumbs {
+ system: cyclic;
+ symbols: "👍";
+ suffix: " "
+}`));
+        });
+
+        it('counter-style #17', function () {
+
+            return transform(`
+
+/* condition list */
+@counter-style  {
+  system: cyclic;
+  symbols: "\\1F44D";
+  suffix: " ";
+}
+
+@counter-style thumbs;
+@counter-style thumbs thumbs;
+@counter-style /* thumbs thumbs */;
+@counter-style var();
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('at-rule #18', function () {
+
+            return transform(`@charset  "UTF-8"
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('at-rule #19', function () {
+
+            return transform(`@charset "UTF-8"
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
+        });
+
+        it('at-rule #20', function () {
+
+            return transform(`@charset 'UTF-8'
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('at-rule #21', function () {
+
+            return transform(`@charset /* erw */ 'UTF-8';
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('at-rule #22', function () {
+
+            return transform(`@charset /* erw */ "UTF-8";
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('at-rule #23', function () {
+
+            return transform(`@charset /* erw */"UTF-8";
+`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
         });
     });
 

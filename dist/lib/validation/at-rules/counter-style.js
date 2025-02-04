@@ -15,7 +15,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
             matches: [],
             node: atRule,
             syntax: '@counter-style',
-            error: 'expected media query list',
+            error: 'expected counter style name',
             tokens: []
         };
     }
@@ -23,7 +23,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
             syntax: '@counter-style',

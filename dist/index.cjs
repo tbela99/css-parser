@@ -5958,7 +5958,7 @@ function consumeWhiteSpace(parseInfo) {
     return count;
 }
 function pushToken(token, parseInfo, hint) {
-    const result = { token, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
+    const result = { token, len: parseInfo.currentPosition.ind - parseInfo.position.ind, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
     parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
@@ -6126,8 +6126,10 @@ function* tokenize$1(stream) {
                             buffer += value;
                         }
                     }
-                    yield pushToken(buffer, parseInfo, exports.EnumToken.BadCommentTokenType);
-                    buffer = '';
+                    if (buffer.length > 0) {
+                        yield pushToken(buffer, parseInfo, exports.EnumToken.BadCommentTokenType);
+                        buffer = '';
+                    }
                 }
                 break;
             case '&':
@@ -12131,7 +12133,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
             matches: [],
             node: atRule,
             syntax: '@counter-style',
-            error: 'expected media query list',
+            error: 'expected counter style name',
             tokens: []
         };
     }
@@ -12139,7 +12141,7 @@ function validateAtRuleCounterStyle(atRule, options, root) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
             syntax: '@counter-style',
@@ -15349,9 +15351,10 @@ async function doParse(iterator, options = {}) {
     }
     const iter = tokenize$1(iterator);
     let item;
+    const rawTokens = [];
     while (item = iter.next().value) {
         stats.bytesIn = item.bytesIn;
-        //
+        rawTokens.push(item);
         // doParse error
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
             // bad token
@@ -15361,7 +15364,8 @@ async function doParse(iterator, options = {}) {
             tokens.push(item);
         }
         if (item.token == ';' || item.token == '{') {
-            let node = await parseNode(tokens, context, stats, options, errors, src, map);
+            let node = await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
             if (node != null) {
                 // @ts-ignore
                 stack.push(node);
@@ -15387,7 +15391,8 @@ async function doParse(iterator, options = {}) {
             map = new Map;
         }
         else if (item.token == '}') {
-            await parseNode(tokens, context, stats, options, errors, src, map);
+            await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
             const previousNode = stack.pop();
             // @ts-ignore
             context = stack[stack.length - 1] ?? ast;
@@ -15410,7 +15415,8 @@ async function doParse(iterator, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        await parseNode(tokens, context, stats, options, errors, src, map);
+        await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+        rawTokens.length = 0;
         if (context != null && context.typ == exports.EnumToken.InvalidRuleTokenType) {
             const index = context.chi.findIndex(node => node == context);
             if (index > -1) {
@@ -15527,7 +15533,7 @@ function getLastNode(context) {
     }
     return null;
 }
-async function parseNode(results, context, stats, options, errors, src, map) {
+async function parseNode(results, context, stats, options, errors, src, map, rawTokens) {
     let tokens = [];
     for (const t of results) {
         const node = getTokenType(t.token, t.hint);
@@ -15678,8 +15684,42 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         // https://www.w3.org/TR/css-nesting-1/#conditionals
         // allowed nesting at-rules
         // there must be a top level rule in the stack
-        if (atRule.val == 'charset' && options.removeCharset) {
-            return null;
+        if (atRule.val == 'charset') {
+            let spaces = 0;
+            for (let k = 1; k < rawTokens.length; k++) {
+                if (rawTokens[k].hint == exports.EnumToken.WhitespaceTokenType) {
+                    spaces += rawTokens[k].len;
+                    continue;
+                }
+                if (rawTokens[k].hint == exports.EnumToken.CommentTokenType) {
+                    continue;
+                }
+                if (rawTokens[k].hint == exports.EnumToken.CDOCOMMTokenType) {
+                    continue;
+                }
+                if (spaces > 1) {
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset must have only one space',
+                        // @ts-ignore
+                        location: { src, ...(map.get(atRule) ?? position) }
+                    });
+                    return null;
+                }
+                if (rawTokens[k].hint != exports.EnumToken.StringTokenType || rawTokens[k].token[0] != '"') {
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset expects a "<charset>"',
+                        // @ts-ignore
+                        location: { src, ...(map.get(atRule) ?? position) }
+                    });
+                    return null;
+                }
+                break;
+            }
+            if (options.removeCharset) {
+                return null;
+            }
         }
         const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }), atRule);
         const raw = t.reduce((acc, curr) => {
@@ -15727,7 +15767,6 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 error: '@' + node.nam + ' not allowed here',
                 tokens
             };
-            // console.error({valid, isValid});
             if (valid.valid == ValidationLevel.Drop) {
                 errors.push({
                     action: 'drop',
@@ -15739,7 +15778,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 node.typ = exports.EnumToken.InvalidAtRuleTokenType;
             }
             else {
-                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
+                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false, removeComments: true }), '');
             }
         }
         // @ts-ignore

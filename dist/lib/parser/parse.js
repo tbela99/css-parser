@@ -133,9 +133,10 @@ async function doParse(iterator, options = {}) {
     }
     const iter = tokenize(iterator);
     let item;
+    const rawTokens = [];
     while (item = iter.next().value) {
         stats.bytesIn = item.bytesIn;
-        //
+        rawTokens.push(item);
         // doParse error
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
             // bad token
@@ -145,7 +146,8 @@ async function doParse(iterator, options = {}) {
             tokens.push(item);
         }
         if (item.token == ';' || item.token == '{') {
-            let node = await parseNode(tokens, context, stats, options, errors, src, map);
+            let node = await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
             if (node != null) {
                 // @ts-ignore
                 stack.push(node);
@@ -171,7 +173,8 @@ async function doParse(iterator, options = {}) {
             map = new Map;
         }
         else if (item.token == '}') {
-            await parseNode(tokens, context, stats, options, errors, src, map);
+            await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
             const previousNode = stack.pop();
             // @ts-ignore
             context = stack[stack.length - 1] ?? ast;
@@ -194,7 +197,8 @@ async function doParse(iterator, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        await parseNode(tokens, context, stats, options, errors, src, map);
+        await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+        rawTokens.length = 0;
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
             const index = context.chi.findIndex(node => node == context);
             if (index > -1) {
@@ -311,7 +315,7 @@ function getLastNode(context) {
     }
     return null;
 }
-async function parseNode(results, context, stats, options, errors, src, map) {
+async function parseNode(results, context, stats, options, errors, src, map, rawTokens) {
     let tokens = [];
     for (const t of results) {
         const node = getTokenType(t.token, t.hint);
@@ -462,8 +466,42 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         // https://www.w3.org/TR/css-nesting-1/#conditionals
         // allowed nesting at-rules
         // there must be a top level rule in the stack
-        if (atRule.val == 'charset' && options.removeCharset) {
-            return null;
+        if (atRule.val == 'charset') {
+            let spaces = 0;
+            for (let k = 1; k < rawTokens.length; k++) {
+                if (rawTokens[k].hint == EnumToken.WhitespaceTokenType) {
+                    spaces += rawTokens[k].len;
+                    continue;
+                }
+                if (rawTokens[k].hint == EnumToken.CommentTokenType) {
+                    continue;
+                }
+                if (rawTokens[k].hint == EnumToken.CDOCOMMTokenType) {
+                    continue;
+                }
+                if (spaces > 1) {
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset must have only one space',
+                        // @ts-ignore
+                        location: { src, ...(map.get(atRule) ?? position) }
+                    });
+                    return null;
+                }
+                if (rawTokens[k].hint != EnumToken.StringTokenType || rawTokens[k].token[0] != '"') {
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset expects a "<charset>"',
+                        // @ts-ignore
+                        location: { src, ...(map.get(atRule) ?? position) }
+                    });
+                    return null;
+                }
+                break;
+            }
+            if (options.removeCharset) {
+                return null;
+            }
         }
         const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }), atRule);
         const raw = t.reduce((acc, curr) => {
@@ -511,7 +549,6 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 error: '@' + node.nam + ' not allowed here',
                 tokens
             };
-            // console.error({valid, isValid});
             if (valid.valid == ValidationLevel.Drop) {
                 errors.push({
                     action: 'drop',
@@ -523,7 +560,7 @@ async function parseNode(results, context, stats, options, errors, src, map) {
                 node.typ = EnumToken.InvalidAtRuleTokenType;
             }
             else {
-                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
+                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false, removeComments: true }), '');
             }
         }
         // @ts-ignore

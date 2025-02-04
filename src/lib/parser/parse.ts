@@ -239,12 +239,14 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
     const iter: Generator<TokenizeResult> = tokenize(iterator);
     let item: TokenizeResult;
+    const rawTokens: TokenizeResult[] = [];
 
     while (item = iter.next().value) {
 
         stats.bytesIn = item.bytesIn;
 
-        //
+        rawTokens.push(item);
+
         // doParse error
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
 
@@ -259,7 +261,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (item.token == ';' || item.token == '{') {
 
-            let node: AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule | null = await parseNode(tokens, context, stats, options, errors, src, map);
+            let node: AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule | null = await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
 
             if (node != null) {
 
@@ -296,7 +299,9 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             map = new Map;
         } else if (item.token == '}') {
 
-            await parseNode(tokens, context, stats, options, errors, src, map);
+            await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
+
             const previousNode = stack.pop() as AstNode;
 
             // @ts-ignore
@@ -328,7 +333,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
     if (tokens.length > 0) {
 
-        await parseNode(tokens, context, stats, options, errors, src, map);
+        await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+        rawTokens.length = 0;
 
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
 
@@ -472,7 +478,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
     }
 }
 
- function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): AstNode | null {
+function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): AstNode | null {
 
     let i: number = (context.chi as AstNode[]).length;
 
@@ -492,7 +498,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 async function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, stats: {
     bytesIn: number;
     importedBytesIn: number;
-}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>): Promise<AstRule | AstAtRule | AstKeyFrameRule | AstInvalidRule | null> {
+}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>, rawTokens: TokenizeResult[]): Promise<AstRule | AstAtRule | AstKeyFrameRule | AstInvalidRule | null> {
 
     let tokens: Token[] = [];
 
@@ -696,11 +702,59 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
         // https://www.w3.org/TR/css-nesting-1/#conditionals
         // allowed nesting at-rules
         // there must be a top level rule in the stack
+        if (atRule.val == 'charset') {
 
+            let spaces: number = 0;
 
-        if (atRule.val == 'charset' && options.removeCharset) {
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
+            for (let k = 1; k < rawTokens.length; k++) {
 
-            return null;
+                if (rawTokens[k].hint == EnumToken.WhitespaceTokenType) {
+
+                    spaces+= rawTokens[k].len;
+                    continue;
+                }
+
+                if (rawTokens[k].hint == EnumToken.CommentTokenType) {
+
+                    continue;
+                }
+
+                if (rawTokens[k].hint == EnumToken.CDOCOMMTokenType) {
+                    continue;
+                }
+
+                if (spaces > 1) {
+
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset must have only one space',
+                        // @ts-ignore
+                        location: {src, ...(map.get(atRule) ?? position)}
+                    });
+
+                    return null;
+                }
+
+                if (rawTokens[k].hint != EnumToken.StringTokenType || rawTokens[k].token[0] != '"') {
+
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset expects a "<charset>"',
+                        // @ts-ignore
+                        location: {src, ...(map.get(atRule) ?? position)}
+                    });
+
+                    return null;
+                }
+
+                break;
+            }
+
+            if (options.removeCharset) {
+
+                return null;
+            }
         }
 
         const t = parseAtRulePrelude(parseTokens(tokens, {minify: options.minify}), atRule) as Token[];
@@ -739,21 +793,19 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
         if (options.validation) {
 
-            let isValid : boolean = true;
+            let isValid: boolean = true;
 
             if (node.nam == 'else') {
 
                 const prev = getLastNode(context);
 
-                if (prev != null&& prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes((<AstAtRule>prev).nam)) {
+                if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes((<AstAtRule>prev).nam)) {
 
                     if ((<AstAtRule>prev).nam == 'else') {
 
-                        isValid = Array.isArray((<AstAtRule>prev).tokens ) && ( (<AstAtRule>prev).tokens as Token[]).length > 0;
+                        isValid = Array.isArray((<AstAtRule>prev).tokens) && ((<AstAtRule>prev).tokens as Token[]).length > 0;
                     }
-                }
-
-                else {
+                } else {
 
                     isValid = false;
                 }
@@ -768,8 +820,6 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 tokens
             } as ValidationResult;
 
-            // console.error({valid, isValid});
-
             if (valid.valid == ValidationLevel.Drop) {
 
                 errors.push({
@@ -783,7 +833,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 node.typ = EnumToken.InvalidAtRuleTokenType;
             } else {
 
-                node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '');
+                node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {minify: false, removeComments: true}), '');
             }
         }
 

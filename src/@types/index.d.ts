@@ -151,6 +151,7 @@ export declare interface ParseTokenOptions extends ParserOptions {
 
 export declare interface TokenizeResult {
     token: string;
+    len: number;
     hint?: EnumToken;
     position: Position;
     bytesIn: number;
