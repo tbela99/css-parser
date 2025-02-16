@@ -1,5 +1,6 @@
 /test/ export-ignore
 /docs/ export-ignore
+/.editorconfig export-ignore
 /build.sh export-ignore linguist-vendored
 /Writerside export-ignore linguist-vendored
 /benchmark

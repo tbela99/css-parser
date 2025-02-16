@@ -18,6 +18,9 @@ selector validation
 declaration validation
 - [ ] validate declaration
 
+error validation
+- [ ] when a parent is marked as invalid node, do not parse or validate descendant nodes
+
 # v0.8.0
 
 - [x] validate selectors using mdn data

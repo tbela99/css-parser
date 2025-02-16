@@ -710,4 +710,16 @@ content: '\\21 now\\21';
  height: 25%
 }`));
     });
+
+    it('compound selector #34', function () {
+        const file = `
+
+::selection {
+  color: red;
+}
+`;
+        return parse(file, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`::selection {
+ color: red
+}`));
+    });
 }

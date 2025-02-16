@@ -3939,6 +3939,341 @@
         'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
     // https://www.w3.org/TR/css-values-4/#math-function
     const mathFuncs = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+    const webkitPseudoAliasMap = {
+        '-webkit-autofill': 'autofill',
+        '-webkit-any': 'is',
+        '-moz-any': 'is',
+        '-webkit-border-after': 'border-block-end',
+        '-webkit-border-after-color': 'border-block-end-color',
+        '-webkit-border-after-style': 'border-block-end-style',
+        '-webkit-border-after-width': 'border-block-end-width',
+        '-webkit-border-before': 'border-block-start',
+        '-webkit-border-before-color': 'border-block-start-color',
+        '-webkit-border-before-style': 'border-block-start-style',
+        '-webkit-border-before-width': 'border-block-start-width',
+        '-webkit-border-end': 'border-inline-end',
+        '-webkit-border-end-color': 'border-inline-end-color',
+        '-webkit-border-end-style': 'border-inline-end-style',
+        '-webkit-border-end-width': 'border-inline-end-width',
+        '-webkit-border-start': 'border-inline-start',
+        '-webkit-border-start-color': 'border-inline-start-color',
+        '-webkit-border-start-style': 'border-inline-start-style',
+        '-webkit-border-start-width': 'border-inline-start-width',
+        '-webkit-box-align': 'align-items',
+        '-webkit-box-direction': 'flex-direction',
+        '-webkit-box-flex': 'flex-grow',
+        '-webkit-box-lines': 'flex-flow',
+        '-webkit-box-ordinal-group': 'order',
+        '-webkit-box-orient': 'flex-direction',
+        '-webkit-box-pack': 'justify-content',
+        '-webkit-column-break-after': 'break-after',
+        '-webkit-column-break-before': 'break-before',
+        '-webkit-column-break-inside': 'break-inside',
+        '-webkit-font-feature-settings': 'font-feature-settings',
+        '-webkit-hyphenate-character': 'hyphenate-character',
+        '-webkit-initial-letter': 'initial-letter',
+        '-webkit-margin-end': 'margin-block-end',
+        '-webkit-margin-start': 'margin-block-start',
+        '-webkit-padding-after': 'padding-block-end',
+        '-webkit-padding-before': 'padding-block-start',
+        '-webkit-padding-end': 'padding-inline-end',
+        '-webkit-padding-start': 'padding-inline-start',
+        '-webkit-min-device-pixel-ratio': 'min-resolution',
+        '-webkit-max-device-pixel-ratio': 'max-resolution'
+    };
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
+    const webkitExtensions = new Set([
+        '-webkit-app-region',
+        '-webkit-border-horizontal-spacing',
+        '-webkit-border-vertical-spacing',
+        '-webkit-box-reflect',
+        '-webkit-column-axis',
+        '-webkit-column-progression',
+        '-webkit-cursor-visibility',
+        '-webkit-font-smoothing',
+        '-webkit-hyphenate-limit-after',
+        '-webkit-hyphenate-limit-before',
+        '-webkit-hyphenate-limit-lines',
+        '-webkit-line-align',
+        '-webkit-line-box-contain',
+        '-webkit-line-clamp',
+        '-webkit-line-grid',
+        '-webkit-line-snap',
+        '-webkit-locale',
+        '-webkit-logical-height',
+        '-webkit-logical-width',
+        '-webkit-margin-after',
+        '-webkit-margin-before',
+        '-webkit-mask-box-image-outset',
+        '-webkit-mask-box-image-repeat',
+        '-webkit-mask-box-image-slice',
+        '-webkit-mask-box-image-source',
+        '-webkit-mask-box-image-width',
+        '-webkit-mask-box-image',
+        '-webkit-mask-composite',
+        '-webkit-mask-position-x',
+        '-webkit-mask-position-y',
+        '-webkit-mask-repeat-x',
+        '-webkit-mask-repeat-y',
+        '-webkit-mask-source-type',
+        '-webkit-max-logical-height',
+        '-webkit-max-logical-width',
+        '-webkit-min-logical-height',
+        '-webkit-min-logical-width',
+        '-webkit-nbsp-mode',
+        '-webkit-perspective-origin-x',
+        '-webkit-perspective-origin-y',
+        '-webkit-rtl-ordering',
+        '-webkit-tap-highlight-color',
+        '-webkit-text-decoration-skip',
+        '-webkit-text-decorations-in-effect',
+        '-webkit-text-fill-color',
+        '-webkit-text-security',
+        '-webkit-text-stroke-color',
+        '-webkit-text-stroke-width',
+        '-webkit-text-stroke',
+        '-webkit-text-zoom',
+        '-webkit-touch-callout',
+        '-webkit-transform-origin-x',
+        '-webkit-transform-origin-y',
+        '-webkit-transform-origin-z',
+        '-webkit-user-drag',
+        '-webkit-user-modify',
+        '-webkit-border-after',
+        '-webkit-border-after-color',
+        '-webkit-border-after-style',
+        '-webkit-border-after-width',
+        '-webkit-border-before',
+        '-webkit-border-before-color',
+        '-webkit-border-before-style',
+        '-webkit-border-before-width',
+        '-webkit-border-end',
+        '-webkit-border-end-color',
+        '-webkit-border-end-style',
+        '-webkit-border-end-width',
+        '-webkit-border-start',
+        '-webkit-border-start-color',
+        '-webkit-border-start-style',
+        '-webkit-border-start-width',
+        '-webkit-box-align',
+        '-webkit-box-direction',
+        '-webkit-box-flex-group',
+        '-webkit-box-flex',
+        '-webkit-box-lines',
+        '-webkit-box-ordinal-group',
+        '-webkit-box-orient',
+        '-webkit-box-pack',
+        '-webkit-column-break-after',
+        '-webkit-column-break-before',
+        '-webkit-column-break-inside',
+        '-webkit-font-feature-settings',
+        '-webkit-hyphenate-character',
+        '-webkit-initial-letter',
+        '-webkit-margin-end',
+        '-webkit-margin-start',
+        '-webkit-padding-after',
+        '-webkit-padding-before',
+        '-webkit-padding-end',
+        '-webkit-padding-start',
+        '-webkit-fill-available',
+        ':-webkit-animating-full-screen-transition',
+        ':-webkit-any',
+        ':-webkit-any-link',
+        ':-webkit-autofill',
+        ':-webkit-autofill-strong-password',
+        ':-webkit-drag',
+        ':-webkit-full-page-media',
+        ':-webkit-full-screen*',
+        ':-webkit-full-screen-ancestor',
+        ':-webkit-full-screen-document',
+        ':-webkit-full-screen-controls-hidden',
+        '::-webkit-file-upload-button*',
+        '::-webkit-inner-spin-button',
+        '::-webkit-input-placeholder',
+        '::-webkit-meter-bar',
+        '::-webkit-meter-even-less-good-value',
+        '::-webkit-meter-inner-element',
+        '::-webkit-meter-optimum-value',
+        '::-webkit-meter-suboptimum-value',
+        '::-webkit-progress-bar',
+        '::-webkit-progress-inner-element',
+        '::-webkit-progress-value',
+        '::-webkit-search-cancel-button',
+        '::-webkit-search-results-button',
+        '::-webkit-slider-runnable-track',
+        '::-webkit-slider-thumb',
+        '-webkit-animation',
+        '-webkit-device-pixel-ratio',
+        '-webkit-transform-2d',
+        '-webkit-transform-3d',
+        '-webkit-transition',
+        '::-webkit-scrollbar',
+        '::-webkit-scrollbar-button',
+        '::-webkit-scrollbar',
+        '::-webkit-scrollbar-thumb',
+        '::-webkit-scrollbar-track',
+        '::-webkit-scrollbar-track-piece',
+        '::-webkit-scrollbar:vertical',
+        '::-webkit-scrollbar-corner ',
+        '::-webkit-resizer',
+        ':vertical',
+        ':horizontal',
+    ]);
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
+    const mozExtensions = new Set([
+        '-moz-box-align',
+        '-moz-box-direction',
+        '-moz-box-flex',
+        '-moz-box-ordinal-group',
+        '-moz-box-orient',
+        '-moz-box-pack',
+        '-moz-float-edge',
+        '-moz-force-broken-image-icon',
+        '-moz-image-region',
+        '-moz-orient',
+        '-moz-osx-font-smoothing',
+        '-moz-user-focus',
+        '-moz-user-input',
+        '-moz-user-modify',
+        '-moz-animation',
+        '-moz-animation-delay',
+        '-moz-animation-direction',
+        '-moz-animation-duration',
+        '-moz-animation-fill-mode',
+        '-moz-animation-iteration-count',
+        '-moz-animation-name',
+        '-moz-animation-play-state',
+        '-moz-animation-timing-function',
+        '-moz-appearance',
+        '-moz-backface-visibility',
+        '-moz-background-clip',
+        '-moz-background-origin',
+        '-moz-background-inline-policy',
+        '-moz-background-size',
+        '-moz-border-end',
+        '-moz-border-end-color',
+        '-moz-border-end-style',
+        '-moz-border-end-width',
+        '-moz-border-image',
+        '-moz-border-start',
+        '-moz-border-start-color',
+        '-moz-border-start-style',
+        '-moz-border-start-width',
+        '-moz-box-sizing',
+        'clip-path',
+        '-moz-column-count',
+        '-moz-column-fill',
+        '-moz-column-gap',
+        '-moz-column-width',
+        '-moz-column-rule',
+        '-moz-column-rule-width',
+        '-moz-column-rule-style',
+        '-moz-column-rule-color',
+        'filter',
+        '-moz-font-feature-settings',
+        '-moz-font-language-override',
+        '-moz-hyphens',
+        '-moz-margin-end',
+        '-moz-margin-start',
+        'mask',
+        '-moz-opacity',
+        '-moz-outline',
+        '-moz-outline-color',
+        '-moz-outline-offset',
+        '-moz-outline-style',
+        '-moz-outline-width',
+        '-moz-padding-end',
+        '-moz-padding-start',
+        '-moz-perspective',
+        '-moz-perspective-origin',
+        'pointer-events',
+        '-moz-tab-size',
+        '-moz-text-align-last',
+        '-moz-text-decoration-color',
+        '-moz-text-decoration-line',
+        '-moz-text-decoration-style',
+        '-moz-text-size-adjust',
+        '-moz-transform',
+        '-moz-transform-origin',
+        '-moz-transform-style',
+        '-moz-transition',
+        '-moz-transition-delay',
+        '-moz-transition-duration',
+        '-moz-transition-property',
+        '-moz-transition-timing-function',
+        '-moz-user-select',
+        '-moz-initial',
+        '-moz-appearance',
+        '-moz-linear-gradient',
+        '-moz-radial-gradient',
+        '-moz-element',
+        '-moz-image-rect',
+        '::-moz-anonymous-block',
+        '::-moz-anonymous-positioned-block',
+        ':-moz-any',
+        ':-moz-any-link',
+        ':-moz-broken',
+        '::-moz-canvas',
+        '::-moz-color-swatch',
+        '::-moz-cell-content',
+        ':-moz-drag-over',
+        ':-moz-first-node',
+        '::-moz-focus-inner',
+        '::-moz-focus-outer',
+        ':-moz-full-screen',
+        ':-moz-full-screen-ancestor',
+        ':-moz-handler-blocked',
+        ':-moz-handler-crashed',
+        ':-moz-handler-disabled',
+        '::-moz-inline-table',
+        ':-moz-last-node',
+        '::-moz-list-bullet',
+        '::-moz-list-number',
+        ':-moz-loading',
+        ':-moz-locale-dir',
+        ':-moz-locale-dir',
+        ':-moz-lwtheme',
+        ':-moz-lwtheme-brighttext',
+        ':-moz-lwtheme-darktext',
+        '::-moz-meter-bar',
+        ':-moz-native-anonymous',
+        ':-moz-only-whitespace',
+        '::-moz-pagebreak',
+        '::-moz-pagecontent',
+        ':-moz-placeholder',
+        '::-moz-placeholder',
+        '::-moz-progress-bar',
+        '::-moz-range-progress',
+        '::-moz-range-thumb',
+        '::-moz-range-track',
+        ':-moz-read-only',
+        ':-moz-read-write',
+        '::-moz-scrolled-canvas',
+        '::-moz-scrolled-content',
+        '::-moz-selection',
+        ':-moz-submit-invalid',
+        ':-moz-suppressed',
+        '::-moz-svg-foreign-content',
+        '::-moz-table',
+        '::-moz-table-cell',
+        '::-moz-table-column',
+        '::-moz-table-column-group',
+        '::-moz-table-outer',
+        '::-moz-table-row',
+        '::-moz-table-row-group',
+        ':-moz-ui-invalid',
+        ':-moz-ui-valid',
+        ':-moz-user-disabled',
+        '::-moz-viewport',
+        '::-moz-viewport-scroll',
+        ':-moz-window-inactive',
+        '-moz-device-pixel-ratio',
+        '-moz-os-version',
+        '-moz-touch-enabled',
+        '-moz-windows-glass',
+        '-moz-alt-content'
+    ]);
     function isLength(dimension) {
         return 'unit' in dimension && dimensionUnits.has(dimension.unit.toLowerCase());
     }
@@ -11269,12 +11604,12 @@
         return true;
     }
 
-    function splitTokenList(tokenList) {
+    function splitTokenList(tokenList, split = [exports.EnumToken.CommaTokenType]) {
         return tokenList.reduce((acc, curr) => {
             if (curr.typ == exports.EnumToken.CommentTokenType) {
                 return acc;
             }
-            if (curr.typ == exports.EnumToken.CommaTokenType) {
+            if (split.includes(curr.typ)) {
                 acc.push([]);
             }
             else {
@@ -11365,8 +11700,219 @@
         };
     }
 
+    function validateCompoundSelector(tokens, root, options) {
+        if (tokens.length == 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                // @ts-ignore
+                node: root,
+                // @ts-ignore
+                syntax: null,
+                error: 'expected selector',
+                tokens
+            };
+        }
+        tokens = tokens.slice();
+        consumeWhitespace(tokens);
+        const config = getSyntaxConfig();
+        let match = 0;
+        let length = tokens.length;
+        while (tokens.length > 0) {
+            while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
+                if (!options?.nestedSelector) {
+                    // @ts-ignore
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'nested selector not allowed',
+                        tokens
+                    };
+                }
+                match++;
+                tokens.shift();
+                consumeWhitespace(tokens);
+            }
+            // <type-selector>
+            while (tokens.length > 0 &&
+                [
+                    exports.EnumToken.IdenTokenType,
+                    exports.EnumToken.NameSpaceAttributeTokenType,
+                    exports.EnumToken.ClassSelectorTokenType,
+                    exports.EnumToken.HashTokenType,
+                    exports.EnumToken.UniversalSelectorTokenType
+                ].includes(tokens[0].typ)) {
+                match++;
+                tokens.shift();
+                consumeWhitespace(tokens);
+            }
+            while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.PseudoClassFuncTokenType) {
+                if (!mozExtensions.has(tokens[0].val + '()') &&
+                    !webkitExtensions.has(tokens[0].val + '()') &&
+                    !((tokens[0].val + '()') in config.selectors)) {
+                    // @ts-ignore
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val + '()',
+                        tokens
+                    };
+                }
+                match++;
+                tokens.shift();
+                consumeWhitespace(tokens);
+            }
+            while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.PseudoClassTokenType) {
+                const isPseudoElement = tokens[0].val.startsWith('::');
+                if (
+                // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions#pseudo-elements
+                !(isPseudoElement && tokens[0].val.startsWith('::-webkit-')) &&
+                    !mozExtensions.has(tokens[0].val) &&
+                    !webkitExtensions.has(tokens[0].val) &&
+                    !(tokens[0].val in config.selectors) &&
+                    !(!isPseudoElement &&
+                        (':' + tokens[0].val) in config.selectors)) {
+                    // @ts-ignore
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val,
+                        tokens
+                    };
+                }
+                match++;
+                tokens.shift();
+                consumeWhitespace(tokens);
+            }
+            while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.AttrTokenType) {
+                const children = tokens[0].chi.slice();
+                consumeWhitespace(children);
+                if (children.length == 0) {
+                    // @ts-ignore
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'invalid attribute selector',
+                        tokens
+                    };
+                }
+                if (![
+                    exports.EnumToken.IdenTokenType,
+                    exports.EnumToken.NameSpaceAttributeTokenType,
+                    exports.EnumToken.MatchExpressionTokenType
+                ].includes(children[0].typ)) {
+                    // @ts-ignore
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'invalid attribute selector',
+                        tokens
+                    };
+                }
+                if (children[0].typ == exports.EnumToken.MatchExpressionTokenType) {
+                    if (children.length != 1) {
+                        return {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: tokens[0],
+                            syntax: null,
+                            error: 'invalid <attribute-selector>',
+                            tokens
+                        };
+                    }
+                    if (![
+                        exports.EnumToken.IdenTokenType,
+                        exports.EnumToken.NameSpaceAttributeTokenType
+                    ].includes(children[0].l.typ) ||
+                        ![
+                            exports.EnumToken.EqualMatchTokenType, exports.EnumToken.DashMatchTokenType,
+                            exports.EnumToken.StartMatchTokenType, exports.EnumToken.ContainMatchTokenType,
+                            exports.EnumToken.EndMatchTokenType, exports.EnumToken.IncludeMatchTokenType
+                        ].includes(children[0].op.typ) ||
+                        ![
+                            exports.EnumToken.StringTokenType,
+                            exports.EnumToken.IdenTokenType
+                        ].includes(children[0].r.typ)) {
+                        // @ts-ignore
+                        return {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: tokens[0],
+                            syntax: null,
+                            error: 'invalid attribute selector',
+                            tokens
+                        };
+                    }
+                    if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+                        // @ts-ignore
+                        return {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: tokens[0],
+                            syntax: null,
+                            error: 'invalid attribute selector',
+                            tokens
+                        };
+                    }
+                }
+                match++;
+                tokens.shift();
+                consumeWhitespace(tokens);
+            }
+            if (length == tokens.length) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    // @ts-ignore
+                    node: tokens[0],
+                    // @ts-ignore
+                    syntax: null,
+                    error: 'expected compound selector',
+                    tokens
+                };
+            }
+            length = tokens.length;
+        }
+        return match == 0 ? {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            // @ts-ignore
+            node: root,
+            // @ts-ignore
+            syntax: null,
+            error: 'expected compound selector',
+            tokens
+        } :
+            // @ts-ignore
+            {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                // @ts-ignore
+                node: root,
+                // @ts-ignore
+                syntax: null,
+                error: null,
+                tokens
+            };
+    }
+
     const combinatorsTokens = [exports.EnumToken.ChildCombinatorTokenType, exports.EnumToken.ColumnCombinatorTokenType,
-        exports.EnumToken.DescendantCombinatorTokenType, exports.EnumToken.NextSiblingCombinatorTokenType, exports.EnumToken.SubsequentSiblingCombinatorTokenType];
+        // EnumToken.DescendantCombinatorTokenType,
+        exports.EnumToken.NextSiblingCombinatorTokenType, exports.EnumToken.SubsequentSiblingCombinatorTokenType];
     // <compound-selector> [ <combinator>? <compound-selector> ]*
     function validateComplexSelector(tokens, root, options) {
         // [ <type-selector>? <subclass-selector>* [ <pseudo-element-selector> <pseudo-class-selector>* ]* ]!
@@ -11383,257 +11929,374 @@
                 tokens
             };
         }
-        while (tokens.length > 0) {
-            if (combinatorsTokens.includes(tokens[0].typ)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unexpected combinator',
-                    tokens
-                };
+        // const config = getSyntaxConfig();
+        //
+        // let match: number = 0;
+        let result = null;
+        // const combinators: EnumToken[] = combinatorsTokens.filter((t: EnumToken) => t != EnumToken.DescendantCombinatorTokenType);
+        for (const t of splitTokenList(tokens, combinatorsTokens)) {
+            result = validateCompoundSelector(t, root, options);
+            if (result.valid == ValidationLevel.Drop) {
+                return result;
             }
-            if (tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
-                if (!options?.nestedSelector) {
-                    // @ts-ignore
-                    return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        // @ts-ignore
-                        node: tokens[0],
-                        syntax: null,
-                        error: 'nested selector not allowed',
-                        tokens
-                    };
-                }
-                while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
-                    tokens.shift();
-                    consumeWhitespace(tokens);
-                }
-                if (tokens.length == 0) {
-                    break;
-                }
-            }
-            if (exports.EnumToken.IdenTokenType == tokens[0].typ) {
-                tokens.shift();
-                consumeWhitespace(tokens);
-                if (tokens.length == 0) {
-                    break;
-                }
-            }
-            if (exports.EnumToken.UniversalSelectorTokenType == tokens[0].typ) {
-                tokens.shift();
-                consumeWhitespace(tokens);
-            }
-            while (tokens.length > 0) {
-                if (tokens[0].typ == exports.EnumToken.PseudoClassFuncTokenType) {
-                    if (tokens[0].val.startsWith(':-webkit-')) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            // @ts-ignore
-                            node: tokens[0],
-                            syntax: null,
-                            error: 'invalid pseudo-class',
-                            tokens
-                        };
-                    }
-                }
-                if ([
-                    exports.EnumToken.ClassSelectorTokenType,
-                    exports.EnumToken.HashTokenType,
-                    exports.EnumToken.PseudoClassTokenType,
-                    exports.EnumToken.PseudoClassFuncTokenType
-                ].includes(tokens[0].typ)) {
-                    tokens.shift();
-                    consumeWhitespace(tokens);
-                    continue;
-                }
-                if (tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
-                    if (!options?.nestedSelector) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            // @ts-ignore
-                            node: tokens[0],
-                            syntax: null,
-                            error: 'nested selector not allowed',
-                            tokens
-                        };
-                    }
-                    tokens.shift();
-                    consumeWhitespace(tokens);
-                    continue;
-                }
-                // validate namespace
-                if (tokens[0].typ == exports.EnumToken.NameSpaceAttributeTokenType) {
-                    if (!((tokens[0].l == null || tokens[0].l.typ == exports.EnumToken.IdenTokenType || (tokens[0].l.typ == exports.EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
-                        tokens[0].r.typ == exports.EnumToken.IdenTokenType)) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: tokens[0],
-                            syntax: null,
-                            error: 'expecting wq-name',
-                            tokens
-                        };
-                    }
-                    tokens.shift();
-                    consumeWhitespace(tokens);
-                    continue;
-                }
-                // validate attribute
-                else if (tokens[0].typ == exports.EnumToken.AttrTokenType) {
-                    const children = tokens[0].chi.slice();
-                    consumeWhitespace(children);
-                    if (children.length == 0) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: tokens[0],
-                            syntax: null,
-                            error: 'invalid attribute selector',
-                            tokens
-                        };
-                    }
-                    if (![
-                        exports.EnumToken.IdenTokenType,
-                        exports.EnumToken.NameSpaceAttributeTokenType,
-                        exports.EnumToken.MatchExpressionTokenType
-                    ].includes(children[0].typ)) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: tokens[0],
-                            syntax: null,
-                            error: 'invalid attribute selector',
-                            tokens
-                        };
-                    }
-                    if (children[0].typ == exports.EnumToken.MatchExpressionTokenType) {
-                        if (![exports.EnumToken.IdenTokenType,
-                            exports.EnumToken.NameSpaceAttributeTokenType].includes(children[0].l.typ) ||
-                            ![
-                                exports.EnumToken.EqualMatchTokenType, exports.EnumToken.DashMatchTokenType,
-                                exports.EnumToken.StartMatchTokenType, exports.EnumToken.ContainMatchTokenType,
-                                exports.EnumToken.EndMatchTokenType, exports.EnumToken.IncludeMatchTokenType
-                            ].includes(children[0].op.typ) ||
-                            ![exports.EnumToken.StringTokenType,
-                                exports.EnumToken.IdenTokenType].includes(children[0].r.typ)) {
-                            // @ts-ignore
-                            return {
-                                valid: ValidationLevel.Drop,
-                                matches: [],
-                                node: tokens[0],
-                                syntax: null,
-                                error: 'invalid attribute selector',
-                                tokens
-                            };
-                        }
-                        if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
-                            // @ts-ignore
-                            return {
-                                valid: ValidationLevel.Drop,
-                                matches: [],
-                                node: tokens[0],
-                                syntax: null,
-                                error: 'invalid attribute selector',
-                                tokens
-                            };
-                        }
-                    }
-                    children.shift();
-                    consumeWhitespace(children);
-                    if (children.length > 0) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: children[0],
-                            syntax: null,
-                            error: 'unexpected token',
-                            tokens
-                        };
-                    }
-                    tokens.shift();
-                    consumeWhitespace(tokens);
-                    continue;
-                }
-                break;
-            }
-            if (tokens.length == 0) {
-                break;
-            }
-            // combinator
-            if (!combinatorsTokens.includes(tokens[0].typ)) {
-                if (tokens[0].typ == exports.EnumToken.NestingSelectorTokenType) {
-                    if (!options?.nestedSelector) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            // @ts-ignore
-                            node: tokens[0],
-                            syntax: null,
-                            error: 'nested selector not allowed',
-                            tokens
-                        };
-                    }
-                    tokens.shift();
-                    consumeWhitespace(tokens);
-                    continue;
-                }
-                if (tokens.length > 0 &&
-                    [
-                        exports.EnumToken.IdenTokenType,
-                        exports.EnumToken.AttrTokenType,
-                        exports.EnumToken.NameSpaceAttributeTokenType,
-                        exports.EnumToken.ClassSelectorTokenType,
-                        exports.EnumToken.HashTokenType,
-                        exports.EnumToken.PseudoClassTokenType,
-                        exports.EnumToken.PseudoClassFuncTokenType
-                    ].includes(tokens[0].typ)) {
-                    continue;
-                }
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'expecting combinator or subclass-selector',
-                    tokens
-                };
-            }
-            const token = tokens.shift();
-            consumeWhitespace(tokens);
-            if (tokens.length == 0) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: token,
-                    syntax: null,
-                    error: 'expected compound-selector',
-                    tokens
-                };
-            }
+            //  if (combinatorsTokens.includes(tokens[0].typ)) {
+            //
+            //      // @ts-ignore
+            //      return {
+            //          valid: ValidationLevel.Drop,
+            //          matches: [],
+            //          // @ts-ignore
+            //          node: tokens[0],
+            //          syntax: null,
+            //          error: 'unexpected combinator: ' + JSON.stringify(tokens[0]),
+            //          tokens
+            //      }
+            //  }
+            //
+            //  else if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //      if (!options?.nestedSelector) {
+            //
+            //          // @ts-ignore
+            //          return {
+            //              valid: ValidationLevel.Drop,
+            //              matches: [],
+            //              // @ts-ignore
+            //              node: tokens[0],
+            //              syntax: null,
+            //              error: 'nested selector not allowed',
+            //              tokens
+            //          }
+            //
+            //          match++;
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //      }
+            //
+            //      while (tokens.length > 0 && tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //      }
+            //
+            //      if (tokens.length == 0) {
+            //
+            //          break;
+            //      }
+            //  }
+            //
+            // else if (EnumToken.IdenTokenType == tokens[0].typ) {
+            //
+            //      tokens.shift();
+            //      consumeWhitespace(tokens);
+            //
+            //      if (tokens.length == 0) {
+            //
+            //          break;
+            //      }
+            //  }
+            //
+            //  else if (EnumToken.UniversalSelectorTokenType == tokens[0].typ) {
+            //
+            //      tokens.shift();
+            //      consumeWhitespace(tokens);
+            //      continue;
+            //  }
+            //
+            //    while (tokens.length > 0) {
+            //
+            //      if (tokens[0].typ == EnumToken.PseudoClassFuncTokenType) {
+            //
+            //          if (tokens[0].val.startsWith(':-webkit-')) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'invalid pseudo-class',
+            //                  tokens
+            //              }
+            //          }
+            //      }
+            //
+            //      if (tokens[0].typ == EnumToken.PseudoClassTokenType) {
+            //
+            //          const isPseudoElement: boolean = tokens[0].val.startsWith('::');
+            //
+            //          if (!mozExtensions.has(tokens[0].val) && !webkitExtensions.has(tokens[0].val) && !(tokens[0].val in config.selectors) && !(!isPseudoElement &&( ':' + tokens[0].val) in config.selectors)) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'unknown pseudo-class: ' + tokens[0].val,
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //     else if ([
+            //          EnumToken.ClassSelectorTokenType,
+            //          EnumToken.HashTokenType,
+            //          EnumToken.PseudoClassFuncTokenType].includes(tokens[0].typ)) {
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //          if (!options?.nestedSelector) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'nested selector not allowed',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      // validate namespace
+            //      if (tokens[0].typ == EnumToken.NameSpaceAttributeTokenType) {
+            //
+            //          if (!((tokens[0].l == null || tokens[0].l.typ == EnumToken.IdenTokenType || (tokens[0].l.typ == EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
+            //              tokens[0].r.typ == EnumToken.IdenTokenType)) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'expecting wq-name',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue;
+            //      }
+            //      // validate attribute
+            //      else if (tokens[0].typ == EnumToken.AttrTokenType) {
+            //
+            //          const children: Token[] = tokens[0].chi.slice() as Token[];
+            //
+            //          consumeWhitespace(children);
+            //
+            //          if (children.length == 0) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'invalid attribute selector',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          if (![
+            //              EnumToken.IdenTokenType,
+            //              EnumToken.NameSpaceAttributeTokenType,
+            //              EnumToken.MatchExpressionTokenType].includes(children[0].typ)) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'invalid attribute selector',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          if (children[0].typ == EnumToken.MatchExpressionTokenType) {
+            //
+            //              if (![EnumToken.IdenTokenType,
+            //                      EnumToken.NameSpaceAttributeTokenType].includes(children[0].l.typ) ||
+            //                  ![
+            //                      EnumToken.EqualMatchTokenType, EnumToken.DashMatchTokenType,
+            //                      EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
+            //                      EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes(children[0].op.typ) ||
+            //                  ![EnumToken.StringTokenType,
+            //                      EnumToken.IdenTokenType].includes(children[0].r.typ)) {
+            //
+            //                  // @ts-ignore
+            //                  return {
+            //                      valid: ValidationLevel.Drop,
+            //                      matches: [],
+            //                      node: tokens[0],
+            //                      syntax: null,
+            //                      error: 'invalid attribute selector',
+            //                      tokens
+            //                  }
+            //              }
+            //
+            //              if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+            //
+            //                  // @ts-ignore
+            //                  return {
+            //                      valid: ValidationLevel.Drop,
+            //                      matches: [],
+            //                      node: tokens[0],
+            //                      syntax: null,
+            //                      error: 'invalid attribute selector',
+            //                      tokens
+            //                  }
+            //              }
+            //          }
+            //
+            //          children.shift();
+            //          consumeWhitespace(children);
+            //
+            //          if (children.length > 0) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: children[0],
+            //                  syntax: null,
+            //                  error: 'unexpected token',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue;
+            //      }
+            //
+            //      break;
+            //  }
+            //
+            //  if (tokens.length == 0) {
+            //
+            //      break
+            //  }
+            //
+            //  // combinator
+            //  if (!combinatorsTokens.includes(tokens[0].typ)) {
+            //
+            //      if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //          if (!options?.nestedSelector) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'nested selector not allowed',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      if (tokens[0].typ == EnumToken.PseudoClassTokenType) {
+            //
+            //          const isPseudoElement: boolean = tokens[0].val.startsWith('::');
+            //
+            //          if (!(tokens[0].val in config.selectors) && (isPseudoElement && !(!isPseudoElement &&( ':' + tokens[0].val) in config.selectors))) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'unknown pseudo-class',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //
+            //      if (tokens.length > 0 &&
+            //          [
+            //              EnumToken.IdenTokenType,
+            //              EnumToken.AttrTokenType,
+            //              EnumToken.NameSpaceAttributeTokenType,
+            //              EnumToken.ClassSelectorTokenType,
+            //              EnumToken.HashTokenType,
+            //              EnumToken.UniversalSelectorTokenType,
+            //              EnumToken.PseudoClassFuncTokenType,
+            //              EnumToken.PseudoClassFuncTokenType].includes(tokens[0].typ)) {
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      // @ts-ignore
+            //      return {
+            //          valid: ValidationLevel.Drop,
+            //          matches: [],
+            //          node: tokens[0],
+            //          syntax: null,
+            //          error: 'expecting combinator or subclass-selector: ' + JSON.stringify(tokens[0]),
+            //          tokens
+            //      }
+            //  }
+            //
+            //  const token = tokens.shift() as Token;
+            //  consumeWhitespace(tokens);
+            //
+            //  if (tokens.length == 0) {
+            //
+            //      // @ts-ignore
+            //      return {
+            //          valid: ValidationLevel.Drop,
+            //          matches: [],
+            //          node: token,
+            //          syntax: null,
+            //          error: 'expected compound-selector',
+            //          tokens
+            //      }
+            //  }
         }
         // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
+        return result ?? {
+            valid: ValidationLevel.Drop,
             matches: [],
-            node: null,
+            node: root,
             syntax: null,
-            error: '',
+            error: 'expecting compound-selector',
             tokens
         };
     }
@@ -11665,20 +12328,48 @@
     }
 
     function validateRelativeSelectorList(tokens, root, options) {
-        let i = 0;
-        let j = 0;
-        let result = null;
-        while (i + 1 < tokens.length) {
-            if (tokens[++i].typ == exports.EnumToken.CommaTokenType) {
-                result = validateRelativeSelector(tokens.slice(j, i), root, options);
-                if (result.valid == ValidationLevel.Drop) {
-                    return result;
-                }
-                j = i + 1;
-                i = j;
+        tokens = tokens.slice();
+        consumeWhitespace(tokens);
+        if (tokens.length == 0) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                // @ts-ignore
+                node: root,
+                // @ts-ignore
+                syntax: null,
+                error: 'expecting relative selector list',
+                tokens
+            };
+        }
+        for (const t of splitTokenList(tokens)) {
+            if (t.length == 0) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    // @ts-ignore
+                    node: root,
+                    // @ts-ignore
+                    syntax: null,
+                    error: 'unexpected comma',
+                    tokens
+                };
+            }
+            const result = validateRelativeSelector(t, root, options);
+            if (result.valid == ValidationLevel.Drop) {
+                return result;
             }
         }
-        return validateRelativeSelector(i == j ? tokens.slice(i) : tokens.slice(j, i + 1), root, options);
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            // @ts-ignore
+            node: root,
+            // @ts-ignore
+            syntax: null,
+            error: '',
+            tokens
+        };
     }
 
     function validateComplexSelectorList(tokens, root, options) {
@@ -11695,20 +12386,23 @@
                 tokens
             };
         }
-        let i = -1;
-        let j = 0;
         let result = null;
-        while (i + 1 < tokens.length) {
-            if (tokens[++i].typ == exports.EnumToken.CommaTokenType) {
-                result = validateSelector$1(tokens.slice(j, i), root, options);
-                if (result.valid == ValidationLevel.Drop) {
-                    return result;
-                }
-                j = i + 1;
-                i = j;
+        for (const t of splitTokenList(tokens)) {
+            result = validateSelector$1(t, root, options);
+            if (result.valid == ValidationLevel.Drop) {
+                return result;
             }
         }
-        return validateSelector$1(i == j ? tokens.slice(i) : tokens.slice(j, i + 1), root, options);
+        // @ts-ignore
+        return result ?? {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            // @ts-ignore
+            node: root,
+            syntax: null,
+            error: 'expecting complex selector list',
+            tokens
+        };
     }
 
     function validateKeyframeSelector(tokens, atRule) {
@@ -11859,7 +12553,7 @@
 
     function validateSelector(selector, options, root) {
         if (root == null) {
-            return validateRelativeSelectorList(selector, root);
+            return validateSelectorList(selector, root);
         }
         // @ts-ignore
         if (root.typ == exports.EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
@@ -15248,48 +15942,6 @@
         exports.EnumToken.StartMatchTokenType, exports.EnumToken.EndMatchTokenType, exports.EnumToken.IncludeMatchTokenType, exports.EnumToken.DashMatchTokenType, exports.EnumToken.ContainMatchTokenType,
         exports.EnumToken.EOFTokenType
     ]);
-    const webkitPseudoAliasMap = {
-        '-webkit-autofill': 'autofill',
-        '-webkit-any': 'is',
-        '-moz-any': 'is',
-        '-webkit-border-after': 'border-block-end',
-        '-webkit-border-after-color': 'border-block-end-color',
-        '-webkit-border-after-style': 'border-block-end-style',
-        '-webkit-border-after-width': 'border-block-end-width',
-        '-webkit-border-before': 'border-block-start',
-        '-webkit-border-before-color': 'border-block-start-color',
-        '-webkit-border-before-style': 'border-block-start-style',
-        '-webkit-border-before-width': 'border-block-start-width',
-        '-webkit-border-end': 'border-inline-end',
-        '-webkit-border-end-color': 'border-inline-end-color',
-        '-webkit-border-end-style': 'border-inline-end-style',
-        '-webkit-border-end-width': 'border-inline-end-width',
-        '-webkit-border-start': 'border-inline-start',
-        '-webkit-border-start-color': 'border-inline-start-color',
-        '-webkit-border-start-style': 'border-inline-start-style',
-        '-webkit-border-start-width': 'border-inline-start-width',
-        '-webkit-box-align': 'align-items',
-        '-webkit-box-direction': 'flex-direction',
-        '-webkit-box-flex': 'flex-grow',
-        '-webkit-box-lines': 'flex-flow',
-        '-webkit-box-ordinal-group': 'order',
-        '-webkit-box-orient': 'flex-direction',
-        '-webkit-box-pack': 'justify-content',
-        '-webkit-column-break-after': 'break-after',
-        '-webkit-column-break-before': 'break-before',
-        '-webkit-column-break-inside': 'break-inside',
-        '-webkit-font-feature-settings': 'font-feature-settings',
-        '-webkit-hyphenate-character': 'hyphenate-character',
-        '-webkit-initial-letter': 'initial-letter',
-        '-webkit-margin-end': 'margin-block-end',
-        '-webkit-margin-start': 'margin-block-start',
-        '-webkit-padding-after': 'padding-block-end',
-        '-webkit-padding-before': 'padding-block-start',
-        '-webkit-padding-end': 'padding-inline-end',
-        '-webkit-padding-start': 'padding-inline-start',
-        '-webkit-min-device-pixel-ratio': 'min-resolution',
-        '-webkit-max-device-pixel-ratio': 'max-resolution'
-    };
     function reject(reason) {
         throw new Error(reason ?? 'Parsing aborted');
     }
@@ -15687,6 +16339,7 @@
             // there must be a top level rule in the stack
             if (atRule.val == 'charset') {
                 let spaces = 0;
+                // https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
                 for (let k = 1; k < rawTokens.length; k++) {
                     if (rawTokens[k].hint == exports.EnumToken.WhitespaceTokenType) {
                         spaces += rawTokens[k].len;

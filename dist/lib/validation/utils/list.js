@@ -6,12 +6,12 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 
-function splitTokenList(tokenList) {
+function splitTokenList(tokenList, split = [EnumToken.CommaTokenType]) {
     return tokenList.reduce((acc, curr) => {
         if (curr.typ == EnumToken.CommentTokenType) {
             return acc;
         }
-        if (curr.typ == EnumToken.CommaTokenType) {
+        if (split.includes(curr.typ)) {
             acc.push([]);
         }
         else {

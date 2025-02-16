@@ -41,12 +41,12 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
 @media screen {
         
-    .foo:-webkit-autofiller:not(:hover) {
+    .foo:-webkit-autofill:not(:hover) {
             height: calc(100px * 2/ 15);
     }
 }
 `, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
- .foo:-webkit-autofiller:not(:hover) {
+ .foo:autofill:not(:hover) {
   height: calc(40px/3)
  }
 }`));
