@@ -6,6 +6,10 @@ import { renderToken } from '../renderer/render.js';
 import '../renderer/color/utils/constants.js';
 import '../parser/utils/config.js';
 
+/**
+ * expand nested css ast
+ * @param ast
+ */
 function expand(ast) {
     //
     if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
@@ -194,6 +198,11 @@ function expandRule(node, parent) {
     // @ts-ignore
     return ast.chi.length > 0 ? [ast].concat(result) : result;
 }
+/**
+ * replace compound selector
+ * @param input
+ * @param replace
+ */
 function replaceCompound(input, replace) {
     const tokens = parseString(input);
     let replacement = null;

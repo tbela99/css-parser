@@ -41,7 +41,8 @@ export enum ValidationTokenEnum {
     DeclarationNameToken,
     DeclarationDefinitionToken,
     SemiColon,
-    Character
+    Character,
+    ColumnArrayToken
 }
 
 export const enum ValidationSyntaxGroupEnum {
@@ -232,6 +233,12 @@ export interface ValidationColumnToken extends ValidationToken {
     typ: ValidationTokenEnum.ColumnToken,
     l: ValidationToken[];
     r: ValidationToken[];
+}
+
+export interface ValidationColumnArrayToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.ColumnArrayToken,
+   chi: ValidationToken[];
 }
 
 export interface ValidationDeclarationToken extends ValidationToken {

@@ -199,7 +199,10 @@ function next(parseInfo: ParseInfo, count: number = 1): string {
     return char;
 }
 
-
+/**
+ * tokenize css string
+ * @param stream
+ */
 export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
     const parseInfo: ParseInfo = {

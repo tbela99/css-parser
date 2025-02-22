@@ -13,6 +13,15 @@ const definedPropertySettings = { configurable: true, enumerable: false, writabl
 const notEndingWith = ['(', '['].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
+/**
+ * minify ast
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ * @param context
+ */
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     if (!('nodes' in context)) {
         context.nodes = new Set;
@@ -510,6 +519,10 @@ function reduceSelector(selector) {
         reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
     };
 }
+/**
+ * split selector string
+ * @param buffer
+ */
 function splitRule(buffer) {
     const result = [[]];
     let str = '';
@@ -996,4 +1009,4 @@ function reduceRuleSelector(node) {
     }
 }
 
-export { combinators, definedPropertySettings, hasDeclaration, matchSelectors, minify, reduceSelector, splitRule };
+export { combinators, definedPropertySettings, minify, splitRule };

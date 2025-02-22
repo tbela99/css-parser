@@ -5,6 +5,10 @@ import {renderToken} from "../renderer";
 import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
 import {EnumToken} from "./types";
 
+/**
+ * expand nested css ast
+ * @param ast
+ */
 export function expand(ast: AstNode): AstNode {
     //
     if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
@@ -269,6 +273,11 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
     return ast.chi.length > 0 ? [ast].concat(result) : result;
 }
 
+/**
+ * replace compound selector
+ * @param input
+ * @param replace
+ */
 export function replaceCompound(input: string, replace: string): string {
 
     const tokens: Token[] = parseString(input);

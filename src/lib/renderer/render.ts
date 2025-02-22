@@ -98,6 +98,11 @@ function update(position: Position, str: string) {
     }
 }
 
+/**
+ * render ast
+ * @param data
+ * @param options
+ */
 export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
 
     const minify: boolean = options.minify ?? true;
@@ -218,7 +223,18 @@ function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions,
     update(position, str);
 }
 
-// @ts-ignore
+/**
+ * render ast node
+ * @param data
+ * @param options
+ * @param sourcemap
+ * @param position
+ * @param errors
+ * @param reducer
+ * @param cache
+ * @param level
+ * @param indents
+ */
 function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceMap | null, position: Position, errors: ErrorDescription[], reducer: (acc: string, curr: Token) => string, cache: {
     [key: string]: any
 }, level: number = 0, indents: string[] = []): string {
@@ -363,10 +379,16 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
             // return renderToken(data as Token, options, cache, reducer, errors);
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
-
-    return '';
 }
 
+/**
+ * render ast token
+ * @param token
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
 export function renderToken(token: Token, options: RenderOptions = {}, cache: {
     [key: string]: any
 } = Object.create(null), reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string {

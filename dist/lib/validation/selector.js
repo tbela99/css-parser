@@ -8,6 +8,9 @@ import '../parser/utils/config.js';
 import { validateRelativeSelectorList } from './syntaxes/relative-selector-list.js';
 import './syntaxes/complex-selector.js';
 import { validateKeyframeBlockList } from './syntaxes/keyframe-block-list.js';
+import './parser/types.js';
+import './parser/parse.js';
+import './config.js';
 import { validateSelectorList } from './syntaxes/selector-list.js';
 
 function validateSelector(selector, options, root) {

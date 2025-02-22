@@ -7,6 +7,9 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { validateFamilyName } from '../syntaxes/family-name.js';
 import '../syntaxes/complex-selector.js';
+import '../parser/types.js';
+import '../parser/parse.js';
+import '../config.js';
 
 function validateAtRuleFontFeatureValues(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {

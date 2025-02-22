@@ -136,6 +136,10 @@ function next(parseInfo, count = 1) {
     }
     return char;
 }
+/**
+ * tokenize css string
+ * @param stream
+ */
 function* tokenize(stream) {
     const parseInfo = {
         stream,

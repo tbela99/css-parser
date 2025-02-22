@@ -1,9 +1,9 @@
 import type {AstAtRule, AstDeclaration, AstNode, ValidationOptions} from "../../@types";
-import type {ValidationConfiguration, ValidationResult, ValidationSyntaxResult} from "../../@types/validation";
+import type {ValidationConfiguration, ValidationResult} from "../../@types/validation";
 import {EnumToken, ValidationLevel} from "../ast";
 import {getParsedSyntax, getSyntaxConfig} from "./config";
+import {ParsedSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 import {validateSyntax} from "./syntax";
-import {ValidationAtRuleDefinitionToken, ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 
 export function validateDeclaration(declaration: AstDeclaration, options: ValidationOptions, root?: AstNode): ValidationResult {
 
@@ -15,7 +15,7 @@ export function validateDeclaration(declaration: AstDeclaration, options: Valida
 
         if (name[0] == '-') {
 
-            const match = /^-([a-z]+)-(.*)$/.exec(name);
+            const match: RegExpExecArray | null = /^-([a-z]+)-(.*)$/.exec(name);
 
             if (match != null) {
 
@@ -26,12 +26,12 @@ export function validateDeclaration(declaration: AstDeclaration, options: Valida
 
     // root is at-rule - check if declaration allowed
     if (root?.typ == EnumToken.AtRuleNodeType) {
-
+        //
         const syntax: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
 
         if (syntax != null) {
 
-            if(!('chi' in syntax)) {
+            if (!('chi' in syntax)) {
 
                 return {
                     valid: ValidationLevel.Drop,
@@ -52,18 +52,45 @@ export function validateDeclaration(declaration: AstDeclaration, options: Valida
                 }
             }
 
-            if (!(name in config.declarations) && !(name in config.syntaxes)) {
+            // console.error({syntax});
 
-                return {
+            const config: ValidationConfiguration = getSyntaxConfig();
 
-                    valid: ValidationLevel.Drop,
-                    node: declaration,
-                    syntax: null,
-                    error: `unknown declaration "${declaration.nam}"`
+            // @ts-ignore
+            const obj = config[ValidationSyntaxGroupEnum.AtRules]['@' + (root as AstAtRule).nam] as ParsedSyntax;
+
+            if ('descriptors' in obj) {
+
+                const descriptors = obj.descriptors as Record<string, ParsedSyntax>;
+
+                if (!(name in descriptors)) {
+
+                    return {
+                        valid: ValidationLevel.Drop,
+                        node: declaration,
+                        syntax: `<${declaration.nam}>`,
+                        error: `declaration <${declaration.nam}> is not allowed in <@${(root as AstAtRule).nam}>`
+                    }
                 }
+
+                const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, ['@' + (root as AstAtRule).nam, 'descriptors', name]) as ValidationToken[];
+                return validateSyntax(syntax, declaration.val, root, options);
             }
 
-            return validateSyntax((syntax as ValidationAtRuleDefinitionToken).chi as ValidationToken[], [declaration], root, options);
+            // console.error({name});
+
+            //         if (!(name in config.declarations) && !(name in config.syntaxes)) {
+            //
+            //             return {
+            //
+            //                 valid: ValidationLevel.Drop,
+            //                 node: declaration,
+            //                 syntax: null,
+            //                 error: `unknown declaration "${declaration.nam}"`
+            //             }
+            //         }
+            //
+            //         return validateSyntax((syntax as ValidationAtRuleDefinitionToken).chi as ValidationToken[], [declaration], root, options);
         }
     }
 
@@ -84,7 +111,7 @@ export function validateDeclaration(declaration: AstDeclaration, options: Valida
 
             valid: ValidationLevel.Drop,
             node: declaration,
-            syntax: null,
+            syntax: `<${declaration.nam}>`,
             error: `unknown declaration "${declaration.nam}"`
         }
     }

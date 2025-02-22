@@ -23,6 +23,7 @@ import {
     ValidationBlockToken,
     ValidationBracketToken,
     ValidationCharacterToken,
+    ValidationColumnArrayToken,
     ValidationColumnToken,
     ValidationCommaToken,
     ValidationDeclarationDefinitionToken,
@@ -44,6 +45,22 @@ import {
     ValidationWhitespaceToken
 } from "./index";
 import {isIdent, isPseudo} from '../../syntax';
+
+export enum WalkValidationTokenEnum {
+
+    IgnoreChildren,
+    IgnoreNode,
+    IgnoreAll,
+}
+
+export enum WalkValidationTokenKeyTypeEnum {
+
+    Array = 'array',
+    Children = 'chi',
+    Left = 'l',
+    Right = 'r',
+    Prelude = 'prelude',
+}
 
 declare type ValidationContext =
     ValidationRootToken
@@ -288,6 +305,88 @@ function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}
     }
 }
 
+function columnCallback(token: ValidationToken, parent: ValidationToken, key: WalkValidationTokenKeyTypeEnum) {
+
+    if (key == WalkValidationTokenKeyTypeEnum.Prelude) {
+
+        return WalkValidationTokenEnum.IgnoreAll;
+    }
+
+    if (token.typ == ValidationTokenEnum.ColumnToken || token.typ == ValidationTokenEnum.Whitespace) {
+
+        return WalkValidationTokenEnum.IgnoreNode
+    }
+
+    return WalkValidationTokenEnum.IgnoreChildren
+}
+
+function toColumnArray(ast: ValidationColumnToken, parent?: ValidationToken): ValidationToken {
+
+    const result = new Map;
+
+    // @ts-ignore
+    for (const {token} of walkValidationToken(ast, null, columnCallback)) {
+
+        result.set(JSON.stringify(token), token);
+    }
+
+    const node = {
+        typ: ValidationTokenEnum.ColumnArrayToken,
+        chi: [...result.values()]
+    } as ValidationColumnArrayToken;
+
+    if (parent != null) {
+
+        replaceNode(parent, ast, node);
+    }
+
+    return node;
+}
+
+function replaceNode(parent: ValidationToken, target: ValidationToken, node: ValidationToken) {
+
+    if ('l' in parent && parent.l == target) {
+
+        parent.l = node;
+    }
+
+    if ('r' in parent && parent.r == target) {
+
+        parent.r = node;
+    }
+
+    if ('chi' in parent) {
+
+        // @ts-ignore
+        for (let i = 0; i < parent.chi.length; i++) {
+
+            // @ts-ignore
+            if (parent.chi[i] == target) {
+
+                // @ts-ignore
+                parent.chi[i] = node;
+                break;
+            }
+        }
+    }
+}
+
+function transform(context: ValidationContext): ValidationToken {
+
+    for (const {token, parent} of walkValidationToken(context)) {
+
+        switch (token.typ) {
+
+            case ValidationTokenEnum.ColumnToken:
+
+                toColumnArray(token as ValidationColumnToken, parent as ValidationToken);
+                break
+        }
+    }
+
+    return context;
+}
+
 export function parseSyntax(syntax: string): ValidationRootToken {
 
     const root: ValidationRootToken = Object.defineProperty({
@@ -296,7 +395,7 @@ export function parseSyntax(syntax: string): ValidationRootToken {
     }, 'pos', {...objectProperties, value: {ind: 0, lin: 1, col: 0}}) as ValidationRootToken;
 
     // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
-    return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
+    return minify(transform(doParseSyntax(syntax, tokenize(syntax), root))) as ValidationRootToken;
 }
 
 function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorValue> | Generator<ValidationToken>): ValidationToken[] {
@@ -1420,6 +1519,13 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
 
             return '{' + (token as ValidationBlockToken).chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
 
+        case ValidationTokenEnum.DeclarationDefinitionToken:
+
+            return (token as ValidationDeclarationDefinitionToken).nam + ': ' + renderSyntax((token as ValidationDeclarationDefinitionToken).val);
+
+        case ValidationTokenEnum.ColumnArrayToken:
+
+            return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
 
         default:
 
@@ -1565,61 +1671,66 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
     return ast;
 }
 
-export function* walkValidationToken(token: ValidationToken | ValidationToken[], parent?: ValidationToken, callback?: (token: ValidationToken, parent?: ValidationToken) => void): Generator<{
+export function* walkValidationToken(token: ValidationToken | ValidationToken[], parent?: ValidationToken | null, callback?: (token: ValidationToken, parent?: ValidationToken | null, key?: WalkValidationTokenKeyTypeEnum | null) => WalkValidationTokenEnum | null, key?: WalkValidationTokenKeyTypeEnum): Generator<{
     token: ValidationToken,
-    parent?: ValidationToken
+    parent?: ValidationToken | null
 }> {
 
     if (Array.isArray(token)) {
 
         for (const child of token) {
 
-            yield* walkValidationToken(child, parent, callback);
+            yield* walkValidationToken(child, parent, callback, WalkValidationTokenKeyTypeEnum.Array);
         }
 
         return;
     }
 
+    let action: WalkValidationTokenEnum | null = null;
 
     if (callback != null) {
 
-        callback(token, parent);
+        // @ts-ignore
+        action = callback(token, parent, key);
     }
 
-    yield {token, parent};
+    if (action != WalkValidationTokenEnum.IgnoreNode && action != WalkValidationTokenEnum.IgnoreAll) {
 
-    if ('prelude' in token) {
+        yield {token, parent};
+    }
+
+    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'prelude' in token) {
 
         for (const child of (token as ValidationAtRuleDefinitionToken).prelude as ValidationToken[]) {
 
-            yield* walkValidationToken(child, token, callback);
+            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Prelude);
         }
     }
 
-    if ('chi' in token) {
+    if (action != WalkValidationTokenEnum.IgnoreChildren && 'chi' in token) {
 
         // @ts-ignore
         for (const child of (token as ValidationFunctionToken | ValidationBracketToken | ValidationPipeToken).chi) {
 
-            yield* walkValidationToken(child as ValidationToken, token, callback);
+            yield* walkValidationToken(child as ValidationToken, token, callback, WalkValidationTokenKeyTypeEnum.Children);
         }
     }
 
-    if ('l' in token) {
+    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'l' in token) {
 
         // @ts-ignore
         for (const child of (token as ValidationColumnToken | ValidationAmpersandToken).l) {
 
-            yield* walkValidationToken(child as ValidationToken, token, callback);
+            yield* walkValidationToken(child as ValidationToken, token, callback, WalkValidationTokenKeyTypeEnum.Left);
         }
     }
 
-    if ('r' in token) {
+    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'r' in token) {
 
         // @ts-ignore
         for (const child of (token as ValidationColumnToken | ValidationAmpersandToken).r) {
 
-            yield* walkValidationToken(child as ValidationToken, token, callback);
+            yield* walkValidationToken(child as ValidationToken, token, callback, WalkValidationTokenKeyTypeEnum.Right);
         }
     }
 }
@@ -1629,9 +1740,10 @@ export function cleanup(ast: { [key: string]: any }) {
     return ast;
 }
 
-interface ParsedSyntax {
-    syntax: string
-    ast?: ValidationToken[]
+export interface ParsedSyntax {
+    syntax: string;
+    ast?: ValidationToken[];
+    descriptors?: Record<string, ParsedSyntax>;
 }
 
 type ParsedSyntaxes = Record<string, ParsedSyntax>
@@ -1748,6 +1860,13 @@ export async function parseAtRulesSyntax(): Promise<ParsedSyntaxes> {
             // ast: parseSyntax(values.syntaxes).chi,
             // mdn_url: values.mdn_url
         };
+
+        if ('descriptors' in values) {
+
+            json[key].descriptors = Object.entries(values.descriptors as Record<string, {
+                [key: string]: string
+            }>).reduce((acc, [k, v]) => Object.assign(acc, {[k]: {syntax: v.syntax} as ParsedSyntax}), {} as Record<string, ParsedSyntax>);
+        }
     }
 
     return cleanup(json) as ParsedSyntaxes;

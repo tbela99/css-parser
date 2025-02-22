@@ -1,6 +1,20 @@
 import { ValidationTokenEnum } from './types.js';
 import { isIdent, isPseudo } from '../../syntax/syntax.js';
 
+var WalkValidationTokenEnum;
+(function (WalkValidationTokenEnum) {
+    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreChildren"] = 0] = "IgnoreChildren";
+    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreNode"] = 1] = "IgnoreNode";
+    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreAll"] = 2] = "IgnoreAll";
+})(WalkValidationTokenEnum || (WalkValidationTokenEnum = {}));
+var WalkValidationTokenKeyTypeEnum;
+(function (WalkValidationTokenKeyTypeEnum) {
+    WalkValidationTokenKeyTypeEnum["Array"] = "array";
+    WalkValidationTokenKeyTypeEnum["Children"] = "chi";
+    WalkValidationTokenKeyTypeEnum["Left"] = "l";
+    WalkValidationTokenKeyTypeEnum["Right"] = "r";
+    WalkValidationTokenKeyTypeEnum["Prelude"] = "prelude";
+})(WalkValidationTokenKeyTypeEnum || (WalkValidationTokenKeyTypeEnum = {}));
 const skipped = [
     ValidationTokenEnum.Star,
     ValidationTokenEnum.HashMark,
@@ -167,13 +181,66 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
         yield getTokenType(buffer, position, currentPosition);
     }
 }
+function columnCallback(token, parent, key) {
+    if (key == WalkValidationTokenKeyTypeEnum.Prelude) {
+        return WalkValidationTokenEnum.IgnoreAll;
+    }
+    if (token.typ == ValidationTokenEnum.ColumnToken || token.typ == ValidationTokenEnum.Whitespace) {
+        return WalkValidationTokenEnum.IgnoreNode;
+    }
+    return WalkValidationTokenEnum.IgnoreChildren;
+}
+function toColumnArray(ast, parent) {
+    const result = new Map;
+    // @ts-ignore
+    for (const { token } of walkValidationToken(ast, null, columnCallback)) {
+        result.set(JSON.stringify(token), token);
+    }
+    const node = {
+        typ: ValidationTokenEnum.ColumnArrayToken,
+        chi: [...result.values()]
+    };
+    if (parent != null) {
+        replaceNode(parent, ast, node);
+    }
+    return node;
+}
+function replaceNode(parent, target, node) {
+    if ('l' in parent && parent.l == target) {
+        parent.l = node;
+    }
+    if ('r' in parent && parent.r == target) {
+        parent.r = node;
+    }
+    if ('chi' in parent) {
+        // @ts-ignore
+        for (let i = 0; i < parent.chi.length; i++) {
+            // @ts-ignore
+            if (parent.chi[i] == target) {
+                // @ts-ignore
+                parent.chi[i] = node;
+                break;
+            }
+        }
+    }
+}
+function transform(context) {
+    for (const { token, parent } of walkValidationToken(context)) {
+        switch (token.typ) {
+            case ValidationTokenEnum.ColumnToken:
+                toColumnArray(token, parent);
+                break;
+        }
+    }
+    return context;
+}
 function parseSyntax(syntax) {
     const root = Object.defineProperty({
         typ: ValidationTokenEnum.Root,
         chi: []
     }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
     // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
-    return minify(doParseSyntax(syntax, tokenize(syntax), root));
+    return minify(transform(doParseSyntax(syntax, tokenize(syntax), root)));
 }
 function matchParens(syntax, iterator) {
     let item;
@@ -941,6 +1008,10 @@ function renderSyntax(token, parent) {
                 (token.chi == null ? '' : ' {\n' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '')).slice(1, -1) + '\n}';
         case ValidationTokenEnum.Block:
             return '{' + token.chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
+        case ValidationTokenEnum.DeclarationDefinitionToken:
+            return token.nam + ': ' + renderSyntax(token.val);
+        case ValidationTokenEnum.ColumnArrayToken:
+            return token.chi.reduce((acc, curr) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
         default:
             throw new Error('Unhandled token: ' + JSON.stringify({ token }));
     }
@@ -1032,37 +1103,44 @@ function minify(ast) {
     }
     return ast;
 }
-function* walkValidationToken(token, parent, callback) {
+function* walkValidationToken(token, parent, callback, key) {
     if (Array.isArray(token)) {
         for (const child of token) {
-            yield* walkValidationToken(child, parent);
+            yield* walkValidationToken(child, parent, callback, WalkValidationTokenKeyTypeEnum.Array);
         }
         return;
     }
-    yield { token, parent };
-    if ('prelude' in token) {
+    let action = null;
+    if (callback != null) {
+        // @ts-ignore
+        action = callback(token, parent, key);
+    }
+    if (action != WalkValidationTokenEnum.IgnoreNode && action != WalkValidationTokenEnum.IgnoreAll) {
+        yield { token, parent };
+    }
+    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'prelude' in token) {
         for (const child of token.prelude) {
-            yield* walkValidationToken(child, token);
+            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Prelude);
         }
     }
-    if ('chi' in token) {
+    if (action != WalkValidationTokenEnum.IgnoreChildren && 'chi' in token) {
         // @ts-ignore
         for (const child of token.chi) {
-            yield* walkValidationToken(child, token);
+            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Children);
         }
     }
-    if ('l' in token) {
+    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'l' in token) {
         // @ts-ignore
         for (const child of token.l) {
-            yield* walkValidationToken(child, token);
+            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Left);
         }
     }
-    if ('r' in token) {
+    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'r' in token) {
         // @ts-ignore
         for (const child of token.r) {
-            yield* walkValidationToken(child, token);
+            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Right);
         }
     }
 }
 
-export { parseSyntax, renderSyntax, walkValidationToken };
+export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, renderSyntax, walkValidationToken };

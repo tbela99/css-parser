@@ -1,5 +1,5 @@
 import { ValidationTokenEnum, specialValues } from './parser/types.js';
-import './parser/parse.js';
+import { renderSyntax } from './parser/parse.js';
 import { ValidationLevel, EnumToken, funcLike } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
@@ -10,6 +10,8 @@ import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import { getParsedSyntax, getSyntaxConfig } from './config.js';
 import { validateSelector } from './selector.js';
+import './syntaxes/complex-selector.js';
+import { validateImage } from './syntaxes/image.js';
 
 const config = getSyntaxConfig();
 function consumeToken(tokens) {
@@ -30,6 +32,7 @@ function splice(tokens, matches) {
     return tokens;
 }
 function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
+    console.error(JSON.stringify({ syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''), syntaxes, tokens, s: new Error('bar').stack }, null, 1));
     if (syntaxes == null) {
         // @ts-ignore
         return {
@@ -485,7 +488,7 @@ function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 })
     return result;
 }
 function isOptionalSyntax(syntaxes) {
-    return syntaxes.every(t => t.typ == ValidationTokenEnum.Whitespace || t.isOptional || t.isRepeatable || (t.typ == ValidationTokenEnum.PropertyType && isOptionalSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, t.val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, t.val))));
+    return syntaxes.length > 0 && syntaxes.every(t => t.typ == ValidationTokenEnum.Whitespace || t.isOptional || t.isRepeatable || (t.typ == ValidationTokenEnum.PropertyType && isOptionalSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, t.val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, t.val) ?? [])));
 }
 function doValidateSyntax(syntax, token, tokens, root, options, context) {
     let valid = false;
@@ -706,7 +709,21 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             break;
         case ValidationTokenEnum.PropertyType:
             //
-            if (['media-feature', 'mf-plain'].includes(syntax.val)) {
+            if ('image' == syntax.val) {
+                valid = token.typ == EnumToken.UrlFunctionTokenType || token.typ == EnumToken.ImageFunctionTokenType;
+                if (!valid) {
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: token,
+                        syntax,
+                        error: 'unexpected <image>',
+                        tokens
+                    };
+                }
+                result = validateImage(token);
+            }
+            else if (['media-feature', 'mf-plain'].includes(syntax.val)) {
                 valid = token.typ == EnumToken.DeclarationNodeType;
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -751,6 +768,18 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
             }
             else if (syntax.val == 'group-rule-body') {
                 valid = [EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(token.typ);
+                if (!valid && token.typ == EnumToken.DeclarationNodeType && root?.typ == EnumToken.AtRuleNodeType && root.nam == 'media') {
+                    // allowed only if nested rule
+                    let parent = root;
+                    while (parent != null) {
+                        if (parent.typ == EnumToken.RuleNodeType) {
+                            valid = true;
+                            break;
+                        }
+                        // @ts-ignore
+                        parent = parent.parent;
+                    }
+                }
                 // @ts-ignore
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -1419,6 +1448,18 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 tokens
             };
             break;
+        case ValidationTokenEnum.DeclarationDefinitionToken:
+            if (token.typ != EnumToken.DeclarationNodeType || token.nam != syntax.nam) {
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax,
+                    error: '',
+                    tokens
+                };
+            }
+            return validateSyntax([syntax.val], token.val, root, options, context);
         default:
             throw new Error('not implemented: ' + JSON.stringify({ syntax, token, tokens }, null, 1));
     }
