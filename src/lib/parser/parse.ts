@@ -155,6 +155,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         setParent: true,
         removePrefix: false,
         validation: true,
+        lenient: true,
         ...options
     };
 

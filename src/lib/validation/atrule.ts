@@ -166,7 +166,6 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
     }
 
     // scope
-
     if (atRule.nam == 'page') {
 
         return validateAtRulePage(atRule, options, root);
@@ -205,15 +204,15 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
     if (!(name in config.atRules)) {
 
-        //     if (root?.typ == EnumToken.AtRuleNodeType) {
-        //
-        //         const syntaxes: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
-        //
-        //         if ('chi' in syntaxes) {
-        //
-        //             return validateSyntax(syntaxes.chi as ValidationToken[], [atRule], root, options);
-        //         }
-        //     }
+        if (options.lenient) {
+
+            return {
+                valid: ValidationLevel.Lenient,
+                node: atRule,
+                syntax: null,
+                error: ''
+            }
+        }
 
         return {
 

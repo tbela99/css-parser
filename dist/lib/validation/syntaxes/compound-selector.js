@@ -63,16 +63,18 @@ function validateCompoundSelector(tokens, root, options) {
             if (!mozExtensions.has(tokens[0].val + '()') &&
                 !webkitExtensions.has(tokens[0].val + '()') &&
                 !((tokens[0].val + '()') in config.selectors)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                     // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unknown pseudo-class: ' + tokens[0].val + '()',
-                    tokens
-                };
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val + '()',
+                        tokens
+                    };
+                }
             }
             match++;
             tokens.shift();
@@ -88,16 +90,18 @@ function validateCompoundSelector(tokens, root, options) {
                 !(tokens[0].val in config.selectors) &&
                 !(!isPseudoElement &&
                     (':' + tokens[0].val) in config.selectors)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                     // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unknown pseudo-class: ' + tokens[0].val,
-                    tokens
-                };
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val,
+                        tokens
+                    };
+                }
             }
             match++;
             tokens.shift();
