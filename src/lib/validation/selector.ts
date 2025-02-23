@@ -1,14 +1,14 @@
 import type {AstAtRule, AstRule, AstRuleStyleSheet, Token, ValidationOptions} from "../../@types";
 import {EnumToken} from "../ast";
-import type {ValidationResult} from "../../@types/validation";
 import {validateKeyframeBlockList, validateRelativeSelectorList} from "./syntaxes";
+import type {ValidationResult} from "../../@types/validation";
 import {validateSelectorList} from "./syntaxes/selector-list";
 
 export function validateSelector(selector: Token[], options: ValidationOptions, root?: AstAtRule | AstRule | AstRuleStyleSheet): ValidationResult {
 
     if (root == null) {
 
-        return validateRelativeSelectorList(selector, root);
+        return validateSelectorList(selector, root);
     }
 
     // @ts-ignore
@@ -18,7 +18,6 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     }
 
     let isNested: number = root.typ == EnumToken.RuleNodeType ? 1 : 0;
-
     let currentRoot = root.parent;
 
     while (currentRoot != null && isNested == 0) {

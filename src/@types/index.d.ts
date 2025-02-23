@@ -1,5 +1,5 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
-import {AstAtRule, AstRule, AstRuleStyleSheet, Position, AstDeclaration} from "./ast.d.ts";
+import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib";
@@ -94,6 +94,7 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     minify?: boolean;
+    beautify?: boolean;
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
@@ -107,7 +108,6 @@ export declare interface RenderOptions {
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
-
 }
 
 export declare interface TransformOptions extends ParserOptions, RenderOptions {
@@ -151,6 +151,7 @@ export declare interface ParseTokenOptions extends ParserOptions {
 
 export declare interface TokenizeResult {
     token: string;
+    len: number;
     hint?: EnumToken;
     position: Position;
     bytesIn: number;

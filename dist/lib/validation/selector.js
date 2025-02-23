@@ -12,7 +12,7 @@ import { validateSelectorList } from './syntaxes/selector-list.js';
 
 function validateSelector(selector, options, root) {
     if (root == null) {
-        return validateRelativeSelectorList(selector, root);
+        return validateSelectorList(selector, root);
     }
     // @ts-ignore
     if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {

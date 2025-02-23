@@ -13,7 +13,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
             matches: [],
             node: atRule,
             syntax: '@counter-style',
-            error: 'expected media query list',
+            error: 'expected counter style name',
             tokens: []
         } as ValidationSyntaxResult;
     }
@@ -24,7 +24,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
             syntax: '@counter-style',

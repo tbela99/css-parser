@@ -16,7 +16,7 @@ function consumeWhiteSpace(parseInfo) {
     return count;
 }
 function pushToken(token, parseInfo, hint) {
-    const result = { token, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
+    const result = { token, len: parseInfo.currentPosition.ind - parseInfo.position.ind, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
     parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
@@ -184,8 +184,10 @@ function* tokenize(stream) {
                             buffer += value;
                         }
                     }
-                    yield pushToken(buffer, parseInfo, EnumToken.BadCommentTokenType);
-                    buffer = '';
+                    if (buffer.length > 0) {
+                        yield pushToken(buffer, parseInfo, EnumToken.BadCommentTokenType);
+                        buffer = '';
+                    }
                 }
                 break;
             case '&':

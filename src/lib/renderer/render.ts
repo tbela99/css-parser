@@ -100,16 +100,23 @@ function update(position: Position, str: string) {
 
 export function doRender(data: AstNode, options: RenderOptions = {}): RenderResult {
 
+    const minify: boolean = options.minify ?? true;
+    const beautify: boolean = options.beautify ?? !minify;
     options = {
-        ...(options.minify ?? true ? {
+        ...(beautify ? {
+
+            indent: ' ',
+            newLine: '\n',
+        } : {
+
             indent: '',
             newLine: '',
+        }),
+        ...(minify ? {
             removeEmpty: true,
             removeComments: true
         } : {
-            indent: ' ',
-            newLine: '\n',
-            compress: false,
+            removeEmpty: false,
             removeComments: false,
 
         }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options

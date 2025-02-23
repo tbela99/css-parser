@@ -41,17 +41,16 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
 @media screen {
         
-    .foo:-webkit-autofiller:not(:hover) {
+    .foo:-webkit-autofill:not(:hover) {
             height: calc(100px * 2/ 15);
     }
 }
 `, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
- .foo:-webkit-autofiller:not(:hover) {
+ .foo:autofill:not(:hover) {
   height: calc(40px/3)
  }
 }`));
         });
-
 
         it('selector invalid prefix #4', function () {
             return transform(`
@@ -63,6 +62,33 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
     }
 }
 `, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(``));
+        });
+
+        it('prefixed properties #4', function () {
+            return transform(`
+
+@media screen {
+        
+:root {
+
+  --color: red;
+  }
+    .foo:-webkit-any-link {
+            height: calc(100px * 2/ 15);
+            -webkit-appearance: none;;
+  -moz-window-shadow: menu;
+    }
+}
+`, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
+ :root {
+  --color: red
+ }
+ .foo:-webkit-any-link {
+  height: calc(40px/3);
+  appearance: none;
+  -moz-window-shadow: menu
+ }
+}`));
         });
 
     });

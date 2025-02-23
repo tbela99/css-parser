@@ -567,21 +567,15 @@ export declare interface MediaFeatureToken extends BaseToken {
     val: string;
 }
 
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
 export declare interface MediaFeatureOnlyToken extends BaseToken {
 
     typ: EnumToken.MediaFeatureOnlyTokenType,
-    val: Token;
-}
-
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
-    val: Token;
-}
-
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
     val: Token;
 }
 
@@ -861,6 +855,7 @@ export declare interface AstKeyFrameRule extends BaseToken {
     chi: Array<AstDeclaration | AstComment>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
+    tokens?: Token[]
 }
 
 export declare type RawSelectorTokens = string[][];
@@ -1060,6 +1055,7 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     minify?: boolean;
+    beautify?: boolean;
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
@@ -1073,7 +1069,6 @@ export declare interface RenderOptions {
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
-
 }
 
 export declare interface TransformOptions extends ParserOptions, RenderOptions {

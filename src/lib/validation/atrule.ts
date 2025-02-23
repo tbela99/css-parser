@@ -4,8 +4,10 @@ import {EnumToken, ValidationLevel} from "../ast";
 import {getParsedSyntax, getSyntaxConfig} from "./config";
 import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 import {
+    validateAtRuleContainer,
     validateAtRuleCounterStyle,
     validateAtRuleDocument,
+    validateAtRuleElse,
     validateAtRuleFontFeatureValues,
     validateAtRuleImport,
     validateAtRuleKeyframes,
@@ -14,8 +16,10 @@ import {
     validateAtRuleNamespace,
     validateAtRulePage,
     validateAtRulePageMarginBox,
-    validateAtRuleSupports
+    validateAtRuleSupports,
+    validateAtRuleWhen
 } from "./at-rules";
+import {validateAtRuleCustomMedia} from "./at-rules/custom-media";
 
 export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationResult {
 
@@ -82,9 +86,29 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
         return validateAtRuleNamespace(atRule, options, root);
     }
 
+    if (atRule.nam == 'when') {
+
+        return validateAtRuleWhen(atRule, options, root);
+    }
+
+    if (atRule.nam == 'else') {
+
+        return validateAtRuleElse(atRule, options, root);
+    }
+
+    if (atRule.nam == 'container') {
+
+        return validateAtRuleContainer(atRule, options, root);
+    }
+
     if (atRule.nam == 'document') {
 
         return validateAtRuleDocument(atRule, options, root);
+    }
+
+    if (atRule.nam == 'custom-media') {
+
+        return validateAtRuleCustomMedia(atRule, options, root);
     }
 
     if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {

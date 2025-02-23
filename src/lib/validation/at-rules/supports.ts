@@ -17,7 +17,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: 'expected supports query list',
             tokens: []
         } as ValidationSyntaxResult;
@@ -42,7 +42,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: 'expected at-rule body',
             tokens: []
         }
@@ -53,7 +53,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
         valid: ValidationLevel.Valid,
         matches: [],
         node: atRule,
-        syntax: '@supports',
+        syntax: '@' + atRule.nam,
         error: '',
         tokens: []
     }
@@ -70,7 +70,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                 valid: ValidationLevel.Drop,
                 matches: [],
                 node: tokens[0] ?? atRule,
-                syntax: '@supports',
+                syntax: '@' + atRule.nam,
                 error: 'unexpected token',
                 tokens: []
             } as ValidationSyntaxResult;
@@ -116,7 +116,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                         valid: ValidationLevel.Drop,
                         matches: [],
                         node: tokens[0] ?? previousToken ?? atRule,
-                        syntax: '@supports',
+                        syntax: '@' + atRule.nam,
                         error: 'expected whitespace',
                         tokens: []
                     }
@@ -130,7 +130,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'expected and/or',
                     tokens: []
                 }
@@ -143,7 +143,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'expected supports-condition',
                     tokens: []
                 }
@@ -158,7 +158,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                     valid: ValidationLevel.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
-                    syntax: '@supports',
+                    syntax: '@' + atRule.nam,
                     error: 'expected whitespace',
                     tokens: []
                 }
@@ -176,14 +176,14 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         return validateSupportCondition(atRule, token.val);
     }
 
-    if (token.typ != EnumToken.ParensTokenType) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes(token.val))) {
 
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
             node: token,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: 'expected supports condition-in-parens',
             tokens: []
         };
@@ -202,7 +202,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
             valid: ValidationLevel.Valid,
             matches: [],
             node: null,
-            syntax: '@supports',
+            syntax: '@' + atRule.nam,
             error: '',
             tokens: []
         };
