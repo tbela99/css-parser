@@ -1,6 +1,6 @@
 function clickHandler(event) {
 
-    if (event.target.classList.contains('e') || event.target.tagName === 'A') {
+    if (event.target.matches('.e,.property') || event.target.tagName === 'A') {
 
         const parentLi = event.target.closest('li');
 
