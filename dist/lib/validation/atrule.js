@@ -5,7 +5,7 @@ import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import '../parser/utils/config.js';
-import { getParsedSyntax, getSyntaxConfig } from './config.js';
+import { getSyntaxConfig, getParsedSyntax } from './config.js';
 import { validateAtRuleMedia } from './at-rules/media.js';
 import { validateAtRuleCounterStyle } from './at-rules/counter-style.js';
 import { validateAtRulePage } from './at-rules/page.js';
@@ -17,6 +17,10 @@ import { validateAtRuleFontFeatureValues } from './at-rules/font-feature-values.
 import { validateAtRuleNamespace } from './at-rules/namespace.js';
 import { validateAtRuleDocument } from './at-rules/document.js';
 import { validateAtRuleKeyframes } from './at-rules/keyframes.js';
+import { validateAtRuleWhen } from './at-rules/when.js';
+import { validateAtRuleElse } from './at-rules/else.js';
+import { validateAtRuleContainer } from './at-rules/container.js';
+import { validateAtRuleCustomMedia } from './at-rules/custom-media.js';
 
 function validateAtRule(atRule, options, root) {
     if (atRule.nam == 'charset') {
@@ -60,8 +64,20 @@ function validateAtRule(atRule, options, root) {
     if (atRule.nam == 'namespace') {
         return validateAtRuleNamespace(atRule);
     }
+    if (atRule.nam == 'when') {
+        return validateAtRuleWhen(atRule);
+    }
+    if (atRule.nam == 'else') {
+        return validateAtRuleElse(atRule);
+    }
+    if (atRule.nam == 'container') {
+        return validateAtRuleContainer(atRule);
+    }
     if (atRule.nam == 'document') {
         return validateAtRuleDocument(atRule);
+    }
+    if (atRule.nam == 'custom-media') {
+        return validateAtRuleCustomMedia(atRule);
     }
     if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
         if (!('tokens' in atRule)) {
@@ -132,15 +148,14 @@ function validateAtRule(atRule, options, root) {
         }
     }
     if (!(name in config.atRules)) {
-        //     if (root?.typ == EnumToken.AtRuleNodeType) {
-        //
-        //         const syntaxes: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
-        //
-        //         if ('chi' in syntaxes) {
-        //
-        //             return validateSyntax(syntaxes.chi as ValidationToken[], [atRule], root, options);
-        //         }
-        //     }
+        if (options.lenient) {
+            return {
+                valid: ValidationLevel.Lenient,
+                node: atRule,
+                syntax: null,
+                error: ''
+            };
+        }
         return {
             valid: ValidationLevel.Drop,
             node: atRule,

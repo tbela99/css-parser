@@ -5,7 +5,7 @@ import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import { expandHexValue } from './hex.js';
-import { hwb2srgb, hslvalues, hsl2srgbvalues, cmyk2srgb, oklab2srgb, oklch2srgb, lab2srgb, lch2srgb } from './srgb.js';
+import { hslvalues, hsl2srgbvalues, hwb2srgb, cmyk2srgb, oklab2srgb, oklch2srgb, lab2srgb, lch2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 

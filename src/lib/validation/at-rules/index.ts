@@ -9,3 +9,6 @@ export * from './font-feature-values';
 export * from './namespace';
 export * from './document';
 export * from './keyframes';
+export * from './when';
+export * from './else';
+export * from './container';

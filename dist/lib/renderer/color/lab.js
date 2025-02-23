@@ -1,7 +1,7 @@
 import { e, k, D50 } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { srgb2xyz, xyzd502srgb } from './xyz.js';
-import { hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, oklch2srgb } from './srgb.js';
+import { oklch2srgb, hwb2srgb, hsl2srgb, rgb2srgb, hex2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
 import { OKLab_to_XYZ, getOKLABComponents } from './oklab.js';
 import { getNumber } from './color.js';

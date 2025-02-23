@@ -1,4 +1,4 @@
-import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, isIdentStart, mathFuncs, isColor, mediaTypes } from '../syntax/syntax.js';
+import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -13,6 +13,7 @@ import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
 import { validateSelector } from '../validation/selector.js';
 import { validateAtRule } from '../validation/atrule.js';
+import '../validation/syntaxes/complex-selector.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -29,51 +30,14 @@ const enumTokenHints = new Set([
     EnumToken.StartMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DashMatchTokenType, EnumToken.ContainMatchTokenType,
     EnumToken.EOFTokenType
 ]);
-const webkitPseudoAliasMap = {
-    '-webkit-autofill': 'autofill',
-    '-webkit-any': 'is',
-    '-moz-any': 'is',
-    '-webkit-border-after': 'border-block-end',
-    '-webkit-border-after-color': 'border-block-end-color',
-    '-webkit-border-after-style': 'border-block-end-style',
-    '-webkit-border-after-width': 'border-block-end-width',
-    '-webkit-border-before': 'border-block-start',
-    '-webkit-border-before-color': 'border-block-start-color',
-    '-webkit-border-before-style': 'border-block-start-style',
-    '-webkit-border-before-width': 'border-block-start-width',
-    '-webkit-border-end': 'border-inline-end',
-    '-webkit-border-end-color': 'border-inline-end-color',
-    '-webkit-border-end-style': 'border-inline-end-style',
-    '-webkit-border-end-width': 'border-inline-end-width',
-    '-webkit-border-start': 'border-inline-start',
-    '-webkit-border-start-color': 'border-inline-start-color',
-    '-webkit-border-start-style': 'border-inline-start-style',
-    '-webkit-border-start-width': 'border-inline-start-width',
-    '-webkit-box-align': 'align-items',
-    '-webkit-box-direction': 'flex-direction',
-    '-webkit-box-flex': 'flex-grow',
-    '-webkit-box-lines': 'flex-flow',
-    '-webkit-box-ordinal-group': 'order',
-    '-webkit-box-orient': 'flex-direction',
-    '-webkit-box-pack': 'justify-content',
-    '-webkit-column-break-after': 'break-after',
-    '-webkit-column-break-before': 'break-before',
-    '-webkit-column-break-inside': 'break-inside',
-    '-webkit-font-feature-settings': 'font-feature-settings',
-    '-webkit-hyphenate-character': 'hyphenate-character',
-    '-webkit-initial-letter': 'initial-letter',
-    '-webkit-margin-end': 'margin-block-end',
-    '-webkit-margin-start': 'margin-block-start',
-    '-webkit-padding-after': 'padding-block-end',
-    '-webkit-padding-before': 'padding-block-start',
-    '-webkit-padding-end': 'padding-inline-end',
-    '-webkit-padding-start': 'padding-inline-start',
-    '-webkit-min-device-pixel-ratio': 'min-resolution',
-    '-webkit-max-device-pixel-ratio': 'max-resolution'
-};
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
 }
+/**
+ * parse css string
+ * @param iterator
+ * @param options
+ */
 async function doParse(iterator, options = {}) {
     if (options.signal != null) {
         options.signal.addEventListener('abort', reject);
@@ -95,6 +59,7 @@ async function doParse(iterator, options = {}) {
         setParent: true,
         removePrefix: false,
         validation: true,
+        lenient: true,
         ...options
     };
     if (options.expandNestingRules) {
@@ -133,9 +98,10 @@ async function doParse(iterator, options = {}) {
     }
     const iter = tokenize(iterator);
     let item;
+    const rawTokens = [];
     while (item = iter.next().value) {
         stats.bytesIn = item.bytesIn;
-        //
+        rawTokens.push(item);
         // doParse error
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
             // bad token
@@ -145,7 +111,8 @@ async function doParse(iterator, options = {}) {
             tokens.push(item);
         }
         if (item.token == ';' || item.token == '{') {
-            let node = await parseNode(tokens, context, stats, options, errors, src, map);
+            let node = await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
             if (node != null) {
                 // @ts-ignore
                 stack.push(node);
@@ -171,7 +138,8 @@ async function doParse(iterator, options = {}) {
             map = new Map;
         }
         else if (item.token == '}') {
-            await parseNode(tokens, context, stats, options, errors, src, map);
+            await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            rawTokens.length = 0;
             const previousNode = stack.pop();
             // @ts-ignore
             context = stack[stack.length - 1] ?? ast;
@@ -194,7 +162,8 @@ async function doParse(iterator, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        await parseNode(tokens, context, stats, options, errors, src, map);
+        await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+        rawTokens.length = 0;
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
             const index = context.chi.findIndex(node => node == context);
             if (index > -1) {
@@ -206,6 +175,7 @@ async function doParse(iterator, options = {}) {
         const previousNode = stack.pop();
         // @ts-ignore
         context = stack[stack.length - 1] ?? ast;
+        // remove empty nodes
         // @ts-ignore
         if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
             // @ts-ignore
@@ -258,33 +228,6 @@ async function doParse(iterator, options = {}) {
             minify(ast, options, true, errors, false);
         }
     }
-    // if (options.setParent) {
-    //
-    //     const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
-    //     let node: AstNode;
-    //
-    //     while ((node = nodes.shift()!)) {
-    //
-    //         // @ts-ignore
-    //         if (node.chi.length > 0) {
-    //
-    //             // @ts-ignore
-    //             for (const child of node.chi) {
-    //
-    //                 if (child.parent != node) {
-    //
-    //                     Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
-    //                 }
-    //
-    //                 if ('chi' in child && child.chi.length > 0) {
-    //
-    //                     // @ts-ignore
-    //                     nodes.push(<AstRule | AstAtRule>child);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
     const endTime = performance.now();
     if (options.signal != null) {
         options.signal.removeEventListener('abort', reject);
@@ -301,7 +244,17 @@ async function doParse(iterator, options = {}) {
         }
     };
 }
-async function parseNode(results, context, stats, options, errors, src, map) {
+function getLastNode(context) {
+    let i = context.chi.length;
+    while (i--) {
+        if ([EnumToken.CommentTokenType, EnumToken.CDOCOMMTokenType, EnumToken.WhitespaceTokenType].includes(context.chi[i].typ)) {
+            continue;
+        }
+        return context.chi[i];
+    }
+    return null;
+}
+async function parseNode(results, context, stats, options, errors, src, map, rawTokens) {
     let tokens = [];
     for (const t of results) {
         const node = getTokenType(t.token, t.hint);
@@ -356,24 +309,6 @@ async function parseNode(results, context, stats, options, errors, src, map) {
     if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
         const atRule = tokens.shift();
         const position = map.get(atRule);
-        // if (atRule.val == 'charset') {
-        //
-        //     if (context.typ  != EnumToken.StyleSheetNodeType || context.chi.some(t => t.typ != EnumToken.CDOCOMMTokenType && t.typ != EnumToken.CommentNodeType)) {
-        //
-        //         errors.push({
-        //             action: 'drop',
-        //             message: 'doParse: invalid @charset',
-        //             location: {src, ...position}
-        //         });
-        //
-        //         return null;
-        //     }
-        //
-        //     if (options.removeCharset) {
-        //
-        //         return null;
-        //     }
-        // }
         // @ts-ignore
         while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
             tokens.shift();
@@ -470,8 +405,43 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         // https://www.w3.org/TR/css-nesting-1/#conditionals
         // allowed nesting at-rules
         // there must be a top level rule in the stack
-        if (atRule.val == 'charset' && options.removeCharset) {
-            return null;
+        if (atRule.val == 'charset') {
+            let spaces = 0;
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
+            for (let k = 1; k < rawTokens.length; k++) {
+                if (rawTokens[k].hint == EnumToken.WhitespaceTokenType) {
+                    spaces += rawTokens[k].len;
+                    continue;
+                }
+                if (rawTokens[k].hint == EnumToken.CommentTokenType) {
+                    continue;
+                }
+                if (rawTokens[k].hint == EnumToken.CDOCOMMTokenType) {
+                    continue;
+                }
+                if (spaces > 1) {
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset must have only one space',
+                        // @ts-ignore
+                        location: { src, ...(map.get(atRule) ?? position) }
+                    });
+                    return null;
+                }
+                if (rawTokens[k].hint != EnumToken.StringTokenType || rawTokens[k].token[0] != '"') {
+                    errors.push({
+                        action: 'drop',
+                        message: '@charset expects a "<charset>"',
+                        // @ts-ignore
+                        location: { src, ...(map.get(atRule) ?? position) }
+                    });
+                    return null;
+                }
+                break;
+            }
+            if (options.removeCharset) {
+                return null;
+            }
         }
         const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }), atRule);
         const raw = t.reduce((acc, curr) => {
@@ -499,10 +469,35 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             node.loc = loc;
         }
         if (options.validation) {
-            const valid = validateAtRule(node, options, context);
+            let isValid = true;
+            if (node.nam == 'else') {
+                const prev = getLastNode(context);
+                if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes(prev.nam)) {
+                    if (prev.nam == 'else') {
+                        isValid = Array.isArray(prev.tokens) && prev.tokens.length > 0;
+                    }
+                }
+                else {
+                    isValid = false;
+                }
+            }
+            const valid = isValid ? validateAtRule(node, options, context) : {
+                valid: ValidationLevel.Drop,
+                node,
+                syntax: '@' + node.nam,
+                error: '@' + node.nam + ' not allowed here'};
             if (valid.valid == ValidationLevel.Drop) {
+                errors.push({
+                    action: 'drop',
+                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                    // @ts-ignore
+                    location: { src, ...(map.get(valid.node) ?? position) }
+                });
                 // @ts-ignore
                 node.typ = EnumToken.InvalidAtRuleTokenType;
+            }
+            else {
+                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false, removeComments: true }), '');
             }
         }
         // @ts-ignore
@@ -682,7 +677,24 @@ async function parseNode(results, context, stats, options, errors, src, map) {
             };
             const result = parseDeclarationNode(node, errors, src, position);
             if (result != null) {
-                if (options.validation) ;
+                // if (options.validation) {
+                //
+                //     const valid: ValidationResult = validateDeclaration(result, options, context);
+                //
+                //     console.error({valid});
+                //
+                //     if (valid.valid == ValidationLevel.Drop) {
+                //
+                //         errors.push({
+                //             action: 'drop',
+                //             message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                //             // @ts-ignore
+                //             location: {src, ...(map.get(valid.node) ?? position)}
+                //         });
+                //
+                //         return null;
+                //     }
+                // }
                 // @ts-ignore
                 context.chi.push(result);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
@@ -691,6 +703,11 @@ async function parseNode(results, context, stats, options, errors, src, map) {
         }
     }
 }
+/**
+ * parse at-rule prelude
+ * @param tokens
+ * @param atRule
+ */
 function parseAtRulePrelude(tokens, atRule) {
     // @ts-ignore
     for (const { value, parent } of walkValues(tokens, null, null, true)) {
@@ -759,17 +776,18 @@ function parseAtRulePrelude(tokens, atRule) {
                 continue;
             }
         }
-        if (value.typ == EnumToken.ParensTokenType) {
+        if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
             // @todo parse range and declarations
             // parseDeclaration(parent.chi);
             let i;
             let nameIndex = -1;
             let valueIndex = -1;
+            const dashedIdent = value.typ == EnumToken.FunctionTokenType && value.val == 'style';
             for (let i = 0; i < value.chi.length; i++) {
                 if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
                     continue;
                 }
-                if (value.chi[i].typ == EnumToken.IdenTokenType) {
+                if ((dashedIdent && value.chi[i].typ == EnumToken.DashedIdenTokenType) || value.chi[i].typ == EnumToken.IdenTokenType || value.chi[i].typ == EnumToken.FunctionTokenType || value.chi[i].typ == EnumToken.ColorTokenType) {
                     nameIndex = i;
                 }
                 break;
@@ -798,6 +816,13 @@ function parseAtRulePrelude(tokens, atRule) {
                 ].includes(value.chi[valueIndex].typ)) {
                     const val = value.chi.splice(valueIndex, 1)[0];
                     const node = value.chi.splice(nameIndex, 1)[0];
+                    // 'background'
+                    // @ts-ignore
+                    if (node.typ == EnumToken.ColorTokenType && node.kin == 'dpsys') {
+                        // @ts-ignore
+                        delete node.kin;
+                        node.typ = EnumToken.IdenTokenType;
+                    }
                     while (value.chi[0]?.typ == EnumToken.WhitespaceTokenType) {
                         value.chi.shift();
                     }
@@ -815,6 +840,10 @@ function parseAtRulePrelude(tokens, atRule) {
     }
     return tokens;
 }
+/**
+ * parse selector
+ * @param tokens
+ */
 function parseSelector(tokens) {
     for (const { value, previousValue, nextValue, parent } of walkValues(tokens)) {
         if (value.typ == EnumToken.CommentTokenType ||
@@ -958,6 +987,11 @@ function parseSelector(tokens) {
 //
 //     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
 // }
+/**
+ * parse string
+ * @param src
+ * @param options
+ */
 function parseString(src, options = { location: false }) {
     return parseTokens([...tokenize(src)].map(t => {
         const token = getTokenType(t.token, t.hint);
@@ -1039,7 +1073,7 @@ function getTokenType(val, hint) {
                 chi: []
             };
         }
-        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade', 'paint'].includes(val)) {
             return {
                 typ: EnumToken.ImageFunctionTokenType,
                 val,
@@ -1139,6 +1173,11 @@ function getTokenType(val, hint) {
         val
     };
 }
+/**
+ * parse token list
+ * @param tokens
+ * @param options
+ */
 function parseTokens(tokens, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];
@@ -1474,4 +1513,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, parseSelector, parseString, parseTokens, urlTokenMatcher };

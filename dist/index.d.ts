@@ -120,6 +120,15 @@ declare enum EnumToken {
     TimelineFunction = 16
 }
 
+/**
+ * minify ast
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ * @param context
+ */
 declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
     [key: string]: any;
 }): AstNode;
@@ -128,22 +137,56 @@ declare enum WalkerValueEvent {
     Enter = 0,
     Leave = 1
 }
+/**
+ * walk ast nodes
+ * @param node
+ * @param filter
+ */
 declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
+/**
+ * walk ast values
+ * @param values
+ * @param root
+ * @param filter
+ * @param reverse
+ */
 declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
     event: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
 }, reverse?: boolean): Generator<WalkAttributesResult>;
 
+/**
+ * expand nested css ast
+ * @param ast
+ */
 declare function expand(ast: AstNode): AstNode;
 
+/**
+ * render ast token
+ * @param token
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
 declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
+/**
+ * parse string
+ * @param src
+ * @param options
+ */
 declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
+/**
+ * parse token list
+ * @param tokens
+ * @param options
+ */
 declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
 
 export declare interface LiteralToken extends BaseToken {
@@ -567,21 +610,15 @@ export declare interface MediaFeatureToken extends BaseToken {
     val: string;
 }
 
+export declare interface MediaFeatureNotToken extends BaseToken {
+
+    typ: EnumToken.MediaFeatureNotTokenType,
+    val: Token;
+}
+
 export declare interface MediaFeatureOnlyToken extends BaseToken {
 
     typ: EnumToken.MediaFeatureOnlyTokenType,
-    val: Token;
-}
-
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
-    val: Token;
-}
-
-export declare interface MediaFeatureNotToken extends BaseToken {
-
-    typ: EnumToken.MediaFeatureNotTokenType,
     val: Token;
 }
 
@@ -861,6 +898,7 @@ export declare interface AstKeyFrameRule extends BaseToken {
     chi: Array<AstDeclaration | AstComment>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
+    tokens?: Token[]
 }
 
 export declare type RawSelectorTokens = string[][];
@@ -994,6 +1032,7 @@ export declare interface ErrorDescription {
 interface ValidationOptions {
 
     validation?: boolean;
+    lenient?: boolean;
 }
 
 export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
@@ -1044,9 +1083,7 @@ export declare interface MinifyFeature {
 export declare interface MinifyFeature {
 
     ordering: number;
-
     register: (options: MinifyOptions | ParserOptions) => void;
-
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
     }) => void;
@@ -1060,6 +1097,7 @@ export declare interface ResolvedPath {
 export declare interface RenderOptions {
 
     minify?: boolean;
+    beautify?: boolean;
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
@@ -1073,7 +1111,6 @@ export declare interface RenderOptions {
     cwd?: string;
     load?: (url: string, currentUrl: string) => Promise<string>;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => ResolvedPath;
-
 }
 
 export declare interface TransformOptions extends ParserOptions, RenderOptions {

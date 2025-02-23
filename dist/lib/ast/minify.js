@@ -2,10 +2,10 @@ import { parseString } from '../parser/parse.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';
-import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
+import { isIdent, isFunction, isWhiteSpace, isIdentStart } from '../syntax/syntax.js';
 import '../parser/utils/config.js';
 import { eq } from '../parser/utils/eq.js';
-import { renderToken, doRender } from '../renderer/render.js';
+import { doRender, renderToken } from '../renderer/render.js';
 import * as index from './features/index.js';
 
 const combinators = ['+', '>', '~', '||', '|'];
@@ -13,6 +13,15 @@ const definedPropertySettings = { configurable: true, enumerable: false, writabl
 const notEndingWith = ['(', '['].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
+/**
+ * minify ast
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ * @param context
+ */
 function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
     if (!('nodes' in context)) {
         context.nodes = new Set;
@@ -82,7 +91,8 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                 continue;
             }
             if (node.typ == EnumToken.AtRuleNodeType) {
-                if (node.nam == 'media' && node.val == 'all') {
+                // @ts-ignore
+                if (node.nam == 'media' && ['all', '', null].includes(node.val)) {
                     // @ts-ignore
                     ast.chi?.splice(i, 1, ...node.chi);
                     i--;
@@ -397,6 +407,18 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     }
     return ast;
 }
+function hasDeclaration(node) {
+    // @ts-ignore
+    for (let i = 0; i < node.chi?.length; i++) {
+        // @ts-ignore
+        if (node.chi[i].typ == EnumToken.CommentNodeType) {
+            continue;
+        }
+        // @ts-ignore
+        return node.chi[i].typ == EnumToken.DeclarationNodeType;
+    }
+    return true;
+}
 function reduceSelector(selector) {
     if (selector.length == 0) {
         return null;
@@ -497,18 +519,10 @@ function reduceSelector(selector) {
         reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
     };
 }
-function hasDeclaration(node) {
-    // @ts-ignore
-    for (let i = 0; i < node.chi?.length; i++) {
-        // @ts-ignore
-        if (node.chi[i].typ == EnumToken.CommentNodeType) {
-            continue;
-        }
-        // @ts-ignore
-        return node.chi[i].typ == EnumToken.DeclarationNodeType;
-    }
-    return true;
-}
+/**
+ * split selector string
+ * @param buffer
+ */
 function splitRule(buffer) {
     const result = [[]];
     let str = '';
@@ -995,4 +1009,4 @@ function reduceRuleSelector(node) {
     }
 }
 
-export { combinators, definedPropertySettings, hasDeclaration, matchSelectors, minify, reduceSelector, splitRule };
+export { combinators, definedPropertySettings, minify, splitRule };

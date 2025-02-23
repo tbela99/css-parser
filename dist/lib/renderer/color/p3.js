@@ -1,4 +1,4 @@
-import { xyz2srgb, srgb2lsrgbvalues, lsrgb2srgbvalues } from './srgb.js';
+import { xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';

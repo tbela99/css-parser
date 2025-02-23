@@ -41,6 +41,7 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["DeclarationDefinitionToken"] = 37] = "DeclarationDefinitionToken";
     ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 38] = "SemiColon";
     ValidationTokenEnum[ValidationTokenEnum["Character"] = 39] = "Character";
+    ValidationTokenEnum[ValidationTokenEnum["ColumnArrayToken"] = 40] = "ColumnArrayToken";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
 var ValidationSyntaxGroupEnum;
 (function (ValidationSyntaxGroupEnum) {

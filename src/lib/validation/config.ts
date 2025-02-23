@@ -1,6 +1,6 @@
 import config from './config.json' with {type: 'json'};
-import type {ValidationConfiguration} from "../../@types/validation";
-import {parseSyntax, renderSyntax, ValidationSyntaxGroupEnum, ValidationToken, walkValidationToken} from "./parser";
+import type {ValidationConfiguration, ValidationSyntaxNode} from "../../@types/validation";
+import {parseSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
 
 const parsedSyntaxes = new Map<string, ValidationToken[]>();
 
@@ -11,38 +11,46 @@ export function getSyntaxConfig(): ValidationConfiguration {
     return config as ValidationConfiguration;
 }
 
-export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string): null | ValidationToken[] {
+export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] {
 
-    if (!(key in config[group])) {
+    // @ts-ignore
+    let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
 
-        const matches: RegExpMatchArray = key.match(/(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
+    const keys: string[] = Array.isArray(key) ? key : [key];
 
-        if (matches != null) {
+    for (let i = 0; i < keys.length; i++) {
 
-            key = matches[1] + matches[3];
+        key = keys[i];
+
+        if (!(key in obj)) {
+
+            if ((i == 0 && key.charAt(0) == '@') || key.charAt(0) == '-') {
+
+                const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
+
+                if (matches != null) {
+
+                    key = matches[1] + matches[3];
+                }
+            }
+
+            if (!(key in obj)) {
+
+                return null;
+            }
         }
 
-        if (!(key in config[group])) {
-
-            return null;
-        }
+        // @ts-ignore
+        obj = obj[key];
     }
 
-    const index: string = group + '.' + key;
+    const index: string = group + '.' + keys.join('.');
 
     // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
 
         // @ts-ignore
-        const syntax = parseSyntax(config[group][key].syntax);
-
-        for (const node of syntax.chi as ValidationToken[]) {
-
-            for (const {token, parent} of walkValidationToken(node)) {
-
-                token.text = renderSyntax(token, parent);
-            }
-        }
+        const syntax: ValidationRootToken = parseSyntax(obj.syntax);
 
         // @ts-ignore
         parsedSyntaxes.set(index, syntax.chi);

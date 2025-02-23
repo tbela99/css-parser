@@ -6,6 +6,10 @@ import { renderToken } from '../renderer/render.js';
 import '../renderer/color/utils/constants.js';
 import '../parser/utils/config.js';
 
+/**
+ * expand nested css ast
+ * @param ast
+ */
 function expand(ast) {
     //
     if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
@@ -50,7 +54,7 @@ function expand(ast) {
     }
     return result;
 }
-function expandRule(node, parent) {
+function expandRule(node) {
     const ast = { ...node, chi: node.chi.slice() };
     const result = [];
     if (ast.typ == EnumToken.RuleNodeType) {
@@ -155,7 +159,10 @@ function expandRule(node, parent) {
                     if (astAtRule.val.includes('&')) {
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
-                    astAtRule = expand(astAtRule);
+                    const slice = astAtRule.chi.slice().filter(t => t.typ == EnumToken.RuleNodeType && t.sel.includes('&'));
+                    if (slice.length > 0) {
+                        expandRule({ ...node, chi: astAtRule.chi.slice() });
+                    }
                 }
                 else {
                     // @ts-ignore
@@ -194,6 +201,11 @@ function expandRule(node, parent) {
     // @ts-ignore
     return ast.chi.length > 0 ? [ast].concat(result) : result;
 }
+/**
+ * replace compound selector
+ * @param input
+ * @param replace
+ */
 function replaceCompound(input, replace) {
     const tokens = parseString(input);
     let replacement = null;

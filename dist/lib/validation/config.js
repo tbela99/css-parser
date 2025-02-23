@@ -1,6 +1,6 @@
 import config from './config.json.js';
 import './parser/types.js';
-import { parseSyntax, walkValidationToken, renderSyntax } from './parser/parse.js';
+import { parseSyntax } from './parser/parse.js';
 
 const parsedSyntaxes = new Map();
 Object.freeze(config);
@@ -9,25 +9,30 @@ function getSyntaxConfig() {
     return config;
 }
 function getParsedSyntax(group, key) {
-    if (!(key in config[group])) {
-        const matches = key.match(/(@?)(-[a-zA-Z]+)-(.*?)$/);
-        if (matches != null) {
-            key = matches[1] + matches[3];
+    // @ts-ignore
+    let obj = config[group];
+    const keys = Array.isArray(key) ? key : [key];
+    for (let i = 0; i < keys.length; i++) {
+        key = keys[i];
+        if (!(key in obj)) {
+            if ((i == 0 && key.charAt(0) == '@') || key.charAt(0) == '-') {
+                const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
+                if (matches != null) {
+                    key = matches[1] + matches[3];
+                }
+            }
+            if (!(key in obj)) {
+                return null;
+            }
         }
-        if (!(key in config[group])) {
-            return null;
-        }
+        // @ts-ignore
+        obj = obj[key];
     }
-    const index = group + '.' + key;
+    const index = group + '.' + keys.join('.');
     // @ts-ignore
     if (!parsedSyntaxes.has(index)) {
         // @ts-ignore
-        const syntax = parseSyntax(config[group][key].syntax);
-        for (const node of syntax.chi) {
-            for (const { token, parent } of walkValidationToken(node)) {
-                token.text = renderSyntax(token);
-            }
-        }
+        const syntax = parseSyntax(obj.syntax);
         // @ts-ignore
         parsedSyntaxes.set(index, syntax.chi);
     }

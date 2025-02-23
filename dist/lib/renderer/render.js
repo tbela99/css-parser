@@ -41,17 +41,27 @@ function update(position, str) {
         }
     }
 }
+/**
+ * render ast
+ * @param data
+ * @param options
+ */
 function doRender(data, options = {}) {
+    const minify = options.minify ?? true;
+    const beautify = options.beautify ?? !minify;
     options = {
-        ...(options.minify ?? true ? {
+        ...(beautify ? {
+            indent: ' ',
+            newLine: '\n',
+        } : {
             indent: '',
             newLine: '',
+        }),
+        ...(minify ? {
             removeEmpty: true,
             removeComments: true
         } : {
-            indent: ' ',
-            newLine: '\n',
-            compress: false,
+            removeEmpty: false,
             removeComments: false,
         }), sourcemap: false, convertColor: true, expandNestingRules: false, preserveLicense: false, ...options
     };
@@ -119,7 +129,18 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
     }
     update(position, str);
 }
-// @ts-ignore
+/**
+ * render ast node
+ * @param data
+ * @param options
+ * @param sourcemap
+ * @param position
+ * @param errors
+ * @param reducer
+ * @param cache
+ * @param level
+ * @param indents
+ */
 function renderAstNode(data, options, sourcemap, position, errors, reducer, cache, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
@@ -212,8 +233,15 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             // return renderToken(data as Token, options, cache, reducer, errors);
             throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
     }
-    return '';
 }
+/**
+ * render ast token
+ * @param token
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
 function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
     if (reducer == null) {
         reducer = function (acc, curr) {

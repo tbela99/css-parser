@@ -222,7 +222,7 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 }`));
         });
 
-        it('relative color calc( and var() #25', function () {
+        it('relative color calc() and var() #25', function () {
             return parse(`
 :root {
 --color: green;
@@ -242,7 +242,7 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 }`));
         });
 
-        it('relative color calc( and var() #26', function () {
+        it('relative color calc() and var() #26', function () {
             return parse(`
 :root {
   --color: 255 0 0;

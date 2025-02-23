@@ -1,5 +1,34 @@
 # Changelog
 
+# v0.9.0
+
+validation
+- [x] validate invalid pseudo classes
+- [x] rewrite selector validation
+- [ ] lenient mode that preserves 
+  - [ ] unknown at-rules
+  - [ ] unknown declarations 
+  - [ ] unknown pseudo classes
+
+media query level 5
+- [x] at-rule custom-media
+- [x] at-rule when-else custom media
+- [x] at-rule charset validation
+- [x] media query error handling
+- [x] at-rule container
+- [ ] expand at-rule custom-media
+- [ ] expand at-rule when-else
+
+selector validation
+- [ ] pseudo class arguments validation
+- [ ] pseudo class validation
+
+declaration validation
+- [ ] validate declaration
+
+error validation
+- [ ] when a parent is marked as invalid node, do not parse or validate descendant nodes
+
 # v0.8.0
 
 - [x] validate selectors using mdn data
