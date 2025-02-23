@@ -7,7 +7,7 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 
-function validateKeyframeSelector(tokens, atRule) {
+function validateKeyframeSelector(tokens, atRule, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         // @ts-ignore

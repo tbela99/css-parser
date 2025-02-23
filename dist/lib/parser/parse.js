@@ -59,6 +59,7 @@ async function doParse(iterator, options = {}) {
         setParent: true,
         removePrefix: false,
         validation: true,
+        lenient: true,
         ...options
     };
     if (options.expandNestingRules) {

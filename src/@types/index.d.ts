@@ -39,6 +39,7 @@ export declare interface MinifyFeature {
 export interface ValidationOptions {
 
     validation?: boolean;
+    lenient?: boolean;
 }
 
 export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
@@ -78,9 +79,7 @@ export declare interface MinifyOptions extends ParserOptions {
 export declare interface MinifyFeature {
 
     ordering: number;
-
     register: (options: MinifyOptions | ParserOptions) => void;
-
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
     }) => void;

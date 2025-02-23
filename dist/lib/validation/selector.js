@@ -15,7 +15,7 @@ import { validateSelectorList } from './syntaxes/selector-list.js';
 
 function validateSelector(selector, options, root) {
     if (root == null) {
-        return validateSelectorList(selector, root);
+        return validateSelectorList(selector, root, options);
     }
     // @ts-ignore
     if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
@@ -28,14 +28,14 @@ function validateSelector(selector, options, root) {
             isNested++;
             if (isNested > 0) {
                 // @ts-ignore
-                return validateRelativeSelectorList(selector, root, { nestedSelector: true });
+                return validateRelativeSelectorList(selector, root, { ...(options ?? {}), nestedSelector: true });
             }
         }
         currentRoot = currentRoot.parent;
     }
     const nestedSelector = isNested > 0;
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, { nestedSelector }) : validateSelectorList(selector, root, { nestedSelector });
+    return nestedSelector ? validateRelativeSelectorList(selector, root, { ...(options ?? {}), nestedSelector }) : validateSelectorList(selector, root, { ...(options ?? {}), nestedSelector });
 }
 
 export { validateSelector };

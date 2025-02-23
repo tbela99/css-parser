@@ -148,15 +148,14 @@ function validateAtRule(atRule, options, root) {
         }
     }
     if (!(name in config.atRules)) {
-        //     if (root?.typ == EnumToken.AtRuleNodeType) {
-        //
-        //         const syntaxes: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
-        //
-        //         if ('chi' in syntaxes) {
-        //
-        //             return validateSyntax(syntaxes.chi as ValidationToken[], [atRule], root, options);
-        //         }
-        //     }
+        if (options.lenient) {
+            return {
+                valid: ValidationLevel.Lenient,
+                node: atRule,
+                syntax: null,
+                error: ''
+            };
+        }
         return {
             valid: ValidationLevel.Drop,
             node: atRule,

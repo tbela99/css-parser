@@ -7,7 +7,7 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { validateKeyframeSelector } from './keyframe-selector.js';
 
-function validateKeyframeBlockList(tokens, atRule) {
+function validateKeyframeBlockList(tokens, atRule, options) {
     let i = 0;
     let j = 0;
     let result = null;

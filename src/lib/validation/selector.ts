@@ -8,13 +8,13 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
 
     if (root == null) {
 
-        return validateSelectorList(selector, root);
+        return validateSelectorList(selector, root, options);
     }
 
     // @ts-ignore
     if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
 
-        return validateKeyframeBlockList(selector, root);
+        return validateKeyframeBlockList(selector, root, options);
     }
 
     let isNested: number = root.typ == EnumToken.RuleNodeType ? 1 : 0;
@@ -29,7 +29,7 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
             if (isNested > 0) {
 
                 // @ts-ignore
-                return validateRelativeSelectorList(selector, root, {nestedSelector: true});
+                return validateRelativeSelectorList(selector, root, {...(options ?? {}), nestedSelector: true});
             }
         }
 
@@ -39,5 +39,5 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     const nestedSelector: boolean = isNested > 0;
 
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, {nestedSelector}) : validateSelectorList(selector, root, {nestedSelector});
+    return nestedSelector ? validateRelativeSelectorList(selector, root, {...(options ?? {}), nestedSelector}) : validateSelectorList(selector, root, {...(options ?? {}), nestedSelector});
 }

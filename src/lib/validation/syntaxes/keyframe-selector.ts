@@ -1,9 +1,9 @@
-import type {AstNode, Token} from "../../../@types";
+import type {AstNode, Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {consumeWhitespace} from "../utils";
 import {EnumToken, ValidationLevel} from "../../ast";
 
-export function validateKeyframeSelector(tokens: Token[], atRule: AstNode): ValidationSyntaxResult {
+export function validateKeyframeSelector(tokens: Token[], atRule: AstNode, options: ValidationOptions): ValidationSyntaxResult {
 
     consumeWhitespace(tokens);
 

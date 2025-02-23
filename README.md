@@ -164,10 +164,11 @@ Include ParseOptions and RenderOptions
   in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
-> Minify Options
+> Validation Options
 
 - validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the
   selector is validated at this time.
+- lenient: boolean, optional. ignore unknown at-rules, pseudo-classes and declarations.
 
 > Sourcemap Options
 

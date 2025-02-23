@@ -80,15 +80,18 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 !((tokens[0].val + '()') in config.selectors)
             ) {
 
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
+
                     // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unknown pseudo-class: ' + tokens[0].val + '()',
-                    tokens
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val + '()',
+                        tokens
+                    }
                 }
             }
 
@@ -111,15 +114,18 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                     (':' + tokens[0].val) in config.selectors)
             ) {
 
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
+
                     // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unknown pseudo-class: ' + tokens[0].val,
-                    tokens
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val,
+                        tokens
+                    }
                 }
             }
 

@@ -224,8 +224,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
 
-                    /* astAtRule = <AstAtRule> */
-
                     const slice = (astAtRule.chi as AstNode[]).slice().filter(t => t.typ == EnumToken.RuleNodeType && ((t as AstRule).sel as string).includes('&'));
 
                     if (slice.length > 0) {

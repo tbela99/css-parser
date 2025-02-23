@@ -11991,16 +11991,18 @@ function validateCompoundSelector(tokens, root, options) {
             if (!mozExtensions.has(tokens[0].val + '()') &&
                 !webkitExtensions.has(tokens[0].val + '()') &&
                 !((tokens[0].val + '()') in config.selectors)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                     // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unknown pseudo-class: ' + tokens[0].val + '()',
-                    tokens
-                };
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val + '()',
+                        tokens
+                    };
+                }
             }
             match++;
             tokens.shift();
@@ -12016,16 +12018,18 @@ function validateCompoundSelector(tokens, root, options) {
                 !(tokens[0].val in config.selectors) &&
                 !(!isPseudoElement &&
                     (':' + tokens[0].val) in config.selectors)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                     // @ts-ignore
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'unknown pseudo-class: ' + tokens[0].val,
-                    tokens
-                };
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        // @ts-ignore
+                        node: tokens[0],
+                        syntax: null,
+                        error: 'unknown pseudo-class: ' + tokens[0].val,
+                        tokens
+                    };
+                }
             }
             match++;
             tokens.shift();
@@ -12176,356 +12180,6 @@ function validateComplexSelector(tokens, root, options) {
         if (result.valid == ValidationLevel.Drop) {
             return result;
         }
-        //  if (combinatorsTokens.includes(tokens[0].typ)) {
-        //
-        //      // @ts-ignore
-        //      return {
-        //          valid: ValidationLevel.Drop,
-        //          matches: [],
-        //          // @ts-ignore
-        //          node: tokens[0],
-        //          syntax: null,
-        //          error: 'unexpected combinator: ' + JSON.stringify(tokens[0]),
-        //          tokens
-        //      }
-        //  }
-        //
-        //  else if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
-        //
-        //      if (!options?.nestedSelector) {
-        //
-        //          // @ts-ignore
-        //          return {
-        //              valid: ValidationLevel.Drop,
-        //              matches: [],
-        //              // @ts-ignore
-        //              node: tokens[0],
-        //              syntax: null,
-        //              error: 'nested selector not allowed',
-        //              tokens
-        //          }
-        //
-        //          match++;
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //      }
-        //
-        //      while (tokens.length > 0 && tokens[0].typ == EnumToken.NestingSelectorTokenType) {
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //      }
-        //
-        //      if (tokens.length == 0) {
-        //
-        //          break;
-        //      }
-        //  }
-        //
-        // else if (EnumToken.IdenTokenType == tokens[0].typ) {
-        //
-        //      tokens.shift();
-        //      consumeWhitespace(tokens);
-        //
-        //      if (tokens.length == 0) {
-        //
-        //          break;
-        //      }
-        //  }
-        //
-        //  else if (EnumToken.UniversalSelectorTokenType == tokens[0].typ) {
-        //
-        //      tokens.shift();
-        //      consumeWhitespace(tokens);
-        //      continue;
-        //  }
-        //
-        //    while (tokens.length > 0) {
-        //
-        //      if (tokens[0].typ == EnumToken.PseudoClassFuncTokenType) {
-        //
-        //          if (tokens[0].val.startsWith(':-webkit-')) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  // @ts-ignore
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'invalid pseudo-class',
-        //                  tokens
-        //              }
-        //          }
-        //      }
-        //
-        //      if (tokens[0].typ == EnumToken.PseudoClassTokenType) {
-        //
-        //          const isPseudoElement: boolean = tokens[0].val.startsWith('::');
-        //
-        //          if (!mozExtensions.has(tokens[0].val) && !webkitExtensions.has(tokens[0].val) && !(tokens[0].val in config.selectors) && !(!isPseudoElement &&( ':' + tokens[0].val) in config.selectors)) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  // @ts-ignore
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'unknown pseudo-class: ' + tokens[0].val,
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue
-        //      }
-        //
-        //     else if ([
-        //          EnumToken.ClassSelectorTokenType,
-        //          EnumToken.HashTokenType,
-        //          EnumToken.PseudoClassFuncTokenType].includes(tokens[0].typ)) {
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue
-        //      }
-        //
-        //      if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
-        //
-        //          if (!options?.nestedSelector) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  // @ts-ignore
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'nested selector not allowed',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue
-        //      }
-        //
-        //      // validate namespace
-        //      if (tokens[0].typ == EnumToken.NameSpaceAttributeTokenType) {
-        //
-        //          if (!((tokens[0].l == null || tokens[0].l.typ == EnumToken.IdenTokenType || (tokens[0].l.typ == EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
-        //              tokens[0].r.typ == EnumToken.IdenTokenType)) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'expecting wq-name',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue;
-        //      }
-        //      // validate attribute
-        //      else if (tokens[0].typ == EnumToken.AttrTokenType) {
-        //
-        //          const children: Token[] = tokens[0].chi.slice() as Token[];
-        //
-        //          consumeWhitespace(children);
-        //
-        //          if (children.length == 0) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'invalid attribute selector',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          if (![
-        //              EnumToken.IdenTokenType,
-        //              EnumToken.NameSpaceAttributeTokenType,
-        //              EnumToken.MatchExpressionTokenType].includes(children[0].typ)) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'invalid attribute selector',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          if (children[0].typ == EnumToken.MatchExpressionTokenType) {
-        //
-        //              if (![EnumToken.IdenTokenType,
-        //                      EnumToken.NameSpaceAttributeTokenType].includes(children[0].l.typ) ||
-        //                  ![
-        //                      EnumToken.EqualMatchTokenType, EnumToken.DashMatchTokenType,
-        //                      EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
-        //                      EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes(children[0].op.typ) ||
-        //                  ![EnumToken.StringTokenType,
-        //                      EnumToken.IdenTokenType].includes(children[0].r.typ)) {
-        //
-        //                  // @ts-ignore
-        //                  return {
-        //                      valid: ValidationLevel.Drop,
-        //                      matches: [],
-        //                      node: tokens[0],
-        //                      syntax: null,
-        //                      error: 'invalid attribute selector',
-        //                      tokens
-        //                  }
-        //              }
-        //
-        //              if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
-        //
-        //                  // @ts-ignore
-        //                  return {
-        //                      valid: ValidationLevel.Drop,
-        //                      matches: [],
-        //                      node: tokens[0],
-        //                      syntax: null,
-        //                      error: 'invalid attribute selector',
-        //                      tokens
-        //                  }
-        //              }
-        //          }
-        //
-        //          children.shift();
-        //          consumeWhitespace(children);
-        //
-        //          if (children.length > 0) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  node: children[0],
-        //                  syntax: null,
-        //                  error: 'unexpected token',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue;
-        //      }
-        //
-        //      break;
-        //  }
-        //
-        //  if (tokens.length == 0) {
-        //
-        //      break
-        //  }
-        //
-        //  // combinator
-        //  if (!combinatorsTokens.includes(tokens[0].typ)) {
-        //
-        //      if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
-        //
-        //          if (!options?.nestedSelector) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  // @ts-ignore
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'nested selector not allowed',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue
-        //      }
-        //
-        //      if (tokens[0].typ == EnumToken.PseudoClassTokenType) {
-        //
-        //          const isPseudoElement: boolean = tokens[0].val.startsWith('::');
-        //
-        //          if (!(tokens[0].val in config.selectors) && (isPseudoElement && !(!isPseudoElement &&( ':' + tokens[0].val) in config.selectors))) {
-        //
-        //              // @ts-ignore
-        //              return {
-        //                  valid: ValidationLevel.Drop,
-        //                  matches: [],
-        //                  // @ts-ignore
-        //                  node: tokens[0],
-        //                  syntax: null,
-        //                  error: 'unknown pseudo-class',
-        //                  tokens
-        //              }
-        //          }
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue
-        //      }
-        //
-        //
-        //      if (tokens.length > 0 &&
-        //          [
-        //              EnumToken.IdenTokenType,
-        //              EnumToken.AttrTokenType,
-        //              EnumToken.NameSpaceAttributeTokenType,
-        //              EnumToken.ClassSelectorTokenType,
-        //              EnumToken.HashTokenType,
-        //              EnumToken.UniversalSelectorTokenType,
-        //              EnumToken.PseudoClassFuncTokenType,
-        //              EnumToken.PseudoClassFuncTokenType].includes(tokens[0].typ)) {
-        //
-        //          tokens.shift();
-        //          consumeWhitespace(tokens);
-        //          continue
-        //      }
-        //
-        //      // @ts-ignore
-        //      return {
-        //          valid: ValidationLevel.Drop,
-        //          matches: [],
-        //          node: tokens[0],
-        //          syntax: null,
-        //          error: 'expecting combinator or subclass-selector: ' + JSON.stringify(tokens[0]),
-        //          tokens
-        //      }
-        //  }
-        //
-        //  const token = tokens.shift() as Token;
-        //  consumeWhitespace(tokens);
-        //
-        //  if (tokens.length == 0) {
-        //
-        //      // @ts-ignore
-        //      return {
-        //          valid: ValidationLevel.Drop,
-        //          matches: [],
-        //          node: token,
-        //          syntax: null,
-        //          error: 'expected compound-selector',
-        //          tokens
-        //      }
-        //  }
     }
     // @ts-ignore
     return result ?? {
@@ -12642,7 +12296,7 @@ function validateComplexSelectorList(tokens, root, options) {
     };
 }
 
-function validateKeyframeSelector(tokens, atRule) {
+function validateKeyframeSelector(tokens, atRule, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         // @ts-ignore
@@ -12769,7 +12423,7 @@ function validateKeyframeSelector(tokens, atRule) {
     };
 }
 
-function validateKeyframeBlockList(tokens, atRule) {
+function validateKeyframeBlockList(tokens, atRule, options) {
     let i = 0;
     let j = 0;
     let result = null;
@@ -14331,7 +13985,7 @@ const validateSelectorList = validateComplexSelectorList;
 
 function validateSelector(selector, options, root) {
     if (root == null) {
-        return validateSelectorList(selector, root);
+        return validateSelectorList(selector, root, options);
     }
     // @ts-ignore
     if (root.typ == exports.EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
@@ -14344,14 +13998,14 @@ function validateSelector(selector, options, root) {
             isNested++;
             if (isNested > 0) {
                 // @ts-ignore
-                return validateRelativeSelectorList(selector, root, { nestedSelector: true });
+                return validateRelativeSelectorList(selector, root, { ...(options ?? {}), nestedSelector: true });
             }
         }
         currentRoot = currentRoot.parent;
     }
     const nestedSelector = isNested > 0;
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, { nestedSelector }) : validateSelectorList(selector, root, { nestedSelector });
+    return nestedSelector ? validateRelativeSelectorList(selector, root, { ...(options ?? {}), nestedSelector }) : validateSelectorList(selector, root, { ...(options ?? {}), nestedSelector });
 }
 
 function validateAtRuleMedia(atRule, options, root) {
@@ -16188,15 +15842,14 @@ function validateAtRule(atRule, options, root) {
         }
     }
     if (!(name in config.atRules)) {
-        //     if (root?.typ == EnumToken.AtRuleNodeType) {
-        //
-        //         const syntaxes: ValidationToken = (getParsedSyntax(ValidationSyntaxGroupEnum.AtRules, '@' + (root as AstAtRule).nam) as ValidationToken[])?.[0];
-        //
-        //         if ('chi' in syntaxes) {
-        //
-        //             return validateSyntax(syntaxes.chi as ValidationToken[], [atRule], root, options);
-        //         }
-        //     }
+        if (options.lenient) {
+            return {
+                valid: ValidationLevel.Lenient,
+                node: atRule,
+                syntax: null,
+                error: ''
+            };
+        }
         return {
             valid: ValidationLevel.Drop,
             node: atRule,
@@ -16269,6 +15922,7 @@ async function doParse(iterator, options = {}) {
         setParent: true,
         removePrefix: false,
         validation: true,
+        lenient: true,
         ...options
     };
     if (options.expandNestingRules) {
@@ -18049,7 +17703,6 @@ function expandRule(node) {
                     if (astAtRule.val.includes('&')) {
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
-                    /* astAtRule = <AstAtRule> */
                     const slice = astAtRule.chi.slice().filter(t => t.typ == exports.EnumToken.RuleNodeType && t.sel.includes('&'));
                     if (slice.length > 0) {
                         expandRule({ ...node, chi: astAtRule.chi.slice() });

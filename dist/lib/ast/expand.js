@@ -159,7 +159,6 @@ function expandRule(node) {
                     if (astAtRule.val.includes('&')) {
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
-                    /* astAtRule = <AstAtRule> */
                     const slice = astAtRule.chi.slice().filter(t => t.typ == EnumToken.RuleNodeType && t.sel.includes('&'));
                     if (slice.length > 0) {
                         expandRule({ ...node, chi: astAtRule.chi.slice() });
