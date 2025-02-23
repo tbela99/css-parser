@@ -26,7 +26,13 @@ function consumeWhiteSpace(parseInfo: ParseInfo): number {
 
 function pushToken(token: string, parseInfo: ParseInfo, hint?: EnumToken): TokenizeResult {
 
-    const result = {token, len: parseInfo.currentPosition.ind - parseInfo.position.ind, hint, position: {...parseInfo.position}, bytesIn: parseInfo.currentPosition.ind + 1};
+    const result = {
+        token,
+        len: parseInfo.currentPosition.ind - parseInfo.position.ind,
+        hint,
+        position: {...parseInfo.position},
+        bytesIn: parseInfo.currentPosition.ind + 1
+    };
 
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
@@ -332,7 +338,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 }
 
                 break;
-                
+
             case '#':
 
                 if (buffer.length > 0) {

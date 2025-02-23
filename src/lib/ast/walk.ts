@@ -104,7 +104,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
     while (stack.length > 0) {
 
-        let value: Token =  reverse ? <Token> stack.pop() : <Token> stack.shift();
+        let value: Token = reverse ? <Token>stack.pop() : <Token>stack.shift();
         let option: WalkerOption = null;
 
         if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
@@ -160,8 +160,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             if (reverse) {
 
                 stack.push(...sliced);
-            }
-            else {
+            } else {
 
                 stack.unshift(...sliced);
             }

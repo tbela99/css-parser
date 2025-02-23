@@ -1,4 +1,4 @@
-import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, webkitPseudoAliasMap, isIdentStart, mathFuncs, isColor, mediaTypes } from '../syntax/syntax.js';
+import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -483,11 +483,8 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             const valid = isValid ? validateAtRule(node, options, context) : {
                 valid: ValidationLevel.Drop,
                 node,
-                matches: [],
                 syntax: '@' + node.nam,
-                error: '@' + node.nam + ' not allowed here',
-                tokens
-            };
+                error: '@' + node.nam + ' not allowed here'};
             if (valid.valid == ValidationLevel.Drop) {
                 errors.push({
                     action: 'drop',

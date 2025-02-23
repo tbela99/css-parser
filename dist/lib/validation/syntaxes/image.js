@@ -7,17 +7,11 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { validateSyntax } from '../syntax.js';
 import { getParsedSyntax } from '../config.js';
+import { validateURL } from './url.js';
 
 function validateImage(token) {
     if (token.typ == EnumToken.UrlFunctionTokenType) {
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: token,
-            syntax: 'url()',
-            error: '',
-            tokens: []
-        };
+        return validateURL(token);
     }
     if (token.typ == EnumToken.ImageFunctionTokenType) {
         return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, token.val + '()'), token.chi);

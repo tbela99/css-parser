@@ -1,5 +1,5 @@
+export const specialValues: string[] = ['inherit', 'initial', 'unset', 'revert', 'revert-layer'];
 
-export const specialValues: string[] = ['inherit', 'initial', 'unset',  'revert', 'revert-layer'];
 export enum ValidationTokenEnum {
 
     Root,
@@ -238,7 +238,7 @@ export interface ValidationColumnToken extends ValidationToken {
 export interface ValidationColumnArrayToken extends ValidationToken {
 
     typ: ValidationTokenEnum.ColumnArrayToken,
-   chi: ValidationToken[];
+    chi: ValidationToken[];
 }
 
 export interface ValidationDeclarationToken extends ValidationToken {

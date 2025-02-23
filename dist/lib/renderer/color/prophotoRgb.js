@@ -1,4 +1,4 @@
-import { xyzd502srgb, srgb2xyz } from './xyz.js';
+import { srgb2xyz, xyzd502srgb } from './xyz.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 
 function prophotorgb2srgbvalues(r, g, b, a = null) {

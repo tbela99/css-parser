@@ -181,20 +181,8 @@ class PropertySet {
                         return acc;
                     }, [])
                 }][Symbol.iterator]();
-            // return {
-            //     next() {
-            //
-            //         return iterator.next();
-            //     }
-            // }
         }
         return iterator;
-        // return {
-        //     next() {
-        //
-        //         return iterator.next();
-        //     }
-        // }
     }
 }
 

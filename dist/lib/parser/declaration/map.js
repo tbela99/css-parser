@@ -162,55 +162,6 @@ class PropertyMap {
         }
         return this;
     }
-    matchTypes(declaration) {
-        const patterns = this.pattern.slice();
-        const values = [...declaration.val];
-        let i;
-        let j;
-        const map = new Map;
-        for (i = 0; i < patterns.length; i++) {
-            for (j = 0; j < values.length; j++) {
-                if (!map.has(patterns[i])) {
-                    // @ts-ignore
-                    map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
-                }
-                let count = map.get(patterns[i]);
-                if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
-                    Object.defineProperty(values[j], 'propertyName', {
-                        enumerable: false,
-                        writable: true,
-                        value: patterns[i]
-                    });
-                    map.set(patterns[i], --count);
-                    values.splice(j--, 1);
-                }
-            }
-        }
-        if (this.config.set != null) {
-            for (const [key, val] of Object.entries(this.config.set)) {
-                if (map.has(key)) {
-                    for (const v of val) {
-                        // missing
-                        if (map.get(v) == 1) {
-                            let i = declaration.val.length;
-                            while (i--) {
-                                // @ts-ignore
-                                if (declaration.val[i].propertyName == key) {
-                                    const val = { ...declaration.val[i] };
-                                    Object.defineProperty(val, 'propertyName', {
-                                        enumerable: false,
-                                        writable: true,
-                                        value: v
-                                    });
-                                    declaration.val.splice(i, 0, val, { typ: EnumToken.WhitespaceTokenType });
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
     [Symbol.iterator]() {
         let iterable;
         let requiredCount = 0;
@@ -249,9 +200,15 @@ class PropertyMap {
                     // @ts-ignore
                     let typ = (EnumToken[this.config.separator?.typ] ?? EnumToken.CommaTokenType);
                     // @ts-ignore
-                    const sep = this.config.separator == null ? null : { ...this.config.separator, typ: EnumToken[this.config.separator.typ] };
+                    const sep = this.config.separator == null ? null : {
+                        ...this.config.separator,
+                        typ: EnumToken[this.config.separator.typ]
+                    };
                     // @ts-ignore
-                    const separator = this.config.separator ? renderToken({ ...this.config.separator, typ: EnumToken[this.config.separator.typ] }) : ',';
+                    const separator = this.config.separator ? renderToken({
+                        ...this.config.separator,
+                        typ: EnumToken[this.config.separator.typ]
+                    }) : ',';
                     this.matchTypes(declaration);
                     values.push(value);
                     for (i = 0; i < declaration.val.length; i++) {
@@ -446,7 +403,6 @@ class PropertyMap {
                             acc.push(curr);
                             return acc;
                         }, []);
-                        // @todo remove renderToken call
                         if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
                             if (!this.config.properties[curr[0]].required) {
                                 continue;
@@ -544,6 +500,7 @@ class PropertyMap {
                 }
                 // @ts-ignore
                 if (values.length == 1 &&
+                    // @ts-ignore
                     typeof values[0].val == 'string' &&
                     this.config.default.includes(values[0].val.toLowerCase()) &&
                     this.config.default[0] != values[0].val.toLowerCase()) {
@@ -562,6 +519,7 @@ class PropertyMap {
             // @ts-ignore
             next() {
                 let v = iterable.next();
+                // @ts-ignore
                 while (v.done || v.value instanceof PropertySet) {
                     if (v.value instanceof PropertySet) {
                         // @ts-ignore
@@ -583,6 +541,55 @@ class PropertyMap {
                 return v;
             }
         };
+    }
+    matchTypes(declaration) {
+        const patterns = this.pattern.slice();
+        const values = [...declaration.val];
+        let i;
+        let j;
+        const map = new Map;
+        for (i = 0; i < patterns.length; i++) {
+            for (j = 0; j < values.length; j++) {
+                if (!map.has(patterns[i])) {
+                    // @ts-ignore
+                    map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
+                }
+                let count = map.get(patterns[i]);
+                if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
+                    Object.defineProperty(values[j], 'propertyName', {
+                        enumerable: false,
+                        writable: true,
+                        value: patterns[i]
+                    });
+                    map.set(patterns[i], --count);
+                    values.splice(j--, 1);
+                }
+            }
+        }
+        if (this.config.set != null) {
+            for (const [key, val] of Object.entries(this.config.set)) {
+                if (map.has(key)) {
+                    for (const v of val) {
+                        // missing
+                        if (map.get(v) == 1) {
+                            let i = declaration.val.length;
+                            while (i--) {
+                                // @ts-ignore
+                                if (declaration.val[i].propertyName == key) {
+                                    const val = { ...declaration.val[i] };
+                                    Object.defineProperty(val, 'propertyName', {
+                                        enumerable: false,
+                                        writable: true,
+                                        value: v
+                                    });
+                                    declaration.val.splice(i, 0, val, { typ: EnumToken.WhitespaceTokenType });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     removeDefaults(map, value) {
         for (const [key, val] of map) {

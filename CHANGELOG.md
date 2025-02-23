@@ -2,6 +2,14 @@
 
 # v0.9.0
 
+validation
+- [x] validate invalid pseudo classes
+- [x] rewrite selector validation
+- [ ] lenient mode that preserves 
+  - [ ] unknown at-rules
+  - [ ] unknown declarations 
+  - [ ] unknown pseudo classes
+
 media query level 5
 - [x] at-rule custom-media
 - [x] at-rule when-else custom media

@@ -249,6 +249,28 @@ html {
  }
 }`));
         });
+
+        it('expand rule #11', function () {
+
+            return transform(`
+.parent {
+  color: blue;
+
+  @scope (& > .scope) to (& .limit) {
+    & .content {
+      color: red;
+    }
+  }
+}
+`, {beautify: true, expandNestingRules: true}).then((result) => expect(result.code).equals(`.parent {
+ color: blue
+}
+@scope (.parent >.scope) to (.parent .limit) {
+ .parent .content {
+  color: red
+ }
+}`));
+        });
     });
 
 }

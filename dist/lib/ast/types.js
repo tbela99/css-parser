@@ -2,6 +2,7 @@ var ValidationLevel;
 (function (ValidationLevel) {
     ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
     ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
+    ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
 })(ValidationLevel || (ValidationLevel = {}));
 var EnumToken;
 (function (EnumToken) {

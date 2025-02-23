@@ -552,7 +552,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     return ast;
 }
 
- function hasDeclaration(node: AstRule): boolean {
+function hasDeclaration(node: AstRule): boolean {
 
     // @ts-ignore
     for (let i = 0; i < node.chi?.length; i++) {
@@ -569,7 +569,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     return true;
 }
 
- function reduceSelector(selector: string[][]): OptimizedSelector | null {
+function reduceSelector(selector: string[][]): OptimizedSelector | null {
 
     if (selector.length == 0) {
         return null;
@@ -841,7 +841,7 @@ export function splitRule(buffer: string): string[][] {
     return result;
 }
 
- function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
+function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
 
     let match: string[][] = [[]];
     const j: number = Math.min(

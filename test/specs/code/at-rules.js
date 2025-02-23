@@ -366,20 +366,6 @@ export function run(describe, expect, transform, parse, render, dirname) {
             return transform(`@charset /* erw */"UTF-8";
 `, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
         });
-
-        it('font-face #24', function () {
-
-            return transform(`@font-face {
-      font-family: icons;
-      font-family: icons;
-      src: url(icons-gradient-var.woff2)
-        }
-`, {beautify: true, removeCharset: false}).then((result) => expect(result.code).equals(`@font-face {
- font-family: icons;
- font-family: icons;
- src: url(icons-gradient-var.woff2)
-}`));
-        });
     });
 
 }

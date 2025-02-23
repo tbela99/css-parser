@@ -2,10 +2,10 @@ import { parseString } from '../parser/parse.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { replaceCompound } from './expand.js';
-import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
+import { isIdent, isFunction, isWhiteSpace, isIdentStart } from '../syntax/syntax.js';
 import '../parser/utils/config.js';
 import { eq } from '../parser/utils/eq.js';
-import { renderToken, doRender } from '../renderer/render.js';
+import { doRender, renderToken } from '../renderer/render.js';
 import * as index from './features/index.js';
 
 const combinators = ['+', '>', '~', '||', '|'];

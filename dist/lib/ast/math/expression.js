@@ -1,5 +1,5 @@
 import { EnumToken } from '../types.js';
-import { compute, rem } from './math.js';
+import { rem, compute } from './math.js';
 import { reduceNumber } from '../../renderer/render.js';
 import { mathFuncs } from '../../syntax/syntax.js';
 

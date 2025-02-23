@@ -1,12 +1,12 @@
 import { hsl2hsv } from './hsv.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { getNumber, getAngle } from './color.js';
+import { getAngle, getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
-import { lab2srgb, lch2srgb, oklab2srgb, oklch2srgb } from './srgb.js';
+import { lch2srgb, lab2srgb, oklch2srgb, oklab2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 

@@ -85,7 +85,12 @@ export interface ValidationContext {
 
 export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | AstNode[], root?: AstNode, options?: ValidationOptions, context: ValidationContext = {level: 0}): ValidationSyntaxResult {
 
-    console.error(JSON.stringify({syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''), syntaxes, tokens, s: new Error('bar').stack}, null, 1));
+    console.error(JSON.stringify({
+        syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''),
+        syntaxes,
+        tokens,
+        s: new Error('bar').stack
+    }, null, 1));
     if (syntaxes == null) {
 
         // @ts-ignore
@@ -1118,7 +1123,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                     while (parent != null) {
 
-                        if(parent.typ == EnumToken.RuleNodeType) {
+                        if (parent.typ == EnumToken.RuleNodeType) {
 
                             valid = true;
                             break;

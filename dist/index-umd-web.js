@@ -8,6 +8,7 @@
     (function (ValidationLevel) {
         ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
         ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
+        ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
     })(ValidationLevel || (ValidationLevel = {}));
     exports.EnumToken = void 0;
     (function (EnumToken) {
@@ -204,7 +205,7 @@
         }
     };
     const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-    ({ typ: exports.EnumToken.IdenTokenType, val: 'none' });
+    ({ typ: exports.EnumToken.IdenTokenType});
     const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
     const k = Math.pow(29, 3) / Math.pow(3, 3);
     const e = Math.pow(6, 3) / Math.pow(29, 3);
@@ -735,7 +736,7 @@
             1.2914855378640917399 * b, 3);
         return lsrgb2srgbvalues(
         /* r: */
-        +4.076741661347994 * L -
+        4.076741661347994 * L -
             3.307711590408193 * M +
             0.230969928729428 * S, 
         /*  g: */
@@ -6317,7 +6318,13 @@
         return count;
     }
     function pushToken(token, parseInfo, hint) {
-        const result = { token, len: parseInfo.currentPosition.ind - parseInfo.position.ind, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
+        const result = {
+            token,
+            len: parseInfo.currentPosition.ind - parseInfo.position.ind,
+            hint,
+            position: { ...parseInfo.position },
+            bytesIn: parseInfo.currentPosition.ind + 1
+        };
         parseInfo.position.ind = parseInfo.currentPosition.ind;
         parseInfo.position.lin = parseInfo.currentPosition.lin;
         parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
@@ -12799,7 +12806,12 @@
         return tokens;
     }
     function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
-        console.error(JSON.stringify({ syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''), syntaxes, tokens, s: new Error('bar').stack }, null, 1));
+        console.error(JSON.stringify({
+            syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''),
+            syntaxes,
+            tokens,
+            s: new Error('bar').stack
+        }, null, 1));
         if (syntaxes == null) {
             // @ts-ignore
             return {
@@ -14234,16 +14246,74 @@
         return result;
     }
 
-    function validateImage(token) {
-        if (token.typ == exports.EnumToken.UrlFunctionTokenType) {
+    function validateURL(token) {
+        if (token.typ == exports.EnumToken.UrlTokenTokenType) {
+            // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
                 matches: [],
                 node: token,
+                // @ts-ignore
                 syntax: 'url()',
                 error: '',
                 tokens: []
             };
+        }
+        if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: 'expected url()',
+                tokens: []
+            };
+        }
+        const children = token.chi.slice();
+        consumeWhitespace(children);
+        if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: children[0] ?? token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: 'expected url-token',
+                tokens: children
+            };
+        }
+        children.shift();
+        consumeWhitespace(children);
+        if (children.length > 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: children[0] ?? token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: 'unexpected token',
+                tokens: children
+            };
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: token,
+            // @ts-ignore
+            syntax: 'url()',
+            error: '',
+            tokens: []
+        };
+    }
+
+    function validateImage(token) {
+        if (token.typ == exports.EnumToken.UrlFunctionTokenType) {
+            return validateURL(token);
         }
         if (token.typ == exports.EnumToken.ImageFunctionTokenType) {
             return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, token.val + '()'), token.chi);
@@ -15201,71 +15271,6 @@
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
-        };
-    }
-
-    function validateURL(token) {
-        if (token.typ == exports.EnumToken.UrlTokenTokenType) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: '',
-                tokens: []
-            };
-        }
-        if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: 'expected url()',
-                tokens: []
-            };
-        }
-        const children = token.chi.slice();
-        consumeWhitespace(children);
-        if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: children[0] ?? token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: 'expected url-token',
-                tokens: children
-            };
-        }
-        children.shift();
-        consumeWhitespace(children);
-        if (children.length > 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: children[0] ?? token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: 'unexpected token',
-                tokens: children
-            };
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: token,
-            // @ts-ignore
-            syntax: 'url()',
             error: '',
             tokens: []
         };
@@ -16689,11 +16694,8 @@
                 const valid = isValid ? validateAtRule(node, options, context) : {
                     valid: ValidationLevel.Drop,
                     node,
-                    matches: [],
                     syntax: '@' + node.nam,
-                    error: '@' + node.nam + ' not allowed here',
-                    tokens
-                };
+                    error: '@' + node.nam + ' not allowed here'};
                 if (valid.valid == ValidationLevel.Drop) {
                     errors.push({
                         action: 'drop',
@@ -17943,7 +17945,7 @@
         }
         return result;
     }
-    function expandRule(node, parent) {
+    function expandRule(node) {
         const ast = { ...node, chi: node.chi.slice() };
         const result = [];
         if (ast.typ == exports.EnumToken.RuleNodeType) {
@@ -18048,7 +18050,11 @@
                         if (astAtRule.val.includes('&')) {
                             astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                         }
-                        astAtRule = expand(astAtRule);
+                        /* astAtRule = <AstAtRule> */
+                        const slice = astAtRule.chi.slice().filter(t => t.typ == exports.EnumToken.RuleNodeType && t.sel.includes('&'));
+                        if (slice.length > 0) {
+                            expandRule({ ...node, chi: astAtRule.chi.slice() });
+                        }
                     }
                     else {
                         // @ts-ignore
@@ -18563,20 +18569,8 @@
                             return acc;
                         }, [])
                     }][Symbol.iterator]();
-                // return {
-                //     next() {
-                //
-                //         return iterator.next();
-                //     }
-                // }
             }
             return iterator;
-            // return {
-            //     next() {
-            //
-            //         return iterator.next();
-            //     }
-            // }
         }
     }
 
@@ -18733,55 +18727,6 @@
             }
             return this;
         }
-        matchTypes(declaration) {
-            const patterns = this.pattern.slice();
-            const values = [...declaration.val];
-            let i;
-            let j;
-            const map = new Map;
-            for (i = 0; i < patterns.length; i++) {
-                for (j = 0; j < values.length; j++) {
-                    if (!map.has(patterns[i])) {
-                        // @ts-ignore
-                        map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
-                    }
-                    let count = map.get(patterns[i]);
-                    if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
-                        Object.defineProperty(values[j], 'propertyName', {
-                            enumerable: false,
-                            writable: true,
-                            value: patterns[i]
-                        });
-                        map.set(patterns[i], --count);
-                        values.splice(j--, 1);
-                    }
-                }
-            }
-            if (this.config.set != null) {
-                for (const [key, val] of Object.entries(this.config.set)) {
-                    if (map.has(key)) {
-                        for (const v of val) {
-                            // missing
-                            if (map.get(v) == 1) {
-                                let i = declaration.val.length;
-                                while (i--) {
-                                    // @ts-ignore
-                                    if (declaration.val[i].propertyName == key) {
-                                        const val = { ...declaration.val[i] };
-                                        Object.defineProperty(val, 'propertyName', {
-                                            enumerable: false,
-                                            writable: true,
-                                            value: v
-                                        });
-                                        declaration.val.splice(i, 0, val, { typ: exports.EnumToken.WhitespaceTokenType });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
         [Symbol.iterator]() {
             let iterable;
             let requiredCount = 0;
@@ -18820,9 +18765,15 @@
                         // @ts-ignore
                         let typ = (exports.EnumToken[this.config.separator?.typ] ?? exports.EnumToken.CommaTokenType);
                         // @ts-ignore
-                        const sep = this.config.separator == null ? null : { ...this.config.separator, typ: exports.EnumToken[this.config.separator.typ] };
+                        const sep = this.config.separator == null ? null : {
+                            ...this.config.separator,
+                            typ: exports.EnumToken[this.config.separator.typ]
+                        };
                         // @ts-ignore
-                        const separator = this.config.separator ? renderToken({ ...this.config.separator, typ: exports.EnumToken[this.config.separator.typ] }) : ',';
+                        const separator = this.config.separator ? renderToken({
+                            ...this.config.separator,
+                            typ: exports.EnumToken[this.config.separator.typ]
+                        }) : ',';
                         this.matchTypes(declaration);
                         values.push(value);
                         for (i = 0; i < declaration.val.length; i++) {
@@ -19017,7 +18968,6 @@
                                 acc.push(curr);
                                 return acc;
                             }, []);
-                            // @todo remove renderToken call
                             if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
                                 if (!this.config.properties[curr[0]].required) {
                                     continue;
@@ -19115,6 +19065,7 @@
                     }
                     // @ts-ignore
                     if (values.length == 1 &&
+                        // @ts-ignore
                         typeof values[0].val == 'string' &&
                         this.config.default.includes(values[0].val.toLowerCase()) &&
                         this.config.default[0] != values[0].val.toLowerCase()) {
@@ -19133,6 +19084,7 @@
                 // @ts-ignore
                 next() {
                     let v = iterable.next();
+                    // @ts-ignore
                     while (v.done || v.value instanceof PropertySet) {
                         if (v.value instanceof PropertySet) {
                             // @ts-ignore
@@ -19154,6 +19106,55 @@
                     return v;
                 }
             };
+        }
+        matchTypes(declaration) {
+            const patterns = this.pattern.slice();
+            const values = [...declaration.val];
+            let i;
+            let j;
+            const map = new Map;
+            for (i = 0; i < patterns.length; i++) {
+                for (j = 0; j < values.length; j++) {
+                    if (!map.has(patterns[i])) {
+                        // @ts-ignore
+                        map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
+                    }
+                    let count = map.get(patterns[i]);
+                    if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
+                        Object.defineProperty(values[j], 'propertyName', {
+                            enumerable: false,
+                            writable: true,
+                            value: patterns[i]
+                        });
+                        map.set(patterns[i], --count);
+                        values.splice(j--, 1);
+                    }
+                }
+            }
+            if (this.config.set != null) {
+                for (const [key, val] of Object.entries(this.config.set)) {
+                    if (map.has(key)) {
+                        for (const v of val) {
+                            // missing
+                            if (map.get(v) == 1) {
+                                let i = declaration.val.length;
+                                while (i--) {
+                                    // @ts-ignore
+                                    if (declaration.val[i].propertyName == key) {
+                                        const val = { ...declaration.val[i] };
+                                        Object.defineProperty(val, 'propertyName', {
+                                            enumerable: false,
+                                            writable: true,
+                                            value: v
+                                        });
+                                        declaration.val.splice(i, 0, val, { typ: exports.EnumToken.WhitespaceTokenType });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         removeDefaults(map, value) {
             for (const [key, val] of map) {

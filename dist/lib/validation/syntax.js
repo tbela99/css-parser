@@ -8,7 +8,7 @@ import { isLength } from '../syntax/syntax.js';
 import '../parser/utils/config.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
-import { getParsedSyntax, getSyntaxConfig } from './config.js';
+import { getSyntaxConfig, getParsedSyntax } from './config.js';
 import { validateSelector } from './selector.js';
 import './syntaxes/complex-selector.js';
 import { validateImage } from './syntaxes/image.js';
@@ -32,7 +32,12 @@ function splice(tokens, matches) {
     return tokens;
 }
 function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
-    console.error(JSON.stringify({ syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''), syntaxes, tokens, s: new Error('bar').stack }, null, 1));
+    console.error(JSON.stringify({
+        syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''),
+        syntaxes,
+        tokens,
+        s: new Error('bar').stack
+    }, null, 1));
     if (syntaxes == null) {
         // @ts-ignore
         return {

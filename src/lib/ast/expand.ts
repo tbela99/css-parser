@@ -69,7 +69,7 @@ export function expand(ast: AstNode): AstNode {
     return result;
 }
 
-function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule> {
+function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
     const ast: AstRule = <AstRule>{...node, chi: node.chi.slice()};
     const result: Array<AstRule | AstAtRule> = [];
@@ -210,7 +210,7 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
 
                 ast.chi.splice(i--, 1);
 
-                result.push(...<AstRule[]>expandRule(rule, node));
+                result.push(...<AstRule[]>expandRule(rule));
             } else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
 
 
@@ -224,7 +224,14 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                         astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                     }
 
-                    astAtRule = <AstAtRule>expand(astAtRule);
+                    /* astAtRule = <AstAtRule> */
+
+                    const slice = (astAtRule.chi as AstNode[]).slice().filter(t => t.typ == EnumToken.RuleNodeType && ((t as AstRule).sel as string).includes('&'));
+
+                    if (slice.length > 0) {
+                        expandRule(<AstRule>{...node, chi: (astAtRule.chi as AstNode[]).slice()});
+                    }
+
                 } else {
 
                     // @ts-ignore
@@ -233,7 +240,7 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                     // @ts-ignore
                     astAtRule.chi.length = 0;
 
-                    for (const r of (<Array<AstRule | AstAtRule>>expandRule(clone, node))) {
+                    for (const r of (<Array<AstRule | AstAtRule>>expandRule(clone))) {
 
                         if (r.typ == EnumToken.AtRuleNodeType && 'chi' in r) {
 
@@ -253,7 +260,7 @@ function expandRule(node: AstRule, parent?: AstRule): Array<AstRule | AstAtRule>
                         } else if (r.typ == EnumToken.RuleNodeType) {
 
                             // @ts-ignore
-                            astAtRule.chi.push(...expandRule(r, node));
+                            astAtRule.chi.push(...expandRule(r));
                         } else {
 
                             // @ts-ignore

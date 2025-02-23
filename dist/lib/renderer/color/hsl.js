@@ -1,6 +1,6 @@
 import { hwb2hsv } from './hsv.js';
 import { getNumber } from './color.js';
-import { hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb } from './rgb.js';
+import { lch2rgb, lab2rgb, oklch2rgb, oklab2rgb, hex2rgb } from './rgb.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { EnumToken } from '../../ast/types.js';
