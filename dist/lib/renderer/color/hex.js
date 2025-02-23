@@ -2,7 +2,7 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
-import { getNumber, minmax } from './color.js';
+import { minmax, getNumber } from './color.js';
 import { hsl2rgb, hwb2rgb, cmyk2rgb, oklab2rgb, oklch2rgb, lab2rgb, lch2rgb } from './rgb.js';
 import { NAMES_COLORS } from './utils/constants.js';
 import { getComponents } from './utils/components.js';

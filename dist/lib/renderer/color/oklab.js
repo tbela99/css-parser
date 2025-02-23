@@ -1,7 +1,7 @@
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2lsrgbvalues, hex2srgb, rgb2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgbvalues } from './srgb.js';
+import { srgb2lsrgbvalues, lch2srgb, lab2srgb, hwb2srgb, hsl2srgb, rgb2srgb, hex2srgb, lsrgb2srgbvalues } from './srgb.js';
 import { getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
@@ -106,7 +106,7 @@ function OKLab_to_sRGB(l, a, b) {
         1.2914855378640917399 * b, 3);
     return lsrgb2srgbvalues(
     /* r: */
-    +4.076741661347994 * L -
+    4.076741661347994 * L -
         3.307711590408193 * M +
         0.230969928729428 * S, 
     /*  g: */

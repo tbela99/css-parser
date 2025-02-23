@@ -126,6 +126,11 @@ function reject(reason?: any) {
     throw new Error(reason ?? 'Parsing aborted');
 }
 
+/**
+ * parse css string
+ * @param iterator
+ * @param options
+ */
 export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
 
     if (options.signal != null) {
@@ -311,6 +316,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         // @ts-ignore
         context = stack[stack.length - 1] ?? ast;
+
+        // remove empty nodes
         // @ts-ignore
         if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
             // @ts-ignore
@@ -386,34 +393,6 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             minify(ast, options, true, errors, false);
         }
     }
-
-    // if (options.setParent) {
-    //
-    //     const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
-    //     let node: AstNode;
-    //
-    //     while ((node = nodes.shift()!)) {
-    //
-    //         // @ts-ignore
-    //         if (node.chi.length > 0) {
-    //
-    //             // @ts-ignore
-    //             for (const child of node.chi) {
-    //
-    //                 if (child.parent != node) {
-    //
-    //                     Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
-    //                 }
-    //
-    //                 if ('chi' in child && child.chi.length > 0) {
-    //
-    //                     // @ts-ignore
-    //                     nodes.push(<AstRule | AstAtRule>child);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 
     const endTime: number = performance.now();
 
@@ -715,11 +694,10 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
             }
         }
 
-        const t = parseAtRulePrelude(parseTokens(tokens, {minify: options.minify}), atRule) as Token[];
+        const t: Token[] = parseAtRulePrelude(parseTokens(tokens, {minify: options.minify}), atRule) as Token[];
         const raw: string[] = t.reduce((acc: string[], curr: Token) => {
 
             acc.push(renderToken(curr, {removeComments: true}));
-
             return acc
         }, []);
 
@@ -1037,15 +1015,24 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
             if (result != null) {
 
-                if (options.validation) {
-
-                    // const valid: ValidationResult = validateDeclaration(result, options, context);
-                    //
-                    // if (valid.valid == ValidationLevel.Drop) {
-                    //
-                    //     return null;
-                    // }
-                }
+                // if (options.validation) {
+                //
+                //     const valid: ValidationResult = validateDeclaration(result, options, context);
+                //
+                //     console.error({valid});
+                //
+                //     if (valid.valid == ValidationLevel.Drop) {
+                //
+                //         errors.push({
+                //             action: 'drop',
+                //             message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                //             // @ts-ignore
+                //             location: {src, ...(map.get(valid.node) ?? position)}
+                //         });
+                //
+                //         return null;
+                //     }
+                // }
 
                 // @ts-ignore
                 context.chi.push(result);
@@ -1057,7 +1044,12 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
     }
 }
 
-export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
+/**
+ * parse at-rule prelude
+ * @param tokens
+ * @param atRule
+ */
+ function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
 
     // @ts-ignore
     for (const {value, parent} of walkValues(tokens, null, null, true)) {
@@ -1250,6 +1242,10 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[
     return tokens;
 }
 
+/**
+ * parse selector
+ * @param tokens
+ */
 export function parseSelector(tokens: Token[]): Token[] {
 
     for (const {value, previousValue, nextValue, parent} of walkValues(tokens)) {
@@ -1437,6 +1433,11 @@ export function parseSelector(tokens: Token[]): Token[] {
 //     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
 // }
 
+/**
+ * parse string
+ * @param src
+ * @param options
+ */
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
     return parseTokens([...tokenize(src)].map(t => {
@@ -1554,7 +1555,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
             };
         }
 
-        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade', 'paint'].includes(val)) {
             return <FunctionImageToken>{
                 typ: EnumToken.ImageFunctionTokenType,
                 val,
@@ -1674,6 +1675,11 @@ function getTokenType(val: string, hint?: EnumToken): Token {
     };
 }
 
+/**
+ * parse token list
+ * @param tokens
+ * @param options
+ */
 export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
 
     for (let i = 0; i < tokens.length; i++) {

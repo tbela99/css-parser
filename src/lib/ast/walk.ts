@@ -12,13 +12,17 @@ import type {
     WalkResult
 } from "../../@types/index.d.ts";
 import {EnumToken} from "./types";
-import {renderToken} from "../renderer";
 
 export enum WalkerValueEvent {
     Enter,
     Leave
 }
 
+/**
+ * walk ast nodes
+ * @param node
+ * @param filter
+ */
 export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult> {
 
     const parents: AstNode[] = [node];
@@ -64,6 +68,13 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
     }
 }
 
+/**
+ * walk ast values
+ * @param values
+ * @param root
+ * @param filter
+ * @param reverse
+ */
 export function* walkValues(values: Token[], root: AstNode | Token | null = null, filter?: WalkerValueFilter | {
     event: WalkerValueEvent,
     fn?: WalkerValueFilter,
@@ -93,7 +104,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
     while (stack.length > 0) {
 
-        let value: Token =  reverse ? <Token> stack.pop() : <Token> stack.shift();
+        let value: Token = reverse ? <Token>stack.pop() : <Token>stack.shift();
         let option: WalkerOption = null;
 
         if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
@@ -149,8 +160,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             if (reverse) {
 
                 stack.push(...sliced);
-            }
-            else {
+            } else {
 
                 stack.unshift(...sliced);
             }

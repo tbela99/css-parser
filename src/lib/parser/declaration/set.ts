@@ -1,8 +1,7 @@
 import type {
     AstDeclaration,
     DimensionToken,
-     LiteralToken,
-
+    LiteralToken,
     NumberToken,
     ShorthandPropertyType,
     Token,
@@ -179,7 +178,7 @@ export class PropertySet {
         return this.config.properties.length == this.declarations.size;
     }
 
-    [Symbol.iterator]() {
+    [Symbol.iterator](): IterableIterator<AstDeclaration> {
 
         let iterator: IterableIterator<AstDeclaration>;
         const declarations: Map<string, AstDeclaration> = this.declarations;
@@ -272,22 +271,8 @@ export class PropertySet {
                     return acc;
                 }, <Token[]>[])
             }][Symbol.iterator]();
-
-            // return {
-            //     next() {
-            //
-            //         return iterator.next();
-            //     }
-            // }
         }
 
         return iterator;
-
-        // return {
-        //     next() {
-        //
-        //         return iterator.next();
-        //     }
-        // }
     }
 }

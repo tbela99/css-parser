@@ -1,4 +1,4 @@
-import { isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isIdent, isHexColor, isHash, webkitPseudoAliasMap, isIdentStart, mathFuncs, isColor, mediaTypes } from '../syntax/syntax.js';
+import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -13,6 +13,7 @@ import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
 import { validateSelector } from '../validation/selector.js';
 import { validateAtRule } from '../validation/atrule.js';
+import '../validation/syntaxes/complex-selector.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -32,6 +33,11 @@ const enumTokenHints = new Set([
 function reject(reason) {
     throw new Error(reason ?? 'Parsing aborted');
 }
+/**
+ * parse css string
+ * @param iterator
+ * @param options
+ */
 async function doParse(iterator, options = {}) {
     if (options.signal != null) {
         options.signal.addEventListener('abort', reject);
@@ -168,6 +174,7 @@ async function doParse(iterator, options = {}) {
         const previousNode = stack.pop();
         // @ts-ignore
         context = stack[stack.length - 1] ?? ast;
+        // remove empty nodes
         // @ts-ignore
         if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
             // @ts-ignore
@@ -220,33 +227,6 @@ async function doParse(iterator, options = {}) {
             minify(ast, options, true, errors, false);
         }
     }
-    // if (options.setParent) {
-    //
-    //     const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
-    //     let node: AstNode;
-    //
-    //     while ((node = nodes.shift()!)) {
-    //
-    //         // @ts-ignore
-    //         if (node.chi.length > 0) {
-    //
-    //             // @ts-ignore
-    //             for (const child of node.chi) {
-    //
-    //                 if (child.parent != node) {
-    //
-    //                     Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
-    //                 }
-    //
-    //                 if ('chi' in child && child.chi.length > 0) {
-    //
-    //                     // @ts-ignore
-    //                     nodes.push(<AstRule | AstAtRule>child);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
     const endTime = performance.now();
     if (options.signal != null) {
         options.signal.removeEventListener('abort', reject);
@@ -503,11 +483,8 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             const valid = isValid ? validateAtRule(node, options, context) : {
                 valid: ValidationLevel.Drop,
                 node,
-                matches: [],
                 syntax: '@' + node.nam,
-                error: '@' + node.nam + ' not allowed here',
-                tokens
-            };
+                error: '@' + node.nam + ' not allowed here'};
             if (valid.valid == ValidationLevel.Drop) {
                 errors.push({
                     action: 'drop',
@@ -699,7 +676,24 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             };
             const result = parseDeclarationNode(node, errors, src, position);
             if (result != null) {
-                if (options.validation) ;
+                // if (options.validation) {
+                //
+                //     const valid: ValidationResult = validateDeclaration(result, options, context);
+                //
+                //     console.error({valid});
+                //
+                //     if (valid.valid == ValidationLevel.Drop) {
+                //
+                //         errors.push({
+                //             action: 'drop',
+                //             message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                //             // @ts-ignore
+                //             location: {src, ...(map.get(valid.node) ?? position)}
+                //         });
+                //
+                //         return null;
+                //     }
+                // }
                 // @ts-ignore
                 context.chi.push(result);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
@@ -708,6 +702,11 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
         }
     }
 }
+/**
+ * parse at-rule prelude
+ * @param tokens
+ * @param atRule
+ */
 function parseAtRulePrelude(tokens, atRule) {
     // @ts-ignore
     for (const { value, parent } of walkValues(tokens, null, null, true)) {
@@ -840,6 +839,10 @@ function parseAtRulePrelude(tokens, atRule) {
     }
     return tokens;
 }
+/**
+ * parse selector
+ * @param tokens
+ */
 function parseSelector(tokens) {
     for (const { value, previousValue, nextValue, parent } of walkValues(tokens)) {
         if (value.typ == EnumToken.CommentTokenType ||
@@ -983,6 +986,11 @@ function parseSelector(tokens) {
 //
 //     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
 // }
+/**
+ * parse string
+ * @param src
+ * @param options
+ */
 function parseString(src, options = { location: false }) {
     return parseTokens([...tokenize(src)].map(t => {
         const token = getTokenType(t.token, t.hint);
@@ -1064,7 +1072,7 @@ function getTokenType(val, hint) {
                 chi: []
             };
         }
-        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+        if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade', 'paint'].includes(val)) {
             return {
                 typ: EnumToken.ImageFunctionTokenType,
                 val,
@@ -1164,6 +1172,11 @@ function getTokenType(val, hint) {
         val
     };
 }
+/**
+ * parse token list
+ * @param tokens
+ * @param options
+ */
 function parseTokens(tokens, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];
@@ -1499,4 +1512,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, parseSelector, parseString, parseTokens, urlTokenMatcher };

@@ -1,6 +1,7 @@
 export enum ValidationLevel {
     Valid,
-    Drop
+    Drop,
+    Lenient/* preserve unknown at-rules, declarations and pseudo-classes */
 }
 
 export enum EnumToken {

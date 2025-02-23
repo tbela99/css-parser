@@ -8,6 +8,7 @@
     (function (ValidationLevel) {
         ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
         ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
+        ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
     })(ValidationLevel || (ValidationLevel = {}));
     exports.EnumToken = void 0;
     (function (EnumToken) {
@@ -204,7 +205,7 @@
         }
     };
     const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-    ({ typ: exports.EnumToken.IdenTokenType, val: 'none' });
+    ({ typ: exports.EnumToken.IdenTokenType});
     const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
     const k = Math.pow(29, 3) / Math.pow(3, 3);
     const e = Math.pow(6, 3) / Math.pow(29, 3);
@@ -735,7 +736,7 @@
             1.2914855378640917399 * b, 3);
         return lsrgb2srgbvalues(
         /* r: */
-        +4.076741661347994 * L -
+        4.076741661347994 * L -
             3.307711590408193 * M +
             0.230969928729428 * S, 
         /*  g: */
@@ -3332,6 +3333,11 @@
             }
         }
     }
+    /**
+     * render ast
+     * @param data
+     * @param options
+     */
     function doRender(data, options = {}) {
         const minify = options.minify ?? true;
         const beautify = options.beautify ?? !minify;
@@ -3415,7 +3421,18 @@
         }
         update(position, str);
     }
-    // @ts-ignore
+    /**
+     * render ast node
+     * @param data
+     * @param options
+     * @param sourcemap
+     * @param position
+     * @param errors
+     * @param reducer
+     * @param cache
+     * @param level
+     * @param indents
+     */
     function renderAstNode(data, options, sourcemap, position, errors, reducer, cache, level = 0, indents = []) {
         if (indents.length < level + 1) {
             indents.push(options.indent.repeat(level));
@@ -3508,8 +3525,15 @@
                 // return renderToken(data as Token, options, cache, reducer, errors);
                 throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
         }
-        return '';
     }
+    /**
+     * render ast token
+     * @param token
+     * @param options
+     * @param cache
+     * @param reducer
+     * @param errors
+     */
     function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
         if (reducer == null) {
             reducer = function (acc, curr) {
@@ -6294,7 +6318,13 @@
         return count;
     }
     function pushToken(token, parseInfo, hint) {
-        const result = { token, len: parseInfo.currentPosition.ind - parseInfo.position.ind, hint, position: { ...parseInfo.position }, bytesIn: parseInfo.currentPosition.ind + 1 };
+        const result = {
+            token,
+            len: parseInfo.currentPosition.ind - parseInfo.position.ind,
+            hint,
+            position: { ...parseInfo.position },
+            bytesIn: parseInfo.currentPosition.ind + 1
+        };
         parseInfo.position.ind = parseInfo.currentPosition.ind;
         parseInfo.position.lin = parseInfo.currentPosition.lin;
         parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
@@ -6414,6 +6444,10 @@
         }
         return char;
     }
+    /**
+     * tokenize css string
+     * @param stream
+     */
     function* tokenize$1(stream) {
         const parseInfo = {
             stream,
@@ -7841,9 +7875,6 @@
     	"inline-size": {
     		syntax: "<'width'>"
     	},
-    	"input-security": {
-    		syntax: "auto | none"
-    	},
     	inset: {
     		syntax: "<'top'>{1,4}"
     	},
@@ -8402,6 +8433,9 @@
     	"shape-rendering": {
     		syntax: "auto | optimizeSpeed | crispEdges | geometricPrecision"
     	},
+    	"speak-as": {
+    		syntax: "normal | spell-out || digits || [ literal-punctuation | no-punctuation ]"
+    	},
     	"stop-color": {
     		syntax: "<'color'>"
     	},
@@ -8514,7 +8548,7 @@
     		syntax: "none | auto | <percentage>"
     	},
     	"text-spacing-trim": {
-    		syntax: "space-all | normal | space-first | trim-start | trim-both | trim-all | auto"
+    		syntax: "space-all | normal | space-first | trim-start"
     	},
     	"text-transform": {
     		syntax: "none | capitalize | uppercase | lowercase | full-width | full-size-kana"
@@ -8610,7 +8644,7 @@
     		syntax: "normal | pre | nowrap | pre-wrap | pre-line | break-spaces | [ <'white-space-collapse'> || <'text-wrap'> ]"
     	},
     	"white-space-collapse": {
-    		syntax: "collapse | discard | preserve | preserve-breaks | preserve-spaces | break-spaces"
+    		syntax: "collapse | preserve | preserve-breaks | preserve-spaces | break-spaces"
     	},
     	widows: {
     		syntax: "<integer>"
@@ -8672,10 +8706,10 @@
     		syntax: "attr( <attr-name> <type-or-unit>? [, <attr-fallback> ]? )"
     	},
     	blur: {
-    		syntax: "blur( <length> )"
+    		syntax: "blur( <length>? )"
     	},
     	brightness: {
-    		syntax: "brightness( <number-percentage> )"
+    		syntax: "brightness( [ <number> | <percentage> ]? )"
     	},
     	calc: {
     		syntax: "calc( <calc-sum> )"
@@ -8699,7 +8733,7 @@
     		syntax: "conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )"
     	},
     	contrast: {
-    		syntax: "contrast( [ <number-percentage> ] )"
+    		syntax: "contrast( [ <number> | <percentage> ]? )"
     	},
     	cos: {
     		syntax: "cos( <calc-sum> )"
@@ -8714,7 +8748,7 @@
     		syntax: "cross-fade( <cf-mixing-image> , <cf-final-image>? )"
     	},
     	"drop-shadow": {
-    		syntax: "drop-shadow( <length>{2,3} <color>? )"
+    		syntax: "drop-shadow( [ <color>? && <length>{2,3} ] )"
     	},
     	element: {
     		syntax: "element( <id-selector> )"
@@ -8732,7 +8766,7 @@
     		syntax: "fit-content( <length-percentage [0,∞]> )"
     	},
     	grayscale: {
-    		syntax: "grayscale( <number-percentage> )"
+    		syntax: "grayscale( [ <number> | <percentage> ]? )"
     	},
     	hsl: {
     		syntax: "hsl( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsl( <hue>, <percentage>, <percentage>, <alpha-value>? )"
@@ -8741,7 +8775,7 @@
     		syntax: "hsla( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsla( <hue>, <percentage>, <percentage>, <alpha-value>? )"
     	},
     	"hue-rotate": {
-    		syntax: "hue-rotate( <angle> )"
+    		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
     	},
     	hwb: {
     		syntax: "hwb( [<hue> | none] [<percentage> | none] [<percentage> | none] [ / [<alpha-value> | none] ]? )"
@@ -8759,7 +8793,7 @@
     		syntax: "inset( <length-percentage>{1,4} [ round <'border-radius'> ]? )"
     	},
     	invert: {
-    		syntax: "invert( <number-percentage> )"
+    		syntax: "invert( [ <number> | <percentage> ]? )"
     	},
     	lab: {
     		syntax: "lab( [<percentage> | <number> | none] [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
@@ -8807,7 +8841,7 @@
     		syntax: "oklch( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? )"
     	},
     	opacity: {
-    		syntax: "opacity( [ <number-percentage> ] )"
+    		syntax: "opacity( [ <number> | <percentage> ]? )"
     	},
     	paint: {
     		syntax: "paint( <ident>, <declaration-value>? )"
@@ -8816,13 +8850,13 @@
     		syntax: "palette-mix(<color-interpolation-method> , [ [normal | light | dark | <palette-identifier> | <palette-mix()> ] && <percentage [0,100]>? ]#{2})"
     	},
     	path: {
-    		syntax: "path( [ <fill-rule>, ]? <string> )"
+    		syntax: "path( <'fill-rule'>? , <string> )"
     	},
     	perspective: {
     		syntax: "perspective( [ <length [0,∞]> | none ] )"
     	},
     	polygon: {
-    		syntax: "polygon( <fill-rule>? , [ <length-percentage> <length-percentage> ]# )"
+    		syntax: "polygon( <'fill-rule'>? , [ <length-percentage> <length-percentage> ]# )"
     	},
     	pow: {
     		syntax: "pow( <calc-sum>, <calc-sum> )"
@@ -8870,7 +8904,7 @@
     		syntax: "round( <rounding-strategy>?, <calc-sum>, <calc-sum> )"
     	},
     	saturate: {
-    		syntax: "saturate( <number-percentage> )"
+    		syntax: "saturate( [ <number> | <percentage> ]? )"
     	},
     	scale: {
     		syntax: "scale( [ <number> | <percentage> ]#{1,2} )"
@@ -8891,7 +8925,7 @@
     		syntax: "scroll( [ <scroller> || <axis> ]? )"
     	},
     	sepia: {
-    		syntax: "sepia( <number-percentage> )"
+    		syntax: "sepia( [ <number> | <percentage> ]? )"
     	},
     	sign: {
     		syntax: "sign( <calc-sum> )"
@@ -9046,10 +9080,10 @@
     		syntax: "normal | multiply | screen | overlay | darken | lighten | color-dodge | color-burn | hard-light | soft-light | difference | exclusion | hue | saturation | color | luminosity"
     	},
     	"blur()": {
-    		syntax: "blur( <length> )"
+    		syntax: "blur( <length>? )"
     	},
     	"brightness()": {
-    		syntax: "brightness( <number-percentage> )"
+    		syntax: "brightness( [ <number> | <percentage> ]? )"
     	},
     	"calc()": {
     		syntax: "calc( <calc-sum> )"
@@ -9091,7 +9125,13 @@
     		syntax: "<url>"
     	},
     	color: {
-    		syntax: "<rgb()> | <rgba()> | <hsl()> | <hsla()> | <hwb()> | <lab()> | <lch()> | <oklab()> | <oklch()> | <color()> | <hex-color> | <named-color> | <system-color> | <deprecated-system-color> | currentcolor | transparent"
+    		syntax: "<color-base> | currentColor | <system-color> | <light-dark()> | <deprecated-system-color>"
+    	},
+    	"color-base": {
+    		syntax: "<hex-color> | <color-function> | <named-color> | <color-mix()> | transparent"
+    	},
+    	"color-function": {
+    		syntax: "<rgb()> | <rgba()> | <hsl()> | <hsla()> | <hwb()> | <lab()> | <lch()> | <oklab()> | <oklch()> | <color()>"
     	},
     	"color()": {
     		syntax: "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
@@ -9163,7 +9203,7 @@
     		syntax: "[ contextual | no-contextual ]"
     	},
     	"contrast()": {
-    		syntax: "contrast( [ <number-percentage> ] )"
+    		syntax: "contrast( [ <number> | <percentage> ]? )"
     	},
     	"coord-box": {
     		syntax: "<paint-box> | view-box"
@@ -9205,7 +9245,7 @@
     		syntax: "[ [ <length-percentage> | <number> ]+ ]#"
     	},
     	"deprecated-system-color": {
-    		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonFace | ButtonHighlight | ButtonShadow | ButtonText | CaptionText | GrayText | Highlight | HighlightText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText"
+    		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonHighlight | ButtonShadow | CaptionText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText"
     	},
     	"discretionary-lig-values": {
     		syntax: "[ discretionary-ligatures | no-discretionary-ligatures ]"
@@ -9229,7 +9269,7 @@
     		syntax: "block | inline | run-in"
     	},
     	"drop-shadow()": {
-    		syntax: "drop-shadow( <length>{2,3} <color>? )"
+    		syntax: "drop-shadow( [ <color>? && <length>{2,3} ] )"
     	},
     	"easing-function": {
     		syntax: "linear | <cubic-bezier-timing-function> | <step-timing-function>"
@@ -9282,9 +9322,6 @@
     	"feature-value-name": {
     		syntax: "<custom-ident>"
     	},
-    	"fill-rule": {
-    		syntax: "nonzero | evenodd"
-    	},
     	"filter-function": {
     		syntax: "<blur()> | <brightness()> | <contrast()> | <drop-shadow()> | <grayscale()> | <hue-rotate()> | <invert()> | <opacity()> | <saturate()> | <sepia()>"
     	},
@@ -9334,7 +9371,7 @@
     		syntax: "<linear-gradient()> | <repeating-linear-gradient()> | <radial-gradient()> | <repeating-radial-gradient()> | <conic-gradient()> | <repeating-conic-gradient()>"
     	},
     	"grayscale()": {
-    		syntax: "grayscale( <number-percentage> )"
+    		syntax: "grayscale( [ <number> | <percentage> ]? )"
     	},
     	"grid-line": {
     		syntax: "auto | <custom-ident> | [ <integer> && <custom-ident>? ] | [ span && [ <integer> || <custom-ident> ] ]"
@@ -9355,7 +9392,7 @@
     		syntax: "[ shorter | longer | increasing | decreasing ] hue"
     	},
     	"hue-rotate()": {
-    		syntax: "hue-rotate( <angle> )"
+    		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
     	},
     	"hwb()": {
     		syntax: "hwb( [<hue> | none] [<percentage> | none] [<percentage> | none] [ / [<alpha-value> | none] ]? )"
@@ -9376,7 +9413,7 @@
     		syntax: "image-set( <image-set-option># )"
     	},
     	"image-set-option": {
-    		syntax: "[ <image> | <string> ]x [ <resolution> || type(<string>) ]"
+    		syntax: "[ <image> | <string> ] [ <resolution> || type(<string>) ]"
     	},
     	"image-src": {
     		syntax: "<url> | <string>"
@@ -9391,7 +9428,7 @@
     		syntax: "inset( <length-percentage>{1,4} [ round <'border-radius'> ]? )"
     	},
     	"invert()": {
-    		syntax: "invert( <number-percentage> )"
+    		syntax: "invert( [ <number> | <percentage> ]? )"
     	},
     	"keyframe-block": {
     		syntax: "<keyframe-selector># {\n  <declaration-list>\n}"
@@ -9535,7 +9572,7 @@
     		syntax: "repeat( [ <integer [1,∞]> | auto-fill ], <line-names>+ )"
     	},
     	"named-color": {
-    		syntax: "transparent | aliceblue | antiquewhite | aqua | aquamarine | azure | beige | bisque | black | blanchedalmond | blue | blueviolet | brown | burlywood | cadetblue | chartreuse | chocolate | coral | cornflowerblue | cornsilk | crimson | cyan | darkblue | darkcyan | darkgoldenrod | darkgray | darkgreen | darkgrey | darkkhaki | darkmagenta | darkolivegreen | darkorange | darkorchid | darkred | darksalmon | darkseagreen | darkslateblue | darkslategray | darkslategrey | darkturquoise | darkviolet | deeppink | deepskyblue | dimgray | dimgrey | dodgerblue | firebrick | floralwhite | forestgreen | fuchsia | gainsboro | ghostwhite | gold | goldenrod | gray | green | greenyellow | grey | honeydew | hotpink | indianred | indigo | ivory | khaki | lavender | lavenderblush | lawngreen | lemonchiffon | lightblue | lightcoral | lightcyan | lightgoldenrodyellow | lightgray | lightgreen | lightgrey | lightpink | lightsalmon | lightseagreen | lightskyblue | lightslategray | lightslategrey | lightsteelblue | lightyellow | lime | limegreen | linen | magenta | maroon | mediumaquamarine | mediumblue | mediumorchid | mediumpurple | mediumseagreen | mediumslateblue | mediumspringgreen | mediumturquoise | mediumvioletred | midnightblue | mintcream | mistyrose | moccasin | navajowhite | navy | oldlace | olive | olivedrab | orange | orangered | orchid | palegoldenrod | palegreen | paleturquoise | palevioletred | papayawhip | peachpuff | peru | pink | plum | powderblue | purple | rebeccapurple | red | rosybrown | royalblue | saddlebrown | salmon | sandybrown | seagreen | seashell | sienna | silver | skyblue | slateblue | slategray | slategrey | snow | springgreen | steelblue | tan | teal | thistle | tomato | turquoise | violet | wheat | white | whitesmoke | yellow | yellowgreen"
+    		syntax: "aliceblue | antiquewhite | aqua | aquamarine | azure | beige | bisque | black | blanchedalmond | blue | blueviolet | brown | burlywood | cadetblue | chartreuse | chocolate | coral | cornflowerblue | cornsilk | crimson | cyan | darkblue | darkcyan | darkgoldenrod | darkgray | darkgreen | darkgrey | darkkhaki | darkmagenta | darkolivegreen | darkorange | darkorchid | darkred | darksalmon | darkseagreen | darkslateblue | darkslategray | darkslategrey | darkturquoise | darkviolet | deeppink | deepskyblue | dimgray | dimgrey | dodgerblue | firebrick | floralwhite | forestgreen | fuchsia | gainsboro | ghostwhite | gold | goldenrod | gray | green | greenyellow | grey | honeydew | hotpink | indianred | indigo | ivory | khaki | lavender | lavenderblush | lawngreen | lemonchiffon | lightblue | lightcoral | lightcyan | lightgoldenrodyellow | lightgray | lightgreen | lightgrey | lightpink | lightsalmon | lightseagreen | lightskyblue | lightslategray | lightslategrey | lightsteelblue | lightyellow | lime | limegreen | linen | magenta | maroon | mediumaquamarine | mediumblue | mediumorchid | mediumpurple | mediumseagreen | mediumslateblue | mediumspringgreen | mediumturquoise | mediumvioletred | midnightblue | mintcream | mistyrose | moccasin | navajowhite | navy | oldlace | olive | olivedrab | orange | orangered | orchid | palegoldenrod | palegreen | paleturquoise | palevioletred | papayawhip | peachpuff | peru | pink | plum | powderblue | purple | rebeccapurple | red | rosybrown | royalblue | saddlebrown | salmon | sandybrown | seagreen | seashell | sienna | silver | skyblue | slateblue | slategray | slategrey | snow | springgreen | steelblue | tan | teal | thistle | tomato | turquoise | violet | wheat | white | whitesmoke | yellow | yellowgreen"
     	},
     	"namespace-prefix": {
     		syntax: "<ident>"
@@ -9568,7 +9605,7 @@
     		syntax: "oklch( [ <percentage> | <number> | none] [ <percentage> | <number> | none] [ <hue> | none] [ / [<alpha-value> | none] ]? )"
     	},
     	"opacity()": {
-    		syntax: "opacity( [ <number-percentage> ] )"
+    		syntax: "opacity( [ <number> | <percentage> ]? )"
     	},
     	"opacity-value": {
     		syntax: "<number> | <percentage>"
@@ -9616,7 +9653,7 @@
     		syntax: "palette-mix(<color-interpolation-method> , [ [normal | light | dark | <palette-identifier> | <palette-mix()> ] && <percentage [0,100]>? ]#{2})"
     	},
     	"path()": {
-    		syntax: "path( [ <fill-rule>, ]? <string> )"
+    		syntax: "path( <'fill-rule'>? , <string> )"
     	},
     	"perspective()": {
     		syntax: "perspective( [ <length [0,∞]> | none ] )"
@@ -9625,7 +9662,7 @@
     		syntax: "hsl | hwb | lch | oklch"
     	},
     	"polygon()": {
-    		syntax: "polygon( <fill-rule>? , [ <length-percentage> <length-percentage> ]# )"
+    		syntax: "polygon( <'fill-rule'>? , [ <length-percentage> <length-percentage> ]# )"
     	},
     	position: {
     		syntax: "[ [ left | center | right ] || [ top | center | bottom ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ]? | [ [ left | right ] <length-percentage> ] && [ [ top | bottom ] <length-percentage> ] ]"
@@ -9724,7 +9761,7 @@
     		syntax: "nearest | up | down | to-zero"
     	},
     	"saturate()": {
-    		syntax: "saturate( <number-percentage> )"
+    		syntax: "saturate( [ <number> | <percentage> ]? )"
     	},
     	"scale()": {
     		syntax: "scale( [ <number> | <percentage> ]#{1,2} )"
@@ -9760,7 +9797,7 @@
     		syntax: "center | start | end | self-start | self-end | flex-start | flex-end"
     	},
     	"sepia()": {
-    		syntax: "sepia( <number-percentage> )"
+    		syntax: "sepia( [ <number> | <percentage> ]? )"
     	},
     	shadow: {
     		syntax: "inset? && <length>{2,4} && <color>?"
@@ -10325,19 +10362,103 @@
     		syntax: "@charset \"<charset>\";"
     	},
     	"@counter-style": {
-    		syntax: "@counter-style <counter-style-name> {\n  [ system: <counter-system>; ] ||\n  [ symbols: <counter-symbols>; ] ||\n  [ additive-symbols: <additive-symbols>; ] ||\n  [ negative: <negative-symbol>; ] ||\n  [ prefix: <prefix>; ] ||\n  [ suffix: <suffix>; ] ||\n  [ range: <range>; ] ||\n  [ pad: <padding>; ] ||\n  [ speak-as: <speak-as>; ] ||\n  [ fallback: <counter-style-name>; ]\n}"
+    		syntax: "@counter-style <counter-style-name> {\n  [ system: <counter-system>; ] ||\n  [ symbols: <counter-symbols>; ] ||\n  [ additive-symbols: <additive-symbols>; ] ||\n  [ negative: <negative-symbol>; ] ||\n  [ prefix: <prefix>; ] ||\n  [ suffix: <suffix>; ] ||\n  [ range: <range>; ] ||\n  [ pad: <padding>; ] ||\n  [ speak-as: <speak-as>; ] ||\n  [ fallback: <counter-style-name>; ]\n}",
+    		descriptors: {
+    			"additive-symbols": {
+    				syntax: "[ <integer> && <symbol> ]#"
+    			},
+    			fallback: {
+    				syntax: "<counter-style-name>"
+    			},
+    			negative: {
+    				syntax: "<symbol> <symbol>?"
+    			},
+    			pad: {
+    				syntax: "<integer> && <symbol>"
+    			},
+    			prefix: {
+    				syntax: "<symbol>"
+    			},
+    			range: {
+    				syntax: "[ [ <integer> | infinite ]{2} ]# | auto"
+    			},
+    			"speak-as": {
+    				syntax: "auto | bullets | numbers | words | spell-out | <counter-style-name>"
+    			},
+    			suffix: {
+    				syntax: "<symbol>"
+    			},
+    			symbols: {
+    				syntax: "<symbol>+"
+    			},
+    			system: {
+    				syntax: "cyclic | numeric | alphabetic | symbolic | additive | [ fixed <integer>? ] | [ extends <counter-style-name> ]"
+    			}
+    		}
     	},
     	"@document": {
     		syntax: "@document [ <url> | url-prefix(<string>) | domain(<string>) | media-document(<string>) | regexp(<string>) ]# {\n  <group-rule-body>\n}"
     	},
     	"@font-face": {
-    		syntax: "@font-face {\n  [ font-family: <family-name>; ] ||\n  [ src: <src>; ] ||\n  [ unicode-range: <unicode-range>; ] ||\n  [ font-variant: <font-variant>; ] ||\n  [ font-feature-settings: <font-feature-settings>; ] ||\n  [ font-variation-settings: <font-variation-settings>; ] ||\n  [ font-stretch: <font-stretch>; ] ||\n  [ font-weight: <font-weight>; ] ||\n  [ font-style: <font-style>; ] ||\n  [ size-adjust: <size-adjust>; ] ||\n  [ ascent-override: <ascent-override>; ] ||\n  [ descent-override: <descent-override>; ] ||\n  [ line-gap-override: <line-gap-override>; ]\n}"
+    		syntax: "@font-face {\n  [ font-family: <family-name>; ] ||\n  [ src: <src>; ] ||\n  [ unicode-range: <unicode-range>; ] ||\n  [ font-variant: <font-variant>; ] ||\n  [ font-feature-settings: <font-feature-settings>; ] ||\n  [ font-variation-settings: <font-variation-settings>; ] ||\n  [ font-stretch: <font-stretch>; ] ||\n  [ font-weight: <font-weight>; ] ||\n  [ font-style: <font-style>; ] ||\n  [ size-adjust: <size-adjust>; ] ||\n  [ ascent-override: <ascent-override>; ] ||\n  [ descent-override: <descent-override>; ] ||\n  [ line-gap-override: <line-gap-override>; ]\n}",
+    		descriptors: {
+    			"ascent-override": {
+    				syntax: "normal | <percentage>"
+    			},
+    			"descent-override": {
+    				syntax: "normal | <percentage>"
+    			},
+    			"font-display": {
+    				syntax: "[ auto | block | swap | fallback | optional ]"
+    			},
+    			"font-family": {
+    				syntax: "<family-name>"
+    			},
+    			"font-feature-settings": {
+    				syntax: "normal | <feature-tag-value>#"
+    			},
+    			"font-stretch": {
+    				syntax: "<font-stretch-absolute>{1,2}"
+    			},
+    			"font-style": {
+    				syntax: "normal | italic | oblique <angle>{0,2}"
+    			},
+    			"font-variation-settings": {
+    				syntax: "normal | [ <string> <number> ]#"
+    			},
+    			"font-weight": {
+    				syntax: "<font-weight-absolute>{1,2}"
+    			},
+    			"line-gap-override": {
+    				syntax: "normal | <percentage>"
+    			},
+    			"size-adjust": {
+    				syntax: "<percentage>"
+    			},
+    			src: {
+    				syntax: "[ <url> [ format( <string># ) ]? | local( <family-name> ) ]#"
+    			},
+    			"unicode-range": {
+    				syntax: "<unicode-range-token>#"
+    			}
+    		}
     	},
     	"@font-feature-values": {
     		syntax: "@font-feature-values <family-name># {\n  <feature-value-block-list>\n}"
     	},
     	"@font-palette-values": {
-    		syntax: "@font-palette-values <dashed-ident> {\n  <declaration-list>\n}"
+    		syntax: "@font-palette-values <dashed-ident> {\n  <declaration-list>\n}",
+    		descriptors: {
+    			"base-palette": {
+    				syntax: "light | dark | <integer [0,∞]>"
+    			},
+    			"font-family": {
+    				syntax: "<family-name>#"
+    			},
+    			"override-colors": {
+    				syntax: "[ <integer [0,∞]> <color> ]#"
+    			}
+    		}
     	},
     	"@import": {
     		syntax: "@import [ <string> | <url> ]\n        [ layer | layer(<layer-name>) ]?\n        [ supports( [ <supports-condition> | <declaration> ] ) ]?\n        <media-query-list>? ;"
@@ -10355,13 +10476,38 @@
     		syntax: "@namespace <namespace-prefix>? [ <string> | <url> ];"
     	},
     	"@page": {
-    		syntax: "@page <page-selector-list> {\n  <page-body>\n}"
+    		syntax: "@page <page-selector-list> {\n  <page-body>\n}",
+    		descriptors: {
+    			bleed: {
+    				syntax: "auto | <length>"
+    			},
+    			marks: {
+    				syntax: "none | [ crop || cross ]"
+    			},
+    			"page-orientation": {
+    				syntax: "upright | rotate-left | rotate-right "
+    			},
+    			size: {
+    				syntax: "<length>{1,2} | auto | [ <page-size> || [ portrait | landscape ] ]"
+    			}
+    		}
     	},
     	"@position-try": {
     		syntax: "@position-try <dashed-ident> {\n  <declaration-list>\n}"
     	},
     	"@property": {
-    		syntax: "@property <custom-property-name> {\n  <declaration-list>\n}"
+    		syntax: "@property <custom-property-name> {\n  <declaration-list>\n}",
+    		descriptors: {
+    			inherits: {
+    				syntax: "true | false"
+    			},
+    			"initial-value": {
+    				syntax: "<declaration-value>?"
+    			},
+    			syntax: {
+    				syntax: "<string>"
+    			}
+    		}
     	},
     	"@scope": {
     		syntax: "@scope [(<scope-start>)]? [to (<scope-end>)]? {\n  <rule-list>\n}"
@@ -10373,7 +10519,15 @@
     		syntax: "@supports <supports-condition> {\n  <group-rule-body>\n}"
     	},
     	"@view-transition": {
-    		syntax: "@view-transition {\n  <declaration-list>\n}"
+    		syntax: "@view-transition {\n  <declaration-list>\n}",
+    		descriptors: {
+    			navigation: {
+    				syntax: "auto | none"
+    			},
+    			types: {
+    				syntax: "none | <custom-ident>+"
+    			}
+    		}
     	}
     };
     var config$3 = {
@@ -10427,6 +10581,7 @@
         ValidationTokenEnum[ValidationTokenEnum["DeclarationDefinitionToken"] = 37] = "DeclarationDefinitionToken";
         ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 38] = "SemiColon";
         ValidationTokenEnum[ValidationTokenEnum["Character"] = 39] = "Character";
+        ValidationTokenEnum[ValidationTokenEnum["ColumnArrayToken"] = 40] = "ColumnArrayToken";
     })(ValidationTokenEnum || (ValidationTokenEnum = {}));
     var ValidationSyntaxGroupEnum;
     (function (ValidationSyntaxGroupEnum) {
@@ -10437,6 +10592,20 @@
         ValidationSyntaxGroupEnum["AtRules"] = "atRules";
     })(ValidationSyntaxGroupEnum || (ValidationSyntaxGroupEnum = {}));
 
+    var WalkValidationTokenEnum;
+    (function (WalkValidationTokenEnum) {
+        WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreChildren"] = 0] = "IgnoreChildren";
+        WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreNode"] = 1] = "IgnoreNode";
+        WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreAll"] = 2] = "IgnoreAll";
+    })(WalkValidationTokenEnum || (WalkValidationTokenEnum = {}));
+    var WalkValidationTokenKeyTypeEnum;
+    (function (WalkValidationTokenKeyTypeEnum) {
+        WalkValidationTokenKeyTypeEnum["Array"] = "array";
+        WalkValidationTokenKeyTypeEnum["Children"] = "chi";
+        WalkValidationTokenKeyTypeEnum["Left"] = "l";
+        WalkValidationTokenKeyTypeEnum["Right"] = "r";
+        WalkValidationTokenKeyTypeEnum["Prelude"] = "prelude";
+    })(WalkValidationTokenKeyTypeEnum || (WalkValidationTokenKeyTypeEnum = {}));
     const skipped = [
         ValidationTokenEnum.Star,
         ValidationTokenEnum.HashMark,
@@ -10603,13 +10772,66 @@
             yield getTokenType$1(buffer, position, currentPosition);
         }
     }
+    function columnCallback(token, parent, key) {
+        if (key == WalkValidationTokenKeyTypeEnum.Prelude) {
+            return WalkValidationTokenEnum.IgnoreAll;
+        }
+        if (token.typ == ValidationTokenEnum.ColumnToken || token.typ == ValidationTokenEnum.Whitespace) {
+            return WalkValidationTokenEnum.IgnoreNode;
+        }
+        return WalkValidationTokenEnum.IgnoreChildren;
+    }
+    function toColumnArray(ast, parent) {
+        const result = new Map;
+        // @ts-ignore
+        for (const { token } of walkValidationToken(ast, null, columnCallback)) {
+            result.set(JSON.stringify(token), token);
+        }
+        const node = {
+            typ: ValidationTokenEnum.ColumnArrayToken,
+            chi: [...result.values()]
+        };
+        if (parent != null) {
+            replaceNode(parent, ast, node);
+        }
+        return node;
+    }
+    function replaceNode(parent, target, node) {
+        if ('l' in parent && parent.l == target) {
+            parent.l = node;
+        }
+        if ('r' in parent && parent.r == target) {
+            parent.r = node;
+        }
+        if ('chi' in parent) {
+            // @ts-ignore
+            for (let i = 0; i < parent.chi.length; i++) {
+                // @ts-ignore
+                if (parent.chi[i] == target) {
+                    // @ts-ignore
+                    parent.chi[i] = node;
+                    break;
+                }
+            }
+        }
+    }
+    function transform$1(context) {
+        for (const { token, parent } of walkValidationToken(context)) {
+            switch (token.typ) {
+                case ValidationTokenEnum.ColumnToken:
+                    toColumnArray(token, parent);
+                    break;
+            }
+        }
+        return context;
+    }
     function parseSyntax(syntax) {
         const root = Object.defineProperty({
             typ: ValidationTokenEnum.Root,
             chi: []
         }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
         // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
-        return minify$1(doParseSyntax(syntax, tokenize(syntax), root));
+        return minify$1(transform$1(doParseSyntax(syntax, tokenize(syntax), root)));
     }
     function matchParens(syntax, iterator) {
         let item;
@@ -11377,6 +11599,10 @@
                     (token.chi == null ? '' : ' {\n' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '')).slice(1, -1) + '\n}';
             case ValidationTokenEnum.Block:
                 return '{' + token.chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
+            case ValidationTokenEnum.DeclarationDefinitionToken:
+                return token.nam + ': ' + renderSyntax(token.val);
+            case ValidationTokenEnum.ColumnArrayToken:
+                return token.chi.reduce((acc, curr) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
             default:
                 throw new Error('Unhandled token: ' + JSON.stringify({ token }));
         }
@@ -11468,35 +11694,42 @@
         }
         return ast;
     }
-    function* walkValidationToken(token, parent, callback) {
+    function* walkValidationToken(token, parent, callback, key) {
         if (Array.isArray(token)) {
             for (const child of token) {
-                yield* walkValidationToken(child, parent);
+                yield* walkValidationToken(child, parent, callback, WalkValidationTokenKeyTypeEnum.Array);
             }
             return;
         }
-        yield { token, parent };
-        if ('prelude' in token) {
+        let action = null;
+        if (callback != null) {
+            // @ts-ignore
+            action = callback(token, parent, key);
+        }
+        if (action != WalkValidationTokenEnum.IgnoreNode && action != WalkValidationTokenEnum.IgnoreAll) {
+            yield { token, parent };
+        }
+        if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'prelude' in token) {
             for (const child of token.prelude) {
-                yield* walkValidationToken(child, token);
+                yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Prelude);
             }
         }
-        if ('chi' in token) {
+        if (action != WalkValidationTokenEnum.IgnoreChildren && 'chi' in token) {
             // @ts-ignore
             for (const child of token.chi) {
-                yield* walkValidationToken(child, token);
+                yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Children);
             }
         }
-        if ('l' in token) {
+        if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'l' in token) {
             // @ts-ignore
             for (const child of token.l) {
-                yield* walkValidationToken(child, token);
+                yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Left);
             }
         }
-        if ('r' in token) {
+        if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'r' in token) {
             // @ts-ignore
             for (const child of token.r) {
-                yield* walkValidationToken(child, token);
+                yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Right);
             }
         }
     }
@@ -11508,25 +11741,30 @@
         return config$3;
     }
     function getParsedSyntax(group, key) {
-        if (!(key in config$3[group])) {
-            const matches = key.match(/(@?)(-[a-zA-Z]+)-(.*?)$/);
-            if (matches != null) {
-                key = matches[1] + matches[3];
+        // @ts-ignore
+        let obj = config$3[group];
+        const keys = Array.isArray(key) ? key : [key];
+        for (let i = 0; i < keys.length; i++) {
+            key = keys[i];
+            if (!(key in obj)) {
+                if ((i == 0 && key.charAt(0) == '@') || key.charAt(0) == '-') {
+                    const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
+                    if (matches != null) {
+                        key = matches[1] + matches[3];
+                    }
+                }
+                if (!(key in obj)) {
+                    return null;
+                }
             }
-            if (!(key in config$3[group])) {
-                return null;
-            }
+            // @ts-ignore
+            obj = obj[key];
         }
-        const index = group + '.' + key;
+        const index = group + '.' + keys.join('.');
         // @ts-ignore
         if (!parsedSyntaxes.has(index)) {
             // @ts-ignore
-            const syntax = parseSyntax(config$3[group][key].syntax);
-            for (const node of syntax.chi) {
-                for (const { token, parent } of walkValidationToken(node)) {
-                    token.text = renderSyntax(token);
-                }
-            }
+            const syntax = parseSyntax(obj.syntax);
             // @ts-ignore
             parsedSyntaxes.set(index, syntax.chi);
         }
@@ -11929,12 +12167,366 @@
                 tokens
             };
         }
+        // const config = getSyntaxConfig();
+        //
+        // let match: number = 0;
         let result = null;
+        // const combinators: EnumToken[] = combinatorsTokens.filter((t: EnumToken) => t != EnumToken.DescendantCombinatorTokenType);
         for (const t of splitTokenList(tokens, combinatorsTokens)) {
             result = validateCompoundSelector(t, root, options);
             if (result.valid == ValidationLevel.Drop) {
                 return result;
             }
+            //  if (combinatorsTokens.includes(tokens[0].typ)) {
+            //
+            //      // @ts-ignore
+            //      return {
+            //          valid: ValidationLevel.Drop,
+            //          matches: [],
+            //          // @ts-ignore
+            //          node: tokens[0],
+            //          syntax: null,
+            //          error: 'unexpected combinator: ' + JSON.stringify(tokens[0]),
+            //          tokens
+            //      }
+            //  }
+            //
+            //  else if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //      if (!options?.nestedSelector) {
+            //
+            //          // @ts-ignore
+            //          return {
+            //              valid: ValidationLevel.Drop,
+            //              matches: [],
+            //              // @ts-ignore
+            //              node: tokens[0],
+            //              syntax: null,
+            //              error: 'nested selector not allowed',
+            //              tokens
+            //          }
+            //
+            //          match++;
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //      }
+            //
+            //      while (tokens.length > 0 && tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //      }
+            //
+            //      if (tokens.length == 0) {
+            //
+            //          break;
+            //      }
+            //  }
+            //
+            // else if (EnumToken.IdenTokenType == tokens[0].typ) {
+            //
+            //      tokens.shift();
+            //      consumeWhitespace(tokens);
+            //
+            //      if (tokens.length == 0) {
+            //
+            //          break;
+            //      }
+            //  }
+            //
+            //  else if (EnumToken.UniversalSelectorTokenType == tokens[0].typ) {
+            //
+            //      tokens.shift();
+            //      consumeWhitespace(tokens);
+            //      continue;
+            //  }
+            //
+            //    while (tokens.length > 0) {
+            //
+            //      if (tokens[0].typ == EnumToken.PseudoClassFuncTokenType) {
+            //
+            //          if (tokens[0].val.startsWith(':-webkit-')) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'invalid pseudo-class',
+            //                  tokens
+            //              }
+            //          }
+            //      }
+            //
+            //      if (tokens[0].typ == EnumToken.PseudoClassTokenType) {
+            //
+            //          const isPseudoElement: boolean = tokens[0].val.startsWith('::');
+            //
+            //          if (!mozExtensions.has(tokens[0].val) && !webkitExtensions.has(tokens[0].val) && !(tokens[0].val in config.selectors) && !(!isPseudoElement &&( ':' + tokens[0].val) in config.selectors)) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'unknown pseudo-class: ' + tokens[0].val,
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //     else if ([
+            //          EnumToken.ClassSelectorTokenType,
+            //          EnumToken.HashTokenType,
+            //          EnumToken.PseudoClassFuncTokenType].includes(tokens[0].typ)) {
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //          if (!options?.nestedSelector) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'nested selector not allowed',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      // validate namespace
+            //      if (tokens[0].typ == EnumToken.NameSpaceAttributeTokenType) {
+            //
+            //          if (!((tokens[0].l == null || tokens[0].l.typ == EnumToken.IdenTokenType || (tokens[0].l.typ == EnumToken.LiteralTokenType && tokens[0].l.val == '*')) &&
+            //              tokens[0].r.typ == EnumToken.IdenTokenType)) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'expecting wq-name',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue;
+            //      }
+            //      // validate attribute
+            //      else if (tokens[0].typ == EnumToken.AttrTokenType) {
+            //
+            //          const children: Token[] = tokens[0].chi.slice() as Token[];
+            //
+            //          consumeWhitespace(children);
+            //
+            //          if (children.length == 0) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'invalid attribute selector',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          if (![
+            //              EnumToken.IdenTokenType,
+            //              EnumToken.NameSpaceAttributeTokenType,
+            //              EnumToken.MatchExpressionTokenType].includes(children[0].typ)) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'invalid attribute selector',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          if (children[0].typ == EnumToken.MatchExpressionTokenType) {
+            //
+            //              if (![EnumToken.IdenTokenType,
+            //                      EnumToken.NameSpaceAttributeTokenType].includes(children[0].l.typ) ||
+            //                  ![
+            //                      EnumToken.EqualMatchTokenType, EnumToken.DashMatchTokenType,
+            //                      EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
+            //                      EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes(children[0].op.typ) ||
+            //                  ![EnumToken.StringTokenType,
+            //                      EnumToken.IdenTokenType].includes(children[0].r.typ)) {
+            //
+            //                  // @ts-ignore
+            //                  return {
+            //                      valid: ValidationLevel.Drop,
+            //                      matches: [],
+            //                      node: tokens[0],
+            //                      syntax: null,
+            //                      error: 'invalid attribute selector',
+            //                      tokens
+            //                  }
+            //              }
+            //
+            //              if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+            //
+            //                  // @ts-ignore
+            //                  return {
+            //                      valid: ValidationLevel.Drop,
+            //                      matches: [],
+            //                      node: tokens[0],
+            //                      syntax: null,
+            //                      error: 'invalid attribute selector',
+            //                      tokens
+            //                  }
+            //              }
+            //          }
+            //
+            //          children.shift();
+            //          consumeWhitespace(children);
+            //
+            //          if (children.length > 0) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  node: children[0],
+            //                  syntax: null,
+            //                  error: 'unexpected token',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue;
+            //      }
+            //
+            //      break;
+            //  }
+            //
+            //  if (tokens.length == 0) {
+            //
+            //      break
+            //  }
+            //
+            //  // combinator
+            //  if (!combinatorsTokens.includes(tokens[0].typ)) {
+            //
+            //      if (tokens[0].typ == EnumToken.NestingSelectorTokenType) {
+            //
+            //          if (!options?.nestedSelector) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'nested selector not allowed',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      if (tokens[0].typ == EnumToken.PseudoClassTokenType) {
+            //
+            //          const isPseudoElement: boolean = tokens[0].val.startsWith('::');
+            //
+            //          if (!(tokens[0].val in config.selectors) && (isPseudoElement && !(!isPseudoElement &&( ':' + tokens[0].val) in config.selectors))) {
+            //
+            //              // @ts-ignore
+            //              return {
+            //                  valid: ValidationLevel.Drop,
+            //                  matches: [],
+            //                  // @ts-ignore
+            //                  node: tokens[0],
+            //                  syntax: null,
+            //                  error: 'unknown pseudo-class',
+            //                  tokens
+            //              }
+            //          }
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //
+            //      if (tokens.length > 0 &&
+            //          [
+            //              EnumToken.IdenTokenType,
+            //              EnumToken.AttrTokenType,
+            //              EnumToken.NameSpaceAttributeTokenType,
+            //              EnumToken.ClassSelectorTokenType,
+            //              EnumToken.HashTokenType,
+            //              EnumToken.UniversalSelectorTokenType,
+            //              EnumToken.PseudoClassFuncTokenType,
+            //              EnumToken.PseudoClassFuncTokenType].includes(tokens[0].typ)) {
+            //
+            //          tokens.shift();
+            //          consumeWhitespace(tokens);
+            //          continue
+            //      }
+            //
+            //      // @ts-ignore
+            //      return {
+            //          valid: ValidationLevel.Drop,
+            //          matches: [],
+            //          node: tokens[0],
+            //          syntax: null,
+            //          error: 'expecting combinator or subclass-selector: ' + JSON.stringify(tokens[0]),
+            //          tokens
+            //      }
+            //  }
+            //
+            //  const token = tokens.shift() as Token;
+            //  consumeWhitespace(tokens);
+            //
+            //  if (tokens.length == 0) {
+            //
+            //      // @ts-ignore
+            //      return {
+            //          valid: ValidationLevel.Drop,
+            //          matches: [],
+            //          node: token,
+            //          syntax: null,
+            //          error: 'expected compound-selector',
+            //          tokens
+            //      }
+            //  }
         }
         // @ts-ignore
         return result ?? {
@@ -12195,470 +12787,6 @@
         return validateKeyframeSelector(i == j ? tokens.slice(i) : tokens.slice(j, i + 1), atRule);
     }
 
-    const validateSelectorList = validateComplexSelectorList;
-
-    function validateSelector(selector, options, root) {
-        if (root == null) {
-            return validateSelectorList(selector, root);
-        }
-        // @ts-ignore
-        if (root.typ == exports.EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
-            return validateKeyframeBlockList(selector, root);
-        }
-        let isNested = root.typ == exports.EnumToken.RuleNodeType ? 1 : 0;
-        let currentRoot = root.parent;
-        while (currentRoot != null && isNested == 0) {
-            if (currentRoot.typ == exports.EnumToken.RuleNodeType) {
-                isNested++;
-                if (isNested > 0) {
-                    // @ts-ignore
-                    return validateRelativeSelectorList(selector, root, { nestedSelector: true });
-                }
-            }
-            currentRoot = currentRoot.parent;
-        }
-        const nestedSelector = isNested > 0;
-        // @ts-ignore
-        return nestedSelector ? validateRelativeSelectorList(selector, root, { nestedSelector }) : validateSelectorList(selector, root, { nestedSelector });
-    }
-
-    function validateAtRuleMedia(atRule, options, root) {
-        // media-query-list
-        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: null,
-                syntax: null,
-                error: '',
-                tokens: []
-            };
-        }
-        let result = null;
-        const slice = atRule.tokens.slice();
-        consumeWhitespace(slice);
-        if (slice.length == 0) {
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: atRule,
-                syntax: '@media',
-                error: '',
-                tokens: []
-            };
-        }
-        result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
-        if (result.valid == ValidationLevel.Drop) {
-            return result;
-        }
-        if (!('chi' in atRule)) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: atRule,
-                syntax: '@media',
-                error: 'expected at-rule body',
-                tokens: []
-            };
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: atRule,
-            syntax: '@media',
-            error: '',
-            tokens: []
-        };
-    }
-    function validateAtRuleMediaQueryList(tokenList, atRule) {
-        const split = splitTokenList(tokenList);
-        const matched = [];
-        let result = null;
-        let previousToken;
-        let mediaFeatureType;
-        for (let i = 0; i < split.length; i++) {
-            const tokens = split[i].slice();
-            const match = [];
-            result = null;
-            mediaFeatureType = null;
-            previousToken = null;
-            if (tokens.length == 0) {
-                // @ts-ignore
-                result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0] ?? atRule,
-                    syntax: '@media',
-                    error: 'unexpected token',
-                    tokens: []
-                };
-                continue;
-            }
-            while (tokens.length > 0) {
-                previousToken = tokens[0];
-                // media-condition | media-type | custom-media
-                if (!(validateMediaCondition(tokens[0], atRule) || validateMediaFeature(tokens[0]) || validateCustomMediaCondition(tokens[0], atRule))) {
-                    if (tokens[0].typ == exports.EnumToken.ParensTokenType) {
-                        result = validateAtRuleMediaQueryList(tokens[0].chi, atRule);
-                    }
-                    else {
-                        result = {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: tokens[0] ?? atRule,
-                            syntax: '@media',
-                            error: 'expecting media feature or media condition',
-                            tokens: []
-                        };
-                    }
-                    if (result.valid == ValidationLevel.Drop) {
-                        break;
-                    }
-                    result = null;
-                }
-                match.push(tokens.shift());
-                if (tokens.length == 0) {
-                    break;
-                }
-                if (!consumeWhitespace(tokens)) {
-                    if (previousToken?.typ != exports.EnumToken.ParensTokenType) {
-                        // @ts-ignore
-                        result = {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: tokens[0] ?? atRule,
-                            syntax: '@media',
-                            error: 'expected media query list',
-                            tokens: []
-                        };
-                        break;
-                    }
-                }
-                else if (![exports.EnumToken.MediaFeatureOrTokenType, exports.EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
-                    // @ts-ignore
-                    result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        node: tokens[0] ?? atRule,
-                        syntax: '@media',
-                        error: 'expected and/or',
-                        tokens: []
-                    };
-                    break;
-                }
-                if (mediaFeatureType == null) {
-                    mediaFeatureType = tokens[0];
-                }
-                if (mediaFeatureType.typ != tokens[0].typ) {
-                    // @ts-ignore
-                    result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        node: tokens[0] ?? atRule,
-                        syntax: '@media',
-                        error: 'mixing and/or not allowed at the same level',
-                        tokens: []
-                    };
-                    break;
-                }
-                match.push({ typ: exports.EnumToken.WhitespaceTokenType }, tokens.shift());
-                consumeWhitespace(tokens);
-                if (tokens.length == 0) {
-                    // @ts-ignore
-                    result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        node: tokens[0] ?? atRule,
-                        syntax: '@media',
-                        error: 'expected media-condition',
-                        tokens: []
-                    };
-                    break;
-                }
-                match.push({ typ: exports.EnumToken.WhitespaceTokenType });
-            }
-            if (result == null && match.length > 0) {
-                matched.push(match);
-            }
-        }
-        if (result != null) {
-            return result;
-        }
-        if (matched.length == 0) {
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: atRule,
-                syntax: '@media',
-                error: 'expected media query list',
-                tokens: []
-            };
-        }
-        tokenList.length = 0;
-        let hasAll = false;
-        for (let i = 0; i < matched.length; i++) {
-            if (tokenList.length > 0) {
-                tokenList.push({ typ: exports.EnumToken.CommaTokenType });
-            }
-            if (matched[i].length == 1 && matched.length > 1 && matched[i][0].typ == exports.EnumToken.MediaFeatureTokenType && matched[i][0].val == 'all') {
-                hasAll = true;
-                continue;
-            }
-            tokenList.push(...matched[i]);
-        }
-        if (hasAll && tokenList.length == 0) {
-            tokenList.push({ typ: exports.EnumToken.MediaFeatureTokenType, val: 'all' });
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: atRule,
-            syntax: '@media',
-            error: '',
-            tokens: []
-        };
-    }
-    function validateCustomMediaCondition(token, atRule) {
-        if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
-            return validateMediaCondition(token.val, atRule);
-        }
-        if (token.typ != exports.EnumToken.ParensTokenType) {
-            return false;
-        }
-        const chi = token.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
-        if (chi.length != 1) {
-            return false;
-        }
-        return chi[0].typ == exports.EnumToken.DashedIdenTokenType;
-    }
-    function validateMediaCondition(token, atRule) {
-        if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
-            return validateMediaCondition(token.val, atRule);
-        }
-        if (token.typ != exports.EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == exports.EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val))) {
-            return false;
-        }
-        const chi = token.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
-        if (chi.length != 1) {
-            return false;
-        }
-        if (chi[0].typ == exports.EnumToken.IdenTokenType) {
-            return true;
-        }
-        if (chi[0].typ == exports.EnumToken.MediaFeatureNotTokenType) {
-            return validateMediaCondition(chi[0].val, atRule);
-        }
-        if (chi[0].typ == exports.EnumToken.MediaQueryConditionTokenType) {
-            return chi[0].l.typ == exports.EnumToken.IdenTokenType;
-        }
-        return false;
-    }
-    function validateMediaFeature(token) {
-        let val = token;
-        if (token.typ == exports.EnumToken.MediaFeatureOnlyTokenType || token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
-            val = token.val;
-        }
-        return val.typ == exports.EnumToken.MediaFeatureTokenType;
-    }
-
-    function validateAtRuleCounterStyle(atRule, options, root) {
-        // media-query-list
-        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: atRule,
-                syntax: '@counter-style',
-                error: 'expected counter style name',
-                tokens: []
-            };
-        }
-        const tokens = atRule.tokens.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
-        if (tokens.length == 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: atRule,
-                syntax: '@counter-style',
-                error: 'expected counter style name',
-                tokens
-            };
-        }
-        if (tokens.length > 1) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: tokens[1] ?? atRule,
-                syntax: '@counter-style',
-                error: 'unexpected token',
-                tokens
-            };
-        }
-        if (![exports.EnumToken.IdenTokenType, exports.EnumToken.DashedIdenTokenType].includes(tokens[0].typ)) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: tokens[0],
-                syntax: '@counter-style',
-                error: 'expected counter style name',
-                tokens
-            };
-        }
-        if (!('chi' in atRule)) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: atRule,
-                syntax: '@counter-style',
-                error: 'expected counter style body',
-                tokens
-            };
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: atRule,
-            syntax: '@counter-style',
-            error: '',
-            tokens
-        };
-    }
-
-    function validateAtRulePage(atRule, options, root) {
-        // media-query-list
-        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: null,
-                syntax: '@page',
-                error: '',
-                tokens: []
-            };
-        }
-        // page-selector-list
-        for (const tokens of splitTokenList(atRule.tokens)) {
-            if (tokens.length == 0) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0] ?? atRule,
-                    syntax: '@page',
-                    error: 'unexpected token',
-                    tokens: []
-                };
-            }
-            // <pseudo-page>+ | <ident> <pseudo-page>*
-            // ident pseudo-page* | pseudo-page+
-            if (tokens[0].typ == exports.EnumToken.IdenTokenType) {
-                tokens.shift();
-                if (tokens.length == 0) {
-                    continue;
-                }
-                // @ts-ignore
-                if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
-                    // @ts-ignore
-                    return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
-                        node: tokens[0] ?? atRule,
-                        syntax: '@page',
-                        error: 'unexpected token',
-                        tokens: []
-                    };
-                }
-            }
-            while (tokens.length > 0) {
-                if (tokens[0].typ == exports.EnumToken.PseudoPageTokenType) {
-                    tokens.shift();
-                    if (tokens.length == 0) {
-                        continue;
-                    }
-                    // @ts-ignore
-                    if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
-                        // @ts-ignore
-                        return {
-                            valid: ValidationLevel.Drop,
-                            matches: [],
-                            node: tokens[0] ?? atRule,
-                            syntax: '@page',
-                            error: 'unexpected token',
-                            tokens: []
-                        };
-                    }
-                }
-            }
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: atRule,
-            syntax: '@page',
-            error: '',
-            tokens: []
-        };
-    }
-
-    function validateAtRulePageMarginBox(atRule, options, root) {
-        if (Array.isArray(atRule.tokens) && atRule.tokens.length > 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: null,
-                syntax: '@' + atRule.nam,
-                error: '',
-                tokens: []
-            };
-        }
-        if (!('chi' in atRule)) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: atRule,
-                syntax: '@' + atRule.nam,
-                error: 'expected margin-box body',
-                tokens: []
-            };
-        }
-        for (const token of atRule.chi) {
-            if (![exports.EnumToken.DeclarationNodeType, exports.EnumToken.CommentNodeType, exports.EnumToken.WhitespaceTokenType].includes(token.typ)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: token,
-                    syntax: 'declaration-list',
-                    error: 'expected margin-box body',
-                    tokens: []
-                };
-            }
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: null,
-            syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
-        };
-    }
-
     const config$2 = getSyntaxConfig();
     function consumeToken(tokens) {
         tokens.shift();
@@ -12678,6 +12806,12 @@
         return tokens;
     }
     function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
+        console.error(JSON.stringify({
+            syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''),
+            syntaxes,
+            tokens,
+            s: new Error('bar').stack
+        }, null, 1));
         if (syntaxes == null) {
             // @ts-ignore
             return {
@@ -13133,7 +13267,7 @@
         return result;
     }
     function isOptionalSyntax(syntaxes) {
-        return syntaxes.every(t => t.typ == ValidationTokenEnum.Whitespace || t.isOptional || t.isRepeatable || (t.typ == ValidationTokenEnum.PropertyType && isOptionalSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, t.val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, t.val))));
+        return syntaxes.length > 0 && syntaxes.every(t => t.typ == ValidationTokenEnum.Whitespace || t.isOptional || t.isRepeatable || (t.typ == ValidationTokenEnum.PropertyType && isOptionalSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, t.val) ?? getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, t.val) ?? [])));
     }
     function doValidateSyntax(syntax, token, tokens, root, options, context) {
         let valid = false;
@@ -13354,7 +13488,21 @@
                 break;
             case ValidationTokenEnum.PropertyType:
                 //
-                if (['media-feature', 'mf-plain'].includes(syntax.val)) {
+                if ('image' == syntax.val) {
+                    valid = token.typ == exports.EnumToken.UrlFunctionTokenType || token.typ == exports.EnumToken.ImageFunctionTokenType;
+                    if (!valid) {
+                        return {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: token,
+                            syntax,
+                            error: 'unexpected <image>',
+                            tokens
+                        };
+                    }
+                    result = validateImage(token);
+                }
+                else if (['media-feature', 'mf-plain'].includes(syntax.val)) {
                     valid = token.typ == exports.EnumToken.DeclarationNodeType;
                     result = {
                         valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -13399,6 +13547,18 @@
                 }
                 else if (syntax.val == 'group-rule-body') {
                     valid = [exports.EnumToken.AtRuleNodeType, exports.EnumToken.RuleNodeType].includes(token.typ);
+                    if (!valid && token.typ == exports.EnumToken.DeclarationNodeType && root?.typ == exports.EnumToken.AtRuleNodeType && root.nam == 'media') {
+                        // allowed only if nested rule
+                        let parent = root;
+                        while (parent != null) {
+                            if (parent.typ == exports.EnumToken.RuleNodeType) {
+                                valid = true;
+                                break;
+                            }
+                            // @ts-ignore
+                            parent = parent.parent;
+                        }
+                    }
                     // @ts-ignore
                     result = {
                         valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -14067,11 +14227,569 @@
                     tokens
                 };
                 break;
+            case ValidationTokenEnum.DeclarationDefinitionToken:
+                if (token.typ != exports.EnumToken.DeclarationNodeType || token.nam != syntax.nam) {
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: token,
+                        syntax,
+                        error: '',
+                        tokens
+                    };
+                }
+                return validateSyntax([syntax.val], token.val, root, options, context);
             default:
                 throw new Error('not implemented: ' + JSON.stringify({ syntax, token, tokens }, null, 1));
         }
         // @ts-ignore
         return result;
+    }
+
+    function validateURL(token) {
+        if (token.typ == exports.EnumToken.UrlTokenTokenType) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                node: token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: '',
+                tokens: []
+            };
+        }
+        if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: 'expected url()',
+                tokens: []
+            };
+        }
+        const children = token.chi.slice();
+        consumeWhitespace(children);
+        if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: children[0] ?? token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: 'expected url-token',
+                tokens: children
+            };
+        }
+        children.shift();
+        consumeWhitespace(children);
+        if (children.length > 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: children[0] ?? token,
+                // @ts-ignore
+                syntax: 'url()',
+                error: 'unexpected token',
+                tokens: children
+            };
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: token,
+            // @ts-ignore
+            syntax: 'url()',
+            error: '',
+            tokens: []
+        };
+    }
+
+    function validateImage(token) {
+        if (token.typ == exports.EnumToken.UrlFunctionTokenType) {
+            return validateURL(token);
+        }
+        if (token.typ == exports.EnumToken.ImageFunctionTokenType) {
+            return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, token.val + '()'), token.chi);
+        }
+        return {
+            valid: ValidationLevel.Drop,
+            matches: [],
+            node: token,
+            syntax: 'image()',
+            error: 'expected <image> or <url>',
+            tokens: []
+        };
+    }
+
+    const validateSelectorList = validateComplexSelectorList;
+
+    function validateSelector(selector, options, root) {
+        if (root == null) {
+            return validateSelectorList(selector, root);
+        }
+        // @ts-ignore
+        if (root.typ == exports.EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
+            return validateKeyframeBlockList(selector, root);
+        }
+        let isNested = root.typ == exports.EnumToken.RuleNodeType ? 1 : 0;
+        let currentRoot = root.parent;
+        while (currentRoot != null && isNested == 0) {
+            if (currentRoot.typ == exports.EnumToken.RuleNodeType) {
+                isNested++;
+                if (isNested > 0) {
+                    // @ts-ignore
+                    return validateRelativeSelectorList(selector, root, { nestedSelector: true });
+                }
+            }
+            currentRoot = currentRoot.parent;
+        }
+        const nestedSelector = isNested > 0;
+        // @ts-ignore
+        return nestedSelector ? validateRelativeSelectorList(selector, root, { nestedSelector }) : validateSelectorList(selector, root, { nestedSelector });
+    }
+
+    function validateAtRuleMedia(atRule, options, root) {
+        // media-query-list
+        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                node: null,
+                syntax: null,
+                error: '',
+                tokens: []
+            };
+        }
+        let result = null;
+        const slice = atRule.tokens.slice();
+        consumeWhitespace(slice);
+        if (slice.length == 0) {
+            return {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                node: atRule,
+                syntax: '@media',
+                error: '',
+                tokens: []
+            };
+        }
+        result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
+        if (result.valid == ValidationLevel.Drop) {
+            return result;
+        }
+        if (!('chi' in atRule)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@media',
+                error: 'expected at-rule body',
+                tokens: []
+            };
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: atRule,
+            syntax: '@media',
+            error: '',
+            tokens: []
+        };
+    }
+    function validateAtRuleMediaQueryList(tokenList, atRule) {
+        const split = splitTokenList(tokenList);
+        const matched = [];
+        let result = null;
+        let previousToken;
+        let mediaFeatureType;
+        for (let i = 0; i < split.length; i++) {
+            const tokens = split[i].slice();
+            const match = [];
+            result = null;
+            mediaFeatureType = null;
+            previousToken = null;
+            if (tokens.length == 0) {
+                // @ts-ignore
+                result = {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: tokens[0] ?? atRule,
+                    syntax: '@media',
+                    error: 'unexpected token',
+                    tokens: []
+                };
+                continue;
+            }
+            while (tokens.length > 0) {
+                previousToken = tokens[0];
+                // media-condition | media-type | custom-media
+                if (!(validateMediaCondition(tokens[0], atRule) || validateMediaFeature(tokens[0]) || validateCustomMediaCondition(tokens[0], atRule))) {
+                    if (tokens[0].typ == exports.EnumToken.ParensTokenType) {
+                        result = validateAtRuleMediaQueryList(tokens[0].chi, atRule);
+                    }
+                    else {
+                        result = {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: tokens[0] ?? atRule,
+                            syntax: '@media',
+                            error: 'expecting media feature or media condition',
+                            tokens: []
+                        };
+                    }
+                    if (result.valid == ValidationLevel.Drop) {
+                        break;
+                    }
+                    result = null;
+                }
+                match.push(tokens.shift());
+                if (tokens.length == 0) {
+                    break;
+                }
+                if (!consumeWhitespace(tokens)) {
+                    if (previousToken?.typ != exports.EnumToken.ParensTokenType) {
+                        // @ts-ignore
+                        result = {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: tokens[0] ?? atRule,
+                            syntax: '@media',
+                            error: 'expected media query list',
+                            tokens: []
+                        };
+                        break;
+                    }
+                }
+                else if (![exports.EnumToken.MediaFeatureOrTokenType, exports.EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+                    // @ts-ignore
+                    result = {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0] ?? atRule,
+                        syntax: '@media',
+                        error: 'expected and/or',
+                        tokens: []
+                    };
+                    break;
+                }
+                if (mediaFeatureType == null) {
+                    mediaFeatureType = tokens[0];
+                }
+                if (mediaFeatureType.typ != tokens[0].typ) {
+                    // @ts-ignore
+                    result = {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0] ?? atRule,
+                        syntax: '@media',
+                        error: 'mixing and/or not allowed at the same level',
+                        tokens: []
+                    };
+                    break;
+                }
+                match.push({ typ: exports.EnumToken.WhitespaceTokenType }, tokens.shift());
+                consumeWhitespace(tokens);
+                if (tokens.length == 0) {
+                    // @ts-ignore
+                    result = {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0] ?? atRule,
+                        syntax: '@media',
+                        error: 'expected media-condition',
+                        tokens: []
+                    };
+                    break;
+                }
+                match.push({ typ: exports.EnumToken.WhitespaceTokenType });
+            }
+            if (result == null && match.length > 0) {
+                matched.push(match);
+            }
+        }
+        if (result != null) {
+            return result;
+        }
+        if (matched.length == 0) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@media',
+                error: 'expected media query list',
+                tokens: []
+            };
+        }
+        tokenList.length = 0;
+        let hasAll = false;
+        for (let i = 0; i < matched.length; i++) {
+            if (tokenList.length > 0) {
+                tokenList.push({ typ: exports.EnumToken.CommaTokenType });
+            }
+            if (matched[i].length == 1 && matched.length > 1 && matched[i][0].typ == exports.EnumToken.MediaFeatureTokenType && matched[i][0].val == 'all') {
+                hasAll = true;
+                continue;
+            }
+            tokenList.push(...matched[i]);
+        }
+        if (hasAll && tokenList.length == 0) {
+            tokenList.push({ typ: exports.EnumToken.MediaFeatureTokenType, val: 'all' });
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: atRule,
+            syntax: '@media',
+            error: '',
+            tokens: []
+        };
+    }
+    function validateCustomMediaCondition(token, atRule) {
+        if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
+            return validateMediaCondition(token.val, atRule);
+        }
+        if (token.typ != exports.EnumToken.ParensTokenType) {
+            return false;
+        }
+        const chi = token.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
+        if (chi.length != 1) {
+            return false;
+        }
+        return chi[0].typ == exports.EnumToken.DashedIdenTokenType;
+    }
+    function validateMediaCondition(token, atRule) {
+        if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
+            return validateMediaCondition(token.val, atRule);
+        }
+        if (token.typ != exports.EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == exports.EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val))) {
+            return false;
+        }
+        const chi = token.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
+        if (chi.length != 1) {
+            return false;
+        }
+        if (chi[0].typ == exports.EnumToken.IdenTokenType) {
+            return true;
+        }
+        if (chi[0].typ == exports.EnumToken.MediaFeatureNotTokenType) {
+            return validateMediaCondition(chi[0].val, atRule);
+        }
+        if (chi[0].typ == exports.EnumToken.MediaQueryConditionTokenType) {
+            return chi[0].l.typ == exports.EnumToken.IdenTokenType;
+        }
+        return false;
+    }
+    function validateMediaFeature(token) {
+        let val = token;
+        if (token.typ == exports.EnumToken.MediaFeatureOnlyTokenType || token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
+            val = token.val;
+        }
+        return val.typ == exports.EnumToken.MediaFeatureTokenType;
+    }
+
+    function validateAtRuleCounterStyle(atRule, options, root) {
+        // media-query-list
+        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@counter-style',
+                error: 'expected counter style name',
+                tokens: []
+            };
+        }
+        const tokens = atRule.tokens.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
+        if (tokens.length == 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@counter-style',
+                error: 'expected counter style name',
+                tokens
+            };
+        }
+        if (tokens.length > 1) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[1] ?? atRule,
+                syntax: '@counter-style',
+                error: 'unexpected token',
+                tokens
+            };
+        }
+        if (![exports.EnumToken.IdenTokenType, exports.EnumToken.DashedIdenTokenType].includes(tokens[0].typ)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[0],
+                syntax: '@counter-style',
+                error: 'expected counter style name',
+                tokens
+            };
+        }
+        if (!('chi' in atRule)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@counter-style',
+                error: 'expected counter style body',
+                tokens
+            };
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: atRule,
+            syntax: '@counter-style',
+            error: '',
+            tokens
+        };
+    }
+
+    function validateAtRulePage(atRule, options, root) {
+        // media-query-list
+        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                node: null,
+                syntax: '@page',
+                error: '',
+                tokens: []
+            };
+        }
+        // page-selector-list
+        for (const tokens of splitTokenList(atRule.tokens)) {
+            if (tokens.length == 0) {
+                // @ts-ignore
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: tokens[0] ?? atRule,
+                    syntax: '@page',
+                    error: 'unexpected token',
+                    tokens: []
+                };
+            }
+            // <pseudo-page>+ | <ident> <pseudo-page>*
+            // ident pseudo-page* | pseudo-page+
+            if (tokens[0].typ == exports.EnumToken.IdenTokenType) {
+                tokens.shift();
+                if (tokens.length == 0) {
+                    continue;
+                }
+                // @ts-ignore
+                if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
+                    // @ts-ignore
+                    return {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0] ?? atRule,
+                        syntax: '@page',
+                        error: 'unexpected token',
+                        tokens: []
+                    };
+                }
+            }
+            while (tokens.length > 0) {
+                if (tokens[0].typ == exports.EnumToken.PseudoPageTokenType) {
+                    tokens.shift();
+                    if (tokens.length == 0) {
+                        continue;
+                    }
+                    // @ts-ignore
+                    if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
+                        // @ts-ignore
+                        return {
+                            valid: ValidationLevel.Drop,
+                            matches: [],
+                            node: tokens[0] ?? atRule,
+                            syntax: '@page',
+                            error: 'unexpected token',
+                            tokens: []
+                        };
+                    }
+                }
+            }
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: atRule,
+            syntax: '@page',
+            error: '',
+            tokens: []
+        };
+    }
+
+    function validateAtRulePageMarginBox(atRule, options, root) {
+        if (Array.isArray(atRule.tokens) && atRule.tokens.length > 0) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Valid,
+                matches: [],
+                node: null,
+                syntax: '@' + atRule.nam,
+                error: '',
+                tokens: []
+            };
+        }
+        if (!('chi' in atRule)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: atRule,
+                syntax: '@' + atRule.nam,
+                error: 'expected margin-box body',
+                tokens: []
+            };
+        }
+        for (const token of atRule.chi) {
+            if (![exports.EnumToken.DeclarationNodeType, exports.EnumToken.CommentNodeType, exports.EnumToken.WhitespaceTokenType].includes(token.typ)) {
+                // @ts-ignore
+                return {
+                    valid: ValidationLevel.Drop,
+                    matches: [],
+                    node: token,
+                    syntax: 'declaration-list',
+                    error: 'expected margin-box body',
+                    tokens: []
+                };
+            }
+        }
+        // @ts-ignore
+        return {
+            valid: ValidationLevel.Valid,
+            matches: [],
+            node: null,
+            syntax: '@' + atRule.nam,
+            error: '',
+            tokens: []
+        };
     }
 
     function validateAtRuleSupports(atRule, options, root) {
@@ -14553,71 +15271,6 @@
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
-        };
-    }
-
-    function validateURL(token) {
-        if (token.typ == exports.EnumToken.UrlTokenTokenType) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: '',
-                tokens: []
-            };
-        }
-        if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: 'expected url()',
-                tokens: []
-            };
-        }
-        const children = token.chi.slice();
-        consumeWhitespace(children);
-        if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: children[0] ?? token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: 'expected url-token',
-                tokens: children
-            };
-        }
-        children.shift();
-        consumeWhitespace(children);
-        if (children.length > 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: [],
-                node: children[0] ?? token,
-                // @ts-ignore
-                syntax: 'url()',
-                error: 'unexpected token',
-                tokens: children
-            };
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: token,
-            // @ts-ignore
-            syntax: 'url()',
             error: '',
             tokens: []
         };
@@ -15591,6 +16244,11 @@
     function reject(reason) {
         throw new Error(reason ?? 'Parsing aborted');
     }
+    /**
+     * parse css string
+     * @param iterator
+     * @param options
+     */
     async function doParse(iterator, options = {}) {
         if (options.signal != null) {
             options.signal.addEventListener('abort', reject);
@@ -15727,6 +16385,7 @@
             const previousNode = stack.pop();
             // @ts-ignore
             context = stack[stack.length - 1] ?? ast;
+            // remove empty nodes
             // @ts-ignore
             if (options.removeEmpty && previousNode != null && previousNode.chi.length == 0 && context.chi[context.chi.length - 1] == previousNode) {
                 // @ts-ignore
@@ -15779,33 +16438,6 @@
                 minify(ast, options, true, errors, false);
             }
         }
-        // if (options.setParent) {
-        //
-        //     const nodes: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [ast];
-        //     let node: AstNode;
-        //
-        //     while ((node = nodes.shift()!)) {
-        //
-        //         // @ts-ignore
-        //         if (node.chi.length > 0) {
-        //
-        //             // @ts-ignore
-        //             for (const child of node.chi) {
-        //
-        //                 if (child.parent != node) {
-        //
-        //                     Object.defineProperty(child, 'parent', {...definedPropertySettings, value: node});
-        //                 }
-        //
-        //                 if ('chi' in child && child.chi.length > 0) {
-        //
-        //                     // @ts-ignore
-        //                     nodes.push(<AstRule | AstAtRule>child);
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
         const endTime = performance.now();
         if (options.signal != null) {
             options.signal.removeEventListener('abort', reject);
@@ -16062,11 +16694,8 @@
                 const valid = isValid ? validateAtRule(node, options, context) : {
                     valid: ValidationLevel.Drop,
                     node,
-                    matches: [],
                     syntax: '@' + node.nam,
-                    error: '@' + node.nam + ' not allowed here',
-                    tokens
-                };
+                    error: '@' + node.nam + ' not allowed here'};
                 if (valid.valid == ValidationLevel.Drop) {
                     errors.push({
                         action: 'drop',
@@ -16258,7 +16887,24 @@
                 };
                 const result = parseDeclarationNode(node, errors, src, position);
                 if (result != null) {
-                    if (options.validation) ;
+                    // if (options.validation) {
+                    //
+                    //     const valid: ValidationResult = validateDeclaration(result, options, context);
+                    //
+                    //     console.error({valid});
+                    //
+                    //     if (valid.valid == ValidationLevel.Drop) {
+                    //
+                    //         errors.push({
+                    //             action: 'drop',
+                    //             message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                    //             // @ts-ignore
+                    //             location: {src, ...(map.get(valid.node) ?? position)}
+                    //         });
+                    //
+                    //         return null;
+                    //     }
+                    // }
                     // @ts-ignore
                     context.chi.push(result);
                     Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
@@ -16267,6 +16913,11 @@
             }
         }
     }
+    /**
+     * parse at-rule prelude
+     * @param tokens
+     * @param atRule
+     */
     function parseAtRulePrelude(tokens, atRule) {
         // @ts-ignore
         for (const { value, parent } of walkValues(tokens, null, null, true)) {
@@ -16399,6 +17050,10 @@
         }
         return tokens;
     }
+    /**
+     * parse selector
+     * @param tokens
+     */
     function parseSelector(tokens) {
         for (const { value, previousValue, nextValue, parent } of walkValues(tokens)) {
             if (value.typ == exports.EnumToken.CommentTokenType ||
@@ -16542,6 +17197,11 @@
     //
     //     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
     // }
+    /**
+     * parse string
+     * @param src
+     * @param options
+     */
     function parseString(src, options = { location: false }) {
         return parseTokens([...tokenize$1(src)].map(t => {
             const token = getTokenType(t.token, t.hint);
@@ -16623,7 +17283,7 @@
                     chi: []
                 };
             }
-            if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade'].includes(val)) {
+            if (['linear-gradient', 'radial-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'conic-gradient', 'image', 'image-set', 'element', 'cross-fade', 'paint'].includes(val)) {
                 return {
                     typ: exports.EnumToken.ImageFunctionTokenType,
                     val,
@@ -16723,6 +17383,11 @@
             val
         };
     }
+    /**
+     * parse token list
+     * @param tokens
+     * @param options
+     */
     function parseTokens(tokens, options = {}) {
         for (let i = 0; i < tokens.length; i++) {
             const t = tokens[i];
@@ -17099,6 +17764,11 @@
         WalkerValueEvent[WalkerValueEvent["Enter"] = 0] = "Enter";
         WalkerValueEvent[WalkerValueEvent["Leave"] = 1] = "Leave";
     })(WalkerValueEvent || (WalkerValueEvent = {}));
+    /**
+     * walk ast nodes
+     * @param node
+     * @param filter
+     */
     function* walk(node, filter) {
         const parents = [node];
         const root = node;
@@ -17127,6 +17797,13 @@
             }
         }
     }
+    /**
+     * walk ast values
+     * @param values
+     * @param root
+     * @param filter
+     * @param reverse
+     */
     function* walkValues(values, root = null, filter, reverse) {
         // const set = new Set<Token>();
         const stack = values.slice();
@@ -17220,6 +17897,10 @@
         }
     }
 
+    /**
+     * expand nested css ast
+     * @param ast
+     */
     function expand(ast) {
         //
         if (![exports.EnumToken.RuleNodeType, exports.EnumToken.StyleSheetNodeType, exports.EnumToken.AtRuleNodeType].includes(ast.typ)) {
@@ -17264,7 +17945,7 @@
         }
         return result;
     }
-    function expandRule(node, parent) {
+    function expandRule(node) {
         const ast = { ...node, chi: node.chi.slice() };
         const result = [];
         if (ast.typ == exports.EnumToken.RuleNodeType) {
@@ -17369,7 +18050,11 @@
                         if (astAtRule.val.includes('&')) {
                             astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
                         }
-                        astAtRule = expand(astAtRule);
+                        /* astAtRule = <AstAtRule> */
+                        const slice = astAtRule.chi.slice().filter(t => t.typ == exports.EnumToken.RuleNodeType && t.sel.includes('&'));
+                        if (slice.length > 0) {
+                            expandRule({ ...node, chi: astAtRule.chi.slice() });
+                        }
                     }
                     else {
                         // @ts-ignore
@@ -17408,6 +18093,11 @@
         // @ts-ignore
         return ast.chi.length > 0 ? [ast].concat(result) : result;
     }
+    /**
+     * replace compound selector
+     * @param input
+     * @param replace
+     */
     function replaceCompound(input, replace) {
         const tokens = parseString(input);
         let replacement = null;
@@ -17879,20 +18569,8 @@
                             return acc;
                         }, [])
                     }][Symbol.iterator]();
-                // return {
-                //     next() {
-                //
-                //         return iterator.next();
-                //     }
-                // }
             }
             return iterator;
-            // return {
-            //     next() {
-            //
-            //         return iterator.next();
-            //     }
-            // }
         }
     }
 
@@ -18049,55 +18727,6 @@
             }
             return this;
         }
-        matchTypes(declaration) {
-            const patterns = this.pattern.slice();
-            const values = [...declaration.val];
-            let i;
-            let j;
-            const map = new Map;
-            for (i = 0; i < patterns.length; i++) {
-                for (j = 0; j < values.length; j++) {
-                    if (!map.has(patterns[i])) {
-                        // @ts-ignore
-                        map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
-                    }
-                    let count = map.get(patterns[i]);
-                    if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
-                        Object.defineProperty(values[j], 'propertyName', {
-                            enumerable: false,
-                            writable: true,
-                            value: patterns[i]
-                        });
-                        map.set(patterns[i], --count);
-                        values.splice(j--, 1);
-                    }
-                }
-            }
-            if (this.config.set != null) {
-                for (const [key, val] of Object.entries(this.config.set)) {
-                    if (map.has(key)) {
-                        for (const v of val) {
-                            // missing
-                            if (map.get(v) == 1) {
-                                let i = declaration.val.length;
-                                while (i--) {
-                                    // @ts-ignore
-                                    if (declaration.val[i].propertyName == key) {
-                                        const val = { ...declaration.val[i] };
-                                        Object.defineProperty(val, 'propertyName', {
-                                            enumerable: false,
-                                            writable: true,
-                                            value: v
-                                        });
-                                        declaration.val.splice(i, 0, val, { typ: exports.EnumToken.WhitespaceTokenType });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
         [Symbol.iterator]() {
             let iterable;
             let requiredCount = 0;
@@ -18136,9 +18765,15 @@
                         // @ts-ignore
                         let typ = (exports.EnumToken[this.config.separator?.typ] ?? exports.EnumToken.CommaTokenType);
                         // @ts-ignore
-                        const sep = this.config.separator == null ? null : { ...this.config.separator, typ: exports.EnumToken[this.config.separator.typ] };
+                        const sep = this.config.separator == null ? null : {
+                            ...this.config.separator,
+                            typ: exports.EnumToken[this.config.separator.typ]
+                        };
                         // @ts-ignore
-                        const separator = this.config.separator ? renderToken({ ...this.config.separator, typ: exports.EnumToken[this.config.separator.typ] }) : ',';
+                        const separator = this.config.separator ? renderToken({
+                            ...this.config.separator,
+                            typ: exports.EnumToken[this.config.separator.typ]
+                        }) : ',';
                         this.matchTypes(declaration);
                         values.push(value);
                         for (i = 0; i < declaration.val.length; i++) {
@@ -18333,7 +18968,6 @@
                                 acc.push(curr);
                                 return acc;
                             }, []);
-                            // @todo remove renderToken call
                             if (props.default.includes(curr[1][i].reduce((acc, curr) => acc + renderToken(curr) + ' ', '').trimEnd())) {
                                 if (!this.config.properties[curr[0]].required) {
                                     continue;
@@ -18431,6 +19065,7 @@
                     }
                     // @ts-ignore
                     if (values.length == 1 &&
+                        // @ts-ignore
                         typeof values[0].val == 'string' &&
                         this.config.default.includes(values[0].val.toLowerCase()) &&
                         this.config.default[0] != values[0].val.toLowerCase()) {
@@ -18449,6 +19084,7 @@
                 // @ts-ignore
                 next() {
                     let v = iterable.next();
+                    // @ts-ignore
                     while (v.done || v.value instanceof PropertySet) {
                         if (v.value instanceof PropertySet) {
                             // @ts-ignore
@@ -18470,6 +19106,55 @@
                     return v;
                 }
             };
+        }
+        matchTypes(declaration) {
+            const patterns = this.pattern.slice();
+            const values = [...declaration.val];
+            let i;
+            let j;
+            const map = new Map;
+            for (i = 0; i < patterns.length; i++) {
+                for (j = 0; j < values.length; j++) {
+                    if (!map.has(patterns[i])) {
+                        // @ts-ignore
+                        map.set(patterns[i], this.config.properties?.[patterns[i]]?.constraints?.mapping?.max ?? 1);
+                    }
+                    let count = map.get(patterns[i]);
+                    if (count > 0 && matchType(values[j], this.config.properties[patterns[i]])) {
+                        Object.defineProperty(values[j], 'propertyName', {
+                            enumerable: false,
+                            writable: true,
+                            value: patterns[i]
+                        });
+                        map.set(patterns[i], --count);
+                        values.splice(j--, 1);
+                    }
+                }
+            }
+            if (this.config.set != null) {
+                for (const [key, val] of Object.entries(this.config.set)) {
+                    if (map.has(key)) {
+                        for (const v of val) {
+                            // missing
+                            if (map.get(v) == 1) {
+                                let i = declaration.val.length;
+                                while (i--) {
+                                    // @ts-ignore
+                                    if (declaration.val[i].propertyName == key) {
+                                        const val = { ...declaration.val[i] };
+                                        Object.defineProperty(val, 'propertyName', {
+                                            enumerable: false,
+                                            writable: true,
+                                            value: v
+                                        });
+                                        declaration.val.splice(i, 0, val, { typ: exports.EnumToken.WhitespaceTokenType });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         removeDefaults(map, value) {
             for (const [key, val] of map) {
@@ -18771,6 +19456,15 @@
     const notEndingWith = ['(', '['].concat(combinators);
     // @ts-ignore
     const features = Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering);
+    /**
+     * minify ast
+     * @param ast
+     * @param options
+     * @param recursive
+     * @param errors
+     * @param nestingContent
+     * @param context
+     */
     function minify(ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
         if (!('nodes' in context)) {
             context.nodes = new Set;
@@ -19268,6 +19962,10 @@
             reducible: selector.every((selector) => !['>', '+', '~', '&'].includes(selector[0]))
         };
     }
+    /**
+     * split selector string
+     * @param buffer
+     */
     function splitRule(buffer) {
         const result = [[]];
         let str = '';

@@ -5,6 +5,11 @@ var WalkerValueEvent;
     WalkerValueEvent[WalkerValueEvent["Enter"] = 0] = "Enter";
     WalkerValueEvent[WalkerValueEvent["Leave"] = 1] = "Leave";
 })(WalkerValueEvent || (WalkerValueEvent = {}));
+/**
+ * walk ast nodes
+ * @param node
+ * @param filter
+ */
 function* walk(node, filter) {
     const parents = [node];
     const root = node;
@@ -33,6 +38,13 @@ function* walk(node, filter) {
         }
     }
 }
+/**
+ * walk ast values
+ * @param values
+ * @param root
+ * @param filter
+ * @param reverse
+ */
 function* walkValues(values, root = null, filter, reverse) {
     // const set = new Set<Token>();
     const stack = values.slice();

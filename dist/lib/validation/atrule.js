@@ -5,7 +5,7 @@ import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import '../parser/utils/config.js';
-import { getParsedSyntax, getSyntaxConfig } from './config.js';
+import { getSyntaxConfig, getParsedSyntax } from './config.js';
 import { validateAtRuleMedia } from './at-rules/media.js';
 import { validateAtRuleCounterStyle } from './at-rules/counter-style.js';
 import { validateAtRulePage } from './at-rules/page.js';

@@ -7,6 +7,9 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { validateLayerName } from '../syntaxes/layer-name.js';
 import '../syntaxes/complex-selector.js';
+import '../parser/types.js';
+import '../parser/parse.js';
+import '../config.js';
 
 function validateAtRuleLayer(atRule, options, root) {
     // media-query-list

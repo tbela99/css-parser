@@ -29,6 +29,15 @@ const notEndingWith: string[] = ['(', '['].concat(combinators);
 // @ts-ignore
 const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering)
 
+/**
+ * minify ast
+ * @param ast
+ * @param options
+ * @param recursive
+ * @param errors
+ * @param nestingContent
+ * @param context
+ */
 export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
@@ -543,7 +552,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
     return ast;
 }
 
-export function hasDeclaration(node: AstRule): boolean {
+function hasDeclaration(node: AstRule): boolean {
 
     // @ts-ignore
     for (let i = 0; i < node.chi?.length; i++) {
@@ -560,7 +569,7 @@ export function hasDeclaration(node: AstRule): boolean {
     return true;
 }
 
-export function reduceSelector(selector: string[][]): OptimizedSelector | null {
+function reduceSelector(selector: string[][]): OptimizedSelector | null {
 
     if (selector.length == 0) {
         return null;
@@ -699,6 +708,10 @@ export function reduceSelector(selector: string[][]): OptimizedSelector | null {
     };
 }
 
+/**
+ * split selector string
+ * @param buffer
+ */
 export function splitRule(buffer: string): string[][] {
 
     const result: string[][] = [[]];
@@ -828,7 +841,7 @@ export function splitRule(buffer: string): string[][] {
     return result;
 }
 
-export function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
+function matchSelectors(selector1: string[][], selector2: string[][], parentType: EnumToken, errors: ErrorDescription[]): null | MatchedSelector {
 
     let match: string[][] = [[]];
     const j: number = Math.min(

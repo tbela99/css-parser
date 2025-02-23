@@ -10,6 +10,9 @@ import { validateAtRuleMediaQueryList } from './media.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { validateLayerName } from '../syntaxes/layer-name.js';
 import '../syntaxes/complex-selector.js';
+import '../parser/types.js';
+import '../parser/parse.js';
+import '../config.js';
 
 function validateAtRuleImport(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {

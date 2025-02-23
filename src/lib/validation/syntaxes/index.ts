@@ -7,3 +7,4 @@ export * from './complex-selector-list';
 export * from './selector';
 export * from './keyframe-block-list';
 export * from './keyframe-selector';
+export * from './image';
