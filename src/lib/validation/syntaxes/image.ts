@@ -1,5 +1,5 @@
 import {ValidationSyntaxResult} from "../../../@types/validation";
-import {type FunctionImageToken, Token} from "../../../@types";
+import type {FunctionImageToken, Token} from "../../../@types/index.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {validateSyntax} from "../syntax";
 import {getParsedSyntax} from "../config";

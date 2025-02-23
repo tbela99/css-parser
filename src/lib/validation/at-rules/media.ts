@@ -1,4 +1,4 @@
-import {
+import type {
     AstAtRule,
     AstNode,
     FunctionToken,
@@ -6,7 +6,7 @@ import {
     ParensToken,
     Token,
     ValidationOptions
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace, splitTokenList} from "../utils";
@@ -112,30 +112,29 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
             previousToken = tokens[0];
 
             // media-condition | media-type | custom-media
-             if (!(validateMediaCondition(tokens[0], atRule) || validateMediaFeature(tokens[0]) || validateCustomMediaCondition(tokens[0], atRule))) {
+            if (!(validateMediaCondition(tokens[0], atRule) || validateMediaFeature(tokens[0]) || validateCustomMediaCondition(tokens[0], atRule))) {
 
-                 if (tokens[0].typ == EnumToken.ParensTokenType) {
+                if (tokens[0].typ == EnumToken.ParensTokenType) {
 
-                     result = validateAtRuleMediaQueryList(tokens[0].chi, atRule);
-                 }
-                 else {
+                    result = validateAtRuleMediaQueryList(tokens[0].chi, atRule);
+                } else {
 
-                     result = {
-                         valid: ValidationLevel.Drop,
-                         matches: [],
-                         node: tokens[0] ?? atRule,
-                         syntax: '@media',
-                         error: 'expecting media feature or media condition',
-                         tokens: []
-                     }
-                 }
+                    result = {
+                        valid: ValidationLevel.Drop,
+                        matches: [],
+                        node: tokens[0] ?? atRule,
+                        syntax: '@media',
+                        error: 'expecting media feature or media condition',
+                        tokens: []
+                    }
+                }
 
-                 if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == ValidationLevel.Drop) {
 
-                     break;
-                 }
+                    break;
+                }
 
-                 result = null;
+                result = null;
             }
 
             match.push(tokens.shift() as Token);
@@ -161,9 +160,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                     break;
                 }
-            }
-
-            else if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
+            } else if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
 
                 // @ts-ignore
                 result = {
@@ -308,7 +305,7 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
         return validateMediaCondition(token.val, atRule);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val)) ) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val))) {
 
         return false;
     }

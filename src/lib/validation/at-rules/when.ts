@@ -1,4 +1,4 @@
-import {AstAtRule, type AstNode, FunctionToken, Token, type ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace, splitTokenList} from "../utils";
@@ -111,7 +111,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
                     break;
                 }
 
-            } else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)  ) {
+            } else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)) {
 
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {
