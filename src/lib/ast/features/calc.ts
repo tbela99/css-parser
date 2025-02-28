@@ -5,7 +5,7 @@ import type {
     AstRule,
     BinaryExpressionToken,
     FunctionToken,
-    MinifyOptions,
+    MinifyFeatureOptions,
     NumberToken,
     ParensToken,
     Token,
@@ -23,7 +23,7 @@ export class ComputeCalcExpressionFeature {
         return 1;
     }
 
-    static register(options: MinifyOptions): void {
+    static register(options: MinifyFeatureOptions): void {
 
         if (options.computeCalcExpression) {
 

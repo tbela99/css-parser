@@ -142,6 +142,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         src: '',
         sourcemap: false,
         minify: true,
+        pass: 1,
         parseColor: true,
         nestingRules: false,
         resolveImport: false,
@@ -391,7 +392,12 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (ast.chi.length > 0) {
 
-            minify(ast, options, true, errors, false);
+            let passes: number = options.pass ?? 1 as number;
+
+            while (passes--) {
+
+                minify(ast, options, true, errors, false);
+            }
         }
     }
 

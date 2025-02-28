@@ -19,3 +19,4 @@ export * as walk from './walk.js';
 export * as validation from './validation.js';
 export * as atRules from './at-rules.js';
 export * as lenient from './lenient.js'
+export * as minify from './minify.js'
