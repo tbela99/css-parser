@@ -14,7 +14,7 @@ import type {
     LiteralToken,
     MatchedSelector,
     MinifyFeature,
-    MinifyOptions,
+    MinifyFeatureOptions,
     OptimizedSelector,
     ParserOptions,
     RawSelectorTokens,
@@ -38,7 +38,7 @@ const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).so
  * @param nestingContent
  * @param context
  */
-export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
+export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
 
@@ -54,10 +54,10 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
     context.nodes.add(ast);
 
-    if (!('features' in <MinifyOptions>options)) {
+    if (!('features' in <MinifyFeatureOptions>options)) {
 
         // @ts-ignore
-        options = <MinifyOptions>{
+        options = <MinifyFeatureOptions>{
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
@@ -523,7 +523,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                     Object.defineProperty(node, 'parent', {...definedPropertySettings, value: parent});
 
-                    for (const feature of (<MinifyOptions>options).features) {
+                    for (const feature of (<MinifyFeatureOptions>options).features) {
 
                         feature.run(<AstRule | AstAtRule>node, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent, context);
                     }
@@ -539,7 +539,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             }
         }
 
-        for (const feature of (<MinifyOptions>options).features) {
+        for (const feature of (<MinifyFeatureOptions>options).features) {
 
             if ('cleanup' in feature) {
 

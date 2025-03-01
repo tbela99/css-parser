@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "0.9.0",
+  "version": "0.9.1-alpha1",
   "publish": {
     "include": [
       "src",

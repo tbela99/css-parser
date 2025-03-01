@@ -7,7 +7,7 @@ import type {
     AstRuleStyleSheet,
     CommentToken,
     FunctionToken,
-    MinifyOptions,
+    MinifyFeatureOptions,
     ParserOptions,
     VariableScopeInfo
 } from "../../../@types";
@@ -55,7 +55,7 @@ export class InlineCssVariablesFeature {
         return 0;
     }
 
-    static register(options: MinifyOptions): void {
+    static register(options: MinifyFeatureOptions): void {
 
         if (options.inlineCssVariables) {
 

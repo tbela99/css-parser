@@ -1,5 +1,5 @@
 import {EnumToken} from "../types";
-import type {AstAtRule, AstDeclaration, AstRule, MinifyOptions, Token} from "../../../@types";
+import type {AstAtRule, AstDeclaration, AstRule, MinifyFeatureOptions, Token} from "../../../@types";
 import {
     getSyntaxConfig,
     ValidationAmpersandToken,
@@ -21,7 +21,7 @@ export class ComputePrefixFeature {
         return 2;
     }
 
-    static register(options: MinifyOptions) {
+    static register(options: MinifyFeatureOptions) {
 
         if (options.removePrefix) {
 

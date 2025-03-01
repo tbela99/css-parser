@@ -15909,6 +15909,7 @@ async function doParse(iterator, options = {}) {
         src: '',
         sourcemap: false,
         minify: true,
+        pass: 1,
         parseColor: true,
         nestingRules: false,
         resolveImport: false,
@@ -16088,7 +16089,10 @@ async function doParse(iterator, options = {}) {
     }
     if (options.minify) {
         if (ast.chi.length > 0) {
-            minify(ast, options, true, errors, false);
+            let passes = options.pass ?? 1;
+            while (passes--) {
+                minify(ast, options, true, errors, false);
+            }
         }
     }
     const endTime = performance.now();

@@ -1,9 +1,10 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser for node and the browser",
-  "version": "v0.9.0",
+  "version": "v0.9.1-alpah1",
   "exports": {
     ".": "./dist/node/index.js",
+    "./node": "./dist/node/index.js",
     "./umd": "./dist/index-umd-web.js",
     "./web": "./dist/web/index.js",
     "./cjs": "./dist/index.cjs"
