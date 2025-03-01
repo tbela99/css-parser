@@ -227,7 +227,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                         return s.join('');
                     }).join(',');
                     // @ts-ignore
-                    let sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                    let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
                     if (rule.includes('&')) {
                         // @ts-ignore
                         rule = replaceCompound(rule, node.optimized.optimized[0]);

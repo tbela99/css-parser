@@ -451,11 +451,11 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
         const node = {
             typ: EnumToken.AtRuleNodeType,
             nam: renderToken(atRule, { removeComments: true }),
-            tokens: t,
+            // tokens: t,
             val: raw.join('')
         };
         Object.defineProperties(node, {
-            tokens: { ...definedPropertySettings, enumerable: true, value: tokens.slice() },
+            tokens: { ...definedPropertySettings, enumerable: false, value: tokens.slice() },
             raw: { ...definedPropertySettings, value: raw }
         });
         if (delim.typ == EnumToken.BlockStartTokenType) {
@@ -580,7 +580,7 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             };
             Object.defineProperty(node, 'tokens', {
                 ...definedPropertySettings,
-                enumerable: true,
+                enumerable: false,
                 value: tokens.slice()
             });
             let raw = [...uniq.values()];
@@ -1053,10 +1053,16 @@ function getTokenType(val, hint) {
             val: val.slice(0, -1),
             chi: []
         }
-            : {
-                typ: EnumToken.PseudoClassTokenType,
+            : (
+            // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+            val.startsWith('::') || [':before', ':after', ':first-line', ':first-letter'].includes(val) ? {
+                typ: EnumToken.PseudoElementTokenType,
                 val
-            };
+            } :
+                {
+                    typ: EnumToken.PseudoClassTokenType,
+                    val
+                });
     }
     if (isAtKeyword(val)) {
         return {

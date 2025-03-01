@@ -107,6 +107,7 @@
         EnumToken[EnumToken["MediaFeatureAndTokenType"] = 89] = "MediaFeatureAndTokenType";
         EnumToken[EnumToken["MediaFeatureOrTokenType"] = 90] = "MediaFeatureOrTokenType";
         EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
+        EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
         /* aliases */
         EnumToken[EnumToken["Time"] = 25] = "Time";
         EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -3881,8 +3882,9 @@
                     return '';
                 }
             case exports.EnumToken.PseudoClassTokenType:
+            case exports.EnumToken.PseudoElementTokenType:
                 // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
-                if (token.typ == exports.EnumToken.PseudoClassTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+                if (token.typ == exports.EnumToken.PseudoElementTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
                     return token.val.slice(1);
                 }
             case exports.EnumToken.UrlTokenTokenType:
@@ -12009,8 +12011,8 @@
                 tokens.shift();
                 consumeWhitespace(tokens);
             }
-            while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.PseudoClassTokenType) {
-                const isPseudoElement = tokens[0].val.startsWith('::');
+            while (tokens.length > 0 && (tokens[0].typ == exports.EnumToken.PseudoElementTokenType || tokens[0].typ == exports.EnumToken.PseudoClassTokenType)) {
+                const isPseudoElement = tokens[0].typ == exports.EnumToken.PseudoElementTokenType;
                 if (
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions#pseudo-elements
                 !(isPseudoElement && tokens[0].val.startsWith('::-webkit-')) &&
@@ -16315,11 +16317,11 @@
             const node = {
                 typ: exports.EnumToken.AtRuleNodeType,
                 nam: renderToken(atRule, { removeComments: true }),
-                tokens: t,
+                // tokens: t,
                 val: raw.join('')
             };
             Object.defineProperties(node, {
-                tokens: { ...definedPropertySettings, enumerable: true, value: tokens.slice() },
+                tokens: { ...definedPropertySettings, enumerable: false, value: tokens.slice() },
                 raw: { ...definedPropertySettings, value: raw }
             });
             if (delim.typ == exports.EnumToken.BlockStartTokenType) {
@@ -16444,7 +16446,7 @@
                 };
                 Object.defineProperty(node, 'tokens', {
                     ...definedPropertySettings,
-                    enumerable: true,
+                    enumerable: false,
                     value: tokens.slice()
                 });
                 let raw = [...uniq.values()];
@@ -16917,10 +16919,16 @@
                 val: val.slice(0, -1),
                 chi: []
             }
-                : {
-                    typ: exports.EnumToken.PseudoClassTokenType,
+                : (
+                // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+                val.startsWith('::') || [':before', ':after', ':first-line', ':first-letter'].includes(val) ? {
+                    typ: exports.EnumToken.PseudoElementTokenType,
                     val
-                };
+                } :
+                    {
+                        typ: exports.EnumToken.PseudoClassTokenType,
+                        val
+                    });
         }
         if (isAtKeyword(val)) {
             return {
@@ -17614,7 +17622,14 @@
                             rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), []).join(',');
                         }
                         else {
-                            selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
+                            // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
+                            const arSelf = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
+                            if (arSelf.length == 0) {
+                                ast.chi.splice(i--, 1);
+                                continue;
+                            }
+                            //
+                            selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
                             rule.sel = selRule.reduce((acc, curr) => {
                                 acc.push(curr.join(''));
                                 return acc;
@@ -17625,8 +17640,14 @@
                         let childSelectorCompound = [];
                         let withCompound = [];
                         let withoutCompound = [];
-                        const rules = splitRule(ast.sel);
+                        // pseudo elements cannot be used with '&'
+                        // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
+                        const rules = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::')));
                         const parentSelector = !node.sel.includes('&');
+                        if (rules.length == 0) {
+                            ast.chi.splice(i--, 1);
+                            continue;
+                        }
                         for (const sel of (rule.raw ?? splitRule(rule.sel))) {
                             const s = sel.join('');
                             if (s.includes('&') || parentSelector) {
@@ -19323,7 +19344,7 @@
                             return s.join('');
                         }).join(',');
                         // @ts-ignore
-                        let sel = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                        let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
                         if (rule.includes('&')) {
                             // @ts-ignore
                             rule = replaceCompound(rule, node.optimized.optimized[0]);

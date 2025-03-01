@@ -100,9 +100,9 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
             consumeWhitespace(tokens);
         }
 
-        while (tokens.length > 0 && tokens[0].typ == EnumToken.PseudoClassTokenType) {
+        while (tokens.length > 0 && (tokens[0].typ == EnumToken.PseudoElementTokenType || tokens[0].typ == EnumToken.PseudoClassTokenType)) {
 
-            const isPseudoElement: boolean = tokens[0].val.startsWith('::');
+            const isPseudoElement: boolean = tokens[0].typ == EnumToken.PseudoElementTokenType;
 
             if (
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions#pseudo-elements

@@ -91,6 +91,7 @@ declare enum EnumToken {
     MediaFeatureAndTokenType = 89,
     MediaFeatureOrTokenType = 90,
     PseudoPageTokenType = 91,
+    PseudoElementTokenType = 92,
     Time = 25,
     Iden = 7,
     EOF = 48,
@@ -517,6 +518,12 @@ export declare interface PseudoClassToken extends BaseToken {
     val: string;
 }
 
+export declare interface PseudoElementToken extends BaseToken {
+
+    typ: EnumToken.PseudoElementTokenType;
+    val: string;
+}
+
 export declare interface PseudoPageToken extends BaseToken {
 
     typ: EnumToken.PseudoPageTokenType;
@@ -812,6 +819,7 @@ export declare type Token =
     ListToken
     | PseudoClassToken
     | PseudoPageToken
+    | PseudoElementToken
     | PseudoClassFunctionToken
     | DelimToken
     | BinaryExpressionToken

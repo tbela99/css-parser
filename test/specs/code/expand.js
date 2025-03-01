@@ -1,4 +1,3 @@
-
 export function run(describe, expect, transform, parse, render) {
 
     describe('flatten nested css rules', function () {
@@ -273,4 +272,112 @@ html {
         });
     });
 
+    describe('nesting selector cannot match pseudo element', () => {
+
+        it('nesting selector cannot match pseudo element #12', function () {
+
+            const css = `
+.foo, .foo::before, .foo::after {
+  color: red;
+
+  &:hover { color: blue; }
+}
+
+        `;
+
+            return transform(css, {
+                beautify: true,
+                expandNestingRules: true
+            }).then(result => expect(result.code).equals(`.foo,.foo:before,.foo:after {
+ color: red
+}
+.foo:hover {
+ color: blue
+}`))
+        });
+
+        it('nesting selector cannot match pseudo element #13', () => {
+
+            const css = `
+.foo, .foo::before, .foo::after {
+  color: red;
+
+ .bar { color: blue; }
+}
+
+        `;
+
+            return transform(css, {
+                beautify: true,
+                expandNestingRules: true
+            }).then(result => expect(result.code).equals(`.foo,.foo:before,.foo:after {
+ color: red
+}
+.foo .bar {
+ color: blue
+}`))
+        });
+
+        it('nesting selector cannot match pseudo element #14', () => {
+
+            const css = `
+ .foo::before, .foo::after {
+  color: red;
+
+  .bar { color: blue; }
+}
+
+        `;
+
+            return transform(css, {
+                beautify: true,
+                expandNestingRules: true
+            }).then(result => expect(result.code).equals(`.foo:before,.foo:after {
+ color: red
+}`))
+        });
+
+        it('nesting selector cannot match pseudo element #15', () => {
+
+            const css = `
+ .foo::before, .foo::after {
+  color: red;
+
+  &:hover { color: blue; }
+}
+
+        `;
+
+            return transform(css, {
+                beautify: true,
+                expandNestingRules: true
+            }).then(result => expect(result.code).equals(`.foo:before,.foo:after {
+ color: red
+}`))
+        });;
+
+        it('nesting selector cannot match pseudo element #16', () => {
+
+            const css = `
+
+.foo, .foo:active, .foo:before {
+  color: red;
+
+  &:hover { color: blue; }
+}
+
+
+        `;
+
+            return transform(css, {
+                beautify: true,
+                expandNestingRules: true
+            }).then(result => expect(result.code).equals(`.foo,.foo:active,.foo:before {
+ color: red
+}
+:hover:is(.foo,.foo:active) {
+ color: blue
+}`))
+        });
+    });
 }
