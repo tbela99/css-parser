@@ -316,7 +316,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                     }).join(',');
 
                     // @ts-ignore
-                    let sel: string = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                    let sel: string = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
 
                     if (rule.includes('&')) {
 

@@ -100,6 +100,7 @@ export enum EnumToken {
     MediaFeatureAndTokenType,
     MediaFeatureOrTokenType,
     PseudoPageTokenType,
+    PseudoElementTokenType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,

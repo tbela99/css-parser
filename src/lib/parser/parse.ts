@@ -31,7 +31,7 @@ import {
     walkValues
 } from "../ast";
 import {tokenize} from "./tokenize";
-import type {
+import {
     AstAtRule,
     AstComment,
     AstDeclaration,
@@ -88,6 +88,7 @@ import type {
     Position,
     PseudoClassFunctionToken,
     PseudoClassToken,
+    PseudoElementToken,
     SemiColonToken,
     StartMatchToken,
     SubsequentCombinatorToken,
@@ -711,12 +712,12 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
         const node: AstAtRule = {
             typ: EnumToken.AtRuleNodeType,
             nam: renderToken(atRule, {removeComments: true}),
-            tokens: t,
+            // tokens: t,
             val: raw.join('')
         };
 
         Object.defineProperties(node, {
-            tokens: {...definedPropertySettings, enumerable: true, value: tokens.slice()},
+            tokens: {...definedPropertySettings, enumerable: false, value: tokens.slice()},
             raw: {...definedPropertySettings, value: raw}
         });
 
@@ -892,7 +893,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
             Object.defineProperty(node, 'tokens', {
                 ...definedPropertySettings,
-                enumerable: true,
+                enumerable: false,
                 value: tokens.slice()
             });
 
@@ -1537,10 +1538,16 @@ function getTokenType(val: string, hint?: EnumToken): Token {
                 val: val.slice(0, -1),
                 chi: <Token[]>[]
             }
-            : <PseudoClassToken>{
+            : (
+                // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+                val.startsWith('::') || [':before', ':after', ':first-line', ':first-letter'].includes(val) ? <PseudoElementToken>{
+                    typ: EnumToken.PseudoElementTokenType,
+                    val
+                    } :
+                    <PseudoClassToken>{
                 typ: EnumToken.PseudoClassTokenType,
                 val
-            };
+            });
     }
 
     if (isAtKeyword(val)) {

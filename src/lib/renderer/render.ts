@@ -923,9 +923,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             }
 
         case EnumToken.PseudoClassTokenType:
+        case EnumToken.PseudoElementTokenType:
 
             // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
-            if (token.typ == EnumToken.PseudoClassTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+            if (token.typ == EnumToken.PseudoElementTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
 
                 return token.val.slice(1);
             }

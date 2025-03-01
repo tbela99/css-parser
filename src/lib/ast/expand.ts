@@ -95,7 +95,19 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     } else {
 
-                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
+                        // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
+
+                        const arSelf = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), <string[]>[]).join(',');
+
+                        if (arSelf.length == 0) {
+
+                            ast.chi.splice(i--, 1);
+                            continue;
+                        }
+
+                        //
+                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
+
                         rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
 
                             acc.push(curr.join(''));
@@ -110,8 +122,16 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     let withCompound: string[] = [];
                     let withoutCompound: string[] = [];
 
-                    const rules: string[][] = splitRule(ast.sel);
+                    // pseudo elements cannot be used with '&'
+                    // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
+                    const rules: string[][] = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::')));
                     const parentSelector: boolean = !node.sel.includes('&');
+
+                    if (rules.length == 0) {
+
+                        ast.chi.splice(i--, 1);
+                        continue;
+                    }
 
                     for (const sel of (rule.raw ?? splitRule(rule.sel))) {
 
@@ -212,7 +232,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                 result.push(...<AstRule[]>expandRule(rule));
             } else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
-
 
                 let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
                 const values: Array<AstRule | AstAtRule> = <Array<AstRule | AstAtRule>>[];

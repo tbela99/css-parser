@@ -80,8 +80,8 @@ function validateCompoundSelector(tokens, root, options) {
             tokens.shift();
             consumeWhitespace(tokens);
         }
-        while (tokens.length > 0 && tokens[0].typ == EnumToken.PseudoClassTokenType) {
-            const isPseudoElement = tokens[0].val.startsWith('::');
+        while (tokens.length > 0 && (tokens[0].typ == EnumToken.PseudoElementTokenType || tokens[0].typ == EnumToken.PseudoClassTokenType)) {
+            const isPseudoElement = tokens[0].typ == EnumToken.PseudoElementTokenType;
             if (
             // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions#pseudo-elements
             !(isPseudoElement && tokens[0].val.startsWith('::-webkit-')) &&
