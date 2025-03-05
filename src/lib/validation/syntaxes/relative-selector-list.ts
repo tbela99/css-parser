@@ -1,8 +1,8 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types";
 import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {ValidationLevel} from "../../ast";
-import {validateRelativeSelector} from "./relative-selector";
-import {consumeWhitespace, splitTokenList} from "../utils";
+import {ValidationLevel} from "../../ast/index.ts";
+import {validateRelativeSelector} from "./relative-selector.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
 export function validateRelativeSelectorList(tokens: Token[], root?: AstAtRule | AstRule, options?: ValidationSelectorOptions): ValidationSyntaxResult {
 

@@ -6,6 +6,7 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
+import { splitTokenList } from '../utils/list.js';
 import { validateURL } from '../syntaxes/url.js';
 
 function validateAtRuleDocument(atRule, options, root) {
@@ -34,71 +35,50 @@ function validateAtRuleDocument(atRule, options, root) {
             tokens
         };
     }
-    if (tokens[0].typ == EnumToken.CommaTokenType) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            syntax: '@document',
-            error: 'unexpected token',
-            tokens
-        };
-    }
-    while (tokens.length > 0) {
-        if (tokens[0].typ == EnumToken.CommentTokenType) {
-            tokens.shift();
-            consumeWhitespace(tokens);
+    for (const t of splitTokenList(tokens)) {
+        if (t.length != 1) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: t[0] ?? atRule,
+                syntax: '@document',
+                error: 'unexpected token',
+                tokens
+            };
         }
-        result = validateURL(tokens[0]);
-        if (result.valid == ValidationLevel.Valid) {
-            tokens.shift();
-            consumeWhitespace(tokens);
+        // @ts-ignore
+        if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: t[0] ?? atRule,
+                syntax: '@document',
+                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val,
+                tokens
+            };
+        }
+        if (t[0].typ == EnumToken.UrlFunctionTokenType) {
+            result = validateURL(t[0]);
+            if (result.valid == ValidationLevel.Drop) {
+                return result;
+            }
             continue;
         }
-        if (tokens[0].typ == EnumToken.FunctionTokenType) {
-            if (!['url-prefix', 'domain', 'media-document', 'regexp'].some((t) => t.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0)) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@document',
-                    error: 'unexpected token',
-                    tokens
-                };
-            }
-            const children = tokens[0].chi.slice();
-            consumeWhitespace(children);
-            if (children.length == 0) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@document',
-                    error: 'expecting string argument',
-                    tokens
-                };
-            }
-            if (children[0].typ == EnumToken.StringTokenType) {
-                children.shift();
-                consumeWhitespace(children);
-            }
-            if (children.length > 0) {
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: children[0],
-                    syntax: '@document',
-                    error: 'unexpected token',
-                    tokens
-                };
-            }
-            tokens.shift();
-            consumeWhitespace(tokens);
+        const children = t[0].chi.slice();
+        consumeWhitespace(children);
+        if (children.length != 1 || (children[0].typ != EnumToken.StringTokenType && children[0].typ != EnumToken.UrlTokenTokenType)) {
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[0],
+                syntax: '@document',
+                error: 'expecting string argument',
+                tokens
+            };
         }
+        tokens.shift();
+        consumeWhitespace(tokens);
     }
     // @ts-ignore
     return {

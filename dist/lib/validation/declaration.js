@@ -5,7 +5,7 @@ import '../parser/parse.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import '../parser/utils/config.js';
-import { getParsedSyntax, getSyntaxConfig } from './config.js';
+import { getSyntaxConfig, getParsedSyntax } from './config.js';
 import { validateSyntax } from './syntax.js';
 
 function validateDeclaration(declaration, options, root) {
@@ -23,7 +23,6 @@ function validateDeclaration(declaration, options, root) {
     if (root?.typ == EnumToken.AtRuleNodeType) {
         //
         const syntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + root.nam)?.[0];
-        // console.error({syntax});
         if (syntax != null) {
             if (!('chi' in syntax)) {
                 return {
@@ -52,7 +51,7 @@ function validateDeclaration(declaration, options, root) {
                         valid: ValidationLevel.Drop,
                         node: declaration,
                         syntax: `<${declaration.nam}>`,
-                        error: ` declaration <${declaration.nam}> is not allowed in <@${root.nam}>`
+                        error: `declaration <${declaration.nam}> is not allowed in <@${root.nam}>`
                     };
                 }
                 const syntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, ['@' + root.nam, 'descriptors', name]);
@@ -89,13 +88,6 @@ function validateDeclaration(declaration, options, root) {
             error: `unknown declaration "${declaration.nam}"`
         };
     }
-    // return {
-    //
-    //     valid: ValidationLevel.Valid,
-    //     node: declaration,
-    //     syntax: null,
-    //     error: ''
-    // }
     return validateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, name), declaration.val);
 }
 

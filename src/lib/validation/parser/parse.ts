@@ -43,8 +43,8 @@ import {
     ValidationToken,
     ValidationTokenEnum,
     ValidationWhitespaceToken
-} from "./index";
-import {isIdent, isPseudo} from '../../syntax';
+} from "./index.ts";
+import {isIdent, isPseudo} from '../../syntax/index.ts';
 
 export enum WalkValidationTokenEnum {
 
@@ -1517,7 +1517,7 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
 
         case ValidationTokenEnum.Block:
 
-            return '{' + (token as ValidationBlockToken).chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
+            return '{' + (token as ValidationBlockToken).chi.reduce((acc: string, t: ValidationToken): string => acc + renderSyntax(t), '') + '}';
 
         case ValidationTokenEnum.DeclarationDefinitionToken:
 

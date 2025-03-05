@@ -1,7 +1,7 @@
 
-export * from './config';
-export * from './parser';
-export * from './selector';
-export * from './atrule';
-export * from './declaration';
+export * from './config.ts';
+export * from './parser/index.ts';
+export * from './selector.ts';
+export * from './atrule.ts';
+export * from './declaration.ts';
 

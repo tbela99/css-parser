@@ -305,7 +305,7 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
         return validateMediaCondition(token.val, atRule);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes(token.val))) {
 
         return false;
     }
@@ -331,6 +331,8 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
 
         return chi[0].l.typ == EnumToken.IdenTokenType;
     }
+
+    console.error(chi[0].parent);
 
     return false;
 }

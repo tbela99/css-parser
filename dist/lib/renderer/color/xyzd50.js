@@ -1,3 +1,4 @@
+import { lsrgb2srgbvalues } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';
@@ -10,11 +11,12 @@ import { XYZ_D50_to_D65 } from './xyz.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 
+/*
+*/
 function xyzd502lch(x, y, z, alpha) {
     // @ts-ignore
     const [l, a, b] = xyz2lab(...XYZ_D50_to_D65(x, y, z));
     // L in range [0,100]. For use in CSS, add a percent
-    // @ts-ignore
     return lab2lchvalues(l, a, b, alpha);
 }
 function XYZ_D65_to_D50(x, y, z) {
@@ -31,5 +33,21 @@ function XYZ_D65_to_D50(x, y, z) {
     ];
     return multiplyMatrices(M, [x, y, z]);
 }
+function xyzd502srgb(x, y, z) {
+    // @ts-ignore
+    return lsrgb2srgbvalues(
+    /* r: */
+    x * 3.1341359569958707 -
+        y * 1.6173863321612538 -
+        0.4906619460083532 * z, 
+    /*  g: */
+    x * -0.978795502912089 +
+        y * 1.916254567259524 +
+        0.03344273116131949 * z, 
+    /*    b: */
+    x * 0.07195537988411677 -
+        y * 0.2289768264158322 +
+        1.405386058324125 * z);
+}
 
-export { XYZ_D65_to_D50, xyzd502lch };
+export { XYZ_D65_to_D50, xyzd502lch, xyzd502srgb };

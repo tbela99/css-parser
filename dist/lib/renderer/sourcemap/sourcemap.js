@@ -1,11 +1,11 @@
 import { encode } from './lib/encode.js';
 
 class SourceMap {
+    lastLocation = null;
     #version = 3;
     #sources = [];
     #map = new Map;
     #line = -1;
-    lastLocation = null;
     add(source, original) {
         if (original.src !== '') {
             if (!this.#sources.includes(original.src)) {

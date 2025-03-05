@@ -47,7 +47,7 @@ import {
 import {EnumToken, expand} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
-import {isColor, isNewLine, mathFuncs} from "../syntax";
+import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 
@@ -271,7 +271,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.StyleSheetNodeType:
 
-            return (<AstRuleStyleSheet>data).chi.reduce((css: string, node) => {
+            return (<AstRuleStyleSheet>data).chi.reduce((css: string, node: AstRuleList | AstComment) => {
 
                 const str: string = renderAstNode(node, options, sourcemap, {...position}, errors, reducer, cache, level, indents);
 
@@ -926,7 +926,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.PseudoElementTokenType:
 
             // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
-            if (token.typ == EnumToken.PseudoElementTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+            if (token.typ == EnumToken.PseudoElementTokenType && pseudoElements.includes(token.val.slice(1))) {
 
                 return token.val.slice(1);
             }
@@ -982,7 +982,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.InvalidAttrTokenType:
 
-            return '[' + (<InvalidAttrToken>token).chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+            return '[' + (<InvalidAttrToken>token).chi.reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
 
         case EnumToken.InvalidClassSelectorTokenType:
 

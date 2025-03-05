@@ -1,3 +1,3 @@
 
-export * from './whitespace';
-export * from './list';
+export * from './whitespace.ts';
+export * from './list.ts';

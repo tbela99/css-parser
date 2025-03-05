@@ -1,4 +1,4 @@
 
-export * from './config';
-export * from './type';
-export * from './declaration';
+export * from './config.ts';
+export * from './type.ts';
+export * from './declaration.ts';

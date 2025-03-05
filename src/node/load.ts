@@ -1,5 +1,5 @@
 import {readFile} from "node:fs/promises";
-import {resolve, matchUrl} from "../lib/fs";
+import {matchUrl, resolve} from "../lib/fs/index.ts";
 
 function parseResponse(response: Response) {
 

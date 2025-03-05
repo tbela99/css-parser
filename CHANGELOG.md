@@ -1,14 +1,19 @@
 # Changelog
 
+# v0.9.1
+
+- [x] minification passes #66
+- [x] nesting selector cannot match pseudo element #67
+
 # v0.9.0
 
 validation
 - [x] validate invalid pseudo classes
 - [x] rewrite selector validation
-- [ ] lenient mode that preserves 
-  - [ ] unknown at-rules
-  - [ ] unknown declarations 
-  - [ ] unknown pseudo classes
+- [x] lenient mode that preserves 
+  - [x] unknown at-rules
+  - [x] unknown declarations 
+  - [x] unknown pseudo classes
 
 media query level 5
 - [x] at-rule custom-media

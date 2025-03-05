@@ -1,13 +1,22 @@
-import type {AstAtRule, AstRule, Token} from "../../../@types";
+import type {
+    AstAtRule,
+    AstRule,
+    AttrToken,
+    MatchExpressionToken,
+    PseudoClassFunctionToken,
+    PseudoClassToken,
+    PseudoElementToken,
+    Token
+} from "../../../@types/index.d.ts";
 import type {
     ValidationConfiguration,
     ValidationSelectorOptions,
     ValidationSyntaxResult
-} from "../../../@types/validation";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace} from "../utils";
-import {mozExtensions, webkitExtensions} from "../../syntax";
-import {getSyntaxConfig} from "../config";
+} from "../../../@types/validation.d.ts";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace} from "../utils/index.ts";
+import {mozExtensions, webkitExtensions} from "../../syntax/index.ts";
+import {getSyntaxConfig} from "../config.ts";
 
 export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | AstRule, options?: ValidationSelectorOptions): ValidationSyntaxResult {
 
@@ -75,12 +84,12 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
         while (tokens.length > 0 && tokens[0].typ == EnumToken.PseudoClassFuncTokenType) {
 
             if (
-                !mozExtensions.has(tokens[0].val + '()') &&
-                !webkitExtensions.has(tokens[0].val + '()') &&
-                !((tokens[0].val + '()') in config.selectors)
+                !mozExtensions.has((tokens[0] as PseudoClassFunctionToken).val + '()') &&
+                !webkitExtensions.has((tokens[0] as PseudoClassFunctionToken).val + '()') &&
+                !(((tokens[0] as PseudoClassFunctionToken).val + '()') in config.selectors)
             ) {
 
-                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
+                if (!options?.lenient || /^(:?)-webkit-/.test((tokens[0] as PseudoClassFunctionToken).val)) {
 
                     // @ts-ignore
                     return {
@@ -89,7 +98,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'unknown pseudo-class: ' + tokens[0].val + '()',
+                        error: 'unknown pseudo-class: ' + (tokens[0] as PseudoClassFunctionToken).val + '()',
                         tokens
                     }
                 }
@@ -106,15 +115,15 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
             if (
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions#pseudo-elements
-                !(isPseudoElement && tokens[0].val.startsWith('::-webkit-')) &&
-                !mozExtensions.has(tokens[0].val) &&
-                !webkitExtensions.has(tokens[0].val) &&
-                !(tokens[0].val in config.selectors) &&
+                !(isPseudoElement && (tokens[0] as PseudoClassToken | PseudoElementToken).val.startsWith('::-webkit-')) &&
+                !mozExtensions.has((tokens[0] as PseudoClassToken | PseudoElementToken).val) &&
+                !webkitExtensions.has((tokens[0] as PseudoClassToken | PseudoElementToken).val) &&
+                !((tokens[0] as PseudoClassToken | PseudoElementToken).val in config.selectors) &&
                 !(!isPseudoElement &&
-                    (':' + tokens[0].val) in config.selectors)
+                    (':' +(tokens[0] as PseudoClassToken | PseudoElementToken).val) in config.selectors)
             ) {
 
-                if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
+                if (!options?.lenient || /^(:?)-webkit-/.test((tokens[0] as PseudoClassToken | PseudoElementToken).val)) {
 
                     // @ts-ignore
                     return {
@@ -123,7 +132,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'unknown pseudo-class: ' + tokens[0].val,
+                        error: 'unknown pseudo-class: ' + (tokens[0] as PseudoClassToken | PseudoElementToken).val,
                         tokens
                     }
                 }
@@ -136,7 +145,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
         while (tokens.length > 0 && tokens[0].typ == EnumToken.AttrTokenType) {
 
-            const children: Token[] = tokens[0].chi.slice() as Token[];
+            const children: Token[] = (tokens[0] as AttrToken).chi.slice() as Token[];
 
             consumeWhitespace(children);
 
@@ -187,15 +196,15 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 if (![
                         EnumToken.IdenTokenType,
                         EnumToken.NameSpaceAttributeTokenType
-                    ].includes(children[0].l.typ) ||
+                    ].includes((children[0] as MatchExpressionToken).l.typ) ||
                     ![
                         EnumToken.EqualMatchTokenType, EnumToken.DashMatchTokenType,
                         EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
-                        EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes(children[0].op.typ) ||
+                        EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes((children[0] as MatchExpressionToken).op.typ) ||
                     ![
                         EnumToken.StringTokenType,
                         EnumToken.IdenTokenType
-                    ].includes(children[0].r.typ)) {
+                    ].includes((children[0] as MatchExpressionToken).r.typ)) {
 
                     // @ts-ignore
                     return {
@@ -208,7 +217,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                     }
                 }
 
-                if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+                if ((children[0] as MatchExpressionToken).attr != null && !['i', 's'].includes((children[0] as MatchExpressionToken).attr as string)) {
 
                     // @ts-ignore
                     return {

@@ -949,100 +949,6 @@ function move(position, chr) {
     }
     return position;
 }
-function renderSyntax(token, parent) {
-    let glue;
-    switch (token.typ) {
-        case ValidationTokenEnum.Root:
-            return token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '');
-        case ValidationTokenEnum.Whitespace:
-            return ' ';
-        case ValidationTokenEnum.ValidationFunctionDefinition:
-            return '<' + token.val + '()>';
-        case ValidationTokenEnum.HashMark:
-            return '#';
-        case ValidationTokenEnum.Pipe:
-            return '|';
-        case ValidationTokenEnum.Column:
-            return '||';
-        case ValidationTokenEnum.PipeToken:
-            return token.chi.reduce((acc, curr) => acc + (acc.trim().length > 0 ? '|' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '');
-        case ValidationTokenEnum.ColumnToken:
-        case ValidationTokenEnum.AmpersandToken:
-            glue = token.typ == ValidationTokenEnum.ColumnToken ? '||' : '&&';
-            return token.l.reduce((acc, curr) => acc + renderSyntax(curr), '') +
-                glue +
-                token.r.reduce((acc, curr) => acc + renderSyntax(curr), '');
-        case ValidationTokenEnum.Function:
-        case ValidationTokenEnum.PseudoClassFunctionToken:
-        case ValidationTokenEnum.Parens:
-            return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ')' + renderAttributes(token);
-        case ValidationTokenEnum.Comma:
-            return ',';
-        case ValidationTokenEnum.Keyword:
-            return token.val + renderAttributes(token);
-        case ValidationTokenEnum.OpenBracket:
-            return '[';
-        case ValidationTokenEnum.Ampersand:
-            return '&&';
-        case ValidationTokenEnum.QuestionMark:
-            return '?';
-        case ValidationTokenEnum.Separator:
-            return '/';
-        case ValidationTokenEnum.Bracket:
-            return '[' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
-        case ValidationTokenEnum.PropertyType:
-            return '<' + token.val + '>' + renderAttributes(token);
-        case ValidationTokenEnum.DeclarationType:
-            return "<'" + token.val + "'>" + renderAttributes(token);
-        case ValidationTokenEnum.Number:
-        case ValidationTokenEnum.PseudoClassToken:
-        case ValidationTokenEnum.StringToken:
-            return token.val + '';
-        case ValidationTokenEnum.SemiColon:
-            return ';';
-        case ValidationTokenEnum.AtRule:
-            return '@' + token.val;
-        case ValidationTokenEnum.AtRuleDefinition:
-            return '@' + token.val +
-                (token.prelude == null ? '' : ' ' + token.prelude.reduce((acc, curr) => acc + renderSyntax(curr), '')) +
-                (token.chi == null ? '' : ' {\n' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '')).slice(1, -1) + '\n}';
-        case ValidationTokenEnum.Block:
-            return '{' + token.chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
-        case ValidationTokenEnum.DeclarationDefinitionToken:
-            return token.nam + ': ' + renderSyntax(token.val);
-        case ValidationTokenEnum.ColumnArrayToken:
-            return token.chi.reduce((acc, curr) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
-        default:
-            throw new Error('Unhandled token: ' + JSON.stringify({ token }));
-    }
-}
-function renderAttributes(token) {
-    let result = '';
-    if (token.isList) {
-        result += '#';
-    }
-    if (token.isOptional) {
-        result += '?';
-    }
-    if (token.isRepeatableGroup) {
-        result += '!';
-    }
-    if (token.isRepeatable) {
-        result += '*';
-    }
-    if (token.atLeastOnce) {
-        result += '+';
-    }
-    if (token.occurence != null) {
-        if (token.occurence.max == 0 || token.occurence.max == token.occurence.min || Number.isNaN(token.occurence.max)) {
-            result += '{' + token.occurence.min + '}';
-        }
-        else {
-            result += '{' + token.occurence.min + ',' + token.occurence.max + '}';
-        }
-    }
-    return result;
-}
 function minify(ast) {
     if (Array.isArray(ast)) {
         // @ts-ignore
@@ -1143,4 +1049,4 @@ function* walkValidationToken(token, parent, callback, key) {
     }
 }
 
-export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, renderSyntax, walkValidationToken };
+export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, walkValidationToken };

@@ -1,5 +1,5 @@
 import {EnumToken} from "../../ast";
-import type {IdentToken, PropertyMapType, Token} from "../../../@types/index.d.ts";
+import type {FunctionToken, IdentToken, NumberToken, PropertyMapType, Token} from "../../../@types/index.d.ts";
 
 import {mathFuncs} from "../../syntax";
 
@@ -12,22 +12,22 @@ export function matchType(val: Token, properties: PropertyMapType): boolean {
         return true;
     }
 
-    if (val.typ == EnumToken.NumberTokenType && val.val == '0') {
+    if (val.typ == EnumToken.NumberTokenType && (val as NumberToken).val == '0') {
 
         // @ts-ignore
         return properties.types.some((type: keyof EnumToken) => {
 
             // @ts-ignore
-            const typ = EnumToken[type];
+            const typ = EnumToken[type] as EnumToken;
             return typ == EnumToken.LengthTokenType || typ == EnumToken.AngleTokenType
         })
     }
 
     if (val.typ == EnumToken.FunctionTokenType) {
 
-        if (mathFuncs.includes(val.val)) {
+        if (mathFuncs.includes((val as FunctionToken).val)) {
 
-            return val.chi.every(((t: Token) => [EnumToken.Add,EnumToken.Mul,EnumToken.Div,EnumToken.Sub,EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.DimensionTokenType, EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.ResolutionTokenType, EnumToken.TimeTokenType, EnumToken.BinaryExpressionTokenType].includes(t.typ) || matchType(t, properties)));
+            return (val as FunctionToken).chi.every(((t: Token):   boolean => [EnumToken.Add,EnumToken.Mul,EnumToken.Div,EnumToken.Sub,EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.DimensionTokenType, EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.ResolutionTokenType, EnumToken.TimeTokenType, EnumToken.BinaryExpressionTokenType].includes(t.typ) || matchType(t, properties)));
         }
 
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.

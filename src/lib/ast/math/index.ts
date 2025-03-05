@@ -1,2 +1,2 @@
 
-export * from './expression';
+export * from './expression.ts';

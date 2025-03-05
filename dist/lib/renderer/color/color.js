@@ -15,9 +15,9 @@ import { xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues, lch2srgb, oklab2srgb, lab
 import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from './prophotorgb.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
 import { rec20202srgb, srgb2rec2020values } from './rec2020.js';
-import { xyzd502srgb, srgb2xyz } from './xyz.js';
+import { srgb2xyz } from './xyz.js';
 import { p32srgbvalues, srgb2p3values } from './p3.js';
-import { XYZ_D65_to_D50 } from './xyzd50.js';
+import { xyzd502srgb, XYZ_D65_to_D50 } from './xyzd50.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 

@@ -1,7 +1,7 @@
 import type {AstAtRule, Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {validateKeyframeSelector} from "./keyframe-selector";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {validateKeyframeSelector} from "./keyframe-selector.ts";
 
 
 export function validateKeyframeBlockList(tokens: Token[], atRule: AstAtRule, options: ValidationOptions): ValidationSyntaxResult {
@@ -14,11 +14,11 @@ export function validateKeyframeBlockList(tokens: Token[], atRule: AstAtRule, op
 
         if (tokens[++i].typ == EnumToken.CommaTokenType) {
 
-            result = validateKeyframeSelector(tokens.slice(j, i), atRule, options);
+            result = validateKeyframeSelector(tokens.slice(j, i), atRule, options) as ValidationSyntaxResult;
 
             if (result.valid == ValidationLevel.Drop) {
 
-                return result;
+                return result as ValidationSyntaxResult;
             }
 
             j = i + 1;

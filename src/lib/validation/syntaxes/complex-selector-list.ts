@@ -1,8 +1,8 @@
-import type {AstAtRule, AstRule, Token} from "../../../@types";
+import type {AstAtRule, AstRule, Token} from "../../../@types/index.d.ts";
 import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {ValidationLevel} from "../../ast";
-import {validateSelector} from "./selector";
-import {consumeWhitespace, splitTokenList} from "../utils";
+import {ValidationLevel} from "../../ast/index.ts";
+import {validateSelector} from "./selector.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
 
 export function validateComplexSelectorList(tokens: Token[], root?: AstAtRule | AstRule, options?: ValidationSelectorOptions): ValidationSyntaxResult {
@@ -28,7 +28,7 @@ export function validateComplexSelectorList(tokens: Token[], root?: AstAtRule | 
 
     for (const t of splitTokenList(tokens)) {
 
-            result = validateSelector(t, root, options);
+            result = validateSelector(t, root, options) as ValidationSyntaxResult;
 
             if (result.valid == ValidationLevel.Drop) {
 
