@@ -225,7 +225,7 @@ function validateMediaCondition(token, atRule) {
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
         return validateMediaCondition(token.val, atRule);
     }
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports'].includes(token.val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes(token.val))) {
         return false;
     }
     const chi = token.chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
@@ -241,6 +241,7 @@ function validateMediaCondition(token, atRule) {
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
         return chi[0].l.typ == EnumToken.IdenTokenType;
     }
+    console.error(chi[0].parent);
     return false;
 }
 function validateMediaFeature(token) {

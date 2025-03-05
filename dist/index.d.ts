@@ -91,6 +91,7 @@ declare enum EnumToken {
     MediaFeatureAndTokenType = 89,
     MediaFeatureOrTokenType = 90,
     PseudoPageTokenType = 91,
+    PseudoElementTokenType = 92,
     Time = 25,
     Iden = 7,
     EOF = 48,
@@ -129,7 +130,7 @@ declare enum EnumToken {
  * @param nestingContent
  * @param context
  */
-declare function minify(ast: AstNode, options?: ParserOptions | MinifyOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+declare function minify(ast: AstNode, options?: ParserOptions | MinifyFeatureOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
     [key: string]: any;
 }): AstNode;
 
@@ -517,6 +518,12 @@ export declare interface PseudoClassToken extends BaseToken {
     val: string;
 }
 
+export declare interface PseudoElementToken extends BaseToken {
+
+    typ: EnumToken.PseudoElementTokenType;
+    val: string;
+}
+
 export declare interface PseudoPageToken extends BaseToken {
 
     typ: EnumToken.PseudoPageTokenType;
@@ -812,6 +819,7 @@ export declare type Token =
     ListToken
     | PseudoClassToken
     | PseudoPageToken
+    | PseudoElementToken
     | PseudoClassFunctionToken
     | DelimToken
     | BinaryExpressionToken
@@ -1035,24 +1043,29 @@ interface ValidationOptions {
     lenient?: boolean;
 }
 
-export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
+interface MinifyOptions {
 
     minify?: boolean;
-    src?: string;
-    sourcemap?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
-    removeCharset?: boolean;
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
+    computeCalcExpression?: boolean;
+    inlineCssVariables?: boolean;
     removeEmpty?: boolean;
+    pass?: number;
+}
+
+export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
+
+    src?: string;
+    sourcemap?: boolean;
+    removeCharset?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
     parseColor?: boolean;
-    removeDuplicateDeclarations?: boolean;
-    computeShorthand?: boolean;
     removePrefix?: boolean;
-    inlineCssVariables?: boolean;
-    computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
@@ -1064,7 +1077,7 @@ export declare interface ParserOptions extends ValidationOptions, PropertyListOp
     setParent?: boolean;
 }
 
-export declare interface MinifyOptions extends ParserOptions {
+export declare interface MinifyFeatureOptions extends ParserOptions {
 
     features: MinifyFeature[];
 }
@@ -1073,7 +1086,7 @@ export declare interface MinifyFeature {
 
     ordering: number;
 
-    register(options: MinifyOptions | ParserOptions): void;
+    register(options: MinifyFeatureOptions | ParserOptions): void;
 
     // run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: { [key: string]: any }): void;
 
@@ -1083,7 +1096,7 @@ export declare interface MinifyFeature {
 export declare interface MinifyFeature {
 
     ordering: number;
-    register: (options: MinifyOptions | ParserOptions) => void;
+    register: (options: MinifyFeatureOptions | ParserOptions) => void;
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
     }) => void;

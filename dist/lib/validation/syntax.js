@@ -6,8 +6,7 @@ import '../ast/walk.js';
 import '../parser/parse.js';
 import { isLength } from '../syntax/syntax.js';
 import '../parser/utils/config.js';
-import '../renderer/color/utils/constants.js';
-import '../renderer/sourcemap/lib/encode.js';
+import { renderToken } from '../renderer/render.js';
 import { getSyntaxConfig, getParsedSyntax } from './config.js';
 import { validateSelector } from './selector.js';
 import './syntaxes/complex-selector.js';
@@ -33,9 +32,9 @@ function splice(tokens, matches) {
 }
 function validateSyntax(syntaxes, tokens, root, options, context = { level: 0 }) {
     console.error(JSON.stringify({
-        syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''),
-        syntaxes,
-        tokens,
+        syntax: syntaxes?.reduce?.((acc, curr) => acc + renderSyntax(curr), ''),
+        // syntaxes,
+        tokens: tokens.reduce((acc, curr) => acc + renderToken(curr), ''),
         s: new Error('bar').stack
     }, null, 1));
     if (syntaxes == null) {
@@ -1390,6 +1389,41 @@ function doValidateSyntax(syntax, token, tokens, root, options, context) {
                 error: valid ? '' : 'expecting token',
                 tokens
             };
+            break;
+        case ValidationTokenEnum.ColumnArrayToken:
+            {
+                matches = [];
+                queue = [];
+                const children = syntax.chi;
+                let child;
+                while (child = children.shift()) {
+                    result = validateSyntax([child], tokens, root, options, context);
+                    if (result.valid == ValidationLevel.Valid) {
+                        matches.push(child);
+                        consumeToken(tokens);
+                        token = tokens[0];
+                        if (queue.length > 0) {
+                            children.unshift(...queue);
+                            queue = [];
+                        }
+                        if (token == null) {
+                            break;
+                        }
+                    }
+                    else {
+                        queue.push(child);
+                    }
+                }
+                valid = matches.length > 0;
+                result = {
+                    valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    matches: valid ? [token] : [],
+                    node: valid ? null : token,
+                    syntax,
+                    error: valid ? '' : 'expecting token',
+                    tokens
+                };
+            }
             break;
         case ValidationTokenEnum.ColumnToken:
             children = [...syntax.l.slice(), ...syntax.r.slice()];

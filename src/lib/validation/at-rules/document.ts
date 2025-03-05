@@ -1,7 +1,7 @@
 import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace} from "../utils";
+import {consumeWhitespace, splitTokenList} from "../utils";
 import {validateURL} from "../syntaxes/url";
 
 
@@ -38,90 +38,65 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
         } as ValidationSyntaxResult;
     }
 
-    if (tokens[0].typ == EnumToken.CommaTokenType) {
+    for (const t of splitTokenList(tokens)) {
+
+        if (t.length != 1) {
+
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: t[0] ?? atRule,
+                syntax: '@document',
+                error: 'unexpected token',
+                tokens
+            };
+        }
+
 
         // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            syntax: '@document',
-            error: 'unexpected token',
-            tokens
-        }
-    }
+        if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare((t[0] as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0)) {
 
-    while (tokens.length > 0) {
-
-        if (tokens[0].typ == EnumToken.CommentTokenType) {
-
-            tokens.shift();
-            consumeWhitespace(tokens);
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: t[0] ?? atRule,
+                syntax: '@document',
+                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + (t[0] as FunctionToken).val,
+                tokens
+            }
         }
 
-        result = validateURL(tokens[0]);
+        if (t[0].typ == EnumToken.UrlFunctionTokenType) {
 
-        if (result.valid == ValidationLevel.Valid) {
+            result = validateURL(t[0]);
 
-            tokens.shift();
-            consumeWhitespace(tokens);
+            if (result.valid == ValidationLevel.Drop) {
+
+                return result;
+            }
+
             continue;
         }
 
-        if (tokens[0].typ == EnumToken.FunctionTokenType) {
+        const children = (t[0] as FunctionToken).chi.slice() as Token[];
 
-            if (!['url-prefix', 'domain', 'media-document', 'regexp'].some((t) => t.localeCompare((tokens[0] as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0)) {
+        consumeWhitespace(children);
 
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@document',
-                    error: 'unexpected token',
-                    tokens
-                }
+        if (children.length != 1 || (children[0].typ != EnumToken.StringTokenType && children[0].typ != EnumToken.UrlTokenTokenType)) {
+
+            // @ts-ignore
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: tokens[0],
+                syntax: '@document',
+                error: 'expecting string argument',
+                tokens
             }
-
-            const children = (tokens[0] as FunctionToken).chi.slice() as Token[];
-
-            consumeWhitespace(children);
-
-            if (children.length == 0) {
-
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@document',
-                    error: 'expecting string argument',
-                    tokens
-                }
-            }
-
-            if (children[0].typ == EnumToken.StringTokenType) {
-
-                children.shift();
-                consumeWhitespace(children);
-            }
-
-            if (children.length > 0) {
-
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: children[0],
-                    syntax: '@document',
-                    error: 'unexpected token',
-                    tokens
-                }
-            }
-
-            tokens.shift();
-            consumeWhitespace(tokens);
         }
+
+        tokens.shift();
+        consumeWhitespace(tokens);
     }
 
     // @ts-ignore

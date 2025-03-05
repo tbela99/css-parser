@@ -1,4 +1,3 @@
-
 import type {
     AstNode,
     ParseResult,
@@ -9,11 +8,11 @@ import type {
     TransformResult
 } from "../@types/index.d.ts";
 
-import {doParse, doRender} from "../lib";
-import {resolve, dirname} from "../lib/fs";
-import {load} from "./load";
+import {doParse, doRender} from "../lib/index.ts";
+import {dirname, resolve} from "../lib/fs/index.ts";
+import {load} from "./load.ts";
 
-export {minify, expand, parseString, parseTokens, renderToken, walk, walkValues, EnumToken} from '../lib';
+export {minify, expand, parseString, parseTokens, renderToken, walk, walkValues, EnumToken} from '../lib/index.ts';
 export {dirname, resolve, load};
 
 /**

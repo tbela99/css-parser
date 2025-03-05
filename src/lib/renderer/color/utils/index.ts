@@ -1,4 +1,4 @@
 
-export * from './matrix';
-export * from './constants';
-export * from './components';
+export * from './matrix.ts';
+export * from './constants.ts';
+export * from './components.ts';

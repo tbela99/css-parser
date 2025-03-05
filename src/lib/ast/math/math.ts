@@ -112,7 +112,7 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
 
     }
 
-    const a2: [number, number] = simplify(l2, r2);
+    const a2: [number, number] = simplify(l2 as number, r2 as number);
 
     if (a2[1] == 1) {
 

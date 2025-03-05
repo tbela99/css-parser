@@ -1,6 +1,6 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
 import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Position} from "./ast.d.ts";
-import {SourceMap} from "../lib/renderer/sourcemap";
+import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib";
 
@@ -29,7 +29,7 @@ export declare interface MinifyFeature {
 
     ordering: number;
 
-    register(options: MinifyOptions | ParserOptions): void;
+    register(options: MinifyFeatureOptions | ParserOptions): void;
 
     // run(ast: AstRule | AstAtRule, options: ParserOptions = {}, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: { [key: string]: any }): void;
 
@@ -42,24 +42,29 @@ export interface ValidationOptions {
     lenient?: boolean;
 }
 
-export declare interface ParserOptions extends ValidationOptions, PropertyListOptions {
+export interface MinifyOptions {
 
     minify?: boolean;
-    src?: string;
-    sourcemap?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
-    removeCharset?: boolean;
+    removeDuplicateDeclarations?: boolean;
+    computeShorthand?: boolean;
+    computeCalcExpression?: boolean;
+    inlineCssVariables?: boolean;
     removeEmpty?: boolean;
+    pass?: number;
+}
+
+export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
+
+    src?: string;
+    sourcemap?: boolean;
+    removeCharset?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
     parseColor?: boolean;
-    removeDuplicateDeclarations?: boolean;
-    computeShorthand?: boolean;
     removePrefix?: boolean;
-    inlineCssVariables?: boolean;
-    computeCalcExpression?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
@@ -71,7 +76,7 @@ export declare interface ParserOptions extends ValidationOptions, PropertyListOp
     setParent?: boolean;
 }
 
-export declare interface MinifyOptions extends ParserOptions {
+export declare interface MinifyFeatureOptions extends ParserOptions {
 
     features: MinifyFeature[];
 }
@@ -79,7 +84,7 @@ export declare interface MinifyOptions extends ParserOptions {
 export declare interface MinifyFeature {
 
     ordering: number;
-    register: (options: MinifyOptions | ParserOptions) => void;
+    register: (options: MinifyFeatureOptions | ParserOptions) => void;
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
     }) => void;

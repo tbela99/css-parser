@@ -8,13 +8,13 @@ import type {
     StringToken,
     Token,
     WhitespaceToken
-} from "../../../@types";
-import {eq} from "../utils/eq";
-import {getConfig, matchType} from "../utils";
-import {renderToken} from "../../renderer";
-import {parseString} from "../parse";
-import {PropertySet} from "./set";
-import {EnumToken} from "../../ast";
+} from "../../../@types/index.d.ts";
+import {eq} from "../utils/eq.ts";
+import {getConfig, matchType} from "../utils/index.ts";
+import {renderToken} from "../../renderer/index.ts";
+import {parseString} from "../parse.ts";
+import {PropertySet} from "./set.ts";
+import {EnumToken} from "../../ast/index.ts";
 
 const propertiesConfig: PropertiesConfig = getConfig();
 

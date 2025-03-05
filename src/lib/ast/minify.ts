@@ -1,9 +1,9 @@
-import {parseString} from "../parser";
-import {eq} from "../parser/utils/eq";
-import {replaceCompound} from './expand';
-import {doRender, renderToken} from "../renderer";
-import * as allFeatures from "./features";
-import {walkValues} from "./walk";
+import {parseString} from "../parser/index.ts";
+import {eq} from "../parser/utils/eq.ts";
+import {replaceCompound} from './expand.ts';
+import {doRender, renderToken} from "../renderer/index.ts";
+import * as allFeatures from "./features/index.ts";
+import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -14,14 +14,15 @@ import type {
     LiteralToken,
     MatchedSelector,
     MinifyFeature,
-    MinifyOptions,
+    MinifyFeatureOptions,
     OptimizedSelector,
     ParserOptions,
+    PseudoClassFunctionToken,
     RawSelectorTokens,
     Token
-} from "../../@types";
-import {EnumToken} from "./types";
-import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax";
+} from "../../@types/index.d.ts";
+import {EnumToken} from "./types.ts";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/index.ts";
 
 export const combinators: string[] = ['+', '>', '~', '||', '|'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
@@ -38,7 +39,7 @@ const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).so
  * @param nestingContent
  * @param context
  */
-export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
+export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
 
@@ -54,10 +55,10 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
     context.nodes.add(ast);
 
-    if (!('features' in <MinifyOptions>options)) {
+    if (!('features' in <MinifyFeatureOptions>options)) {
 
         // @ts-ignore
-        options = <MinifyOptions>{
+        options = <MinifyFeatureOptions>{
             removeDuplicateDeclarations: true,
             computeShorthand: true,
             computeCalcExpression: true,
@@ -316,7 +317,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
                     }).join(',');
 
                     // @ts-ignore
-                    let sel: string = wrap ? node.optimized.optimized[0] + `:is(${rule})` : rule;
+                    let sel: string = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
 
                     if (rule.includes('&')) {
 
@@ -523,7 +524,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
 
                     Object.defineProperty(node, 'parent', {...definedPropertySettings, value: parent});
 
-                    for (const feature of (<MinifyOptions>options).features) {
+                    for (const feature of (<MinifyFeatureOptions>options).features) {
 
                         feature.run(<AstRule | AstAtRule>node, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent, context);
                     }
@@ -539,7 +540,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyOptions = {}
             }
         }
 
-        for (const feature of (<MinifyOptions>options).features) {
+        for (const feature of (<MinifyFeatureOptions>options).features) {
 
             if ('cleanup' in feature) {
 
@@ -1094,9 +1095,9 @@ function fixSelector(node: AstRule) {
 
         for (const attr of walkValues(attributes)) {
 
-            if (attr.value.typ == EnumToken.PseudoClassFuncTokenType && attr.value.val == ':is') {
+            if (attr.value.typ == EnumToken.PseudoClassFuncTokenType && (attr.value as PseudoClassFunctionToken).val == ':is') {
 
-                let i = attr.value.chi.length;
+                let i = (attr.value as PseudoClassFunctionToken).chi.length;
 
                 while (i--) {
 

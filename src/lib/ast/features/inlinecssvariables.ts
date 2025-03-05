@@ -6,14 +6,16 @@ import type {
     AstRuleList,
     AstRuleStyleSheet,
     CommentToken,
+    DashedIdentToken,
     FunctionToken,
-    MinifyOptions,
+    MinifyFeatureOptions,
     ParserOptions,
+    Token,
     VariableScopeInfo
-} from "../../../@types";
-import {EnumToken} from "../types";
-import {walkValues} from "../walk";
-import {renderToken} from "../../renderer";
+} from "../../../@types/index";
+import {EnumToken} from "../types.ts";
+import {walkValues} from "../walk.ts";
+import {renderToken} from "../../renderer/index.ts";
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
 
@@ -21,9 +23,9 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
         if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
 
-            if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {
+            if ((value as FunctionToken).chi.length == 1 && (value as FunctionToken).chi[0].typ == EnumToken.DashedIdenTokenType) {
 
-                const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get(value.chi[0].val);
+                const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get(((value as FunctionToken).chi[0] as DashedIdentToken).val);
 
                 if (info?.replaceable) {
 
@@ -55,7 +57,7 @@ export class InlineCssVariablesFeature {
         return 0;
     }
 
-    static register(options: MinifyOptions): void {
+    static register(options: MinifyFeatureOptions): void {
 
         if (options.inlineCssVariables) {
 
@@ -186,7 +188,7 @@ export class InlineCssVariablesFeature {
                             // @ts-ignore
                             (<AstDeclaration[]>parent.chi).splice(i++, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc: string, curr: Token): string => acc + renderToken(curr), '')} */`
                             } as CommentToken);
                         }
                     }

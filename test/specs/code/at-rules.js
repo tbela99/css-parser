@@ -368,4 +368,113 @@ export function run(describe, expect, transform, parse, render, dirname) {
         });
     });
 
+    describe('@import', function () {
+        it('import #24', function () {
+            return transform(`
+@import "custom.css
+";
+@import url("chrome://communicator/skin/
+");
+
+`).then((result) => expect(result.code).equals(``));
+        });
+        it('import #25', function () {
+            return transform(`
+
+@import url("landscape.css") screen and (orientation: landscape);
+
+`).then((result) => expect(result.code).equals(`@import "landscape.css" screen and (orientation:landscape);`));
+        });
+
+        it('import #26', function () {
+            return transform(`
+
+@import url("gridy.css") supports((not (display: grid)) and (display: flex))
+  screen and (max-width: 400px)
+
+`).then((result) => expect(result.code).equals(`@import "gridy.css" supports((not (display:grid)) and (display:flex)) screen and (max-width:400px);`));
+        });
+
+        it('import #27', function () {
+            return transform(`
+
+
+@import url("whatever.css")
+supports((selector(h2 > p)) and (font-tech(color-COLRv1)));
+
+
+`).then((result) => expect(result.code).equals(`@import "whatever.css" supports((selector(h2>p)) and (font-tech(color-COLRv1)));`));
+        });
+
+        it('import #27', function () {
+            return transform(`
+
+
+@import url("whatever.css")
+supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
+
+}
+
+`).then((result) => expect(result.code).equals(``));
+        });
+
+        it('import #28', function () {
+            return transform(`
+
+@import "theme.css" layer("bar");
+@import "theme.css" layer();
+@import "style.css" layer;
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@import "style.css" layer;`));
+        });
+    });
+
+
+    describe('@document', function () {
+        it('document #29', function () {
+            return transform(`
+@document url("https://www.example.com/")
+{
+  h1 {
+    color: green;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@document url(https://www.example.com/) {
+ h1 {
+  color: green
+ }
+}`));
+        });
+        it('document #30', function () {
+            return transform(`
+
+@document url("http://www.w3.org/"),
+          url-prefix("http://www.w3.org/Style/"),
+          domain("mozilla.org"),
+          media-document("video"),
+          regexp("https:.*") {
+  /* CSS rules here apply to:
+     - The page "http://www.w3.org/"
+     - Any page whose URL begins with "http://www.w3.org/Style/"
+     - Any page whose URL's host is "mozilla.org"
+       or ends with ".mozilla.org"
+     - Any standalone video
+     - Any page whose URL starts with "https:" */
+
+  /* Make the above-mentioned pages really ugly */
+  body {
+    color: purple;
+    background: yellow;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@document url(http://www.w3.org/),url-prefix("http://www.w3.org/Style/"),domain("mozilla.org"),media-document("video"),regexp("https:.*") {
+ body {
+  color: purple;
+  background: #ff0
+ }
+}`));
+        });
+    });
 }

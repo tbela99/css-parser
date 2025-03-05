@@ -1,6 +1,6 @@
 [![playground](https://img.shields.io/badge/playground-try%20it%20now-%230a7398
 )](https://tbela99.github.io/css-parser/playground/) [![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
-)](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser)
+)](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![bundle size](https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
 
@@ -65,7 +65,7 @@ import as a module
 
 ```javascript
 
-import {transform} from 'npm:@tbela99/css-parser';
+import {transform} from '@tbela99/css-parser';
 
 // ...
 ```
@@ -96,7 +96,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@0.4.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@0.9.0/web';
 
 
     const css = `
@@ -154,6 +154,7 @@ Include ParseOptions and RenderOptions
 > Minify Options
 
 - minify: boolean, optional. default to _true_. optimize ast.
+- pass: number, optional. minification pass. default to 1
 - nestingRules: boolean, optional. automatically generated nested rules.
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
@@ -700,7 +701,9 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Minification
 
-- [x] reduce calc()
+- [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
+  acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
+- [x] multi-pass minification
 - [x] inline css variables
 - [x] merge identical rules
 - [x] merge adjacent rules
@@ -816,7 +819,7 @@ the visitor is called only on 'height' declarations
 ```typescript
 
 import {AstDeclaration, LengthToken, ParserOptions} from "../src/@types";
-import {EnumToken, EnumToken} from "../src/lib";
+import {EnumToken} from "../src/lib";
 import {transform} from "../src/node";
 
 const options: ParserOptions = {

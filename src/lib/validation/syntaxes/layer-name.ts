@@ -15,7 +15,7 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
         }
 
         return acc
-    }, [[]] as Token[][]).slice(1);
+    }, [[]] as Token[][]);
 
     for (let i = 0; i < slice.length; i++) {
 
@@ -32,30 +32,17 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
             } as ValidationSyntaxResult
         }
 
-        if (slice[i][0].typ != EnumToken.IdenTokenType) {
+        for (let j = 0; j < slice[i].length; j++) {
 
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: tokens,
-                node: slice[i][0],
-                syntax: 'ident',
-                error: 'expecting ident',
-                tokens
-            } as ValidationSyntaxResult
-        }
-
-        for (let j = 1; j < slice[i].length; j++) {
-
-            if (slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
+            if (slice[i][j].typ != EnumToken.IdenTokenType &&slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
 
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: tokens,
                     node: slice[i][j],
-                    syntax: 'layer-name',
-                    error: 'expecting class selector',
+                    syntax: '<layer-name>',
+                    error: 'expecting ident or class selector',
                     tokens
                 } as ValidationSyntaxResult
             }

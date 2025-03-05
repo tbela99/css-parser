@@ -1,4 +1,4 @@
-import type {AstDeclaration, BaseToken} from "./ast";
+import type {AstDeclaration, BaseToken} from "./ast.d.ts";
 import {EnumToken} from "../lib";
 
 export declare interface LiteralToken extends BaseToken {
@@ -329,6 +329,12 @@ export declare interface PseudoClassToken extends BaseToken {
     val: string;
 }
 
+export declare interface PseudoElementToken extends BaseToken {
+
+    typ: EnumToken.PseudoElementTokenType;
+    val: string;
+}
+
 export declare interface PseudoPageToken extends BaseToken {
 
     typ: EnumToken.PseudoPageTokenType;
@@ -639,6 +645,7 @@ export declare type Token =
     ListToken
     | PseudoClassToken
     | PseudoPageToken
+    | PseudoElementToken
     | PseudoClassFunctionToken
     | DelimToken
     | BinaryExpressionToken

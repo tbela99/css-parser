@@ -1,8 +1,8 @@
-import type {AstAtRule, AstRule, AstRuleStyleSheet, Token, ValidationOptions} from "../../@types";
-import {EnumToken} from "../ast";
-import {validateKeyframeBlockList, validateRelativeSelectorList} from "./syntaxes";
-import type {ValidationResult} from "../../@types/validation";
-import {validateSelectorList} from "./syntaxes/selector-list";
+import type {AstAtRule, AstRule, AstRuleStyleSheet, Token, ValidationOptions} from "../../@types/index.d.ts";
+import {EnumToken} from "../ast/index.ts";
+import {validateKeyframeBlockList, validateRelativeSelectorList} from "./syntaxes/index.ts";
+import type {ValidationResult} from "../../@types/validation.d.ts";
+import {validateSelectorList} from "./syntaxes/selector-list.ts";
 
 export function validateSelector(selector: Token[], options: ValidationOptions, root?: AstAtRule | AstRule | AstRuleStyleSheet): ValidationResult {
 

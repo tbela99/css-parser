@@ -5,17 +5,17 @@ import type {
     AstRule,
     BinaryExpressionToken,
     FunctionToken,
-    MinifyOptions,
+    MinifyFeatureOptions,
     NumberToken,
     ParensToken,
     Token,
     WalkerOption
 } from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
-import {WalkerValueEvent, walkValues} from "../walk";
-import {evaluate} from "../math";
-import {renderToken} from "../../renderer";
-import {mathFuncs} from "../../syntax";
+import {WalkerValueEvent, walkValues} from "../walk.ts";
+import {evaluate} from "../math/index.ts";
+import {renderToken} from "../../renderer/index.ts";
+import {mathFuncs} from "../../syntax/index.ts";
 
 export class ComputeCalcExpressionFeature {
 
@@ -23,7 +23,7 @@ export class ComputeCalcExpressionFeature {
         return 1;
     }
 
-    static register(options: MinifyOptions): void {
+    static register(options: MinifyFeatureOptions): void {
 
         if (options.computeCalcExpression) {
 
@@ -110,7 +110,7 @@ export class ComputeCalcExpressionFeature {
                 }
             )) {
 
-                if (value != null && value.typ == EnumToken.FunctionTokenType && mathFuncs.includes(value.val)) {
+                if (value != null && value.typ == EnumToken.FunctionTokenType && mathFuncs.includes((value as FunctionToken).val)) {
 
                     if (!set.has(<FunctionToken>value)) {
 
@@ -129,12 +129,12 @@ export class ComputeCalcExpressionFeature {
 
                                 if (parent.typ == EnumToken.BinaryExpressionTokenType) {
 
-                                    if (parent.l == value) {
+                                    if ((parent as BinaryExpressionToken).l == value) {
 
-                                        parent.l = values[0];
+                                        (parent as BinaryExpressionToken).l = values[0];
                                     } else {
 
-                                        parent.r = values[0];
+                                        (parent as BinaryExpressionToken).r = values[0];
                                     }
                                 } else {
 
@@ -159,7 +159,7 @@ export class ComputeCalcExpressionFeature {
 
                                     if (children[i] == value) {
 
-                                        if (parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') {
+                                        if (parent.typ == EnumToken.FunctionTokenType && (parent as FunctionToken).val == 'calc') {
 
                                             children.splice(i, 1, ...values);
                                         } else {

@@ -101,6 +101,7 @@ var EnumToken;
     EnumToken[EnumToken["MediaFeatureAndTokenType"] = 89] = "MediaFeatureAndTokenType";
     EnumToken[EnumToken["MediaFeatureOrTokenType"] = 90] = "MediaFeatureOrTokenType";
     EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
+    EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";

@@ -1,4 +1,4 @@
-import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
+import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -46,6 +46,7 @@ async function doParse(iterator, options = {}) {
         src: '',
         sourcemap: false,
         minify: true,
+        pass: 1,
         parseColor: true,
         nestingRules: false,
         resolveImport: false,
@@ -165,7 +166,7 @@ async function doParse(iterator, options = {}) {
         await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
         rawTokens.length = 0;
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
-            const index = context.chi.findIndex(node => node == context);
+            const index = context.chi.findIndex((node) => node == context);
             if (index > -1) {
                 context.chi.splice(index, 1);
             }
@@ -225,7 +226,10 @@ async function doParse(iterator, options = {}) {
     }
     if (options.minify) {
         if (ast.chi.length > 0) {
-            minify(ast, options, true, errors, false);
+            let passes = options.pass ?? 1;
+            while (passes--) {
+                minify(ast, options, true, errors, false);
+            }
         }
     }
     const endTime = performance.now();
@@ -326,8 +330,13 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                         continue;
                     }
                     if (type != EnumToken.AtRuleNodeType) {
-                        errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
-                        return null;
+                        // @ts-ignore
+                        if (!(type == EnumToken.InvalidAtRuleTokenType &&
+                            // @ts-ignore
+                            ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
+                            errors.push({ action: 'drop', message: 'invalid @import', location: { src, ...position } });
+                            return null;
+                        }
                     }
                     // @ts-ignore
                     const name = context.chi[i].nam;
@@ -362,11 +371,19 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             if (tokens[0].typ == EnumToken.UrlFunctionTokenType) {
                 if (tokens[1].typ == EnumToken.UrlTokenTokenType || tokens[1].typ == EnumToken.StringTokenType) {
                     tokens.shift();
-                    if (tokens[1].typ == EnumToken.UrlTokenTokenType) {
+                    if (tokens[0]?.typ == EnumToken.UrlTokenTokenType) {
                         // @ts-ignore
                         tokens[0].typ = EnumToken.StringTokenType;
                         // @ts-ignore
                         tokens[0].val = `"${tokens[0].val}"`;
+                    }
+                    // @ts-ignore
+                    while (tokens[1]?.typ == EnumToken.WhitespaceTokenType || tokens[1]?.typ == EnumToken.CommentTokenType) {
+                        tokens.splice(1, 1);
+                    }
+                    // @ts-ignore
+                    if (tokens[1]?.typ == EnumToken.EndParensTokenType) {
+                        tokens.splice(1, 1);
                     }
                 }
             }
@@ -451,11 +468,11 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
         const node = {
             typ: EnumToken.AtRuleNodeType,
             nam: renderToken(atRule, { removeComments: true }),
-            tokens: t,
+            // tokens: t,
             val: raw.join('')
         };
         Object.defineProperties(node, {
-            tokens: { ...definedPropertySettings, enumerable: true, value: tokens.slice() },
+            tokens: { ...definedPropertySettings, enumerable: false, value: tokens.slice() },
             raw: { ...definedPropertySettings, value: raw }
         });
         if (delim.typ == EnumToken.BlockStartTokenType) {
@@ -580,7 +597,7 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             };
             Object.defineProperty(node, 'tokens', {
                 ...definedPropertySettings,
-                enumerable: true,
+                enumerable: false,
                 value: tokens.slice()
             });
             let raw = [...uniq.values()];
@@ -681,7 +698,7 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                 //
                 //     const valid: ValidationResult = validateDeclaration(result, options, context);
                 //
-                //     console.error({valid});
+                //     // console.error({valid});
                 //
                 //     if (valid.valid == ValidationLevel.Drop) {
                 //
@@ -1053,10 +1070,16 @@ function getTokenType(val, hint) {
             val: val.slice(0, -1),
             chi: []
         }
-            : {
-                typ: EnumToken.PseudoClassTokenType,
+            : (
+            // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
+            val.startsWith('::') || pseudoElements.includes(val) ? {
+                typ: EnumToken.PseudoElementTokenType,
                 val
-            };
+            } :
+                {
+                    typ: EnumToken.PseudoClassTokenType,
+                    val
+                });
     }
     if (isAtKeyword(val)) {
         return {
@@ -1233,25 +1256,25 @@ function parseTokens(tokens, options = {}) {
                     break;
                 }
             }
-            Object.assign(t, {
+            const attr = Object.assign(t, {
                 typ: inAttr == 0 ? EnumToken.AttrTokenType : EnumToken.InvalidAttrTokenType,
                 chi: tokens.splice(i + 1, k - i)
             });
             // @ts-ignore
-            if (t.chi.at(-1).typ == EnumToken.AttrEndTokenType) {
+            if (attr.chi.at(-1).typ == EnumToken.AttrEndTokenType) {
                 // @ts-ignore
-                t.chi.pop();
+                attr.chi.pop();
             }
             // @ts-ignore
-            if (t.chi.length > 1) {
+            if (attr.chi.length > 1) {
                 /*(<AttrToken>t).chi =*/
                 // @ts-ignore
-                parseTokens(t.chi, t.typ);
+                parseTokens(attr.chi, t.typ);
             }
-            let m = t.chi.length;
+            let m = attr.chi.length;
             let val;
-            for (m = 0; m < t.chi.length; m++) {
-                val = t.chi[m];
+            for (m = 0; m < attr.chi.length; m++) {
+                val = attr.chi[m];
                 if (val.typ == EnumToken.StringTokenType) {
                     const slice = val.val.slice(1, -1);
                     if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
@@ -1261,55 +1284,55 @@ function parseTokens(tokens, options = {}) {
                 else if (val.typ == EnumToken.LiteralTokenType && val.val == '|') {
                     let upper = m;
                     let lower = m;
-                    while (++upper < t.chi.length) {
-                        if (t.chi[upper].typ == EnumToken.CommentTokenType) {
+                    while (++upper < attr.chi.length) {
+                        if (attr.chi[upper].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
                         break;
                     }
                     while (lower-- > 0) {
-                        if (t.chi[lower].typ == EnumToken.CommentTokenType) {
+                        if (attr.chi[lower].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
                         break;
                     }
                     // @ts-ignore
-                    t.chi[m] = {
+                    attr.chi[m] = {
                         typ: EnumToken.NameSpaceAttributeTokenType,
-                        l: t.chi[lower],
-                        r: t.chi[upper]
+                        l: attr.chi[lower],
+                        r: attr.chi[upper]
                     };
-                    t.chi.splice(upper, 1);
+                    attr.chi.splice(upper, 1);
                     if (lower >= 0) {
-                        t.chi.splice(lower, 1);
+                        attr.chi.splice(lower, 1);
                         m--;
                     }
                 }
                 else if ([
                     EnumToken.DashMatchTokenType, EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType, EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType, EnumToken.DelimTokenType
-                ].includes(t.chi[m].typ)) {
+                ].includes(attr.chi[m].typ)) {
                     let upper = m;
                     let lower = m;
-                    while (++upper < t.chi.length) {
-                        if (t.chi[upper].typ == EnumToken.CommentTokenType) {
+                    while (++upper < attr.chi.length) {
+                        if (attr.chi[upper].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
                         break;
                     }
                     while (lower-- > 0) {
-                        if (t.chi[lower].typ == EnumToken.CommentTokenType) {
+                        if (attr.chi[lower].typ == EnumToken.CommentTokenType) {
                             continue;
                         }
                         break;
                     }
-                    val = t.chi[lower];
+                    val = attr.chi[lower];
                     if (val.typ == EnumToken.StringTokenType) {
                         const slice = val.val.slice(1, -1);
                         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
                             Object.assign(val, { typ: EnumToken.IdenTokenType, val: slice });
                         }
                     }
-                    val = t.chi[upper];
+                    val = attr.chi[upper];
                     if (val.typ == EnumToken.StringTokenType) {
                         const slice = val.val.slice(1, -1);
                         if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
@@ -1429,7 +1452,9 @@ function parseTokens(tokens, options = {}) {
                 t.typ = EnumToken.ColorTokenType;
                 // @ts-ignore
                 t.kin = t.val;
+                // @ts-ignore
                 if (t.chi[0].typ == EnumToken.IdenTokenType) {
+                    // @ts-ignore
                     if (t.chi[0].val == 'from') {
                         // @ts-ignore
                         t.cal = 'rel';
@@ -1439,10 +1464,11 @@ function parseTokens(tokens, options = {}) {
                         // @ts-ignore
                         t.cal = 'mix';
                     }
-                    else if (t.val == 'color') {
-                        // @ts-ignore
-                        t.cal = 'col';
-                        // t.chi = t.chi.filter((t: Token) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+                    else { // @ts-ignore
+                        if (t.val == 'color') {
+                            // @ts-ignore
+                            t.cal = 'col';
+                        }
                     }
                 }
                 const filter = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
@@ -1476,7 +1502,7 @@ function parseTokens(tokens, options = {}) {
             if (t.chi.length > 0) {
                 if (t.typ == EnumToken.PseudoClassFuncTokenType && t.val == ':is' && options.minify) {
                     //
-                    const count = t.chi.filter(t => t.typ != EnumToken.CommentTokenType).length;
+                    const count = t.chi.filter((t) => t.typ != EnumToken.CommentTokenType).length;
                     if (count == 1 ||
                         (i == 0 &&
                             (tokens[i + 1]?.typ == EnumToken.CommaTokenType || tokens.length == i + 1)) ||

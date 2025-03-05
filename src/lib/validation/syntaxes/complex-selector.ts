@@ -1,8 +1,8 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types";
 import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {consumeWhitespace, splitTokenList} from "../utils";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {validateCompoundSelector} from "./compound-selector";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {validateCompoundSelector} from "./compound-selector.ts";
 
 export const combinatorsTokens: EnumToken[] = [EnumToken.ChildCombinatorTokenType, EnumToken.ColumnCombinatorTokenType,
     // EnumToken.DescendantCombinatorTokenType,
@@ -38,7 +38,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
     for (const t of splitTokenList(tokens, combinatorsTokens)) {
 
-        result = validateCompoundSelector(t, root, options);
+        result = validateCompoundSelector(t, root, options) as ValidationSyntaxResult;
 
         if (result.valid == ValidationLevel.Drop) {
 

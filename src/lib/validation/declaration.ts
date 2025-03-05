@@ -1,9 +1,9 @@
-import type {AstAtRule, AstDeclaration, AstNode, ValidationOptions} from "../../@types";
+import type {AstAtRule, AstDeclaration, AstNode, ValidationOptions} from "../../@types/index.d.ts";
 import type {ValidationConfiguration, ValidationResult} from "../../@types/validation";
-import {EnumToken, ValidationLevel} from "../ast";
-import {getParsedSyntax, getSyntaxConfig} from "./config";
-import {ParsedSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
-import {validateSyntax} from "./syntax";
+import {EnumToken, ValidationLevel} from "../ast/index.ts";
+import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
+import {ParsedSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser/index.ts";
+import {validateSyntax} from "./syntax.ts";
 
 export function validateDeclaration(declaration: AstDeclaration, options: ValidationOptions, root?: AstNode): ValidationResult {
 

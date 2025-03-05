@@ -1,14 +1,13 @@
-import type {Location, SourceMapObject} from "../../../@types";
-import {encode} from "./lib";
+import type {Location, SourceMapObject} from "../../../@types/index.d.ts";
+import {encode} from "./lib/index.ts";
 
 export class SourceMap {
 
+    lastLocation: Location | null = null;
     #version: number = 3;
     #sources: string[] = [];
-
     #map: Map<number, number[][]> = new Map;
     #line: number = -1;
-    lastLocation: Location | null = null;
 
     add(source: Location, original: Location) {
 

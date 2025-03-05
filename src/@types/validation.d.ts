@@ -1,8 +1,8 @@
-import {ValidationLevel, ValidationSyntaxGroupEnum} from "../lib";
-import {AstNode} from "./ast.d.ts";
-import {Token} from "./token.d.ts";
-import type {ValidationToken} from "../lib/validation/parser";
-import type {ValidationOptions} from "./index";
+import {ValidationLevel, ValidationSyntaxGroupEnum} from "../lib/index.ts";
+import type {AstNode} from "./ast.d.ts";
+import type {Token} from "./token.d.ts";
+import type {ValidationToken} from "../lib/validation/parser/index.ts";
+import type {ValidationOptions} from "./index.d.ts";
 
 export declare interface ValidationSyntaxNode {
 

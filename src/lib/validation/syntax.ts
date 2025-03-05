@@ -6,6 +6,7 @@ import {
     ValidationAtRuleDefinitionToken,
     ValidationAtRuleToken,
     ValidationBracketToken,
+    ValidationColumnArrayToken,
     ValidationColumnToken,
     ValidationDeclarationDefinitionToken,
     ValidationDeclarationToken,
@@ -42,9 +43,10 @@ import type {
 import {EnumToken, funcLike, ValidationLevel} from "../ast";
 import {getParsedSyntax, getSyntaxConfig} from "./config";
 import type {ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation";
-import {isLength} from "../syntax";
-import {validateSelector} from "./selector";
-import {validateImage} from "./syntaxes";
+import {isLength} from "../syntax/index.ts";
+import {validateSelector} from "./selector.ts";
+import {validateImage} from "./syntaxes/index.ts";
+import {renderToken} from "../../web/index.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -83,14 +85,15 @@ export interface ValidationContext {
     cache?: WeakMap<AstNode | Token, Map<string, ValidationSyntaxResult>>;
 }
 
-export function validateSyntax(syntaxes: ValidationToken[], tokens: Token[] | AstNode[], root?: AstNode, options?: ValidationOptions, context: ValidationContext = {level: 0}): ValidationSyntaxResult {
+export function validateSyntax(syntaxes: ValidationToken[] | null, tokens: Token[] | AstNode[], root?: AstNode, options?: ValidationOptions, context: ValidationContext = {level: 0}): ValidationSyntaxResult {
 
     console.error(JSON.stringify({
-        syntax: syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), ''),
-        syntaxes,
-        tokens,
+        syntax: syntaxes?.reduce?.((acc, curr) => acc + renderSyntax(curr), ''),
+        // syntaxes,
+        tokens: tokens.reduce((acc, curr) => acc + renderToken(curr as Token), ''),
         s: new Error('bar').stack
     }, null, 1));
+
     if (syntaxes == null) {
 
         // @ts-ignore
@@ -1205,7 +1208,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 if (valid) {
 
-                    const children: Token[] = (token as AttrToken).chi.filter(t => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType)
+                    const children: Token[] = (token as AttrToken).chi.filter((t: Token): boolean => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType)
 
                     valid = children.length == 1 && [
                         EnumToken.IdenTokenType,
@@ -1913,9 +1916,56 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             break;
 
-        case
-        ValidationTokenEnum.ColumnToken
-        :
+        case ValidationTokenEnum.ColumnArrayToken: {
+
+            matches = [] as ValidationToken[];
+            queue = [] as ValidationToken[];
+            const children = (syntax as ValidationColumnArrayToken).chi;
+            let child: ValidationToken;
+
+            while (child = children.shift() as ValidationColumnToken) {
+
+                result = validateSyntax([child], tokens, root as AstNode, options, context);
+
+                if (result.valid == ValidationLevel.Valid) {
+
+                    matches.push(child);
+
+                    consumeToken(tokens);
+                    token = tokens[0];
+
+                    if (queue.length > 0) {
+
+                        children.unshift(...queue);
+                        queue = [];
+                    }
+
+                    if (token == null) {
+
+                        break;
+                    }
+
+                } else {
+
+                    queue.push(child);
+                }
+            }
+
+            valid = matches.length > 0;
+            result = {
+
+                valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                matches: valid ? [token] as Token[] : [],
+                node: valid ? null : token,
+                syntax,
+                error: valid ? '' : 'expecting token',
+                tokens
+            } as ValidationSyntaxResult
+        }
+
+            break;
+
+        case ValidationTokenEnum.ColumnToken:
 
             children = [...(syntax as ValidationColumnToken).l.slice(), ...(syntax as ValidationColumnToken).r.slice()] as ValidationToken[];
             matches = [] as ValidationToken[];

@@ -69,7 +69,14 @@ function expandRule(node) {
                         rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), []).join(',');
                     }
                     else {
-                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(ast.sel) : arr.unshift(ast.sel, ' '));
+                        // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
+                        const arSelf = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
+                        if (arSelf.length == 0) {
+                            ast.chi.splice(i--, 1);
+                            continue;
+                        }
+                        //
+                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
                         rule.sel = selRule.reduce((acc, curr) => {
                             acc.push(curr.join(''));
                             return acc;
@@ -80,8 +87,14 @@ function expandRule(node) {
                     let childSelectorCompound = [];
                     let withCompound = [];
                     let withoutCompound = [];
-                    const rules = splitRule(ast.sel);
+                    // pseudo elements cannot be used with '&'
+                    // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
+                    const rules = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::')));
                     const parentSelector = !node.sel.includes('&');
+                    if (rules.length == 0) {
+                        ast.chi.splice(i--, 1);
+                        continue;
+                    }
                     for (const sel of (rule.raw ?? splitRule(rule.sel))) {
                         const s = sel.join('');
                         if (s.includes('&') || parentSelector) {

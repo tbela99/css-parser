@@ -4,26 +4,10 @@ import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
-import { srgb2lsrgbvalues, lsrgb2srgbvalues } from './srgb.js';
+import { srgb2lsrgbvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 
-function xyzd502srgb(x, y, z) {
-    // @ts-ignore
-    return lsrgb2srgbvalues(
-    /* r: */
-    x * 3.1341359569958707 -
-        y * 1.6173863321612538 -
-        0.4906619460083532 * z, 
-    /*  g: */
-    x * -0.978795502912089 +
-        y * 1.916254567259524 +
-        0.03344273116131949 * z, 
-    /*    b: */
-    x * 0.07195537988411677 -
-        y * 0.2289768264158322 +
-        1.405386058324125 * z);
-}
 function XYZ_to_lin_sRGB(x, y, z) {
     // convert XYZ to linear-light sRGB
     const M = [
@@ -63,4 +47,4 @@ function srgb2xyz(r, g, b, alpha) {
     return rgb;
 }
 
-export { XYZ_D50_to_D65, XYZ_to_lin_sRGB, srgb2xyz, xyzd502srgb };
+export { XYZ_D50_to_D65, XYZ_to_lin_sRGB, srgb2xyz };

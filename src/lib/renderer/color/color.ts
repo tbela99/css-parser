@@ -25,15 +25,16 @@ import {
     lch2srgb,
     lsrgb2srgbvalues,
     oklab2srgb,
-    rgb2srgb, srgb2lsrgbvalues,
+    rgb2srgb,
+    srgb2lsrgbvalues,
     xyz2srgb
 } from "./srgb";
 import {prophotorgb2srgbvalues, srgb2prophotorgbvalues} from "./prophotorgb";
 import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb";
 import {rec20202srgb, srgb2rec2020values} from "./rec2020";
-import {srgb2xyz, xyzd502srgb} from "./xyz";
+import {srgb2xyz} from "./xyz";
 import {p32srgbvalues, srgb2p3values} from "./p3";
-import {XYZ_D65_to_D50} from "./xyzd50";
+import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50";
 
 export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorToken | null {
 

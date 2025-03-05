@@ -2,10 +2,9 @@ import type {AstAtRule, AstNode, IdentToken, MediaQueryConditionToken, Token, Va
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace, splitTokenList} from "../utils";
-import {validateSyntax} from "../syntax";
-import {getParsedSyntax} from "../config";
-import {ValidationSyntaxGroupEnum, ValidationToken} from "../parser";
 import {colorFontTech, fontFeaturesTech, fontFormat} from "../../syntax";
+import {validateComplexSelector} from "../syntaxes/complex-selector";
+import {parseSelector} from "../../parser";
 
 export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -59,7 +58,9 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
     }
 }
 
-export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: Token[]): ValidationSyntaxResult | null {
+export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: Token[]): ValidationSyntaxResult {
+
+    let result: ValidationSyntaxResult | null = null;
 
     for (const tokens of splitTokenList(tokenList)) {
 
@@ -77,14 +78,13 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
         }
 
         let previousToken: Token | null = null;
-        let result: ValidationSyntaxResult | null = null;
 
         while (tokens.length > 0) {
 
             result = validateSupportCondition(atRule, tokens[0]);
 
             // supports-condition
-            if (result == null || result.valid == ValidationLevel.Valid) {
+            if (result.valid == ValidationLevel.Valid) {
 
                 previousToken = tokens[0];
                 tokens.shift();
@@ -92,13 +92,46 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 result = validateSupportFeature(tokens[0]);
 
-                if (result == null || result.valid == ValidationLevel.Valid) {
+                if (/*result == null || */ result.valid == ValidationLevel.Valid) {
 
                     previousToken = tokens[0];
                     tokens.shift();
                 } else {
 
-                    return result;
+                    if (tokens[0].typ == EnumToken.ParensTokenType) {
+
+                        result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
+
+                        if (/* result == null || */ result.valid == ValidationLevel.Valid) {
+
+                            previousToken = tokens[0];
+                            tokens.shift();
+                            // continue;
+                        }
+
+                        else {
+
+                            return result;
+                        }
+                    }
+
+                    else {
+
+                        return result;
+                    }
+
+                    // if (result!= null && result.valid == ValidationLevel.Drop) {
+                    //
+                    //     return  {
+                    //         valid: ValidationLevel.Drop,
+                    //         matches: [],
+                    //         node: tokens[0] ?? atRule,
+                    //         syntax: '@' + atRule.nam,
+                    //         // @ts-ignore
+                    //         error: result.error as string ?? 'unexpected token',
+                    //         tokens: []
+                    //     };
+                    // }
                 }
             }
 
@@ -166,10 +199,17 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
         }
     }
 
-    return null;
+    return {
+        valid: ValidationLevel.Valid,
+        matches: [],
+        node: atRule,
+        syntax: '@' + atRule.nam,
+        error: '',
+        tokens: []
+    }
 }
 
-export function validateSupportCondition(atRule: AstAtRule, token: Token): ValidationSyntaxResult | null {
+export function validateSupportCondition(atRule: AstAtRule, token: Token): ValidationSyntaxResult{
 
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
 
@@ -252,7 +292,7 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
 
         if (token.val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
 
-            return validateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, 'complex-selector') as ValidationToken[], token.chi);
+            return validateComplexSelector(parseSelector(token.chi));
         }
 
         if (token.val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {
