@@ -11,7 +11,7 @@ import type {
     WalkerValueFilter,
     WalkResult
 } from "../../@types/index.d.ts";
-import {EnumToken} from "./types";
+import {EnumToken} from "./types.ts";
 
 export enum WalkerValueEvent {
     Enter,
@@ -167,10 +167,10 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
         } else if (value.typ == EnumToken.BinaryExpressionTokenType) {
 
-            map.set(value.l, map.get(value) ?? root as FunctionToken | ParensToken);
-            map.set(value.r, map.get(value) ?? root as FunctionToken | ParensToken);
+            map.set( (value as BinaryExpressionToken).l, map.get(value) ?? root as FunctionToken | ParensToken);
+            map.set( (value as BinaryExpressionToken).r, map.get(value) ?? root as FunctionToken | ParensToken);
 
-            stack.unshift(value.l, value.r);
+            stack.unshift( (value as BinaryExpressionToken).l, (value as BinaryExpressionToken).r);
         }
 
         if (filter.event == WalkerValueEvent.Leave && filter.fn != null) {

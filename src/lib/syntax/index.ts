@@ -1,2 +1,2 @@
 
-export * from './syntax';
+export * from './syntax.ts';

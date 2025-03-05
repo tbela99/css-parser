@@ -1,10 +1,10 @@
-import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
-import {validateAtRuleSupports} from "./supports";
 import {validateAtRuleMediaQueryList} from "./media";
 import {consumeWhitespace} from "../utils";
 import {validateLayerName} from "../syntaxes";
+import {validateAtRuleSupportsConditions} from "./supports";
 
 export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -86,6 +86,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
                 } as ValidationSyntaxResult;
             }
         }
+
+        tokens.shift();
+        // @ts-ignore
+        consumeWhitespace(tokens);
+
     } else {
 
         // @ts-ignore
@@ -129,88 +134,80 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         else if (tokens[0].typ == EnumToken.FunctionTokenType) {
 
             // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, {sensitivity: 'base'}) != 0) {
+            if ('layer'.localeCompare(tokens[0].val, undefined, {sensitivity: 'base'}) == 0) {
 
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@' + atRule.nam,
-                    error: 'expecting layer()',
-                    tokens
+                const result = validateLayerName((tokens[0] as FunctionToken).chi);
+
+                if (result.valid == ValidationLevel.Drop) {
+
+                    return result;
                 }
+
+                tokens.shift();
+                // @ts-ignore
+                consumeWhitespace(tokens);
             }
 
             // @ts-ignore
-            const result: ValidationSyntaxResult = validateLayerName(tokens[0].chi);
+            if ('supports'.localeCompare(tokens[0]?.val, undefined, {sensitivity: 'base'}) == 0) {
 
-            if (result.valid == ValidationLevel.Drop) {
+                const result = validateAtRuleSupportsConditions(atRule, (tokens[0] as FunctionToken).chi) as ValidationSyntaxResult;
 
-                return result;
-            }
+                if (result.valid == ValidationLevel.Drop) {
 
-            tokens.shift();
-
-            // @ts-ignore
-            if (!consumeWhitespace(tokens)) {
-
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@' + atRule.nam,
-                    error: 'expecting whitespace',
-                    tokens
+                    return result;
                 }
+
+                tokens.shift();
+                // @ts-ignore
+                consumeWhitespace(tokens);
             }
         }
     }
 
-    if (tokens.length > 0) {
-
-        // @ts-ignore
-        if (tokens[0].typ == EnumToken.AtRuleTokenType) {
-
-            if ((tokens[0] as AstAtRule).nam != 'supports') {
-
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@' + atRule.nam,
-                    error: 'expecting @supports or media query list',
-                    tokens
-                }
-            }
-
-            // @ts-ignore
-            const result: ValidationSyntaxResult = validateAtRuleSupports(tokens[0] as AstAtRule, options, atRule);
-
-            if (result.valid == ValidationLevel.Drop) {
-
-                return result;
-            }
-
-            tokens.shift();
-
-            // @ts-ignore
-            if (!consumeWhitespace(tokens)) {
-
-                // @ts-ignore
-                return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
-                    node: tokens[0],
-                    syntax: '@' + atRule.nam,
-                    error: 'expecting whitespace',
-                    tokens
-                }
-            }
-        }
-    }
+    // if (tokens.length > 0) {
+    //
+    //     // @ts-ignore
+    //     if (tokens[0].typ == EnumToken.AtRuleTokenType) {
+    //
+    //         if ((tokens[0] as AstAtRule).nam != 'supports') {
+    //
+    //             // @ts-ignore
+    //             return {
+    //                 valid: ValidationLevel.Drop,
+    //                 matches: [],
+    //                 node: tokens[0],
+    //                 syntax: '@' + atRule.nam,
+    //                 error: 'expecting @supports or media query list',
+    //                 tokens
+    //             }
+    //         }
+    //
+    //         // @ts-ignore
+    //         const result: ValidationSyntaxResult = validateAtRuleSupports(tokens[0] as AstAtRule, options, atRule);
+    //
+    //         if (result.valid == ValidationLevel.Drop) {
+    //
+    //             return result;
+    //         }
+    //
+    //         tokens.shift();
+    //
+    //         // @ts-ignore
+    //         if (!consumeWhitespace(tokens)) {
+    //
+    //             // @ts-ignore
+    //             return {
+    //                 valid: ValidationLevel.Drop,
+    //                 matches: [],
+    //                 node: tokens[0],
+    //                 syntax: '@' + atRule.nam,
+    //                 error: 'expecting whitespace',
+    //                 tokens
+    //             }
+    //         }
+    //     }
+    // }
 
     if (tokens.length > 0) {
 

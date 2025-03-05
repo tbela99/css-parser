@@ -15,7 +15,7 @@ function validateLayerName(tokens) {
             acc[acc.length - 1].push(curr);
         }
         return acc;
-    }, [[]]).slice(1);
+    }, [[]]);
     for (let i = 0; i < slice.length; i++) {
         if (slice[i].length == 0) {
             // @ts-ignore
@@ -28,26 +28,15 @@ function validateLayerName(tokens) {
                 tokens
             };
         }
-        if (slice[i][0].typ != EnumToken.IdenTokenType) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Drop,
-                matches: tokens,
-                node: slice[i][0],
-                syntax: 'ident',
-                error: 'expecting ident',
-                tokens
-            };
-        }
-        for (let j = 1; j < slice[i].length; j++) {
-            if (slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
+        for (let j = 0; j < slice[i].length; j++) {
+            if (slice[i][j].typ != EnumToken.IdenTokenType && slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
                     matches: tokens,
                     node: slice[i][j],
-                    syntax: 'layer-name',
-                    error: 'expecting class selector',
+                    syntax: '<layer-name>',
+                    error: 'expecting ident or class selector',
                     tokens
                 };
             }

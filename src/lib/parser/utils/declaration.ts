@@ -1,6 +1,15 @@
-import type {AstDeclaration, ErrorDescription, FunctionToken, ParensToken, Position, Token} from "../../../@types/index.d.ts";
-import {EnumToken, walkValues} from "../../ast";
-import {isWhiteSpace} from "../../syntax/syntax";
+import type {
+    AstDeclaration,
+    AttrToken,
+    ErrorDescription,
+    FunctionToken,
+    ParensToken,
+    Position,
+    StringToken,
+    Token
+} from "../../../@types/index.d.ts";
+import {EnumToken, walkValues} from "../../ast/index.ts";
+import {isWhiteSpace} from "../../syntax/syntax.ts";
 
 export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
 
@@ -21,14 +30,14 @@ export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescript
 
     for (const {value: val, parent} of walkValues(node.val, node)) {
 
-        if (val.typ == EnumToken.AttrTokenType && val.chi.every((t: Token) => [EnumToken.IdenTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ))) {
+        if (val.typ == EnumToken.AttrTokenType && (val as AttrToken).chi.every((t: Token) => [EnumToken.IdenTokenType, EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ))) {
 
             // @ts-ignore
             val.typ = EnumToken.IdenListTokenType;
 
         } else if (val.typ == EnumToken.StringTokenType && (node.nam == 'grid' || node.nam == 'grid-template-areas' || node.nam == 'grid-template-rows' || node.nam == 'grid-template-columns')) {
 
-            val.val = val.val.at(0) + parseGridTemplate(val.val.slice(1, -1)) + val.val.at(-1);
+            (val as StringToken).val = (val as StringToken).val.at(0) + parseGridTemplate((val as StringToken).val.slice(1, -1)) + (val as StringToken).val.at(-1);
 
             // @ts-ignore
             const array: Token[] = (<FunctionToken | ParensToken>parent)?.chi ?? node.val;

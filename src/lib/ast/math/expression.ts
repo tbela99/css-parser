@@ -15,11 +15,11 @@ import type {
     TimeToken,
     Token
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../types";
-import {compute, rem} from "./math";
-import {reduceNumber} from "../../renderer";
+import {EnumToken} from "../types.ts";
+import {compute, rem} from "./math.ts";
+import {reduceNumber} from "../../renderer/index.ts";
 
-import {mathFuncs} from "../../syntax";
+import {mathFuncs} from "../../syntax/index.ts";
 
 /**
  * evaluate an array of tokens
@@ -31,7 +31,7 @@ export function evaluate(tokens: Token[]): Token[] {
 
     if (tokens.length == 1 && tokens[0].typ == EnumToken.FunctionTokenType && (<FunctionToken>tokens[0]).val != 'calc' && mathFuncs.includes((<FunctionToken>tokens[0]).val)) {
 
-        const chi: Token[][] = tokens[0].chi.reduce((acc: Token[][], t: Token): Token[][] => {
+        const chi: Token[][] = (tokens[0] as FunctionToken).chi.reduce((acc: Token[][], t: Token): Token[][] => {
 
             if (acc.length == 0 || t.typ == EnumToken.CommaTokenType) {
 
@@ -52,7 +52,7 @@ export function evaluate(tokens: Token[]): Token[] {
             chi[i] = evaluate(chi[i]);
         }
 
-        tokens[0].chi = chi.reduce((acc: Token[], t: Token[]): Token[] => {
+        (tokens[0] as FunctionToken).chi = chi.reduce((acc: Token[], t: Token[]): Token[] => {
 
             if (acc.length > 0) {
 
@@ -64,7 +64,7 @@ export function evaluate(tokens: Token[]): Token[] {
             return acc;
         });
 
-        return evaluateFunc(tokens[0]);
+        return evaluateFunc(tokens[0] as FunctionToken);
     }
 
     try {
@@ -172,7 +172,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
     if (l.typ == EnumToken.FunctionTokenType) {
 
-        const val: Token[] = evaluateFunc(l);
+        const val: Token[] = evaluateFunc(l as FunctionToken);
 
         if (val.length == 1) {
 
@@ -185,7 +185,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
     if (r.typ == EnumToken.FunctionTokenType) {
 
-        const val = evaluateFunc(r);
+        const val = evaluateFunc(r as FunctionToken);
 
         if (val.length == 1) {
 
@@ -198,7 +198,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
     if (l.typ == EnumToken.FunctionTokenType) {
 
-        const val = evaluateFunc(l);
+        const val = evaluateFunc(l as FunctionToken);
 
         if (val.length == 1) {
 
@@ -278,7 +278,7 @@ function getValue(t: NumberToken | IdentToken | FunctionToken): number | null {
 
     if (t.typ == EnumToken.FunctionTokenType) {
 
-        v1 = evaluateFunc(t);
+        v1 = evaluateFunc(t as FunctionToken);
 
         if (v1.length != 1 || v1[0].typ == EnumToken.BinaryExpressionTokenType) {
 
@@ -596,15 +596,15 @@ function inlineExpression(token: Token): Token[] {
 
     if (token.typ == EnumToken.ParensTokenType && token.chi.length == 1) {
 
-        result.push(token.chi[0]);
+        result.push((token as ParensToken).chi[0]);
     } else if (token.typ == EnumToken.BinaryExpressionTokenType) {
 
-        if ([EnumToken.Mul, EnumToken.Div].includes(token.op)) {
+        if ([EnumToken.Mul, EnumToken.Div].includes((token as BinaryExpressionToken).op)) {
 
             result.push(token);
         } else {
 
-            result.push(...inlineExpression(token.l), {typ: token.op}, ...inlineExpression(token.r));
+            result.push(...inlineExpression((token as BinaryExpressionToken).l), {typ: (token as BinaryExpressionToken).op}, ...inlineExpression((token as BinaryExpressionToken).r));
         }
     } else {
 
@@ -625,17 +625,17 @@ function evaluateExpression(token: Token): Token {
         return token;
     }
 
-    if (token.r.typ == EnumToken.BinaryExpressionTokenType) {
+    if ((token as BinaryExpressionToken).r.typ == EnumToken.BinaryExpressionTokenType) {
 
-        token.r = <BinaryExpressionNode>evaluateExpression(token.r);
+        (token as BinaryExpressionToken).r = <BinaryExpressionNode>evaluateExpression((token as BinaryExpressionToken).r);
     }
 
-    if (token.l.typ == EnumToken.BinaryExpressionTokenType) {
+    if ((token as BinaryExpressionToken).l.typ == EnumToken.BinaryExpressionTokenType) {
 
-        token.l = <BinaryExpressionNode>evaluateExpression(token.l);
+        (token as BinaryExpressionToken).l = <BinaryExpressionNode>evaluateExpression((token as BinaryExpressionToken).l);
     }
 
-    return doEvaluate(token.l, token.r, token.op);
+    return doEvaluate((token as BinaryExpressionToken).l, (token as BinaryExpressionToken).r, (token as BinaryExpressionToken).op);
 }
 
 function isScalarToken(token: Token): boolean {

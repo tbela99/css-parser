@@ -1,11 +1,12 @@
 import {D50, e, getComponents, k} from "./utils";
-import {srgb2xyz, xyzd502srgb} from "./xyz";
+import {srgb2xyz} from "./xyz";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb";
 import {getLCHComponents} from "./lch";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
+import {xyzd502srgb} from "./xyzd50";
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125

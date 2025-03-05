@@ -372,7 +372,7 @@ var declarations = {
 		syntax: "auto || <ratio>"
 	},
 	"backdrop-filter": {
-		syntax: "none | <filter-function-list>"
+		syntax: "none | <filter-value-list>"
 	},
 	"backface-visibility": {
 		syntax: "visible | hidden"
@@ -786,7 +786,7 @@ var declarations = {
 		syntax: "nonzero | evenodd"
 	},
 	filter: {
-		syntax: "none | <filter-function-list>"
+		syntax: "none | <filter-value-list>"
 	},
 	flex: {
 		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]"
@@ -1242,7 +1242,7 @@ var declarations = {
 		syntax: "<integer>"
 	},
 	outline: {
-		syntax: "[ <'outline-width'> || <'outline-style'> || <'outline-color'> ]"
+		syntax: "<'outline-width'> || <'outline-style'> || <'outline-color'>"
 	},
 	"outline-color": {
 		syntax: "auto | <color>"
@@ -1671,7 +1671,7 @@ var declarations = {
 		syntax: "space-all | normal | space-first | trim-start"
 	},
 	"text-transform": {
-		syntax: "none | capitalize | uppercase | lowercase | full-width | full-size-kana"
+		syntax: "none | [ capitalize | uppercase | lowercase ] || full-width || full-size-kana | math-auto"
 	},
 	"text-underline-offset": {
 		syntax: "auto | <length> | <percentage> "
@@ -1761,7 +1761,7 @@ var declarations = {
 		syntax: "visible | hidden | collapse"
 	},
 	"white-space": {
-		syntax: "normal | pre | nowrap | pre-wrap | pre-line | break-spaces | [ <'white-space-collapse'> || <'text-wrap'> ]"
+		syntax: "normal | pre | pre-wrap | pre-line | <'white-space-collapse'> || <'text-wrap-mode'>"
 	},
 	"white-space-collapse": {
 		syntax: "collapse | preserve | preserve-breaks | preserve-spaces | break-spaces"
@@ -1797,7 +1797,7 @@ var declarations = {
 		syntax: "auto | <integer>"
 	},
 	zoom: {
-		syntax: "normal | reset | <number> | <percentage>"
+		syntax: "normal | reset | <number [0,∞]> || <percentage [0,∞]>"
 	}
 };
 var functions = {
@@ -1838,7 +1838,7 @@ var functions = {
 		syntax: "calc-size( <calc-size-basis>, <calc-sum> )"
 	},
 	circle: {
-		syntax: "circle( [ <shape-radius> ]? [ at <position> ]? )"
+		syntax: "circle( <radial-size>? [ at <position> ]? )"
 	},
 	clamp: {
 		syntax: "clamp( <calc-sum>#{3} )"
@@ -1874,7 +1874,7 @@ var functions = {
 		syntax: "element( <id-selector> )"
 	},
 	ellipse: {
-		syntax: "ellipse( [ <shape-radius>{2} ]? [ at <position> ]? )"
+		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
 	},
 	env: {
 		syntax: "env( <custom-ident> , <declaration-value>? )"
@@ -1889,16 +1889,16 @@ var functions = {
 		syntax: "grayscale( [ <number> | <percentage> ]? )"
 	},
 	hsl: {
-		syntax: "hsl( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsl( <hue>, <percentage>, <percentage>, <alpha-value>? )"
+		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsl( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	hsla: {
-		syntax: "hsla( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsla( <hue>, <percentage>, <percentage>, <alpha-value>? )"
+		syntax: "hsla( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsla( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	"hue-rotate": {
 		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
 	},
 	hwb: {
-		syntax: "hwb( [<hue> | none] [<percentage> | none] [<percentage> | none] [ / [<alpha-value> | none] ]? )"
+		syntax: "hwb( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	hypot: {
 		syntax: "hypot( <calc-sum># )"
@@ -1987,6 +1987,9 @@ var functions = {
 	ray: {
 		syntax: "ray( <angle> && <ray-size>? && contain? && [at <position>]? )"
 	},
+	rect: {
+		syntax: "rect( [ <length-percentage> | auto ]{4} [ round <'border-radius'> ]? )"
+	},
 	rem: {
 		syntax: "rem( <calc-sum>, <calc-sum> )"
 	},
@@ -2000,10 +2003,10 @@ var functions = {
 		syntax: "repeating-radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )"
 	},
 	rgb: {
-		syntax: "rgb( <percentage>{3} [ / <alpha-value> ]? ) | rgb( <number>{3} [ / <alpha-value> ]? ) | rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? )"
+		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	rgba: {
-		syntax: "rgba( <percentage>{3} [ / <alpha-value> ]? ) | rgba( <number>{3} [ / <alpha-value> ]? ) | rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? )"
+		syntax: "rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? ) | rgba( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	rotate: {
 		syntax: "rotate( [ <angle> | <zero> ] )"
@@ -2065,6 +2068,9 @@ var functions = {
 	sqrt: {
 		syntax: "sqrt( <calc-sum> )"
 	},
+	symbols: {
+		syntax: "symbols( <symbols-type>? [ <string> | <image> ]+ )"
+	},
 	tan: {
 		syntax: "tan( <calc-sum> )"
 	},
@@ -2097,6 +2103,9 @@ var functions = {
 	},
 	view: {
 		syntax: "view([<axis> || <'view-timeline-inset'>]?)"
+	},
+	xywh: {
+		syntax: "xywh( <length-percentage>{2} <length-percentage [0,∞]>{2} [ round <'border-radius'> ]? )"
 	}
 };
 var syntaxes = {
@@ -2111,6 +2120,9 @@ var syntaxes = {
 	},
 	"alpha-value": {
 		syntax: "<number> | <percentage>"
+	},
+	"an+b": {
+		syntax: "odd | even | <integer> | <n-dimension> | '+'?† n | -n | <ndashdigit-dimension> | '+'?† <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'?† n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'?† n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'?† n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
 	},
 	"anchor()": {
 		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
@@ -2233,7 +2245,7 @@ var syntaxes = {
 		syntax: "<percentage>? && <image>"
 	},
 	"circle()": {
-		syntax: "circle( [ <shape-radius> ]? [ at <position> ]? )"
+		syntax: "circle( <radial-size>? [ at <position> ]? )"
 	},
 	"clamp()": {
 		syntax: "clamp( <calc-sum>#{3} )"
@@ -2247,14 +2259,14 @@ var syntaxes = {
 	color: {
 		syntax: "<color-base> | currentColor | <system-color> | <light-dark()> | <deprecated-system-color>"
 	},
+	"color()": {
+		syntax: "color( [ from <color> ]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+	},
 	"color-base": {
 		syntax: "<hex-color> | <color-function> | <named-color> | <color-mix()> | transparent"
 	},
 	"color-function": {
 		syntax: "<rgb()> | <rgba()> | <hsl()> | <hsla()> | <hwb()> | <lab()> | <lch()> | <oklab()> | <oklch()> | <color()>"
-	},
-	"color()": {
-		syntax: "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
 	},
 	"color-interpolation-method": {
 		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
@@ -2364,6 +2376,9 @@ var syntaxes = {
 	dasharray: {
 		syntax: "[ [ <length-percentage> | <number> ]+ ]#"
 	},
+	"dashndashdigit-ident": {
+		syntax: "<ident-token>"
+	},
 	"deprecated-system-color": {
 		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonHighlight | ButtonShadow | CaptionText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText"
 	},
@@ -2404,7 +2419,7 @@ var syntaxes = {
 		syntax: "element( <id-selector> )"
 	},
 	"ellipse()": {
-		syntax: "ellipse( [ <shape-radius>{2} ]? [ at <position> ]? )"
+		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
 	},
 	"ending-shape": {
 		syntax: "circle | ellipse"
@@ -2445,7 +2460,7 @@ var syntaxes = {
 	"filter-function": {
 		syntax: "<blur()> | <brightness()> | <contrast()> | <drop-shadow()> | <grayscale()> | <hue-rotate()> | <invert()> | <opacity()> | <saturate()> | <sepia()>"
 	},
-	"filter-function-list": {
+	"filter-value-list": {
 		syntax: "[ <filter-function> | <url> ]+"
 	},
 	"final-bg-layer": {
@@ -2500,10 +2515,10 @@ var syntaxes = {
 		syntax: "[ historical-ligatures | no-historical-ligatures ]"
 	},
 	"hsl()": {
-		syntax: "hsl( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsl( <hue>, <percentage>, <percentage>, <alpha-value>? )"
+		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsl( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	"hsla()": {
-		syntax: "hsla( <hue> <percentage> <percentage> [ / <alpha-value> ]? ) | hsla( <hue>, <percentage>, <percentage>, <alpha-value>? )"
+		syntax: "hsla( <hue>, <percentage>, <percentage>, <alpha-value>? ) | hsla( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	hue: {
 		syntax: "<number> | <angle>"
@@ -2515,13 +2530,16 @@ var syntaxes = {
 		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
 	},
 	"hwb()": {
-		syntax: "hwb( [<hue> | none] [<percentage> | none] [<percentage> | none] [ / [<alpha-value> | none] ]? )"
+		syntax: "hwb( [ <hue> | none ] [ <percentage> | <number> | none ] [ <percentage> | <number> | none ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	"hypot()": {
 		syntax: "hypot( <calc-sum># )"
 	},
 	"id-selector": {
 		syntax: "<hash-token>"
+	},
+	integer: {
+		syntax: "<number-token>"
 	},
 	image: {
 		syntax: "<url> | <image()> | <image-set()> | <element()> | <paint()> | <cross-fade()> | <gradient>"
@@ -2688,6 +2706,18 @@ var syntaxes = {
 	"mod()": {
 		syntax: "mod( <calc-sum>, <calc-sum> )"
 	},
+	"n-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndash-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndashdigit-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndashdigit-ident": {
+		syntax: "<ident-token>"
+	},
 	"name-repeat": {
 		syntax: "repeat( [ <integer [1,∞]> | auto-fill ], <line-names>+ )"
 	},
@@ -2699,9 +2729,6 @@ var syntaxes = {
 	},
 	"ns-prefix": {
 		syntax: "[ <ident-token> | '*' ]? '|'"
-	},
-	nth: {
-		syntax: "<an-plus-b> | even | odd"
 	},
 	"number-percentage": {
 		syntax: "<number> | <percentage>"
@@ -2811,8 +2838,14 @@ var syntaxes = {
 	quote: {
 		syntax: "open-quote | close-quote | no-open-quote | no-close-quote"
 	},
+	"radial-extent": {
+		syntax: "closest-corner | closest-side | farthest-corner | farthest-side"
+	},
 	"radial-gradient()": {
 		syntax: "radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )"
+	},
+	"radial-size": {
+		syntax: "<radial-extent> | <length [0,∞]> | <length-percentage [0,∞]>{2}"
 	},
 	ratio: {
 		syntax: "<number [0,∞]> [ / <number [0,∞]> ]?"
@@ -2835,6 +2868,9 @@ var syntaxes = {
 	"relative-size": {
 		syntax: "larger | smaller"
 	},
+	"rect()": {
+		syntax: "rect( [ <length-percentage> | auto ]{4} [ round <'border-radius'> ]? )"
+	},
 	"rem()": {
 		syntax: "rem( <calc-sum>, <calc-sum> )"
 	},
@@ -2854,10 +2890,10 @@ var syntaxes = {
 		syntax: "reversed( <counter-name> )"
 	},
 	"rgb()": {
-		syntax: "rgb( <percentage>{3} [ / <alpha-value> ]? ) | rgb( <number>{3} [ / <alpha-value> ]? ) | rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? )"
+		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"rgba()": {
-		syntax: "rgba( <percentage>{3} [ / <alpha-value> ]? ) | rgba( <number>{3} [ / <alpha-value> ]? ) | rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? )"
+		syntax: "rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? ) | rgba( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"rotate()": {
 		syntax: "rotate( [ <angle> | <zero> ] )"
@@ -2931,14 +2967,17 @@ var syntaxes = {
 	"shape-box": {
 		syntax: "<visual-box> | margin-box"
 	},
-	"shape-radius": {
-		syntax: "<length-percentage> | closest-side | farthest-side"
-	},
 	"side-or-corner": {
 		syntax: "[ left | right ] || [ top | bottom ]"
 	},
 	"sign()": {
 		syntax: "sign( <calc-sum> )"
+	},
+	"signed-integer": {
+		syntax: "<number-token>"
+	},
+	"signless-integer": {
+		syntax: "<number-token>"
 	},
 	"sin()": {
 		syntax: "sin( <calc-sum> )"
@@ -3011,6 +3050,12 @@ var syntaxes = {
 	},
 	symbol: {
 		syntax: "<string> | <image> | <custom-ident>"
+	},
+	"symbols()": {
+		syntax: "symbols( <symbols-type>? [ <string> | <image> ]+ )"
+	},
+	"symbols-type": {
+		syntax: "cyclic | numeric | alphabetic | symbolic | fixed"
 	},
 	"system-color": {
 		syntax: "AccentColor | AccentColorText | ActiveText | ButtonBorder | ButtonFace | ButtonText | Canvas | CanvasText | Field | FieldText | GrayText | Highlight | HighlightText | LinkText | Mark | MarkText | SelectedItem | SelectedItemText | VisitedText"
@@ -3101,6 +3146,9 @@ var syntaxes = {
 	},
 	"wq-name": {
 		syntax: "<ns-prefix>? <ident-token>"
+	},
+	"xywh()": {
+		syntax: "xywh( <length-percentage>{2} <length-percentage [0,∞]>{2} [ round <'border-radius'> ]? )"
 	},
 	xyz: {
 		syntax: "xyz | xyz-d50 | xyz-d65"
@@ -3237,16 +3285,16 @@ var selectors = {
 		syntax: ":not( <complex-selector-list> )"
 	},
 	":nth-child()": {
-		syntax: ":nth-child( <nth> [ of <complex-selector-list> ]? )"
+		syntax: ":nth-child( <an+b> [ of <complex-selector-list> ]? )"
 	},
 	":nth-last-child()": {
-		syntax: ":nth-last-child( <nth> [ of <complex-selector-list> ]? )"
+		syntax: ":nth-last-child( <an+b> [ of <complex-selector-list> ]? )"
 	},
 	":nth-last-of-type()": {
-		syntax: ":nth-last-of-type( <nth> )"
+		syntax: ":nth-last-of-type( <an+b> )"
 	},
 	":nth-of-type()": {
-		syntax: ":nth-of-type( <nth> )"
+		syntax: ":nth-of-type( <an+b> )"
 	},
 	":only-child": {
 		syntax: ":only-child"
@@ -3529,7 +3577,7 @@ var atRules = {
 				syntax: "normal | <percentage>"
 			},
 			"font-display": {
-				syntax: "[ auto | block | swap | fallback | optional ]"
+				syntax: "auto | block | swap | fallback | optional"
 			},
 			"font-family": {
 				syntax: "<family-name>"

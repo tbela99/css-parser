@@ -1,4 +1,4 @@
-import type {AstDeclaration, BaseToken} from "./ast";
+import type {AstDeclaration, BaseToken} from "./ast.d.ts";
 import {EnumToken} from "../lib";
 
 export declare interface LiteralToken extends BaseToken {

@@ -1,16 +1,23 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import {COLORS_NAMES, getComponents} from "./utils";
-import type {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {color2srgbvalues, getAngle, getNumber} from "./color";
-import {EnumToken} from "../../ast";
-import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab";
-import {expandHexValue} from "./hex";
-import {getOKLABComponents, OKLab_to_sRGB} from "./oklab";
-import {getLCHComponents} from "./lch";
-import {getOKLCHComponents} from "./oklch";
-import {XYZ_to_lin_sRGB} from "./xyz";
+import {COLORS_NAMES, getComponents} from "./utils/index.ts";
+import type {
+    ColorToken,
+    DimensionToken,
+    IdentToken,
+    NumberToken,
+    PercentageToken,
+    Token
+} from "../../../@types/index.d.ts";
+import {color2srgbvalues, getAngle, getNumber} from "./color.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab.ts";
+import {expandHexValue} from "./hex.ts";
+import {getOKLABComponents, OKLab_to_sRGB} from "./oklab.ts";
+import {getLCHComponents} from "./lch.ts";
+import {getOKLCHComponents} from "./oklch.ts";
+import {XYZ_to_lin_sRGB} from "./xyz.ts";
 
 export function srgbvalues(token: ColorToken): number[] | null {
 
@@ -53,7 +60,7 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
 export function rgb2srgb(token: ColorToken): number[] {
 
-    return getComponents(token).map((t: Token, index: number) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
+    return getComponents(token).map((t: Token, index: number): number => index == 3 ? ((t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == 'none') ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255);
 }
 
 export function hex2srgb(token: ColorToken): number[] {

@@ -1,6 +1,6 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
 import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Position} from "./ast.d.ts";
-import {SourceMap} from "../lib/renderer/sourcemap";
+import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib";
 

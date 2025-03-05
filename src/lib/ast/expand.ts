@@ -1,9 +1,9 @@
-import {combinators, splitRule} from "./minify";
-import {parseString} from "../parser";
-import {walkValues} from "./walk";
-import {renderToken} from "../renderer";
-import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types";
-import {EnumToken} from "./types";
+import {combinators, splitRule} from "./minify.ts";
+import {parseString} from "../parser/index.ts";
+import {walkValues} from "./walk.ts";
+import {renderToken} from "../renderer/index.ts";
+import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types/index.d.ts";
+import {EnumToken} from "./types.ts";
 
 /**
  * expand nested css ast
@@ -91,13 +91,13 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                     if (selRule.length > 1) {
 
                         const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
-                        rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), <string[]>[]).join(',');
+                        rule.sel = splitRule(ast.sel).reduce((a: string[], b: string[]): string[] => a.concat([b.join('') + r]), <string[]>[]).join(',');
 
                     } else {
 
                         // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
 
-                        const arSelf = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), <string[]>[]).join(',');
+                        const arSelf: string = splitRule(ast.sel).filter((r: string[]): boolean => r.every((t: string): boolean => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc: string[], curr: string[]): string[] => acc.concat([curr.join('')]), <string[]>[]).join(',');
 
                         if (arSelf.length == 0) {
 
@@ -124,7 +124,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     // pseudo elements cannot be used with '&'
                     // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
-                    const rules: string[][] = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::')));
+                    const rules: string[][] = splitRule(ast.sel).filter((r: string[]): boolean => r.every((t: string): boolean => t != ':before' && t != ':after' && !t.startsWith('::')));
                     const parentSelector: boolean = !node.sel.includes('&');
 
                     if (rules.length == 0) {
@@ -323,7 +323,7 @@ export function replaceCompound(input: string, replace: string): string {
                     if (tokens[1].typ == EnumToken.IdenTokenType) {
 
 
-                        t.value.val = replacement.length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
+                        t.value.val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
                         tokens.splice(1, 1);
                     } else {
 

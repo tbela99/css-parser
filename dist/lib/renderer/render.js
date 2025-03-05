@@ -9,7 +9,7 @@ import { expand } from '../ast/expand.js';
 import { colorMix } from './color/colormix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { isColor, mathFuncs, isNewLine } from '../syntax/syntax.js';
+import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
 
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
@@ -591,7 +591,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.PseudoClassTokenType:
         case EnumToken.PseudoElementTokenType:
             // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
-            if (token.typ == EnumToken.PseudoElementTokenType && ['::before', '::after', '::first-line', '::first-letter'].includes(token.val)) {
+            if (token.typ == EnumToken.PseudoElementTokenType && pseudoElements.includes(token.val.slice(1))) {
                 return token.val.slice(1);
             }
         case EnumToken.UrlTokenTokenType:

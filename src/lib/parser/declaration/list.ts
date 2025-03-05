@@ -1,17 +1,17 @@
 import type {
     AstDeclaration,
     AstNode,
+    PropertiesConfig,
     PropertyListOptions,
     ShorthandMapType,
     ShorthandPropertyType,
-    PropertiesConfig,
     Token
-} from "../../../@types";
-import {PropertySet} from "./set";
-import {getConfig} from "../utils";
-import {PropertyMap} from "./map";
-import {parseString} from "../parse";
-import {EnumToken} from "../../ast";
+} from "../../../@types/index";
+import {PropertySet} from "./set.ts";
+import {getConfig} from "../utils/index.ts";
+import {PropertyMap} from "./map.ts";
+import {parseString} from "../parse.ts";
+import {EnumToken} from "../../ast/index.ts";
 
 const config: PropertiesConfig = getConfig();
 

@@ -1,7 +1,7 @@
 import type {AstAtRule, Token} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace} from "../utils";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace} from "../utils/index.ts";
 
 export function validateFamilyName(tokens: Token[], atRule: AstAtRule): ValidationSyntaxResult {
 

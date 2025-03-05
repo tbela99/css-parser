@@ -70,7 +70,7 @@ function expandRule(node) {
                     }
                     else {
                         // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
-                        const arSelf = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
+                        const arSelf = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
                         if (arSelf.length == 0) {
                             ast.chi.splice(i--, 1);
                             continue;
@@ -89,7 +89,7 @@ function expandRule(node) {
                     let withoutCompound = [];
                     // pseudo elements cannot be used with '&'
                     // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
-                    const rules = splitRule(ast.sel).filter(r => r.every(t => t != ':before' && t != ':after' && !t.startsWith('::')));
+                    const rules = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::')));
                     const parentSelector = !node.sel.includes('&');
                     if (rules.length == 0) {
                         ast.chi.splice(i--, 1);

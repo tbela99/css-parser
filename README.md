@@ -701,7 +701,9 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Minification
 
-- [x] reduce calc()
+- [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
+  acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
+- [x] multi-pass minification
 - [x] inline css variables
 - [x] merge identical rules
 - [x] merge adjacent rules
@@ -817,7 +819,7 @@ the visitor is called only on 'height' declarations
 ```typescript
 
 import {AstDeclaration, LengthToken, ParserOptions} from "../src/@types";
-import {EnumToken, EnumToken} from "../src/lib";
+import {EnumToken} from "../src/lib";
 import {transform} from "../src/node";
 
 const options: ParserOptions = {

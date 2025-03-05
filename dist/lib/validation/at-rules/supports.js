@@ -1,15 +1,14 @@
 import { ValidationLevel, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
-import '../../parser/parse.js';
+import { parseSelector } from '../../parser/parse.js';
 import { colorFontTech, fontFeaturesTech, fontFormat } from '../../syntax/syntax.js';
 import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
-import { validateSyntax } from '../syntax.js';
-import { getParsedSyntax } from '../config.js';
+import { validateComplexSelector } from '../syntaxes/complex-selector.js';
 
 function validateAtRuleSupports(atRule, options, root) {
     // media-query-list
@@ -53,6 +52,7 @@ function validateAtRuleSupports(atRule, options, root) {
     };
 }
 function validateAtRuleSupportsConditions(atRule, tokenList) {
+    let result = null;
     for (const tokens of splitTokenList(tokenList)) {
         if (tokens.length == 0) {
             // @ts-ignore
@@ -66,22 +66,46 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             };
         }
         let previousToken = null;
-        let result = null;
         while (tokens.length > 0) {
             result = validateSupportCondition(atRule, tokens[0]);
             // supports-condition
-            if (result == null || result.valid == ValidationLevel.Valid) {
+            if (result.valid == ValidationLevel.Valid) {
                 previousToken = tokens[0];
                 tokens.shift();
             }
             else {
                 result = validateSupportFeature(tokens[0]);
-                if (result == null || result.valid == ValidationLevel.Valid) {
+                if ( /*result == null || */result.valid == ValidationLevel.Valid) {
                     previousToken = tokens[0];
                     tokens.shift();
                 }
                 else {
-                    return result;
+                    if (tokens[0].typ == EnumToken.ParensTokenType) {
+                        result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
+                        if ( /* result == null || */result.valid == ValidationLevel.Valid) {
+                            previousToken = tokens[0];
+                            tokens.shift();
+                            // continue;
+                        }
+                        else {
+                            return result;
+                        }
+                    }
+                    else {
+                        return result;
+                    }
+                    // if (result!= null && result.valid == ValidationLevel.Drop) {
+                    //
+                    //     return  {
+                    //         valid: ValidationLevel.Drop,
+                    //         matches: [],
+                    //         node: tokens[0] ?? atRule,
+                    //         syntax: '@' + atRule.nam,
+                    //         // @ts-ignore
+                    //         error: result.error as string ?? 'unexpected token',
+                    //         tokens: []
+                    //     };
+                    // }
                 }
             }
             if (tokens.length == 0) {
@@ -136,7 +160,14 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             }
         }
     }
-    return null;
+    return {
+        valid: ValidationLevel.Valid,
+        matches: [],
+        node: atRule,
+        syntax: '@' + atRule.nam,
+        error: '',
+        tokens: []
+    };
 }
 function validateSupportCondition(atRule, token) {
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
@@ -203,7 +234,7 @@ function validateSupportCondition(atRule, token) {
 function validateSupportFeature(token) {
     if (token.typ == EnumToken.FunctionTokenType) {
         if (token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
-            return validateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, 'complex-selector'), token.chi);
+            return validateComplexSelector(parseSelector(token.chi));
         }
         if (token.val.localeCompare('font-tech', undefined, { sensitivity: 'base' }) == 0) {
             const chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));

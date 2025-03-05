@@ -1,10 +1,10 @@
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import type {FunctionImageToken, Token} from "../../../@types/index.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {validateSyntax} from "../syntax";
-import {getParsedSyntax} from "../config";
-import {ValidationSyntaxGroupEnum, ValidationToken} from "../parser";
-import {validateURL} from "./url";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {validateSyntax} from "../syntax.ts";
+import {getParsedSyntax} from "../config.ts";
+import {ValidationSyntaxGroupEnum, ValidationToken} from "../parser/index.ts";
+import {validateURL} from "./url.ts";
 
 export function validateImage(token: Token): ValidationSyntaxResult {
 

@@ -10,13 +10,18 @@ export function run(describe, expect, transform, parse, render) {
         });
 
         it('hsl #2', function () {
-            return parse(`.hsl { color: hsla(195, 100%, 50%, 50%); }`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.hsl {
- color: #00bfff80
+            return parse(`.hsl { color: hsla(195, 100%, 50%, 50%);
+             background-color: color(xyz-d50 0.3 80 0.3);}`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.hsl {
+ color: #00bfff80;
+ background-color: lime
 }`));
         });
         it('hwb #3', function () {
-            return parse(`.hwb { color: hwb(195, 0%, 0%); }`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.hwb {
- color: #00bfff
+            return parse(`.hwb { color: hwb(195, 0%, 0%); 
+            background-color: color-mix(in xyz-d50, #FF7F50 50%, #00FFFF 50%) ;
+            }`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.hwb {
+ color: #00bfff;
+ background-color: #bcccc2
 }`));
         });
 

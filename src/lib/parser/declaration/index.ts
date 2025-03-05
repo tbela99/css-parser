@@ -1,4 +1,4 @@
 
-export * from './list';
-export * from './set';
-export * from './map';
+export * from './list.ts';
+export * from './set.ts';
+export * from './map.ts';

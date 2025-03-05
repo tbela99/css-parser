@@ -1,1 +1,1 @@
-export * from './sourcemap';
+export * from './sourcemap.ts';

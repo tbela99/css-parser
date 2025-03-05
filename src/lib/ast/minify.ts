@@ -1,9 +1,9 @@
-import {parseString} from "../parser";
-import {eq} from "../parser/utils/eq";
-import {replaceCompound} from './expand';
-import {doRender, renderToken} from "../renderer";
-import * as allFeatures from "./features";
-import {walkValues} from "./walk";
+import {parseString} from "../parser/index.ts";
+import {eq} from "../parser/utils/eq.ts";
+import {replaceCompound} from './expand.ts';
+import {doRender, renderToken} from "../renderer/index.ts";
+import * as allFeatures from "./features/index.ts";
+import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -17,11 +17,12 @@ import type {
     MinifyFeatureOptions,
     OptimizedSelector,
     ParserOptions,
+    PseudoClassFunctionToken,
     RawSelectorTokens,
     Token
-} from "../../@types";
-import {EnumToken} from "./types";
-import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax";
+} from "../../@types/index.d.ts";
+import {EnumToken} from "./types.ts";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/index.ts";
 
 export const combinators: string[] = ['+', '>', '~', '||', '|'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
@@ -1094,9 +1095,9 @@ function fixSelector(node: AstRule) {
 
         for (const attr of walkValues(attributes)) {
 
-            if (attr.value.typ == EnumToken.PseudoClassFuncTokenType && attr.value.val == ':is') {
+            if (attr.value.typ == EnumToken.PseudoClassFuncTokenType && (attr.value as PseudoClassFunctionToken).val == ':is') {
 
-                let i = attr.value.chi.length;
+                let i = (attr.value as PseudoClassFunctionToken).chi.length;
 
                 while (i--) {
 

@@ -1,4 +1,3 @@
-const specialValues = ['inherit', 'initial', 'unset', 'revert', 'revert-layer'];
 var ValidationTokenEnum;
 (function (ValidationTokenEnum) {
     ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
@@ -52,4 +51,4 @@ var ValidationSyntaxGroupEnum;
     ValidationSyntaxGroupEnum["AtRules"] = "atRules";
 })(ValidationSyntaxGroupEnum || (ValidationSyntaxGroupEnum = {}));
 
-export { ValidationSyntaxGroupEnum, ValidationTokenEnum, specialValues };
+export { ValidationSyntaxGroupEnum, ValidationTokenEnum };

@@ -6,12 +6,12 @@ import type {
     ShorthandPropertyType,
     Token,
     WhitespaceToken
-} from "../../../@types";
-import {eq} from "../utils/eq";
-import {EnumToken} from "../../ast";
-import {isLength} from "../../syntax";
+} from "../../../@types/index.d.ts";
+import {eq} from "../utils/eq.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {isLength} from "../../syntax/index.ts";
 
-function dedup(values: Token[][]) {
+function dedup(values: Token[][]): Token[][] {
 
     for (const value of values) {
 
