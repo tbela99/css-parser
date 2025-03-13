@@ -107,6 +107,7 @@ exports.EnumToken = void 0;
     EnumToken[EnumToken["MediaFeatureOrTokenType"] = 90] = "MediaFeatureOrTokenType";
     EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
     EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
+    EnumToken[EnumToken["KeyframeAtRuleNodeType"] = 93] = "KeyframeAtRuleNodeType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -3402,7 +3403,7 @@ function doRender(data, options = {}) {
     return result;
 }
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
-    if ([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyFrameRuleNodeType].includes(node.typ)) {
+    if ([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyFrameRuleNodeType, exports.EnumToken.KeyframeAtRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
         if (!(src in cache)) {
@@ -3445,7 +3446,8 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case exports.EnumToken.DeclarationNodeType:
-            return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
+            console.error({ options });
+            return `${data.nam}:${options.indent}${(options.minify ? filterValues(data.val) : data.val).reduce(reducer, '')}`;
         case exports.EnumToken.CommentNodeType:
         case exports.EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith('/*# sourceMappingURL=')) {
@@ -3474,7 +3476,8 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
         case exports.EnumToken.AtRuleNodeType:
         case exports.EnumToken.RuleNodeType:
         case exports.EnumToken.KeyFrameRuleNodeType:
-            if (data.typ == exports.EnumToken.AtRuleNodeType && !('chi' in data)) {
+        case exports.EnumToken.KeyframeAtRuleNodeType:
+            if ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframeAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
                 return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
@@ -3484,7 +3487,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                 }
                 else if (node.typ == exports.EnumToken.DeclarationNodeType) {
-                    if (node.val.length == 0) {
+                    if (!node.nam.startsWith('--') && node.val.length == 0) {
                         // @ts-ignore
                         errors.push({
                             action: 'ignore',
@@ -3493,7 +3496,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                         });
                         return '';
                     }
-                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
+                    str = `${node.nam}:${options.indent}${(options.minify ? filterValues(node.val) : node.val).reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == exports.EnumToken.AtRuleNodeType && !('chi' in node)) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
@@ -3515,7 +3518,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
-            if (data.typ == exports.EnumToken.AtRuleNodeType) {
+            if ([exports.EnumToken.AtRuleNodeType, exports.EnumToken.KeyframeAtRuleNodeType].includes(data.typ)) {
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
@@ -3926,7 +3929,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case exports.EnumToken.InvalidClassSelectorTokenType:
             return token.val;
         case exports.EnumToken.DeclarationNodeType:
-            return token.nam + ':' + token.val.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+            return token.nam + ':' + (options.minify ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case exports.EnumToken.MediaQueryConditionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) + renderToken(token.op, options, cache, reducer, errors) + token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case exports.EnumToken.MediaFeatureTokenType:
@@ -3939,11 +3942,24 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return 'and';
         case exports.EnumToken.MediaFeatureOrTokenType:
             return 'or';
-        default:
-            throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
+        // default:
+        //
+        //     throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
+}
+function filterValues(values) {
+    let i = 0;
+    for (; i < values.length; i++) {
+        if (values[i].typ == exports.EnumToken.ImportantTokenType && values[i - 1]?.typ == exports.EnumToken.WhitespaceTokenType) {
+            values.splice(i - 1, 1);
+        }
+        else if (funcLike.includes(values[i].typ) && !['var', 'calc'].includes(values[i].val) && values[i + 1]?.typ == exports.EnumToken.WhitespaceTokenType) {
+            values.splice(i + 1, 1);
+        }
+    }
+    return values;
 }
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -6258,7 +6274,7 @@ function parseDeclarationNode(node, errors, src, position) {
     while (node.val[0]?.typ == exports.EnumToken.WhitespaceTokenType) {
         node.val.shift();
     }
-    if (node.val.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
+    if (!node.nam.startsWith('--') && node.val.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
         errors.push({
             action: 'drop',
             message: 'doParse: invalid declaration',
@@ -12143,19 +12159,20 @@ const validateSelector$1 = validateComplexSelector;
 function validateRelativeSelector(tokens, root, options) {
     tokens = tokens.slice();
     consumeWhitespace(tokens);
-    if (tokens.length == 0) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            // @ts-ignore
-            node: root,
-            // @ts-ignore
-            syntax: null,
-            error: 'expected selector',
-            tokens
-        };
-    }
+    // if (tokens.length == 0) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: ValidationLevel.Drop,
+    //         matches: [],
+    //         // @ts-ignore
+    //         node: root,
+    //         // @ts-ignore
+    //         syntax: null,
+    //         error: 'expected selector',
+    //         tokens
+    //     }
+    // }
     // , EnumToken.DescendantCombinatorTokenType
     if (combinatorsTokens.includes(tokens[0].typ)) {
         tokens.shift();
@@ -12242,120 +12259,40 @@ function validateComplexSelectorList(tokens, root, options) {
     };
 }
 
-function validateKeyframeSelector(tokens, atRule, options) {
+function validateKeyframeSelector(tokens, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
             matches: [],
-            node: atRule,
+            node: null,
             syntax: null,
             error: 'expected keyframe selector',
             tokens
         };
     }
-    if (tokens[0].typ == exports.EnumToken.PercentageTokenType) {
-        tokens.shift();
-        consumeWhitespace(tokens);
-        if (tokens.length == 0) {
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: atRule,
-                syntax: null,
-                error: '',
-                tokens
-            };
-        }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            syntax: null,
-            error: 'unexpected token',
-            tokens
-        };
-    }
-    if (tokens[0].typ != exports.EnumToken.IdenTokenType) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'expected keyframe selector',
-            tokens
-        };
-    }
-    if (['from', 'to'].includes(tokens[0].val)) {
-        tokens.shift();
-        consumeWhitespace(tokens);
-        if (tokens.length > 0) {
-            // @ts-ignore
+    for (const t of splitTokenList(tokens)) {
+        if (t.length != 1) {
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
-                node: tokens[0],
+                node: t[0] ?? null,
                 syntax: null,
                 error: 'unexpected token',
                 tokens
             };
         }
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: null,
-            // @ts-ignore
-            syntax: null,
-            error: '',
-            tokens
-        };
-    }
-    if (!['cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(tokens[0].val)) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'unexpected token',
-            tokens
-        };
-    }
-    tokens.shift();
-    consumeWhitespace(tokens);
-    // @ts-ignore
-    if (tokens.length == 0 || tokens[0].typ != exports.EnumToken.PercentageTokenType) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'expecting percentage token',
-            tokens
-        };
-    }
-    tokens.shift();
-    consumeWhitespace(tokens);
-    if (tokens.length > 0) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'unexpected token',
-            tokens
-        };
+        if (t[0].typ != exports.EnumToken.PercentageTokenType && !(t[0].typ == exports.EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: t[0],
+                syntax: null,
+                error: 'expected keyframe selector',
+                tokens
+            };
+        }
     }
     // @ts-ignore
     return {
@@ -12375,7 +12312,7 @@ function validateKeyframeBlockList(tokens, atRule, options) {
     let result = null;
     while (i + 1 < tokens.length) {
         if (tokens[++i].typ == exports.EnumToken.CommaTokenType) {
-            result = validateKeyframeSelector(tokens.slice(j, i), atRule);
+            result = validateKeyframeSelector(tokens.slice(j, i));
             if (result.valid == ValidationLevel.Drop) {
                 return result;
             }
@@ -12383,7 +12320,7 @@ function validateKeyframeBlockList(tokens, atRule, options) {
             i = j;
         }
     }
-    return validateKeyframeSelector(i == j ? tokens.slice(i) : tokens.slice(j, i + 1), atRule);
+    return validateKeyframeSelector(i == j ? tokens.slice(i) : tokens.slice(j, i + 1));
 }
 
 const matchUrl = /^(https?:)?\/\//;
@@ -12559,7 +12496,7 @@ function validateSelector(selector, options, root) {
     }
     // @ts-ignore
     if (root.typ == exports.EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
-        return validateKeyframeBlockList(selector, root);
+        return validateKeyframeBlockList(selector);
     }
     let isNested = root.typ == exports.EnumToken.RuleNodeType ? 1 : 0;
     let currentRoot = root.parent;
@@ -13697,7 +13634,7 @@ function validateAtRuleKeyframes(atRule, options, root) {
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@document',
+            syntax: '@keyframes',
             error: 'expecting at-rule prelude',
             tokens: []
         };
@@ -14310,9 +14247,6 @@ function validateAtRule(atRule, options, root) {
             error: ''
         };
     }
-    if (atRule.nam == 'keyframes') {
-        return validateAtRuleKeyframes(atRule);
-    }
     if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {
         return {
             valid: ValidationLevel.Valid,
@@ -14495,7 +14429,7 @@ async function doParse(iterator, options = {}) {
         minify: true,
         pass: 1,
         parseColor: true,
-        nestingRules: false,
+        nestingRules: true,
         resolveImport: false,
         resolveUrls: false,
         removeCharset: true,
@@ -14569,11 +14503,13 @@ async function doParse(iterator, options = {}) {
             }
             else if (item.token == '{') {
                 let inBlock = 1;
+                tokens = [item];
                 do {
                     item = iter.next().value;
                     if (item == null) {
                         break;
                     }
+                    tokens.push(item);
                     if (item.token == '{') {
                         inBlock++;
                     }
@@ -14581,6 +14517,13 @@ async function doParse(iterator, options = {}) {
                         inBlock--;
                     }
                 } while (inBlock != 0);
+                if (tokens.length > 0) {
+                    errors.push({
+                        action: 'drop',
+                        message: 'invalid block',
+                        rawTokens: tokens.slice()
+                    });
+                }
             }
             tokens = [];
             map = new Map;
@@ -14912,9 +14855,11 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             acc.push(renderToken(curr, { removeComments: true }));
             return acc;
         }, []);
+        const nam = renderToken(atRule, { removeComments: true });
+        // @ts-ignore
         const node = {
-            typ: exports.EnumToken.AtRuleNodeType,
-            nam: renderToken(atRule, { removeComments: true }),
+            typ: /^(-[a-z]+-)?keyframes$/.test(nam) ? exports.EnumToken.KeyframeAtRuleNodeType : exports.EnumToken.AtRuleNodeType,
+            nam,
             // tokens: t,
             val: raw.join('')
         };
@@ -14945,7 +14890,7 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                     isValid = false;
                 }
             }
-            const valid = isValid ? validateAtRule(node, options, context) : {
+            const valid = isValid ? (node.typ == exports.EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
                 valid: ValidationLevel.Drop,
                 node,
                 syntax: '@' + node.nam,
@@ -14961,7 +14906,10 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                 node.typ = exports.EnumToken.InvalidAtRuleTokenType;
             }
             else {
-                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false, removeComments: true }), '');
+                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
+                    minify: false,
+                    removeComments: true
+                }), '');
             }
         }
         // @ts-ignore
@@ -14974,72 +14922,80 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
         if (delim.typ == exports.EnumToken.BlockStartTokenType) {
             const position = map.get(tokens[0]);
             const uniq = new Map;
-            parseTokens(tokens, { minify: true }).reduce((acc, curr, index, array) => {
-                if (curr.typ == exports.EnumToken.CommentTokenType) {
-                    return acc;
-                }
-                if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
-                    if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                        combinators.includes(array[index - 1]?.val) ||
-                        combinators.includes(array[index + 1]?.val)) {
-                        return acc;
-                    }
-                }
-                let t = renderToken(curr, { minify: false });
-                if (t == ',') {
-                    acc.push([]);
-                    // uniqTokens.push([]);
-                }
-                else {
-                    acc[acc.length - 1].push(t);
-                    // uniqTokens[uniqTokens.length - 1].push(curr);
-                }
-                return acc;
-            }, [[]]).reduce((acc, curr) => {
-                let i = 0;
-                for (; i < curr.length; i++) {
-                    if (i + 1 < curr.length && curr[i] == '*') {
-                        if (curr[i] == '*') {
-                            let index = curr[i + 1] == ' ' ? 2 : 1;
-                            if (!['>', '~', '+'].includes(curr[index])) {
-                                curr.splice(i, index);
-                            }
-                        }
-                    }
-                }
-                acc.set(curr.join(''), curr);
-                return acc;
-            }, uniq);
-            const ruleType = context.typ == exports.EnumToken.AtRuleNodeType && context.nam == 'keyframes' ? exports.EnumToken.KeyFrameRuleNodeType : exports.EnumToken.RuleNodeType;
+            parseTokens(tokens, { minify: true });
+            const ruleType = context.typ == exports.EnumToken.KeyframeAtRuleNodeType ? exports.EnumToken.KeyFrameRuleNodeType : exports.EnumToken.RuleNodeType;
             if (ruleType == exports.EnumToken.RuleNodeType) {
                 parseSelector(tokens);
-                if (options.validation) {
-                    // @ts-ignore
-                    const valid = validateSelector(tokens, options, context);
-                    if (valid.valid != ValidationLevel.Valid) {
-                        const node = {
-                            typ: exports.EnumToken.InvalidRuleTokenType,
-                            // @ts-ignore
-                            sel: tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''),
-                            chi: []
-                        };
-                        errors.push({
-                            action: 'drop',
-                            message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
-                            // @ts-ignore
-                            location: { src, ...(map.get(valid.node) ?? position) }
-                        });
+            }
+            if (options.validation) {
+                // @ts-ignore
+                const valid = ruleType == exports.EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
+                if (valid.valid != ValidationLevel.Valid) {
+                    const node = {
+                        typ: exports.EnumToken.InvalidRuleTokenType,
                         // @ts-ignore
-                        context.chi.push(node);
-                        Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-                        return node;
-                    }
+                        sel: tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''),
+                        chi: []
+                    };
+                    errors.push({
+                        action: 'drop',
+                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                        // @ts-ignore
+                        location: { src, ...(map.get(valid.node) ?? position) }
+                    });
+                    // @ts-ignore
+                    context.chi.push(node);
+                    Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
+                    return node;
                 }
             }
             const node = {
                 typ: ruleType,
-                sel: [...uniq.keys()].join(','),
+                sel: [...tokens.reduce((acc, curr, index, array) => {
+                        if (curr.typ == exports.EnumToken.CommentTokenType) {
+                            return acc;
+                        }
+                        if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
+                            if (trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                                trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                                combinators.includes(array[index - 1]?.val) ||
+                                combinators.includes(array[index + 1]?.val)) {
+                                return acc;
+                            }
+                        }
+                        if (ruleType == exports.EnumToken.KeyFrameRuleNodeType) {
+                            if (curr.typ == exports.EnumToken.IdenTokenType && curr.val == 'from') {
+                                Object.assign(curr, { typ: exports.EnumToken.PercentageTokenType, val: '0' });
+                            }
+                            else if (curr.typ == exports.EnumToken.PercentageTokenType && curr.val == '100') {
+                                Object.assign(curr, { typ: exports.EnumToken.IdenTokenType, val: 'to' });
+                            }
+                        }
+                        let t = renderToken(curr, { minify: false });
+                        if (t == ',') {
+                            acc.push([]);
+                            // uniqTokens.push([]);
+                        }
+                        else {
+                            acc[acc.length - 1].push(t);
+                            // uniqTokens[uniqTokens.length - 1].push(curr);
+                        }
+                        return acc;
+                    }, [[]]).reduce((acc, curr) => {
+                        let i = 0;
+                        for (; i < curr.length; i++) {
+                            if (i + 1 < curr.length && curr[i] == '*') {
+                                if (curr[i] == '*') {
+                                    let index = curr[i + 1] == ' ' ? 2 : 1;
+                                    if (!['>', '~', '+'].includes(curr[index])) {
+                                        curr.splice(i, index);
+                                    }
+                                }
+                            }
+                        }
+                        acc.set(curr.join(''), curr);
+                        return acc;
+                    }, uniq).keys()].join(','),
                 chi: []
             };
             Object.defineProperty(node, 'tokens', {
@@ -15124,7 +15080,8 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                     }
                 }
             }
-            if (value == null || value.length == 0) {
+            const nam = renderToken(name.shift(), { removeComments: true });
+            if (value == null || (!nam.startsWith('--') && value.length == 0)) {
                 errors.push({
                     action: 'drop',
                     message: 'doParse: invalid declaration',
@@ -15135,7 +15092,7 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             const node = {
                 typ: exports.EnumToken.DeclarationNodeType,
                 // @ts-ignore
-                nam: renderToken(name.shift(), { removeComments: true }),
+                nam,
                 // @ts-ignore
                 val: value
             };
@@ -17787,9 +17744,9 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             nestingContent = options.nestingRules && ast.typ == exports.EnumToken.RuleNodeType;
         }
         let i = 0;
-        let previous;
+        let previous = null;
         let node;
-        let nodeIndex;
+        let nodeIndex = -1;
         // @ts-ignore
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
@@ -17801,12 +17758,49 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
             // @ts-ignore
             if (previous == node) {
                 // @ts-ignore
-                ast.chi.splice(i, 1);
-                i--;
+                ast.chi.splice(i--, 1);
                 continue;
             }
             if (node.typ == exports.EnumToken.AtRuleNodeType && node.nam == 'font-face') {
                 continue;
+            }
+            if (node.typ == exports.EnumToken.KeyframeAtRuleNodeType) {
+                if (previous?.typ == exports.EnumToken.KeyframeAtRuleNodeType &&
+                    node.nam == previous.nam &&
+                    node.val == previous.val) {
+                    ast.chi?.splice(nodeIndex--, 1);
+                    previous = ast?.chi?.[nodeIndex] ?? null;
+                    i = nodeIndex;
+                    continue;
+                }
+                if (node.chi.length > 0) {
+                    minify(node, options, true, errors, nestingContent, context);
+                }
+            }
+            if (node.typ == exports.EnumToken.KeyFrameRuleNodeType) {
+                if (previous?.typ == exports.EnumToken.KeyFrameRuleNodeType &&
+                    node.sel == previous.sel) {
+                    previous.chi.push(...node.chi);
+                    // @ts-ignore
+                    ast.chi.splice(i--, 1);
+                    continue;
+                }
+                let k;
+                for (k = 0; k < node.chi.length; k++) {
+                    if (node.chi[k].typ == exports.EnumToken.DeclarationNodeType) {
+                        let l = node.chi[k].val.length;
+                        while (l--) {
+                            if (node.chi[k].val[l].typ == exports.EnumToken.ImportantTokenType) {
+                                node.chi.splice(k--, 1);
+                                break;
+                            }
+                            if ([exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(node.chi[k].val[l].typ)) {
+                                continue;
+                            }
+                            break;
+                        }
+                    }
+                }
             }
             if (node.typ == exports.EnumToken.AtRuleNodeType) {
                 // @ts-ignore
@@ -18058,6 +18052,10 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
                     }
                 }
             }
+            // else if ('chi' in node) {
+            //
+            //     minify(node, options, recursive, errors, nestingContent, context);
+            // }
             if (!nestingContent &&
                 // @ts-ignore
                 previous != null &&
@@ -18072,7 +18070,7 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
         // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
             // @ts-ignore
-            if (!node.chi.some(n => n.typ == exports.EnumToken.DeclarationNodeType)) {
+            if (node.typ == exports.EnumToken.KeyframeAtRuleNodeType || !node.chi.some(n => n.typ == exports.EnumToken.DeclarationNodeType)) {
                 // @ts-ignore
                 if (!(node.typ == exports.EnumToken.AtRuleNodeType && node.nam != 'font-face')) {
                     minify(node, options, recursive, errors, nestingContent, context);
@@ -18733,7 +18731,7 @@ function parseResponse(response) {
     }
     return response.text();
 }
-async function load(url, currentFile) {
+async function load(url, currentFile = '.') {
     const resolved = resolve(url, currentFile);
     return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : promises.readFile(resolved.absolute, { encoding: 'utf-8' });
 }

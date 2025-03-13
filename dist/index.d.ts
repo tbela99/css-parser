@@ -92,6 +92,7 @@ declare enum EnumToken {
     MediaFeatureOrTokenType = 90,
     PseudoPageTokenType = 91,
     PseudoElementTokenType = 92,
+    KeyframeAtRuleNodeType = 93,
     Time = 25,
     Iden = 7,
     EOF = 48,
@@ -873,7 +874,6 @@ export declare interface AstDeclaration extends BaseToken {
     typ: EnumToken.DeclarationNodeType
 }
 
-
 export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
@@ -896,8 +896,6 @@ export declare interface AstInvalidAtRule extends BaseToken {
     val: string;
     chi?: Array<AstNode>;
 }
-
-
 
 export declare interface AstKeyFrameRule extends BaseToken {
 
@@ -926,14 +924,31 @@ export declare interface AstAtRule extends BaseToken {
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
+export declare interface AstKeyframeRule extends BaseToken {
+
+    typ: EnumToken.KeyFrameRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare interface AstKeyframAtRule extends BaseToken {
+
+    typ: EnumToken.KeyframeAtRuleNodeType,
+    nam: string;
+    val: string;
+    chi: Array<AstKeyframeRule | AstComment>;
+}
+
 export declare interface AstRuleList extends BaseToken {
 
-    typ:  EnumToken.StyleSheetNodeType |  EnumToken.RuleNodeType |  EnumToken.AtRuleNodeType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType,
     chi: Array<BaseToken | AstComment>;
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {
-    typ:  EnumToken.StyleSheetNodeType,
+    typ: EnumToken.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
@@ -944,6 +959,7 @@ export declare type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration
+    | AstKeyframAtRule
     | AstKeyFrameRule
     | AstInvalidRule
     | AstInvalidAtRule;
@@ -1035,6 +1051,7 @@ export declare interface ErrorDescription {
         col: number;
     };
     error?: Error;
+    rawTokens?: TokenizeResult[];
 }
 
 interface ValidationOptions {
@@ -1165,6 +1182,14 @@ export declare interface TransformResult extends ParseResult, RenderResult {
 export declare interface ParseTokenOptions extends ParserOptions {
 }
 
+export declare interface TokenizeResult {
+    token: string;
+    len: number;
+    hint?: EnumToken;
+    position: Position;
+    bytesIn: number;
+}
+
 export declare interface SourceMapObject {
     version: number;
     file?: string;
@@ -1181,7 +1206,7 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
     relative: string;
 };
 
-declare function load(url: string, currentFile: string): Promise<string>;
+declare function load(url: string, currentFile?: string): Promise<string>;
 
 /**
  * render ast node

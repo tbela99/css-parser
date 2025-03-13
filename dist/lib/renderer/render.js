@@ -2,7 +2,7 @@ import { getAngle, color2srgbvalues, clamp } from './color/color.js';
 import { colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { EnumToken } from '../ast/types.js';
+import { EnumToken, funcLike } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -109,7 +109,7 @@ function doRender(data, options = {}) {
     return result;
 }
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
-    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
         if (!(src in cache)) {
@@ -152,7 +152,8 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case EnumToken.DeclarationNodeType:
-            return `${data.nam}:${options.indent}${data.val.reduce(reducer, '')}`;
+            console.error({ options });
+            return `${data.nam}:${options.indent}${(options.minify ? filterValues(data.val) : data.val).reduce(reducer, '')}`;
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
             if (data.val.startsWith('/*# sourceMappingURL=')) {
@@ -181,7 +182,8 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
         case EnumToken.KeyFrameRuleNodeType:
-            if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
+        case EnumToken.KeyframeAtRuleNodeType:
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
                 return `${indent}@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val};`;
             }
             // @ts-ignore
@@ -191,7 +193,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                     str = options.removeComments && (!options.preserveLicense || !node.val.startsWith('/*!')) ? '' : node.val;
                 }
                 else if (node.typ == EnumToken.DeclarationNodeType) {
-                    if (node.val.length == 0) {
+                    if (!node.nam.startsWith('--') && node.val.length == 0) {
                         // @ts-ignore
                         errors.push({
                             action: 'ignore',
@@ -200,7 +202,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                         });
                         return '';
                     }
-                    str = `${node.nam}:${options.indent}${node.val.reduce(reducer, '').trimEnd()};`;
+                    str = `${node.nam}:${options.indent}${(options.minify ? filterValues(node.val) : node.val).reduce(reducer, '').trimEnd()};`;
                 }
                 else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
                     str = `${data.val === '' ? '' : options.indent || ' '}${data.val};`;
@@ -222,7 +224,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
             if (children.endsWith(';')) {
                 children = children.slice(0, -1);
             }
-            if (data.typ == EnumToken.AtRuleNodeType) {
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ)) {
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
@@ -633,7 +635,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.InvalidClassSelectorTokenType:
             return token.val;
         case EnumToken.DeclarationNodeType:
-            return token.nam + ':' + token.val.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
+            return token.nam + ':' + (options.minify ? filterValues(token.val) : token.val).reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.MediaQueryConditionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) + renderToken(token.op, options, cache, reducer, errors) + token.r.reduce((acc, curr) => acc + renderToken(curr, options, cache), '');
         case EnumToken.MediaFeatureTokenType:
@@ -646,11 +648,24 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return 'and';
         case EnumToken.MediaFeatureOrTokenType:
             return 'or';
-        default:
-            throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
+        // default:
+        //
+        //     throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
+}
+function filterValues(values) {
+    let i = 0;
+    for (; i < values.length; i++) {
+        if (values[i].typ == EnumToken.ImportantTokenType && values[i - 1]?.typ == EnumToken.WhitespaceTokenType) {
+            values.splice(i - 1, 1);
+        }
+        else if (funcLike.includes(values[i].typ) && !['var', 'calc'].includes(values[i].val) && values[i + 1]?.typ == EnumToken.WhitespaceTokenType) {
+            values.splice(i + 1, 1);
+        }
+    }
+    return values;
 }
 
 export { colorsFunc, doRender, reduceNumber, renderToken };

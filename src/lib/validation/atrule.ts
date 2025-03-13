@@ -10,7 +10,6 @@ import {
     validateAtRuleElse,
     validateAtRuleFontFeatureValues,
     validateAtRuleImport,
-    validateAtRuleKeyframes,
     validateAtRuleLayer,
     validateAtRuleMedia,
     validateAtRuleNamespace,
@@ -34,11 +33,6 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
             syntax: null,
             error: ''
         }
-    }
-
-    if (atRule.nam == 'keyframes') {
-
-        return validateAtRuleKeyframes(atRule, options, root);
     }
 
     if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {

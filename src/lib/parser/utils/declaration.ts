@@ -17,7 +17,7 @@ export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescript
         node.val.shift();
     }
 
-    if (node.val.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
+    if (!node.nam.startsWith('--') && node.val.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
 
         errors.push(<ErrorDescription>{
             action: 'drop',

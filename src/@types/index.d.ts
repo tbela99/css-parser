@@ -23,6 +23,7 @@ export declare interface ErrorDescription {
         col: number;
     };
     error?: Error;
+    rawTokens?: TokenizeResult[];
 }
 
 export declare interface MinifyFeature {

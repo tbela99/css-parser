@@ -1,9 +1,9 @@
-import type {AstNode, Token, ValidationOptions} from "../../../@types";
+import type {Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {consumeWhitespace} from "../utils/index.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {EnumToken, ValidationLevel} from "../../ast/index.ts";
 
-export function validateKeyframeSelector(tokens: Token[], atRule: AstNode, options: ValidationOptions): ValidationSyntaxResult {
+export function validateKeyframeSelector(tokens: Token[], options: ValidationOptions): ValidationSyntaxResult {
 
     consumeWhitespace(tokens);
 
@@ -13,132 +13,37 @@ export function validateKeyframeSelector(tokens: Token[], atRule: AstNode, optio
         return {
             valid: ValidationLevel.Drop,
             matches: [],
-            node: atRule,
+            node: null,
             syntax: null,
             error: 'expected keyframe selector',
             tokens
         }
     }
 
-    if (tokens[0].typ == EnumToken.PercentageTokenType) {
+    for (const t of splitTokenList(tokens)) {
 
-        tokens.shift();
-        consumeWhitespace(tokens);
+        if (t.length!= 1) {
 
-        if (tokens.length == 0) {
-
-            // @ts-ignore
-            return {
-                valid: ValidationLevel.Valid,
-                matches: [],
-                node: atRule,
-                syntax: null,
-                error: '',
-                tokens
-            }
-        }
-
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            syntax: null,
-            error: 'unexpected token',
-            tokens
-        }
-    }
-
-    if (tokens[0].typ != EnumToken.IdenTokenType) {
-
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'expected keyframe selector',
-            tokens
-        }
-    }
-
-    if (['from', 'to'].includes(tokens[0].val)) {
-
-        tokens.shift();
-        consumeWhitespace(tokens);
-
-        if (tokens.length > 0) {
-
-            // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
                 matches: [],
-                node: tokens[0],
+                node: t[0] ?? null,
                 syntax: null,
                 error: 'unexpected token',
                 tokens
             }
         }
 
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Valid,
-            matches: [],
-            node: null,
-            // @ts-ignore
-            syntax: null,
-            error: '',
-            tokens
-        }
-    }
+        if (t[0].typ != EnumToken.PercentageTokenType && !(t[0].typ == EnumToken.IdenTokenType  && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
 
-    if (!['cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(tokens[0].val)) {
-
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'unexpected token',
-            tokens
-        }
-    }
-
-    tokens.shift();
-    consumeWhitespace(tokens);
-
-    // @ts-ignore
-    if (tokens.length == 0 || tokens[0].typ != EnumToken.PercentageTokenType) {
-
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'expecting percentage token',
-            tokens
-        }
-    }
-
-    tokens.shift();
-    consumeWhitespace(tokens);
-
-    if (tokens.length > 0) {
-
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: tokens[0],
-            // @ts-ignore
-            syntax: null,
-            error: 'unexpected token',
-            tokens
+            return {
+                valid: ValidationLevel.Drop,
+                matches: [],
+                node: t[0],
+                syntax: null,
+                error: 'expected keyframe selector',
+                tokens
+            }
         }
     }
 

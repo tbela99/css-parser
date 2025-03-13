@@ -52,7 +52,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
     animation-delay: calc(var(--animate-delay)*4)
 }
 
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+`, {inlineCssVariables: true, nestingRules: false}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
  /* --animate-duration: 1s */
  /* --animate-delay: 1s */
  /* --animate-repeat: 1 */

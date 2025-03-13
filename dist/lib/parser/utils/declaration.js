@@ -11,7 +11,7 @@ function parseDeclarationNode(node, errors, src, position) {
     while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
         node.val.shift();
     }
-    if (node.val.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
+    if (!node.nam.startsWith('--') && node.val.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)).length == 0) {
         errors.push({
             action: 'drop',
             message: 'doParse: invalid declaration',

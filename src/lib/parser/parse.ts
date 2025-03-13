@@ -38,6 +38,7 @@ import type {
     AstDeclaration,
     AstInvalidAtRule,
     AstInvalidRule,
+    AstKeyframAtRule,
     AstKeyFrameRule,
     AstNode,
     AstRule,
@@ -106,6 +107,8 @@ import type {
 import {deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
 import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult} from "../../@types/validation.d.ts";
+import {validateAtRuleKeyframes} from "../validation/at-rules";
+import {validateKeyframeSelector} from "../validation/syntaxes";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -147,7 +150,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         minify: true,
         pass: 1,
         parseColor: true,
-        nestingRules: false,
+        nestingRules: true,
         resolveImport: false,
         resolveUrls: false,
         removeCharset: true,
@@ -229,7 +232,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (item.token == ';' || item.token == '{') {
 
-            let node: AstAtRule | AstRule | AstKeyFrameRule | AstInvalidRule | null = await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframAtRule | AstInvalidRule | null = await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
             rawTokens.length = 0;
 
             if (node != null) {
@@ -242,6 +245,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                 let inBlock = 1;
 
+                tokens = [item];
+
                 do {
 
                     item = iter.next().value;
@@ -250,6 +255,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                         break;
                     }
+
+                    tokens.push(item);
 
                     if (item.token == '{') {
 
@@ -261,6 +268,15 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 }
 
                 while (inBlock != 0);
+
+                if (tokens.length > 0) {
+
+                    errors.push({
+                        action: 'drop',
+                        message: 'invalid block',
+                        rawTokens: tokens.slice()
+                    });
+                }
             }
 
             tokens = [];
@@ -445,7 +461,7 @@ function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): 
 async function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, stats: {
     bytesIn: number;
     importedBytesIn: number;
-}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>, rawTokens: TokenizeResult[]): Promise<AstRule | AstAtRule | AstKeyFrameRule | AstInvalidRule | null> {
+}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Position>, rawTokens: TokenizeResult[]): Promise<AstRule | AstAtRule | AstKeyFrameRule | AstKeyframAtRule | AstInvalidRule | null> {
 
     let tokens: Token[] = [] as Token[];
 
@@ -548,7 +564,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                         // @ts-ignore
                         if (!(type == EnumToken.InvalidAtRuleTokenType &&
                             // @ts-ignore
-                           ['charset', 'layer', 'import'].includes((<AstInvalidAtRule>context.chi[i]).nam as string) )) {
+                            ['charset', 'layer', 'import'].includes((<AstInvalidAtRule>context.chi[i]).nam as string))) {
 
                             errors.push({action: 'drop', message: 'invalid @import', location: {src, ...position}});
                             return null;
@@ -679,7 +695,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
 
                 if (rawTokens[k].hint == EnumToken.WhitespaceTokenType) {
 
-                    spaces+= rawTokens[k].len;
+                    spaces += rawTokens[k].len;
                     continue;
                 }
 
@@ -732,9 +748,12 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
             return acc
         }, []);
 
-        const node: AstAtRule = {
-            typ: EnumToken.AtRuleNodeType,
-            nam: renderToken(atRule, {removeComments: true}),
+        const nam: string = renderToken(atRule, {removeComments: true});
+
+        // @ts-ignore
+        const node: AstAtRule | AstKeyframAtRule = {
+            typ: /^(-[a-z]+-)?keyframes$/.test(nam) ? EnumToken.KeyframeAtRuleNodeType : EnumToken.AtRuleNodeType,
+            nam,
             // tokens: t,
             val: raw.join('')
         };
@@ -778,7 +797,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 }
             }
 
-            const valid: ValidationResult = isValid ? validateAtRule(node, options, context) : {
+            const valid: ValidationResult = isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(<AstKeyframAtRule>node, options, context) : validateAtRule(node, options, context)) : {
                 valid: ValidationLevel.Drop,
                 node,
                 matches: [] as Token[],
@@ -800,7 +819,10 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 node.typ = EnumToken.InvalidAtRuleTokenType;
             } else {
 
-                node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {minify: false, removeComments: true}), '');
+                node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {
+                    minify: false,
+                    removeComments: true
+                }), '');
             }
         }
 
@@ -817,100 +839,111 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
             const position: Position = <Position>map.get(tokens[0]);
             const uniq = new Map<string, string[]>;
 
-            parseTokens(tokens, {minify: true}).reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
+            parseTokens(tokens, {minify: true});
 
-                if (curr.typ == EnumToken.CommentTokenType) {
-
-                    return acc;
-                }
-
-                if (curr.typ == EnumToken.WhitespaceTokenType) {
-
-                    if (
-                        trimWhiteSpace.includes(array[index - 1]?.typ) ||
-                        trimWhiteSpace.includes(array[index + 1]?.typ) ||
-                        combinators.includes((<LiteralToken>array[index - 1])?.val) ||
-                        combinators.includes((<LiteralToken>array[index + 1])?.val)) {
-
-                        return acc;
-                    }
-                }
-
-                let t: string = renderToken(curr, {minify: false});
-
-                if (t == ',') {
-
-                    acc.push([]);
-                    // uniqTokens.push([]);
-                } else {
-
-                    acc[acc.length - 1].push(t);
-                    // uniqTokens[uniqTokens.length - 1].push(curr);
-                }
-                return acc;
-            }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
-
-                let i: number = 0;
-
-                for (; i < curr.length; i++) {
-
-                    if (i + 1 < curr.length && curr[i] == '*') {
-
-                        if (curr[i] == '*') {
-
-                            let index: number = curr[i + 1] == ' ' ? 2 : 1;
-
-                            if (!['>', '~', '+'].includes(curr[index])) {
-
-                                curr.splice(i, index);
-                            }
-                        }
-                    }
-                }
-
-                acc.set(curr.join(''), curr);
-                return acc;
-            }, uniq);
-
-            const ruleType: EnumToken = context.typ == EnumToken.AtRuleNodeType && (<AstAtRule>context).nam == 'keyframes' ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
+            const ruleType: EnumToken = context.typ == EnumToken.KeyframeAtRuleNodeType ? EnumToken.KeyFrameRuleNodeType : EnumToken.RuleNodeType;
 
             if (ruleType == EnumToken.RuleNodeType) {
 
                 parseSelector(tokens);
+            }
 
-                if (options.validation) {
+            if (options.validation) {
+
+                // @ts-ignore
+                const valid: ValidationResult = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context);
+
+                if (valid.valid != ValidationLevel.Valid) {
+
+                    const node: AstInvalidRule = {
+                        typ: EnumToken.InvalidRuleTokenType,
+                        // @ts-ignore
+                        sel: tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), ''),
+                        chi: []
+                    }
+
+                    errors.push({
+                        action: 'drop',
+                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                        // @ts-ignore
+                        location: {src, ...(map.get(valid.node) ?? position)}
+                    });
 
                     // @ts-ignore
-                    const valid: ValidationResult = validateSelector(tokens, options, context);
+                    context.chi.push(node);
+                    Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
-                    if (valid.valid != ValidationLevel.Valid) {
-
-                        const node: AstInvalidRule = {
-                            typ: EnumToken.InvalidRuleTokenType,
-                            // @ts-ignore
-                            sel: tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), ''),
-                            chi: []
-                        }
-
-                        errors.push({
-                            action: 'drop',
-                            message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
-                            // @ts-ignore
-                            location: {src, ...(map.get(valid.node) ?? position)}
-                        });
-
-                        // @ts-ignore
-                        context.chi.push(node);
-                        Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
-
-                        return node;
-                    }
+                    return node;
                 }
             }
 
             const node: AstRule | AstKeyFrameRule = {
                 typ: ruleType,
-                sel: [...uniq.keys()].join(','),
+                sel: [...tokens.reduce((acc: string[][], curr: Token, index: number, array: Token[]) => {
+
+                    if (curr.typ == EnumToken.CommentTokenType) {
+
+                        return acc;
+                    }
+
+                    if (curr.typ == EnumToken.WhitespaceTokenType) {
+
+                        if (
+                            trimWhiteSpace.includes(array[index - 1]?.typ) ||
+                            trimWhiteSpace.includes(array[index + 1]?.typ) ||
+                            combinators.includes((<LiteralToken>array[index - 1])?.val) ||
+                            combinators.includes((<LiteralToken>array[index + 1])?.val)) {
+
+                            return acc;
+                        }
+                    }
+
+                    if (ruleType == EnumToken.KeyFrameRuleNodeType) {
+
+                        if (curr.typ == EnumToken.IdenTokenType && curr.val == 'from') {
+
+                            Object.assign(curr, {typ: EnumToken.PercentageTokenType, val: '0'})
+                        } else if (curr.typ == EnumToken.PercentageTokenType && curr.val == '100') {
+
+                            Object.assign(curr, {typ: EnumToken.IdenTokenType, val: 'to'})
+                        }
+                    }
+
+                    let t: string = renderToken(curr, {minify: false});
+
+                    if (t == ',') {
+
+                        acc.push([]);
+                        // uniqTokens.push([]);
+                    } else {
+
+                        acc[acc.length - 1].push(t);
+                        // uniqTokens[uniqTokens.length - 1].push(curr);
+                    }
+                    return acc;
+                }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
+
+                    let i: number = 0;
+
+                    for (; i < curr.length; i++) {
+
+                        if (i + 1 < curr.length && curr[i] == '*') {
+
+                            if (curr[i] == '*') {
+
+                                let index: number = curr[i + 1] == ' ' ? 2 : 1;
+
+                                if (!['>', '~', '+'].includes(curr[index])) {
+
+                                    curr.splice(i, index);
+                                }
+                            }
+                        }
+                    }
+
+                    acc.set(curr.join(''), curr);
+                    return acc;
+                }, uniq).keys()].join(','),
                 chi: []
             };
 
@@ -1011,6 +1044,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
             if (name.length > 0) {
 
                 for (let i = 1; i < name.length; i++) {
+
                     if (name[i].typ != EnumToken.WhitespaceTokenType && name[i].typ != EnumToken.CommentTokenType) {
 
                         errors.push(<ErrorDescription>{
@@ -1024,7 +1058,9 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 }
             }
 
-            if (value == null || value.length == 0) {
+            const nam: string = renderToken(name.shift() as Token, {removeComments: true})
+
+            if (value == null || (!nam.startsWith('--') && value.length == 0)) {
 
                 errors.push(<ErrorDescription>{
                     action: 'drop',
@@ -1037,7 +1073,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
             const node: AstDeclaration = {
                 typ: EnumToken.DeclarationNodeType,
                 // @ts-ignore
-                nam: renderToken(name.shift(), {removeComments: true}),
+                nam,
                 // @ts-ignore
                 val: value
             }
@@ -1080,7 +1116,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
  * @param tokens
  * @param atRule
  */
- function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
+function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
 
     // @ts-ignore
     for (const {value, parent} of walkValues(tokens, null, null, true)) {
@@ -1212,7 +1248,7 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                 continue;
             }
 
-            for (let i = nameIndex + 1; i <(value as FunctionToken | ParensToken).chi.length; i++) {
+            for (let i = nameIndex + 1; i < (value as FunctionToken | ParensToken).chi.length; i++) {
 
                 if ((value as FunctionToken | ParensToken).chi[i].typ == EnumToken.CommentTokenType || (value as FunctionToken | ParensToken).chi[i].typ == EnumToken.WhitespaceTokenType) {
 
@@ -1564,13 +1600,13 @@ function getTokenType(val: string, hint?: EnumToken): Token {
             : (
                 // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
                 val.startsWith('::') || pseudoElements.includes(val) ? <PseudoElementToken>{
-                    typ: EnumToken.PseudoElementTokenType,
-                    val
+                        typ: EnumToken.PseudoElementTokenType,
+                        val
                     } :
                     <PseudoClassToken>{
-                typ: EnumToken.PseudoClassTokenType,
-                val
-            });
+                        typ: EnumToken.PseudoClassTokenType,
+                        val
+                    });
     }
 
     if (isAtKeyword(val)) {
@@ -2072,9 +2108,9 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                         (t as ColorToken).cal = 'mix';
                     } else { // @ts-ignore
                         if ((t as ColorToken).val == 'color') {
-                                                // @ts-ignore
-                                                (t as ColorToken).cal = 'col';
-                                            }
+                            // @ts-ignore
+                            (t as ColorToken).cal = 'col';
+                        }
                     }
                 }
 
