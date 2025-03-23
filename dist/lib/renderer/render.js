@@ -152,7 +152,6 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case EnumToken.DeclarationNodeType:
-            console.error({ options });
             return `${data.nam}:${options.indent}${(options.minify ? filterValues(data.val) : data.val).reduce(reducer, '')}`;
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
@@ -339,6 +338,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
                     if (value != null) {
                         token = value;
+                    }
+                    else {
+                        token.chi = children.reduce((acc, curr, index) => {
+                            if (acc.length > 0) {
+                                acc.push({ typ: EnumToken.CommaTokenType });
+                            }
+                            acc.push(...curr);
+                            return acc;
+                        }, []);
                     }
                 }
                 if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {

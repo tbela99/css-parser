@@ -40,7 +40,7 @@ function compute(transformList) {
                         return null;
                     }
                     const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
-                    console.error([transformList[i].val, valCount]);
+                    // console.error([(transformList[i] as FunctionToken).val, valCount]);
                     if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && children[0].val == 'none') {
                         values.fill(0, 0, valCount);
                     }

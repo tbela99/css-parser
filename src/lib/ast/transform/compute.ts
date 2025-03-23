@@ -50,7 +50,7 @@ export function compute(transformList: Token[]): Matrix | null {
 
                 const valCount: number = (transformList[i] as FunctionToken).val == 'translate3d' || (transformList[i] as FunctionToken).val == 'translate' ? 3 : 1;
 
-                console.error([(transformList[i] as FunctionToken).val, valCount]);
+                // console.error([(transformList[i] as FunctionToken).val, valCount]);
 
                 if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && children[0].val == 'none') {
 

@@ -7,7 +7,6 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { compute } from '../transform/compute.js';
-import { decompose } from '../transform/utils.js';
 import { minify } from '../transform/minify.js';
 
 class TransformCssFeature {
@@ -42,7 +41,7 @@ class TransformCssFeature {
                 // console.error({result});
                 return;
             }
-            decompose(result);
+            // const decomposed = decompose(result);
             const minified = minify(result);
             // console.error({result, decomposed, minify: minify(result), serialized: renderToken(serialize(result))});
             if (minified != null) {

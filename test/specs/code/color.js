@@ -1277,4 +1277,23 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
  color: #453ba9
 }`));
     });
+
+    it('current color #130', function () {
+        return transform(`
+ 
+  .now {
+  color: color-mix(in oklch, currentcolor 35% , #0000 );
+  background-color:  color-mix(
+            in oklab,
+            oklch(var(--btn-color, var(--b2)) / var(--tw-bg-opacity, 1)) 90%,
+            black
+          );
+    transform: rotateY(180deg);
+}
+`, {beautify: true}).then(result => expect(result.code).equals(`.now {
+ color: color-mix(in oklch,currentcolor 35%,#0000);
+ background-color: color-mix(in oklab,oklch(var(--btn-color,var(--b2))/var(--tw-bg-opacity,1)) 90%,#000);
+ transform: rotateY(180deg)
+}`));
+    });
 }

@@ -57,6 +57,9 @@ function interpolateHue(interpolationMethod, h1, h2) {
     return [h1, h2];
 }
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
+    if (color1.val == 'currentcolor' || color2.val == 'currentcolor') {
+        return null;
+    }
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
         return null;
     }

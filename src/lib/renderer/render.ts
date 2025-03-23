@@ -257,7 +257,6 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.DeclarationNodeType:
 
-            console.error({options});
             return `${(<AstDeclaration>data).nam}:${options.indent}${(options.minify ? filterValues((<AstDeclaration>data).val) : (<AstDeclaration>data).val).reduce(reducer, '')}`;
 
         case EnumToken.CommentNodeType:
@@ -544,6 +543,20 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     if (value != null) {
 
                         token = value;
+                    }
+
+                    else {
+
+                        token.chi = children.reduce((acc, curr, index) => {
+
+                            if (acc.length > 0) {
+
+                                acc.push({ typ: EnumToken.CommaTokenType });
+                            }
+
+                            acc.push(...curr);
+                            return acc;
+                        }, [] as Token[]);
                     }
                 }
 

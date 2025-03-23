@@ -13,7 +13,6 @@ import {
     rgb2oklab,
     srgb2oklab
 } from "./oklab";
-import {eq} from "../../parser/utils/eq";
 
 export function hex2oklch(token: ColorToken): number[] {
 
@@ -66,6 +65,14 @@ export function srgb2oklch(r: number, g: number, blue: number, alpha: number | n
 export function getOKLCHComponents(token: ColorToken): number[] {
 
     const components: Token[] = getComponents(token);
+
+    for (let i = 0; i < components.length; i++) {
+
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+
+            return [];
+        }
+    }
 
     // @ts-ignore
     let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];

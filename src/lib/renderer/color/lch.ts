@@ -88,6 +88,14 @@ export function getLCHComponents(token: ColorToken): number[] {
 
     const components: Token[] = getComponents(token);
 
+    for (let i = 0; i < components.length; i++) {
+
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+
+            return [];
+        }
+    }
+
     // @ts-ignore
     let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
 

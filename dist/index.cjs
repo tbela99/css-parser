@@ -555,6 +555,11 @@ function xyz2lchvalues(x, y, z, alpha) {
 }
 function getLCHComponents(token) {
     const components = getComponents(token);
+    for (let i = 0; i < components.length; i++) {
+        if (![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.IdenTokenType].includes(components[i].typ)) {
+            return [];
+        }
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
@@ -608,6 +613,11 @@ function srgb2oklch(r, g, blue, alpha) {
 }
 function getOKLCHComponents(token) {
     const components = getComponents(token);
+    for (let i = 0; i < components.length; i++) {
+        if (![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.IdenTokenType].includes(components[i].typ)) {
+            return [];
+        }
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
@@ -667,6 +677,11 @@ function srgb2oklab(r, g, blue, alpha) {
 }
 function getOKLABComponents(token) {
     const components = getComponents(token);
+    for (let i = 0; i < components.length; i++) {
+        if (![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.IdenTokenType].includes(components[i].typ)) {
+            return [];
+        }
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
@@ -847,6 +862,11 @@ function lch2labvalues(l, c, h, a = null) {
 }
 function getLABComponents(token) {
     const components = getComponents(token);
+    for (let i = 0; i < components.length; i++) {
+        if (![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.IdenTokenType].includes(components[i].typ)) {
+            return [];
+        }
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
@@ -997,7 +1017,10 @@ function oklab2srgb(token) {
     return rgb;
 }
 function oklch2srgb(token) {
-    const [l, c, h, alpha] = getOKLCHComponents(token);
+    const [l, c, h, alpha] = getOKLCHComponents(token) ?? {};
+    if (l == null || c == null || h == null) {
+        return null;
+    }
     // @ts-ignore
     const rgb = OKLab_to_sRGB(...lch2labvalues(l, c, h));
     if (alpha != 1) {
@@ -2172,6 +2195,9 @@ function interpolateHue(interpolationMethod, h1, h2) {
     return [h1, h2];
 }
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
+    if (color1.val == 'currentcolor' || color2.val == 'currentcolor') {
+        return null;
+    }
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
         return null;
     }
@@ -3450,7 +3476,6 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case exports.EnumToken.DeclarationNodeType:
-            console.error({ options });
             return `${data.nam}:${options.indent}${(options.minify ? filterValues(data.val) : data.val).reduce(reducer, '')}`;
         case exports.EnumToken.CommentNodeType:
         case exports.EnumToken.CDOCOMMNodeType:
@@ -3637,6 +3662,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
                     if (value != null) {
                         token = value;
+                    }
+                    else {
+                        token.chi = children.reduce((acc, curr, index) => {
+                            if (acc.length > 0) {
+                                acc.push({ typ: exports.EnumToken.CommaTokenType });
+                            }
+                            acc.push(...curr);
+                            return acc;
+                        }, []);
                     }
                 }
                 if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
@@ -17978,7 +18012,7 @@ function compute(transformList) {
                         return null;
                     }
                     const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
-                    console.error([transformList[i].val, valCount]);
+                    // console.error([(transformList[i] as FunctionToken).val, valCount]);
                     if (children.length == 1 && children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'none') {
                         values.fill(0, 0, valCount);
                     }
@@ -18228,7 +18262,7 @@ class TransformCssFeature {
                 // console.error({result});
                 return;
             }
-            decompose(result);
+            // const decomposed = decompose(result);
             const minified = minify$1(result);
             // console.error({result, decomposed, minify: minify(result), serialized: renderToken(serialize(result))});
             if (minified != null) {

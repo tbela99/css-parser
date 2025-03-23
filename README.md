@@ -706,6 +706,8 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Minification
 
+- [x] minify keyframs
+- [x] minify transform
 - [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
   acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
 - [x] multi-pass minification

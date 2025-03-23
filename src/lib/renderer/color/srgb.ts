@@ -171,9 +171,14 @@ export function oklab2srgb(token: ColorToken): number[] {
     return rgb;
 }
 
-export function oklch2srgb(token: ColorToken): number[] {
+export function oklch2srgb(token: ColorToken): number[] | null {
 
-    const [l, c, h, alpha] = getOKLCHComponents(token);
+    const [l, c, h, alpha] = getOKLCHComponents(token) ?? {};
+
+    if (l == null || c == null || h == null) {
+
+        return null;
+    }
 
     // @ts-ignore
     const rgb: number[] = OKLab_to_sRGB(...lch2labvalues(l, c, h));
