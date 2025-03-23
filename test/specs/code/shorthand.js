@@ -166,10 +166,10 @@ background-size: cover auto, contain;
             return transform(background1, options).then(result => expect(result.code).equals('p{background:no-repeat red url(images/bg.gif)}'));
         });
         it('background #12', function () {
-            return transform(background2, options).then(result => expect(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png) 0 5%/cover}'));
+            return transform(background2, options).then(result => expect(result.code).equals('a:focus{background:repeat-x url(../../media/examples/star.png)0 5%/cover}'));
         });
         it('background #13', function () {
-            return transform(background3, options).then(result => expect(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg) 50%/cover,#eee url(../../media/examples/lizard.png) 35%/contain}'));
+            return transform(background3, options).then(result => expect(result.code).equals('a{background:no-repeat url(../../media/examples/firefox-logo.svg)50%/cover,#eee url(../../media/examples/lizard.png)35%/contain}'));
         });
 
         it('border #14', function () {
@@ -289,7 +289,7 @@ button.jetpack-instant-search__overlay-close {
  background-attachment: initial;
  background-origin: initial;
  background-clip: initial;
- background-color: #0000 !important;
+ background-color: #0000!important;
  border-top: none;
  border-right: none;
  border-left: none;

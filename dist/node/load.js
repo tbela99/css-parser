@@ -7,7 +7,7 @@ function parseResponse(response) {
     }
     return response.text();
 }
-async function load(url, currentFile) {
+async function load(url, currentFile = '.') {
     const resolved = resolve(url, currentFile);
     return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : readFile(resolved.absolute, { encoding: 'utf-8' });
 }

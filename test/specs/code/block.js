@@ -89,7 +89,7 @@ border-left-color: red;
 
 `;
             return transform(file, {
-                minify: true
+                minify: true, nestingRules: false
             }).then(result => expect(result.code).equals(`.blockquote{margin-bottom:1rem;font-size:1.25rem}.blockquote>:last-child{margin-bottom:0}.blockquote-footer{margin-top:-1rem;margin-bottom:1rem;font-size:.875em;color:#6c757d}.blockquote-footer:before{content:"— "}.img-fluid,.img-thumbnail{max-width:100%;height:auto}.img-thumbnail{padding:.25rem;background-color:var(--bs-body-bg);border:var(--bs-border-width) solid var(--bs-border-color);border-radius:var(--bs-border-radius)}`));
         });
 
@@ -103,7 +103,7 @@ border-left-color: red;
 
 `;
             return transform(file, {
-                minify: true
+                minify: true, nestingRules: false
             }).then(result => expect(result.code).equals(`.nav-pills:is(.nav-link.active,.show>.nav-link){color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}`));
         });
 
@@ -148,7 +148,7 @@ content: '\\21 now\\21';
 
 `;
             return transform(file, {
-                minify: true
+                minify: true, nestingRules: false
             }).then(result => expect(result.code).equals(`:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`));
         });
 
@@ -176,7 +176,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
 
 `;
             return transform(file, {
-                minify: true
+                minify: true, nestingRules: false
             }).then(result => expect(result.code).equals(`abbr[title],abbr[data-original-title],abbr>[data-original-title]{text-decoration:underline dotted;-webkit-text-decoration:underline dotted;cursor:help;border-bottom:0;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}`));
         });
 
@@ -638,7 +638,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-webkit-scrollbar{display:none}.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar::-webkit-scrollbar{display:none}.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
     });
 
     it('do not merge pseudo class selectors #31', function () {
@@ -656,7 +656,7 @@ content: '\\21 now\\21';
 }
 
 `;
-        return parse(file).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
+        return parse(file, {nestingRules: false}).then(result => expect(render(result.ast).code).equals(`.invisible-scrollbar:is(::-moz-range-thumb,:has(::-moz-range-thumb)){display:none}`));
     });
 
     it('do not merge pseudo class selectors #32', function () {

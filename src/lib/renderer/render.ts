@@ -12,6 +12,7 @@ import type {
     ColorToken,
     ErrorDescription,
     FractionToken,
+    FunctionToken,
     IdentToken,
     InvalidAttrToken,
     Location,
@@ -44,7 +45,7 @@ import {
     rgb2hex,
     srgb2hexvalues
 } from "./color";
-import {EnumToken, expand} from "../ast";
+import {EnumToken, expand, funcLike} from "../ast";
 import {SourceMap} from "./sourcemap";
 import {colorFuncColorSpace, getComponents} from "./color/utils";
 import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax";
@@ -195,7 +196,7 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
-    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType].includes(node.typ)) {
+    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(node.typ)) {
 
         let src: string = (<Location>node.loc)?.src ?? '';
         let output: string = <string>options.output ?? '';
@@ -256,7 +257,8 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.DeclarationNodeType:
 
-            return `${(<AstDeclaration>data).nam}:${options.indent}${(<AstDeclaration>data).val.reduce(reducer, '')}`;
+            console.error({options});
+            return `${(<AstDeclaration>data).nam}:${options.indent}${(options.minify ? filterValues((<AstDeclaration>data).val) : (<AstDeclaration>data).val).reduce(reducer, '')}`;
 
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
@@ -303,8 +305,9 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
         case EnumToken.KeyFrameRuleNodeType:
+        case EnumToken.KeyframeAtRuleNodeType:
 
-            if (data.typ == EnumToken.AtRuleNodeType && !('chi' in data)) {
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ) && !('chi' in data)) {
 
                 return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
             }
@@ -319,7 +322,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                     str = options.removeComments && (!options.preserveLicense || !(<AstComment>node).val.startsWith('/*!')) ? '' : (<AstComment>node).val;
                 } else if (node.typ == EnumToken.DeclarationNodeType) {
 
-                    if ((<AstDeclaration>node).val.length == 0) {
+                    if (!(<AstDeclaration>node).nam.startsWith('--') && (<AstDeclaration>node).val.length == 0) {
 
                         // @ts-ignore
                         errors.push(<ErrorDescription>{
@@ -330,7 +333,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                         return '';
                     }
 
-                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(<AstDeclaration>node).val.reduce(reducer, '').trimEnd()};`;
+                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minify ? filterValues((<AstDeclaration>node).val) : (<AstDeclaration>node).val).reduce(reducer, '').trimEnd()};`;
                 } else if (node.typ == EnumToken.AtRuleNodeType && !('chi' in node)) {
 
                     str = `${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val};`;
@@ -362,7 +365,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
                 children = children.slice(0, -1);
             }
 
-            if (data.typ == EnumToken.AtRuleNodeType) {
+            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(data.typ)) {
 
                 return `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === '' ? '' : options.indent || ' '}${(<AstAtRule>data).val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`
             }
@@ -1000,7 +1003,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.DeclarationNodeType:
 
-            return (<AstDeclaration>token).nam + ':' + (<AstDeclaration>token).val.reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
+            return (<AstDeclaration>token).nam + ':' + (options.minify ? filterValues((<AstDeclaration>token).val) : (<AstDeclaration>token).val).reduce((acc: string, curr: Token): string => acc + renderToken(curr, options, cache), '');
 
         case EnumToken.MediaQueryConditionTokenType:
 
@@ -1023,11 +1026,30 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.MediaFeatureOrTokenType:
             return 'or';
 
-        default:
-
-            throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
+        // default:
+        //
+        //     throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }
 
     errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
     return '';
+}
+
+function filterValues(values: Token[]): Token[] {
+
+    let i: number = 0;
+
+    for (; i < values.length; i++) {
+
+        if (values[i].typ == EnumToken.ImportantTokenType && values[i - 1]?.typ == EnumToken.WhitespaceTokenType) {
+
+            values.splice(i - 1, 1);
+        }
+        else if (funcLike.includes(values[i].typ) && !['var', 'calc'].includes((values[i] as FunctionToken).val) && values[i + 1]?.typ == EnumToken.WhitespaceTokenType) {
+
+            values.splice(i + 1, 1);
+        }
+    }
+
+    return values;
 }

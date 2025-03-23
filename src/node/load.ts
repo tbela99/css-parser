@@ -11,7 +11,7 @@ function parseResponse(response: Response) {
     return response.text();
 }
 
-export async function load(url: string, currentFile: string): Promise<string> {
+export async function load(url: string, currentFile: string = '.'): Promise<string> {
 
     const resolved = resolve(url, currentFile);
 

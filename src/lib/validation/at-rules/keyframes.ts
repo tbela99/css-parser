@@ -1,9 +1,9 @@
-import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
+import type {AstKeyframAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast";
 import {consumeWhitespace} from "../utils";
 
-export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
+export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
 
@@ -12,7 +12,7 @@ export function validateAtRuleKeyframes(atRule: AstAtRule, options: ValidationOp
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@document',
+            syntax: '@keyframes',
             error: 'expecting at-rule prelude',
             tokens: []
         } as ValidationSyntaxResult;

@@ -190,7 +190,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 `;
             return transform(nesting3, {
                 minify: true, nestingRules: true, resolveImport: true
-            }).then((result) => expect(result.code).equals(`.card{--bs-card-spacer-y:1rem;--bs-card-spacer-x:1rem;--bs-card-title-spacer-y:.5rem;--bs-card-border-width:var(--bs-border-width);--bs-card-border-color:var(--bs-border-color-translucent);--bs-card-border-radius:var(--bs-border-radius);--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width));--bs-card-cap-padding-y:.5rem;--bs-card-cap-padding-x:1rem;--bs-card-cap-bg:rgb(var(--bs-body-color-rgb) .03);--bs-card-bg:var(--bs-body-bg);--bs-card-img-overlay-padding:1rem;--bs-card-group-margin:.75rem;position:relative;display:flex;flex-direction:column;min-width:0;height:var(--bs-card-height);color:var(--bs-body-color);word-wrap:break-word;background-color:var(--bs-card-bg);background-clip:border-box;border:var(--bs-card-border-width) solid var(--bs-card-border-color);border-radius:var(--bs-card-border-radius);>hr{margin-right:0;margin-left:0}}`));
+            }).then((result) => expect(result.code).equals(`.card{--bs-card-spacer-y:1rem;--bs-card-spacer-x:1rem;--bs-card-title-spacer-y:.5rem;--bs-card-title-color:;--bs-card-subtitle-color:;--bs-card-border-width:var(--bs-border-width);--bs-card-border-color:var(--bs-border-color-translucent);--bs-card-border-radius:var(--bs-border-radius);--bs-card-box-shadow:;--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width));--bs-card-cap-padding-y:.5rem;--bs-card-cap-padding-x:1rem;--bs-card-cap-bg:rgb(var(--bs-body-color-rgb) .03);--bs-card-cap-color:;--bs-card-height:;--bs-card-color:;--bs-card-bg:var(--bs-body-bg);--bs-card-img-overlay-padding:1rem;--bs-card-group-margin:.75rem;position:relative;display:flex;flex-direction:column;min-width:0;height:var(--bs-card-height);color:var(--bs-body-color);word-wrap:break-word;background-color:var(--bs-card-bg);background-clip:border-box;border:var(--bs-card-border-width) solid var(--bs-card-border-color);border-radius:var(--bs-card-border-radius);>hr{margin-right:0;margin-left:0}}`));
         });
         it('nesting #9', function () {
             const nesting3 = `
@@ -298,7 +298,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 `;
             return transform(nesting3, {
                 minify: true, nestingRules: true, resolveImport: true
-            }).then((result) => expect(result.code).equals(`[data-bs-theme=dark]{.carousel .carousel-control-next-icon,.carousel .carousel-control-prev-icon,&.carousel .carousel-control-next-icon,&.carousel .carousel-control-prev-icon{filter:invert(1) grayscale(100)}.carousel .carousel-indicators [data-bs-target],&.carousel .carousel-indicators [data-bs-target]{background-color:#000}.carousel .carousel-caption,&.carousel .carousel-caption{color:#000}}`));
+            }).then((result) => expect(result.code).equals(`[data-bs-theme=dark]{.carousel .carousel-control-next-icon,.carousel .carousel-control-prev-icon,&.carousel .carousel-control-next-icon,&.carousel .carousel-control-prev-icon{filter:invert(1)grayscale(100)}.carousel .carousel-indicators [data-bs-target],&.carousel .carousel-indicators [data-bs-target]{background-color:#000}.carousel .carousel-caption,&.carousel .carousel-caption{color:#000}}`));
         });
 
         it('nesting #14', function () {

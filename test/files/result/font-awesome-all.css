@@ -101,7 +101,7 @@
   -webkit-transform: rotate(0);
   transform: rotate(0)
  }
- 100% {
+ to {
   -webkit-transform: rotate(1turn);
   transform: rotate(1turn)
  }
@@ -111,7 +111,7 @@
   -webkit-transform: rotate(0);
   transform: rotate(0)
  }
- 100% {
+ to {
   -webkit-transform: rotate(1turn);
   transform: rotate(1turn)
  }
