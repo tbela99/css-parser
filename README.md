@@ -176,13 +176,18 @@ Include ParseOptions and RenderOptions
 - src: string, optional. original css file location to be used with sourcemap, also used to resolve url().
 - sourcemap: boolean, optional. preserve node location data.
 
-> Misc Options
+> Ast Traversal Options
 
+- visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
+
+> Urls and \@import Options
+
+- resolveImport: boolean, optional. replace @import rule by the content of the referenced stylesheet.
 - resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
-- resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
+
+> Misc Options
 - removeCharset: boolean, optional. remove @charset.
 - cwd: string, optional. destination directory used to resolve url().
-- visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
 #### RenderOptions

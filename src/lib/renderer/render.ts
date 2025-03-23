@@ -684,6 +684,16 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 return token.chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
             }
 
+            // if (token.typ == EnumToken.FunctionTokenType && transformFunctions.includes(token.val)) {
+            //
+            //     const children =  token.val.startsWith('matrix') ? null : stripCommaToken(token.chi.slice()) as Token[];
+            //
+            //     if (children != null) {
+            //
+            //         return token.val + '(' + children.reduce((acc: string, curr: Token) => acc + (acc.length > 0 ? ' ' : '') + renderToken(curr, options, cache, reducer), '') + ')';
+            //     }
+            // }
+
             // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
 
@@ -1019,6 +1029,5 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
     }
 
     errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
-
     return '';
 }

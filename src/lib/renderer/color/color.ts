@@ -752,6 +752,10 @@ export function getNumber(token: NumberToken | PercentageToken | IdentToken): nu
     return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
 
+/**
+ * convert angle to turn
+ * @param token
+ */
 export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
     if (token.typ == EnumToken.IdenTokenType) {

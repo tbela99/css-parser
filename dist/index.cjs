@@ -2107,6 +2107,10 @@ function getNumber(token) {
     // @ts-ignore
     return token.typ == exports.EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
+/**
+ * convert angle to turn
+ * @param token
+ */
 function getAngle(token) {
     if (token.typ == exports.EnumToken.IdenTokenType) {
         if (token.val == 'none') {
@@ -2459,7 +2463,7 @@ function gcd(x, y) {
     }
     return x;
 }
-function compute(a, b, op) {
+function compute$1(a, b, op) {
     if (typeof a == 'number' && typeof b == 'number') {
         switch (op) {
             case exports.EnumToken.Add:
@@ -2705,7 +2709,7 @@ function doEvaluate(l, r, op) {
         }
     }
     // @ts-ignore
-    const val = compute(v1, v2, op);
+    const val = compute$1(v1, v2, op);
     // typ = typeof val == 'number' ? EnumToken.NumberTokenType : EnumToken.FractionTokenType;
     const token = {
         ...(l.typ == exports.EnumToken.NumberTokenType ? r : l),
@@ -3729,6 +3733,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 token.chi[0].val?.typ != exports.EnumToken.FractionTokenType) {
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
+            // if (token.typ == EnumToken.FunctionTokenType && transformFunctions.includes(token.val)) {
+            //
+            //     const children =  token.val.startsWith('matrix') ? null : stripCommaToken(token.chi.slice()) as Token[];
+            //
+            //     if (children != null) {
+            //
+            //         return token.val + '(' + children.reduce((acc: string, curr: Token) => acc + (acc.length > 0 ? ' ' : '') + renderToken(curr, options, cache, reducer), '') + ')';
+            //     }
+            // }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case exports.EnumToken.MatchExpressionTokenType:
@@ -3959,6 +3972,14 @@ const dimensionUnits = new Set([
 const fontFormat = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];
 const colorFontTech = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 const fontFeaturesTech = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
+const transformFunctions = [
+    'matrix', 'translate', 'scale', 'rotate', 'skew', 'perspective',
+    'translateX', 'translateY', 'translateZ',
+    'scaleX', 'scaleY', 'scaleZ',
+    'rotateX', 'rotateY', 'rotateZ',
+    'skewX', 'skewY',
+    'rotate3d', 'translate3d', 'scale3d', 'matrix3d'
+];
 // https://drafts.csswg.org/mediaqueries/#media-types
 const mediaTypes = ['all', 'print', 'screen',
     /* deprecated */
@@ -10881,7 +10902,7 @@ function parseSyntax(syntax) {
         chi: []
     }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
     // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
-    return minify$1(transform$1(doParseSyntax(syntax, tokenize(syntax), root)));
+    return minify$2(transform$1(doParseSyntax(syntax, tokenize(syntax), root)));
 }
 function matchParens(syntax, iterator) {
     let item;
@@ -11132,12 +11153,12 @@ function matchAtRule(syntax, iterator) {
                     const t = { typ: ValidationTokenEnum.Root, chi: token.prelude };
                     doParseSyntax(syntax, t.chi[Symbol.iterator](), t);
                     token.prelude = t.chi;
-                    minify$1(token.prelude);
+                    minify$2(token.prelude);
                 }
             }
             // @ts-ignore
             if (token?.chi?.length > 0) {
-                minify$1(doParseSyntax(syntax, token.chi[Symbol.iterator](), token));
+                minify$2(doParseSyntax(syntax, token.chi[Symbol.iterator](), token));
             }
         }
         else {
@@ -11590,7 +11611,7 @@ function move(position, chr) {
     }
     return position;
 }
-function minify$1(ast) {
+function minify$2(ast) {
     if (Array.isArray(ast)) {
         // @ts-ignore
         while (ast.length > 0 && ast[0].typ == ValidationTokenEnum.Whitespace) {
@@ -11603,7 +11624,7 @@ function minify$1(ast) {
         for (let i = 0; i < ast.length; i++) {
             // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
             // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
-            minify$1(ast[i]);
+            minify$2(ast[i]);
             // }
             // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
             //
@@ -11635,18 +11656,18 @@ function minify$1(ast) {
     // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast.typ)) {
     // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
     if ('l' in ast) {
-        minify$1(ast.l);
+        minify$2(ast.l);
     }
     // }
     // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
     if ('r' in ast) {
-        minify$1(ast.r);
+        minify$2(ast.r);
     }
     if ('chi' in ast) {
-        minify$1(ast.chi);
+        minify$2(ast.chi);
     }
     if ('prelude' in ast) {
-        minify$1(ast.prelude);
+        minify$2(ast.prelude);
     }
     return ast;
 }
@@ -11787,6 +11808,23 @@ function consumeWhitespace(tokens) {
     return true;
 }
 
+function stripCommaToken(tokenList) {
+    let result = [];
+    let last = null;
+    for (let i = 0; i < tokenList.length; i++) {
+        if (tokenList[i].typ == exports.EnumToken.CommaTokenType && last != null && last.typ == exports.EnumToken.CommaTokenType) {
+            return null;
+        }
+        if (tokenList[i].typ != exports.EnumToken.WhitespaceTokenType) {
+            last = tokenList[i];
+        }
+        if (tokenList[i].typ == exports.EnumToken.CommentTokenType || tokenList[i].typ == exports.EnumToken.CommaTokenType) {
+            continue;
+        }
+        result.push(tokenList[i]);
+    }
+    return result;
+}
 function splitTokenList(tokenList, split = [exports.EnumToken.CommaTokenType]) {
     return tokenList.reduce((acc, curr) => {
         if (curr.typ == exports.EnumToken.CommentTokenType) {
@@ -16434,11 +16472,6 @@ class ComputePrefixFeature {
     }
     static register(options) {
         if (options.removePrefix) {
-            for (const feature of options.features) {
-                if (feature instanceof ComputePrefixFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new ComputePrefixFeature(options));
         }
@@ -16569,11 +16602,6 @@ class InlineCssVariablesFeature {
     }
     static register(options) {
         if (options.inlineCssVariables) {
-            for (const feature of options.features) {
-                if (feature instanceof InlineCssVariablesFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new InlineCssVariablesFeature());
         }
@@ -17565,15 +17593,10 @@ class PropertyList {
 
 class ComputeShorthandFeature {
     static get ordering() {
-        return 2;
+        return 3;
     }
     static register(options) {
         if (options.computeShorthand) {
-            for (const feature of options.features) {
-                if (feature instanceof ComputeShorthandFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new ComputeShorthandFeature(options));
         }
@@ -17583,18 +17606,20 @@ class ComputeShorthandFeature {
         const j = ast.chi.length;
         let k = 0;
         let properties = new PropertyList(options);
+        const rules = [];
         // @ts-ignore
         for (; k < j; k++) {
             // @ts-ignore
             const node = ast.chi[k];
             if (node.typ == exports.EnumToken.CommentNodeType || node.typ == exports.EnumToken.DeclarationNodeType) {
                 properties.add(node);
-                continue;
             }
-            break;
+            else {
+                rules.push(node);
+            }
         }
         // @ts-ignore
-        ast.chi = [...properties].concat(ast.chi.slice(k));
+        ast.chi = [...properties, ...rules];
         return ast;
     }
 }
@@ -17605,11 +17630,6 @@ class ComputeCalcExpressionFeature {
     }
     static register(options) {
         if (options.computeCalcExpression) {
-            for (const feature of options.features) {
-                if (feature instanceof ComputeCalcExpressionFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new ComputeCalcExpressionFeature());
         }
@@ -17718,12 +17738,556 @@ class ComputeCalcExpressionFeature {
     }
 }
 
+function determinant(matrix) {
+    return matrix[0][0] * matrix[1][1] * matrix[2][2] * matrix[3][3] - matrix[0][0] * matrix[1][2] * matrix[2][3] * matrix[3][1] -
+        matrix[0][1] * matrix[1][0] * matrix[2][3] * matrix[3][2] + matrix[0][1] * matrix[1][2] * matrix[2][0] * matrix[3][3] -
+        matrix[0][2] * matrix[1][0] * matrix[2][1] * matrix[3][3] + matrix[0][2] * matrix[1][1] * matrix[2][0] * matrix[3][2] -
+        matrix[0][3] * matrix[1][0] * matrix[2][1] * matrix[3][2] + matrix[0][3] * matrix[1][1] * matrix[2][2] * matrix[3][0];
+}
+function identity() {
+    return [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
+}
+function inverse(matrix) {
+    // Create augmented matrix [matrix | identity]
+    let augmented = matrix.map((row, i) => [
+        ...row,
+        ...(i === 0 ? [1, 0, 0, 0] :
+            i === 1 ? [0, 1, 0, 0] :
+                i === 2 ? [0, 0, 1, 0] :
+                    [0, 0, 0, 1])
+    ]);
+    // Gaussian elimination with partial pivoting
+    for (let col = 0; col < 4; col++) {
+        // Find pivot row with maximum absolute value
+        let maxRow = col;
+        let maxVal = Math.abs(augmented[col][col]);
+        for (let row = col + 1; row < 4; row++) {
+            let val = Math.abs(augmented[row][col]);
+            if (val > maxVal) {
+                maxVal = val;
+                maxRow = row;
+            }
+        }
+        // Check for singularity
+        if (maxVal < 1e-10) {
+            throw new Error("Matrix is singular and cannot be inverted");
+        }
+        // Swap rows if necessary
+        if (maxRow !== col) {
+            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
+        }
+        // Scale pivot row to make pivot element 1
+        let pivot = augmented[col][col];
+        for (let j = 0; j < 8; j++) {
+            augmented[col][j] /= pivot;
+        }
+        // Eliminate column in other rows
+        for (let row = 0; row < 4; row++) {
+            if (row !== col) {
+                let factor = augmented[row][col];
+                for (let j = 0; j < 8; j++) {
+                    augmented[row][j] -= factor * augmented[col][j];
+                }
+            }
+        }
+    }
+    // Extract the inverse from the right side of the augmented matrix
+    return augmented.map(row => row.slice(4));
+}
+function transpose(matrix) {
+    // Crée une nouvelle matrice vide 4x4
+    // @ts-ignore
+    let transposed = [[], [], [], []];
+    // Parcourt chaque ligne et colonne pour transposer
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            transposed[j][i] = matrix[i][j];
+        }
+    }
+    return transposed;
+}
+function multVecMatrix(vector, matrix) {
+    const result = [0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            result[i] += matrix[i][j] * vector[j];
+        }
+    }
+    return result;
+}
+function pLength(point) {
+    // Calcul de la norme euclidienne
+    return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
+}
+function normalize(point) {
+    const [x, y, z] = point;
+    const norm = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
+    return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
+}
+function dot(point1, point2) {
+    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+}
+function combine(point1, point2, ascl, bscl) {
+    return [point1[0] * ascl + point2[0] * bscl, point1[1] * ascl + point2[1] * bscl, point1[2] * ascl + point2[2] * bscl];
+}
+function cross(a, b) {
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+function decompose(matrix) {
+    // Normalize the matrix.
+    if (matrix[3][3] === 0) {
+        return null;
+    }
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            matrix[i][j] /= matrix[3][3];
+        }
+    }
+    // perspectiveMatrix is used to solve for perspective, but it also provides
+    // an easy way to test for singularity of the upper 3x3 component.
+    let perspectiveMatrix = matrix;
+    for (let i = 0; i < 3; i++) {
+        perspectiveMatrix[i][3] = 0;
+    }
+    perspectiveMatrix[3][3] = 1;
+    if (determinant(perspectiveMatrix) === 0) {
+        return null;
+    }
+    let rightHandSide = [0, 0, 0, 0];
+    let perspective = [0, 0, 0, 0];
+    let translate = [0, 0, 0];
+    // First, isolate perspective.
+    if (matrix[0][3] !== 0 || matrix[1][3] !== 0 || matrix[2][3] !== 0) {
+        // rightHandSide is the right hand side of the equation.
+        rightHandSide[0] = matrix[0][3];
+        rightHandSide[1] = matrix[1][3];
+        rightHandSide[2] = matrix[2][3];
+        rightHandSide[3] = matrix[3][3];
+        // Solve the equation by inverting perspectiveMatrix and multiplying
+        // rightHandSide by the inverse.
+        let inversePerspectiveMatrix = inverse(perspectiveMatrix);
+        let transposedInversePerspectiveMatrix = transpose(inversePerspectiveMatrix);
+        perspective = multVecMatrix(rightHandSide, transposedInversePerspectiveMatrix);
+    }
+    else {
+        // No perspective.
+        perspective[0] = perspective[1] = perspective[2] = 0;
+        perspective[3] = 1;
+    }
+    // Next take care of translation
+    for (let i = 0; i < 3; i++) {
+        translate[i] = matrix[3][i];
+    }
+    let row = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    // Now get scale and shear. 'row' is a 3 element array of 3 component vectors
+    for (let i = 0; i < 3; i++) {
+        row[i][0] = matrix[i][0];
+        row[i][1] = matrix[i][1];
+        row[i][2] = matrix[i][2];
+    }
+    let scale = [0, 0, 0];
+    let skew = [0, 0, 0];
+    // Compute X scale factor and normalize first row.
+    scale[0] = pLength(row[0]);
+    row[0] = normalize(row[0]);
+    // Compute XY shear factor and make 2nd row orthogonal to 1st.
+    skew[0] = dot(row[0], row[1]);
+    row[1] = combine(row[1], row[0], 1.0, -skew[0]);
+    // Now, compute Y scale and normalize 2nd row.
+    scale[1] = pLength(row[1]);
+    row[1] = normalize(row[1]);
+    skew[0] /= scale[1];
+    // Compute XZ and YZ shears, orthogonalize 3rd row
+    skew[1] = dot(row[0], row[2]);
+    row[2] = combine(row[2], row[0], 1.0, -skew[1]);
+    skew[2] = dot(row[1], row[2]);
+    row[2] = combine(row[2], row[1], 1.0, -skew[2]);
+    // Next, get Z scale and normalize 3rd row.
+    scale[2] = pLength(row[2]);
+    row[2] = normalize(row[2]);
+    skew[1] /= scale[2];
+    skew[2] /= scale[2];
+    // At this point, the matrix (in rows) is orthonormal.
+    // Check for a coordinate system flip.  If the determinant
+    // is -1, then negate the matrix and the scaling factors.
+    let pdum3 = cross(row[1], row[2]);
+    if (dot(row[0], pdum3) < 0) {
+        for (let i = 0; i < 3; i++) {
+            scale[i] *= -1;
+            row[i][0] *= -1;
+            row[i][1] *= -1;
+            row[i][2] *= -1;
+        }
+    }
+    let quaternion = [0, 0, 0, 0];
+    // Now, get the rotations out
+    quaternion[0] = 0.5 * Math.sqrt(Math.max(1 + row[0][0] - row[1][1] - row[2][2], 0));
+    quaternion[1] = 0.5 * Math.sqrt(Math.max(1 - row[0][0] + row[1][1] - row[2][2], 0));
+    quaternion[2] = 0.5 * Math.sqrt(Math.max(1 - row[0][0] - row[1][1] + row[2][2], 0));
+    quaternion[3] = 0.5 * Math.sqrt(Math.max(1 + row[0][0] + row[1][1] + row[2][2], 0));
+    if (row[2][1] > row[1][2]) {
+        quaternion[0] = -quaternion[0];
+    }
+    if (row[0][2] > row[2][0]) {
+        quaternion[1] = -quaternion[1];
+    }
+    if (row[1][0] > row[0][1]) {
+        quaternion[2] = -quaternion[2];
+    }
+    return {
+        skew,
+        scale,
+        translate,
+        perspective,
+        quaternion
+    };
+}
+
+// https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
+function length2Px(value) {
+    if (value.typ == exports.EnumToken.NumberTokenType) {
+        return +value.val;
+    }
+    switch (value.unit) {
+        case 'cm':
+            // @ts-ignore
+            return value.val * 37.8;
+        case 'mm':
+            // @ts-ignore
+            return value.val * 3.78;
+        case 'Q':
+            // @ts-ignore
+            return value.val * 37.8 / 40;
+        case 'in':
+            // @ts-ignore
+            return value.val / 96;
+        case 'pc':
+            // @ts-ignore
+            return value.val / 16;
+        case 'pt':
+            // @ts-ignore
+            return value.val * 4 / 3;
+        case 'px':
+            return +value.val;
+    }
+    return null;
+}
+
+function translateX(x, matrix) {
+    matrix[3][0] = x;
+    return matrix;
+}
+function translateY(y, matrix) {
+    matrix[3][1] = y;
+    return matrix;
+}
+function translateZ(z, matrix) {
+    matrix[3][2] = z;
+    return matrix;
+}
+function translate(translate, matrix) {
+    matrix[3][0] = translate[0];
+    matrix[3][1] = translate[1] ?? 0;
+    matrix[3][2] = translate[2] ?? 0;
+    return matrix;
+}
+
+function compute(transformList) {
+    transformList = transformList.slice();
+    stripCommaToken(transformList);
+    if (transformList.length == 0) {
+        return null;
+    }
+    const matrix = identity();
+    let values = [];
+    let val;
+    for (let i = 0; i < transformList.length; i++) {
+        if (transformList[i].typ == exports.EnumToken.WhitespaceTokenType) {
+            continue;
+        }
+        if (transformList[i].typ != exports.EnumToken.FunctionTokenType || !transformFunctions.includes(transformList[i].val)) {
+            return null;
+        }
+        switch (transformList[i].val) {
+            case 'translate':
+            case 'translateX':
+            case 'translateY':
+            case 'translateZ':
+            case 'translate3d':
+                {
+                    values.length = 0;
+                    const children = stripCommaToken(transformList[i].chi.slice());
+                    if (children == null || children.length == 0) {
+                        return null;
+                    }
+                    const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
+                    console.error([transformList[i].val, valCount]);
+                    if (children.length == 1 && children[0].typ == exports.EnumToken.IdenTokenType && children[0].val == 'none') {
+                        values.fill(0, 0, valCount);
+                    }
+                    else {
+                        for (let j = 0; j < children.length; j++) {
+                            if (children[j].typ == exports.EnumToken.WhitespaceTokenType) {
+                                continue;
+                            }
+                            val = length2Px(children[j]);
+                            if (val == null) {
+                                return null;
+                            }
+                            values.push(val);
+                        }
+                    }
+                    if (values.length == 0 || values.length > valCount) {
+                        return null;
+                    }
+                    if (transformList[i].val == 'translateX') {
+                        translateX(values[0], matrix);
+                    }
+                    else if (transformList[i].val == 'translateY') {
+                        translateY(values[0], matrix);
+                    }
+                    else if (transformList[i].val == 'translateZ') {
+                        translateZ(values[0], matrix);
+                    }
+                    else {
+                        // @ts-ignore
+                        translate(values, matrix);
+                    }
+                }
+                break;
+            // case 'rotate':
+            // case 'rotateX':
+            // case 'rotateY':
+            // // case 'rotateZ':
+            // // case 'rotate3d':
+            //
+            // {
+            //     let x: number = 0;
+            //     let y: number = 0;
+            //     let z: number = 0;
+            //
+            //     let angle: number;
+            //     let values: number[] = [];
+            //
+            //     if ((transformList[i] as FunctionToken).val == 'rotateX' || (transformList[i] as FunctionToken).val == 'rotateY' || (transformList[i] as FunctionToken).val == 'rotateZ') {
+            //
+            //         for (const child of stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[]) {
+            //
+            //             if (child.typ == EnumToken.WhitespaceTokenType) {
+            //
+            //                 continue;
+            //             }
+            //
+            //             // if (child.typ == EnumToken.IdenTokenType && child.val == 'none') {
+            //             //
+            //             //     return null;
+            //             // }
+            //
+            //             if (child.typ == EnumToken.NumberTokenType && +child.val > 0) {
+            //
+            //                 return null;
+            //             }
+            //
+            //             angle = getAngle(child as AngleToken | NumberToken);
+            //
+            //             if (angle == null) {
+            //
+            //                 return null;
+            //             }
+            //
+            //             values.push(angle * 2 * Math.PI);
+            //
+            //             if ((transformList[i] as FunctionToken).val == 'rotateX') {
+            //
+            //                 x = 1;
+            //             } else if ((transformList[i] as FunctionToken).val == 'rotateY') {
+            //
+            //                 y = 1;
+            //             } else if ((transformList[i] as FunctionToken).val == 'rotateZ') {
+            //
+            //                 z = 1;
+            //             }
+            //         }
+            //
+            //         if (values.length != 1) {
+            //
+            //             return null;
+            //         }
+            //
+            //         console.error({values});
+            //
+            //         return null;
+            //     }
+            //
+            //     else if ((transformList[i] as FunctionToken).val == 'rotate') {
+            //
+            //     }
+            // }
+            //
+            //     break;
+            default:
+                return null;
+            // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
+        }
+    }
+    return matrix;
+}
+
+function minify$1(matrix) {
+    const decomposed = decompose(matrix);
+    if (decomposed == null) {
+        return null;
+    }
+    const transforms = new Set(['translate', 'scale', 'skew', 'perspective']);
+    // check identity
+    if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
+        transforms.delete('translate');
+    }
+    if (decomposed.scale[0] == 1 && decomposed.scale[1] == 1 && decomposed.scale[2] == 1) {
+        transforms.delete('scale');
+    }
+    if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0 && decomposed.skew[2] == 0) {
+        transforms.delete('skew');
+    }
+    if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
+        transforms.delete('perspective');
+    }
+    if (transforms.size == 0) {
+        // identity
+        return [{
+                typ: exports.EnumToken.FunctionTokenType,
+                val: 'scale',
+                chi: [
+                    { typ: exports.EnumToken.NumberTokenType, val: '1' }
+                ]
+            }
+        ];
+    }
+    if (transforms.size == 1) {
+        if (transforms.has('translate')) {
+            let coordinates = new Set(['x', 'y', 'z']);
+            for (let i = 0; i < 3; i++) {
+                if (decomposed.translate[i] == 0) {
+                    coordinates.delete(i == 0 ? 'x' : i == 1 ? 'y' : 'z');
+                }
+            }
+            if (coordinates.size == 3) {
+                return [{
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'translate',
+                        chi: [
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px' }
+                        ]
+                    }];
+            }
+            if (coordinates.size == 1) {
+                if (coordinates.has('x')) {
+                    return [{
+                            typ: exports.EnumToken.FunctionTokenType,
+                            val: 'translate',
+                            chi: [{ typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' }]
+                        }];
+                }
+                let axis = coordinates.has('y') ? 'y' : 'z';
+                let index = axis == 'y' ? 1 : 2;
+                return [{
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'translate' + axis.toUpperCase(),
+                        chi: [{ typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[index] + '', unit: 'px' }]
+                    }];
+            }
+            if (coordinates.has('z')) {
+                return [{
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'translate',
+                        chi: [
+                            decomposed.translate[0] == 0 ? {
+                                typ: exports.EnumToken.NumberTokenType,
+                                'val': '0'
+                            } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            decomposed.translate[1] == 0 ? {
+                                typ: exports.EnumToken.NumberTokenType,
+                                'val': '0'
+                            } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px' }
+                        ]
+                    }];
+            }
+            return [{
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'translate',
+                    chi: [
+                        decomposed.translate[0] == 0 ? {
+                            typ: exports.EnumToken.NumberTokenType,
+                            'val': '0'
+                        } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        decomposed.translate[1] == 0 ? {
+                            typ: exports.EnumToken.NumberTokenType,
+                            'val': '0'
+                        } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' }
+                    ]
+                }];
+        }
+    }
+    return null;
+}
+
+class TransformCssFeature {
+    static get ordering() {
+        return 4;
+    }
+    static register(options) {
+        // @ts-ignore
+        if (options.minify || options.computeCalcExpression || options.computeShorthand) {
+            // @ts-ignore
+            options.features.push(new TransformCssFeature());
+        }
+    }
+    run(ast) {
+        if (!('chi' in ast)) {
+            return;
+        }
+        let i = 0;
+        let node;
+        // @ts-ignore
+        for (; i < ast.chi.length; i++) {
+            // @ts-ignore
+            node = ast.chi[i];
+            if (node.typ != exports.EnumToken.DeclarationNodeType ||
+                (!node.nam.startsWith('--') && !node.nam.match(/^(-[a-z]+-)?transform$/))) {
+                continue;
+            }
+            const children = node.val.slice();
+            consumeWhitespace(children);
+            const result = compute(children);
+            if (result == null) {
+                // console.error({result});
+                return;
+            }
+            decompose(result);
+            const minified = minify$1(result);
+            // console.error({result, decomposed, minify: minify(result), serialized: renderToken(serialize(result))});
+            if (minified != null) {
+                node.val = minified;
+            }
+        }
+    }
+}
+
 var allFeatures = /*#__PURE__*/Object.freeze({
     __proto__: null,
     ComputeCalcExpressionFeature: ComputeCalcExpressionFeature,
     ComputePrefixFeature: ComputePrefixFeature,
     ComputeShorthandFeature: ComputeShorthandFeature,
-    InlineCssVariablesFeature: InlineCssVariablesFeature
+    InlineCssVariablesFeature: InlineCssVariablesFeature,
+    TransformCssFeature: TransformCssFeature
 });
 
 const combinators = ['+', '>', '~', '||', '|'];

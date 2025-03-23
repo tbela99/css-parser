@@ -10,11 +10,6 @@ class ComputeCalcExpressionFeature {
     }
     static register(options) {
         if (options.computeCalcExpression) {
-            for (const feature of options.features) {
-                if (feature instanceof ComputeCalcExpressionFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new ComputeCalcExpressionFeature());
         }

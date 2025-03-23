@@ -28,6 +28,15 @@ export const fontFormat: string[] = ['collection', 'embedded-opentype', 'opentyp
 export const colorFontTech: string[] = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 export const fontFeaturesTech: string[] = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
 
+export const transformFunctions: string[] = [
+    'matrix', 'translate', 'scale', 'rotate', 'skew', 'perspective',
+    'translateX', 'translateY', 'translateZ',
+    'scaleX', 'scaleY', 'scaleZ',
+    'rotateX', 'rotateY', 'rotateZ',
+    'skewX', 'skewY',
+    'rotate3d', 'translate3d', 'scale3d', 'matrix3d'
+];
+
 // https://drafts.csswg.org/mediaqueries/#media-types
 export const mediaTypes: string[] = ['all', 'print', 'screen',
     /* deprecated */
