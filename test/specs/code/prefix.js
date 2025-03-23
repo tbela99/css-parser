@@ -29,7 +29,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             display: none;
     }
 }
-`, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
+`, {removePrefix: true, nestingRules: false}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
  .foo:is(:autofill:not(:hover),a,b) {
   display: none
  }

@@ -1,5 +1,17 @@
 # Changelog
 
+# v0.9.2
+
+- [x] keyframes
+    - [x] remove consecutive keyframes with the same name
+    - [x] reduce keyframe selector 'from' to '0%'
+    - [x] reduce keyframe selector '100%' to 'to'
+    - [x] remove keyframe selector ignored declarations
+    - [x] merge keyframe rules and declarations
+- [x] trim extra space in declaration value 'url() 15%' -> 'url()15%', '1% !important' -> '1%!important'
+- [x] allow empty value for css variable declaration '--color: ;'
+- [x] change generate nesting rule default to true
+
 # v0.9.1
 
 - [x] minification passes #66
