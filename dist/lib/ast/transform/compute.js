@@ -6,10 +6,12 @@ import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
 import '../../parser/utils/config.js';
+import { getNumber, getAngle } from '../../renderer/color/color.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
 import { translateX, translateY, translateZ, translate } from './translate.js';
+import { rotate3D } from './rotate.js';
 
 function compute(transformList) {
     transformList = transformList.slice();
@@ -50,7 +52,7 @@ function compute(transformList) {
                                 continue;
                             }
                             val = length2Px(children[j]);
-                            if (val == null) {
+                            if (typeof val != 'number' || Number.isNaN(val)) {
                                 return null;
                             }
                             values.push(val);
@@ -74,76 +76,63 @@ function compute(transformList) {
                     }
                 }
                 break;
-            // case 'rotate':
-            // case 'rotateX':
-            // case 'rotateY':
-            // // case 'rotateZ':
-            // // case 'rotate3d':
-            //
-            // {
-            //     let x: number = 0;
-            //     let y: number = 0;
-            //     let z: number = 0;
-            //
-            //     let angle: number;
-            //     let values: number[] = [];
-            //
-            //     if ((transformList[i] as FunctionToken).val == 'rotateX' || (transformList[i] as FunctionToken).val == 'rotateY' || (transformList[i] as FunctionToken).val == 'rotateZ') {
-            //
-            //         for (const child of stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[]) {
-            //
-            //             if (child.typ == EnumToken.WhitespaceTokenType) {
-            //
-            //                 continue;
-            //             }
-            //
-            //             // if (child.typ == EnumToken.IdenTokenType && child.val == 'none') {
-            //             //
-            //             //     return null;
-            //             // }
-            //
-            //             if (child.typ == EnumToken.NumberTokenType && +child.val > 0) {
-            //
-            //                 return null;
-            //             }
-            //
-            //             angle = getAngle(child as AngleToken | NumberToken);
-            //
-            //             if (angle == null) {
-            //
-            //                 return null;
-            //             }
-            //
-            //             values.push(angle * 2 * Math.PI);
-            //
-            //             if ((transformList[i] as FunctionToken).val == 'rotateX') {
-            //
-            //                 x = 1;
-            //             } else if ((transformList[i] as FunctionToken).val == 'rotateY') {
-            //
-            //                 y = 1;
-            //             } else if ((transformList[i] as FunctionToken).val == 'rotateZ') {
-            //
-            //                 z = 1;
-            //             }
-            //         }
-            //
-            //         if (values.length != 1) {
-            //
-            //             return null;
-            //         }
-            //
-            //         console.error({values});
-            //
-            //         return null;
-            //     }
-            //
-            //     else if ((transformList[i] as FunctionToken).val == 'rotate') {
-            //
-            //     }
-            // }
-            //
-            //     break;
+            case 'rotate':
+            case 'rotateX':
+            case 'rotateY':
+            case 'rotateZ':
+            case 'rotate3d':
+                //
+                {
+                    let x = 0;
+                    let y = 0;
+                    let z = 0;
+                    let angle;
+                    let values = [];
+                    let valuesCount = transformList[i].val == 'rotate3d' ? 4 : 1;
+                    if (['rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d'].includes(transformList[i].val)) {
+                        for (const child of stripCommaToken(transformList[i].chi.slice())) {
+                            if (child.typ == EnumToken.WhitespaceTokenType) {
+                                continue;
+                            }
+                            values.push(child);
+                            if (transformList[i].val == 'rotateX') {
+                                x = 1;
+                            }
+                            else if (transformList[i].val == 'rotateY') {
+                                y = 1;
+                            }
+                            else if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
+                                z = 1;
+                            }
+                        }
+                        // console.error({values, valuesCount});
+                        if (values.length != valuesCount) {
+                            return null;
+                        }
+                        if (transformList[i].val == 'rotate3d') {
+                            x = getNumber(values[0]);
+                            y = getNumber(values[1]);
+                            z = getNumber(values[2]);
+                        }
+                        angle = getAngle(values.at(-1));
+                        if ([x, y, z, angle].some(t => typeof t != 'number' || Number.isNaN(+t))) {
+                            return null;
+                        }
+                        // console.error([x, y, z, angle * 2 * Math.PI]);
+                        // if ((transformList[i] as FunctionToken).val == 'rotate' || (transformList[i] as FunctionToken).val == 'rotateZ') {
+                        rotate3D(angle * 2 * Math.PI, x, y, z, matrix);
+                        // console.error({matrix});
+                        // continue;
+                        // }
+                        // console.error({values});
+                        // return null;
+                    }
+                    // else
+                    //     if ((transformList[i] as FunctionToken).val == 'rotate') {
+                    //
+                    // }
+                }
+                break;
             default:
                 return null;
             // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);

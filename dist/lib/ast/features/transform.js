@@ -8,6 +8,7 @@ import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 import { compute } from '../transform/compute.js';
 import { minify } from '../transform/minify.js';
+import { decompose } from '../transform/utils.js';
 
 class TransformCssFeature {
     static get ordering() {
@@ -41,7 +42,7 @@ class TransformCssFeature {
                 // console.error({result});
                 return;
             }
-            // const decomposed = decompose(result);
+            decompose(result);
             const minified = minify(result);
             // console.error({result, decomposed, minify: minify(result), serialized: renderToken(serialize(result))});
             if (minified != null) {

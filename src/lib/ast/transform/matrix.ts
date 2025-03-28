@@ -73,26 +73,28 @@ export function serialize(matrix: Matrix): Token {
         }
     }
 
+    let m: Token[] = [];
+
+    for (let i = 0; i < matrix.length; i++) {
+
+        for (let j = 0; j < matrix[i].length; j ++) {
+
+            if (m.length > 0) {
+
+                m.push({typ: EnumToken.CommaTokenType})
+            }
+
+            m.push({
+                typ: EnumToken.NumberTokenType,
+                val: reduceNumber(matrix[j][i])
+            })
+        }
+    }
+
 
     return {
         typ: EnumToken.FunctionTokenType,
         val: 'matrix3d',
-        chi: matrix[0].concat(matrix[1]).concat(matrix[2]).concat(matrix[3]).reduce((acc, t) => {
-
-            if (acc.length > 0) {
-
-                acc.push({ typ: EnumToken.CommaTokenType });
-            }
-
-            acc.push({
-                typ: EnumToken.NumberTokenType,
-                val: reduceNumber(t)
-
-            });
-
-             return acc;
-
-            return acc;
-        }, [] as Token[])
+        chi: m
     }
 }

@@ -10,6 +10,7 @@ import {EnumToken} from "../types";
 import {consumeWhitespace} from "../../validation/utils";
 import {compute} from "../transform/compute.ts";
 import {minify} from "../transform/minify.ts";
+import {decompose} from "../transform/utils.ts";
 
 export class TransformCssFeature {
 
@@ -62,7 +63,7 @@ export class TransformCssFeature {
                return;
            }
 
-           // const decomposed = decompose(result);
+           const decomposed = decompose(result);
            const minified = minify(result);
 
             // console.error({result, decomposed, minify: minify(result), serialized: renderToken(serialize(result))});

@@ -5,6 +5,7 @@ export declare type Matrix = [Vector, Vector, Vector, Vector];
 interface DecomposedMatrix3D {
     skew: [number, number, number];
     scale: [number, number, number];
+    // rotate: [number, number, number];
     translate : [number, number, number];
     perspective : [number, number, number, number];
     quaternion : [number, number, number, number];
@@ -296,9 +297,37 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
         quaternion[2] = -quaternion[2];
     }
 
+    // const rad2deg = 180 / Math.PI;
+    // const theta: number = Math.atan2(matrix[1][0], matrix[0][0]) * rad2deg;
+    // const zAxis =
+    //
+    // console.error({theta});
+    //
+    // const rotation: [number, number, number] = [-Math.asin(matrix[0][2]) * rad2deg, 0, 0];
+
+// apply rotation
+    let x = quaternion[0];
+    let y = quaternion[1];
+    let z = quaternion[2];
+    let w = quaternion[3];
+
+    const rotationMatrix: Matrix = identity();
+// Construct a composite rotation matrix from the quaternion values
+// rotationMatrix is an identity 4x4 matrix initially
+    rotationMatrix[0][0] = 1 - 2 * (y * y + z * z);
+    rotationMatrix[0][1] = 2 * (x * y - z * w);
+    rotationMatrix[0][2] = 2 * (x * z + y * w);
+    rotationMatrix[1][0] = 2 * (x * y + z * w);
+    rotationMatrix[1][1] = 1 - 2 * (x * x + z * z);
+    rotationMatrix[1][2] = 2 * (y * z - x * w);
+    rotationMatrix[2][0] = 2 * (x * z - y * w);
+    rotationMatrix[2][1] = 2 * (y * z + x * w);
+    rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
+
     return {
         skew,
         scale,
+        // rotate: [+rx.toPrecision(12), +ry.toPrecision(12), +rz.toPrecision(12)],
         translate,
         perspective,
         quaternion
@@ -344,6 +373,7 @@ export function recompose(
     rotationMatrix[2][0] = 2 * (x * z - y * w);
     rotationMatrix[2][1] = 2 * (y * z + x * w);
     rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
+    // console.error({rotationMatrix});
 
     matrix = multiply(matrix, rotationMatrix);
 

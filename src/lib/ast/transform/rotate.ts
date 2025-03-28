@@ -35,41 +35,12 @@ export function rotate3D(angle: number, x: number, y: number, z: number, matrix:
     return matrix;
 }
 
-// export function rotateX(x: number): Matrix {
-//
-//    const  matrix: Matrix = identity();
-//
-//     const angle: number = x * Math.PI / 180;
-//
-//     matrix[1][1] = Math.cos(angle);
-//     matrix[1][2] = Math.sin(angle);
-//     matrix[0][2] = -1;
-//
-//     return matrix;
-// }
-//
-// export function rotateY(y: number): Matrix {
-//
-//     const matrix: Matrix = identity();
-//
-//     const angle: number = y * Math.PI / 180;
-//     matrix[0][0] = matrix[2][2] = Math.cos(angle);
-//     matrix[0][1] = matrix[2][0] = Math.sin(angle);
-//     matrix[0][2] = -1;
-//
-//     return matrix;
-// }
-//
-// export function rotateZ(z: number): Matrix {
-//
-//     const matrix: Matrix = identity();
-//
-//     const angle: number = z * Math.PI / 180;
-//     matrix[0][0] = matrix[1][1] = Math.cos(angle);
-//     matrix[0][1] = matrix[1][0] = -Math.sin(angle);
-//     matrix[2][0] = -1;
-//
-//     return matrix;
-// }
-//
-// export const rotate = rotateZ;
+export function rotate(angle: number, matrix: Matrix): Matrix {
+
+    matrix[0][0] = Math.cos(angle);
+    matrix[0][1] = Math.sin(angle);
+    matrix[1][0] = -Math.sin(angle);
+    matrix[1][1] = Math.cos(angle);
+
+    return matrix;
+}

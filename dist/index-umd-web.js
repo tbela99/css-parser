@@ -12721,7 +12721,7 @@
         if (chi[0].typ == exports.EnumToken.MediaQueryConditionTokenType) {
             return chi[0].l.typ == exports.EnumToken.IdenTokenType;
         }
-        console.error(chi[0].parent);
+        // console.error(chi[0].parent);
         return false;
     }
     function validateMediaFeature(token) {
@@ -17826,9 +17826,34 @@
         if (row[1][0] > row[0][1]) {
             quaternion[2] = -quaternion[2];
         }
+        // const rad2deg = 180 / Math.PI;
+        // const theta: number = Math.atan2(matrix[1][0], matrix[0][0]) * rad2deg;
+        // const zAxis =
+        //
+        // console.error({theta});
+        //
+        // const rotation: [number, number, number] = [-Math.asin(matrix[0][2]) * rad2deg, 0, 0];
+        // apply rotation
+        let x = quaternion[0];
+        let y = quaternion[1];
+        let z = quaternion[2];
+        let w = quaternion[3];
+        const rotationMatrix = identity();
+        // Construct a composite rotation matrix from the quaternion values
+        // rotationMatrix is an identity 4x4 matrix initially
+        rotationMatrix[0][0] = 1 - 2 * (y * y + z * z);
+        rotationMatrix[0][1] = 2 * (x * y - z * w);
+        rotationMatrix[0][2] = 2 * (x * z + y * w);
+        rotationMatrix[1][0] = 2 * (x * y + z * w);
+        rotationMatrix[1][1] = 1 - 2 * (x * x + z * z);
+        rotationMatrix[1][2] = 2 * (y * z - x * w);
+        rotationMatrix[2][0] = 2 * (x * z - y * w);
+        rotationMatrix[2][1] = 2 * (y * z + x * w);
+        rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
         return {
             skew,
             scale,
+            // rotate: [+rx.toPrecision(12), +ry.toPrecision(12), +rz.toPrecision(12)],
             translate,
             perspective,
             quaternion
@@ -17884,6 +17909,34 @@
         return matrix;
     }
 
+    /**
+     * angle in radian
+     * @param angle
+     * @param x
+     * @param y
+     * @param z
+     * @param matrix
+     */
+    function rotate3D(angle, x, y, z, matrix) {
+        const sc = Math.sin(angle / 2) * Math.cos(angle / 2);
+        const sq = Math.sin(angle / 2) * Math.sin(angle / 2);
+        const norm = Math.sqrt(x * x + y * y + z * z);
+        const unit = norm === 0 ? 0 : 1 / norm;
+        x *= unit;
+        y *= unit;
+        z *= unit;
+        matrix[0][0] = 1 - 2 * (y * y + z * z) * sq;
+        matrix[0][1] = 2 * (x * y * sq - z * sc);
+        matrix[0][2] = 2 * (x * z * sq + y * sc);
+        matrix[1][0] = 2 * (x * y * sq + z * sc);
+        matrix[1][1] = 1 - 2 * (x * x + z * z) * sq;
+        matrix[1][2] = 2 * (y * z * sq - x * sc);
+        matrix[2][0] = 2 * (x * z * sq - y * sc);
+        matrix[2][1] = 2 * (y * z * sq + x * sc);
+        matrix[2][2] = 1 - 2 * (x * x + y * y) * sq;
+        return matrix;
+    }
+
     function compute(transformList) {
         transformList = transformList.slice();
         stripCommaToken(transformList);
@@ -17923,7 +17976,7 @@
                                     continue;
                                 }
                                 val = length2Px(children[j]);
-                                if (val == null) {
+                                if (typeof val != 'number' || Number.isNaN(val)) {
                                     return null;
                                 }
                                 values.push(val);
@@ -17947,76 +18000,63 @@
                         }
                     }
                     break;
-                // case 'rotate':
-                // case 'rotateX':
-                // case 'rotateY':
-                // // case 'rotateZ':
-                // // case 'rotate3d':
-                //
-                // {
-                //     let x: number = 0;
-                //     let y: number = 0;
-                //     let z: number = 0;
-                //
-                //     let angle: number;
-                //     let values: number[] = [];
-                //
-                //     if ((transformList[i] as FunctionToken).val == 'rotateX' || (transformList[i] as FunctionToken).val == 'rotateY' || (transformList[i] as FunctionToken).val == 'rotateZ') {
-                //
-                //         for (const child of stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[]) {
-                //
-                //             if (child.typ == EnumToken.WhitespaceTokenType) {
-                //
-                //                 continue;
-                //             }
-                //
-                //             // if (child.typ == EnumToken.IdenTokenType && child.val == 'none') {
-                //             //
-                //             //     return null;
-                //             // }
-                //
-                //             if (child.typ == EnumToken.NumberTokenType && +child.val > 0) {
-                //
-                //                 return null;
-                //             }
-                //
-                //             angle = getAngle(child as AngleToken | NumberToken);
-                //
-                //             if (angle == null) {
-                //
-                //                 return null;
-                //             }
-                //
-                //             values.push(angle * 2 * Math.PI);
-                //
-                //             if ((transformList[i] as FunctionToken).val == 'rotateX') {
-                //
-                //                 x = 1;
-                //             } else if ((transformList[i] as FunctionToken).val == 'rotateY') {
-                //
-                //                 y = 1;
-                //             } else if ((transformList[i] as FunctionToken).val == 'rotateZ') {
-                //
-                //                 z = 1;
-                //             }
-                //         }
-                //
-                //         if (values.length != 1) {
-                //
-                //             return null;
-                //         }
-                //
-                //         console.error({values});
-                //
-                //         return null;
-                //     }
-                //
-                //     else if ((transformList[i] as FunctionToken).val == 'rotate') {
-                //
-                //     }
-                // }
-                //
-                //     break;
+                case 'rotate':
+                case 'rotateX':
+                case 'rotateY':
+                case 'rotateZ':
+                case 'rotate3d':
+                    //
+                    {
+                        let x = 0;
+                        let y = 0;
+                        let z = 0;
+                        let angle;
+                        let values = [];
+                        let valuesCount = transformList[i].val == 'rotate3d' ? 4 : 1;
+                        if (['rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d'].includes(transformList[i].val)) {
+                            for (const child of stripCommaToken(transformList[i].chi.slice())) {
+                                if (child.typ == exports.EnumToken.WhitespaceTokenType) {
+                                    continue;
+                                }
+                                values.push(child);
+                                if (transformList[i].val == 'rotateX') {
+                                    x = 1;
+                                }
+                                else if (transformList[i].val == 'rotateY') {
+                                    y = 1;
+                                }
+                                else if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
+                                    z = 1;
+                                }
+                            }
+                            // console.error({values, valuesCount});
+                            if (values.length != valuesCount) {
+                                return null;
+                            }
+                            if (transformList[i].val == 'rotate3d') {
+                                x = getNumber(values[0]);
+                                y = getNumber(values[1]);
+                                z = getNumber(values[2]);
+                            }
+                            angle = getAngle(values.at(-1));
+                            if ([x, y, z, angle].some(t => typeof t != 'number' || Number.isNaN(+t))) {
+                                return null;
+                            }
+                            // console.error([x, y, z, angle * 2 * Math.PI]);
+                            // if ((transformList[i] as FunctionToken).val == 'rotate' || (transformList[i] as FunctionToken).val == 'rotateZ') {
+                            rotate3D(angle * 2 * Math.PI, x, y, z, matrix);
+                            // console.error({matrix});
+                            // continue;
+                            // }
+                            // console.error({values});
+                            // return null;
+                        }
+                        // else
+                        //     if ((transformList[i] as FunctionToken).val == 'rotate') {
+                        //
+                        // }
+                    }
+                    break;
                 default:
                     return null;
                 // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
@@ -18031,6 +18071,7 @@
             return null;
         }
         const transforms = new Set(['translate', 'scale', 'skew', 'perspective']);
+        const result = [];
         // check identity
         if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
             transforms.delete('translate');
@@ -18044,17 +18085,18 @@
         if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
             transforms.delete('perspective');
         }
-        if (transforms.size == 0) {
-            // identity
-            return [{
-                    typ: exports.EnumToken.FunctionTokenType,
-                    val: 'scale',
-                    chi: [
-                        { typ: exports.EnumToken.NumberTokenType, val: '1' }
-                    ]
-                }
-            ];
-        }
+        // if (transforms.size == 0) {
+        //
+        //     // identity
+        //     return [{
+        //         typ: EnumToken.FunctionTokenType,
+        //         val: 'scale',
+        //         chi: [
+        //             {typ: EnumToken.NumberTokenType, val: '1'}
+        //         ]
+        //     }
+        //     ];
+        // }
         if (transforms.size == 1) {
             if (transforms.has('translate')) {
                 let coordinates = new Set(['x', 'y', 'z']);
@@ -18064,54 +18106,57 @@
                     }
                 }
                 if (coordinates.size == 3) {
-                    return [{
+                    result.push({
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'translate',
+                        chi: [
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px' }
+                        ]
+                    });
+                }
+                else if (coordinates.size == 1) {
+                    if (coordinates.has('x')) {
+                        result.push({
                             typ: exports.EnumToken.FunctionTokenType,
                             val: 'translate',
-                            chi: [
-                                { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
-                                { typ: exports.EnumToken.CommaTokenType },
-                                { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' },
-                                { typ: exports.EnumToken.CommaTokenType },
-                                { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px' }
-                            ]
-                        }];
-                }
-                if (coordinates.size == 1) {
-                    if (coordinates.has('x')) {
-                        return [{
-                                typ: exports.EnumToken.FunctionTokenType,
-                                val: 'translate',
-                                chi: [{ typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' }]
-                            }];
+                            chi: [{ typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' }]
+                        });
                     }
-                    let axis = coordinates.has('y') ? 'y' : 'z';
-                    let index = axis == 'y' ? 1 : 2;
-                    return [{
+                    else {
+                        let axis = coordinates.has('y') ? 'y' : 'z';
+                        let index = axis == 'y' ? 1 : 2;
+                        result.push({
                             typ: exports.EnumToken.FunctionTokenType,
                             val: 'translate' + axis.toUpperCase(),
                             chi: [{ typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[index] + '', unit: 'px' }]
-                        }];
+                        });
+                    }
                 }
-                if (coordinates.has('z')) {
-                    return [{
-                            typ: exports.EnumToken.FunctionTokenType,
-                            val: 'translate',
-                            chi: [
-                                decomposed.translate[0] == 0 ? {
-                                    typ: exports.EnumToken.NumberTokenType,
-                                    'val': '0'
-                                } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
-                                { typ: exports.EnumToken.CommaTokenType },
-                                decomposed.translate[1] == 0 ? {
-                                    typ: exports.EnumToken.NumberTokenType,
-                                    'val': '0'
-                                } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' },
-                                { typ: exports.EnumToken.CommaTokenType },
-                                { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px' }
-                            ]
-                        }];
+                else if (coordinates.has('z')) {
+                    result.push({
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'translate',
+                        chi: [
+                            decomposed.translate[0] == 0 ? {
+                                typ: exports.EnumToken.NumberTokenType,
+                                'val': '0'
+                            } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            decomposed.translate[1] == 0 ? {
+                                typ: exports.EnumToken.NumberTokenType,
+                                'val': '0'
+                            } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px' }
+                        ]
+                    });
                 }
-                return [{
+                else {
+                    result.push({
                         typ: exports.EnumToken.FunctionTokenType,
                         val: 'translate',
                         chi: [
@@ -18125,10 +18170,159 @@
                                 'val': '0'
                             } : { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px' }
                         ]
-                    }];
+                    });
+                }
             }
         }
-        return null;
+        {
+            const { x, y, z, angle } = getRotation3D(matrix);
+            // console.error({x, y, z, angle});
+            if (angle != 0 && !(x == 0 && y == 0 && z == 0)) {
+                if (y == 0 && z == 0) {
+                    result.push({
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'rotateX',
+                        chi: [
+                            {
+                                typ: exports.EnumToken.AngleTokenType,
+                                val: '' + angle,
+                                unit: 'deg'
+                            }
+                        ]
+                    });
+                }
+                else if (x == 0 && z == 0) {
+                    result.push({
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'rotateY',
+                        chi: [
+                            {
+                                typ: exports.EnumToken.AngleTokenType,
+                                val: '' + angle,
+                                unit: 'deg'
+                            }
+                        ]
+                    });
+                }
+                else if (x == 0 && y == 0) {
+                    result.push({
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'rotate',
+                        chi: [
+                            {
+                                typ: exports.EnumToken.AngleTokenType,
+                                val: '' + angle,
+                                unit: 'deg'
+                            }
+                        ]
+                    });
+                }
+                else {
+                    result.push({
+                        typ: exports.EnumToken.FunctionTokenType,
+                        val: 'rotate3d',
+                        chi: [
+                            {
+                                typ: exports.EnumToken.NumberTokenType,
+                                val: '' + x
+                            },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            {
+                                typ: exports.EnumToken.NumberTokenType,
+                                val: '' + y
+                            },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            {
+                                typ: exports.EnumToken.NumberTokenType,
+                                val: '' + z
+                            },
+                            { typ: exports.EnumToken.CommaTokenType },
+                            {
+                                typ: exports.EnumToken.AngleTokenType,
+                                val: '' + angle,
+                                unit: 'deg'
+                            }
+                        ]
+                    });
+                }
+            }
+        }
+        // scale(x, x) -> scale(x)
+        // scale(1, sy) -> scaleY(sy)
+        // scale3d(1, 1, sz) -> scaleZ(sz)
+        // scaleX() scale(Y) scaleZ() -> scale3d()
+        // identity
+        return result.length == 0 ? [
+            {
+                typ: exports.EnumToken.FunctionTokenType,
+                val: 'scale',
+                chi: [
+                    { typ: exports.EnumToken.NumberTokenType, val: '1' }
+                ]
+            }
+        ] : result;
+    }
+    // Fonction pour calculer rotate3d à partir de matrix3d
+    function getRotation3D(matrix) {
+        // Extraire la sous-matrice 3x3 de rotation
+        const r11 = matrix[0][0], r12 = matrix[0][1], r13 = matrix[0][2];
+        const r21 = matrix[1][0], r22 = matrix[1][1], r23 = matrix[1][2];
+        const r31 = matrix[2][0], r32 = matrix[2][1], r33 = matrix[2][2];
+        // Calculer la trace (somme des éléments diagonaux)
+        const trace = r11 + r22 + r33;
+        // Calculer l’angle de rotation (en radians)
+        const cosTheta = (trace - 1) / 2;
+        // Calculer sin(θ) avec le signe correct
+        const sinThetaRaw = Math.sqrt(1 - cosTheta * cosTheta);
+        const xRaw = r32 - r23; // -0.467517
+        const yRaw = r13 - r31; // 0.776535
+        const zRaw = r21 - r12; // 0.776535
+        // Déterminer le signe de sin(θ) basé sur la direction
+        const sinTheta = (xRaw < 0 && yRaw > 0 && zRaw > 0) ? -sinThetaRaw : sinThetaRaw;
+        // Calculer l’angle avec atan2
+        const angle = +(Math.atan2(sinTheta, cosTheta) * 180 / Math.PI).toFixed(12);
+        let x, y, z;
+        if (Math.abs(sinTheta) < 1e-6) { // Cas où l’angle est proche de 0° ou 180°
+            const x1 = r32 - r23;
+            const y1 = r13 - r31;
+            const z1 = r21 - r12;
+            switch (Math.max(x1, y1, z1)) {
+                case x1:
+                    x = 1;
+                    y = 0;
+                    z = 0;
+                    break;
+                case y1:
+                    x = 0;
+                    y = 1;
+                    z = 0;
+                    break;
+                default:
+                    x = 0;
+                    y = 0;
+                    z = 1;
+                    break;
+            }
+        }
+        else {
+            x = (r32 - r23) / (2 * sinTheta);
+            y = (r13 - r31) / (2 * sinTheta);
+            z = (r21 - r12) / (2 * sinTheta);
+        }
+        // Normaliser le vecteur (optionnel, mais utile pour vérification)
+        const length = Math.sqrt(x * x + y * y + z * z);
+        if (length > 0) {
+            x /= length;
+            y /= length;
+            z /= length;
+        }
+        const x1 = gcd(x, gcd(y, z));
+        if (x1 != 0) {
+            x /= x1;
+            y /= x1;
+            z /= x1;
+        }
+        return { x, y, z, angle };
     }
 
     class TransformCssFeature {
@@ -18163,7 +18357,7 @@
                     // console.error({result});
                     return;
                 }
-                // const decomposed = decompose(result);
+                decompose(result);
                 const minified = minify$1(result);
                 // console.error({result, decomposed, minify: minify(result), serialized: renderToken(serialize(result))});
                 if (minified != null) {
