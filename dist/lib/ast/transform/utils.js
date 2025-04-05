@@ -1,3 +1,5 @@
+import { gcd } from '../math/math.js';
+
 function determinant(matrix) {
     return matrix[0][0] * matrix[1][1] * matrix[2][2] * matrix[3][3] - matrix[0][0] * matrix[1][2] * matrix[2][3] * matrix[3][1] -
         matrix[0][1] * matrix[1][0] * matrix[2][3] * matrix[3][2] + matrix[0][1] * matrix[1][2] * matrix[2][0] * matrix[3][3] -
@@ -85,6 +87,9 @@ function normalize(point) {
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
 }
 function dot(point1, point2) {
+    if (point1.length === 4 && point2.length === 4) {
+        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    }
     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 function combine(point1, point2, ascl, bscl) {
@@ -92,6 +97,17 @@ function combine(point1, point2, ascl, bscl) {
 }
 function cross(a, b) {
     return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+function multiply(matrixA, matrixB) {
+    let result = Array(4).fill(0).map(() => Array(4).fill(0));
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            for (let k = 0; k < 4; k++) {
+                result[j][i] += matrixA[k][i] * matrixB[j][k];
+            }
+        }
+    }
+    return result;
 }
 function decompose(matrix) {
     // Normalize the matrix.
@@ -194,13 +210,6 @@ function decompose(matrix) {
     if (row[1][0] > row[0][1]) {
         quaternion[2] = -quaternion[2];
     }
-    // const rad2deg = 180 / Math.PI;
-    // const theta: number = Math.atan2(matrix[1][0], matrix[0][0]) * rad2deg;
-    // const zAxis =
-    //
-    // console.error({theta});
-    //
-    // const rotation: [number, number, number] = [-Math.asin(matrix[0][2]) * rad2deg, 0, 0];
     // apply rotation
     let x = quaternion[0];
     let y = quaternion[1];
@@ -218,14 +227,104 @@ function decompose(matrix) {
     rotationMatrix[2][0] = 2 * (x * z - y * w);
     rotationMatrix[2][1] = 2 * (y * z + x * w);
     rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
+    const { x: x1, y: y1, z: z1, angle } = getRotation3D(rotationMatrix);
     return {
-        skew,
-        scale,
-        // rotate: [+rx.toPrecision(12), +ry.toPrecision(12), +rz.toPrecision(12)],
-        translate,
+        skew: toZero(skew),
+        scale: toZero(scale),
+        rotate: toZero([x1, y1, z1, angle]),
+        translate: toZero(translate),
         perspective,
         quaternion
     };
 }
+function toZero(v) {
+    for (let i = 0; i < v.length; i++) {
+        if (Math.abs(v[i]) <= 1e-6) {
+            v[i] = 0;
+        }
+        else {
+            v[i] = +v[i].toPrecision(6);
+        }
+    }
+    return v;
+}
+// Fonction pour calculer rotate3d à partir de matrix3d
+function getRotation3D(matrix) {
+    // Extraire la sous-matrice 3x3 de rotation
+    const r11 = matrix[0][0], r12 = matrix[0][1], r13 = matrix[0][2];
+    const r21 = matrix[1][0], r22 = matrix[1][1], r23 = matrix[1][2];
+    const r31 = matrix[2][0], r32 = matrix[2][1], r33 = matrix[2][2];
+    // Calculer la trace (somme des éléments diagonaux)
+    const trace = r11 + r22 + r33;
+    // Calculer l’angle de rotation (en radians)
+    const cosTheta = (trace - 1) / 2;
+    // Calculer sin(θ) avec le signe correct
+    const sinThetaRaw = Math.sqrt(1 - cosTheta * cosTheta);
+    const xRaw = r32 - r23; // -0.467517
+    const yRaw = r13 - r31; // 0.776535
+    const zRaw = r21 - r12; // 0.776535
+    // Déterminer le signe de sin(θ) basé sur la direction
+    const sinTheta = (xRaw < 0 && yRaw > 0 && zRaw > 0) ? -sinThetaRaw : sinThetaRaw;
+    // Calculer l’angle avec atan2
+    const angle = +(Math.atan2(sinTheta, cosTheta) * 180 / Math.PI).toFixed(6);
+    let x = 0, y = 0, z = 0;
+    if (Math.abs(sinTheta) < 1e-6) { // Cas où l’angle est proche de 0° ou 180°
+        const x1 = +r11.toPrecision(6);
+        const y1 = +r22.toPrecision(6);
+        const z1 = +r33.toPrecision(6);
+        const max = Math.max(x1, y1, z1);
+        x = y = z = 0;
+        if (max === x1) {
+            x = 1;
+        }
+        if (max === y1) {
+            y = 1;
+        }
+        if (max === z1) {
+            z = 1;
+        }
+    }
+    else {
+        x = (r32 - r23) / (2 * sinTheta);
+        y = (r13 - r31) / (2 * sinTheta);
+        z = (r21 - r12) / (2 * sinTheta);
+    }
+    // Normaliser le vecteur (optionnel, mais utile pour vérification)
+    const length = Math.sqrt(x * x + y * y + z * z);
+    if (length > 0) {
+        x /= length;
+        y /= length;
+        z /= length;
+    }
+    const pc = Math.abs(gcd(x, gcd(y, z)));
+    if (pc > 0.1 && pc <= Math.abs(x) && pc <= Math.abs(y) && pc <= Math.abs(z)) {
+        x /= pc;
+        y /= pc;
+        z /= pc;
+    }
+    else {
+        const min = Math.min(Math.abs(x), Math.abs(y), Math.abs(z));
+        if (min > 0.1) {
+            x = +(x / min).toPrecision(6);
+            y = +(y / min).toPrecision(6);
+            z = +(z / min).toPrecision(6);
+        }
+    }
+    return { x, y, z, angle };
+}
+// https://drafts.csswg.org/css-transforms-1/#2d-matrix
+function is2DMatrix(matrix) {
+    // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
+    return matrix[0][2] === 0 &&
+        matrix[0][3] === 0 &&
+        matrix[1][2] === 0 &&
+        matrix[1][3] === 0 &&
+        matrix[2][0] === 0 &&
+        matrix[2][1] === 0 &&
+        matrix[2][3] === 0 &&
+        matrix[3][2] === 0 &&
+        matrix[2][2] === 1 &&
+        matrix[3][3] === 1;
+}
 
-export { decompose, identity };
+export { decompose, identity, is2DMatrix, multiply, toZero };

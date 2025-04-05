@@ -14,6 +14,13 @@ export function gcd (x: number, y: number): number {
         return 1;
     }
 
+    if (y > x) {
+
+        t = x;
+        x = y;
+        y = t;
+    }
+
     while (y) {
 
         t = y;

@@ -1,7 +1,7 @@
 import {identity, is2DMatrix, Matrix} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {Token} from "../../../@types/index.d.ts";
-import {reduceNumber} from "../../renderer";
+import {reduceNumber} from "../../renderer/render.ts";
 
 export function matrix(values: [number, number, number, number, number, number] | [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]): Matrix | null {
 
@@ -51,7 +51,7 @@ export function serialize(matrix: Matrix): Token {
             val: 'matrix',
             chi: [
                 matrix[0][0],
-                matrix[0][1],
+                matrix[1][1],
                 matrix[1][0],
                 matrix[1][1],
                 matrix[3][0],
@@ -65,7 +65,7 @@ export function serialize(matrix: Matrix): Token {
 
                     acc.push({
                         typ: EnumToken.NumberTokenType,
-                        val: reduceNumber(t)
+                        val: reduceNumber(t.toPrecision(6))
                     })
 
                     return acc
@@ -74,6 +74,8 @@ export function serialize(matrix: Matrix): Token {
     }
 
     let m: Token[] = [];
+
+    // console.error(JSON.stringify({matrix},null, 1));
 
     for (let i = 0; i < matrix.length; i++) {
 
@@ -86,7 +88,7 @@ export function serialize(matrix: Matrix): Token {
 
             m.push({
                 typ: EnumToken.NumberTokenType,
-                val: reduceNumber(matrix[j][i])
+                val: reduceNumber(matrix[i][j].toPrecision(6))
             })
         }
     }

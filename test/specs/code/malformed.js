@@ -173,7 +173,7 @@ color:
                 preserveLicense: true
             }).code).equals(`a {
  color: cyan;
- transform: rotate(179.999579080068deg)
+ transform: rotate(180deg)
 }`));
         });
     });

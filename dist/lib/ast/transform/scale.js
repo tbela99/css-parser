@@ -1,50 +1,38 @@
-import {identity, Matrix, multiply} from "./utils.ts";
+import { identity, multiply } from './utils.js';
 
-export function scaleX(x: number, from: Matrix): Matrix {
-
+function scaleX(x, from) {
     const matrix = identity();
     matrix[0][0] = x;
     // matrix[1][1] = 1;
     // matrix[2][2] = 1;
-
     return multiply(from, matrix);
 }
-
-export function scaleY(y: number, from: Matrix): Matrix {
-
+function scaleY(y, from) {
     const matrix = identity();
     // matrix[0][0] = 1;
     matrix[1][1] = y;
     // matrix[2][2] = 1;
-
     return multiply(from, matrix);
 }
-
-export function scaleZ(z: number, from: Matrix): Matrix {
-
+function scaleZ(z, from) {
     const matrix = identity();
     // matrix[0][0] = 1;
     // matrix[1][1] = 1;
     matrix[2][2] = z;
-
-    return multiply(from, matrix) as Matrix;
+    return multiply(from, matrix);
 }
-
-export function scale(x: number, y: number, from: Matrix): Matrix {
-
+function scale(x, y, from) {
     const matrix = identity();
     matrix[0][0] = x;
     matrix[1][1] = y;
-
     return multiply(from, matrix);
 }
-
-export function scale3d(x: number, y: number, z: number, from: Matrix): Matrix {
-
+function scale3d(x, y, z, from) {
     const matrix = identity();
     matrix[0][0] = x;
     matrix[1][1] = y;
     matrix[2][2] = z;
-
     return multiply(from, matrix);
 }
+
+export { scale, scale3d, scaleX, scaleY, scaleZ };

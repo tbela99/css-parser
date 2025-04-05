@@ -1,3 +1,5 @@
+import {gcd} from "../math/math.ts";
+
 export declare type Point = [number, number, number];
 export declare type Vector = [number, number, number, number];
 export declare type Matrix = [Vector, Vector, Vector, Vector];
@@ -5,10 +7,10 @@ export declare type Matrix = [Vector, Vector, Vector, Vector];
 interface DecomposedMatrix3D {
     skew: [number, number, number];
     scale: [number, number, number];
-    // rotate: [number, number, number];
-    translate : [number, number, number];
-    perspective : [number, number, number, number];
-    quaternion : [number, number, number, number];
+    rotate: [number, number, number, number];
+    translate: [number, number, number];
+    perspective: [number, number, number, number];
+    quaternion: [number, number, number, number];
 }
 
 function determinant(matrix: Matrix): number {
@@ -110,7 +112,7 @@ function transpose(matrix: Matrix): Matrix {
 
 function multVecMatrix(vector: Vector, matrix: Matrix): Vector {
 
-    const result:Vector = [0, 0, 0, 0];
+    const result: Vector = [0, 0, 0, 0];
 
     for (let i = 0; i < 4; i++) {
 
@@ -136,7 +138,40 @@ function normalize(point: Point): Point {
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
 }
 
-function dot(point1: Point, point2: Point): number {
+function interpolate(quaternionA: [number, number, number, number], quaternionB: [number, number, number, number], t: number = 1) {
+
+    let product = dot(quaternionA, quaternionB);
+
+    const quaternionDst: [number, number, number, number] = [0, 0, 0, 0];
+// Clamp product to -1.0 <= product <= 1.0
+    product = Math.min(product, 1.0);
+    product = Math.max(product, -1.0);
+
+    if (Math.abs(product) === 1.0) {
+        return quaternionA;
+    }
+
+    const theta = Math.acos(product);
+    const w = Math.sin(t * theta) / Math.sqrt(1 - product * product);
+
+    for (let i = 0; i < 4; i++) {
+        quaternionA[i] *= Math.cos(t * theta) - product * w;
+        quaternionB[i] *= w;
+        quaternionDst[i] = quaternionA[i] + quaternionB[i];
+    }
+
+    return;
+}
+
+function dot(point1: Point, point2: Point): number;
+function dot(point1: [number, number, number, number], point2: [number, number, number, number]): number;
+
+function dot(point1: Point | [number, number, number, number], point2: Point | [number, number, number, number]): number {
+
+    if (point1.length === 4 && point2.length === 4) {
+
+        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    }
 
     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
@@ -149,19 +184,101 @@ function combine(point1: Point, point2: Point, ascl: number, bscl: number): Poin
 function cross(a: Point, b: Point): Point {
     return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
-function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
+
+export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
 
     let result: Matrix = Array(4).fill(0).map(() => Array(4).fill(0)) as Matrix;
 
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
             for (let k = 0; k < 4; k++) {
-                result[i][j] += matrixA[i][k] * matrixB[k][j];
+                result[j][i] += matrixA[k][i] * matrixB[j][k];
             }
         }
     }
 
     return result;
+}
+
+export function decompose2(matrix: Matrix) {
+
+    let row0x = matrix[0][0]
+    let row0y = matrix[1][0]
+    let row1x = matrix[0][1]
+    let row1y = matrix[1][1]
+
+    // @ts-ignore
+    const translate: [number, number] = [] as [number, number];
+    // @ts-ignore
+    const scale: [number, number] = [] as [number, number];
+
+    translate[0] = matrix[0][3]
+    translate[1] = matrix[1][3]
+
+    scale[0] = Math.sqrt(row0x * row0x + row0y * row0y)
+    scale[1] = Math.sqrt(row1x * row1x + row1y * row1y)
+
+// If determinant is negative, one axis was flipped.
+    let determinant = row0x * row1y - row0y * row1x
+    if (determinant < 0) {
+
+        // Flip axis with minimum unit vector dot product.
+        if (row0x < row1y) {
+
+            scale[0] = -scale[0]
+        } else {
+
+            scale[1] = -scale[1]
+        }
+    }
+
+// Renormalize matrix to remove scale.
+    if (scale[0]) {
+
+        row0x *= 1 / scale[0]
+        row0y *= 1 / scale[0]
+    }
+
+
+    if (scale[1]) {
+
+        row1x *= 1 / scale[1]
+        row1y *= 1 / scale[1]
+    }
+
+// Compute rotation and renormalize matrix.
+    let angle = Math.atan2(row0y, row0x);
+
+    if (angle) {
+
+        let sn = -row0y
+        // Rotate(-angle) = [cos(angle), sin(angle), -sin(angle), cos(angle)]
+        //                = [row0x, -row0y, row0y, row0x]
+        // Thanks to the normalization above.
+        let cs = row0x
+        let m11 = row0x
+        let m12 = row0y
+        let m21 = row1x
+        let m22 = row1y
+        row0x = cs * m11 + sn * m21
+        row0y = cs * m12 + sn * m22
+        row1x = -sn * m11 + cs * m21
+        row1y = -sn * m12 + cs * m22
+    }
+
+    let m11 = row0x
+    let m12 = row0y
+    let m21 = row1x
+    let m22 = row1y
+
+// Convert into degrees because our rotation functions expect it.
+//     angle = rad2deg(angle)
+
+    angle *= 180 / Math.PI;
+
+    return {
+        translate, scale, angle: +angle.toPrecision(12), m11, m12, m21, m22
+    }
 }
 
 export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
@@ -297,19 +414,11 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
         quaternion[2] = -quaternion[2];
     }
 
-    // const rad2deg = 180 / Math.PI;
-    // const theta: number = Math.atan2(matrix[1][0], matrix[0][0]) * rad2deg;
-    // const zAxis =
-    //
-    // console.error({theta});
-    //
-    // const rotation: [number, number, number] = [-Math.asin(matrix[0][2]) * rad2deg, 0, 0];
-
 // apply rotation
-    let x = quaternion[0];
-    let y = quaternion[1];
-    let z = quaternion[2];
-    let w = quaternion[3];
+    let x: number = quaternion[0];
+    let y: number = quaternion[1];
+    let z: number = quaternion[2];
+    let w: number = quaternion[3];
 
     const rotationMatrix: Matrix = identity();
 // Construct a composite rotation matrix from the quaternion values
@@ -324,14 +433,118 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
     rotationMatrix[2][1] = 2 * (y * z + x * w);
     rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
 
+    const {x: x1, y: y1, z: z1, angle} = getRotation3D(rotationMatrix);
+
     return {
-        skew,
-        scale,
-        // rotate: [+rx.toPrecision(12), +ry.toPrecision(12), +rz.toPrecision(12)],
-        translate,
+        skew: toZero(skew) as [number, number, number],
+        scale: toZero(scale) as [number, number, number],
+        rotate: toZero([x1, y1, z1, angle]) as [number, number, number, number],
+        translate: toZero(translate) as [number, number, number],
         perspective,
         quaternion
     };
+}
+
+export function toZero(v: [number, number] | [number, number, number] | [number, number, number, number]) {
+
+    for (let i = 0; i < v.length; i++) {
+
+        if (Math.abs(v[i]) <= 1e-6) {
+
+            v[i] = 0;
+        } else {
+
+            v[i] = +v[i].toPrecision(6);
+        }
+    }
+
+    return v;
+}
+
+
+// Fonction pour calculer rotate3d à partir de matrix3d
+function getRotation3D(matrix: Matrix): { x: number, y: number, z: number, angle: number } {
+
+    // Extraire la sous-matrice 3x3 de rotation
+    const r11: number = matrix[0][0], r12: number = matrix[0][1], r13: number = matrix[0][2];
+    const r21: number = matrix[1][0], r22: number = matrix[1][1], r23: number = matrix[1][2];
+    const r31: number = matrix[2][0], r32: number = matrix[2][1], r33: number = matrix[2][2];
+
+    // Calculer la trace (somme des éléments diagonaux)
+    const trace: number = r11 + r22 + r33;
+
+    // Calculer l’angle de rotation (en radians)
+    const cosTheta: number = (trace - 1) / 2;
+
+    // Calculer sin(θ) avec le signe correct
+    const sinThetaRaw: number = Math.sqrt(1 - cosTheta * cosTheta);
+    const xRaw: number = r32 - r23; // -0.467517
+    const yRaw: number = r13 - r31; // 0.776535
+    const zRaw: number = r21 - r12; // 0.776535
+    // Déterminer le signe de sin(θ) basé sur la direction
+    const sinTheta: number = (xRaw < 0 && yRaw > 0 && zRaw > 0) ? -sinThetaRaw : sinThetaRaw;
+
+    // Calculer l’angle avec atan2
+    const angle: number = +(Math.atan2(sinTheta, cosTheta) * 180 / Math.PI).toFixed(6);
+    let x = 0, y = 0, z = 0;
+
+    if (Math.abs(sinTheta) < 1e-6) { // Cas où l’angle est proche de 0° ou 180°
+
+        const x1: number = +r11.toPrecision(6);
+        const y1: number = +r22.toPrecision(6);
+        const z1:   number = +r33.toPrecision(6);
+        const max: number = Math.max(x1, y1, z1);
+
+        x = y = z = 0;
+
+        if (max === x1) {
+            x = 1;
+        }
+
+        if (max === y1) {
+            y = 1;
+        }
+
+        if (max === z1) {
+            z = 1;
+        }
+
+    } else {
+        x = (r32 - r23) / (2 * sinTheta);
+        y = (r13 - r31) / (2 * sinTheta);
+        z = (r21 - r12) / (2 * sinTheta);
+    }
+
+    // Normaliser le vecteur (optionnel, mais utile pour vérification)
+    const length: number = Math.sqrt(x * x + y * y + z * z);
+
+    if (length > 0) {
+        x /= length;
+        y /= length;
+        z /= length;
+    }
+
+    const pc = Math.abs(gcd(x, gcd(y, z)));
+
+
+    if (pc > 0.1 && pc <= Math.abs(x) && pc <= Math.abs(y) && pc <= Math.abs(z)) {
+
+        x /= pc;
+        y /= pc;
+        z /= pc;
+    } else {
+
+        const min = Math.min(Math.abs(x), Math.abs(y), Math.abs(z));
+
+        if (min > 0.1) {
+
+            x = +(x / min).toPrecision(6);
+            y = +(y / min).toPrecision(6);
+            z = +(z / min).toPrecision(6);
+        }
+    }
+
+    return {x, y, z, angle};
 }
 
 export function recompose(
@@ -373,7 +586,6 @@ export function recompose(
     rotationMatrix[2][0] = 2 * (x * z - y * w);
     rotationMatrix[2][1] = 2 * (y * z + x * w);
     rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
-    // console.error({rotationMatrix});
 
     matrix = multiply(matrix, rotationMatrix);
 
@@ -413,13 +625,13 @@ export function is2DMatrix(matrix: Matrix): boolean {
 
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
     return matrix[0][2] === 0 &&
-        matrix[0][3]  === 0 &&
-        matrix[1][2]  === 0 &&
-        matrix[1][3]  === 0 &&
-        matrix[2][0]  === 0 &&
-        matrix[2][1]  === 0 &&
-        matrix[2][3]  === 0 &&
-        matrix[3][2]  === 0 &&
+        matrix[0][3] === 0 &&
+        matrix[1][2] === 0 &&
+        matrix[1][3] === 0 &&
+        matrix[2][0] === 0 &&
+        matrix[2][1] === 0 &&
+        matrix[2][3] === 0 &&
+        matrix[3][2] === 0 &&
         matrix[2][2] === 1 &&
         matrix[3][3] === 1;
 }

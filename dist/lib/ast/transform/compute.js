@@ -11,18 +11,41 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
 import { translateX, translateY, translateZ, translate } from './translate.js';
-import { rotate3D } from './rotate.js';
+import { rotate, rotate3D } from './rotate.js';
+import { scale3d, scale, scaleX, scaleY, scaleZ } from './scale.js';
+import { minify } from './minify.js';
+import { serialize } from './matrix.js';
 
-function compute(transformList) {
-    transformList = transformList.slice();
-    stripCommaToken(transformList);
-    if (transformList.length == 0) {
+function compute(transformLists) {
+    transformLists = transformLists.slice();
+    stripCommaToken(transformLists);
+    if (transformLists.length == 0) {
         return null;
     }
-    const matrix = identity();
+    const tokens = [];
+    let matrix;
+    for (const transformList of splitTransformList(transformLists)) {
+        matrix = computeMatrix(transformList);
+        if (matrix == null) {
+            return null;
+        }
+        tokens.push(matrix);
+    }
+    // for (let i = 0; i < tokens.length; i++) {
+    //
+    //     for (let j = 0; j < tokens[i].length; j++) {
+    //
+    //         toZero(tokens[i][j]);
+    //     }
+    // }
+    return tokens.reduce((acc, t) => acc.concat(minify(t) ?? serialize(t)), []);
+}
+function computeMatrix(transformList) {
+    let matrix = identity();
     let values = [];
     let val;
-    for (let i = 0; i < transformList.length; i++) {
+    let i = 0;
+    for (; i < transformList.length; i++) {
         if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
             continue;
         }
@@ -42,7 +65,6 @@ function compute(transformList) {
                         return null;
                     }
                     const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
-                    // console.error([(transformList[i] as FunctionToken).val, valCount]);
                     if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && children[0].val == 'none') {
                         values.fill(0, 0, valCount);
                     }
@@ -62,17 +84,17 @@ function compute(transformList) {
                         return null;
                     }
                     if (transformList[i].val == 'translateX') {
-                        translateX(values[0], matrix);
+                        matrix = translateX(values[0], matrix);
                     }
                     else if (transformList[i].val == 'translateY') {
-                        translateY(values[0], matrix);
+                        matrix = translateY(values[0], matrix);
                     }
                     else if (transformList[i].val == 'translateZ') {
-                        translateZ(values[0], matrix);
+                        matrix = translateZ(values[0], matrix);
                     }
                     else {
                         // @ts-ignore
-                        translate(values, matrix);
+                        matrix = translate(values, matrix);
                     }
                 }
                 break;
@@ -81,7 +103,6 @@ function compute(transformList) {
             case 'rotateY':
             case 'rotateZ':
             case 'rotate3d':
-                //
                 {
                     let x = 0;
                     let y = 0;
@@ -89,50 +110,89 @@ function compute(transformList) {
                     let angle;
                     let values = [];
                     let valuesCount = transformList[i].val == 'rotate3d' ? 4 : 1;
-                    if (['rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d'].includes(transformList[i].val)) {
-                        for (const child of stripCommaToken(transformList[i].chi.slice())) {
-                            if (child.typ == EnumToken.WhitespaceTokenType) {
-                                continue;
-                            }
-                            values.push(child);
-                            if (transformList[i].val == 'rotateX') {
-                                x = 1;
-                            }
-                            else if (transformList[i].val == 'rotateY') {
-                                y = 1;
-                            }
-                            else if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
-                                z = 1;
-                            }
+                    for (const child of stripCommaToken(transformList[i].chi.slice())) {
+                        if (child.typ == EnumToken.WhitespaceTokenType) {
+                            continue;
                         }
-                        // console.error({values, valuesCount});
-                        if (values.length != valuesCount) {
-                            return null;
+                        values.push(child);
+                        if (transformList[i].val == 'rotateX') {
+                            x = 1;
                         }
-                        if (transformList[i].val == 'rotate3d') {
-                            x = getNumber(values[0]);
-                            y = getNumber(values[1]);
-                            z = getNumber(values[2]);
+                        else if (transformList[i].val == 'rotateY') {
+                            y = 1;
                         }
-                        angle = getAngle(values.at(-1));
-                        if ([x, y, z, angle].some(t => typeof t != 'number' || Number.isNaN(+t))) {
-                            return null;
+                        else if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
+                            z = 1;
                         }
-                        // console.error([x, y, z, angle * 2 * Math.PI]);
-                        // if ((transformList[i] as FunctionToken).val == 'rotate' || (transformList[i] as FunctionToken).val == 'rotateZ') {
-                        rotate3D(angle * 2 * Math.PI, x, y, z, matrix);
-                        // console.error({matrix});
-                        // continue;
-                        // }
-                        // console.error({values});
-                        // return null;
                     }
-                    // else
-                    //     if ((transformList[i] as FunctionToken).val == 'rotate') {
-                    //
-                    // }
+                    if (values.length != valuesCount) {
+                        return null;
+                    }
+                    if (transformList[i].val == 'rotate3d') {
+                        x = getNumber(values[0]);
+                        y = getNumber(values[1]);
+                        z = getNumber(values[2]);
+                    }
+                    angle = getAngle(values.at(-1));
+                    if ([x, y, z, angle].some(t => typeof t != 'number' || Number.isNaN(+t))) {
+                        return null;
+                    }
+                    if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
+                        matrix = rotate(angle * 2 * Math.PI, matrix);
+                    }
+                    else {
+                        matrix = rotate3D(angle * 2 * Math.PI, x, y, z, matrix);
+                    }
                 }
                 break;
+            case 'scale':
+            case 'scaleX':
+            case 'scaleY':
+            case 'scaleZ':
+            case 'scale3d': {
+                values.length = 0;
+                let child;
+                for (let k = 0; k < transformList[i].chi.length; k++) {
+                    child = transformList[i].chi[k];
+                    if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                        continue;
+                    }
+                    if (child.typ != EnumToken.NumberTokenType) {
+                        return null;
+                    }
+                    values.push(getNumber(child));
+                }
+                if (values.length == 0) {
+                    return null;
+                }
+                if (transformList[i].val == 'scale3d') {
+                    if (values.length != 3) {
+                        return null;
+                    }
+                    matrix = scale3d(...values, matrix);
+                    break;
+                }
+                if (transformList[i].val == 'scale') {
+                    if (values.length != 1 && values.length != 2) {
+                        return null;
+                    }
+                    matrix = scale(values[0], values[1] ?? values[0], matrix);
+                    break;
+                }
+                if (values.length != 1) {
+                    return null;
+                }
+                else if (transformList[i].val == 'scaleX') {
+                    matrix = scaleX(values[0], matrix);
+                }
+                else if (transformList[i].val == 'scaleY') {
+                    matrix = scaleY(values[0], matrix);
+                }
+                else if (transformList[i].val == 'scaleZ') {
+                    matrix = scaleZ(values[0], matrix);
+                }
+                break;
+            }
             default:
                 return null;
             // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
@@ -140,5 +200,38 @@ function compute(transformList) {
     }
     return matrix;
 }
+function splitTransformList(transformList) {
+    let pattern = null;
+    const tokens = [];
+    for (let i = 0; i < transformList.length; i++) {
+        if (transformList[i].typ == EnumToken.CommentTokenType || transformList[i].typ == EnumToken.WhitespaceTokenType) {
+            continue;
+        }
+        if (pattern == null || (transformList[i].typ == EnumToken.FunctionTokenType && !transformList[i].val.startsWith(pattern))) {
+            if (transformList[i].typ == EnumToken.FunctionTokenType) {
+                if (transformList[i].val.startsWith('scale')) {
+                    pattern = 'scale';
+                }
+                else if (transformList[i].val.startsWith('rotate')) {
+                    pattern = 'rotate';
+                }
+                else if (transformList[i].val.startsWith('translate')) {
+                    pattern = 'translate';
+                }
+                else {
+                    pattern = null;
+                }
+                tokens.push([transformList[i]]);
+                continue;
+            }
+        }
+        if (pattern != null && transformList[i].typ == EnumToken.FunctionTokenType && transformList[i].val.startsWith(pattern)) {
+            tokens[tokens.length - 1].push(transformList[i]);
+            continue;
+        }
+        tokens.push([transformList[i]]);
+    }
+    return tokens;
+}
 
-export { compute };
+export { compute, computeMatrix };

@@ -8,6 +8,11 @@ function gcd(x, y) {
     if (x == 0 || y == 0) {
         return 1;
     }
+    if (y > x) {
+        t = x;
+        x = y;
+        y = t;
+    }
     while (y) {
         t = y;
         y = x % y;

@@ -67,7 +67,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             return transform(nesting1, {
                 beautify: true
             }).then((result) => expect(result.code).equals(`.now {
- transform: scale(1)
+ transform: none
 }`));
         });
 
@@ -81,7 +81,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             return transform(nesting1, {
                 beautify: true
             }).then((result) => expect(result.code).equals(`.now {
- transform: scale(1)
+ transform: none
 }`));
         });
 
@@ -157,6 +157,48 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
                 beautify:  true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotate3d(2,-1,-1,-72deg)
+}`));
+        });
+
+        it('rotateZ #10', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(0.5) scaleY( 1) scaleZ(1.7) rotate3d(1, 1, 1,  67deg)
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: scale3d(.5,1,1.7)rotate3d(1,1,1,67deg)
+}`));
+        });
+
+        it('rotateY #11', function () {
+            const nesting1 = `
+
+  .now {
+    transform: rotateY(180deg)
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: rotateY(180deg)
+}`));
+        });
+
+        it('rotate3d #12', function () {
+            const nesting1 = `
+
+  .now {
+    transform: rotate3d(1, 1, 1, 180deg)
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: rotate3d(1,1,1,180deg)
 }`));
         });
 
