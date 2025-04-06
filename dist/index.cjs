@@ -18320,7 +18320,7 @@ function minify$1(matrix) {
                     val: 'scale',
                     chi: [
                         { typ: exports.EnumToken.NumberTokenType, val: '' + sx },
-                        { typ: exports.EnumToken.WhitespaceTokenType },
+                        { typ: exports.EnumToken.CommaTokenType },
                         { typ: exports.EnumToken.NumberTokenType, val: '' + sy },
                     ]
                 });
@@ -18422,51 +18422,6 @@ function minify$1(matrix) {
     ] : result;
 }
 
-function serialize(matrix) {
-    if (is2DMatrix(matrix)) {
-        // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
-        return {
-            typ: exports.EnumToken.FunctionTokenType,
-            val: 'matrix',
-            chi: [
-                matrix[0][0],
-                matrix[1][1],
-                matrix[1][0],
-                matrix[1][1],
-                matrix[3][0],
-                matrix[3][1]
-            ].reduce((acc, t) => {
-                if (acc.length > 0) {
-                    acc.push({ typ: exports.EnumToken.CommaTokenType });
-                }
-                acc.push({
-                    typ: exports.EnumToken.NumberTokenType,
-                    val: reduceNumber(t.toPrecision(6))
-                });
-                return acc;
-            }, [])
-        };
-    }
-    let m = [];
-    // console.error(JSON.stringify({matrix},null, 1));
-    for (let i = 0; i < matrix.length; i++) {
-        for (let j = 0; j < matrix[i].length; j++) {
-            if (m.length > 0) {
-                m.push({ typ: exports.EnumToken.CommaTokenType });
-            }
-            m.push({
-                typ: exports.EnumToken.NumberTokenType,
-                val: reduceNumber(matrix[i][j].toPrecision(6))
-            });
-        }
-    }
-    return {
-        typ: exports.EnumToken.FunctionTokenType,
-        val: 'matrix3d',
-        chi: m
-    };
-}
-
 function compute(transformLists) {
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
@@ -18489,7 +18444,15 @@ function compute(transformLists) {
     //         toZero(tokens[i][j]);
     //     }
     // }
-    return tokens.reduce((acc, t) => acc.concat(minify$1(t) ?? serialize(t)), []);
+    const result = [];
+    for (const token of tokens) {
+        let t = minify$1(token);
+        if (t == null) {
+            return null;
+        }
+        result.push(...t);
+    }
+    return result;
 }
 function computeMatrix(transformList) {
     let matrix = identity();
@@ -18683,6 +18646,51 @@ function splitTransformList(transformList) {
         tokens.push([transformList[i]]);
     }
     return tokens;
+}
+
+function serialize(matrix) {
+    if (is2DMatrix(matrix)) {
+        // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
+        return {
+            typ: exports.EnumToken.FunctionTokenType,
+            val: 'matrix',
+            chi: [
+                matrix[0][0],
+                matrix[1][1],
+                matrix[1][0],
+                matrix[1][1],
+                matrix[3][0],
+                matrix[3][1]
+            ].reduce((acc, t) => {
+                if (acc.length > 0) {
+                    acc.push({ typ: exports.EnumToken.CommaTokenType });
+                }
+                acc.push({
+                    typ: exports.EnumToken.NumberTokenType,
+                    val: reduceNumber(t.toPrecision(6))
+                });
+                return acc;
+            }, [])
+        };
+    }
+    let m = [];
+    // console.error(JSON.stringify({matrix},null, 1));
+    for (let i = 0; i < matrix.length; i++) {
+        for (let j = 0; j < matrix[i].length; j++) {
+            if (m.length > 0) {
+                m.push({ typ: exports.EnumToken.CommaTokenType });
+            }
+            m.push({
+                typ: exports.EnumToken.NumberTokenType,
+                val: reduceNumber(matrix[i][j].toPrecision(6))
+            });
+        }
+    }
+    return {
+        typ: exports.EnumToken.FunctionTokenType,
+        val: 'matrix3d',
+        chi: m
+    };
 }
 
 class TransformCssFeature {

@@ -136,7 +136,7 @@ function minify(matrix) {
                     val: 'scale',
                     chi: [
                         { typ: EnumToken.NumberTokenType, val: '' + sx },
-                        { typ: EnumToken.WhitespaceTokenType },
+                        { typ: EnumToken.CommaTokenType },
                         { typ: EnumToken.NumberTokenType, val: '' + sy },
                     ]
                 });

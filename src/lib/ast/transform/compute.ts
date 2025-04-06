@@ -9,7 +9,6 @@ import {getAngle, getNumber} from "../../renderer/color";
 import {rotate, rotate3D} from "./rotate.ts";
 import {scale, scale3d, scaleX, scaleY, scaleZ} from "./scale.ts";
 import {minify} from "./minify.ts";
-import {serialize} from "./matrix.ts";
 
 export function compute(transformLists: Token[]): Token[] | null {
 
@@ -43,8 +42,21 @@ export function compute(transformLists: Token[]): Token[] | null {
     //         toZero(tokens[i][j]);
     //     }
     // }
+    const result: Token[] = [];
 
-    return tokens.reduce((acc, t) => acc.concat(minify(t) ?? serialize(t)), [] as Token[]);
+    for (const token of tokens) {
+
+        let t = minify(token);
+
+        if (t == null) {
+
+            return null;
+        }
+
+        result.push(...t);
+    }
+
+    return result;
 }
 
 export function computeMatrix(transformList: Token[]): Matrix | null {

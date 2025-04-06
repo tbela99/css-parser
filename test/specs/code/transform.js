@@ -203,4 +203,121 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         });
 
     });
+
+    describe('CSS scale', function () {
+
+        it('scale3d #13', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(0.5) scaleY(0.5) scaleZ(0.5);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: scale3d(.5,.5,.5)
+}`));
+        });
+
+        it('scale #14', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(1) scaleY(1) scaleZ(1);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: none
+}`));
+        });
+
+
+        it('scale #15', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(1) scaleY(1) ;
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: none
+}`));
+        });
+
+        it('scale #16', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(1)  scaleZ(1);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: none
+}`));
+        });
+
+        it('scale #17', function () {
+            const nesting1 = `
+
+  .now {
+    transform:  scaleY(1) scaleZ(1);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: none
+}`));
+        });
+
+        it('rotate3d #18', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(1);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: none
+}`));
+        });
+
+        it('scale #19', function () {
+            const nesting1 = `
+
+  .now {
+    transform: scaleX(1.5)  scaleY(2);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: scale(1.5,2)
+}`));
+        });
+
+        it('scale #20', function () {
+            const nesting1 = `
+
+  .now {
+    transform:scaleX(0) scaleY( 0) scaleZ(0);
+}
+`;
+            return transform(nesting1, {
+                beautify:  true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: scaleX(0)scaleY(0)scaleZ(0)
+}`));
+        });
+
+    });
 }

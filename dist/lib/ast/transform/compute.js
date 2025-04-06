@@ -14,7 +14,6 @@ import { translateX, translateY, translateZ, translate } from './translate.js';
 import { rotate, rotate3D } from './rotate.js';
 import { scale3d, scale, scaleX, scaleY, scaleZ } from './scale.js';
 import { minify } from './minify.js';
-import { serialize } from './matrix.js';
 
 function compute(transformLists) {
     transformLists = transformLists.slice();
@@ -38,7 +37,15 @@ function compute(transformLists) {
     //         toZero(tokens[i][j]);
     //     }
     // }
-    return tokens.reduce((acc, t) => acc.concat(minify(t) ?? serialize(t)), []);
+    const result = [];
+    for (const token of tokens) {
+        let t = minify(token);
+        if (t == null) {
+            return null;
+        }
+        result.push(...t);
+    }
+    return result;
 }
 function computeMatrix(transformList) {
     let matrix = identity();
