@@ -8,9 +8,8 @@ import type {
 } from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
 import {consumeWhitespace} from "../../validation/utils";
-import {compute, computeMatrix} from "../transform/compute.ts";
+import {compute} from "../transform/compute.ts";
 import {renderToken} from "../../renderer";
-import {serialize} from "../transform/matrix.ts";
 
 export class TransformCssFeature {
 
@@ -55,39 +54,23 @@ export class TransformCssFeature {
 
             consumeWhitespace(children);
 
-            let result = compute(children as Token[]);
+            let {result, matrix} = compute(children as Token[]) ?? {};
 
-            if (result == null) {
+            // console.error({result, matrix});
+
+            // console.error({result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''), matrix: matrix == null ? null : renderToken(matrix)});
+
+            if (result == null || matrix == null) {
 
                 return;
             }
 
-            // console.error(JSON.stringify({result}, null, 1));
-            // console.error({result, t: result.map(t =>  minify(t) ?? t
-            //     )});
+            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
 
-            // console.error({result: decompose2(result)});
-            // const decomposed =decompose(result);
-            // const minified = minify(result);
-
-            const matrix = computeMatrix(result);
-
-            if (matrix != null) {
-
-                const m = serialize(matrix);
-
-                if (renderToken(m).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-
-                    result = [m];
-                }
+                result = [matrix];
             }
 
-            // console.error({result, serialized: renderToken()});
-
-            // if (minified != null) {
-
-                (node as AstDeclaration).val = result;
-            // }
+            (node as AstDeclaration).val = result;
         }
     }
 }

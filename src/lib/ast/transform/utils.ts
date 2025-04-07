@@ -190,8 +190,11 @@ export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
     let result: Matrix = Array(4).fill(0).map(() => Array(4).fill(0)) as Matrix;
 
     for (let i = 0; i < 4; i++) {
+
         for (let j = 0; j < 4; j++) {
+
             for (let k = 0; k < 4; k++) {
+
                 result[j][i] += matrixA[k][i] * matrixB[j][k];
             }
         }
@@ -282,7 +285,8 @@ export function decompose2(matrix: Matrix) {
 }
 
 export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
-// Normalize the matrix.
+
+    // Normalize the matrix.
     if (matrix[3][3] === 0) {
 
         return null;
@@ -436,6 +440,7 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
     const {x: x1, y: y1, z: z1, angle} = getRotation3D(rotationMatrix);
 
     return {
+        // @ts-ignore
         skew: toZero(skew) as [number, number, number],
         scale: toZero(scale) as [number, number, number],
         rotate: toZero([x1, y1, z1, angle]) as [number, number, number, number],

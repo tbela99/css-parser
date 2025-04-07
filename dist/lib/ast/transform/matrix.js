@@ -10,7 +10,7 @@ function serialize(matrix) {
             val: 'matrix',
             chi: [
                 matrix[0][0],
-                matrix[1][1],
+                matrix[0][1],
                 matrix[1][0],
                 matrix[1][1],
                 matrix[3][0],
@@ -36,7 +36,7 @@ function serialize(matrix) {
             }
             m.push({
                 typ: EnumToken.NumberTokenType,
-                val: reduceNumber(matrix[i][j].toPrecision(6))
+                val: reduceNumber(matrix[j][i].toPrecision(6))
             });
         }
     }

@@ -6,14 +6,16 @@ import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
 import '../../parser/utils/config.js';
-import { getNumber, getAngle } from '../../renderer/color/color.js';
+import { getAngle, getNumber } from '../../renderer/color/color.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
-import { translateX, translateY, translateZ, translate } from './translate.js';
+import { translateX, translateY, translateZ, translate, translate3d } from './translate.js';
 import { rotate, rotate3D } from './rotate.js';
 import { scale3d, scale, scaleX, scaleY, scaleZ } from './scale.js';
 import { minify } from './minify.js';
+import { skew, skewX, skewY } from './skew.js';
+import { serialize } from './matrix.js';
 
 function compute(transformLists) {
     transformLists = transformLists.slice();
@@ -21,34 +23,19 @@ function compute(transformLists) {
     if (transformLists.length == 0) {
         return null;
     }
-    const tokens = [];
-    let matrix;
+    let matrix = identity();
     for (const transformList of splitTransformList(transformLists)) {
-        matrix = computeMatrix(transformList);
+        matrix = computeMatrix(transformList, matrix);
         if (matrix == null) {
             return null;
         }
-        tokens.push(matrix);
     }
-    // for (let i = 0; i < tokens.length; i++) {
-    //
-    //     for (let j = 0; j < tokens[i].length; j++) {
-    //
-    //         toZero(tokens[i][j]);
-    //     }
-    // }
-    const result = [];
-    for (const token of tokens) {
-        let t = minify(token);
-        if (t == null) {
-            return null;
-        }
-        result.push(...t);
-    }
-    return result;
+    return {
+        result: minify(matrix),
+        matrix: serialize(matrix)
+    };
 }
-function computeMatrix(transformList) {
-    let matrix = identity();
+function computeMatrix(transformList, matrix) {
     let values = [];
     let val;
     let i = 0;
@@ -99,9 +86,12 @@ function computeMatrix(transformList) {
                     else if (transformList[i].val == 'translateZ') {
                         matrix = translateZ(values[0], matrix);
                     }
+                    else if (transformList[i].val == 'translate') {
+                        matrix = translate(values, matrix);
+                    }
                     else {
                         // @ts-ignore
-                        matrix = translate(values, matrix);
+                        matrix = translate3d(values, matrix);
                     }
                 }
                 break;
@@ -156,50 +146,80 @@ function computeMatrix(transformList) {
             case 'scaleX':
             case 'scaleY':
             case 'scaleZ':
-            case 'scale3d': {
-                values.length = 0;
-                let child;
-                for (let k = 0; k < transformList[i].chi.length; k++) {
-                    child = transformList[i].chi[k];
-                    if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
-                        continue;
+            case 'scale3d':
+                {
+                    values.length = 0;
+                    let child;
+                    for (let k = 0; k < transformList[i].chi.length; k++) {
+                        child = transformList[i].chi[k];
+                        if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                            continue;
+                        }
+                        if (child.typ != EnumToken.NumberTokenType) {
+                            return null;
+                        }
+                        values.push(getNumber(child));
                     }
-                    if (child.typ != EnumToken.NumberTokenType) {
+                    if (values.length == 0) {
                         return null;
                     }
-                    values.push(getNumber(child));
-                }
-                if (values.length == 0) {
-                    return null;
-                }
-                if (transformList[i].val == 'scale3d') {
-                    if (values.length != 3) {
+                    if (transformList[i].val == 'scale3d') {
+                        if (values.length != 3) {
+                            return null;
+                        }
+                        matrix = scale3d(...values, matrix);
+                        break;
+                    }
+                    if (transformList[i].val == 'scale') {
+                        if (values.length != 1 && values.length != 2) {
+                            return null;
+                        }
+                        matrix = scale(values[0], values[1] ?? values[0], matrix);
+                        break;
+                    }
+                    if (values.length != 1) {
                         return null;
                     }
-                    matrix = scale3d(...values, matrix);
-                    break;
-                }
-                if (transformList[i].val == 'scale') {
-                    if (values.length != 1 && values.length != 2) {
-                        return null;
+                    else if (transformList[i].val == 'scaleX') {
+                        matrix = scaleX(values[0], matrix);
                     }
-                    matrix = scale(values[0], values[1] ?? values[0], matrix);
-                    break;
-                }
-                if (values.length != 1) {
-                    return null;
-                }
-                else if (transformList[i].val == 'scaleX') {
-                    matrix = scaleX(values[0], matrix);
-                }
-                else if (transformList[i].val == 'scaleY') {
-                    matrix = scaleY(values[0], matrix);
-                }
-                else if (transformList[i].val == 'scaleZ') {
-                    matrix = scaleZ(values[0], matrix);
+                    else if (transformList[i].val == 'scaleY') {
+                        matrix = scaleY(values[0], matrix);
+                    }
+                    else if (transformList[i].val == 'scaleZ') {
+                        matrix = scaleZ(values[0], matrix);
+                    }
                 }
                 break;
-            }
+            case 'skew':
+            case 'skewX':
+            case 'skewY':
+                {
+                    values.length = 0;
+                    let child;
+                    let value;
+                    for (let k = 0; k < transformList[i].chi.length; k++) {
+                        child = transformList[i].chi[k];
+                        if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                            continue;
+                        }
+                        value = getAngle(child);
+                        if (value == null) {
+                            return null;
+                        }
+                        values.push(value * 2 * Math.PI);
+                    }
+                    if (values.length == 0 || (values.length > (transformList[i].val == 'skew' ? 2 : 1))) {
+                        return null;
+                    }
+                    if (transformList[i].val == 'skew') {
+                        matrix = skew(values, matrix);
+                    }
+                    else {
+                        matrix = transformList[i].val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
+                    }
+                }
+                break;
             default:
                 return null;
             // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);

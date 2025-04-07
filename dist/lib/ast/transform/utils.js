@@ -229,6 +229,7 @@ function decompose(matrix) {
     rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
     const { x: x1, y: y1, z: z1, angle } = getRotation3D(rotationMatrix);
     return {
+        // @ts-ignore
         skew: toZero(skew),
         scale: toZero(scale),
         rotate: toZero([x1, y1, z1, angle]),

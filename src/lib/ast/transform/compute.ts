@@ -4,13 +4,18 @@ import {EnumToken} from "../types.ts";
 import {length2Px} from "./convert.ts";
 import {transformFunctions} from "../../syntax/index.ts";
 import {stripCommaToken} from "../../validation/utils";
-import {translate, translateX, translateY, translateZ} from "./translate.ts";
+import {translate, translate3d, translateX, translateY, translateZ} from "./translate.ts";
 import {getAngle, getNumber} from "../../renderer/color";
 import {rotate, rotate3D} from "./rotate.ts";
 import {scale, scale3d, scaleX, scaleY, scaleZ} from "./scale.ts";
 import {minify} from "./minify.ts";
+import {skew, skewX, skewY} from "./skew.ts";
+import {serialize} from "./matrix.ts";
 
-export function compute(transformLists: Token[]): Token[] | null {
+export function compute(transformLists: Token[]): {
+    result: Token[] | null;
+    matrix: Token
+} | null {
 
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
@@ -20,48 +25,26 @@ export function compute(transformLists: Token[]): Token[] | null {
         return null;
     }
 
-    const tokens: Matrix[] = [];
-    let matrix: Matrix | null;
+    let matrix: Matrix | null = identity();
 
     for (const transformList of splitTransformList(transformLists)) {
 
-        matrix = computeMatrix(transformList);
+        matrix = computeMatrix(transformList, matrix);
 
         if (matrix == null) {
 
             return null;
         }
-
-        tokens.push(matrix);
     }
 
-    // for (let i = 0; i < tokens.length; i++) {
-    //
-    //     for (let j = 0; j < tokens[i].length; j++) {
-    //
-    //         toZero(tokens[i][j]);
-    //     }
-    // }
-    const result: Token[] = [];
-
-    for (const token of tokens) {
-
-        let t = minify(token);
-
-        if (t == null) {
-
-            return null;
-        }
-
-        result.push(...t);
+    return {
+        result: minify(matrix),
+        matrix: serialize(matrix)
     }
-
-    return result;
 }
 
-export function computeMatrix(transformList: Token[]): Matrix | null {
+export function computeMatrix(transformList: Token[], matrix: Matrix): Matrix | null {
 
-    let matrix: Matrix = identity();
     let values: number[] = [];
     let val: number | null;
     let i: number = 0;
@@ -136,10 +119,13 @@ export function computeMatrix(transformList: Token[]): Matrix | null {
                 } else if ((transformList[i] as FunctionToken).val == 'translateZ') {
 
                     matrix = translateZ(values[0], matrix);
+                } else if ((transformList[i] as FunctionToken).val == 'translate') {
+
+                    matrix = translate(values as [number] | [number, number], matrix);
                 } else {
 
                     // @ts-ignore
-                    matrix = translate(values as [number] | [number, number], matrix);
+                    matrix = translate3d(values as [number] | [number, number], matrix);
                 }
             }
                 break;
@@ -275,9 +261,53 @@ export function computeMatrix(transformList: Token[]): Matrix | null {
 
                     matrix = scaleZ(values[0], matrix);
                 }
+            }
 
                 break;
+
+            case 'skew':
+            case 'skewX':
+            case 'skewY': {
+
+                values.length = 0;
+
+                let child: Token;
+                let value: number | null;
+
+                for (let k = 0; k < (transformList[i] as FunctionToken).chi.length; k++) {
+
+                    child = (transformList[i] as FunctionToken).chi[k];
+
+                    if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+
+                        continue;
+                    }
+
+                    value = getAngle(child as AngleToken | NumberToken);
+
+                    if (value == null) {
+
+                        return null;
+                    }
+
+                    values.push(value * 2 * Math.PI);
+                }
+
+                if (values.length == 0 || (values.length > ((transformList[i] as FunctionToken).val == 'skew' ? 2 : 1))) {
+
+                    return null;
+                }
+
+                if ((transformList[i] as FunctionToken).val == 'skew') {
+
+                    matrix = skew(values as [number] | [number, number], matrix);
+                } else {
+
+                    matrix = (transformList[i] as FunctionToken).val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
+                }
             }
+
+                break;
 
             default:
 

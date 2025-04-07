@@ -4,14 +4,12 @@ import { eq } from '../../parser/utils/eq.js';
 
 function minify(matrix) {
     const decomposed = decompose(matrix);
-    // console.error({decomposed});
     if (decomposed == null) {
         return null;
     }
-    const transforms = new Set([
-        'translate', 'scale', 'skew', 'perspective', 'rotate'
-    ]);
+    const transforms = new Set(['translate', 'scale', 'skew', 'perspective', 'rotate']);
     const scales = new Set(['x', 'y', 'z']);
+    const skew = new Set(['x', 'y']);
     const result = [];
     // check identity
     if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
@@ -20,7 +18,7 @@ function minify(matrix) {
     if (decomposed.scale[0] == 1 && decomposed.scale[1] == 1 && decomposed.scale[2] == 1) {
         transforms.delete('scale');
     }
-    if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0 && decomposed.skew[2] == 0) {
+    if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0) {
         transforms.delete('skew');
     }
     if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
@@ -39,7 +37,7 @@ function minify(matrix) {
         if (coordinates.size == 3) {
             result.push({
                 typ: EnumToken.FunctionTokenType,
-                val: 'translate',
+                val: 'translate3d',
                 chi: [
                     { typ: EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
                     { typ: EnumToken.CommaTokenType },
@@ -104,133 +102,156 @@ function minify(matrix) {
             });
         }
     }
-    // scale(x, x) -> scale(x)
-    // scale(1, sy) -> scaleY(sy)
-    // scale3d(1, 1, sz) -> scaleZ(sz)
-    // scaleX() scale(Y) scaleZ() -> scale3d()
     if (transforms.has('scale')) {
         const [sx, sy, sz] = decomposed.scale;
-        if (!(sx == 1 && sy == 1 && sz == 1)) {
-            if (sz == 1) {
-                scales.delete('z');
-            }
-            if (sy == 1) {
-                scales.delete('y');
-            }
-            if (sx == 1) {
-                scales.delete('x');
-            }
-            if (scales.size == 1) {
-                let prefix = scales.has('x') ? '' : scales.has('y') ? 'Y' : 'Z';
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'scale' + prefix,
-                    chi: [
-                        { typ: EnumToken.NumberTokenType, val: '' + (prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx) }
-                    ]
-                });
-            }
-            else if (!scales.has('z')) {
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'scale',
-                    chi: [
-                        { typ: EnumToken.NumberTokenType, val: '' + sx },
-                        { typ: EnumToken.CommaTokenType },
-                        { typ: EnumToken.NumberTokenType, val: '' + sy },
-                    ]
-                });
-            }
-            else {
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'scale3d',
-                    chi: [
-                        { typ: EnumToken.NumberTokenType, val: '' + sx },
-                        { typ: EnumToken.CommaTokenType },
-                        { typ: EnumToken.NumberTokenType, val: '' + sy },
-                        { typ: EnumToken.CommaTokenType },
-                        { typ: EnumToken.NumberTokenType, val: '' + sz }
-                    ]
-                });
-            }
+        if (sz == 1) {
+            scales.delete('z');
+        }
+        if (sy == 1) {
+            scales.delete('y');
+        }
+        if (sx == 1) {
+            scales.delete('x');
+        }
+        if (scales.size == 1) {
+            let prefix = scales.has('x') ? '' : scales.has('y') ? 'Y' : 'Z';
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'scale' + prefix,
+                chi: [
+                    { typ: EnumToken.NumberTokenType, val: '' + (prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx) }
+                ]
+            });
+        }
+        else if (!scales.has('z')) {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'scale',
+                chi: [
+                    { typ: EnumToken.NumberTokenType, val: '' + sx },
+                    { typ: EnumToken.CommaTokenType },
+                    { typ: EnumToken.NumberTokenType, val: '' + sy },
+                ]
+            });
+        }
+        else {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'scale3d',
+                chi: [
+                    { typ: EnumToken.NumberTokenType, val: '' + sx },
+                    { typ: EnumToken.CommaTokenType },
+                    { typ: EnumToken.NumberTokenType, val: '' + sy },
+                    { typ: EnumToken.CommaTokenType },
+                    { typ: EnumToken.NumberTokenType, val: '' + sz }
+                ]
+            });
         }
     }
     if (transforms.has('rotate')) {
         const [x, y, z, angle] = decomposed.rotate;
-        // console.error({x, y, z, angle});
-        if (angle != 0 && !(x == 0 && y == 0 && z == 0)) {
-            if (y == 0 && z == 0) {
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'rotateX',
-                    chi: [
-                        {
-                            typ: EnumToken.AngleTokenType,
-                            val: '' + angle,
-                            unit: 'deg'
-                        }
-                    ]
-                });
-            }
-            else if (x == 0 && z == 0) {
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'rotateY',
-                    chi: [
-                        {
-                            typ: EnumToken.AngleTokenType,
-                            val: '' + angle,
-                            unit: 'deg'
-                        }
-                    ]
-                });
-            }
-            else if (x == 0 && y == 0) {
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'rotate',
-                    chi: [
-                        {
-                            typ: EnumToken.AngleTokenType,
-                            val: '' + angle,
-                            unit: 'deg'
-                        }
-                    ]
-                });
-            }
-            else {
-                result.push({
-                    typ: EnumToken.FunctionTokenType,
-                    val: 'rotate3d',
-                    chi: [
-                        {
-                            typ: EnumToken.NumberTokenType,
-                            val: '' + x
-                        },
-                        { typ: EnumToken.CommaTokenType },
-                        {
-                            typ: EnumToken.NumberTokenType,
-                            val: '' + y
-                        },
-                        { typ: EnumToken.CommaTokenType },
-                        {
-                            typ: EnumToken.NumberTokenType,
-                            val: '' + z
-                        },
-                        { typ: EnumToken.CommaTokenType },
-                        {
-                            typ: EnumToken.AngleTokenType,
-                            val: '' + angle,
-                            unit: 'deg'
-                        }
-                    ]
-                });
-            }
+        if (y == 0 && z == 0) {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotateX',
+                chi: [
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + angle,
+                        unit: 'deg'
+                    }
+                ]
+            });
+        }
+        else if (x == 0 && z == 0) {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotateY',
+                chi: [
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + angle,
+                        unit: 'deg'
+                    }
+                ]
+            });
+        }
+        else if (x == 0 && y == 0) {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotate',
+                chi: [
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + angle,
+                        unit: 'deg'
+                    }
+                ]
+            });
+        }
+        else {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotate3d',
+                chi: [
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: '' + x
+                    },
+                    { typ: EnumToken.CommaTokenType },
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: '' + y
+                    },
+                    { typ: EnumToken.CommaTokenType },
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: '' + z
+                    },
+                    { typ: EnumToken.CommaTokenType },
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + angle,
+                        unit: 'deg'
+                    }
+                ]
+            });
+        }
+    }
+    if (transforms.has('skew')) {
+        if (decomposed.skew[0] == 0) {
+            skew.delete('x');
+        }
+        if (decomposed.skew[1] == 0) {
+            skew.delete('y');
+        }
+        // console.error({skew});
+        for (let i = 0; i < 2; i++) {
+            decomposed.skew[i] = +(Math.atan(decomposed.skew[i]) * 180 / Math.PI).toPrecision(6);
+        }
+        if (skew.size == 1) {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'skew' + (skew.has('x') ? '' : 'Y'),
+                chi: [
+                    { typ: EnumToken.AngleTokenType, val: '' + decomposed.skew[0], unit: 'deg' }
+                ]
+            });
+        }
+        else {
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'skew',
+                chi: [
+                    { typ: EnumToken.AngleTokenType, val: '' + decomposed.skew[0], unit: 'deg' },
+                    { typ: EnumToken.CommaTokenType },
+                    { typ: EnumToken.AngleTokenType, val: '' + decomposed.skew[1], unit: 'deg' }
+                ]
+            });
         }
     }
     // identity
-    return transforms.size > 1 ? null : result.length == 0 || eq(result, identity()) ? [
+    return result.length == 0 || eq(result, identity()) ? [
         {
             typ: EnumToken.IdenTokenType,
             val: 'none'

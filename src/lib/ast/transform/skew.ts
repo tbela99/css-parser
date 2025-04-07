@@ -1,32 +1,33 @@
-import {identity, Matrix} from "./utils.ts";
+import {identity, Matrix, multiply} from "./utils.ts";
 
-export function skewX(x: number): Matrix {
+export function skewX(x: number, from: Matrix): Matrix {
 
     const matrix: Matrix = identity();
 
-    matrix[2][0] = Math.tan( x * Math.PI / 180);
-    return matrix;
+    matrix[1][0] = Math.tan(x);
+
+    return multiply(from, matrix);
 }
 
-export function skewY(y: number): Matrix {
+export function skewY(y: number, from: Matrix): Matrix {
 
     const matrix: Matrix = identity();
 
-    matrix[0][1] = Math.tan( y * Math.PI / 180);
-    return matrix;
+    matrix[0][1] = Math.tan(y);
+    return multiply(from, matrix);
 }
 
 // convert angle to radian
-export function skew(x: number, y?: number): Matrix {
+export function skew(values: [number] | [number, number], from: Matrix): Matrix {
 
     const matrix: Matrix = identity();
 
-    matrix[2][0] = Math.tan( x * Math.PI / 180);
+    matrix[1][0] = Math.tan(values[0]);
 
-    if (y != null) {
+    if (values.length > 1) {
 
-        matrix[0][1] = Math.tan(y * Math.PI / 180);
+        matrix[0][1] = Math.tan(values[1]!);
     }
 
-    return matrix;
+    return multiply(from, matrix);
 }

@@ -19,8 +19,14 @@ function translate(translate, from) {
     const matrix = identity();
     matrix[3][0] = translate[0];
     matrix[3][1] = translate[1] ?? 0;
-    matrix[3][2] = translate[2] ?? 0;
+    return multiply(from, matrix);
+}
+function translate3d(translate, from) {
+    const matrix = identity();
+    matrix[3][0] = translate[0];
+    matrix[3][1] = translate[1];
+    matrix[3][2] = translate[2];
     return multiply(from, matrix);
 }
 
-export { translate, translateX, translateY, translateZ };
+export { translate, translate3d, translateX, translateY, translateZ };

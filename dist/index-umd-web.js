@@ -17864,6 +17864,7 @@
         rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
         const { x: x1, y: y1, z: z1, angle } = getRotation3D(rotationMatrix);
         return {
+            // @ts-ignore
             skew: toZero(skew),
             scale: toZero(scale),
             rotate: toZero([x1, y1, z1, angle]),
@@ -18011,7 +18012,13 @@
         const matrix = identity();
         matrix[3][0] = translate[0];
         matrix[3][1] = translate[1] ?? 0;
-        matrix[3][2] = translate[2] ?? 0;
+        return multiply(from, matrix);
+    }
+    function translate3d(translate, from) {
+        const matrix = identity();
+        matrix[3][0] = translate[0];
+        matrix[3][1] = translate[1];
+        matrix[3][2] = translate[2];
         return multiply(from, matrix);
     }
 
@@ -18089,14 +18096,12 @@
 
     function minify$1(matrix) {
         const decomposed = decompose(matrix);
-        // console.error({decomposed});
         if (decomposed == null) {
             return null;
         }
-        const transforms = new Set([
-            'translate', 'scale', 'skew', 'perspective', 'rotate'
-        ]);
+        const transforms = new Set(['translate', 'scale', 'skew', 'perspective', 'rotate']);
         const scales = new Set(['x', 'y', 'z']);
+        const skew = new Set(['x', 'y']);
         const result = [];
         // check identity
         if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
@@ -18105,7 +18110,7 @@
         if (decomposed.scale[0] == 1 && decomposed.scale[1] == 1 && decomposed.scale[2] == 1) {
             transforms.delete('scale');
         }
-        if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0 && decomposed.skew[2] == 0) {
+        if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0) {
             transforms.delete('skew');
         }
         if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
@@ -18124,7 +18129,7 @@
             if (coordinates.size == 3) {
                 result.push({
                     typ: exports.EnumToken.FunctionTokenType,
-                    val: 'translate',
+                    val: 'translate3d',
                     chi: [
                         { typ: exports.EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px' },
                         { typ: exports.EnumToken.CommaTokenType },
@@ -18189,138 +18194,226 @@
                 });
             }
         }
-        // scale(x, x) -> scale(x)
-        // scale(1, sy) -> scaleY(sy)
-        // scale3d(1, 1, sz) -> scaleZ(sz)
-        // scaleX() scale(Y) scaleZ() -> scale3d()
         if (transforms.has('scale')) {
             const [sx, sy, sz] = decomposed.scale;
-            if (!(sx == 1 && sy == 1 && sz == 1)) {
-                if (sz == 1) {
-                    scales.delete('z');
-                }
-                if (sy == 1) {
-                    scales.delete('y');
-                }
-                if (sx == 1) {
-                    scales.delete('x');
-                }
-                if (scales.size == 1) {
-                    let prefix = scales.has('x') ? '' : scales.has('y') ? 'Y' : 'Z';
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'scale' + prefix,
-                        chi: [
-                            { typ: exports.EnumToken.NumberTokenType, val: '' + (prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx) }
-                        ]
-                    });
-                }
-                else if (!scales.has('z')) {
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'scale',
-                        chi: [
-                            { typ: exports.EnumToken.NumberTokenType, val: '' + sx },
-                            { typ: exports.EnumToken.CommaTokenType },
-                            { typ: exports.EnumToken.NumberTokenType, val: '' + sy },
-                        ]
-                    });
-                }
-                else {
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'scale3d',
-                        chi: [
-                            { typ: exports.EnumToken.NumberTokenType, val: '' + sx },
-                            { typ: exports.EnumToken.CommaTokenType },
-                            { typ: exports.EnumToken.NumberTokenType, val: '' + sy },
-                            { typ: exports.EnumToken.CommaTokenType },
-                            { typ: exports.EnumToken.NumberTokenType, val: '' + sz }
-                        ]
-                    });
-                }
+            if (sz == 1) {
+                scales.delete('z');
+            }
+            if (sy == 1) {
+                scales.delete('y');
+            }
+            if (sx == 1) {
+                scales.delete('x');
+            }
+            if (scales.size == 1) {
+                let prefix = scales.has('x') ? '' : scales.has('y') ? 'Y' : 'Z';
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'scale' + prefix,
+                    chi: [
+                        { typ: exports.EnumToken.NumberTokenType, val: '' + (prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx) }
+                    ]
+                });
+            }
+            else if (!scales.has('z')) {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'scale',
+                    chi: [
+                        { typ: exports.EnumToken.NumberTokenType, val: '' + sx },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        { typ: exports.EnumToken.NumberTokenType, val: '' + sy },
+                    ]
+                });
+            }
+            else {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'scale3d',
+                    chi: [
+                        { typ: exports.EnumToken.NumberTokenType, val: '' + sx },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        { typ: exports.EnumToken.NumberTokenType, val: '' + sy },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        { typ: exports.EnumToken.NumberTokenType, val: '' + sz }
+                    ]
+                });
             }
         }
         if (transforms.has('rotate')) {
             const [x, y, z, angle] = decomposed.rotate;
-            // console.error({x, y, z, angle});
-            if (angle != 0 && !(x == 0 && y == 0 && z == 0)) {
-                if (y == 0 && z == 0) {
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'rotateX',
-                        chi: [
-                            {
-                                typ: exports.EnumToken.AngleTokenType,
-                                val: '' + angle,
-                                unit: 'deg'
-                            }
-                        ]
-                    });
-                }
-                else if (x == 0 && z == 0) {
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'rotateY',
-                        chi: [
-                            {
-                                typ: exports.EnumToken.AngleTokenType,
-                                val: '' + angle,
-                                unit: 'deg'
-                            }
-                        ]
-                    });
-                }
-                else if (x == 0 && y == 0) {
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'rotate',
-                        chi: [
-                            {
-                                typ: exports.EnumToken.AngleTokenType,
-                                val: '' + angle,
-                                unit: 'deg'
-                            }
-                        ]
-                    });
-                }
-                else {
-                    result.push({
-                        typ: exports.EnumToken.FunctionTokenType,
-                        val: 'rotate3d',
-                        chi: [
-                            {
-                                typ: exports.EnumToken.NumberTokenType,
-                                val: '' + x
-                            },
-                            { typ: exports.EnumToken.CommaTokenType },
-                            {
-                                typ: exports.EnumToken.NumberTokenType,
-                                val: '' + y
-                            },
-                            { typ: exports.EnumToken.CommaTokenType },
-                            {
-                                typ: exports.EnumToken.NumberTokenType,
-                                val: '' + z
-                            },
-                            { typ: exports.EnumToken.CommaTokenType },
-                            {
-                                typ: exports.EnumToken.AngleTokenType,
-                                val: '' + angle,
-                                unit: 'deg'
-                            }
-                        ]
-                    });
-                }
+            if (y == 0 && z == 0) {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'rotateX',
+                    chi: [
+                        {
+                            typ: exports.EnumToken.AngleTokenType,
+                            val: '' + angle,
+                            unit: 'deg'
+                        }
+                    ]
+                });
+            }
+            else if (x == 0 && z == 0) {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'rotateY',
+                    chi: [
+                        {
+                            typ: exports.EnumToken.AngleTokenType,
+                            val: '' + angle,
+                            unit: 'deg'
+                        }
+                    ]
+                });
+            }
+            else if (x == 0 && y == 0) {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'rotate',
+                    chi: [
+                        {
+                            typ: exports.EnumToken.AngleTokenType,
+                            val: '' + angle,
+                            unit: 'deg'
+                        }
+                    ]
+                });
+            }
+            else {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'rotate3d',
+                    chi: [
+                        {
+                            typ: exports.EnumToken.NumberTokenType,
+                            val: '' + x
+                        },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        {
+                            typ: exports.EnumToken.NumberTokenType,
+                            val: '' + y
+                        },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        {
+                            typ: exports.EnumToken.NumberTokenType,
+                            val: '' + z
+                        },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        {
+                            typ: exports.EnumToken.AngleTokenType,
+                            val: '' + angle,
+                            unit: 'deg'
+                        }
+                    ]
+                });
+            }
+        }
+        if (transforms.has('skew')) {
+            if (decomposed.skew[0] == 0) {
+                skew.delete('x');
+            }
+            if (decomposed.skew[1] == 0) {
+                skew.delete('y');
+            }
+            // console.error({skew});
+            for (let i = 0; i < 2; i++) {
+                decomposed.skew[i] = +(Math.atan(decomposed.skew[i]) * 180 / Math.PI).toPrecision(6);
+            }
+            if (skew.size == 1) {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'skew' + (skew.has('x') ? '' : 'Y'),
+                    chi: [
+                        { typ: exports.EnumToken.AngleTokenType, val: '' + decomposed.skew[0], unit: 'deg' }
+                    ]
+                });
+            }
+            else {
+                result.push({
+                    typ: exports.EnumToken.FunctionTokenType,
+                    val: 'skew',
+                    chi: [
+                        { typ: exports.EnumToken.AngleTokenType, val: '' + decomposed.skew[0], unit: 'deg' },
+                        { typ: exports.EnumToken.CommaTokenType },
+                        { typ: exports.EnumToken.AngleTokenType, val: '' + decomposed.skew[1], unit: 'deg' }
+                    ]
+                });
             }
         }
         // identity
-        return transforms.size > 1 ? null : result.length == 0 || eq(result, identity()) ? [
+        return result.length == 0 || eq(result, identity()) ? [
             {
                 typ: exports.EnumToken.IdenTokenType,
                 val: 'none'
             }
         ] : result;
+    }
+
+    function skewX(x, from) {
+        const matrix = identity();
+        matrix[1][0] = Math.tan(x);
+        return multiply(from, matrix);
+    }
+    function skewY(y, from) {
+        const matrix = identity();
+        matrix[0][1] = Math.tan(y);
+        return multiply(from, matrix);
+    }
+    // convert angle to radian
+    function skew(values, from) {
+        const matrix = identity();
+        matrix[1][0] = Math.tan(values[0]);
+        if (values.length > 1) {
+            matrix[0][1] = Math.tan(values[1]);
+        }
+        return multiply(from, matrix);
+    }
+
+    function serialize(matrix) {
+        if (is2DMatrix(matrix)) {
+            // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
+            return {
+                typ: exports.EnumToken.FunctionTokenType,
+                val: 'matrix',
+                chi: [
+                    matrix[0][0],
+                    matrix[0][1],
+                    matrix[1][0],
+                    matrix[1][1],
+                    matrix[3][0],
+                    matrix[3][1]
+                ].reduce((acc, t) => {
+                    if (acc.length > 0) {
+                        acc.push({ typ: exports.EnumToken.CommaTokenType });
+                    }
+                    acc.push({
+                        typ: exports.EnumToken.NumberTokenType,
+                        val: reduceNumber(t.toPrecision(6))
+                    });
+                    return acc;
+                }, [])
+            };
+        }
+        let m = [];
+        // console.error(JSON.stringify({matrix},null, 1));
+        for (let i = 0; i < matrix.length; i++) {
+            for (let j = 0; j < matrix[i].length; j++) {
+                if (m.length > 0) {
+                    m.push({ typ: exports.EnumToken.CommaTokenType });
+                }
+                m.push({
+                    typ: exports.EnumToken.NumberTokenType,
+                    val: reduceNumber(matrix[j][i].toPrecision(6))
+                });
+            }
+        }
+        return {
+            typ: exports.EnumToken.FunctionTokenType,
+            val: 'matrix3d',
+            chi: m
+        };
     }
 
     function compute(transformLists) {
@@ -18329,34 +18422,19 @@
         if (transformLists.length == 0) {
             return null;
         }
-        const tokens = [];
-        let matrix;
+        let matrix = identity();
         for (const transformList of splitTransformList(transformLists)) {
-            matrix = computeMatrix(transformList);
+            matrix = computeMatrix(transformList, matrix);
             if (matrix == null) {
                 return null;
             }
-            tokens.push(matrix);
         }
-        // for (let i = 0; i < tokens.length; i++) {
-        //
-        //     for (let j = 0; j < tokens[i].length; j++) {
-        //
-        //         toZero(tokens[i][j]);
-        //     }
-        // }
-        const result = [];
-        for (const token of tokens) {
-            let t = minify$1(token);
-            if (t == null) {
-                return null;
-            }
-            result.push(...t);
-        }
-        return result;
+        return {
+            result: minify$1(matrix),
+            matrix: serialize(matrix)
+        };
     }
-    function computeMatrix(transformList) {
-        let matrix = identity();
+    function computeMatrix(transformList, matrix) {
         let values = [];
         let val;
         let i = 0;
@@ -18407,9 +18485,12 @@
                         else if (transformList[i].val == 'translateZ') {
                             matrix = translateZ(values[0], matrix);
                         }
+                        else if (transformList[i].val == 'translate') {
+                            matrix = translate(values, matrix);
+                        }
                         else {
                             // @ts-ignore
-                            matrix = translate(values, matrix);
+                            matrix = translate3d(values, matrix);
                         }
                     }
                     break;
@@ -18464,50 +18545,80 @@
                 case 'scaleX':
                 case 'scaleY':
                 case 'scaleZ':
-                case 'scale3d': {
-                    values.length = 0;
-                    let child;
-                    for (let k = 0; k < transformList[i].chi.length; k++) {
-                        child = transformList[i].chi[k];
-                        if (child.typ == exports.EnumToken.CommentTokenType || child.typ == exports.EnumToken.WhitespaceTokenType) {
-                            continue;
+                case 'scale3d':
+                    {
+                        values.length = 0;
+                        let child;
+                        for (let k = 0; k < transformList[i].chi.length; k++) {
+                            child = transformList[i].chi[k];
+                            if (child.typ == exports.EnumToken.CommentTokenType || child.typ == exports.EnumToken.WhitespaceTokenType) {
+                                continue;
+                            }
+                            if (child.typ != exports.EnumToken.NumberTokenType) {
+                                return null;
+                            }
+                            values.push(getNumber(child));
                         }
-                        if (child.typ != exports.EnumToken.NumberTokenType) {
+                        if (values.length == 0) {
                             return null;
                         }
-                        values.push(getNumber(child));
-                    }
-                    if (values.length == 0) {
-                        return null;
-                    }
-                    if (transformList[i].val == 'scale3d') {
-                        if (values.length != 3) {
+                        if (transformList[i].val == 'scale3d') {
+                            if (values.length != 3) {
+                                return null;
+                            }
+                            matrix = scale3d(...values, matrix);
+                            break;
+                        }
+                        if (transformList[i].val == 'scale') {
+                            if (values.length != 1 && values.length != 2) {
+                                return null;
+                            }
+                            matrix = scale(values[0], values[1] ?? values[0], matrix);
+                            break;
+                        }
+                        if (values.length != 1) {
                             return null;
                         }
-                        matrix = scale3d(...values, matrix);
-                        break;
-                    }
-                    if (transformList[i].val == 'scale') {
-                        if (values.length != 1 && values.length != 2) {
-                            return null;
+                        else if (transformList[i].val == 'scaleX') {
+                            matrix = scaleX(values[0], matrix);
                         }
-                        matrix = scale(values[0], values[1] ?? values[0], matrix);
-                        break;
-                    }
-                    if (values.length != 1) {
-                        return null;
-                    }
-                    else if (transformList[i].val == 'scaleX') {
-                        matrix = scaleX(values[0], matrix);
-                    }
-                    else if (transformList[i].val == 'scaleY') {
-                        matrix = scaleY(values[0], matrix);
-                    }
-                    else if (transformList[i].val == 'scaleZ') {
-                        matrix = scaleZ(values[0], matrix);
+                        else if (transformList[i].val == 'scaleY') {
+                            matrix = scaleY(values[0], matrix);
+                        }
+                        else if (transformList[i].val == 'scaleZ') {
+                            matrix = scaleZ(values[0], matrix);
+                        }
                     }
                     break;
-                }
+                case 'skew':
+                case 'skewX':
+                case 'skewY':
+                    {
+                        values.length = 0;
+                        let child;
+                        let value;
+                        for (let k = 0; k < transformList[i].chi.length; k++) {
+                            child = transformList[i].chi[k];
+                            if (child.typ == exports.EnumToken.CommentTokenType || child.typ == exports.EnumToken.WhitespaceTokenType) {
+                                continue;
+                            }
+                            value = getAngle(child);
+                            if (value == null) {
+                                return null;
+                            }
+                            values.push(value * 2 * Math.PI);
+                        }
+                        if (values.length == 0 || (values.length > (transformList[i].val == 'skew' ? 2 : 1))) {
+                            return null;
+                        }
+                        if (transformList[i].val == 'skew') {
+                            matrix = skew(values, matrix);
+                        }
+                        else {
+                            matrix = transformList[i].val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
+                        }
+                    }
+                    break;
                 default:
                     return null;
                 // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
@@ -18549,51 +18660,6 @@
         return tokens;
     }
 
-    function serialize(matrix) {
-        if (is2DMatrix(matrix)) {
-            // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
-            return {
-                typ: exports.EnumToken.FunctionTokenType,
-                val: 'matrix',
-                chi: [
-                    matrix[0][0],
-                    matrix[1][1],
-                    matrix[1][0],
-                    matrix[1][1],
-                    matrix[3][0],
-                    matrix[3][1]
-                ].reduce((acc, t) => {
-                    if (acc.length > 0) {
-                        acc.push({ typ: exports.EnumToken.CommaTokenType });
-                    }
-                    acc.push({
-                        typ: exports.EnumToken.NumberTokenType,
-                        val: reduceNumber(t.toPrecision(6))
-                    });
-                    return acc;
-                }, [])
-            };
-        }
-        let m = [];
-        // console.error(JSON.stringify({matrix},null, 1));
-        for (let i = 0; i < matrix.length; i++) {
-            for (let j = 0; j < matrix[i].length; j++) {
-                if (m.length > 0) {
-                    m.push({ typ: exports.EnumToken.CommaTokenType });
-                }
-                m.push({
-                    typ: exports.EnumToken.NumberTokenType,
-                    val: reduceNumber(matrix[i][j].toPrecision(6))
-                });
-            }
-        }
-        return {
-            typ: exports.EnumToken.FunctionTokenType,
-            val: 'matrix3d',
-            chi: m
-        };
-    }
-
     class TransformCssFeature {
         static get ordering() {
             return 4;
@@ -18621,27 +18687,16 @@
                 }
                 const children = node.val.slice();
                 consumeWhitespace(children);
-                let result = compute(children);
-                if (result == null) {
+                let { result, matrix } = compute(children) ?? {};
+                // console.error({result, matrix});
+                // console.error({result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''), matrix: matrix == null ? null : renderToken(matrix)});
+                if (result == null || matrix == null) {
                     return;
                 }
-                // console.error(JSON.stringify({result}, null, 1));
-                // console.error({result, t: result.map(t =>  minify(t) ?? t
-                //     )});
-                // console.error({result: decompose2(result)});
-                // const decomposed =decompose(result);
-                // const minified = minify(result);
-                const matrix = computeMatrix(result);
-                if (matrix != null) {
-                    const m = serialize(matrix);
-                    if (renderToken(m).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-                        result = [m];
-                    }
+                if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+                    result = [matrix];
                 }
-                // console.error({result, serialized: renderToken()});
-                // if (minified != null) {
                 node.val = result;
-                // }
             }
         }
     }

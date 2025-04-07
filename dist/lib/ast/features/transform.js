@@ -6,8 +6,7 @@ import '../../parser/parse.js';
 import { renderToken } from '../../renderer/render.js';
 import '../../renderer/color/utils/constants.js';
 import '../../parser/utils/config.js';
-import { compute, computeMatrix } from '../transform/compute.js';
-import { serialize } from '../transform/matrix.js';
+import { compute } from '../transform/compute.js';
 
 class TransformCssFeature {
     static get ordering() {
@@ -36,27 +35,16 @@ class TransformCssFeature {
             }
             const children = node.val.slice();
             consumeWhitespace(children);
-            let result = compute(children);
-            if (result == null) {
+            let { result, matrix } = compute(children) ?? {};
+            // console.error({result, matrix});
+            // console.error({result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''), matrix: matrix == null ? null : renderToken(matrix)});
+            if (result == null || matrix == null) {
                 return;
             }
-            // console.error(JSON.stringify({result}, null, 1));
-            // console.error({result, t: result.map(t =>  minify(t) ?? t
-            //     )});
-            // console.error({result: decompose2(result)});
-            // const decomposed =decompose(result);
-            // const minified = minify(result);
-            const matrix = computeMatrix(result);
-            if (matrix != null) {
-                const m = serialize(matrix);
-                if (renderToken(m).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-                    result = [m];
-                }
+            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+                result = [matrix];
             }
-            // console.error({result, serialized: renderToken()});
-            // if (minified != null) {
             node.val = result;
-            // }
         }
     }
 }
