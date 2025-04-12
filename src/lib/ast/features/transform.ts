@@ -54,23 +54,27 @@ export class TransformCssFeature {
 
             consumeWhitespace(children);
 
-            let {result, matrix} = compute(children as Token[]) ?? {};
+            let {matrix, cumulative} = compute(children as Token[]) ?? {};
 
             // console.error({result, matrix});
+            // console.error(
+            //     {
+            //         // result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //         matrix: matrix == null ? null : renderToken(matrix),
+            //         cumulative: cumulative == null ? null : cumulative.reduce((acc, curr) => acc + renderToken(curr), '')
+            //     });
 
-            // console.error({result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''), matrix: matrix == null ? null : renderToken(matrix)});
-
-            if (result == null || matrix == null) {
+            if ( matrix == null) {
 
                 return;
             }
 
-            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+            if (renderToken(matrix).length < cumulative.reduce((acc, t) => acc + renderToken(t), '').length) {
 
-                result = [matrix];
+                cumulative = [matrix];
             }
 
-            (node as AstDeclaration).val = result;
+            (node as AstDeclaration).val = cumulative;
         }
     }
 }

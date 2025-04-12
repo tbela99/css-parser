@@ -17843,14 +17843,20 @@ function multiply(matrixA, matrixB) {
     }
     return result;
 }
-function decompose(matrix) {
+function decompose(original) {
     // Normalize the matrix.
-    if (matrix[3][3] === 0) {
+    if (original[3][3] === 0) {
         return null;
     }
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            matrix[i][j] /= matrix[3][3];
+    // @ts-ignore
+    const matrix = original.reduce((acc, curr) => acc.concat([curr.slice()]), []);
+    const div = Math.abs(1 / matrix[3][3]);
+    // const div = 1 / matrix[3][3];
+    if (div != 1) {
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                matrix[i][j] *= div;
+            }
         }
     }
     // perspectiveMatrix is used to solve for perspective, but it also provides
@@ -17865,14 +17871,14 @@ function decompose(matrix) {
     }
     let rightHandSide = [0, 0, 0, 0];
     let perspective = [0, 0, 0, 0];
-    let translate = [0, 0, 0];
+    let translate = [matrix[3][0], matrix[3][1], matrix[3][2]];
     // First, isolate perspective.
-    if (matrix[0][3] !== 0 || matrix[1][3] !== 0 || matrix[2][3] !== 0) {
+    if (original[0][3] !== 0 || original[1][3] !== 0 || original[2][3] !== 0) {
         // rightHandSide is the right hand side of the equation.
-        rightHandSide[0] = matrix[0][3];
-        rightHandSide[1] = matrix[1][3];
-        rightHandSide[2] = matrix[2][3];
-        rightHandSide[3] = matrix[3][3];
+        rightHandSide[0] = original[0][3];
+        rightHandSide[1] = original[1][3];
+        rightHandSide[2] = original[2][3];
+        rightHandSide[3] = original[3][3];
         // Solve the equation by inverting perspectiveMatrix and multiplying
         // rightHandSide by the inverse.
         let inversePerspectiveMatrix = inverse(perspectiveMatrix);
@@ -17885,9 +17891,10 @@ function decompose(matrix) {
         perspective[3] = 1;
     }
     // Next take care of translation
-    for (let i = 0; i < 3; i++) {
-        translate[i] = matrix[3][i];
-    }
+    //     for (let i = 0; i < 3; i++) {
+    //
+    //         translate[i] = matrix[3][i];
+    //     }
     let row = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
     // Now get scale and shear. 'row' is a 3 element array of 3 component vectors
     for (let i = 0; i < 3; i++) {
@@ -17968,7 +17975,7 @@ function decompose(matrix) {
         scale: toZero(scale),
         rotate: toZero([x1, y1, z1, angle]),
         translate: toZero(translate),
-        perspective,
+        perspective: original[2][3] == 0 ? null : +(-1 / original[2][3]).toPrecision(6),
         quaternion
     };
 }
@@ -18193,7 +18200,7 @@ function scale3d(x, y, z, from) {
     return multiply(from, matrix);
 }
 
-function minify$1(matrix) {
+function minify$1(matrix, names) {
     const decomposed = decompose(matrix);
     if (decomposed == null) {
         return null;
@@ -18201,7 +18208,7 @@ function minify$1(matrix) {
     const transforms = new Set(['translate', 'scale', 'skew', 'perspective', 'rotate']);
     const scales = new Set(['x', 'y', 'z']);
     const skew = new Set(['x', 'y']);
-    const result = [];
+    let result = [];
     // check identity
     if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
         transforms.delete('translate');
@@ -18212,7 +18219,7 @@ function minify$1(matrix) {
     if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0) {
         transforms.delete('skew');
     }
-    if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
+    if (decomposed.perspective == null) {
         transforms.delete('perspective');
     }
     if (decomposed.rotate[3] == 0) {
@@ -18416,7 +18423,6 @@ function minify$1(matrix) {
         if (decomposed.skew[1] == 0) {
             skew.delete('y');
         }
-        // console.error({skew});
         for (let i = 0; i < 2; i++) {
             decomposed.skew[i] = +(Math.atan(decomposed.skew[i]) * 180 / Math.PI).toPrecision(6);
         }
@@ -18440,6 +18446,15 @@ function minify$1(matrix) {
                 ]
             });
         }
+    }
+    if (transforms.has('perspective')) {
+        result.push({
+            typ: exports.EnumToken.FunctionTokenType,
+            val: 'perspective',
+            chi: [
+                { typ: exports.EnumToken.Length, val: '' + decomposed.perspective, unit: 'px' },
+            ]
+        });
     }
     // identity
     return result.length == 0 || eq(result, identity()) ? [
@@ -18515,6 +18530,13 @@ function serialize(matrix) {
     };
 }
 
+function perspective(x, from) {
+    const matrix = identity();
+    // @ts-ignore
+    matrix[2][3] = typeof x == 'object' && x.val == 'none' ? 0 : x == 0 ? Number.NEGATIVE_INFINITY : -1 / x;
+    return multiply(from, matrix);
+}
+
 function compute(transformLists) {
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
@@ -18522,15 +18544,72 @@ function compute(transformLists) {
         return null;
     }
     let matrix = identity();
+    const names = new Set;
+    const cumulative = [];
     for (const transformList of splitTransformList(transformLists)) {
         matrix = computeMatrix(transformList, matrix);
+        switch (transformList[0].val) {
+            case 'translate':
+            case 'translateX':
+            case 'translateY':
+            case 'translateZ':
+            case 'translate3d':
+                if (names.has('translate')) {
+                    names.delete('translate');
+                }
+                names.add('translate');
+                break;
+            case 'scale':
+            case 'scaleX':
+            case 'scaleY':
+            case 'scaleZ':
+            case 'scale3d':
+                if (names.has('scale')) {
+                    names.delete('scale');
+                }
+                names.add('scale');
+                break;
+            case 'rotate':
+            case 'rotateX':
+            case 'rotateY':
+            case 'rotateZ':
+            case 'rotate3d':
+                if (names.has('rotate')) {
+                    names.delete('rotate');
+                }
+                names.add('rotate');
+                break;
+            case 'skew':
+            case 'skewX':
+            case 'skewY':
+                if (names.has('skew')) {
+                    names.delete('skew');
+                }
+                names.add('skew');
+                break;
+            case 'perspective':
+                if (names.has('perspective')) {
+                    names.delete('perspective');
+                }
+                names.add('perspective');
+                break;
+            case 'matrix':
+            case 'matrix3d':
+                if (names.has('matrix')) {
+                    names.delete('matrix');
+                }
+                names.add('matrix');
+                break;
+        }
         if (matrix == null) {
             return null;
         }
+        cumulative.push(...(minify$1(computeMatrix(transformList, identity())) ?? transformList));
     }
     return {
-        result: minify$1(matrix),
-        matrix: serialize(matrix)
+        // result: minify(matrix, [...names]),
+        matrix: serialize(matrix),
+        cumulative
     };
 }
 function computeMatrix(transformList, matrix) {
@@ -18718,6 +18797,32 @@ function computeMatrix(transformList, matrix) {
                     }
                 }
                 break;
+            case 'perspective':
+                {
+                    const values = [];
+                    let child;
+                    let value;
+                    for (let k = 0; k < transformList[i].chi.length; k++) {
+                        child = transformList[i].chi[k];
+                        if (child.typ == exports.EnumToken.CommentTokenType || child.typ == exports.EnumToken.WhitespaceTokenType) {
+                            continue;
+                        }
+                        if (child.typ == exports.EnumToken.IdenTokenType && child.val == 'none') {
+                            values.push(child);
+                            continue;
+                        }
+                        value = length2Px(child);
+                        if (value == null) {
+                            return null;
+                        }
+                        values.push(value);
+                    }
+                    if (values.length != 1) {
+                        return null;
+                    }
+                    matrix = perspective(values[0], matrix);
+                }
+                break;
             default:
                 return null;
             // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
@@ -18786,16 +18891,21 @@ class TransformCssFeature {
             }
             const children = node.val.slice();
             consumeWhitespace(children);
-            let { result, matrix } = compute(children) ?? {};
+            let { matrix, cumulative } = compute(children) ?? {};
             // console.error({result, matrix});
-            // console.error({result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''), matrix: matrix == null ? null : renderToken(matrix)});
-            if (result == null || matrix == null) {
+            // console.error(
+            //     {
+            //         // result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //         matrix: matrix == null ? null : renderToken(matrix),
+            //         cumulative: cumulative == null ? null : cumulative.reduce((acc, curr) => acc + renderToken(curr), '')
+            //     });
+            if (matrix == null) {
                 return;
             }
-            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-                result = [matrix];
+            if (renderToken(matrix).length < cumulative.reduce((acc, t) => acc + renderToken(t), '').length) {
+                cumulative = [matrix];
             }
-            node.val = result;
+            node.val = cumulative;
         }
     }
 }

@@ -2,6 +2,14 @@
 
 # v0.9.2
 
+- [ ] CSS transform module level 2
+  - translate
+  - scale
+  - rotate
+  - skew
+  - perspective                                  
+  - matrix
+  - matrix3d
 - [x] keyframes
     - [x] remove consecutive keyframes with the same name
     - [x] reduce keyframe selector 'from' to '0%'

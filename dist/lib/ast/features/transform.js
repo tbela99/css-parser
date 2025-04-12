@@ -35,16 +35,21 @@ class TransformCssFeature {
             }
             const children = node.val.slice();
             consumeWhitespace(children);
-            let { result, matrix } = compute(children) ?? {};
+            let { matrix, cumulative } = compute(children) ?? {};
             // console.error({result, matrix});
-            // console.error({result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''), matrix: matrix == null ? null : renderToken(matrix)});
-            if (result == null || matrix == null) {
+            // console.error(
+            //     {
+            //         // result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //         matrix: matrix == null ? null : renderToken(matrix),
+            //         cumulative: cumulative == null ? null : cumulative.reduce((acc, curr) => acc + renderToken(curr), '')
+            //     });
+            if (matrix == null) {
                 return;
             }
-            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-                result = [matrix];
+            if (renderToken(matrix).length < cumulative.reduce((acc, t) => acc + renderToken(t), '').length) {
+                cumulative = [matrix];
             }
-            node.val = result;
+            node.val = cumulative;
         }
     }
 }

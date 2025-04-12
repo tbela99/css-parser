@@ -1,4 +1,4 @@
-import type {AngleToken, FunctionToken, LengthToken, NumberToken, Token} from "../../../@types/token.d.ts";
+import type {AngleToken, FunctionToken, IdentToken, LengthToken, NumberToken, Token} from "../../../@types/token.d.ts";
 import {identity, Matrix} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {length2Px} from "./convert.ts";
@@ -11,10 +11,12 @@ import {scale, scale3d, scaleX, scaleY, scaleZ} from "./scale.ts";
 import {minify} from "./minify.ts";
 import {skew, skewX, skewY} from "./skew.ts";
 import {serialize} from "./matrix.ts";
+import {perspective} from "./perspective.ts";
 
 export function compute(transformLists: Token[]): {
-    result: Token[] | null;
-    matrix: Token
+    // result: Token[] | null;
+    matrix: Token,
+    cumulative: Token[]
 } | null {
 
     transformLists = transformLists.slice();
@@ -26,20 +28,104 @@ export function compute(transformLists: Token[]): {
     }
 
     let matrix: Matrix | null = identity();
+    const names: Set<string> = new Set;
+    const cumulative: Token[] = [];
 
     for (const transformList of splitTransformList(transformLists)) {
 
         matrix = computeMatrix(transformList, matrix);
 
+        switch ((transformList[0] as FunctionToken).val) {
+
+            case 'translate':
+            case 'translateX':
+            case 'translateY':
+            case 'translateZ':
+            case 'translate3d':
+
+                if(names.has('translate')) {
+
+                    names.delete('translate');
+                }
+
+                names.add('translate');
+                break;
+
+            case 'scale':
+            case 'scaleX':
+            case 'scaleY':
+            case 'scaleZ':
+            case 'scale3d':
+
+                if(names.has('scale')) {
+
+                    names.delete('scale');
+                }
+
+                names.add('scale');
+
+                break;
+
+            case 'rotate':
+            case 'rotateX':
+            case 'rotateY':
+            case 'rotateZ':
+            case 'rotate3d':
+
+                if(names.has('rotate')) {
+
+                    names.delete('rotate');
+                }
+
+                names.add('rotate');
+                break;
+
+            case 'skew':
+            case 'skewX':
+            case 'skewY':
+
+                if(names.has('skew')) {
+
+                    names.delete('skew');
+                }
+
+                names.add('skew');
+                break;
+
+            case 'perspective':
+
+                if(names.has('perspective')) {
+
+                    names.delete('perspective');
+                }
+
+                names.add('perspective');
+                break;
+
+            case 'matrix':
+            case 'matrix3d':
+
+                if(names.has('matrix')) {
+
+                    names.delete('matrix');
+                }
+
+                names.add('matrix');
+                break;
+        }
+
         if (matrix == null) {
 
             return null;
         }
+
+        cumulative.push(...(minify(computeMatrix(transformList, identity()) as Matrix) as Token[] ?? transformList));
     }
 
     return {
-        result: minify(matrix),
-        matrix: serialize(matrix)
+        // result: minify(matrix, [...names]),
+        matrix: serialize(matrix),
+        cumulative
     }
 }
 
@@ -305,6 +391,48 @@ export function computeMatrix(transformList: Token[], matrix: Matrix): Matrix | 
 
                     matrix = (transformList[i] as FunctionToken).val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
                 }
+            }
+
+                break;
+
+            case 'perspective': {
+
+                const values: Array<number | IdentToken> = [];
+
+                let child: Token;
+                let value: number | null;
+
+                for (let k = 0; k < (transformList[i] as FunctionToken).chi.length; k++) {
+
+                    child = (transformList[i] as FunctionToken).chi[k];
+
+                    if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+
+                        continue;
+                    }
+
+                    if (child.typ == EnumToken.IdenTokenType && child.val == 'none') {
+
+                        values.push(child);
+                        continue;
+                    }
+
+                    value = length2Px(child as LengthToken | NumberToken);
+
+                    if (value == null) {
+
+                        return null;
+                    }
+
+                    values.push(value);
+                }
+
+                if (values.length != 1) {
+
+                    return null;
+                }
+
+                matrix = perspective(values[0], matrix);
             }
 
                 break;

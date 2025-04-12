@@ -16,6 +16,7 @@ import { scale3d, scale, scaleX, scaleY, scaleZ } from './scale.js';
 import { minify } from './minify.js';
 import { skew, skewX, skewY } from './skew.js';
 import { serialize } from './matrix.js';
+import { perspective } from './perspective.js';
 
 function compute(transformLists) {
     transformLists = transformLists.slice();
@@ -24,15 +25,72 @@ function compute(transformLists) {
         return null;
     }
     let matrix = identity();
+    const names = new Set;
+    const cumulative = [];
     for (const transformList of splitTransformList(transformLists)) {
         matrix = computeMatrix(transformList, matrix);
+        switch (transformList[0].val) {
+            case 'translate':
+            case 'translateX':
+            case 'translateY':
+            case 'translateZ':
+            case 'translate3d':
+                if (names.has('translate')) {
+                    names.delete('translate');
+                }
+                names.add('translate');
+                break;
+            case 'scale':
+            case 'scaleX':
+            case 'scaleY':
+            case 'scaleZ':
+            case 'scale3d':
+                if (names.has('scale')) {
+                    names.delete('scale');
+                }
+                names.add('scale');
+                break;
+            case 'rotate':
+            case 'rotateX':
+            case 'rotateY':
+            case 'rotateZ':
+            case 'rotate3d':
+                if (names.has('rotate')) {
+                    names.delete('rotate');
+                }
+                names.add('rotate');
+                break;
+            case 'skew':
+            case 'skewX':
+            case 'skewY':
+                if (names.has('skew')) {
+                    names.delete('skew');
+                }
+                names.add('skew');
+                break;
+            case 'perspective':
+                if (names.has('perspective')) {
+                    names.delete('perspective');
+                }
+                names.add('perspective');
+                break;
+            case 'matrix':
+            case 'matrix3d':
+                if (names.has('matrix')) {
+                    names.delete('matrix');
+                }
+                names.add('matrix');
+                break;
+        }
         if (matrix == null) {
             return null;
         }
+        cumulative.push(...(minify(computeMatrix(transformList, identity())) ?? transformList));
     }
     return {
-        result: minify(matrix),
-        matrix: serialize(matrix)
+        // result: minify(matrix, [...names]),
+        matrix: serialize(matrix),
+        cumulative
     };
 }
 function computeMatrix(transformList, matrix) {
@@ -218,6 +276,32 @@ function computeMatrix(transformList, matrix) {
                     else {
                         matrix = transformList[i].val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
                     }
+                }
+                break;
+            case 'perspective':
+                {
+                    const values = [];
+                    let child;
+                    let value;
+                    for (let k = 0; k < transformList[i].chi.length; k++) {
+                        child = transformList[i].chi[k];
+                        if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                            continue;
+                        }
+                        if (child.typ == EnumToken.IdenTokenType && child.val == 'none') {
+                            values.push(child);
+                            continue;
+                        }
+                        value = length2Px(child);
+                        if (value == null) {
+                            return null;
+                        }
+                        values.push(value);
+                    }
+                    if (values.length != 1) {
+                        return null;
+                    }
+                    matrix = perspective(values[0], matrix);
                 }
                 break;
             default:

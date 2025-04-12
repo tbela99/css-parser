@@ -9,7 +9,7 @@ interface DecomposedMatrix3D {
     scale: [number, number, number];
     rotate: [number, number, number, number];
     translate: [number, number, number];
-    perspective: [number, number, number, number];
+    perspective: number | null;
     quaternion: [number, number, number, number];
 }
 
@@ -284,19 +284,28 @@ export function decompose2(matrix: Matrix) {
     }
 }
 
-export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
+export function decompose(original: Matrix): DecomposedMatrix3D | null {
 
     // Normalize the matrix.
-    if (matrix[3][3] === 0) {
+    if (original[3][3] === 0) {
 
         return null;
     }
 
-    for (let i = 0; i < 4; i++) {
+    // @ts-ignore
+    const matrix: Matrix = original.reduce((acc, curr: Vector): Matrix => acc.concat([curr.slice()]), [] as Matrix);
 
-        for (let j = 0; j < 4; j++) {
+    const div = Math.abs(1 / matrix[3][3]);
+    // const div = 1 / matrix[3][3];
 
-            matrix[i][j] /= matrix[3][3];
+    if (div != 1) {
+
+        for (let i = 0; i < 4; i++) {
+
+            for (let j = 0; j < 4; j++) {
+
+                matrix[i][j] *= div;
+            }
         }
     }
 
@@ -318,15 +327,15 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
 
     let rightHandSide: Vector = [0, 0, 0, 0];
     let perspective: Vector = [0, 0, 0, 0];
-    let translate: [number, number, number] = [0, 0, 0];
+    let translate: [number, number, number] = [matrix[3][0], matrix[3][1], matrix[3][2]];
 
 // First, isolate perspective.
-    if (matrix[0][3] !== 0 || matrix[1][3] !== 0 || matrix[2][3] !== 0) {
+    if (original[0][3] !== 0 || original[1][3] !== 0 || original[2][3] !== 0) {
         // rightHandSide is the right hand side of the equation.
-        rightHandSide[0] = matrix[0][3];
-        rightHandSide[1] = matrix[1][3];
-        rightHandSide[2] = matrix[2][3];
-        rightHandSide[3] = matrix[3][3];
+        rightHandSide[0] = original[0][3];
+        rightHandSide[1] = original[1][3];
+        rightHandSide[2] = original[2][3];
+        rightHandSide[3] = original[3][3];
 
         // Solve the equation by inverting perspectiveMatrix and multiplying
         // rightHandSide by the inverse.
@@ -340,10 +349,10 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
     }
 
 // Next take care of translation
-    for (let i = 0; i < 3; i++) {
-
-        translate[i] = matrix[3][i];
-    }
+//     for (let i = 0; i < 3; i++) {
+//
+//         translate[i] = matrix[3][i];
+//     }
 
     let row: [[number, number, number], [number, number, number], [number, number, number]] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
@@ -445,10 +454,11 @@ export function decompose(matrix: Matrix): DecomposedMatrix3D | null {
         scale: toZero(scale) as [number, number, number],
         rotate: toZero([x1, y1, z1, angle]) as [number, number, number, number],
         translate: toZero(translate) as [number, number, number],
-        perspective,
+        perspective: original[2][3] == 0 ? null : +(-1 / original[2][3]).toPrecision( 6),
         quaternion
     };
 }
+
 
 export function toZero(v: [number, number] | [number, number, number] | [number, number, number, number]) {
 

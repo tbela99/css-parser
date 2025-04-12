@@ -3,6 +3,7 @@ import {EnumToken} from "../types.ts";
 import type {Token} from "../../../@types/index.d.ts";
 import {reduceNumber} from "../../renderer/render.ts";
 
+// use column-major order
 export function matrix(values: [number, number, number, number, number, number] | [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]): Matrix | null {
 
     const matrix = identity();

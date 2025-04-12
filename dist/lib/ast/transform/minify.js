@@ -2,7 +2,7 @@ import { decompose, identity } from './utils.js';
 import { EnumToken } from '../types.js';
 import { eq } from '../../parser/utils/eq.js';
 
-function minify(matrix) {
+function minify(matrix, names) {
     const decomposed = decompose(matrix);
     if (decomposed == null) {
         return null;
@@ -10,7 +10,7 @@ function minify(matrix) {
     const transforms = new Set(['translate', 'scale', 'skew', 'perspective', 'rotate']);
     const scales = new Set(['x', 'y', 'z']);
     const skew = new Set(['x', 'y']);
-    const result = [];
+    let result = [];
     // check identity
     if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
         transforms.delete('translate');
@@ -21,7 +21,7 @@ function minify(matrix) {
     if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0) {
         transforms.delete('skew');
     }
-    if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
+    if (decomposed.perspective == null) {
         transforms.delete('perspective');
     }
     if (decomposed.rotate[3] == 0) {
@@ -225,7 +225,6 @@ function minify(matrix) {
         if (decomposed.skew[1] == 0) {
             skew.delete('y');
         }
-        // console.error({skew});
         for (let i = 0; i < 2; i++) {
             decomposed.skew[i] = +(Math.atan(decomposed.skew[i]) * 180 / Math.PI).toPrecision(6);
         }
@@ -249,6 +248,15 @@ function minify(matrix) {
                 ]
             });
         }
+    }
+    if (transforms.has('perspective')) {
+        result.push({
+            typ: EnumToken.FunctionTokenType,
+            val: 'perspective',
+            chi: [
+                { typ: EnumToken.Length, val: '' + decomposed.perspective, unit: 'px' },
+            ]
+        });
     }
     // identity
     return result.length == 0 || eq(result, identity()) ? [

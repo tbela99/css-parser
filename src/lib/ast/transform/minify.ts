@@ -1,10 +1,10 @@
 import {decompose, identity, Matrix} from "./utils.ts";
 import {EnumToken} from "../types.ts";
-import {Token} from "../../../@types";
+import {FunctionToken, Token} from "../../../@types";
 import {eq} from "../../parser/utils/eq.ts";
 
 
-export function minify(matrix: Matrix): Token[] | null {
+export function minify(matrix: Matrix, names?: string[]): Token[] | null {
 
     const decomposed = decompose(matrix);
 
@@ -17,7 +17,7 @@ export function minify(matrix: Matrix): Token[] | null {
     const scales = new Set(['x', 'y', 'z']);
     const skew = new Set(['x', 'y']);
 
-    const result: Token[] = [];
+    let result: Token[] = [];
 
     // check identity
     if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
@@ -35,7 +35,7 @@ export function minify(matrix: Matrix): Token[] | null {
         transforms.delete('skew');
     }
 
-    if (decomposed.perspective[0] == 0 && decomposed.perspective[1] == 0 && decomposed.perspective[2] == 0 && decomposed.perspective[3] == 1) {
+    if (decomposed.perspective == null) {
 
         transforms.delete('perspective');
     }
@@ -272,8 +272,6 @@ export function minify(matrix: Matrix): Token[] | null {
             skew.delete('y');
         }
 
-        // console.error({skew});
-
         for (let i = 0; i < 2; i++) {
 
             decomposed.skew[i] = +(Math.atan(decomposed.skew[i]) * 180 / Math.PI).toPrecision(6);
@@ -300,6 +298,34 @@ export function minify(matrix: Matrix): Token[] | null {
                 ]
             });
         }
+    }
+
+    if (transforms.has('perspective')) {
+
+        result.push({
+            typ: EnumToken.FunctionTokenType,
+            val: 'perspective',
+            chi: [
+                {typ: EnumToken.Length, val: '' + decomposed.perspective, unit: 'px'},
+            ]
+        });
+    }
+
+    if (names != null) {
+
+        result = names.reduce((acc, curr) => {
+
+            for (let i = 0; i < result.length; i++) {
+
+                if (result[i].typ != EnumToken.FunctionTokenType || (result[i] as FunctionToken).val.startsWith(curr)) {
+
+                    acc.push(result[i]);
+                    result.splice(i--, 1);
+                }
+            }
+
+            return acc;
+        }, [] as Token[]);
     }
 
     // identity

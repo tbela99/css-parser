@@ -338,4 +338,21 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         });
 
     });
+    describe('CSS perspective', function () {
+
+        it('skew #22', function () {
+            const nesting1 = `
+
+  .now {
+    transform: perspective(50px) translateZ(100px)
+}
+`;
+            return transform(nesting1, {
+                beautify: true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: perspective(50px)translateZ(100px)
+}`));
+        });
+
+    });
 }

@@ -109,14 +109,20 @@ function multiply(matrixA, matrixB) {
     }
     return result;
 }
-function decompose(matrix) {
+function decompose(original) {
     // Normalize the matrix.
-    if (matrix[3][3] === 0) {
+    if (original[3][3] === 0) {
         return null;
     }
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            matrix[i][j] /= matrix[3][3];
+    // @ts-ignore
+    const matrix = original.reduce((acc, curr) => acc.concat([curr.slice()]), []);
+    const div = Math.abs(1 / matrix[3][3]);
+    // const div = 1 / matrix[3][3];
+    if (div != 1) {
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                matrix[i][j] *= div;
+            }
         }
     }
     // perspectiveMatrix is used to solve for perspective, but it also provides
@@ -131,14 +137,14 @@ function decompose(matrix) {
     }
     let rightHandSide = [0, 0, 0, 0];
     let perspective = [0, 0, 0, 0];
-    let translate = [0, 0, 0];
+    let translate = [matrix[3][0], matrix[3][1], matrix[3][2]];
     // First, isolate perspective.
-    if (matrix[0][3] !== 0 || matrix[1][3] !== 0 || matrix[2][3] !== 0) {
+    if (original[0][3] !== 0 || original[1][3] !== 0 || original[2][3] !== 0) {
         // rightHandSide is the right hand side of the equation.
-        rightHandSide[0] = matrix[0][3];
-        rightHandSide[1] = matrix[1][3];
-        rightHandSide[2] = matrix[2][3];
-        rightHandSide[3] = matrix[3][3];
+        rightHandSide[0] = original[0][3];
+        rightHandSide[1] = original[1][3];
+        rightHandSide[2] = original[2][3];
+        rightHandSide[3] = original[3][3];
         // Solve the equation by inverting perspectiveMatrix and multiplying
         // rightHandSide by the inverse.
         let inversePerspectiveMatrix = inverse(perspectiveMatrix);
@@ -151,9 +157,10 @@ function decompose(matrix) {
         perspective[3] = 1;
     }
     // Next take care of translation
-    for (let i = 0; i < 3; i++) {
-        translate[i] = matrix[3][i];
-    }
+    //     for (let i = 0; i < 3; i++) {
+    //
+    //         translate[i] = matrix[3][i];
+    //     }
     let row = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
     // Now get scale and shear. 'row' is a 3 element array of 3 component vectors
     for (let i = 0; i < 3; i++) {
@@ -234,7 +241,7 @@ function decompose(matrix) {
         scale: toZero(scale),
         rotate: toZero([x1, y1, z1, angle]),
         translate: toZero(translate),
-        perspective,
+        perspective: original[2][3] == 0 ? null : +(-1 / original[2][3]).toPrecision(6),
         quaternion
     };
 }
