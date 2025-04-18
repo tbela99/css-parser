@@ -4028,12 +4028,12 @@ const fontFormat = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truet
 const colorFontTech = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 const fontFeaturesTech = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
 const transformFunctions = [
-    'matrix', 'translate', 'scale', 'rotate', 'skew', 'perspective',
+    'translate', 'scale', 'rotate', 'skew', 'perspective',
     'translateX', 'translateY', 'translateZ',
     'scaleX', 'scaleY', 'scaleZ',
     'rotateX', 'rotateY', 'rotateZ',
     'skewX', 'skewY',
-    'rotate3d', 'translate3d', 'scale3d', 'matrix3d'
+    'rotate3d', 'translate3d', 'scale3d', 'matrix', 'matrix3d'
 ];
 // https://drafts.csswg.org/mediaqueries/#media-types
 const mediaTypes = ['all', 'print', 'screen',
@@ -14512,6 +14512,7 @@ async function doParse(iterator, options = {}) {
         removeCharset: true,
         removeEmpty: true,
         removeDuplicateDeclarations: true,
+        computeTransform: false,
         computeShorthand: true,
         computeCalcExpression: true,
         inlineCssVariables: false,
@@ -15175,24 +15176,6 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             };
             const result = parseDeclarationNode(node, errors, src, position);
             if (result != null) {
-                // if (options.validation) {
-                //
-                //     const valid: ValidationResult = validateDeclaration(result, options, context);
-                //
-                //     // console.error({valid});
-                //
-                //     if (valid.valid == ValidationLevel.Drop) {
-                //
-                //         errors.push({
-                //             action: 'drop',
-                //             message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
-                //             // @ts-ignore
-                //             location: {src, ...(map.get(valid.node) ?? position)}
-                //         });
-                //
-                //         return null;
-                //     }
-                // }
                 // @ts-ignore
                 context.chi.push(result);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
@@ -17981,7 +17964,7 @@ function decompose(original) {
 }
 function toZero(v) {
     for (let i = 0; i < v.length; i++) {
-        if (Math.abs(v[i]) <= 1e-6) {
+        if (Math.abs(v[i]) <= 1e-5) {
             v[i] = 0;
         }
         else {
@@ -18168,21 +18151,15 @@ function rotate(angle, from) {
 function scaleX(x, from) {
     const matrix = identity();
     matrix[0][0] = x;
-    // matrix[1][1] = 1;
-    // matrix[2][2] = 1;
     return multiply(from, matrix);
 }
 function scaleY(y, from) {
     const matrix = identity();
-    // matrix[0][0] = 1;
     matrix[1][1] = y;
-    // matrix[2][2] = 1;
     return multiply(from, matrix);
 }
 function scaleZ(z, from) {
     const matrix = identity();
-    // matrix[0][0] = 1;
-    // matrix[1][1] = 1;
     matrix[2][2] = z;
     return multiply(from, matrix);
 }
@@ -18201,7 +18178,7 @@ function scale3d(x, y, z, from) {
 }
 
 function minify$1(matrix, names) {
-    const decomposed = decompose(matrix);
+    const decomposed = /* is2DMatrix(matrix) ? decompose2(matrix) : */ decompose(matrix);
     if (decomposed == null) {
         return null;
     }
@@ -18266,7 +18243,7 @@ function minify$1(matrix, names) {
         else if (coordinates.has('z')) {
             result.push({
                 typ: exports.EnumToken.FunctionTokenType,
-                val: 'translate',
+                val: 'translate3d',
                 chi: [
                     decomposed.translate[0] == 0 ? {
                         typ: exports.EnumToken.NumberTokenType,
@@ -18485,20 +18462,55 @@ function skew(values, from) {
     return multiply(from, matrix);
 }
 
+// use column-major order
+function matrix(values) {
+    const matrix = identity();
+    if (values.length === 6) {
+        // matrix(scaleX(), skewY(), skewX(), scaleY(), translateX(), translateY())
+        matrix[0][0] = values[0];
+        matrix[0][1] = values[1];
+        matrix[1][0] = values[2];
+        matrix[1][1] = values[3];
+        matrix[3][0] = values[4];
+        matrix[3][1] = values[5];
+    }
+    else if (values.length === 16) {
+        matrix[0][0] = values[0];
+        matrix[0][1] = values[1];
+        matrix[0][2] = values[2];
+        matrix[0][3] = values[3];
+        matrix[1][0] = values[4];
+        matrix[1][1] = values[5];
+        matrix[1][2] = values[6];
+        matrix[1][3] = values[7];
+        matrix[2][0] = values[8];
+        matrix[2][1] = values[9];
+        matrix[2][2] = values[10];
+        matrix[2][3] = values[11];
+        matrix[3][0] = values[12];
+        matrix[3][1] = values[13];
+        matrix[3][2] = values[14];
+        matrix[3][3] = values[15];
+    }
+    else {
+        throw new RangeError('expecting 6 or 16 values');
+    }
+    return matrix;
+}
 function serialize(matrix) {
     if (is2DMatrix(matrix)) {
         // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
         return {
             typ: exports.EnumToken.FunctionTokenType,
             val: 'matrix',
-            chi: [
+            chi: toZero([
                 matrix[0][0],
                 matrix[0][1],
                 matrix[1][0],
                 matrix[1][1],
                 matrix[3][0],
                 matrix[3][1]
-            ].reduce((acc, t) => {
+            ]).reduce((acc, t) => {
                 if (acc.length > 0) {
                     acc.push({ typ: exports.EnumToken.CommaTokenType });
                 }
@@ -18511,7 +18523,7 @@ function serialize(matrix) {
         };
     }
     let m = [];
-    // console.error(JSON.stringify({matrix},null, 1));
+    matrix = matrix.map((v) => toZero(v));
     for (let i = 0; i < matrix.length; i++) {
         for (let j = 0; j < matrix[i].length; j++) {
             if (m.length > 0) {
@@ -18544,75 +18556,24 @@ function compute(transformLists) {
         return null;
     }
     let matrix = identity();
-    const names = new Set;
+    let mat;
     const cumulative = [];
     for (const transformList of splitTransformList(transformLists)) {
-        matrix = computeMatrix(transformList, matrix);
-        switch (transformList[0].val) {
-            case 'translate':
-            case 'translateX':
-            case 'translateY':
-            case 'translateZ':
-            case 'translate3d':
-                if (names.has('translate')) {
-                    names.delete('translate');
-                }
-                names.add('translate');
-                break;
-            case 'scale':
-            case 'scaleX':
-            case 'scaleY':
-            case 'scaleZ':
-            case 'scale3d':
-                if (names.has('scale')) {
-                    names.delete('scale');
-                }
-                names.add('scale');
-                break;
-            case 'rotate':
-            case 'rotateX':
-            case 'rotateY':
-            case 'rotateZ':
-            case 'rotate3d':
-                if (names.has('rotate')) {
-                    names.delete('rotate');
-                }
-                names.add('rotate');
-                break;
-            case 'skew':
-            case 'skewX':
-            case 'skewY':
-                if (names.has('skew')) {
-                    names.delete('skew');
-                }
-                names.add('skew');
-                break;
-            case 'perspective':
-                if (names.has('perspective')) {
-                    names.delete('perspective');
-                }
-                names.add('perspective');
-                break;
-            case 'matrix':
-            case 'matrix3d':
-                if (names.has('matrix')) {
-                    names.delete('matrix');
-                }
-                names.add('matrix');
-                break;
-        }
-        if (matrix == null) {
+        mat = computeMatrix(transformList, identity());
+        if (mat == null) {
             return null;
         }
-        cumulative.push(...(minify$1(computeMatrix(transformList, identity())) ?? transformList));
+        matrix = multiply(matrix, mat);
+        cumulative.push(...(minify$1(mat) ?? transformList));
     }
+    const serialized = serialize(matrix);
     return {
-        // result: minify(matrix, [...names]),
         matrix: serialize(matrix),
-        cumulative
+        cumulative,
+        minified: minify$1(matrix) ?? [serialized]
     };
 }
-function computeMatrix(transformList, matrix) {
+function computeMatrix(transformList, matrixVar) {
     let values = [];
     let val;
     let i = 0;
@@ -18655,20 +18616,20 @@ function computeMatrix(transformList, matrix) {
                         return null;
                     }
                     if (transformList[i].val == 'translateX') {
-                        matrix = translateX(values[0], matrix);
+                        matrixVar = translateX(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'translateY') {
-                        matrix = translateY(values[0], matrix);
+                        matrixVar = translateY(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'translateZ') {
-                        matrix = translateZ(values[0], matrix);
+                        matrixVar = translateZ(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'translate') {
-                        matrix = translate(values, matrix);
+                        matrixVar = translate(values, matrixVar);
                     }
                     else {
                         // @ts-ignore
-                        matrix = translate3d(values, matrix);
+                        matrixVar = translate3d(values, matrixVar);
                     }
                 }
                 break;
@@ -18712,10 +18673,10 @@ function computeMatrix(transformList, matrix) {
                         return null;
                     }
                     if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
-                        matrix = rotate(angle * 2 * Math.PI, matrix);
+                        matrixVar = rotate(angle * 2 * Math.PI, matrixVar);
                     }
                     else {
-                        matrix = rotate3D(angle * 2 * Math.PI, x, y, z, matrix);
+                        matrixVar = rotate3D(angle * 2 * Math.PI, x, y, z, matrixVar);
                     }
                 }
                 break;
@@ -18744,27 +18705,27 @@ function computeMatrix(transformList, matrix) {
                         if (values.length != 3) {
                             return null;
                         }
-                        matrix = scale3d(...values, matrix);
+                        matrixVar = scale3d(...values, matrixVar);
                         break;
                     }
                     if (transformList[i].val == 'scale') {
                         if (values.length != 1 && values.length != 2) {
                             return null;
                         }
-                        matrix = scale(values[0], values[1] ?? values[0], matrix);
+                        matrixVar = scale(values[0], values[1] ?? values[0], matrixVar);
                         break;
                     }
                     if (values.length != 1) {
                         return null;
                     }
                     else if (transformList[i].val == 'scaleX') {
-                        matrix = scaleX(values[0], matrix);
+                        matrixVar = scaleX(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'scaleY') {
-                        matrix = scaleY(values[0], matrix);
+                        matrixVar = scaleY(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'scaleZ') {
-                        matrix = scaleZ(values[0], matrix);
+                        matrixVar = scaleZ(values[0], matrixVar);
                     }
                 }
                 break;
@@ -18790,10 +18751,10 @@ function computeMatrix(transformList, matrix) {
                         return null;
                     }
                     if (transformList[i].val == 'skew') {
-                        matrix = skew(values, matrix);
+                        matrixVar = skew(values, matrixVar);
                     }
                     else {
-                        matrix = transformList[i].val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
+                        matrixVar = transformList[i].val == 'skewX' ? skewX(values[0], matrixVar) : skewY(values[0], matrixVar);
                     }
                 }
                 break;
@@ -18820,15 +18781,41 @@ function computeMatrix(transformList, matrix) {
                     if (values.length != 1) {
                         return null;
                     }
-                    matrix = perspective(values[0], matrix);
+                    matrixVar = perspective(values[0], matrixVar);
+                }
+                break;
+            case 'matrix3d':
+                return null;
+            case 'matrix':
+                {
+                    const values = [];
+                    let value;
+                    for (const token of transformList[i].chi) {
+                        if ([exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType, exports.EnumToken.CommaTokenType].includes(token.typ)) {
+                            continue;
+                        }
+                        value = getNumber(token);
+                        if (value == null) {
+                            return null;
+                        }
+                        values.push(value);
+                    }
+                    if (transformList[i].val == 'matrix') {
+                        if (values.length != 6) {
+                            return null;
+                        }
+                    }
+                    else if (values.length != 16) {
+                        return null;
+                    }
+                    matrixVar = multiply(matrixVar, matrix(values));
                 }
                 break;
             default:
                 return null;
-            // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
         }
     }
-    return matrix;
+    return matrixVar;
 }
 function splitTransformList(transformList) {
     let pattern = null;
@@ -18870,7 +18857,7 @@ class TransformCssFeature {
     }
     static register(options) {
         // @ts-ignore
-        if (options.minify || options.computeCalcExpression || options.computeShorthand) {
+        if (options.computeTransform) {
             // @ts-ignore
             options.features.push(new TransformCssFeature());
         }
@@ -18891,21 +18878,18 @@ class TransformCssFeature {
             }
             const children = node.val.slice();
             consumeWhitespace(children);
-            let { matrix, cumulative } = compute(children) ?? {};
-            // console.error({result, matrix});
-            // console.error(
-            //     {
-            //         // result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''),
-            //         matrix: matrix == null ? null : renderToken(matrix),
-            //         cumulative: cumulative == null ? null : cumulative.reduce((acc, curr) => acc + renderToken(curr), '')
-            //     });
-            if (matrix == null) {
+            let { matrix, cumulative, minified } = compute(children) ?? {};
+            if (matrix == null || cumulative == null || minified == null) {
                 return;
             }
-            if (renderToken(matrix).length < cumulative.reduce((acc, t) => acc + renderToken(t), '').length) {
-                cumulative = [matrix];
+            let result = cumulative;
+            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+                result = [matrix];
             }
-            node.val = cumulative;
+            if (matrix != minified[0] && minified.reduce((acc, t) => acc + renderToken(t), '').length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+                result = minified;
+            }
+            node.val = result;
         }
     }
 }

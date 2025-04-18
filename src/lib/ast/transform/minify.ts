@@ -6,7 +6,7 @@ import {eq} from "../../parser/utils/eq.ts";
 
 export function minify(matrix: Matrix, names?: string[]): Token[] | null {
 
-    const decomposed = decompose(matrix);
+    const decomposed = /* is2DMatrix(matrix) ? decompose2(matrix) : */ decompose(matrix);
 
     if (decomposed == null) {
 
@@ -94,7 +94,7 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
 
             result.push({
                 typ: EnumToken.FunctionTokenType,
-                val: 'translate',
+                val: 'translate3d',
                 chi: [
                     decomposed.translate[0] == 0 ? {
                         typ: EnumToken.NumberTokenType,

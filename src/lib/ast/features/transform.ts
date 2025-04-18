@@ -20,7 +20,7 @@ export class TransformCssFeature {
     static register(options: MinifyFeatureOptions): void {
 
         // @ts-ignore
-        if (options.minify || options.computeCalcExpression || options.computeShorthand) {
+        if (options.computeTransform) {
 
             // @ts-ignore
             options.features.push(new TransformCssFeature());
@@ -54,27 +54,26 @@ export class TransformCssFeature {
 
             consumeWhitespace(children);
 
-            let {matrix, cumulative} = compute(children as Token[]) ?? {};
+            let {matrix, cumulative, minified} = compute(children as Token[]) ?? {};
 
-            // console.error({result, matrix});
-            // console.error(
-            //     {
-            //         // result: result == null ? null :result.reduce((acc, curr) => acc + renderToken(curr), ''),
-            //         matrix: matrix == null ? null : renderToken(matrix),
-            //         cumulative: cumulative == null ? null : cumulative.reduce((acc, curr) => acc + renderToken(curr), '')
-            //     });
-
-            if ( matrix == null) {
+            if (matrix == null || cumulative == null || minified == null) {
 
                 return;
             }
 
-            if (renderToken(matrix).length < cumulative.reduce((acc, t) => acc + renderToken(t), '').length) {
+            let result: Token[] = cumulative;
 
-                cumulative = [matrix];
+            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+
+                result = [matrix];
             }
 
-            (node as AstDeclaration).val = cumulative;
+            if (matrix != minified[0] && minified.reduce((acc, t) => acc + renderToken(t), '').length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+
+                result = minified;
+            }
+
+            (node as AstDeclaration).val = result;
         }
     }
 }

@@ -1,4 +1,4 @@
-import { identity } from './utils.js';
+import { multiply, identity } from './utils.js';
 import { EnumToken } from '../types.js';
 import { length2Px } from './convert.js';
 import { transformFunctions } from '../../syntax/syntax.js';
@@ -6,7 +6,7 @@ import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
 import '../../parser/utils/config.js';
-import { getAngle, getNumber } from '../../renderer/color/color.js';
+import { getNumber, getAngle } from '../../renderer/color/color.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { stripCommaToken } from '../../validation/utils/list.js';
@@ -15,7 +15,7 @@ import { rotate, rotate3D } from './rotate.js';
 import { scale3d, scale, scaleX, scaleY, scaleZ } from './scale.js';
 import { minify } from './minify.js';
 import { skew, skewX, skewY } from './skew.js';
-import { serialize } from './matrix.js';
+import { serialize, matrix } from './matrix.js';
 import { perspective } from './perspective.js';
 
 function compute(transformLists) {
@@ -25,75 +25,24 @@ function compute(transformLists) {
         return null;
     }
     let matrix = identity();
-    const names = new Set;
+    let mat;
     const cumulative = [];
     for (const transformList of splitTransformList(transformLists)) {
-        matrix = computeMatrix(transformList, matrix);
-        switch (transformList[0].val) {
-            case 'translate':
-            case 'translateX':
-            case 'translateY':
-            case 'translateZ':
-            case 'translate3d':
-                if (names.has('translate')) {
-                    names.delete('translate');
-                }
-                names.add('translate');
-                break;
-            case 'scale':
-            case 'scaleX':
-            case 'scaleY':
-            case 'scaleZ':
-            case 'scale3d':
-                if (names.has('scale')) {
-                    names.delete('scale');
-                }
-                names.add('scale');
-                break;
-            case 'rotate':
-            case 'rotateX':
-            case 'rotateY':
-            case 'rotateZ':
-            case 'rotate3d':
-                if (names.has('rotate')) {
-                    names.delete('rotate');
-                }
-                names.add('rotate');
-                break;
-            case 'skew':
-            case 'skewX':
-            case 'skewY':
-                if (names.has('skew')) {
-                    names.delete('skew');
-                }
-                names.add('skew');
-                break;
-            case 'perspective':
-                if (names.has('perspective')) {
-                    names.delete('perspective');
-                }
-                names.add('perspective');
-                break;
-            case 'matrix':
-            case 'matrix3d':
-                if (names.has('matrix')) {
-                    names.delete('matrix');
-                }
-                names.add('matrix');
-                break;
-        }
-        if (matrix == null) {
+        mat = computeMatrix(transformList, identity());
+        if (mat == null) {
             return null;
         }
-        cumulative.push(...(minify(computeMatrix(transformList, identity())) ?? transformList));
+        matrix = multiply(matrix, mat);
+        cumulative.push(...(minify(mat) ?? transformList));
     }
+    const serialized = serialize(matrix);
     return {
-        // result: minify(matrix, [...names]),
         matrix: serialize(matrix),
-        cumulative
+        cumulative,
+        minified: minify(matrix) ?? [serialized]
     };
 }
-function computeMatrix(transformList, matrix) {
+function computeMatrix(transformList, matrixVar) {
     let values = [];
     let val;
     let i = 0;
@@ -136,20 +85,20 @@ function computeMatrix(transformList, matrix) {
                         return null;
                     }
                     if (transformList[i].val == 'translateX') {
-                        matrix = translateX(values[0], matrix);
+                        matrixVar = translateX(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'translateY') {
-                        matrix = translateY(values[0], matrix);
+                        matrixVar = translateY(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'translateZ') {
-                        matrix = translateZ(values[0], matrix);
+                        matrixVar = translateZ(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'translate') {
-                        matrix = translate(values, matrix);
+                        matrixVar = translate(values, matrixVar);
                     }
                     else {
                         // @ts-ignore
-                        matrix = translate3d(values, matrix);
+                        matrixVar = translate3d(values, matrixVar);
                     }
                 }
                 break;
@@ -193,10 +142,10 @@ function computeMatrix(transformList, matrix) {
                         return null;
                     }
                     if (transformList[i].val == 'rotate' || transformList[i].val == 'rotateZ') {
-                        matrix = rotate(angle * 2 * Math.PI, matrix);
+                        matrixVar = rotate(angle * 2 * Math.PI, matrixVar);
                     }
                     else {
-                        matrix = rotate3D(angle * 2 * Math.PI, x, y, z, matrix);
+                        matrixVar = rotate3D(angle * 2 * Math.PI, x, y, z, matrixVar);
                     }
                 }
                 break;
@@ -225,27 +174,27 @@ function computeMatrix(transformList, matrix) {
                         if (values.length != 3) {
                             return null;
                         }
-                        matrix = scale3d(...values, matrix);
+                        matrixVar = scale3d(...values, matrixVar);
                         break;
                     }
                     if (transformList[i].val == 'scale') {
                         if (values.length != 1 && values.length != 2) {
                             return null;
                         }
-                        matrix = scale(values[0], values[1] ?? values[0], matrix);
+                        matrixVar = scale(values[0], values[1] ?? values[0], matrixVar);
                         break;
                     }
                     if (values.length != 1) {
                         return null;
                     }
                     else if (transformList[i].val == 'scaleX') {
-                        matrix = scaleX(values[0], matrix);
+                        matrixVar = scaleX(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'scaleY') {
-                        matrix = scaleY(values[0], matrix);
+                        matrixVar = scaleY(values[0], matrixVar);
                     }
                     else if (transformList[i].val == 'scaleZ') {
-                        matrix = scaleZ(values[0], matrix);
+                        matrixVar = scaleZ(values[0], matrixVar);
                     }
                 }
                 break;
@@ -271,10 +220,10 @@ function computeMatrix(transformList, matrix) {
                         return null;
                     }
                     if (transformList[i].val == 'skew') {
-                        matrix = skew(values, matrix);
+                        matrixVar = skew(values, matrixVar);
                     }
                     else {
-                        matrix = transformList[i].val == 'skewX' ? skewX(values[0], matrix) : skewY(values[0], matrix);
+                        matrixVar = transformList[i].val == 'skewX' ? skewX(values[0], matrixVar) : skewY(values[0], matrixVar);
                     }
                 }
                 break;
@@ -301,15 +250,41 @@ function computeMatrix(transformList, matrix) {
                     if (values.length != 1) {
                         return null;
                     }
-                    matrix = perspective(values[0], matrix);
+                    matrixVar = perspective(values[0], matrixVar);
+                }
+                break;
+            case 'matrix3d':
+                return null;
+            case 'matrix':
+                {
+                    const values = [];
+                    let value;
+                    for (const token of transformList[i].chi) {
+                        if ([EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(token.typ)) {
+                            continue;
+                        }
+                        value = getNumber(token);
+                        if (value == null) {
+                            return null;
+                        }
+                        values.push(value);
+                    }
+                    if (transformList[i].val == 'matrix') {
+                        if (values.length != 6) {
+                            return null;
+                        }
+                    }
+                    else if (values.length != 16) {
+                        return null;
+                    }
+                    matrixVar = multiply(matrixVar, matrix(values));
                 }
                 break;
             default:
                 return null;
-            // throw new TypeError(`Unknown transform function: ${(transformList[i] as FunctionToken).val}`);
         }
     }
-    return matrix;
+    return matrixVar;
 }
 function splitTransformList(transformList) {
     let pattern = null;

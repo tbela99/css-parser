@@ -247,7 +247,7 @@ function decompose(original) {
 }
 function toZero(v) {
     for (let i = 0; i < v.length; i++) {
-        if (Math.abs(v[i]) <= 1e-6) {
+        if (Math.abs(v[i]) <= 1e-5) {
             v[i] = 0;
         }
         else {

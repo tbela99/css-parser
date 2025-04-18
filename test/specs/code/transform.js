@@ -9,7 +9,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: translateY(-100px)
 }`));
@@ -23,7 +24,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: translate(-100px)
 }`));
@@ -37,7 +39,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: translate(-100px)
 }`));
@@ -51,7 +54,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: translateZ(-100px)
 }`));
@@ -65,7 +69,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -79,7 +84,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -93,7 +99,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: translateZ(14px)
 }`));
@@ -107,9 +114,10 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
- transform: translate(14px,0,14px)
+ transform: translate3d(14px,0,14px)
 }`));
         });
 
@@ -125,7 +133,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotateX(45deg)
 }`));
@@ -139,7 +148,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotate(45deg)
 }`));
@@ -154,7 +164,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotate3d(2,-1,-1,-72deg)
 }`));
@@ -168,7 +179,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: scale3d(.5,1,1.7)rotate3d(1,1,1,67deg)
 }`));
@@ -182,7 +194,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotateY(180deg)
 }`));
@@ -196,7 +209,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotate3d(1,1,1,180deg)
 }`));
@@ -214,7 +228,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: scale3d(.5,.5,.5)
 }`));
@@ -228,7 +243,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -243,7 +259,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -257,7 +274,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -271,7 +289,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -285,7 +304,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: none
 }`));
@@ -299,7 +319,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: scale(1.5,2)
 }`));
@@ -313,7 +334,8 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: scaleX(0)scaleY(0)scaleZ(0)
 }`));
@@ -331,13 +353,15 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: translate(100px,100px)rotate(135deg)skew(10deg)
 }`));
         });
 
     });
+
     describe('CSS perspective', function () {
 
         it('skew #22', function () {
@@ -348,9 +372,29 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }
 `;
             return transform(nesting1, {
-                beautify: true
+                beautify: true,
+                computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: perspective(50px)translateZ(100px)
+}`));
+        });
+
+    });
+
+    describe('CSS perspective', function () {
+
+        it('matrix #23', function () {
+            const nesting1 = `
+
+  .now {
+    transform: matrix(1, 0, 0, 1, 0, 20)
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: translateY(20px)
 }`));
         });
 

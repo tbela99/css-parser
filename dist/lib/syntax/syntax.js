@@ -20,12 +20,12 @@ const fontFormat = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truet
 const colorFontTech = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 const fontFeaturesTech = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
 const transformFunctions = [
-    'matrix', 'translate', 'scale', 'rotate', 'skew', 'perspective',
+    'translate', 'scale', 'rotate', 'skew', 'perspective',
     'translateX', 'translateY', 'translateZ',
     'scaleX', 'scaleY', 'scaleZ',
     'rotateX', 'rotateY', 'rotateZ',
     'skewX', 'skewY',
-    'rotate3d', 'translate3d', 'scale3d', 'matrix3d'
+    'rotate3d', 'translate3d', 'scale3d', 'matrix', 'matrix3d'
 ];
 // https://drafts.csswg.org/mediaqueries/#media-types
 const mediaTypes = ['all', 'print', 'screen',

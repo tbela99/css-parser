@@ -159,6 +159,7 @@ Include ParseOptions and RenderOptions
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
+- computeTransform: boolean, optional. compute css transform functions.
 - computeShorthand: boolean, optional. compute shorthand properties.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once

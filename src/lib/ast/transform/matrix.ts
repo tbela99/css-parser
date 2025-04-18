@@ -1,4 +1,4 @@
-import {identity, is2DMatrix, Matrix} from "./utils.ts";
+import {identity, is2DMatrix, Matrix, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {Token} from "../../../@types/index.d.ts";
 import {reduceNumber} from "../../renderer/render.ts";
@@ -10,6 +10,7 @@ export function matrix(values: [number, number, number, number, number, number] 
 
     if (values.length === 6) {
 
+        // matrix(scaleX(), skewY(), skewX(), scaleY(), translateX(), translateY())
         matrix[0][0] = values[0];
         matrix[0][1] = values[1];
         matrix[1][0] = values[2];
@@ -50,37 +51,37 @@ export function serialize(matrix: Matrix): Token {
         return {
             typ: EnumToken.FunctionTokenType,
             val: 'matrix',
-            chi: [
+            chi: toZero([
                 matrix[0][0],
                 matrix[0][1],
                 matrix[1][0],
                 matrix[1][1],
                 matrix[3][0],
                 matrix[3][1]
-                ].reduce((acc,t) => {
+            ]).reduce((acc, t) => {
 
-                    if (acc.length > 0) {
+                if (acc.length > 0) {
 
-                        acc.push({ typ: EnumToken.CommaTokenType });
-                    }
+                    acc.push({typ: EnumToken.CommaTokenType});
+                }
 
-                    acc.push({
-                        typ: EnumToken.NumberTokenType,
-                        val: reduceNumber(t.toPrecision(6))
-                    })
+                acc.push({
+                    typ: EnumToken.NumberTokenType,
+                    val: reduceNumber(t.toPrecision(6))
+                })
 
-                    return acc
+                return acc
             }, [] as Token[])
         }
     }
 
     let m: Token[] = [];
 
-    // console.error(JSON.stringify({matrix},null, 1));
+    matrix = matrix.map((v) => toZero(v)) as Matrix;
 
     for (let i = 0; i < matrix.length; i++) {
 
-        for (let j = 0; j < matrix[i].length; j ++) {
+        for (let j = 0; j < matrix[i].length; j++) {
 
             if (m.length > 0) {
 

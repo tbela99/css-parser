@@ -167,7 +167,8 @@ color:
 ;
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform,
+                    computeTransform: true, resolveImport: true}).then(result => expect(render(result.ast, {
                 minify: false,
                 removeComments: false,
                 preserveLicense: true

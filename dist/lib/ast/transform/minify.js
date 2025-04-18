@@ -3,7 +3,7 @@ import { EnumToken } from '../types.js';
 import { eq } from '../../parser/utils/eq.js';
 
 function minify(matrix, names) {
-    const decomposed = decompose(matrix);
+    const decomposed = /* is2DMatrix(matrix) ? decompose2(matrix) : */ decompose(matrix);
     if (decomposed == null) {
         return null;
     }
@@ -68,7 +68,7 @@ function minify(matrix, names) {
         else if (coordinates.has('z')) {
             result.push({
                 typ: EnumToken.FunctionTokenType,
-                val: 'translate',
+                val: 'translate3d',
                 chi: [
                     decomposed.translate[0] == 0 ? {
                         typ: EnumToken.NumberTokenType,

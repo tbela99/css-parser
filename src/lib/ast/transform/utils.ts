@@ -138,31 +138,6 @@ function normalize(point: Point): Point {
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
 }
 
-function interpolate(quaternionA: [number, number, number, number], quaternionB: [number, number, number, number], t: number = 1) {
-
-    let product = dot(quaternionA, quaternionB);
-
-    const quaternionDst: [number, number, number, number] = [0, 0, 0, 0];
-// Clamp product to -1.0 <= product <= 1.0
-    product = Math.min(product, 1.0);
-    product = Math.max(product, -1.0);
-
-    if (Math.abs(product) === 1.0) {
-        return quaternionA;
-    }
-
-    const theta = Math.acos(product);
-    const w = Math.sin(t * theta) / Math.sqrt(1 - product * product);
-
-    for (let i = 0; i < 4; i++) {
-        quaternionA[i] *= Math.cos(t * theta) - product * w;
-        quaternionB[i] *= w;
-        quaternionDst[i] = quaternionA[i] + quaternionB[i];
-    }
-
-    return;
-}
-
 function dot(point1: Point, point2: Point): number;
 function dot(point1: [number, number, number, number], point2: [number, number, number, number]): number;
 
@@ -203,7 +178,7 @@ export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
     return result;
 }
 
-export function decompose2(matrix: Matrix) {
+export function decompose2(matrix: Matrix): DecomposedMatrix3D {
 
     let row0x = matrix[0][0]
     let row0y = matrix[1][0]
@@ -274,13 +249,70 @@ export function decompose2(matrix: Matrix) {
     let m21 = row1x
     let m22 = row1y
 
+    let quaternion: [number, number, number, number] = [0, 0, 0, 0];
+
+// Now, get the rotations out
+    quaternion[0] = 0.5 * Math.sqrt(Math.max(1 + m11 - m22 - 1, 0));
+    quaternion[1] = 0.5 * Math.sqrt(Math.max(1 - m11 + m22 - 1, 0));
+    quaternion[2] = 0.5 * Math.sqrt(Math.max(1 - m11 - m22 + 1, 0));
+    quaternion[3] = 0.5 * Math.sqrt(Math.max(1 + m11 + m22 + 1, 0));
+
+    if (matrix[2][1] > matrix[1][2]) {
+
+        quaternion[0] = -quaternion[0];
+    }
+
+    if (matrix[0][2] > matrix[2][0]) {
+
+        quaternion[1] = -quaternion[1];
+    }
+
+    if (matrix[1][0] > matrix[0][1]) {
+
+        quaternion[2] = -quaternion[2];
+    }
+
+
+    let skew: [number, number, number] = [0, 0, 0];
+
+    let row: [[number, number, number], [number, number, number], [number, number, number]] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+
+// Now get scale and shear. 'row' is a 3 element array of 3 component vectors
+    for (let i = 0; i < 3; i++) {
+        row[i][0] = matrix[i][0];
+        row[i][1] = matrix[i][1];
+        row[i][2] = matrix[i][2];
+    }
+
+    row[0] = normalize(row[0]);
+
+// Compute XY shear factor and make 2nd row orthogonal to 1st.
+    skew[0] = dot(row[0], row[1]);
+    row[1] = combine(row[1], row[0], 1.0, -skew[0]);
+
+    skew[0] /= scale[1];
+
+// Compute XZ and YZ shears, orthogonalize 3rd row
+    skew[1] = dot(row[0], row[2]);
+    row[2] = combine(row[2], row[0], 1.0, -skew[1]);
+    skew[2] = dot(row[1], row[2]);
+    row[2] = combine(row[2], row[1], 1.0, -skew[2]);
+
+// Next, g
+
 // Convert into degrees because our rotation functions expect it.
 //     angle = rad2deg(angle)
 
     angle *= 180 / Math.PI;
 
     return {
-        translate, scale, angle: +angle.toPrecision(12), m11, m12, m21, m22
+        skew,
+        translate: toZero(translate.concat(0) as [number, number, number]) as [number, number, number],
+        scale: toZero(scale.concat(1) as [number, number, number]) as [number, number, number],
+        rotate: toZero([1, 1, 0, +angle.toPrecision(6)] as [number, number, number, number]) as [number, number, number, number],
+        perspective: null,
+        quaternion
+        // m11, m12, m21, m22
     }
 }
 
@@ -454,17 +486,17 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         scale: toZero(scale) as [number, number, number],
         rotate: toZero([x1, y1, z1, angle]) as [number, number, number, number],
         translate: toZero(translate) as [number, number, number],
-        perspective: original[2][3] == 0 ? null : +(-1 / original[2][3]).toPrecision( 6),
+        perspective: original[2][3] == 0 ? null : +(-1 / original[2][3]).toPrecision(6),
         quaternion
     };
 }
 
 
-export function toZero(v: [number, number] | [number, number, number] | [number, number, number, number]) {
+export function toZero(v: [number, number] | [number, number, number] | [number, number, number, number] | number[]): [number, number] | [number, number, number] | [number, number, number, number] | number[] {
 
     for (let i = 0; i < v.length; i++) {
 
-        if (Math.abs(v[i]) <= 1e-6) {
+        if (Math.abs(v[i]) <= 1e-5) {
 
             v[i] = 0;
         } else {
@@ -507,7 +539,7 @@ function getRotation3D(matrix: Matrix): { x: number, y: number, z: number, angle
 
         const x1: number = +r11.toPrecision(6);
         const y1: number = +r22.toPrecision(6);
-        const z1:   number = +r33.toPrecision(6);
+        const z1: number = +r33.toPrecision(6);
         const max: number = Math.max(x1, y1, z1);
 
         x = y = z = 0;
@@ -560,79 +592,6 @@ function getRotation3D(matrix: Matrix): { x: number, y: number, z: number, angle
     }
 
     return {x, y, z, angle};
-}
-
-export function recompose(
-    translate: [number, number, number],
-    scale: [number, number, number],
-    skew: [number, number, number],
-    perspective: [number, number, number, number],
-    quaternion: [number, number, number, number]
-): Matrix {
-
-    let matrix: Matrix = identity();
-// apply perspective
-    for (let i = 0; i < 4; i++) {
-        matrix[i][3] = perspective[i];
-    }
-
-// apply translation
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 3; j++) {
-            matrix[3][i] += translate[j] * matrix[j][i];
-        }
-    }
-
-// apply rotation
-    let x = quaternion[0];
-    let y = quaternion[1];
-    let z = quaternion[2];
-    let w = quaternion[3];
-
-    const rotationMatrix: Matrix = identity();
-// Construct a composite rotation matrix from the quaternion values
-// rotationMatrix is an identity 4x4 matrix initially
-    rotationMatrix[0][0] = 1 - 2 * (y * y + z * z);
-    rotationMatrix[0][1] = 2 * (x * y - z * w);
-    rotationMatrix[0][2] = 2 * (x * z + y * w);
-    rotationMatrix[1][0] = 2 * (x * y + z * w);
-    rotationMatrix[1][1] = 1 - 2 * (x * x + z * z);
-    rotationMatrix[1][2] = 2 * (y * z - x * w);
-    rotationMatrix[2][0] = 2 * (x * z - y * w);
-    rotationMatrix[2][1] = 2 * (y * z + x * w);
-    rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
-
-    matrix = multiply(matrix, rotationMatrix);
-
-    let temp: Matrix = identity();
-
-// apply skew
-// temp is an identity 4x4 matrix initially
-    if (skew[2]) {
-        temp[2][1] = skew[2];
-        matrix = multiply(matrix, temp);
-    }
-
-    if (skew[1]) {
-        temp[2][1] = 0;
-        temp[2][0] = skew[1];
-        matrix = multiply(matrix, temp);
-    }
-
-    if (skew[0]) {
-        temp[2][0] = 0;
-        temp[1][0] = skew[0];
-        matrix = multiply(matrix, temp);
-    }
-
-// apply scale
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 4; j++) {
-            matrix[i][j] *= scale[i];
-        }
-    }
-
-    return matrix;
 }
 
 // https://drafts.csswg.org/css-transforms-1/#2d-matrix
