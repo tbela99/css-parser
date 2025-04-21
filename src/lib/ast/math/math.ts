@@ -7,11 +7,22 @@ export function gcd (x: number, y: number): number {
     x = Math.abs(x);
     y = Math.abs(y);
 
+    if (x == y) {
+
+        return x;
+    }
+
+
     let t: number;
 
-    if (x == 0 || y == 0) {
+    if (x == 0) {
 
-        return 1;
+        return y;
+    }
+
+    if (y == 0) {
+
+        return x;
     }
 
     if (y > x) {

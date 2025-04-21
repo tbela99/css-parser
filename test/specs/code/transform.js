@@ -167,7 +167,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
                 beautify: true,
                 computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
- transform: rotate3d(2,-1,-1,-72deg)
+ transform: rotate3d(-2,1,1,72deg)
 }`));
         });
 
@@ -216,11 +216,26 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
+        it('rotate3d #13', function () {
+            const nesting1 = `
+
+  .now {
+    transform: rotate(-10deg)
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: rotate(-10deg)
+}`));
+        });
+
     });
 
     describe('CSS scale', function () {
 
-        it('scale3d #13', function () {
+        it('scale3d #14', function () {
             const nesting1 = `
 
   .now {
@@ -235,7 +250,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('scale #14', function () {
+        it('scale #15', function () {
             const nesting1 = `
 
   .now {
@@ -251,7 +266,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         });
 
 
-        it('scale #15', function () {
+        it('scale #16', function () {
             const nesting1 = `
 
   .now {
@@ -266,7 +281,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('scale #16', function () {
+        it('scale #17', function () {
             const nesting1 = `
 
   .now {
@@ -281,7 +296,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('scale #17', function () {
+        it('scale #18', function () {
             const nesting1 = `
 
   .now {
@@ -296,7 +311,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('rotate3d #18', function () {
+        it('rotate3d #19', function () {
             const nesting1 = `
 
   .now {
@@ -311,7 +326,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('scale #19', function () {
+        it('scale #20', function () {
             const nesting1 = `
 
   .now {
@@ -326,7 +341,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('scale #20', function () {
+        it('scale #21', function () {
             const nesting1 = `
 
   .now {
@@ -337,7 +352,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
                 beautify: true,
                 computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
- transform: scaleX(0)scaleY(0)scaleZ(0)
+ transform: scale3d(0,0,0)
 }`));
         });
 
@@ -345,7 +360,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
     describe('CSS skew', function () {
 
-        it('skew #21', function () {
+        it('skew #22', function () {
             const nesting1 = `
 
   .now {
@@ -364,7 +379,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
     describe('CSS perspective', function () {
 
-        it('skew #22', function () {
+        it('skew #23', function () {
             const nesting1 = `
 
   .now {
@@ -381,9 +396,9 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
     });
 
-    describe('CSS perspective', function () {
+    describe('CSS matrix', function () {
 
-        it('matrix #23', function () {
+        it('matrix #24', function () {
             const nesting1 = `
 
   .now {
@@ -398,5 +413,68 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
+        it('matrix #25', function () {
+            const nesting1 = `
+
+  .now {
+    transform: matrix3d(
+  0.5,
+  0,
+  -0.866025,
+  0,
+  0.595877,
+  1.2,
+  -1.03209,
+  0,
+  0.866025,
+  0,
+  0.5,
+  0,
+  25.9808,
+  0,
+  15,
+  1
+)
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: matrix3d(.5,0,-.866025,0,.595877,1.2,-1.03209,0,.866025,0,.5,0,25.9808,0,15,1)
+}`));
+        });
+
+        it('matrix #25', function () {
+            const nesting1 = `
+
+  .now {
+    transform:matrix3d(
+  -0.6,
+  1.34788,
+  0,
+  0,
+  -2.34788,
+  -0.6,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+  0,
+  0,
+  10,
+  1
+)
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: matrix3d(-.6,1.34788,0,0,-2.34788,-.6,0,0,0,0,1,0,0,0,10,1)
+}`));
+        });
     });
 }

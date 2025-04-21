@@ -46,6 +46,24 @@ export function compute(transformLists: Token[]): {
 
     const serialized: Token = serialize(matrix);
 
+    if (cumulative.length > 0) {
+
+        for (let i = 0; i < cumulative.length; i++) {
+
+            if (cumulative[i].typ == EnumToken.IdenTokenType && (cumulative[i] as IdentToken).val == 'none') {
+
+                cumulative.splice(i--, 1);
+            }
+        }
+
+        if (cumulative.length == 0) {
+
+            cumulative.push({
+                typ: EnumToken.IdenTokenType, val: 'none'
+            })
+        }
+    }
+
     return {
         matrix: serialize(matrix),
         cumulative,
@@ -214,9 +232,11 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                 let child: Token;
 
-                for (let k = 0; k < (transformList[i] as FunctionToken).chi.length; k++) {
+                const children = stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[];
 
-                    child = (transformList[i] as FunctionToken).chi[k];
+                for (let k = 0; k < children.length; k++) {
+
+                    child = children[k];
 
                     if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
 
@@ -362,7 +382,7 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                 break;
 
             case 'matrix3d':
-                return null;
+                // return null;
 
             case 'matrix': {
 

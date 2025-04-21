@@ -36,6 +36,18 @@ function compute(transformLists) {
         cumulative.push(...(minify(mat) ?? transformList));
     }
     const serialized = serialize(matrix);
+    if (cumulative.length > 0) {
+        for (let i = 0; i < cumulative.length; i++) {
+            if (cumulative[i].typ == EnumToken.IdenTokenType && cumulative[i].val == 'none') {
+                cumulative.splice(i--, 1);
+            }
+        }
+        if (cumulative.length == 0) {
+            cumulative.push({
+                typ: EnumToken.IdenTokenType, val: 'none'
+            });
+        }
+    }
     return {
         matrix: serialize(matrix),
         cumulative,
@@ -157,8 +169,9 @@ function computeMatrix(transformList, matrixVar) {
                 {
                     values.length = 0;
                     let child;
-                    for (let k = 0; k < transformList[i].chi.length; k++) {
-                        child = transformList[i].chi[k];
+                    const children = stripCommaToken(transformList[i].chi.slice());
+                    for (let k = 0; k < children.length; k++) {
+                        child = children[k];
                         if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
                             continue;
                         }
@@ -254,7 +267,7 @@ function computeMatrix(transformList, matrixVar) {
                 }
                 break;
             case 'matrix3d':
-                return null;
+            // return null;
             case 'matrix':
                 {
                     const values = [];

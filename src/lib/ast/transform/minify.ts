@@ -1,10 +1,12 @@
-import {decompose, identity, Matrix} from "./utils.ts";
+import {decompose, epsilon, identity, Matrix, multiply, round, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {FunctionToken, Token} from "../../../@types";
 import {eq} from "../../parser/utils/eq.ts";
+import {computeMatrix} from "./compute.ts";
+import {parseMatrix} from "./matrix.ts";
 
-
-export function minify(matrix: Matrix, names?: string[]): Token[] | null {
+// translate → rotate → skew → scale
+export function minify(matrix: Matrix): Token[] | null {
 
     const decomposed = /* is2DMatrix(matrix) ? decompose2(matrix) : */ decompose(matrix);
 
@@ -20,27 +22,27 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
     let result: Token[] = [];
 
     // check identity
-    if (decomposed.translate[0] == 0 && decomposed.translate[1] == 0 && decomposed.translate[2] == 0) {
+    if (round(decomposed.translate[0]) == 0 && round(decomposed.translate[1]) == 0 && round(decomposed.translate[2]) == 0) {
 
         transforms.delete('translate');
     }
 
-    if (decomposed.scale[0] == 1 && decomposed.scale[1] == 1 && decomposed.scale[2] == 1) {
+    if (round(decomposed.scale[0]) == 1 && round(decomposed.scale[1]) == 1 && round(decomposed.scale[2]) == 1) {
 
         transforms.delete('scale');
     }
 
-    if (decomposed.skew[0] == 0 && decomposed.skew[1] == 0) {
+    if (round(decomposed.skew[0]) == 0 && round(decomposed.skew[1]) == 0) {
 
         transforms.delete('skew');
     }
 
-    if (decomposed.perspective == null) {
+    if (round(decomposed.perspective[2]) == 0) {
 
         transforms.delete('perspective');
     }
 
-    if (decomposed.rotate[3] == 0) {
+    if (round(decomposed.rotate[3]) == 0) {
 
         transforms.delete('rotate');
     }
@@ -51,7 +53,7 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
 
         for (let i = 0; i < 3; i++) {
 
-            if (decomposed.translate[i] == 0) {
+            if (round(decomposed.translate[i]) == 0) {
 
                 coordinates.delete(i == 0 ? 'x' : i == 1 ? 'y' : 'z');
             }
@@ -63,11 +65,11 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                 typ: EnumToken.FunctionTokenType,
                 val: 'translate3d',
                 chi: [
-                    {typ: EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px'},
+                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
                     {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px'},
+                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'},
                     {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px'}
+                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]) + '', unit: 'px'}
                 ]
             })
         } else if (coordinates.size == 1) {
@@ -77,7 +79,7 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                 result.push({
                     typ: EnumToken.FunctionTokenType,
                     val: 'translate',
-                    chi: [{typ: EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px'}]
+                    chi: [{typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'}]
                 });
             } else {
 
@@ -87,7 +89,7 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                 result.push({
                     typ: EnumToken.FunctionTokenType,
                     val: 'translate' + axis.toUpperCase(),
-                    chi: [{typ: EnumToken.LengthTokenType, val: decomposed.translate[index] + '', unit: 'px'}]
+                    chi: [{typ: EnumToken.LengthTokenType, val: round(decomposed.translate[index]) + '', unit: 'px'}]
                 });
             }
         } else if (coordinates.has('z')) {
@@ -99,14 +101,14 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                     decomposed.translate[0] == 0 ? {
                         typ: EnumToken.NumberTokenType,
                         'val': '0'
-                    } : {typ: EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px'},
+                    } : {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
                     {typ: EnumToken.CommaTokenType},
                     decomposed.translate[1] == 0 ? {
                         typ: EnumToken.NumberTokenType,
                         'val': '0'
-                    } : {typ: EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px'},
+                    } : {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'},
                     {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.LengthTokenType, val: decomposed.translate[2] + '', unit: 'px'}
+                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]) + '', unit: 'px'}
                 ]
             });
         } else {
@@ -118,12 +120,126 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                     decomposed.translate[0] == 0 ? {
                         typ: EnumToken.NumberTokenType,
                         'val': '0'
-                    } : {typ: EnumToken.LengthTokenType, val: decomposed.translate[0] + '', unit: 'px'},
+                    } : {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
                     {typ: EnumToken.CommaTokenType},
                     decomposed.translate[1] == 0 ? {
                         typ: EnumToken.NumberTokenType,
                         'val': '0'
-                    } : {typ: EnumToken.LengthTokenType, val: decomposed.translate[1] + '', unit: 'px'}
+                    } : {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'}
+                ]
+            });
+        }
+    }
+
+    if (transforms.has('rotate')) {
+
+        const [x, y, z, angle] = decomposed.rotate;
+
+        if (y == 0 && z == 0) {
+
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotateX',
+                chi: [
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + round(angle),
+                        unit: 'deg'
+                    }
+                ]
+            });
+        } else if (x == 0 && z == 0) {
+
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotateY',
+                chi: [
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + round(angle),
+                        unit: 'deg'
+                    }
+                ]
+            });
+        } else if (x == 0 && y == 0) {
+
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotate',
+                chi: [
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + round(angle),
+                        unit: 'deg'
+                    }
+                ]
+            });
+        } else {
+
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'rotate3d',
+                chi: [
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: '' + round(x)
+                    },
+                    {typ: EnumToken.CommaTokenType},
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: '' + round(y)
+                    },
+                    {typ: EnumToken.CommaTokenType},
+                    {
+                        typ: EnumToken.NumberTokenType,
+                        val: '' + round(z)
+                    },
+                    {typ: EnumToken.CommaTokenType},
+                    {
+                        typ: EnumToken.AngleTokenType,
+                        val: '' + round(angle),
+                        unit: 'deg'
+                    }
+                ]
+            });
+        }
+    }
+
+    if (transforms.has('skew')) {
+
+        if (round(decomposed.skew[0]) == 0) {
+
+            skew.delete('x');
+        }
+
+        if (round(decomposed.skew[1]) == 0) {
+
+            skew.delete('y');
+        }
+
+        for (let i = 0; i < 2; i++) {
+
+            decomposed.skew[i] = round(Math.atan(decomposed.skew[i]) * 180 / Math.PI);
+        }
+
+        if (skew.size == 1) {
+
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'skew' + (skew.has('x') ? '' : 'Y'),
+                chi: [
+                    {typ: EnumToken.AngleTokenType, val: '' + round(decomposed.skew[0]), unit: 'deg'}
+                ]
+            });
+        } else {
+
+            result.push({
+                typ: EnumToken.FunctionTokenType,
+                val: 'skew',
+                chi: [
+                    {typ: EnumToken.AngleTokenType, val: '' + round(decomposed.skew[0]), unit: 'deg'},
+                    {typ: EnumToken.CommaTokenType},
+                    {typ: EnumToken.AngleTokenType, val: '' + round(decomposed.skew[1]), unit: 'deg'}
                 ]
             });
         }
@@ -131,7 +247,7 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
 
     if (transforms.has('scale')) {
 
-        const [sx, sy, sz] = decomposed.scale;
+        const [sx, sy, sz] = toZero(decomposed.scale);
 
         if (sz == 1) {
 
@@ -156,7 +272,7 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                 typ: EnumToken.FunctionTokenType,
                 val: 'scale' + prefix,
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '' + (prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx)}
+                    {typ: EnumToken.NumberTokenType, val: '' + round(prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx)}
                 ]
             });
         } else if (!scales.has('z')) {
@@ -165,9 +281,9 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                 typ: EnumToken.FunctionTokenType,
                 val: 'scale',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '' + sx},
+                    {typ: EnumToken.NumberTokenType, val: '' + round(sx)},
                     {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.NumberTokenType, val: '' + sy},
+                    {typ: EnumToken.NumberTokenType, val: '' + round(sy)},
                 ]
             });
         } else {
@@ -176,125 +292,11 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
                 typ: EnumToken.FunctionTokenType,
                 val: 'scale3d',
                 chi: [
-                    {typ: EnumToken.NumberTokenType, val: '' + sx},
+                    {typ: EnumToken.NumberTokenType, val: '' + round(sx)},
                     {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.NumberTokenType, val: '' + sy},
+                    {typ: EnumToken.NumberTokenType, val: '' + round(sy)},
                     {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.NumberTokenType, val: '' + sz}
-                ]
-            });
-        }
-    }
-
-    if (transforms.has('rotate')) {
-
-        const [x, y, z, angle] = decomposed.rotate;
-
-        if (y == 0 && z == 0) {
-
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'rotateX',
-                chi: [
-                    {
-                        typ: EnumToken.AngleTokenType,
-                        val: '' + angle,
-                        unit: 'deg'
-                    }
-                ]
-            });
-        } else if (x == 0 && z == 0) {
-
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'rotateY',
-                chi: [
-                    {
-                        typ: EnumToken.AngleTokenType,
-                        val: '' + angle,
-                        unit: 'deg'
-                    }
-                ]
-            });
-        } else if (x == 0 && y == 0) {
-
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'rotate',
-                chi: [
-                    {
-                        typ: EnumToken.AngleTokenType,
-                        val: '' + angle,
-                        unit: 'deg'
-                    }
-                ]
-            });
-        } else {
-
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'rotate3d',
-                chi: [
-                    {
-                        typ: EnumToken.NumberTokenType,
-                        val: '' + x
-                    },
-                    {typ: EnumToken.CommaTokenType},
-                    {
-                        typ: EnumToken.NumberTokenType,
-                        val: '' + y
-                    },
-                    {typ: EnumToken.CommaTokenType},
-                    {
-                        typ: EnumToken.NumberTokenType,
-                        val: '' + z
-                    },
-                    {typ: EnumToken.CommaTokenType},
-                    {
-                        typ: EnumToken.AngleTokenType,
-                        val: '' + angle,
-                        unit: 'deg'
-                    }
-                ]
-            });
-        }
-    }
-
-    if (transforms.has('skew')) {
-
-        if (decomposed.skew[0] == 0) {
-
-            skew.delete('x');
-        }
-
-        if (decomposed.skew[1] == 0) {
-
-            skew.delete('y');
-        }
-
-        for (let i = 0; i < 2; i++) {
-
-            decomposed.skew[i] = +(Math.atan(decomposed.skew[i]) * 180 / Math.PI).toPrecision(6);
-        }
-
-        if (skew.size == 1) {
-
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'skew' + (skew.has('x') ? '' : 'Y'),
-                chi: [
-                    {typ: EnumToken.AngleTokenType, val: '' + decomposed.skew[0], unit: 'deg'}
-                ]
-            });
-        } else {
-
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'skew',
-                chi: [
-                    {typ: EnumToken.AngleTokenType, val: '' + decomposed.skew[0], unit: 'deg'},
-                    {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.AngleTokenType, val: '' + decomposed.skew[1], unit: 'deg'}
+                    {typ: EnumToken.NumberTokenType, val: '' + round(sz)}
                 ]
             });
         }
@@ -306,26 +308,9 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
             typ: EnumToken.FunctionTokenType,
             val: 'perspective',
             chi: [
-                {typ: EnumToken.Length, val: '' + decomposed.perspective, unit: 'px'},
+                {typ: EnumToken.Length, val: '' + round(1 / decomposed.perspective[2]), unit: 'px'},
             ]
         });
-    }
-
-    if (names != null) {
-
-        result = names.reduce((acc, curr) => {
-
-            for (let i = 0; i < result.length; i++) {
-
-                if (result[i].typ != EnumToken.FunctionTokenType || (result[i] as FunctionToken).val.startsWith(curr)) {
-
-                    acc.push(result[i]);
-                    result.splice(i--, 1);
-                }
-            }
-
-            return acc;
-        }, [] as Token[]);
     }
 
     // identity
@@ -335,4 +320,50 @@ export function minify(matrix: Matrix, names?: string[]): Token[] | null {
             val: 'none'
         }
     ] : result;
+}
+
+export function eqMatrix(a: FunctionToken, b: Token[]): boolean {
+
+    let mat: Matrix = identity();
+    let tmp: Matrix = identity();
+
+    // @ts-ignore
+    const data = parseMatrix(a) as Matrix;
+
+    // console.error({data});
+
+    for (const transform of b) {
+
+        tmp = computeMatrix([transform], identity()) as Matrix;
+
+        // console.error({transform: renderToken(transform), tmp});
+
+        if (tmp == null) {
+
+            return false;
+        }
+
+        mat = multiply(mat, tmp);
+    }
+
+    // console.error({mat});
+
+    if (mat == null) {
+
+        return false;
+    }
+
+    for (let i = 0; i < 4; i++) {
+
+        for (let j = 0; j < 4; j++) {
+
+            if (Math.abs(mat[i][j] - data[i][j]) > epsilon) {
+
+                return false;
+            }
+        }
+    }
+
+    return true;
+
 }

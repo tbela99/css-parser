@@ -685,4 +685,4 @@ function filterValues(values) {
     return values;
 }
 
-export { colorsFunc, doRender, reduceNumber, renderToken };
+export { colorsFunc, doRender, filterValues, reduceNumber, renderToken };

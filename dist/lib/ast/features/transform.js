@@ -3,10 +3,11 @@ import { consumeWhitespace } from '../../validation/utils/whitespace.js';
 import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
-import { renderToken } from '../../renderer/render.js';
+import { filterValues, renderToken } from '../../renderer/render.js';
 import '../../renderer/color/utils/constants.js';
 import '../../parser/utils/config.js';
 import { compute } from '../transform/compute.js';
+import { eqMatrix } from '../transform/minify.js';
 
 class TransformCssFeature {
     static get ordering() {
@@ -39,14 +40,27 @@ class TransformCssFeature {
             if (matrix == null || cumulative == null || minified == null) {
                 return;
             }
-            let result = cumulative;
-            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-                result = [matrix];
+            let r = [filterValues(node.val.slice())];
+            if (eqMatrix(matrix, cumulative)) {
+                r.push(cumulative);
             }
-            if (matrix != minified[0] && minified.reduce((acc, t) => acc + renderToken(t), '').length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
-                result = minified;
+            if (eqMatrix(matrix, minified)) {
+                r.push(minified);
             }
-            node.val = result;
+            // console.error(JSON.stringify({
+            //     matrix:  renderToken(matrix),
+            //     cumulative: cumulative.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //     minified: minified.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //     r: r[0].reduce((acc, curr) => acc + renderToken(curr), ''),
+            //     all: r.map(r => r.reduce((acc, curr) => acc + renderToken(curr), ''))
+            // }, null, 1));
+            const l = renderToken(matrix).length;
+            node.val = r.reduce((acc, curr) => {
+                if (curr.reduce((acc, t) => acc + renderToken(t), '').length < l) {
+                    return curr;
+                }
+                return acc;
+            }, [matrix]);
         }
     }
 }

@@ -1,7 +1,34 @@
-import {identity, is2DMatrix, Matrix, toZero} from "./utils.ts";
+import {identity, is2DMatrix, Matrix, round, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
-import type {Token} from "../../../@types/index.d.ts";
+import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts";
 import {reduceNumber} from "../../renderer/render.ts";
+import {eq} from "../../parser/utils/eq.ts";
+import {getNumber} from "../../renderer/color";
+
+export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
+
+    if (mat.typ == EnumToken.IdenTokenType) {
+
+        return mat.val == 'none' ? identity() : null;
+    }
+
+    const children = mat.chi.filter(t => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType);
+
+    const values: number[] = [];
+
+    for (const child of children) {
+
+        if (child.typ != EnumToken.NumberTokenType) {
+
+            return null;
+        }
+
+        values.push(getNumber(child));
+    }
+
+    // @ts-ignore
+    return matrix(values);
+}
 
 // use column-major order
 export function matrix(values: [number, number, number, number, number, number] | [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]): Matrix | null {
@@ -45,6 +72,14 @@ export function matrix(values: [number, number, number, number, number, number] 
 
 export function serialize(matrix: Matrix): Token {
 
+    if (eq(matrix, identity())) {
+
+        return {
+            typ: EnumToken.IdenTokenType,
+            val: 'none'
+        }
+    }
+
     if (is2DMatrix(matrix)) {
 
         // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
@@ -75,30 +110,22 @@ export function serialize(matrix: Matrix): Token {
         }
     }
 
-    let m: Token[] = [];
-
-    matrix = matrix.map((v) => toZero(v)) as Matrix;
-
-    for (let i = 0; i < matrix.length; i++) {
-
-        for (let j = 0; j < matrix[i].length; j++) {
-
-            if (m.length > 0) {
-
-                m.push({typ: EnumToken.CommaTokenType})
-            }
-
-            m.push({
-                typ: EnumToken.NumberTokenType,
-                val: reduceNumber(matrix[j][i].toPrecision(6))
-            })
-        }
-    }
-
-
     return {
         typ: EnumToken.FunctionTokenType,
         val: 'matrix3d',
-        chi: m
+        chi: matrix.flat().reduce((acc, curr: number) => {
+
+            if (acc.length > 0) {
+
+                acc.push({typ: EnumToken.CommaTokenType});
+            }
+
+            acc.push({
+                typ: EnumToken.NumberTokenType,
+                val: reduceNumber(round(curr))
+            })
+
+            return acc;
+        }, [] as Token[])
     }
 }

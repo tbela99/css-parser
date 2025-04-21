@@ -1048,7 +1048,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
     return '';
 }
 
-function filterValues(values: Token[]): Token[] {
+export function filterValues(values: Token[]): Token[] {
 
     let i: number = 0;
 

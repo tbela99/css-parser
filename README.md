@@ -34,6 +34,7 @@ $ deno add @tbela99/css-parser
 - convert nested css rules to legacy syntax
 - generate sourcemap
 - compute css shorthands. see supported properties list below
+- experimental minification : css transform module level 2
 - evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(),
   atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
 - inline css variables
@@ -96,7 +97,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@0.9.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.0.0/web';
 
 
     const css = `

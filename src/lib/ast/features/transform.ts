@@ -3,13 +3,15 @@ import type {
     AstDeclaration,
     AstNode,
     AstRule,
+    FunctionToken,
     MinifyFeatureOptions,
     Token
 } from "../../../@types/index.d.ts";
 import {EnumToken} from "../types";
 import {consumeWhitespace} from "../../validation/utils";
 import {compute} from "../transform/compute.ts";
-import {renderToken} from "../../renderer";
+import {filterValues, renderToken} from "../../renderer";
+import {eqMatrix} from "../transform/minify.ts";
 
 export class TransformCssFeature {
 
@@ -61,19 +63,38 @@ export class TransformCssFeature {
                 return;
             }
 
-            let result: Token[] = cumulative;
+            let r : Token[][] = [filterValues((node as AstDeclaration).val.slice())];
 
-            if (renderToken(matrix).length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+            if (eqMatrix(matrix as FunctionToken, cumulative)) {
 
-                result = [matrix];
+                r.push(cumulative);
             }
 
-            if (matrix != minified[0] && minified.reduce((acc, t) => acc + renderToken(t), '').length < result.reduce((acc, t) => acc + renderToken(t), '').length) {
+            if (eqMatrix(matrix as FunctionToken, minified)) {
 
-                result = minified;
+                r.push(minified);
             }
 
-            (node as AstDeclaration).val = result;
+            // console.error(JSON.stringify({
+            //     matrix:  renderToken(matrix),
+            //     cumulative: cumulative.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //     minified: minified.reduce((acc, curr) => acc + renderToken(curr), ''),
+            //     r: r[0].reduce((acc, curr) => acc + renderToken(curr), ''),
+            //     all: r.map(r => r.reduce((acc, curr) => acc + renderToken(curr), ''))
+            // }, null, 1));
+
+            const l =  renderToken(matrix).length;
+
+            (node as AstDeclaration).val = r.reduce((acc, curr) => {
+
+                if (curr.reduce((acc, t) => acc + renderToken(t), '').length < l) {
+
+                    return curr;
+                }
+
+                return acc;
+
+            }, [matrix]);
         }
     }
 }

@@ -2,14 +2,14 @@
 
 # v1.0.0
 
-- [x] experimental CSS transform module level 2
+- [x] experimental minification : CSS transform module level 2
   - [x] translate
   - [x] scale
   - [x] rotate
   - [x] skew
   - [x] perspective                                  
   - [x] matrix
-  - [ ] matrix3d
+  - [x] matrix3d
 - [x] keyframes
     - [x] remove consecutive keyframes with the same name
     - [x] reduce keyframe selector 'from' to '0%'
