@@ -1,7 +1,7 @@
-import {EnumToken} from "../../ast";
+import {EnumToken} from "../../ast/index.ts";
 import type {FunctionToken, IdentToken, NumberToken, PropertyMapType, Token} from "../../../@types/index.d.ts";
 
-import {mathFuncs} from "../../syntax";
+import {mathFuncs} from "../../syntax/index.ts";
 
 export function matchType(val: Token, properties: PropertyMapType): boolean {
 

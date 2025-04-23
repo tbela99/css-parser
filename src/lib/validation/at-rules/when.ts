@@ -1,9 +1,9 @@
-import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
-import type {ValidationSyntaxResult} from "../../../@types/validation";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace, splitTokenList} from "../utils";
-import {validateMediaCondition, validateMediaFeature} from "./media";
-import {validateSupportCondition} from "./supports";
+import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types/index.d.ts";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
+import {validateMediaCondition, validateMediaFeature} from "./media.ts";
+import {validateSupportCondition} from "./supports.ts";
 
 export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -90,11 +90,11 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
                 break;
             }
 
-            const chi: Token[] = split[0].chi.slice() as Token[];
+            const chi: Token[] = (split[0] as FunctionToken).chi.slice() as Token[];
 
             consumeWhitespace(chi);
 
-            if (split[0].val == 'media') {
+            if ((split[0] as FunctionToken).val == 'media') {
 
                 // result = valida
                 if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
@@ -111,7 +111,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
                     break;
                 }
 
-            } else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)) {
+            } else if (['supports', 'font-tech', 'font-format'].includes((split[0] as FunctionToken).val)) {
 
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {

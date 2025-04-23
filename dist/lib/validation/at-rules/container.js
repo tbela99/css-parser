@@ -95,10 +95,10 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
                 break;
             }
             token = queries[0];
-            if (token.typ == EnumToken.MediaFeatureNotTokenType) {
+            if (token?.typ == EnumToken.MediaFeatureNotTokenType) {
                 token = token.val;
             }
-            if (token.typ != EnumToken.ParensTokenType && (token.typ != EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
+            if (token?.typ != EnumToken.ParensTokenType && (token?.typ != EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -108,7 +108,7 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
                     tokens
                 };
             }
-            if (token.typ == EnumToken.ParensTokenType) {
+            if (token?.typ == EnumToken.ParensTokenType) {
                 result = validateContainerSizeFeature(token.chi, atRule);
             }
             else if (token.val == 'scroll-state') {
@@ -126,7 +126,7 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
                 break;
             }
             token = queries[0];
-            if (token.typ != EnumToken.MediaFeatureAndTokenType && token.typ != EnumToken.MediaFeatureOrTokenType) {
+            if (token?.typ != EnumToken.MediaFeatureAndTokenType && token?.typ != EnumToken.MediaFeatureOrTokenType) {
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -137,9 +137,9 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
                 };
             }
             if (tokenType == null) {
-                tokenType = token.typ;
+                tokenType = token?.typ;
             }
-            if (tokenType != token.typ) {
+            if (tokenType == null || tokenType != token?.typ) {
                 return {
                     valid: ValidationLevel.Drop,
                     matches: [],

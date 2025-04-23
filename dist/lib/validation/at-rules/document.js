@@ -59,7 +59,7 @@ function validateAtRuleDocument(atRule, options, root) {
         }
         if (t[0].typ == EnumToken.UrlFunctionTokenType) {
             result = validateURL(t[0]);
-            if (result.valid == ValidationLevel.Drop) {
+            if (result?.valid == ValidationLevel.Drop) {
                 return result;
             }
             continue;

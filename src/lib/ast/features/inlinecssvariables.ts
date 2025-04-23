@@ -12,7 +12,7 @@ import type {
     ParserOptions,
     Token,
     VariableScopeInfo
-} from "../../../@types/index";
+} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
 import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";

@@ -1,4 +1,4 @@
-import {EnumToken} from "../lib";
+import {EnumToken} from "../lib/index.ts";
 
 export interface PropertyType {
 

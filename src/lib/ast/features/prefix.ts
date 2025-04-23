@@ -1,5 +1,12 @@
-import {EnumToken} from "../types";
-import type {AstAtRule, AstDeclaration, AstRule, MinifyFeatureOptions, Token} from "../../../@types";
+import {EnumToken} from "../types.ts";
+import type {
+    AstAtRule,
+    AstDeclaration,
+    AstRule,
+    IdentToken,
+    MinifyFeatureOptions,
+    Token
+} from "../../../@types/index.d.ts";
 import {
     getSyntaxConfig,
     ValidationAmpersandToken,
@@ -10,8 +17,8 @@ import {
     ValidationPropertyToken,
     ValidationToken,
     ValidationTokenEnum
-} from '../../validation'
-import {walkValues} from "../walk";
+} from '../../validation/index.ts'
+import {walkValues} from "../walk.ts";
 
 const config = getSyntaxConfig();
 
@@ -62,13 +69,13 @@ export class ComputePrefixFeature {
 
                     for (const {value} of walkValues((<AstDeclaration>node).val)) {
 
-                        if (value.typ == EnumToken.IdenTokenType && value.val.charAt(0) == '-' && value.val.charAt(1) != '-') {
+                        if (value.typ == EnumToken.IdenTokenType && (value as IdentToken).val.charAt(0) == '-' && (value as IdentToken).val.charAt(1) != '-') {
 
                             // @ts-ignore
-                            const values: ValidationToken[] = config.declarations[(<AstDeclaration>node).nam].ast.slice() as ValidationToken[];
-                            const match = value.val.match(/^-(.*?)-(.*)$/);
+                            const values: ValidationToken[] = config.declarations[(<AstDeclaration>node).nam].ast?.slice?.() as ValidationToken[];
+                            const match = (value as IdentToken).val.match(/^-(.*?)-(.*)$/);
 
-                            if (match != null) {
+                            if (values != null && match != null) {
 
                                 const val = matchToken({...value, val: match[2]} as Token, values);
 
@@ -102,7 +109,7 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
 
             case ValidationTokenEnum.Keyword:
 
-                if (token.typ == EnumToken.IdenTokenType && token.val == (matches[i] as ValidationKeywordToken).val) {
+                if (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val == (matches[i] as ValidationKeywordToken).val) {
 
                     return token;
                 }
@@ -113,7 +120,7 @@ function matchToken(token: Token, matches: ValidationToken[]): null | Token {
 
                 if (['ident', 'custom-ident'].includes((matches[i] as ValidationPropertyToken).val)) {
 
-                    if (token.typ == EnumToken.IdenTokenType && token.val == (matches[i] as ValidationPropertyToken).val) {
+                    if (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val == (matches[i] as ValidationPropertyToken).val) {
 
                         return token;
                     }

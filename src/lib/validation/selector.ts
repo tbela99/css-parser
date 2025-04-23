@@ -14,7 +14,7 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     // @ts-ignore
     if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
 
-        return validateKeyframeBlockList(selector, root, options);
+        return validateKeyframeBlockList(selector, root as AstAtRule, options);
     }
 
     let isNested: number = root.typ == EnumToken.RuleNodeType ? 1 : 0;

@@ -113,6 +113,9 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     }
     const components1 = getComponents(color1);
     const components2 = getComponents(color2);
+    if (components1 == null || components2 == null) {
+        return null;
+    }
     if ((components1[3] != null && components1[3].typ == EnumToken.IdenTokenType && components1[3].val == 'none') && values2.length == 4) {
         values1[3] = values2[3];
     }

@@ -1,7 +1,16 @@
-import type {AstAtRule, AstNode, MediaFeatureNotToken, Token, ValidationOptions} from "../../../@types";
-import type {ValidationSyntaxResult} from "../../../@types/validation";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace, splitTokenList} from "../utils";
+import type {
+    AstAtRule,
+    AstNode,
+    FunctionToken,
+    MediaFeatureNotToken,
+    MediaQueryConditionToken,
+    ParensToken,
+    Token,
+    ValidationOptions
+} from "../../../@types/index.d.ts";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
 const validateContainerScrollStateFeature = validateContainerSizeFeature;
 
@@ -118,12 +127,12 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
             token = queries[0];
 
-            if (token.typ == EnumToken.MediaFeatureNotTokenType) {
+            if (token?.typ == EnumToken.MediaFeatureNotTokenType) {
 
-                token = token.val;
+                token = (token  as MediaFeatureNotToken).val;
             }
 
-            if (token.typ != EnumToken.ParensTokenType && (token.typ != EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
+            if (token?.typ != EnumToken.ParensTokenType && (token?.typ != EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes((token as FunctionToken).val))) {
 
                 return {
                     valid: ValidationLevel.Drop,
@@ -135,15 +144,15 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
                 }
             }
 
-            if (token.typ == EnumToken.ParensTokenType) {
+            if (token?.typ == EnumToken.ParensTokenType) {
 
-                result = validateContainerSizeFeature(token.chi, atRule);
-            } else if (token.val == 'scroll-state') {
+                result = validateContainerSizeFeature((token as ParensToken).chi, atRule);
+            } else if ((token as FunctionToken).val == 'scroll-state') {
 
-                result = validateContainerScrollStateFeature(token.chi, atRule);
+                result = validateContainerScrollStateFeature((token as FunctionToken).chi, atRule);
             } else {
 
-                result = validateContainerStyleFeature(token.chi, atRule);
+                result = validateContainerStyleFeature((token as FunctionToken).chi, atRule);
             }
 
             if (result.valid == ValidationLevel.Drop) {
@@ -161,7 +170,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
             token = queries[0];
 
-            if (token.typ != EnumToken.MediaFeatureAndTokenType && token.typ != EnumToken.MediaFeatureOrTokenType) {
+            if (token?.typ != EnumToken.MediaFeatureAndTokenType && token?.typ != EnumToken.MediaFeatureOrTokenType) {
 
                 return {
                     valid: ValidationLevel.Drop,
@@ -175,10 +184,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
             if (tokenType == null) {
 
-                tokenType = token.typ;
+                tokenType = token?.typ;
             }
 
-            if (tokenType != token.typ) {
+            if (tokenType == null ||tokenType != token?.typ) {
 
                 return {
                     valid: ValidationLevel.Drop,
@@ -227,11 +236,11 @@ function validateContainerStyleFeature(tokens: Token[], atRule: AstAtRule): Vali
 
         if (tokens[0].typ == EnumToken.ParensTokenType) {
 
-            return validateContainerStyleFeature(tokens[0].chi, atRule);
+            return validateContainerStyleFeature((tokens[0] as ParensToken).chi, atRule);
         }
 
         if ([EnumToken.DashedIdenTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ) ||
-            (            tokens[0].typ == EnumToken.MediaQueryConditionTokenType &&tokens[0].op.typ == EnumToken.ColonTokenType)) {
+            (tokens[0].typ == EnumToken.MediaQueryConditionTokenType && (tokens[0] as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType)) {
 
             return {
                 valid: ValidationLevel.Valid,
@@ -282,7 +291,7 @@ function validateContainerSizeFeature(tokens: Token[], atRule: AstAtRule): Valid
 
         if (token.typ == EnumToken.ParensTokenType) {
 
-            return validateAtRuleContainerQueryStyleInParams(token.chi, atRule);
+            return validateAtRuleContainerQueryStyleInParams((token as ParensToken).chi, atRule);
         }
 
         if (![EnumToken.DashedIdenTokenType, EnumToken.MediaQueryConditionTokenType].includes(tokens[0].typ)) {
@@ -337,7 +346,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
         if (token.typ == EnumToken.MediaFeatureNotTokenType) {
 
-            token = token.val;
+            token = (token as MediaFeatureNotToken).val;
         }
 
         if (tokens[0].typ != EnumToken.ParensTokenType) {
@@ -352,7 +361,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
             }
         }
 
-        const slices = tokens[0].chi.slice();
+        const slices = (tokens[0] as ParensToken).chi.slice();
 
         consumeWhitespace(slices);
 

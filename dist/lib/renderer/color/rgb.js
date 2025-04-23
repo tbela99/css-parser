@@ -21,26 +21,29 @@ function hex2rgb(token) {
     return rgb;
 }
 function hwb2rgb(token) {
-    return hwb2srgb(token).map(srgb2rgb);
+    return hwb2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 function hsl2rgb(token) {
-    let { h, s, l, a } = hslvalues(token);
+    let { h, s, l, a } = hslvalues(token) ?? {};
+    if (h == null || s == null || l == null) {
+        return null;
+    }
     return hsl2srgbvalues(h, s, l, a).map((t) => minmax(Math.round(t * 255), 0, 255));
 }
 function cmyk2rgb(token) {
-    return cmyk2srgb(token).map(srgb2rgb);
+    return cmyk2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 function oklab2rgb(token) {
-    return oklab2srgb(token).map(srgb2rgb);
+    return oklab2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 function oklch2rgb(token) {
-    return oklch2srgb(token).map(srgb2rgb);
+    return oklch2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 function lab2rgb(token) {
-    return lab2srgb(token).map(srgb2rgb);
+    return lab2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 function lch2rgb(token) {
-    return lch2srgb(token).map(srgb2rgb);
+    return lch2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 
 export { cmyk2rgb, hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb };

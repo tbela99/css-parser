@@ -1,10 +1,20 @@
-import type {AstAtRule, AstNode, IdentToken, MediaQueryConditionToken, Token, ValidationOptions} from "../../../@types";
+import type {
+    AstAtRule,
+    AstNode,
+    FunctionToken,
+    IdentToken,
+    MediaFeatureNotToken,
+    MediaQueryConditionToken,
+    ParensToken,
+    Token,
+    ValidationOptions
+} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace, splitTokenList} from "../utils";
-import {colorFontTech, fontFeaturesTech, fontFormat} from "../../syntax";
-import {validateComplexSelector} from "../syntaxes/complex-selector";
-import {parseSelector} from "../../parser";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
+import {colorFontTech, fontFeaturesTech, fontFormat} from "../../syntax/index.ts";
+import {validateComplexSelector} from "../syntaxes/complex-selector.ts";
+import {parseSelector} from "../../parser/index.ts";
 
 export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -100,7 +110,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                     if (tokens[0].typ == EnumToken.ParensTokenType) {
 
-                        result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
+                        result = validateAtRuleSupportsConditions(atRule, (tokens[0] as ParensToken).chi);
 
                         if (/* result == null || */ result.valid == ValidationLevel.Valid) {
 
@@ -213,10 +223,10 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
 
-        return validateSupportCondition(atRule, token.val);
+        return validateSupportCondition(atRule, (token as MediaFeatureNotToken).val);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes(token.val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes((token as FunctionToken).val))) {
 
         // @ts-ignore
         return {
@@ -229,10 +239,10 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         };
     }
 
-    const chi: Token[] = token.chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
+    const chi: Token[] = (token as FunctionToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
 
     if (chi.length != 1) {
-        return validateAtRuleSupportsConditions(atRule, token.chi);
+        return validateAtRuleSupportsConditions(atRule, (token as FunctionToken).chi);
     }
 
     if (chi[0].typ == EnumToken.IdenTokenType) {
@@ -250,7 +260,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     if (chi[0].typ == EnumToken.MediaFeatureNotTokenType) {
 
-        return validateSupportCondition(atRule, chi[0].val);
+        return validateSupportCondition(atRule, (chi[0] as MediaFeatureNotToken).val);
     }
 
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
@@ -290,14 +300,14 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
 
     if (token.typ == EnumToken.FunctionTokenType) {
 
-        if (token.val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
+        if ((token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
 
-            return validateComplexSelector(parseSelector(token.chi));
+            return validateComplexSelector(parseSelector((token as FunctionToken).chi));
         }
 
-        if (token.val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {
+        if ((token as FunctionToken).val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {
 
-            const chi: Token[] = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            const chi: Token[] = (token as FunctionToken).chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
             // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
@@ -319,9 +329,9 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
                 };
         }
 
-        if (token.val.localeCompare('font-format', undefined, {sensitivity: 'base'}) == 0) {
+        if ((token as FunctionToken).val.localeCompare('font-format', undefined, {sensitivity: 'base'}) == 0) {
 
-            const chi: Token[] = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+            const chi: Token[] = (token as FunctionToken).chi.filter((t: Token): boolean => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
             // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 

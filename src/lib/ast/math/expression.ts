@@ -594,7 +594,7 @@ function inlineExpression(token: Token): Token[] {
 
     const result: Token[] = [];
 
-    if (token.typ == EnumToken.ParensTokenType && token.chi.length == 1) {
+    if (token.typ == EnumToken.ParensTokenType && (token as ParensToken).chi.length == 1) {
 
         result.push((token as ParensToken).chi[0]);
     } else if (token.typ == EnumToken.BinaryExpressionTokenType) {

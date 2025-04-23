@@ -1,20 +1,25 @@
-import {hwb2hsv} from "./hsv";
+import {hwb2hsv} from "./hsv.ts";
 import type {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {getNumber} from "./color";
-import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
-import {getComponents} from "./utils";
-import {EnumToken} from "../../ast";
-import {hslvalues} from './srgb';
+import {getNumber} from "./color.ts";
+import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb.ts";
+import {getComponents} from "./utils/index.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {hslvalues} from './srgb.ts';
 
-export function hex2hsl(token: ColorToken):  number[] {
+export function hex2hsl(token: ColorToken): number[] {
 
     // @ts-ignore
     return rgb2hslvalues(...hex2rgb(token));
 }
 
-export function rgb2hsl(token: ColorToken): number[] {
+export function rgb2hsl(token: ColorToken): number[] | null {
 
-    const chi: Token[] = getComponents(token);
+    const chi: Token[] | null = getComponents(token);
+
+    if (chi == null) {
+
+        return null;
+    }
 
     // @ts-ignore
     let t: NumberToken | PercentageToken | IdentToken = <NumberToken | PercentageToken | IdentToken>chi[0];
@@ -43,7 +48,7 @@ export function rgb2hsl(token: ColorToken): number[] {
         a = getNumber(t) / 255;
     }
 
-    const values:   number[] = [r, g, b];
+    const values: number[] = [r, g, b];
 
     if (a != null && a != 1) {
 
@@ -98,16 +103,18 @@ export function lch2hsl(token: ColorToken): number[] {
     return rgb2hslvalues(...lch2rgb(token));
 }
 
-export function oklab2hsl(token: ColorToken): number[] {
+export function oklab2hsl(token: ColorToken): number[] | null {
 
+    const t: number[] | null = oklab2rgb(token);
     // @ts-ignore
-    return rgb2hslvalues(...oklab2rgb(token));
+    return t == null ? null : rgb2hslvalues(...t);
 }
 
-export function oklch2hsl(token: ColorToken): number[] {
+export function oklch2hsl(token: ColorToken): number[] | null{
 
+    const t: number[] | null = oklch2rgb(token);
     // @ts-ignore
-    return rgb2hslvalues(...oklch2rgb(token));
+    return t == null ? null : rgb2hslvalues(...t);
 }
 
 export function rgb2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {

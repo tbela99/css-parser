@@ -887,7 +887,7 @@ export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstNode>;
 }
 
 export declare interface AstInvalidAtRule extends BaseToken {

@@ -98,19 +98,23 @@ function computeComponentValue(expr, converted, values) {
         }
         else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) ;
         else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
+            // @ts-ignore
             if (typeof values[exp.val] == 'number') {
                 expr[key] = {
                     typ: EnumToken.NumberTokenType,
+                    // @ts-ignore
                     val: reduceNumber(values[exp.val])
                 };
             }
             else {
+                // @ts-ignore
                 expr[key] = values[exp.val];
             }
         }
         else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val)) {
             for (let { value, parent } of walkValues(exp.chi, exp)) {
                 if (parent == null) {
+                    // @ts-ignore
                     parent = exp;
                 }
                 if (value.typ == EnumToken.PercentageTokenType) {

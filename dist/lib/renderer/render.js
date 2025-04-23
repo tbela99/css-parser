@@ -259,20 +259,25 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         if (isColor(token)) {
             // @ts-ignore
             token.typ = EnumToken.ColorTokenType;
+            // @ts-ignore
             if (token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'from') {
                 // @ts-ignore
                 token.cal = 'rel';
             }
-            else if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
-                // @ts-ignore
-                token.cal = 'mix';
-            }
-            else {
-                if (token.val == 'color') {
+            else { // @ts-ignore
+                if (token.val == 'color-mix' && token.chi[0].typ == EnumToken.IdenTokenType && token.chi[0].val == 'in') {
                     // @ts-ignore
-                    token.cal = 'col';
+                    token.cal = 'mix';
                 }
-                token.chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+                else {
+                    // @ts-ignore
+                    if (token.val == 'color') {
+                        // @ts-ignore
+                        token.cal = 'col';
+                    }
+                    // @ts-ignore
+                    token.chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommaTokenType, EnumToken.CommentTokenType].includes(t.typ));
+                }
             }
         }
     }
@@ -352,12 +357,14 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
                     const chi = getComponents(token);
                     const offset = token.val == 'color' ? 2 : 1;
-                    // @ts-ignore
-                    const color = chi[1];
-                    const components = parseRelativeColor(token.val == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
-                    if (components != null) {
-                        token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
-                        delete token.cal;
+                    if (chi != null) {
+                        // @ts-ignore
+                        const color = chi[1];
+                        const components = parseRelativeColor(token.val == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+                        if (components != null) {
+                            token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
+                            delete token.cal;
+                        }
                     }
                 }
                 if (token.val == 'color') {
@@ -420,7 +427,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 else if (token.val == 'lch') {
                     value = lch2hex(token);
                 }
-                if (value !== '') {
+                if (value !== '' && value != null) {
                     return reduceHexValue(value);
                 }
             }
@@ -446,15 +453,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 token.chi[0].val?.typ != EnumToken.FractionTokenType) {
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
-            // if (token.typ == EnumToken.FunctionTokenType && transformFunctions.includes(token.val)) {
-            //
-            //     const children =  token.val.startsWith('matrix') ? null : stripCommaToken(token.chi.slice()) as Token[];
-            //
-            //     if (children != null) {
-            //
-            //         return token.val + '(' + children.reduce((acc: string, curr: Token) => acc + (acc.length > 0 ? ' ' : '') + renderToken(curr, options, cache, reducer), '') + ')';
-            //     }
-            // }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.MatchExpressionTokenType:
@@ -619,7 +617,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     if (!('original' in token)) {
                         // do not modify original token
                         token = { ...token };
-                        Object.defineProperty(token, 'original', { enumerable: false, writable: false, value: token.val });
+                        Object.defineProperty(token, 'original', {
+                            enumerable: false,
+                            writable: false,
+                            value: token.val
+                        });
                     }
                     // @ts-ignore
                     if (!(token.original in cache)) {

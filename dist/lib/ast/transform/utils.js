@@ -171,7 +171,7 @@ function invertMatrix4(m) {
 }
 function toZero(v) {
     for (let i = 0; i < v.length; i++) {
-        if (Math.abs(v[i]) <= 1e-5) {
+        if (Math.abs(v[i]) <= epsilon) {
             v[i] = 0;
         }
         else {

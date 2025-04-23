@@ -1,6 +1,6 @@
 import config from './config.json' with {type: 'json'};
-import type {ValidationConfiguration, ValidationSyntaxNode} from "../../@types/validation";
-import {parseSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
+import type {ValidationConfiguration, ValidationSyntaxNode} from "../../@types/validation.d.ts";
+import {parseSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser/index.ts";
 
 const parsedSyntaxes = new Map<string, ValidationToken[]>();
 

@@ -2,7 +2,7 @@
 
 # v1.0.0
 
-- [x] experimental minification : CSS transform module level 2
+- [x] minification : CSS transform module level 2
   - [x] translate
   - [x] scale
   - [x] rotate

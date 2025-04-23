@@ -21,7 +21,7 @@ import {
     ValidationSyntaxGroupEnum,
     ValidationToken,
     ValidationTokenEnum
-} from "./parser";
+} from "./parser/index.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -33,16 +33,17 @@ import type {
     IdentToken,
     LiteralToken,
     MatchExpressionToken,
+    NameSpaceAttributeToken,
     NumberToken,
     PseudoClassFunctionToken,
     PseudoClassToken,
     StringToken,
     Token,
     ValidationOptions
-} from "../../@types";
-import {EnumToken, funcLike, ValidationLevel} from "../ast";
-import {getParsedSyntax, getSyntaxConfig} from "./config";
-import type {ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation";
+} from "../../@types/index.d.ts";
+import {EnumToken, funcLike, ValidationLevel} from "../ast/index.ts";
+import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
+import type {ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {isLength} from "../syntax/index.ts";
 import {validateSelector} from "./selector.ts";
 import {validateImage} from "./syntaxes/index.ts";
@@ -1160,9 +1161,9 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                 valid = (token.typ == EnumToken.UniversalSelectorTokenType) ||
                     token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.NameSpaceAttributeTokenType &&
                         (
-                            token.l == null || token.l.typ == EnumToken.IdenTokenType ||
-                            (token.l.typ == EnumToken.LiteralTokenType && token.l.val == '*')) &&
-                        token.r.typ == EnumToken.IdenTokenType
+                            (token as NameSpaceAttributeToken).l == null || ((token as NameSpaceAttributeToken).l as IdentToken).typ == EnumToken.IdenTokenType ||
+                            (((token as NameSpaceAttributeToken).l as LiteralToken).typ == EnumToken.LiteralTokenType && ((token as NameSpaceAttributeToken).l as LiteralToken).val == '*')) &&
+                        (token as NameSpaceAttributeToken).r.typ == EnumToken.IdenTokenType
                     );
 
                 result = {
@@ -1177,8 +1178,8 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
             } else if ('wq-name' == (syntax as ValidationPropertyToken).val) {
 
                 valid = token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.NameSpaceAttributeTokenType &&
-                    (token.l == null || token.l.typ == EnumToken.IdenTokenType || (token.l.typ == EnumToken.LiteralTokenType && token.l.val == '*')) &&
-                    token.r.typ == EnumToken.IdenTokenType);
+                    ((token as NameSpaceAttributeToken).l == null || ((token as NameSpaceAttributeToken).l as IdentToken).typ == EnumToken.IdenTokenType || (((token as NameSpaceAttributeToken).l as LiteralToken).typ == EnumToken.LiteralTokenType && ((token as NameSpaceAttributeToken).l as LiteralToken).val == '*')) &&
+                    (token as NameSpaceAttributeToken).r.typ == EnumToken.IdenTokenType);
 
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -1332,7 +1333,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             } else if ('angle' == (syntax as ValidationPropertyToken).val) {
 
-                valid = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+                valid = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
 
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -1385,7 +1386,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
             } else if (['integer', 'number'].includes((syntax as ValidationPropertyToken).val)) {
 
                 // valid = token.typ == EnumToken.NumberTokenType;
-                valid = token.typ == EnumToken.NumberTokenType && ('integer' != (syntax as ValidationPropertyToken).val || Number.isInteger(+token.val));
+                valid = token.typ == EnumToken.NumberTokenType && ('integer' != (syntax as ValidationPropertyToken).val || Number.isInteger(+(token as NumberToken).val));
 
                 if (valid && 'range' in syntax) {
 
@@ -1406,7 +1407,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             } else if ('length' == (syntax as ValidationPropertyToken).val) {
 
-                valid = isLength(token as DimensionToken) || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+                valid = isLength(token as DimensionToken) || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
 
                 // @ts-ignore
                 result = {
@@ -1420,7 +1421,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             } else if ('percentage' == (syntax as ValidationPropertyToken).val) {
 
-                valid = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+                valid = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
 
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -1571,7 +1572,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 if (token.typ == EnumToken.PseudoClassTokenType) {
 
-                    let val: string = token.val;
+                    let val: string = (token as PseudoClassToken).val;
 
                     if (val == ':before' || val == ':after') {
 
@@ -1582,7 +1583,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                     if (!valid && val.match(/^:?:-/) != null) {
 
-                        const match: RegExpMatchArray = token.val.match(/^(:?:)(-[^-]+-)(.*)$/) as RegExpMatchArray;
+                        const match: RegExpMatchArray = (token as PseudoClassToken).val.match(/^(:?:)(-[^-]+-)(.*)$/) as RegExpMatchArray;
 
                         if (match != null) {
 
@@ -1601,13 +1602,13 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
                 } else if (token.typ == EnumToken.PseudoClassFuncTokenType) {
 
-                    let key: string = token.val in config.selectors ? token.val : token.val + '()';
+                    let key: string = (token as PseudoClassFunctionToken).val in config.selectors ? (token as PseudoClassFunctionToken).val : (token as PseudoClassFunctionToken).val + '()';
 
                     valid = key in config.selectors;
 
-                    if (!valid && token.val.match(/^:?:-/)) {
+                    if (!valid && (token as PseudoClassFunctionToken).val.match(/^:?:-/)) {
 
-                        const match: RegExpMatchArray = token.val.match(/^(:?:)(-[^-]+-)(.*)$/) as RegExpMatchArray;
+                        const match: RegExpMatchArray = (token as PseudoClassFunctionToken).val.match(/^(:?:)(-[^-]+-)(.*)$/) as RegExpMatchArray;
 
                         if (match != null) {
 
@@ -1627,7 +1628,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                             valid = false;
                         } else {
 
-                            result = validateSyntax((s[0] as ValidationPseudoClassFunctionToken).chi, token.chi, root as AstNode, options, {
+                            result = validateSyntax((s[0] as ValidationPseudoClassFunctionToken).chi, (token as PseudoClassFunctionToken).chi, root as AstNode, options, {
                                 ...context,
                                 tokens: null,
                                 level: context.level + 1
@@ -1717,8 +1718,8 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
             } else if ('wq-name' == (syntax as ValidationPropertyToken).val) {
 
                 valid = token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.NameSpaceAttributeTokenType &&
-                    (token.l == null || token.l.typ == EnumToken.IdenTokenType || (token.l.typ == EnumToken.LiteralTokenType && token.l.val == '*')) &&
-                    token.r.typ == EnumToken.IdenTokenType);
+                    ((token as NameSpaceAttributeToken).l == null || ((token as NameSpaceAttributeToken).l as Token).typ == EnumToken.IdenTokenType || (((token as NameSpaceAttributeToken).l as Token).typ == EnumToken.LiteralTokenType && ((token as NameSpaceAttributeToken).l as LiteralToken).val == '*')) &&
+                    (token as NameSpaceAttributeToken).r.typ == EnumToken.IdenTokenType);
 
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -2062,7 +2063,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
         case ValidationTokenEnum.DeclarationDefinitionToken:
 
-            if (token.typ != EnumToken.DeclarationNodeType || token.nam != (syntax as ValidationDeclarationDefinitionToken).nam) {
+            if (token.typ != EnumToken.DeclarationNodeType || (token as AstDeclaration).nam != (syntax as ValidationDeclarationDefinitionToken).nam) {
 
                 return {
                     valid: ValidationLevel.Drop,
@@ -2074,7 +2075,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
                 }
             }
 
-            return validateSyntax([(syntax as ValidationDeclarationDefinitionToken).val], token.val, root as AstNode, options, context);
+            return validateSyntax([(syntax as ValidationDeclarationDefinitionToken).val], (token as AstDeclaration).val, root as AstNode, options, context);
 
         default:
 

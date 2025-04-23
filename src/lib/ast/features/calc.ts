@@ -11,7 +11,7 @@ import type {
     Token,
     WalkerOption
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../types";
+import {EnumToken} from "../types.ts";
 import {WalkerValueEvent, walkValues} from "../walk.ts";
 import {evaluate} from "../math/index.ts";
 import {renderToken} from "../../renderer/index.ts";

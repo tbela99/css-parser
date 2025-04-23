@@ -30,8 +30,7 @@ class TransformCssFeature {
         for (; i < ast.chi.length; i++) {
             // @ts-ignore
             node = ast.chi[i];
-            if (node.typ != EnumToken.DeclarationNodeType ||
-                (!node.nam.startsWith('--') && !node.nam.match(/^(-[a-z]+-)?transform$/))) {
+            if (node.typ != EnumToken.DeclarationNodeType || !node.nam.match(/^(-[a-z]+-)?transform$/)) {
                 continue;
             }
             const children = node.val.slice();
@@ -47,13 +46,6 @@ class TransformCssFeature {
             if (eqMatrix(matrix, minified)) {
                 r.push(minified);
             }
-            // console.error(JSON.stringify({
-            //     matrix:  renderToken(matrix),
-            //     cumulative: cumulative.reduce((acc, curr) => acc + renderToken(curr), ''),
-            //     minified: minified.reduce((acc, curr) => acc + renderToken(curr), ''),
-            //     r: r[0].reduce((acc, curr) => acc + renderToken(curr), ''),
-            //     all: r.map(r => r.reduce((acc, curr) => acc + renderToken(curr), ''))
-            // }, null, 1));
             const l = renderToken(matrix).length;
             node.val = r.reduce((acc, curr) => {
                 if (curr.reduce((acc, t) => acc + renderToken(t), '').length < l) {

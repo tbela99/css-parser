@@ -1,6 +1,6 @@
-import {lsrgb2srgbvalues, srgb2lsrgbvalues, xyz2srgb} from "./srgb";
-import {multiplyMatrices} from "./utils";
-import {srgb2xyz} from "./xyz";
+import {lsrgb2srgbvalues, srgb2lsrgbvalues, xyz2srgb} from "./srgb.ts";
+import {multiplyMatrices} from "./utils/index.ts";
+import {srgb2xyz} from "./xyz.ts";
 
 export function p32srgbvalues(r: number, g: number, b: number, alpha?: number) {
 

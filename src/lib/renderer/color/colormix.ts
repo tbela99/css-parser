@@ -1,22 +1,22 @@
-import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
-import {EnumToken} from "../../ast";
-import {getNumber} from "./color";
-import {srgb2lsrgbvalues, srgbvalues} from "./srgb";
-import {srgb2lch, xyz2lchvalues} from "./lch";
-import {srgb2rgb} from "./rgb";
-import {srgb2hsl} from "./hsl";
-import {srgb2hwb} from "./hwb";
-import {srgb2lab} from "./lab";
-import {srgb2p3values} from "./p3";
-import {getComponents} from "./utils";
-import {srgb2oklch} from "./oklch";
-import {srgb2oklab} from "./oklab";
-import {srgb2a98values} from "./a98rgb";
-import {srgb2prophotorgbvalues} from "./prophotorgb";
-import {srgb2xyz} from "./xyz";
-import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50";
-import {srgb2rec2020values} from "./rec2020";
-import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../syntax";
+import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {getNumber} from "./color.ts";
+import {srgb2lsrgbvalues, srgbvalues} from "./srgb.ts";
+import {srgb2lch, xyz2lchvalues} from "./lch.ts";
+import {srgb2rgb} from "./rgb.ts";
+import {srgb2hsl} from "./hsl.ts";
+import {srgb2hwb} from "./hwb.ts";
+import {srgb2lab} from "./lab.ts";
+import {srgb2p3values} from "./p3.ts";
+import {getComponents} from "./utils/index.ts";
+import {srgb2oklch} from "./oklch.ts";
+import {srgb2oklab} from "./oklab.ts";
+import {srgb2a98values} from "./a98rgb.ts";
+import {srgb2prophotorgbvalues} from "./prophotorgb.ts";
+import {srgb2xyz} from "./xyz.ts";
+import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50.ts";
+import {srgb2rec2020values} from "./rec2020.ts";
+import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../../syntax/index.ts";
 
 function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number): number[] {
 
@@ -146,15 +146,20 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         return null;
     }
 
-    const components1: Token[] = getComponents(color1);
-    const components2: Token[] = getComponents(color2);
+    const components1: Token[] | null = getComponents(color1);
+    const components2: Token[] | null = getComponents(color2);
 
-    if ((components1[3] != null && components1[3].typ == EnumToken.IdenTokenType && components1[3].val == 'none') && values2.length == 4) {
+    if (components1 == null || components2 == null) {
+
+        return null;
+    }
+
+    if ((components1[3] != null && components1[3].typ == EnumToken.IdenTokenType && (components1[3] as IdentToken).val == 'none') && values2.length == 4) {
 
         values1[3] = values2[3];
     }
 
-    if ((components2[3] != null && components2[3].typ == EnumToken.IdenTokenType && components2[3].val == 'none') && values1.length == 4) {
+    if ((components2[3] != null && components2[3].typ == EnumToken.IdenTokenType && (components2[3] as IdentToken).val == 'none') && values1.length == 4) {
 
         values2[3] = values1[3];
     }
@@ -307,7 +312,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
 
-        if ((components1[2].typ == EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
+        if ((components1[2].typ == EnumToken.IdenTokenType &&( components1[2] as IdentToken).val == 'none') || values1[2] == 0) {
 
             values1[2] = values2[2];
         }
@@ -316,7 +321,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
 
-        if ((components2[2].typ == EnumToken.IdenTokenType && components2[2].val == 'none') || values2[2] == 0) {
+        if ((components2[2].typ == EnumToken.IdenTokenType && (components2[2] as IdentToken).val == 'none') || values2[2] == 0) {
 
             values2[2] = values1[2];
         }

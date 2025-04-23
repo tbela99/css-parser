@@ -1,4 +1,5 @@
 import type {
+    AngleToken,
     BinaryExpressionToken,
     ColorToken,
     FunctionToken,
@@ -7,12 +8,12 @@ import type {
     PercentageToken,
     Token
 } from "../../../@types/index.d.ts";
-import {convert, getNumber} from "./color";
-import {EnumToken, walkValues} from "../../ast";
-import {reduceNumber} from "../render";
-import {evaluate, evaluateFunc} from "../../ast/math";
-import {colorRange} from "./utils";
-import {mathFuncs} from "../../syntax";
+import {convert, getNumber} from "./color.ts";
+import {EnumToken, walkValues} from "../../ast/index.ts";
+import {reduceNumber} from "../render.ts";
+import {evaluate, evaluateFunc} from "../../ast/math/index.ts";
+import {colorRange} from "./utils/index.ts";
+import {mathFuncs} from "../../syntax/index.ts";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';
 type HSLKeyType = 'h' | 's' | 'l' | 'alpha';
@@ -120,7 +121,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
             // @ts-ignore
             for (const k of walkValues([object.h])) {
 
-                if (k.value.typ == EnumToken.AngleTokenType && k.value.unit == 'deg') {
+                if (k.value.typ == EnumToken.AngleTokenType && (k.value as AngleToken).unit == 'deg') {
 
                     // @ts-ignore
                     k.value.typ = EnumToken.NumberTokenType;
@@ -151,16 +152,20 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
         } else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
 
             // expr[<RelativeColorTypes>key] = exp;
+            // @ts-ignore
         } else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
 
+            // @ts-ignore
             if (typeof values[<RelativeColorTypes>exp.val] == 'number') {
 
                 expr[<RelativeColorTypes>key] = {
                     typ: EnumToken.NumberTokenType,
+                    // @ts-ignore
                     val: reduceNumber(<number>values[<RelativeColorTypes>exp.val])
                 };
             } else {
 
+                // @ts-ignore
                 expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
             }
         } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val)) {
@@ -169,6 +174,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 
                 if (parent == null) {
 
+                    // @ts-ignore
                     parent = exp;
                 }
 

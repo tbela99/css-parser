@@ -1,8 +1,8 @@
-import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace} from "../utils";
-import {validateURL} from "../syntaxes/url";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace} from "../utils/index.ts";
+import {validateURL} from "../syntaxes/url.ts";
 
 
 export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {

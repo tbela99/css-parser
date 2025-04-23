@@ -1,8 +1,8 @@
-import {lsrgb2srgbvalues} from "./srgb";
-import {multiplyMatrices} from "./utils";
-import {xyz2lab} from "./lab";
-import {XYZ_D50_to_D65} from "./xyz";
-import {lab2lchvalues} from "./lch";
+import {lsrgb2srgbvalues} from "./srgb.ts";
+import {multiplyMatrices} from "./utils/index.ts";
+import {xyz2lab} from "./lab.ts";
+import {XYZ_D50_to_D65} from "./xyz.ts";
+import {lab2lchvalues} from "./lch.ts";
 
 /*
 */

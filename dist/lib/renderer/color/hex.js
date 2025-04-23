@@ -67,25 +67,35 @@ function rgb2hex(token) {
     return value;
 }
 function hsl2hex(token) {
-    return `${hsl2rgb(token).reduce(toHexString, '#')}`;
+    const t = hsl2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 function hwb2hex(token) {
-    return `${hwb2rgb(token).reduce(toHexString, '#')}`;
+    const t = hwb2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 function cmyk2hex(token) {
-    return `#${cmyk2rgb(token).reduce(toHexString, '')}`;
+    const t = cmyk2rgb(token);
+    return t == null ? null : `#${t.reduce(toHexString, '')}`;
 }
 function oklab2hex(token) {
-    return `${oklab2rgb(token).reduce(toHexString, '#')}`;
+    const t = oklab2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 function oklch2hex(token) {
-    return `${oklch2rgb(token).reduce(toHexString, '#')}`;
+    const value = oklch2rgb(token);
+    if (value == null) {
+        return null;
+    }
+    return `${value.reduce(toHexString, '#')}`;
 }
 function lab2hex(token) {
-    return `${lab2rgb(token).reduce(toHexString, '#')}`;
+    const t = lab2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 function lch2hex(token) {
-    return `${lch2rgb(token).reduce(toHexString, '#')}`;
+    const t = lch2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 function srgb2hexvalues(r, g, b, alpha) {
     return [r, g, b].concat(alpha == null || alpha == 1 ? [] : [alpha]).reduce((acc, value) => acc + minmax(Math.round(255 * value), 0, 255).toString(16).padStart(2, '0'), '#');

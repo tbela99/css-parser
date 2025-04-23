@@ -56,7 +56,7 @@ async function doParse(iterator, options = {}) {
         removeCharset: true,
         removeEmpty: true,
         removeDuplicateDeclarations: true,
-        computeTransform: false,
+        computeTransform: true,
         computeShorthand: true,
         computeCalcExpression: true,
         inlineCssVariables: false,
@@ -178,6 +178,7 @@ async function doParse(iterator, options = {}) {
         await parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
         rawTokens.length = 0;
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
+            // @ts-ignore
             const index = context.chi.findIndex((node) => node == context);
             if (index > -1) {
                 context.chi.splice(index, 1);
@@ -555,7 +556,6 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                 if (valid.valid != ValidationLevel.Valid) {
                     const node = {
                         typ: EnumToken.InvalidRuleTokenType,
-                        // @ts-ignore
                         sel: tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), ''),
                         chi: []
                     };
@@ -802,8 +802,6 @@ function parseAtRulePrelude(tokens, atRule) {
             }
         }
         if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
-            // @todo parse range and declarations
-            // parseDeclaration(parent.chi);
             let i;
             let nameIndex = -1;
             let valueIndex = -1;
@@ -1367,7 +1365,7 @@ function parseTokens(tokens, options = {}) {
                         upper++;
                     }
                     if (upper < t.chi.length &&
-                        t.chi[upper].typ == EnumToken.Iden &&
+                        t.chi[upper].typ == EnumToken.IdenTokenType &&
                         ['i', 's'].includes(t.chi[upper].val.toLowerCase())) {
                         t.chi[m].attr = t.chi[upper].val;
                         t.chi.splice(upper, 1);
