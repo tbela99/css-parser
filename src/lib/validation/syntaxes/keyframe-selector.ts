@@ -22,7 +22,7 @@ export function validateKeyframeSelector(tokens: Token[], options: ValidationOpt
 
     for (const t of splitTokenList(tokens)) {
 
-        if (t.length!= 1) {
+        if (t.length != 1) {
 
             return {
                 valid: ValidationLevel.Drop,
@@ -34,7 +34,7 @@ export function validateKeyframeSelector(tokens: Token[], options: ValidationOpt
             }
         }
 
-        if (t[0].typ != EnumToken.PercentageTokenType && !(t[0].typ == EnumToken.IdenTokenType  && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes((t[0] as IdentToken).val))) {
+        if (t[0].typ != EnumToken.PercentageTokenType && !(t[0].typ == EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes((t[0] as IdentToken).val))) {
 
             return {
                 valid: ValidationLevel.Drop,

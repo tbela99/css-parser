@@ -39,5 +39,8 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     const nestedSelector: boolean = isNested > 0;
 
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, {...(options ?? {}), nestedSelector}) : validateSelectorList(selector, root, {...(options ?? {}), nestedSelector});
+    return nestedSelector ? validateRelativeSelectorList(selector, root, {
+        ...(options ?? {}),
+        nestedSelector
+    }) : validateSelectorList(selector, root as AstRule, {...(options ?? {}), nestedSelector});
 }

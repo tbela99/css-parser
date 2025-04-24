@@ -27,7 +27,7 @@ export function matchType(val: Token, properties: PropertyMapType): boolean {
 
         if (mathFuncs.includes((val as FunctionToken).val)) {
 
-            return (val as FunctionToken).chi.every(((t: Token):   boolean => [EnumToken.Add,EnumToken.Mul,EnumToken.Div,EnumToken.Sub,EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.DimensionTokenType, EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.ResolutionTokenType, EnumToken.TimeTokenType, EnumToken.BinaryExpressionTokenType].includes(t.typ) || matchType(t, properties)));
+            return (val as FunctionToken).chi.every(((t: Token): boolean => [EnumToken.Add, EnumToken.Mul, EnumToken.Div, EnumToken.Sub, EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.DimensionTokenType, EnumToken.NumberTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.ResolutionTokenType, EnumToken.TimeTokenType, EnumToken.BinaryExpressionTokenType].includes(t.typ) || matchType(t, properties)));
         }
 
         // match type defined like function 'symbols()', 'url()', 'attr()' etc.

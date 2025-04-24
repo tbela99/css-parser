@@ -117,15 +117,11 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                             previousToken = tokens[0];
                             tokens.shift();
                             // continue;
-                        }
-
-                        else {
+                        } else {
 
                             return result;
                         }
-                    }
-
-                    else {
+                    } else {
 
                         return result;
                     }
@@ -219,7 +215,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
     }
 }
 
-export function validateSupportCondition(atRule: AstAtRule, token: Token): ValidationSyntaxResult{
+export function validateSupportCondition(atRule: AstAtRule, token: Token): ValidationSyntaxResult {
 
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
 

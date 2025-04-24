@@ -312,7 +312,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     // powerless
     if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
 
-        if ((components1[2].typ == EnumToken.IdenTokenType &&( components1[2] as IdentToken).val == 'none') || values1[2] == 0) {
+        if ((components1[2].typ == EnumToken.IdenTokenType && (components1[2] as IdentToken).val == 'none') || values1[2] == 0) {
 
             values1[2] = values2[2];
         }
