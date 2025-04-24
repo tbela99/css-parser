@@ -52,6 +52,11 @@ function srgb2oklab(r, g, blue, alpha) {
 }
 function getOKLABComponents(token) {
     const components = getComponents(token);
+    for (let i = 0; i < components.length; i++) {
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+            return [];
+        }
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore

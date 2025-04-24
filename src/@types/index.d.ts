@@ -50,6 +50,7 @@ export interface MinifyOptions {
     expandNestingRules?: boolean;
     removeDuplicateDeclarations?: boolean;
     computeShorthand?: boolean;
+    computeTransform?: boolean;
     computeCalcExpression?: boolean;
     inlineCssVariables?: boolean;
     removeEmpty?: boolean;

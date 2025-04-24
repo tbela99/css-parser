@@ -17,11 +17,6 @@ class ComputePrefixFeature {
     }
     static register(options) {
         if (options.removePrefix) {
-            for (const feature of options.features) {
-                if (feature instanceof ComputePrefixFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new ComputePrefixFeature(options));
         }

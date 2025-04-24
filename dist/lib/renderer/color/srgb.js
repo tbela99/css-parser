@@ -115,7 +115,10 @@ function oklab2srgb(token) {
     return rgb;
 }
 function oklch2srgb(token) {
-    const [l, c, h, alpha] = getOKLCHComponents(token);
+    const [l, c, h, alpha] = getOKLCHComponents(token) ?? {};
+    if (l == null || c == null || h == null) {
+        return null;
+    }
     // @ts-ignore
     const rgb = OKLab_to_sRGB(...lch2labvalues(l, c, h));
     if (alpha != 1) {

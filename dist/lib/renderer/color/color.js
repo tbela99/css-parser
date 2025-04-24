@@ -531,6 +531,10 @@ function getNumber(token) {
     // @ts-ignore
     return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
+/**
+ * convert angle to turn
+ * @param token
+ */
 function getAngle(token) {
     if (token.typ == EnumToken.IdenTokenType) {
         if (token.val == 'none') {

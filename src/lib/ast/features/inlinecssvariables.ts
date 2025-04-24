@@ -61,14 +61,6 @@ export class InlineCssVariablesFeature {
 
         if (options.inlineCssVariables) {
 
-            for (const feature of options.features) {
-
-                if (feature instanceof InlineCssVariablesFeature) {
-
-                    return;
-                }
-            }
-
             // @ts-ignore
             options.features.push(new InlineCssVariablesFeature());
         }

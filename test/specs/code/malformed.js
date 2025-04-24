@@ -167,13 +167,14 @@ color:
 ;
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform,
+                    computeTransform: true, resolveImport: true}).then(result => expect(render(result.ast, {
                 minify: false,
                 removeComments: false,
                 preserveLicense: true
             }).code).equals(`a {
  color: cyan;
- transform: rotate(3.1416rad)
+ transform: rotate(180deg)
 }`));
         });
     });

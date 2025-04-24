@@ -19,6 +19,14 @@ const dimensionUnits = new Set([
 const fontFormat = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];
 const colorFontTech = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 const fontFeaturesTech = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
+const transformFunctions = [
+    'translate', 'scale', 'rotate', 'skew', 'perspective',
+    'translateX', 'translateY', 'translateZ',
+    'scaleX', 'scaleY', 'scaleZ',
+    'rotateX', 'rotateY', 'rotateZ',
+    'skewX', 'skewY',
+    'rotate3d', 'translate3d', 'scale3d', 'matrix', 'matrix3d'
+];
 // https://drafts.csswg.org/mediaqueries/#media-types
 const mediaTypes = ['all', 'print', 'screen',
     /* deprecated */
@@ -812,4 +820,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseDimension, pseudoElements, webkitExtensions, webkitPseudoAliasMap };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseDimension, pseudoElements, transformFunctions, webkitExtensions, webkitPseudoAliasMap };

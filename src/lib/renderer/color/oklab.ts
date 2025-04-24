@@ -1,5 +1,5 @@
 import {getComponents, multiplyMatrices} from "./utils";
-import {srgb2lsrgbvalues, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgbvalues} from "./srgb";
+import {hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgbvalues, rgb2srgb, srgb2lsrgbvalues} from "./srgb";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getNumber} from "./color";
 import {EnumToken} from "../../ast";
@@ -75,6 +75,14 @@ export function srgb2oklab(r: number, g: number, blue: number, alpha: number | n
 export function getOKLABComponents(token: ColorToken): number[] {
 
     const components: Token[] = getComponents(token);
+
+    for (let i = 0; i < components.length; i++) {
+
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+
+            return [];
+        }
+    }
 
     // @ts-ignore
     let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];

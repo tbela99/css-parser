@@ -8,8 +8,7 @@ import {srgb2hsl} from "./hsl";
 import {srgb2hwb} from "./hwb";
 import {srgb2lab} from "./lab";
 import {srgb2p3values} from "./p3";
-import {getComponents, powerlessColorComponent} from "./utils";
-import {eq} from "../../parser/utils/eq";
+import {getComponents} from "./utils";
 import {srgb2oklch} from "./oklch";
 import {srgb2oklab} from "./oklab";
 import {srgb2a98values} from "./a98rgb";
@@ -70,6 +69,11 @@ function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number)
 }
 
 export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentToken | null, color1: ColorToken, percentage1: PercentageToken | null, color2: ColorToken, percentage2: PercentageToken | null): ColorToken | null {
+
+    if (color1.val == 'currentcolor' || color2.val == 'currentcolor') {
+
+        return null;
+    }
 
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
 

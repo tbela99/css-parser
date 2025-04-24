@@ -4,9 +4,20 @@ import { reduceNumber } from '../../renderer/render.js';
 function gcd(x, y) {
     x = Math.abs(x);
     y = Math.abs(y);
+    if (x == y) {
+        return x;
+    }
     let t;
-    if (x == 0 || y == 0) {
-        return 1;
+    if (x == 0) {
+        return y;
+    }
+    if (y == 0) {
+        return x;
+    }
+    if (y > x) {
+        t = x;
+        x = y;
+        y = t;
     }
     while (y) {
         t = y;

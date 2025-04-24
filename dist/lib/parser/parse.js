@@ -56,6 +56,7 @@ async function doParse(iterator, options = {}) {
         removeCharset: true,
         removeEmpty: true,
         removeDuplicateDeclarations: true,
+        computeTransform: false,
         computeShorthand: true,
         computeCalcExpression: true,
         inlineCssVariables: false,
@@ -719,24 +720,6 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
             };
             const result = parseDeclarationNode(node, errors, src, position);
             if (result != null) {
-                // if (options.validation) {
-                //
-                //     const valid: ValidationResult = validateDeclaration(result, options, context);
-                //
-                //     // console.error({valid});
-                //
-                //     if (valid.valid == ValidationLevel.Drop) {
-                //
-                //         errors.push({
-                //             action: 'drop',
-                //             message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
-                //             // @ts-ignore
-                //             location: {src, ...(map.get(valid.node) ?? position)}
-                //         });
-                //
-                //         return null;
-                //     }
-                // }
                 // @ts-ignore
                 context.chi.push(result);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });

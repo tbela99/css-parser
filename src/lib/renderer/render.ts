@@ -257,7 +257,6 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
         case EnumToken.DeclarationNodeType:
 
-            console.error({options});
             return `${(<AstDeclaration>data).nam}:${options.indent}${(options.minify ? filterValues((<AstDeclaration>data).val) : (<AstDeclaration>data).val).reduce(reducer, '')}`;
 
         case EnumToken.CommentNodeType:
@@ -545,6 +544,20 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         token = value;
                     }
+
+                    else {
+
+                        token.chi = children.reduce((acc, curr, index) => {
+
+                            if (acc.length > 0) {
+
+                                acc.push({ typ: EnumToken.CommaTokenType });
+                            }
+
+                            acc.push(...curr);
+                            return acc;
+                        }, [] as Token[]);
+                    }
                 }
 
                 if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
@@ -686,6 +699,16 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 return token.chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
             }
+
+            // if (token.typ == EnumToken.FunctionTokenType && transformFunctions.includes(token.val)) {
+            //
+            //     const children =  token.val.startsWith('matrix') ? null : stripCommaToken(token.chi.slice()) as Token[];
+            //
+            //     if (children != null) {
+            //
+            //         return token.val + '(' + children.reduce((acc: string, curr: Token) => acc + (acc.length > 0 ? ' ' : '') + renderToken(curr, options, cache, reducer), '') + ')';
+            //     }
+            // }
 
             // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
@@ -1022,11 +1045,10 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
     }
 
     errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
-
     return '';
 }
 
-function filterValues(values: Token[]): Token[] {
+export function filterValues(values: Token[]): Token[] {
 
     let i: number = 0;
 

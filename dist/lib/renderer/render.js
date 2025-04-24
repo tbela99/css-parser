@@ -152,7 +152,6 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
     const indentSub = indents[level + 1];
     switch (data.typ) {
         case EnumToken.DeclarationNodeType:
-            console.error({ options });
             return `${data.nam}:${options.indent}${(options.minify ? filterValues(data.val) : data.val).reduce(reducer, '')}`;
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType:
@@ -340,6 +339,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     if (value != null) {
                         token = value;
                     }
+                    else {
+                        token.chi = children.reduce((acc, curr, index) => {
+                            if (acc.length > 0) {
+                                acc.push({ typ: EnumToken.CommaTokenType });
+                            }
+                            acc.push(...curr);
+                            return acc;
+                        }, []);
+                    }
                 }
                 if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
                     const chi = getComponents(token);
@@ -438,6 +446,15 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 token.chi[0].val?.typ != EnumToken.FractionTokenType) {
                 return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
             }
+            // if (token.typ == EnumToken.FunctionTokenType && transformFunctions.includes(token.val)) {
+            //
+            //     const children =  token.val.startsWith('matrix') ? null : stripCommaToken(token.chi.slice()) as Token[];
+            //
+            //     if (children != null) {
+            //
+            //         return token.val + '(' + children.reduce((acc: string, curr: Token) => acc + (acc.length > 0 ? ' ' : '') + renderToken(curr, options, cache, reducer), '') + ')';
+            //     }
+            // }
             // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.MatchExpressionTokenType:
@@ -668,4 +685,4 @@ function filterValues(values) {
     return values;
 }
 
-export { colorsFunc, doRender, reduceNumber, renderToken };
+export { colorsFunc, doRender, filterValues, reduceNumber, renderToken };

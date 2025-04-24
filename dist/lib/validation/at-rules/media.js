@@ -241,7 +241,7 @@ function validateMediaCondition(token, atRule) {
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
         return chi[0].l.typ == EnumToken.IdenTokenType;
     }
-    console.error(chi[0].parent);
+    // console.error(chi[0].parent);
     return false;
 }
 function validateMediaFeature(token) {

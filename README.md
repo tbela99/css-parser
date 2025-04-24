@@ -34,6 +34,7 @@ $ deno add @tbela99/css-parser
 - convert nested css rules to legacy syntax
 - generate sourcemap
 - compute css shorthands. see supported properties list below
+- experimental minification : css transform module level 2
 - evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(),
   atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
 - inline css variables
@@ -96,7 +97,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@0.9.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.0.0/web';
 
 
     const css = `
@@ -159,6 +160,7 @@ Include ParseOptions and RenderOptions
 - expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
   to false.
 - removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.
+- computeTransform: boolean, optional. compute css transform functions.
 - computeShorthand: boolean, optional. compute shorthand properties.
 - computeCalcExpression: boolean, optional. evaluate calc() expression
 - inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once
@@ -176,13 +178,18 @@ Include ParseOptions and RenderOptions
 - src: string, optional. original css file location to be used with sourcemap, also used to resolve url().
 - sourcemap: boolean, optional. preserve node location data.
 
-> Misc Options
+> Ast Traversal Options
 
+- visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
+
+> Urls and \@import Options
+
+- resolveImport: boolean, optional. replace @import rule by the content of the referenced stylesheet.
 - resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'
-- resolveImport: boolean, optional. replace @import rule by the content of its referenced stylesheet.
+
+> Misc Options
 - removeCharset: boolean, optional. remove @charset.
 - cwd: string, optional. destination directory used to resolve url().
-- visitor: VisitorNodeMap, optional. node visitor used to transform the ast.
 - signal: AbortSignal, optional. abort parsing.
 
 #### RenderOptions
@@ -701,6 +708,8 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Minification
 
+- [x] minify keyframs
+- [x] minify transform
 - [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
   acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
 - [x] multi-pass minification

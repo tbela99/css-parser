@@ -1,7 +1,15 @@
 # Changelog
 
-# v0.9.2
+# v1.0.0
 
+- [x] experimental minification : CSS transform module level 2
+  - [x] translate
+  - [x] scale
+  - [x] rotate
+  - [x] skew
+  - [x] perspective                                  
+  - [x] matrix
+  - [x] matrix3d
 - [x] keyframes
     - [x] remove consecutive keyframes with the same name
     - [x] reduce keyframe selector 'from' to '0%'
