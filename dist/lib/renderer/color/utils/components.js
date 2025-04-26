@@ -15,8 +15,19 @@ function getComponents(token) {
             return { typ: EnumToken.Number, val: parseInt(t, 16).toString() };
         });
     }
-    return token.chi
-        .filter((t) => ![EnumToken.LiteralTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(t.typ));
+    const result = [];
+    for (const child of (token.chi)) {
+        if ([
+            EnumToken.LiteralTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType
+        ].includes(child.typ)) {
+            continue;
+        }
+        if (child.typ == EnumToken.ColorTokenType && child.val == 'currentcolor') {
+            return null;
+        }
+        result.push(child);
+    }
+    return result;
 }
 
 export { getComponents };

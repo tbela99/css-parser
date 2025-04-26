@@ -1,5 +1,26 @@
 # Changelog
 
+# v1.0.0
+
+- [x] current color parse error when used in color functions
+- [x] minification : CSS transform module level 2
+  - [x] translate
+  - [x] scale
+  - [x] rotate
+  - [x] skew
+  - [x] perspective                                  
+  - [x] matrix
+  - [x] matrix3d
+- [x] keyframes
+    - [x] remove consecutive keyframes with the same name
+    - [x] reduce keyframe selector 'from' to '0%'
+    - [x] reduce keyframe selector '100%' to 'to'
+    - [x] remove keyframe selector ignored declarations
+    - [x] merge keyframe rules and declarations
+- [x] trim extra space in declaration value 'url() 15%' -> 'url()15%', '1% !important' -> '1%!important'
+- [x] allow empty value for css variable declaration '--color: ;'
+- [x] change generate nesting rule default to true
+
 # v0.9.1
 
 - [x] minification passes #66

@@ -14,7 +14,7 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     // @ts-ignore
     if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
 
-        return validateKeyframeBlockList(selector, root, options);
+        return validateKeyframeBlockList(selector, root as AstAtRule, options);
     }
 
     let isNested: number = root.typ == EnumToken.RuleNodeType ? 1 : 0;
@@ -39,5 +39,8 @@ export function validateSelector(selector: Token[], options: ValidationOptions, 
     const nestedSelector: boolean = isNested > 0;
 
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, {...(options ?? {}), nestedSelector}) : validateSelectorList(selector, root, {...(options ?? {}), nestedSelector});
+    return nestedSelector ? validateRelativeSelectorList(selector, root, {
+        ...(options ?? {}),
+        nestedSelector
+    }) : validateSelectorList(selector, root as AstRule, {...(options ?? {}), nestedSelector});
 }

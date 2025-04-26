@@ -10,7 +10,7 @@ export declare interface ValidationSyntaxNode {
     ast?: ValidationToken[];
 }
 
-export interface ValidationSelectorOptions extends ValidationOptions{
+export interface ValidationSelectorOptions extends ValidationOptions {
 
     nestedSelector?: boolean;
 }

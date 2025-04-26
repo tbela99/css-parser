@@ -1,6 +1,6 @@
-import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
 
 
 export function validateAtRulePageMarginBox(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {

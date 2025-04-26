@@ -19,7 +19,7 @@ function validateSelector(selector, options, root) {
     }
     // @ts-ignore
     if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
-        return validateKeyframeBlockList(selector, root);
+        return validateKeyframeBlockList(selector);
     }
     let isNested = root.typ == EnumToken.RuleNodeType ? 1 : 0;
     let currentRoot = root.parent;
@@ -35,7 +35,10 @@ function validateSelector(selector, options, root) {
     }
     const nestedSelector = isNested > 0;
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, { ...(options ?? {}), nestedSelector }) : validateSelectorList(selector, root, { ...(options ?? {}), nestedSelector });
+    return nestedSelector ? validateRelativeSelectorList(selector, root, {
+        ...(options ?? {}),
+        nestedSelector
+    }) : validateSelectorList(selector, root, { ...(options ?? {}), nestedSelector });
 }
 
 export { validateSelector };

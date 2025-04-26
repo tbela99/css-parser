@@ -11,7 +11,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             // preserveLicense: true,
             src: `${dir}/line-awesome.css`,
             resolveImport: true,
-            sourcemap: true
+            sourcemap: true, nestingRules: false
         };
 
         it('sourcemap file #1', async () => {

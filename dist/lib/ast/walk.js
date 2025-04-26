@@ -1,5 +1,12 @@
 import { EnumToken } from './types.js';
 
+var WalkerOptionEnum;
+(function (WalkerOptionEnum) {
+    WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 0] = "Ignore";
+    WalkerOptionEnum[WalkerOptionEnum["Stop"] = 1] = "Stop";
+    WalkerOptionEnum[WalkerOptionEnum["Children"] = 2] = "Children";
+    WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 3] = "IgnoreChildren";
+})(WalkerOptionEnum || (WalkerOptionEnum = {}));
 var WalkerValueEvent;
 (function (WalkerValueEvent) {
     WalkerValueEvent[WalkerValueEvent["Enter"] = 0] = "Enter";
@@ -18,10 +25,10 @@ function* walk(node, filter) {
         let option = null;
         if (filter != null) {
             option = filter(node);
-            if (option === 'ignore') {
+            if (option === WalkerOptionEnum.Ignore) {
                 continue;
             }
-            if (option === 'stop') {
+            if (option === WalkerOptionEnum.Stop) {
                 break;
             }
         }
@@ -30,7 +37,7 @@ function* walk(node, filter) {
             // @ts-ignore
             yield { node, parent: map.get(node), root };
         }
-        if (option !== 'ignore-children' && 'chi' in node) {
+        if (option !== WalkerOptionEnum.IgnoreChildren && 'chi' in node) {
             parents.unshift(...node.chi);
             for (const child of node.chi.slice()) {
                 map.set(child, node);
@@ -62,19 +69,20 @@ function* walkValues(values, root = null, filter, reverse) {
             event: WalkerValueEvent.Enter
         };
     }
+    const eventType = filter.event ?? WalkerValueEvent.Enter;
     while (stack.length > 0) {
         let value = reverse ? stack.pop() : stack.shift();
         let option = null;
-        if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
+        if (filter.fn != null && eventType == WalkerValueEvent.Enter) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value) ?? root, WalkerValueEvent.Enter);
-                if (option === 'ignore') {
+                option = filter.fn(value, map.get(value) ?? root);
+                if (option === WalkerOptionEnum.Ignore) {
                     continue;
                 }
-                if (option === 'stop') {
+                if (option === WalkerOptionEnum.Stop) {
                     break;
                 }
                 // @ts-ignore
@@ -83,8 +91,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 }
             }
         }
-        // @ts-ignore
-        if (filter.event == WalkerValueEvent.Enter && option !== 'children') {
+        if (eventType == WalkerValueEvent.Enter && option !== WalkerOptionEnum.Children) {
             yield {
                 value,
                 parent: map.get(value) ?? root,
@@ -94,7 +101,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 root: root ?? null
             };
         }
-        if (option !== 'ignore-children' && 'chi' in value) {
+        if (option !== WalkerOptionEnum.IgnoreChildren && 'chi' in value) {
             const sliced = value.chi.slice();
             for (const child of sliced) {
                 map.set(child, value);
@@ -107,24 +114,23 @@ function* walkValues(values, root = null, filter, reverse) {
             }
         }
         else if (value.typ == EnumToken.BinaryExpressionTokenType) {
-            map.set(value.l, map.get(value) ?? root);
-            map.set(value.r, map.get(value) ?? root);
+            map.set(value.l, value);
+            map.set(value.r, value);
             stack.unshift(value.l, value.r);
         }
-        if (filter.event == WalkerValueEvent.Leave && filter.fn != null) {
+        if (eventType == WalkerValueEvent.Leave && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value), WalkerValueEvent.Leave);
+                option = filter.fn(value, map.get(value));
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
                     map.set(option, map.get(value) ?? root);
                 }
             }
         }
-        // @ts-ignore
-        if (filter.event == WalkerValueEvent.Leave && option !== 'children') {
+        if (eventType == WalkerValueEvent.Leave && option !== WalkerOptionEnum.Children) {
             yield {
                 value,
                 parent: map.get(value) ?? root,
@@ -138,4 +144,4 @@ function* walkValues(values, root = null, filter, reverse) {
     }
 }
 
-export { WalkerValueEvent, walk, walkValues };
+export { WalkerOptionEnum, WalkerValueEvent, walk, walkValues };

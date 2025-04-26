@@ -1,4 +1,4 @@
-import {EnumToken} from "../lib";
+import {EnumToken} from "../lib/index.ts";
 import {Token} from "./token.d.ts";
 
 export declare interface Position {
@@ -36,7 +36,6 @@ export declare interface AstDeclaration extends BaseToken {
     typ: EnumToken.DeclarationNodeType
 }
 
-
 export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
@@ -50,7 +49,7 @@ export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstNode>;
 }
 
 export declare interface AstInvalidAtRule extends BaseToken {
@@ -59,8 +58,6 @@ export declare interface AstInvalidAtRule extends BaseToken {
     val: string;
     chi?: Array<AstNode>;
 }
-
-
 
 export declare interface AstKeyFrameRule extends BaseToken {
 
@@ -96,14 +93,31 @@ export declare interface AstAtRule extends BaseToken {
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
+export declare interface AstKeyframeRule extends BaseToken {
+
+    typ: EnumToken.KeyFrameRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare interface AstKeyframAtRule extends BaseToken {
+
+    typ: EnumToken.KeyframeAtRuleNodeType,
+    nam: string;
+    val: string;
+    chi: Array<AstKeyframeRule | AstComment>;
+}
+
 export declare interface AstRuleList extends BaseToken {
 
-    typ:  EnumToken.StyleSheetNodeType |  EnumToken.RuleNodeType |  EnumToken.AtRuleNodeType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType,
     chi: Array<BaseToken | AstComment>;
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {
-    typ:  EnumToken.StyleSheetNodeType,
+    typ: EnumToken.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
@@ -114,6 +128,7 @@ export declare type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration
+    | AstKeyframAtRule
     | AstKeyFrameRule
     | AstInvalidRule
     | AstInvalidAtRule;

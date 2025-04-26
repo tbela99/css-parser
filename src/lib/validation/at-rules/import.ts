@@ -1,10 +1,17 @@
-import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
+import type {
+    AstAtRule,
+    AstNode,
+    FunctionToken,
+    FunctionURLToken,
+    Token,
+    ValidationOptions
+} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {validateAtRuleMediaQueryList} from "./media";
-import {consumeWhitespace} from "../utils";
-import {validateLayerName} from "../syntaxes";
-import {validateAtRuleSupportsConditions} from "./supports";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {validateAtRuleMediaQueryList} from "./media.ts";
+import {consumeWhitespace} from "../utils/index.ts";
+import {validateLayerName} from "../syntaxes/index.ts";
+import {validateAtRuleSupportsConditions} from "./supports.ts";
 
 export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -56,7 +63,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         consumeWhitespace(tokens);
     } else if (tokens[0].typ == EnumToken.UrlFunctionTokenType) {
 
-        const slice = tokens[0].chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
+        const slice = (tokens[0] as FunctionURLToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
 
         if (slice.length != 1 || ![EnumToken.StringTokenType, EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
 

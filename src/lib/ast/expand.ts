@@ -2,7 +2,15 @@ import {combinators, splitRule} from "./minify.ts";
 import {parseString} from "../parser/index.ts";
 import {walkValues} from "./walk.ts";
 import {renderToken} from "../renderer/index.ts";
-import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, Token} from "../../@types/index.d.ts";
+import type {
+    AstAtRule,
+    AstNode,
+    AstRule,
+    AstRuleStyleSheet,
+    IdentToken,
+    LiteralToken,
+    Token
+} from "../../@types/index.d.ts";
 import {EnumToken} from "./types.ts";
 
 /**
@@ -311,7 +319,7 @@ export function replaceCompound(input: string, replace: string): string {
 
         if (t.value.typ == EnumToken.LiteralTokenType) {
 
-            if (t.value.val == '&') {
+            if ((t.value as LiteralToken).val == '&') {
 
                 if (tokens.length == 2) {
 
@@ -323,11 +331,11 @@ export function replaceCompound(input: string, replace: string): string {
                     if (tokens[1].typ == EnumToken.IdenTokenType) {
 
 
-                        t.value.val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
+                        (t.value as LiteralToken).val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? (tokens[1] as IdentToken).val + replace : replaceCompoundLiteral((tokens[1] as IdentToken).val + '&', replace);
                         tokens.splice(1, 1);
                     } else {
 
-                        t.value.val = replaceCompoundLiteral(t.value.val, replace);
+                        (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
                     }
 
                     continue;
@@ -335,15 +343,15 @@ export function replaceCompound(input: string, replace: string): string {
 
                 const rule: string[][] = splitRule(replace);
 
-                t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
-            } else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {
+                (t.value as LiteralToken).val = rule.length > 1 ? ':is(' + replace + ')' : replace;
+            } else if ((t.value as LiteralToken).val.length > 1 && (t.value as LiteralToken).val.charAt(0) == '&') {
 
-                t.value.val = replaceCompoundLiteral(t.value.val, replace);
+                (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
             }
         }
     }
 
-    return tokens.reduce((acc, curr) => acc + renderToken(curr), '');
+    return tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr), '');
 }
 
 function replaceCompoundLiteral(selector: string, replace: string) {

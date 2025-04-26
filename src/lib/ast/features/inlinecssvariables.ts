@@ -12,7 +12,7 @@ import type {
     ParserOptions,
     Token,
     VariableScopeInfo
-} from "../../../@types/index";
+} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
 import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
@@ -60,14 +60,6 @@ export class InlineCssVariablesFeature {
     static register(options: MinifyFeatureOptions): void {
 
         if (options.inlineCssVariables) {
-
-            for (const feature of options.features) {
-
-                if (feature instanceof InlineCssVariablesFeature) {
-
-                    return;
-                }
-            }
 
             // @ts-ignore
             options.features.push(new InlineCssVariablesFeature());

@@ -8,7 +8,7 @@ import { lch2hwb, lab2hwb, oklch2hwb, oklab2hwb, hsl2hwb, rgb2hwb } from './hwb.
 import { srgb2lab, oklch2lab, oklab2lab, lch2lab, hwb2lab, hsl2lab, rgb2lab, hex2lab } from './lab.js';
 import { srgb2lch, oklch2lch, oklab2lch, lab2lch, hwb2lch, hsl2lch, rgb2lch, hex2lch } from './lch.js';
 import { srgb2oklab, oklch2oklab, lch2oklab, lab2oklab, hwb2oklab, hsl2oklab, rgb2oklab, hex2oklab } from './oklab.js';
-import { lch2oklch, oklab2oklch, lab2oklch, hwb2oklch, hsl2oklch, rgb2oklch, hex2oklch, srgb2oklch } from './oklch.js';
+import { lch2oklch, oklab2oklch, lab2oklch, hwb2oklch, hsl2oklch, rgb2oklch, hex2oklch } from './oklch.js';
 import { colorFuncColorSpace } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues, lch2srgb, oklab2srgb, lab2srgb, hwb2srgb, hsl2srgb, rgb2srgb, hex2srgb } from './srgb.js';
@@ -33,10 +33,15 @@ function convert(token, to) {
     }
     let values = [];
     if (to == 'hsl') {
+        let t;
         switch (token.kin) {
             case 'rgb':
             case 'rgba':
-                values.push(...rgb2hsl(token));
+                t = rgb2hsl(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'hex':
             case 'lit':
@@ -46,10 +51,18 @@ function convert(token, to) {
                 values.push(...hwb2hsl(token));
                 break;
             case 'oklab':
-                values.push(...oklab2hsl(token));
+                t = oklab2hsl(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'oklch':
-                values.push(...oklch2hsl(token));
+                t = oklch2hsl(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'lab':
                 values.push(...lab2hsl(token));
@@ -98,28 +111,53 @@ function convert(token, to) {
         }
     }
     else if (to == 'rgb') {
+        let t;
         switch (token.kin) {
             case 'hex':
             case 'lit':
                 values.push(...hex2rgb(token));
                 break;
             case 'hsl':
-                values.push(...hsl2rgb(token));
+                t = hsl2rgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'hwb':
-                values.push(...hwb2rgb(token));
+                t = hwb2rgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'oklab':
-                values.push(...oklab2rgb(token));
+                t = oklab2rgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'oklch':
-                values.push(...oklch2rgb(token));
+                t = oklch2rgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'lab':
-                values.push(...lab2rgb(token));
+                t = lab2rgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'lch':
-                values.push(...lch2rgb(token));
+                t = lch2rgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'color':
                 // @ts-ignore
@@ -305,6 +343,7 @@ function convert(token, to) {
         }
     }
     else if (colorFuncColorSpace.includes(to)) {
+        let t;
         switch (token.kin) {
             case 'hex':
             case 'lit':
@@ -312,30 +351,60 @@ function convert(token, to) {
                 break;
             case 'rgb':
             case 'rgba':
-                values.push(...rgb2srgb(token));
+                t = rgb2srgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'hsl':
             case 'hsla':
-                values.push(...hsl2srgb(token));
+                t = hsl2srgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'hwb':
-                values.push(...hwb2srgb(token));
+                t = hwb2srgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'lab':
-                values.push(...lab2srgb(token));
+                t = lab2srgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'oklab':
-                values.push(...oklab2srgb(token));
+                t = oklab2srgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'lch':
-                values.push(...lch2srgb(token));
+                t = lch2srgb(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'oklch':
-                // @ts-ignore
-                values.push(...srgb2oklch(...color2srgbvalues(token)));
+                t = color2srgbvalues(token);
+                if (t == null) {
+                    return null;
+                }
+                values.push(...t);
                 break;
             case 'color':
                 const val = color2srgbvalues(token);
+                if (val == null) {
+                    return null;
+                }
                 switch (to) {
                     case 'srgb':
                         values.push(...val);
@@ -389,6 +458,9 @@ function minmax(value, min, max) {
 }
 function color2srgbvalues(token) {
     const components = getComponents(token);
+    if (components == null) {
+        return null;
+    }
     const colorSpace = components.shift();
     let values = components.map((val) => getNumber(val));
     switch (colorSpace.val) {
@@ -531,6 +603,10 @@ function getNumber(token) {
     // @ts-ignore
     return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
+/**
+ * convert angle to turn
+ * @param token
+ */
 function getAngle(token) {
     if (token.typ == EnumToken.IdenTokenType) {
         if (token.val == 'none') {

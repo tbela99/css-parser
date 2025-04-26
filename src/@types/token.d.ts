@@ -1,5 +1,5 @@
 import type {AstDeclaration, BaseToken} from "./ast.d.ts";
-import {EnumToken} from "../lib";
+import {EnumToken} from "../lib/index.ts";
 
 export declare interface LiteralToken extends BaseToken {
 

@@ -1,17 +1,35 @@
 import type {FractionToken} from "../../../@types/index.d.ts";
-import {EnumToken} from "../types";
-import {reduceNumber} from "../../renderer";
+import {EnumToken} from "../types.ts";
+import {reduceNumber} from "../../renderer/index.ts";
 
 export function gcd (x: number, y: number): number {
 
     x = Math.abs(x);
     y = Math.abs(y);
 
+    if (x == y) {
+
+        return x;
+    }
+
+
     let t: number;
 
-    if (x == 0 || y == 0) {
+    if (x == 0) {
 
-        return 1;
+        return y;
+    }
+
+    if (y == 0) {
+
+        return x;
+    }
+
+    if (y > x) {
+
+        t = x;
+        x = y;
+        y = t;
     }
 
     while (y) {
@@ -112,6 +130,7 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
 
     }
 
+    // @ts-ignore
     const a2: [number, number] = simplify(l2 as number, r2 as number);
 
     if (a2[1] == 1) {

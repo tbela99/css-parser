@@ -1,7 +1,7 @@
-import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {splitTokenList} from "../utils";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {splitTokenList} from "../utils/index.ts";
 
 export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 

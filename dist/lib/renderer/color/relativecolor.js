@@ -142,29 +142,18 @@ function computeComponentValue(expr, converted, values) {
     return expr;
 }
 function replaceValue(parent, value, newValue) {
-    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-        if (parent.l == value) {
-            parent.l = newValue;
-        }
-        else {
-            parent.r = newValue;
-        }
-    }
-    else {
-        for (let i = 0; i < parent.chi.length; i++) {
-            if (parent.chi[i] == value) {
-                parent.chi.splice(i, 1, newValue);
-                break;
+    for (const { value: val, parent: pr } of walkValues([parent])) {
+        if (val.typ == value.typ && val.val == value.val) {
+            if (pr.typ == EnumToken.BinaryExpressionTokenType) {
+                if (pr.l == val) {
+                    pr.l = newValue;
+                }
+                else {
+                    pr.r = newValue;
+                }
             }
-            if (parent.chi[i].typ == EnumToken.BinaryExpressionTokenType) {
-                if (parent.chi[i].l == value) {
-                    parent.chi[i].l = newValue;
-                    break;
-                }
-                else if (parent.chi[i].r == value) {
-                    parent.chi[i].r = newValue;
-                    break;
-                }
+            else {
+                pr.chi.splice(pr.chi.indexOf(val), 1, newValue);
             }
         }
     }

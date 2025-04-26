@@ -59,6 +59,14 @@ function xyz2lchvalues(x, y, z, alpha) {
 }
 function getLCHComponents(token) {
     const components = getComponents(token);
+    if (components == null) {
+        return null;
+    }
+    for (let i = 0; i < components.length; i++) {
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+            return null;
+        }
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore

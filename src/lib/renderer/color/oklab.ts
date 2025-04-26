@@ -1,10 +1,19 @@
-import {getComponents, multiplyMatrices} from "./utils";
-import {srgb2lsrgbvalues, hex2srgb, hsl2srgb, hwb2srgb, lab2srgb, lch2srgb, rgb2srgb, lsrgb2srgbvalues} from "./srgb";
+import {getComponents, multiplyMatrices} from "./utils/index.ts";
+import {
+    hex2srgb,
+    hsl2srgb,
+    hwb2srgb,
+    lab2srgb,
+    lch2srgb,
+    lsrgb2srgbvalues,
+    rgb2srgb,
+    srgb2lsrgbvalues
+} from "./srgb.ts";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {getNumber} from "./color";
-import {EnumToken} from "../../ast";
-import {getOKLCHComponents} from "./oklch";
-import {lch2labvalues} from "./lab";
+import {getNumber} from "./color.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {getOKLCHComponents} from "./oklch.ts";
+import {lch2labvalues} from "./lab.ts";
 
 export function hex2oklab(token: ColorToken) {
 
@@ -72,9 +81,22 @@ export function srgb2oklab(r: number, g: number, blue: number, alpha: number | n
     return alpha == null ? [l, a, b] : [l, a, b, alpha];
 }
 
-export function getOKLABComponents(token: ColorToken): number[] {
+export function getOKLABComponents(token: ColorToken): number[] | null{
 
-    const components: Token[] = getComponents(token);
+    const components: Token[] | null = getComponents(token);
+
+    if (components == null) {
+
+        return null;
+    }
+
+    for (let i = 0; i < components.length; i++) {
+
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+
+            return null;
+        }
+    }
 
     // @ts-ignore
     let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
