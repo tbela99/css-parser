@@ -140,21 +140,21 @@
                                    id="parseoptionsremoveDuplicateDeclarations" name="parseoptions[removeDuplicateDeclarations]" type="checkbox"
                                    value="">
                             <label class="form-check-label" for="parseoptionsremoveDuplicateDeclarations">
-                                Remove duplicate declarations
+                                Deduplicate declarations
                             </label>
                         </div>
                         <div class="form-check">
                             <input checked class="form-check-input" id="parseoptionscomputeShorthand"
                                    name="parseoptions[computeShorthand]" type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionscomputeShorthand">
-                                Compute shorthand properties
+                                Shorthand
                             </label>
                         </div>
                         <div class="form-check">
                             <input checked class="form-check-input" id="parseoptionscomputeCalcExpression"
                                    name="parseoptions[computeCalcExpression]" type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionscomputeCalcExpression">
-                                Compute calc() expressions
+                                Math expressions
                             </label>
                         </div>
                         <div class="form-check">
@@ -168,7 +168,7 @@
                             <input checked class="form-check-input" id="parseoptionsTransform"
                                    name="parseoptions[computeTransform]" type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionsTransform">
-                                CSS Transform
+                                Minify Transform
                             </label>
                         </div>
                         <div class="form-check">
@@ -182,7 +182,7 @@
                             <input checked class="form-check-input" id="parseoptionsLenient"
                                    name="parseoptions[lenient]" type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionsLenient">
-                                Lenient validation mode
+                                Lenient validation
                             </label>
                         </div>
                         <div class="form-check">
@@ -712,7 +712,7 @@ console.debug({parsed, rendered});`;
 }
 .s:focus {
     --animate-duration: 1s;
-    transform:   translate(0,-100px)
+    transform:   translate(0,-100px) scaleX(0.5) scaleY( 1) scaleZ(1.7) rotate3d(1, 1, 1,  67deg)
 }`;
         } else if (event.target.value === 'bootstrap') {
 
