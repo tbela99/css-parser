@@ -649,7 +649,16 @@ console.debug({parsed, rendered});`;
     width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
     height: calc(100% / 4);
     transform: scaleX(1.5)  scaleY(2);
-}}`;
+
+    .foo-bar {
+  color: lch(from slateblue calc(l + 10%) c h);
+}
+
+    transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
+    color: color-mix(in oklch(currentcolor 35% #0000 ))
+
+}
+`;
 
         } else if (event.target.value === 'validation') {
 
@@ -712,7 +721,7 @@ console.debug({parsed, rendered});`;
 }
 .s:focus {
     --animate-duration: 1s;
-    transform:   translate(0,-100px) scaleX(0.5) scaleY( 1) scaleZ(1.7) rotate3d(1, 1, 1,  67deg)
+    transform:   translate(0,-100px) scaleX(0.5) scaleY( 1) scaleZ(1.7) rotate3d(1, 1, 1,  67deg);
 }`;
         } else if (event.target.value === 'bootstrap') {
 
