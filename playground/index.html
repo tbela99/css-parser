@@ -165,6 +165,13 @@
                             </label>
                         </div>
                         <div class="form-check">
+                            <input checked class="form-check-input" id="parseoptionsTransform"
+                                   name="parseoptions[computeTransform]" type="checkbox" value="">
+                            <label class="form-check-label" for="parseoptionsTransform">
+                                CSS Transform
+                            </label>
+                        </div>
+                        <div class="form-check">
                             <input checked class="form-check-input" id="parseoptionsValidation"
                                    name="parseoptions[validation]" type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionsValidation">
@@ -298,7 +305,9 @@
 }
 .foo-bar {
     width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
-    height: calc(100% / 4);}</textarea>
+    height: calc(100% / 4);
+    transform: scaleX(1.5)  scaleY(2);
+}}</textarea>
                     </div>
                 </div>
                 <div class="col-sm-12 col-md-6">
@@ -638,7 +647,9 @@ console.debug({parsed, rendered});`;
 }
 .foo-bar {
     width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
-    height: calc(100% / 4);}`;
+    height: calc(100% / 4);
+    transform: scaleX(1.5)  scaleY(2);
+}}`;
 
         } else if (event.target.value === 'validation') {
 
@@ -701,6 +712,7 @@ console.debug({parsed, rendered});`;
 }
 .s:focus {
     --animate-duration: 1s;
+    transform:   translate(0,-100px)
 }`;
         } else if (event.target.value === 'bootstrap') {
 
