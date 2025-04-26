@@ -1,6 +1,6 @@
 import {AstNode, AstRuleList} from "./ast.d.ts";
 import {BinaryExpressionToken, FunctionToken, ParensToken, Token} from "./token.d.ts";
-import {WalkerValueEvent} from '../lib/ast/walk.ts';
+import {WalkerOptionEnum, WalkerValueEvent} from '../lib/ast/walk.ts';
 
 export declare type WalkerOption = WalkerOptionEnum | Token | null;
 /**
