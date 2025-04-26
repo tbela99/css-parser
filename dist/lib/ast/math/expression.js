@@ -172,7 +172,6 @@ function doEvaluate(l, r, op) {
     }
     // @ts-ignore
     const val = compute(v1, v2, op);
-    // typ = typeof val == 'number' ? EnumToken.NumberTokenType : EnumToken.FractionTokenType;
     const token = {
         ...(l.typ == EnumToken.NumberTokenType ? r : l),
         typ,
@@ -432,10 +431,6 @@ function inlineExpression(token) {
  * @param token
  */
 function evaluateExpression(token) {
-    // if (token.typ == EnumToken.ParensTokenType) {
-    //
-    //     return evaluateExpression(buildExpression((token as ParensToken).chi));
-    // }
     if (token.typ != EnumToken.BinaryExpressionTokenType) {
         return token;
     }
