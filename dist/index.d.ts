@@ -135,6 +135,12 @@ declare function minify(ast: AstNode, options?: ParserOptions | MinifyFeatureOpt
     [key: string]: any;
 }): AstNode;
 
+declare enum WalkerOptionEnum {
+    Ignore = 0,
+    Stop = 1,
+    Children = 2,
+    IgnoreChildren = 3
+}
 declare enum WalkerValueEvent {
     Enter = 0,
     Leave = 1
