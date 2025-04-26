@@ -16,7 +16,6 @@ import { validateAtRuleLayer } from './at-rules/layer.js';
 import { validateAtRuleFontFeatureValues } from './at-rules/font-feature-values.js';
 import { validateAtRuleNamespace } from './at-rules/namespace.js';
 import { validateAtRuleDocument } from './at-rules/document.js';
-import { validateAtRuleKeyframes } from './at-rules/keyframes.js';
 import { validateAtRuleWhen } from './at-rules/when.js';
 import { validateAtRuleElse } from './at-rules/else.js';
 import { validateAtRuleContainer } from './at-rules/container.js';
@@ -31,9 +30,6 @@ function validateAtRule(atRule, options, root) {
             syntax: null,
             error: ''
         };
-    }
-    if (atRule.nam == 'keyframes') {
-        return validateAtRuleKeyframes(atRule);
     }
     if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {
         return {

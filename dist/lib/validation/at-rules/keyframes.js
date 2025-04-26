@@ -14,7 +14,7 @@ function validateAtRuleKeyframes(atRule, options, root) {
             valid: ValidationLevel.Drop,
             matches: [],
             node: atRule,
-            syntax: '@document',
+            syntax: '@keyframes',
             error: 'expecting at-rule prelude',
             tokens: []
         };

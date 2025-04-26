@@ -1,5 +1,5 @@
 import type {AstAtRule, AstDeclaration, AstNode, ValidationOptions} from "../../@types/index.d.ts";
-import type {ValidationConfiguration, ValidationResult} from "../../@types/validation";
+import type {ValidationConfiguration, ValidationResult} from "../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../ast/index.ts";
 import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
 import {ParsedSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser/index.ts";

@@ -9,15 +9,10 @@ import '../../parser/utils/config.js';
 
 class ComputeShorthandFeature {
     static get ordering() {
-        return 2;
+        return 3;
     }
     static register(options) {
         if (options.computeShorthand) {
-            for (const feature of options.features) {
-                if (feature instanceof ComputeShorthandFeature) {
-                    return;
-                }
-            }
             // @ts-ignore
             options.features.push(new ComputeShorthandFeature(options));
         }
@@ -27,18 +22,20 @@ class ComputeShorthandFeature {
         const j = ast.chi.length;
         let k = 0;
         let properties = new PropertyList(options);
+        const rules = [];
         // @ts-ignore
         for (; k < j; k++) {
             // @ts-ignore
             const node = ast.chi[k];
             if (node.typ == EnumToken.CommentNodeType || node.typ == EnumToken.DeclarationNodeType) {
                 properties.add(node);
-                continue;
             }
-            break;
+            else {
+                rules.push(node);
+            }
         }
         // @ts-ignore
-        ast.chi = [...properties].concat(ast.chi.slice(k));
+        ast.chi = [...properties, ...rules];
         return ast;
     }
 }

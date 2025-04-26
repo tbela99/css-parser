@@ -8,15 +8,15 @@ import type {
     PercentageToken,
     Token
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../../ast";
-import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb";
-import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl";
-import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb} from "./hwb";
-import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab";
-import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch, srgb2lch} from "./lch";
-import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab";
-import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch";
-import {colorFuncColorSpace, getComponents} from "./utils";
+import {EnumToken} from "../../ast/index.ts";
+import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb.ts";
+import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl.ts";
+import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb} from "./hwb.ts";
+import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab.ts";
+import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch, srgb2lch} from "./lch.ts";
+import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab.ts";
+import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch,} from "./oklch.ts";
+import {colorFuncColorSpace, getComponents} from "./utils/index.ts";
 import {
     hex2srgb,
     hsl2srgb,
@@ -28,13 +28,13 @@ import {
     rgb2srgb,
     srgb2lsrgbvalues,
     xyz2srgb
-} from "./srgb";
-import {prophotorgb2srgbvalues, srgb2prophotorgbvalues} from "./prophotorgb";
-import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb";
-import {rec20202srgb, srgb2rec2020values} from "./rec2020";
-import {srgb2xyz} from "./xyz";
-import {p32srgbvalues, srgb2p3values} from "./p3";
-import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50";
+} from "./srgb.ts";
+import {prophotorgb2srgbvalues, srgb2prophotorgbvalues} from "./prophotorgb.ts";
+import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
+import {rec20202srgb, srgb2rec2020values} from "./rec2020.ts";
+import {srgb2xyz} from "./xyz.ts";
+import {p32srgbvalues, srgb2p3values} from "./p3.ts";
+import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50.ts";
 
 export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorToken | null {
 
@@ -57,12 +57,21 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
     if (to == 'hsl') {
 
+        let t: number[] | null;
+
         switch (token.kin) {
 
             case 'rgb':
             case 'rgba':
 
-                values.push(...rgb2hsl(token));
+                t = rgb2hsl(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
             case 'hex':
             case 'lit':
@@ -76,12 +85,26 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
             case 'oklab':
 
-                values.push(...oklab2hsl(token));
+                t = oklab2hsl(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'oklch':
 
-                values.push(...oklch2hsl(token));
+                t = oklch2hsl(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'lab':
@@ -151,7 +174,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
             return values2hwbtoken(values);
         }
     } else if (to == 'rgb') {
-
+            let t : number[] | null;
         switch (token.kin) {
 
             case 'hex':
@@ -161,31 +184,73 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 break
             case 'hsl':
 
-                values.push(...hsl2rgb(token));
+                t = hsl2rgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break
             case 'hwb':
 
-                values.push(...hwb2rgb(token));
+                t = hwb2rgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'oklab':
 
-                values.push(...oklab2rgb(token));
+                t =oklab2rgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'oklch':
 
-                values.push(...oklch2rgb(token));
+                t = oklch2rgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'lab':
 
-                values.push(...lab2rgb(token));
+                t = lab2rgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'lch':
 
-                values.push(...lch2rgb(token));
+                t = lch2rgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'color':
@@ -444,6 +509,8 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
     else if (colorFuncColorSpace.includes(<ColorSpace>to)) {
 
+        let t : number[] | null;
+
         switch (token.kin) {
 
             case 'hex':
@@ -454,38 +521,95 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
             case 'rgb':
             case 'rgba':
 
-                values.push(...rgb2srgb(token));
+                t = rgb2srgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
             case 'hsl':
             case 'hsla':
 
-                values.push(...hsl2srgb(token));
+                t = hsl2srgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'hwb':
-                values.push(...hwb2srgb(token));
+
+                t = hwb2srgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'lab':
-                values.push(...lab2srgb(token));
+                t = lab2srgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'oklab':
-                values.push(...oklab2srgb(token));
+
+                t = oklab2srgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'lch':
-                values.push(...lch2srgb(token));
+
+                t = lch2srgb(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'oklch':
-                // @ts-ignore
-                values.push(...srgb2oklch(...color2srgbvalues(token)));
+
+                t = color2srgbvalues(token);
+
+                if (t == null) {
+
+                    return null;
+                }
+
+                values.push(...t);
                 break;
 
             case 'color':
 
-                const val: number[] = color2srgbvalues(token);
+                const val: number[] | null = color2srgbvalues(token);
+
+                if (val == null) {
+
+                    return null;
+                }
 
                 switch (<ColorSpace>to) {
 
@@ -561,9 +685,14 @@ export function minmax(value: number, min: number, max: number): number {
     return value;
 }
 
-export function color2srgbvalues(token: ColorToken): number[] {
+export function color2srgbvalues(token: ColorToken): number[] | null {
 
-    const components: Token[] = getComponents(token);
+    const components: Token[] = getComponents(token) as Token[];
+
+    if (components == null) {
+
+        return null;
+    }
 
     const colorSpace: IdentToken = <IdentToken>components.shift();
     let values: number[] = components.map((val: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>val));
@@ -718,21 +847,21 @@ export function clamp(token: ColorToken): ColorToken {
 
                 if (token.typ == EnumToken.NumberTokenType) {
 
-                    token.val = String(minmax(+token.val, 0, 255));
+                    (token as NumberToken).val = String(minmax(+(token as NumberToken).val, 0, 255));
 
                 } else if (token.typ == EnumToken.PercentageTokenType) {
 
-                    token.val = String(minmax(+token.val, 0, 100));
+                    (token as PercentageToken).val = String(minmax(+(token as PercentageToken).val, 0, 100));
                 }
             } else {
 
                 if (token.typ == EnumToken.NumberTokenType) {
 
-                    token.val = String(minmax(+token.val, 0, 1));
+                    (token as NumberToken).val = String(minmax(+(token as NumberToken).val, 0, 1));
 
                 } else if (token.typ == EnumToken.PercentageTokenType) {
 
-                    token.val = String(minmax(+token.val, 0, 100));
+                    (token as PercentageToken).val = String(minmax(+(token as PercentageToken).val, 0, 100));
                 }
             }
         });
@@ -752,6 +881,10 @@ export function getNumber(token: NumberToken | PercentageToken | IdentToken): nu
     return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
 }
 
+/**
+ * convert angle to turn
+ * @param token
+ */
 export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
     if (token.typ == EnumToken.IdenTokenType) {
@@ -764,7 +897,7 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
     if (token.typ == EnumToken.AngleTokenType) {
 
-        switch (token.unit) {
+        switch ((token as AngleToken).unit) {
 
             case 'deg':
 

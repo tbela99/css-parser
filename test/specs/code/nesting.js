@@ -190,7 +190,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 `;
             return transform(nesting3, {
                 minify: true, nestingRules: true, resolveImport: true
-            }).then((result) => expect(result.code).equals(`.card{--bs-card-spacer-y:1rem;--bs-card-spacer-x:1rem;--bs-card-title-spacer-y:.5rem;--bs-card-border-width:var(--bs-border-width);--bs-card-border-color:var(--bs-border-color-translucent);--bs-card-border-radius:var(--bs-border-radius);--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width));--bs-card-cap-padding-y:.5rem;--bs-card-cap-padding-x:1rem;--bs-card-cap-bg:rgb(var(--bs-body-color-rgb) .03);--bs-card-bg:var(--bs-body-bg);--bs-card-img-overlay-padding:1rem;--bs-card-group-margin:.75rem;position:relative;display:flex;flex-direction:column;min-width:0;height:var(--bs-card-height);color:var(--bs-body-color);word-wrap:break-word;background-color:var(--bs-card-bg);background-clip:border-box;border:var(--bs-card-border-width) solid var(--bs-card-border-color);border-radius:var(--bs-card-border-radius);>hr{margin-right:0;margin-left:0}}`));
+            }).then((result) => expect(result.code).equals(`.card{--bs-card-spacer-y:1rem;--bs-card-spacer-x:1rem;--bs-card-title-spacer-y:.5rem;--bs-card-title-color:;--bs-card-subtitle-color:;--bs-card-border-width:var(--bs-border-width);--bs-card-border-color:var(--bs-border-color-translucent);--bs-card-border-radius:var(--bs-border-radius);--bs-card-box-shadow:;--bs-card-inner-border-radius:calc(var(--bs-border-radius) - var(--bs-border-width));--bs-card-cap-padding-y:.5rem;--bs-card-cap-padding-x:1rem;--bs-card-cap-bg:rgb(var(--bs-body-color-rgb) .03);--bs-card-cap-color:;--bs-card-height:;--bs-card-color:;--bs-card-bg:var(--bs-body-bg);--bs-card-img-overlay-padding:1rem;--bs-card-group-margin:.75rem;position:relative;display:flex;flex-direction:column;min-width:0;height:var(--bs-card-height);color:var(--bs-body-color);word-wrap:break-word;background-color:var(--bs-card-bg);background-clip:border-box;border:var(--bs-card-border-width) solid var(--bs-card-border-color);border-radius:var(--bs-card-border-radius);>hr{margin-right:0;margin-left:0}}`));
         });
         it('nesting #9', function () {
             const nesting3 = `
@@ -298,7 +298,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 `;
             return transform(nesting3, {
                 minify: true, nestingRules: true, resolveImport: true
-            }).then((result) => expect(result.code).equals(`[data-bs-theme=dark]{.carousel .carousel-control-next-icon,.carousel .carousel-control-prev-icon,&.carousel .carousel-control-next-icon,&.carousel .carousel-control-prev-icon{filter:invert(1) grayscale(100)}.carousel .carousel-indicators [data-bs-target],&.carousel .carousel-indicators [data-bs-target]{background-color:#000}.carousel .carousel-caption,&.carousel .carousel-caption{color:#000}}`));
+            }).then((result) => expect(result.code).equals(`[data-bs-theme=dark]{.carousel .carousel-control-next-icon,.carousel .carousel-control-prev-icon,&.carousel .carousel-control-next-icon,&.carousel .carousel-control-prev-icon{filter:invert(1)grayscale(100)}.carousel .carousel-indicators [data-bs-target],&.carousel .carousel-indicators [data-bs-target]{background-color:#000}.carousel .carousel-caption,&.carousel .carousel-caption{color:#000}}`));
         });
 
         it('nesting #14', function () {
@@ -554,111 +554,38 @@ table.colortable {
 }`));
         });
 
-        // see https://www.w3.org/TR/css-nesting-1/#conditionals
-        /*
-        .header {
-                font-size: 40px;
-            }
+        it('mix rules and declarations #24', function () {
 
-        @media (max-width: 760px) {
-            .header {
-                    font-size: 24px;
-                }
-            }
-        */
-        /*
+            const css = `
+article {
+  color: green;
+  & { color: blue; }
+  color: red;
+  & { color: green; }
+}
+`;
 
-    // .parent {
-    //     color: red;
-    // }
-    // .parent
-    //
-    //     /*
-    //     Valid because it begins with a combinator, which is a
-    //     form of relative selector.
-    //     */
-//     > .descendant {
-//             border: 1px solid black;
-//         }
-//     .parent
-//
-//             /*
-//             Valid because it's equivalent of *.img, which is a complex
-//             selector. Complex selectors are also a form of relative
-//             selector.
-//             */
-//             .nested {
-//             font-style: italic;
-//         }
-//     .parent
-//
-//         /* Not valid. Type (element) selectors are not relative selectors. */
-//         img {
-//             box-shadow: 0 0 10px 5px rgba(0 0 0 .5);
-//         }
-//     }
-//      */
-        /*
-        .foo {
-      display: grid;
-    }
+            return transform(css, {
+                expandNestingRules: true
+            }).then(result => expect(result.code).equals(`article{color:green}`));
+        });
 
-    @media (width => 30em) {
-      .foo {
-        grid-auto-flow: column;
-      }
-    }
-         */
-        /*
-        @media, @supports)
 
-    @layer
+        it('mix rules and declarations #24', function () {
 
-    @scope
+            const css = `
+article {
+  color: green;
+  & { color: blue; }
+  color: red;
+  & { color: green; }
+}
+`;
 
-    @container
-
-    */
-
-//     it('nesting #16', function () {
-//         const nesting3 = `
-// .header {
-//   background-color: white;
-// }
-//
-// .dark .header {
-//     background-color: blue;
-// }
-// `;
-//         return transform(nesting3, {
-//             minify: true, nestingRules: true, resolveImport: true
-//         }).then((result) => expect(result.code).equals(`.nav-pills{.nav-link.active,.show>.nav-link{color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}}`));
-//     });
-
-//     it('nesting #17', function () {
-//         const nesting3 = `
-// .header {
-//   font-size: 40px;
-// }
-//
-// @media (max-width: 760px) {
-//   .header {
-//     font-size: 24px;
-//   }
-// }
-// `;
-//         return transform(nesting3, {
-//             minify: true, nestingRules: true, resolveImport: true
-//         }).then((result) => expect(result.code).equals(`.header {
-//   font-size: 40px
-//
-//   @media (max-width: 760px ) {
-//     & {
-//       font-size: 24px;
-//     }
-//   }
-// }`));
-//     });
+            return transform(css, {
+                expandNestingRules: false
+            }).then(result => expect(result.code).equals(`article{color:red;&{color:blue}&{color:green}}`));
+        });
     });
 
 }

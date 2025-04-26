@@ -1,8 +1,8 @@
-import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types";
-import type {ValidationConfiguration, ValidationResult} from "../../@types/validation";
-import {EnumToken, ValidationLevel} from "../ast";
-import {getParsedSyntax, getSyntaxConfig} from "./config";
-import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser";
+import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types/index.d.ts";
+import type {ValidationConfiguration, ValidationResult} from "../../@types/validation.d.ts";
+import {EnumToken, ValidationLevel} from "../ast/index.ts";
+import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
+import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser/index.ts";
 import {
     validateAtRuleContainer,
     validateAtRuleCounterStyle,
@@ -10,7 +10,6 @@ import {
     validateAtRuleElse,
     validateAtRuleFontFeatureValues,
     validateAtRuleImport,
-    validateAtRuleKeyframes,
     validateAtRuleLayer,
     validateAtRuleMedia,
     validateAtRuleNamespace,
@@ -18,8 +17,8 @@ import {
     validateAtRulePageMarginBox,
     validateAtRuleSupports,
     validateAtRuleWhen
-} from "./at-rules";
-import {validateAtRuleCustomMedia} from "./at-rules/custom-media";
+} from "./at-rules/index.ts";
+import {validateAtRuleCustomMedia} from "./at-rules/custom-media.ts";
 
 export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationResult {
 
@@ -34,11 +33,6 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
             syntax: null,
             error: ''
         }
-    }
-
-    if (atRule.nam == 'keyframes') {
-
-        return validateAtRuleKeyframes(atRule, options, root);
     }
 
     if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {

@@ -63,7 +63,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
     --animate-duration: 1s;
 }
 
-`, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+`, {validation: true, nestingRules: false}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
  --animate-duration: 1s
 }`));
         });
@@ -85,7 +85,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         }
 
 `).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`@-webkit-keyframes flash {
- from,50%,to {
+ 0%,50%,to {
   opacity: 1
  }
  25%,75% {
@@ -250,7 +250,7 @@ html, body, div, span, applet, object, iframe,
 .s:focus {
     --animate-duration: 1s;
 }
-`).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+`, {nestingRules: false}).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
  --animate-duration: 1s
 }`));
         });

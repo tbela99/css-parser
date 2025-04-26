@@ -2,14 +2,17 @@ import type {
     AstAtRule,
     AstNode,
     FunctionToken,
+    MediaFeatureNotToken,
+    MediaFeatureOnlyToken,
     MediaFeatureToken,
+    MediaQueryConditionToken,
     ParensToken,
     Token,
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace, splitTokenList} from "../utils";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
 export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -116,7 +119,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 if (tokens[0].typ == EnumToken.ParensTokenType) {
 
-                    result = validateAtRuleMediaQueryList(tokens[0].chi, atRule);
+                    result = validateAtRuleMediaQueryList((tokens[0] as ParensToken).chi, atRule);
                 } else {
 
                     result = {
@@ -280,7 +283,7 @@ function validateCustomMediaCondition(token: Token, atRule: AstAtRule): boolean 
 
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
 
-        return validateMediaCondition(token.val, atRule);
+        return validateMediaCondition((token as MediaFeatureNotToken).val, atRule);
     }
 
     if (token.typ != EnumToken.ParensTokenType) {
@@ -288,7 +291,7 @@ function validateCustomMediaCondition(token: Token, atRule: AstAtRule): boolean 
         return false;
     }
 
-    const chi: Token[] = token.chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
+    const chi: Token[] = (token as ParensToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
 
     if (chi.length != 1) {
 
@@ -302,10 +305,10 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
 
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
 
-        return validateMediaCondition(token.val, atRule);
+        return validateMediaCondition((token as MediaFeatureNotToken).val, atRule);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes(token.val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes((token as FunctionToken).val))) {
 
         return false;
     }
@@ -324,15 +327,13 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
 
     if (chi[0].typ == EnumToken.MediaFeatureNotTokenType) {
 
-        return validateMediaCondition(chi[0].val, atRule);
+        return validateMediaCondition((chi[0] as MediaFeatureNotToken).val, atRule);
     }
 
     if (chi[0].typ == EnumToken.MediaQueryConditionTokenType) {
 
-        return chi[0].l.typ == EnumToken.IdenTokenType;
+        return (chi[0] as MediaQueryConditionToken).l.typ == EnumToken.IdenTokenType;
     }
-
-    console.error(chi[0].parent);
 
     return false;
 }
@@ -343,7 +344,7 @@ export function validateMediaFeature(token: Token): boolean {
 
     if (token.typ == EnumToken.MediaFeatureOnlyTokenType || token.typ == EnumToken.MediaFeatureNotTokenType) {
 
-        val = token.val
+        val = (token as MediaFeatureOnlyToken | MediaFeatureNotToken).val
     }
 
     return val.typ == EnumToken.MediaFeatureTokenType;

@@ -1,4 +1,4 @@
-import type {Token} from "../../../@types";
+import type {FunctionURLToken, Token} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, ValidationLevel} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
@@ -34,7 +34,7 @@ export function validateURL(token: Token): ValidationSyntaxResult {
         }
     }
 
-    const children = token.chi.slice() as Token[];
+    const children = (token as FunctionURLToken).chi.slice() as Token[];
 
     consumeWhitespace(children);
 

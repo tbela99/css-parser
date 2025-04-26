@@ -1,8 +1,8 @@
 import type {ColorToken} from "../../../@types/index.d.ts";
-import {minmax} from "./color";
-import {COLORS_NAMES} from "./utils";
-import {expandHexValue} from "./hex";
-import {cmyk2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb";
+import {minmax} from "./color.ts";
+import {COLORS_NAMES} from "./utils/index.ts";
+import {expandHexValue} from "./hex.ts";
+import {cmyk2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb.ts";
 
 export function srgb2rgb(value: number): number {
 
@@ -22,40 +22,45 @@ export function hex2rgb(token: ColorToken): number[] {
     return rgb;
 }
 
-export function hwb2rgb(token: ColorToken): number[] {
+export function hwb2rgb(token: ColorToken): number[] | null {
 
-    return hwb2srgb(token).map(srgb2rgb);
+    return hwb2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 
-export function hsl2rgb(token: ColorToken): number[] {
+export function hsl2rgb(token: ColorToken): number[] | null {
 
-    let {h, s, l, a} = hslvalues(token);
+    let {h, s, l, a} = hslvalues(token) ?? {};
+
+    if (h == null || s == null || l == null) {
+
+        return null;
+    }
 
     return hsl2srgbvalues(h, s, l, a).map((t: number) => minmax(Math.round(t * 255), 0, 255));
 }
 
 
-export function cmyk2rgb(token: ColorToken): number[] {
+export function cmyk2rgb(token: ColorToken): number[] | null {
 
-    return cmyk2srgb(token).map(srgb2rgb);
+    return cmyk2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 
-export function oklab2rgb(token: ColorToken): number[] {
+export function oklab2rgb(token: ColorToken): number[] | null {
 
-    return oklab2srgb(token).map(srgb2rgb);
+    return oklab2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 
-export function oklch2rgb(token: ColorToken): number[] {
+export function oklch2rgb(token: ColorToken): number[] | null {
 
-    return oklch2srgb(token).map(srgb2rgb);
+    return oklch2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 
-export function lab2rgb(token: ColorToken): number[] {
+export function lab2rgb(token: ColorToken): number[] | null {
 
-    return lab2srgb(token).map(srgb2rgb);
+    return lab2srgb(token)?.map?.(srgb2rgb) ?? null;
 }
 
-export function lch2rgb(token: ColorToken): number[] {
+export function lch2rgb(token: ColorToken): number[] | null {
 
-    return lch2srgb(token).map(srgb2rgb);
+    return lch2srgb(token)?.map?.(srgb2rgb) ?? null;
 }

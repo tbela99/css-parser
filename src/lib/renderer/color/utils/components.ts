@@ -3,7 +3,7 @@ import {EnumToken} from "../../../ast/index.ts";
 import {COLORS_NAMES} from "./constants.ts";
 import {expandHexValue} from "../hex.ts";
 
-export function getComponents(token: ColorToken): Token[] {
+export function getComponents(token: ColorToken): Token[] | null {
 
     if (token.kin == 'hex' || token.kin == 'lit') {
 
@@ -15,6 +15,23 @@ export function getComponents(token: ColorToken): Token[] {
         });
     }
 
-    return  (<Token[]>token.chi)
-        .filter((t: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(t.typ));
+    const result: Token[] = [];
+
+    for (const child of (token.chi) as Token[]) {
+
+        if ([
+            EnumToken.LiteralTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(child.typ)) {
+
+            continue;
+        }
+
+        if (child.typ == EnumToken.ColorTokenType && (child as ColorToken).val == 'currentcolor') {
+
+            return null;
+        }
+
+        result.push(child);
+    }
+
+    return  result;
 }

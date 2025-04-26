@@ -1,5 +1,5 @@
 import config from '../../../config.json' with {type: 'json'};
-import type {PropertiesConfig} from "../../../@types";
+import type {PropertiesConfig} from "../../../@types/index.d.ts";
 
 Object.freeze(config);
 

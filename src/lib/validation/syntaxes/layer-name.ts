@@ -1,5 +1,5 @@
-import type {Token} from "../../../@types";
-import {EnumToken, ValidationLevel} from "../../ast";
+import type {Token} from "../../../@types/index.d.ts";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 
 export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {

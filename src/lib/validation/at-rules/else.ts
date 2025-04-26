@@ -1,4 +1,4 @@
-import {validateAtRuleWhen} from "./when";
+import {validateAtRuleWhen} from "./when.ts";
 
 
 export const validateAtRuleElse = validateAtRuleWhen;

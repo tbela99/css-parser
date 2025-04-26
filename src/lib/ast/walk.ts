@@ -13,6 +13,14 @@ import type {
 } from "../../@types/index.d.ts";
 import {EnumToken} from "./types.ts";
 
+export enum WalkerOptionEnum {
+
+    Ignore,
+    Stop,
+    Children,
+    IgnoreChildren
+}
+
 export enum WalkerValueEvent {
     Enter,
     Leave
@@ -38,12 +46,12 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 
             option = filter(node);
 
-            if (option === 'ignore') {
+            if (option === WalkerOptionEnum.Ignore) {
 
                 continue;
             }
 
-            if (option === 'stop') {
+            if (option === WalkerOptionEnum.Stop) {
 
                 break;
             }
@@ -56,7 +64,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
             yield {node, parent: <AstRuleList>map.get(node), root};
         }
 
-        if (option !== 'ignore-children' && 'chi' in node) {
+        if (option !== WalkerOptionEnum.IgnoreChildren && 'chi' in node) {
 
             parents.unshift(...<AstNode[]>(<AstRuleList>node).chi);
 
@@ -76,7 +84,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
  * @param reverse
  */
 export function* walkValues(values: Token[], root: AstNode | Token | null = null, filter?: WalkerValueFilter | {
-    event: WalkerValueEvent,
+    event?: WalkerValueEvent,
     fn?: WalkerValueFilter,
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean)
 }, reverse?: boolean): Generator<WalkAttributesResult> {
@@ -102,12 +110,14 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
         }
     }
 
+    const eventType = filter.event ?? WalkerValueEvent.Enter;
+
     while (stack.length > 0) {
 
         let value: Token = reverse ? <Token>stack.pop() : <Token>stack.shift();
         let option: WalkerOption = null;
 
-        if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
+        if (filter.fn != null && eventType == WalkerValueEvent.Enter) {
 
             const isValid: boolean = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
@@ -115,14 +125,14 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
             if (isValid) {
 
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root, WalkerValueEvent.Enter);
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value) ?? root);
 
-                if (option === 'ignore') {
+                if (option === WalkerOptionEnum.Ignore) {
 
                     continue;
                 }
 
-                if (option === 'stop') {
+                if (option === WalkerOptionEnum.Stop) {
 
                     break;
                 }
@@ -135,8 +145,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             }
         }
 
-        // @ts-ignore
-        if (filter.event == WalkerValueEvent.Enter && option !== 'children') {
+        if (eventType == WalkerValueEvent.Enter && option !== WalkerOptionEnum.Children) {
 
             yield {
                 value,
@@ -148,7 +157,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             };
         }
 
-        if (option !== 'ignore-children' && 'chi' in value) {
+        if (option !== WalkerOptionEnum.IgnoreChildren && 'chi' in value) {
 
             const sliced = (<FunctionToken | ParensToken>value).chi.slice();
 
@@ -167,13 +176,13 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
         } else if (value.typ == EnumToken.BinaryExpressionTokenType) {
 
-            map.set( (value as BinaryExpressionToken).l, map.get(value) ?? root as FunctionToken | ParensToken);
-            map.set( (value as BinaryExpressionToken).r, map.get(value) ?? root as FunctionToken | ParensToken);
+            map.set( (value as BinaryExpressionToken).l, value);
+            map.set( (value as BinaryExpressionToken).r, value);
 
             stack.unshift( (value as BinaryExpressionToken).l, (value as BinaryExpressionToken).r);
         }
 
-        if (filter.event == WalkerValueEvent.Leave && filter.fn != null) {
+        if (eventType == WalkerValueEvent.Leave && filter.fn != null) {
 
             const isValid: boolean = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
@@ -181,7 +190,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
 
             if (isValid) {
 
-                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value), WalkerValueEvent.Leave);
+                option = filter.fn(value, <FunctionToken | ParensToken>map.get(value));
 
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
@@ -191,8 +200,7 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
             }
         }
 
-        // @ts-ignore
-        if (filter.event == WalkerValueEvent.Leave && option !== 'children') {
+        if (eventType == WalkerValueEvent.Leave && option !== WalkerOptionEnum.Children) {
 
             yield {
                 value,

@@ -11,8 +11,8 @@ import type {
     Token,
     WalkerOption
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../types";
-import {WalkerValueEvent, walkValues} from "../walk.ts";
+import {EnumToken} from "../types.ts";
+import {WalkerOptionEnum, WalkerValueEvent, walkValues} from "../walk.ts";
 import {evaluate} from "../math/index.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {mathFuncs} from "../../syntax/index.ts";
@@ -27,14 +27,6 @@ export class ComputeCalcExpressionFeature {
 
         if (options.computeCalcExpression) {
 
-            for (const feature of options.features) {
-
-                if (feature instanceof ComputeCalcExpressionFeature) {
-
-                    return
-                }
-            }
-
             // @ts-ignore
             options.features.push(new ComputeCalcExpressionFeature());
         }
@@ -47,8 +39,7 @@ export class ComputeCalcExpressionFeature {
             return;
         }
 
-        // @ts-ignore
-        for (const node of ast.chi) {
+        for (const node of ast.chi! as Token[]) {
 
             if (node.typ != EnumToken.DeclarationNodeType) {
 
@@ -60,17 +51,20 @@ export class ComputeCalcExpressionFeature {
             for (const {value, parent} of walkValues((<AstDeclaration>node).val, node, {
 
                     event: WalkerValueEvent.Enter,
-                    fn(node: AstNode | Token, parent: AstNode | FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent): WalkerOption | null {
+                    // @ts-ignore
+                    fn(node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken): WalkerOption | null {
 
                         if (parent != null &&
+                            // @ts-ignore
                             (parent as AstDeclaration).typ == EnumToken.DeclarationNodeType &&
+                            // @ts-ignore
                             (parent as AstDeclaration).val.length == 1 &&
                             node.typ == EnumToken.FunctionTokenType &&
                             mathFuncs.includes((node as FunctionToken).val) &&
                             (node as FunctionToken).chi.length == 1 &&
                             (node as FunctionToken).chi[0].typ == EnumToken.IdenTokenType) {
 
-                            return 'ignore'
+                            return WalkerOptionEnum.Ignore
                         }
 
                         if ((node.typ == EnumToken.FunctionTokenType && (node as FunctionToken).val == 'var') || (!mathFuncs.includes((parent as FunctionToken).val) && [EnumToken.ColorTokenType, EnumToken.DeclarationNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.StyleSheetNodeType].includes(parent?.typ))) {
@@ -102,7 +96,7 @@ export class ComputeCalcExpressionFeature {
                                 node[key] = values;
                             }
 
-                            return 'ignore';
+                            return WalkerOptionEnum.Ignore;
                         }
 
                         return null;

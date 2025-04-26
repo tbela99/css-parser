@@ -1,6 +1,6 @@
-import {multiplyMatrices} from "./utils";
-import {srgb2lsrgbvalues} from "./srgb";
-import {Lab_to_XYZ} from "./lab";
+import {multiplyMatrices} from "./utils/index.ts";
+import {srgb2lsrgbvalues} from "./srgb.ts";
+import {Lab_to_XYZ} from "./lab.ts";
 
 export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
 

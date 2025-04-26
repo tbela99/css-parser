@@ -1,12 +1,12 @@
-import {D50, e, getComponents, k} from "./utils";
-import {srgb2xyz} from "./xyz";
+import {D50, e, getComponents, k} from "./utils/index.ts";
+import {srgb2xyz} from "./xyz.ts";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb";
-import {getLCHComponents} from "./lch";
-import {getOKLABComponents, OKLab_to_XYZ} from "./oklab";
-import {getNumber} from "./color";
-import {EnumToken} from "../../ast";
-import {xyzd502srgb} from "./xyzd50";
+import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb.ts";
+import {getLCHComponents} from "./lch.ts";
+import {getOKLABComponents, OKLab_to_XYZ} from "./oklab.ts";
+import {getNumber} from "./color.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {xyzd502srgb} from "./xyzd50.ts";
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
@@ -108,9 +108,22 @@ export function lch2labvalues(l: number, c: number, h: number, a: number | null 
     return result;
 }
 
-export function getLABComponents(token: ColorToken) {
+export function getLABComponents(token: ColorToken): number[] | null {
 
-    const components: Token[] = getComponents(token);
+    const components: Token[] | null = getComponents(token);
+
+    if (components == null) {
+
+        return null;
+    }
+
+    for (let i = 0; i < components.length; i++) {
+
+        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
+
+            return [];
+        }
+    }
 
     // @ts-ignore
     let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];

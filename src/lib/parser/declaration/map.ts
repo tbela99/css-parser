@@ -615,7 +615,7 @@ export class PropertyMap {
                             for (let v of values) {
 
                                 if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.IdenTokenType].includes(v.typ)
-                                    || (v.typ == EnumToken.IdenTokenType && !this.config.properties[curr[0]].default.includes(v.val))) {
+                                    || (v.typ == EnumToken.IdenTokenType && !this.config.properties[curr[0]].default.includes((v as IdentToken).val))) {
 
                                     doFilterDefault = false;
                                     break;
@@ -631,7 +631,7 @@ export class PropertyMap {
                                 return false;
                             }
 
-                            return !doFilterDefault || !(val.typ == EnumToken.IdenTokenType && props.default.includes(val.val));
+                            return !doFilterDefault || !(val.typ == EnumToken.IdenTokenType && props.default.includes((val as IdentToken).val));
                         });
 
                         if (filtered.length > 0 || !(this.requiredCount == requiredCount && this.config.properties[curr[0]].required)) {

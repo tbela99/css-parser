@@ -7,6 +7,8 @@ import {walkValues} from "./walk.ts";
 import type {
     AstAtRule,
     AstDeclaration,
+    AstKeyframAtRule,
+    AstKeyFrameRule,
     AstNode,
     AstRule,
     AstRuleStyleSheet,
@@ -99,7 +101,6 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
         return acc;
     }
 
-
     // @ts-ignore
     if ('chi' in ast && ast.chi.length > 0) {
 
@@ -109,9 +110,9 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
         }
 
         let i: number = 0;
-        let previous: AstNode;
+        let previous: AstNode | null = null;
         let node: AstNode;
-        let nodeIndex: number;
+        let nodeIndex: number = -1;
         // @ts-ignore
         for (; i < ast.chi.length; i++) {
 
@@ -127,13 +128,72 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
             if (previous == node) {
 
                 // @ts-ignore
-                ast.chi.splice(i, 1);
-                i--;
+                ast.chi.splice(i--, 1);
                 continue;
             }
 
             if (node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face') {
                 continue;
+            }
+
+            if (node.typ == EnumToken.KeyframeAtRuleNodeType) {
+
+                if (
+                    previous?.typ == EnumToken.KeyframeAtRuleNodeType &&
+                    (<AstKeyframAtRule>node).nam == (<AstKeyframAtRule>previous).nam &&
+                    (<AstKeyframAtRule>node).val == (<AstKeyframAtRule>previous).val
+                ) {
+
+                    ast.chi?.splice(nodeIndex--, 1);
+                    previous = ast?.chi?.[nodeIndex] as AstNode ?? null;
+                    i = nodeIndex;
+
+                    continue;
+                }
+
+                if ((<AstKeyframAtRule>node).chi.length > 0) {
+
+                    minify(node, options, true, errors, nestingContent, context);
+                }
+            }
+
+            if (node.typ == EnumToken.KeyFrameRuleNodeType) {
+
+                if (previous?.typ == EnumToken.KeyFrameRuleNodeType &&
+                    (<AstKeyFrameRule>node).sel == (<AstKeyFrameRule>previous).sel) {
+
+                    (<AstKeyFrameRule>previous).chi.push(...(<AstKeyFrameRule>node).chi);
+
+                    // @ts-ignore
+                    ast.chi.splice(i--, 1);
+                    continue;
+                }
+
+                let k: number;
+
+                for (k = 0; k < (node as AstKeyFrameRule).chi.length; k++) {
+
+                    if ((node as AstKeyFrameRule).chi[k].typ == EnumToken.DeclarationNodeType) {
+
+                        let l: number = ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val.length;
+
+                        while (l--) {
+
+                            if (((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ == EnumToken.ImportantTokenType) {
+
+                                (node as AstKeyFrameRule).chi.splice(k--, 1);
+                                break;
+                            }
+
+                            if ([EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ)) {
+
+                                continue;
+                            }
+
+                            break;
+                        }
+                    }
+                }
             }
 
             if (node.typ == EnumToken.AtRuleNodeType) {
@@ -459,6 +519,11 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                 }
             }
 
+            // else if ('chi' in node) {
+            //
+            //     minify(node, options, recursive, errors, nestingContent, context);
+            // }
+
             if (!nestingContent &&
                 // @ts-ignore
                 previous != null &&
@@ -475,8 +540,9 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
         // @ts-ignore
         if (recursive && node != null && ('chi' in node)) {
+
             // @ts-ignore
-            if (!node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
+            if (node.typ == EnumToken.KeyframeAtRuleNodeType || !node.chi.some(n => n.typ == EnumToken.DeclarationNodeType)) {
 
                 // @ts-ignore
                 if (!(node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
@@ -1101,9 +1167,9 @@ function fixSelector(node: AstRule) {
 
                 while (i--) {
 
-                    if (attr.value.chi[i].typ == EnumToken.LiteralTokenType && (<LiteralToken>attr.value.chi[i]).val == '&') {
+                    if ((attr.value as PseudoClassFunctionToken).chi[i].typ == EnumToken.LiteralTokenType && (<LiteralToken>(attr.value as PseudoClassFunctionToken).chi[i]).val == '&') {
 
-                        attr.value.chi.splice(i, 1);
+                        (attr.value as PseudoClassFunctionToken).chi.splice(i, 1);
                     }
                 }
             }

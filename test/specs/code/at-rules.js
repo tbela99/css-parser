@@ -10,7 +10,7 @@ export function run(describe, expect, transform, parse, render, dirname) {
     }
 }
 
-`).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
+`, {nestingRules: false}).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
         });
 
         it('error handling #2', function () {
@@ -22,7 +22,7 @@ export function run(describe, expect, transform, parse, render, dirname) {
     }
     }
 
-`).then((result) => expect(result.code).equals(`@media speech{p .a,p .b{color:red}}`));
+`, {nestingRules: false}).then((result) => expect(result.code).equals(`@media speech{p .a,p .b{color:red}}`));
         });
 
         it('error handling #3', function () {
@@ -473,6 +473,200 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  body {
   color: purple;
   background: #ff0
+ }
+}`));
+        });
+    });
+
+
+    describe('@keyframes', function () {
+        it('keyframes #31', function () {
+            return transform(`
+
+    @-webkit-keyframes flash {
+            from,
+            50%,
+                100% {
+                opacity: 1;
+            }
+
+            25%,
+            75% {
+                opacity: 0;
+            }
+        }
+`, {beautify: true}).then((result) => expect(result.code).equals(`@-webkit-keyframes flash {
+ 0%,50%,to {
+  opacity: 1
+ }
+ 25%,75% {
+  opacity: 0
+ }
+}`));
+        });
+
+        it('keyframes #32', function () {
+            return transform(`
+
+@keyframes slide-right {
+
+  from {
+    margin-left: 0px;
+  }
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  to {
+    margin-left: 200px;
+  }
+
+}
+
+@keyframes slide-right {
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+    margin-left: 100px;
+  }
+
+  100% {
+    margin-left: 250px;
+  }
+
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`@keyframes slide-right {
+ 50% {
+  margin-left: 100px;
+  opacity: .9
+ }
+ to {
+  margin-left: 250px
+ }
+}`));
+        });
+
+        it('keyframes #33', function () {
+            return transform(`
+
+@keyframes slide-right {
+
+  from {
+    margin-left: 0px;
+  }
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  to {
+    margin-left: 200px;
+  }
+
+}
+
+@keyframes slide-right {
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+    margin-left: 100px;
+  }
+
+  100% {
+    margin-left: 250px;
+  }
+
+}
+
+
+            @keyframes slide-in {
+  from, 13%, 0% {
+    transform: translateX(0%);
+  }
+
+  to, 100% {
+    transform: translateX(100%);
+  }
+}
+
+
+@keyframes important1 {
+  from {
+    margin-top: 50px;
+  }
+  50% {
+    margin-right: 150px !important; /* ignored */
+  }
+  to {
+    margin-top: 100px;
+  }
+}
+
+@keyframes important2 {
+  from {
+    margin-top: 50px;
+  }
+  0% {
+    margin-bottom: 100px;
+  }
+  to {
+    margin-top: 150px !important; /* ignored */
+    margin-bottom: 50px;
+  }
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`@keyframes slide-right {
+ 50% {
+  margin-left: 100px;
+  opacity: .9
+ }
+ to {
+  margin-left: 250px
+ }
+}
+@keyframes slide-in {
+ 0%,13% {
+  transform: translateX(0)
+ }
+ to {
+  transform: translateX(100%)
+ }
+}
+@keyframes important1 {
+ 0% {
+  margin-top: 50px
+ }
+ to {
+  margin-top: 100px
+ }
+}
+@keyframes important2 {
+ 0% {
+  margin-top: 50px;
+  margin-bottom: 100px
+ }
+ to {
+  margin-bottom: 50px
  }
 }`));
         });

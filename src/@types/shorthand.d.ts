@@ -1,4 +1,4 @@
-import {EnumToken} from "../lib";
+import {EnumToken} from "../lib/index.ts";
 
 export interface PropertyType {
 
@@ -56,7 +56,7 @@ export interface ShorthandMapType {
     default: string[];
     mapping?: Record<string, string>;
     multiple?: boolean;
-    separator?: { typ: keyof EnumToken ; val?: string };
+    separator?: { typ: keyof EnumToken; val?: string };
     set?: Record<string, string[]>
     properties: {
         [property: string]: PropertyMapType;

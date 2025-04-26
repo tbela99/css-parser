@@ -6,6 +6,23 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../parser/utils/config.js';
 
+function stripCommaToken(tokenList) {
+    let result = [];
+    let last = null;
+    for (let i = 0; i < tokenList.length; i++) {
+        if (tokenList[i].typ == EnumToken.CommaTokenType && last != null && last.typ == EnumToken.CommaTokenType) {
+            return null;
+        }
+        if (tokenList[i].typ != EnumToken.WhitespaceTokenType) {
+            last = tokenList[i];
+        }
+        if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
+            continue;
+        }
+        result.push(tokenList[i]);
+    }
+    return result;
+}
 function splitTokenList(tokenList, split = [EnumToken.CommaTokenType]) {
     return tokenList.reduce((acc, curr) => {
         if (curr.typ == EnumToken.CommentTokenType) {
@@ -21,4 +38,4 @@ function splitTokenList(tokenList, split = [EnumToken.CommaTokenType]) {
     }, [[]]);
 }
 
-export { splitTokenList };
+export { splitTokenList, stripCommaToken };

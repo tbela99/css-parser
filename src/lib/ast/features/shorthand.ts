@@ -2,6 +2,7 @@ import {PropertyList} from "../../parser/declaration/index.ts";
 import {EnumToken} from "../types.ts";
 import type {
     AstAtRule,
+    AstNode,
     AstRule,
     AstRuleStyleSheet,
     MinifyFeatureOptions,
@@ -11,20 +12,12 @@ import type {
 export class ComputeShorthandFeature {
 
     static get ordering() {
-        return 2;
+        return 3;
     }
 
     static register(options: MinifyFeatureOptions) {
 
         if (options.computeShorthand) {
-
-            for (const feature of options.features) {
-
-                if (feature instanceof ComputeShorthandFeature) {
-
-                    return;
-                }
-            }
 
             // @ts-ignore
             options.features.push(new ComputeShorthandFeature(options));
@@ -37,6 +30,7 @@ export class ComputeShorthandFeature {
         const j: number = ast.chi.length;
         let k: number = 0;
         let properties: PropertyList = new PropertyList(options);
+        const rules: AstNode[] = [];
 
         // @ts-ignore
         for (; k < j; k++) {
@@ -47,14 +41,16 @@ export class ComputeShorthandFeature {
             if (node.typ == EnumToken.CommentNodeType || node.typ == EnumToken.DeclarationNodeType) {
 
                 properties.add(node);
-                continue;
             }
 
-            break;
+            else {
+
+                rules.push(node);
+            }
         }
 
         // @ts-ignore
-        ast.chi = [...properties].concat(ast.chi.slice(k));
+        ast.chi = [...properties, ...rules];
         return ast;
     }
 }

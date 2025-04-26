@@ -92,6 +92,7 @@ declare enum EnumToken {
     MediaFeatureOrTokenType = 90,
     PseudoPageTokenType = 91,
     PseudoElementTokenType = 92,
+    KeyframeAtRuleNodeType = 93,
     Time = 25,
     Iden = 7,
     EOF = 48,
@@ -134,6 +135,12 @@ declare function minify(ast: AstNode, options?: ParserOptions | MinifyFeatureOpt
     [key: string]: any;
 }): AstNode;
 
+declare enum WalkerOptionEnum {
+    Ignore = 0,
+    Stop = 1,
+    Children = 2,
+    IgnoreChildren = 3
+}
 declare enum WalkerValueEvent {
     Enter = 0,
     Leave = 1
@@ -152,7 +159,7 @@ declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
  * @param reverse
  */
 declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
-    event: WalkerValueEvent;
+    event?: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
 }, reverse?: boolean): Generator<WalkAttributesResult>;
@@ -873,7 +880,6 @@ export declare interface AstDeclaration extends BaseToken {
     typ: EnumToken.DeclarationNodeType
 }
 
-
 export declare interface AstRule extends BaseToken {
 
     typ: EnumToken.RuleNodeType;
@@ -887,7 +893,7 @@ export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstNode>;
 }
 
 export declare interface AstInvalidAtRule extends BaseToken {
@@ -896,8 +902,6 @@ export declare interface AstInvalidAtRule extends BaseToken {
     val: string;
     chi?: Array<AstNode>;
 }
-
-
 
 export declare interface AstKeyFrameRule extends BaseToken {
 
@@ -926,14 +930,31 @@ export declare interface AstAtRule extends BaseToken {
     chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
+export declare interface AstKeyframeRule extends BaseToken {
+
+    typ: EnumToken.KeyFrameRuleNodeType;
+    sel: string;
+    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    optimized?: OptimizedSelector;
+    raw?: RawSelectorTokens;
+}
+
+export declare interface AstKeyframAtRule extends BaseToken {
+
+    typ: EnumToken.KeyframeAtRuleNodeType,
+    nam: string;
+    val: string;
+    chi: Array<AstKeyframeRule | AstComment>;
+}
+
 export declare interface AstRuleList extends BaseToken {
 
-    typ:  EnumToken.StyleSheetNodeType |  EnumToken.RuleNodeType |  EnumToken.AtRuleNodeType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType,
     chi: Array<BaseToken | AstComment>;
 }
 
 export declare interface AstRuleStyleSheet extends AstRuleList {
-    typ:  EnumToken.StyleSheetNodeType,
+    typ: EnumToken.StyleSheetNodeType,
     chi: Array<AstRuleList | AstComment>
 }
 
@@ -944,6 +965,7 @@ export declare type AstNode =
     | AstAtRule
     | AstRule
     | AstDeclaration
+    | AstKeyframAtRule
     | AstKeyFrameRule
     | AstInvalidRule
     | AstInvalidAtRule;
@@ -990,13 +1012,13 @@ export declare interface PropertyListOptions {
     computeShorthand?: boolean;
 }
 
-export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | Token | null;
+export declare type WalkerOption = WalkerOptionEnum | Token | null;
 /**
  * returned value:
- * - 'ignore': ignore this node and its children
- * - 'stop': stop walking the tree
- * - 'children': walk the children and ignore the node itself
- * - 'ignore-children': walk the node and ignore children
+ * - WalkerOptionEnum.Ignore: ignore this node and its children
+ * - WalkerOptionEnum.Stop: stop walking the tree
+ * - WalkerOptionEnum.Children: walk the children and ignore the node itself
+ * - WalkerOptionEnum.IgnoreChildren: walk the node and ignore children
  */
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
@@ -1007,7 +1029,7 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - 'children': walk the children and ignore the node itself
  * - 'ignore-children': walk the node and ignore children
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
@@ -1035,6 +1057,7 @@ export declare interface ErrorDescription {
         col: number;
     };
     error?: Error;
+    rawTokens?: TokenizeResult[];
 }
 
 interface ValidationOptions {
@@ -1050,6 +1073,7 @@ interface MinifyOptions {
     expandNestingRules?: boolean;
     removeDuplicateDeclarations?: boolean;
     computeShorthand?: boolean;
+    computeTransform?: boolean;
     computeCalcExpression?: boolean;
     inlineCssVariables?: boolean;
     removeEmpty?: boolean;
@@ -1165,6 +1189,14 @@ export declare interface TransformResult extends ParseResult, RenderResult {
 export declare interface ParseTokenOptions extends ParserOptions {
 }
 
+export declare interface TokenizeResult {
+    token: string;
+    len: number;
+    hint?: EnumToken;
+    position: Position;
+    bytesIn: number;
+}
+
 export declare interface SourceMapObject {
     version: number;
     file?: string;
@@ -1181,7 +1213,7 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
     relative: string;
 };
 
-declare function load(url: string, currentFile: string): Promise<string>;
+declare function load(url: string, currentFile?: string): Promise<string>;
 
 /**
  * render ast node

@@ -24,7 +24,8 @@ export function render(data: AstNode, options: RenderOptions = {}): RenderResult
         load,
         resolve,
         dirname,
-        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)    }));
+        cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
+    }));
 }
 
 /**

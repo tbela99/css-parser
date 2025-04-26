@@ -1,4 +1,4 @@
-import type {AstAtRule, AstRule, Token} from "../../../@types";
+import type {AstAtRule, AstRule, Token} from "../../../@types/index.d.ts";
 import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {EnumToken, ValidationLevel} from "../../ast/index.ts";

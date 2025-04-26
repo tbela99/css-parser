@@ -1,6 +1,6 @@
-import {AstRule, AstDeclaration, AstAtRule} from "./ast.d.ts";
+import {AstAtRule, AstDeclaration, AstRule} from "./ast.d.ts";
 import {Token} from "./token.d.ts";
-import {EnumToken} from "../lib";
+import {EnumToken} from "../lib/index.ts";
 
 /**
  * Declaration visitor handler
