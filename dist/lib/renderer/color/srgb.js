@@ -217,7 +217,7 @@ function hsl2srgbvalues(h, s, l, a = null) {
     return values;
 }
 function lab2srgb(token) {
-    const [l, a, b, alpha] = getLABComponents(token);
+    const [l, a, b, alpha] = getLABComponents(token) ?? [];
     if (l == null || a == null || b == null) {
         return null;
     }

@@ -29,6 +29,7 @@ import {
     minify,
     ValidationLevel,
     walk,
+    WalkerOptionEnum,
     walkValues
 } from "../ast/index.ts";
 import {tokenize} from "./tokenize.ts";
@@ -1070,6 +1071,28 @@ async function parseNode(results: TokenizeResult[], context: AstRuleList | AstIn
                     location: {src, ...position}
                 });
                 return null;
+            }
+
+            for (const {value: token} of walkValues(value as Token[], null, {
+
+                fn: (node: AstNode | Token) => node.typ == EnumToken.FunctionTokenType && (node as FunctionToken).val == 'calc' ? WalkerOptionEnum.IgnoreChildren : null,
+                type: EnumToken.FunctionTokenType
+            })) {
+
+                if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc') {
+
+                    for (const {value: node, parent} of walkValues((token as FunctionToken).chi, token)) {
+
+                        // fix expressions starting with '/' or '*' such as '/4' in (1 + 1)/4
+                        if (node.typ == EnumToken.LiteralTokenType && (node as LiteralToken).val.length > 0) {
+
+                            if ((node as LiteralToken).val[0] == '/' || (node as LiteralToken).val[0] == '*') {
+
+                                (parent as FunctionToken).chi.splice((parent as FunctionToken).chi.indexOf(node), 1,{typ:  (node as LiteralToken).val[0] == '/' ? EnumToken.Div : EnumToken.Mul}, ...parseString((node as LiteralToken).val.slice(1)));
+                            }
+                        }
+                    }
+                }
             }
 
             const node: AstDeclaration = {

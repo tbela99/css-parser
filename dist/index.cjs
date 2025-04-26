@@ -1152,7 +1152,7 @@ function hsl2srgbvalues(h, s, l, a = null) {
     return values;
 }
 function lab2srgb(token) {
-    const [l, a, b, alpha] = getLABComponents(token);
+    const [l, a, b, alpha] = getLABComponents(token) ?? [];
     if (l == null || a == null || b == null) {
         return null;
     }
@@ -2758,14 +2758,19 @@ function evaluate(tokens) {
         return tokens;
     }
     if (nodes.length <= 1) {
-        // @ts-ignore
-        if (nodes.length == 1 && nodes[0].typ == exports.EnumToken.IdenTokenType && typeof Math[nodes[0].val.toUpperCase()] == 'number') {
-            return [{
-                    ...nodes[0],
-                    // @ts-ignore
-                    val: '' + Math[nodes[0].val.toUpperCase()],
-                    typ: exports.EnumToken.NumberTokenType
-                }];
+        if (nodes.length == 1) {
+            if (nodes[0].typ == exports.EnumToken.BinaryExpressionTokenType) {
+                return inlineExpression(nodes[0]);
+            }
+            // @ts-ignore
+            if (nodes[0].typ == exports.EnumToken.IdenTokenType && typeof Math[nodes[0].val.toUpperCase()] == 'number') {
+                return [{
+                        ...nodes[0],
+                        // @ts-ignore
+                        val: '' + Math[nodes[0].val.toUpperCase()],
+                        typ: exports.EnumToken.NumberTokenType
+                    }];
+            }
         }
         return nodes;
     }
@@ -3146,6 +3151,10 @@ function inlineExpression(token) {
  * @param token
  */
 function evaluateExpression(token) {
+    // if (token.typ == EnumToken.ParensTokenType) {
+    //
+    //     return evaluateExpression(buildExpression((token as ParensToken).chi));
+    // }
     if (token.typ != exports.EnumToken.BinaryExpressionTokenType) {
         return token;
     }
@@ -3321,23 +3330,19 @@ function computeComponentValue(expr, converted, values) {
         }
         else if ([exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.LengthTokenType].includes(exp.typ)) ;
         else if (exp.typ == exports.EnumToken.IdenTokenType && exp.val in values) {
-            // @ts-ignore
             if (typeof values[exp.val] == 'number') {
                 expr[key] = {
                     typ: exports.EnumToken.NumberTokenType,
-                    // @ts-ignore
                     val: reduceNumber(values[exp.val])
                 };
             }
             else {
-                // @ts-ignore
                 expr[key] = values[exp.val];
             }
         }
         else if (exp.typ == exports.EnumToken.FunctionTokenType && mathFuncs.includes(exp.val)) {
             for (let { value, parent } of walkValues(exp.chi, exp)) {
                 if (parent == null) {
-                    // @ts-ignore
                     parent = exp;
                 }
                 if (value.typ == exports.EnumToken.PercentageTokenType) {
@@ -3369,29 +3374,18 @@ function computeComponentValue(expr, converted, values) {
     return expr;
 }
 function replaceValue(parent, value, newValue) {
-    if (parent.typ == exports.EnumToken.BinaryExpressionTokenType) {
-        if (parent.l == value) {
-            parent.l = newValue;
-        }
-        else {
-            parent.r = newValue;
-        }
-    }
-    else {
-        for (let i = 0; i < parent.chi.length; i++) {
-            if (parent.chi[i] == value) {
-                parent.chi.splice(i, 1, newValue);
-                break;
+    for (const { value: val, parent: pr } of walkValues([parent])) {
+        if (val.typ == value.typ && val.val == value.val) {
+            if (pr.typ == exports.EnumToken.BinaryExpressionTokenType) {
+                if (pr.l == val) {
+                    pr.l = newValue;
+                }
+                else {
+                    pr.r = newValue;
+                }
             }
-            if (parent.chi[i].typ == exports.EnumToken.BinaryExpressionTokenType) {
-                if (parent.chi[i].l == value) {
-                    parent.chi[i].l = newValue;
-                    break;
-                }
-                else if (parent.chi[i].r == value) {
-                    parent.chi[i].r = newValue;
-                    break;
-                }
+            else {
+                pr.chi.splice(pr.chi.indexOf(val), 1, newValue);
             }
         }
     }
@@ -3821,7 +3815,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     if (value != null) {
                         token = value;
                     }
-                    else {
+                    else if (!token.chi.some(t => t.typ == exports.EnumToken.CommaTokenType)) {
                         token.chi = children.reduce((acc, curr, index) => {
                             if (acc.length > 0) {
                                 acc.push({ typ: exports.EnumToken.CommaTokenType });
@@ -3846,8 +3840,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 if (token.val == 'color') {
                     if (token.chi[0].typ == exports.EnumToken.IdenTokenType && colorFuncColorSpace.includes(token.chi[0].val.toLowerCase())) {
-                        // @ts-ignore
-                        return reduceHexValue(srgb2hexvalues(...color2srgbvalues(token)));
+                        const values = color2srgbvalues(token);
+                        if (Array.isArray(values) && values.every(t => !Number.isNaN(t))) {
+                            // @ts-ignore
+                            return reduceHexValue(srgb2hexvalues(...values));
+                        }
                     }
                 }
                 if (token.cal != null) {
@@ -12749,7 +12746,10 @@ function validateSelector(selector, options, root) {
     }
     const nestedSelector = isNested > 0;
     // @ts-ignore
-    return nestedSelector ? validateRelativeSelectorList(selector, root, { ...(options ?? {}), nestedSelector }) : validateSelectorList(selector, root, { ...(options ?? {}), nestedSelector });
+    return nestedSelector ? validateRelativeSelectorList(selector, root, {
+        ...(options ?? {}),
+        nestedSelector
+    }) : validateSelectorList(selector, root, { ...(options ?? {}), nestedSelector });
 }
 
 function validateAtRuleMedia(atRule, options, root) {
@@ -15326,6 +15326,21 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                 });
                 return null;
             }
+            for (const { value: token } of walkValues(value, null, {
+                fn: (node) => node.typ == exports.EnumToken.FunctionTokenType && node.val == 'calc' ? WalkerOptionEnum.IgnoreChildren : null,
+                type: exports.EnumToken.FunctionTokenType
+            })) {
+                if (token.typ == exports.EnumToken.FunctionTokenType && token.val == 'calc') {
+                    for (const { value: node, parent } of walkValues(token.chi, token)) {
+                        // fix expressions starting with '/' or '*' such as '/4' in (1 + 1)/4
+                        if (node.typ == exports.EnumToken.LiteralTokenType && node.val.length > 0) {
+                            if (node.val[0] == '/' || node.val[0] == '*') {
+                                parent.chi.splice(parent.chi.indexOf(node), 1, { typ: node.val[0] == '/' ? exports.EnumToken.Div : exports.EnumToken.Mul }, ...parseString(node.val.slice(1)));
+                            }
+                        }
+                    }
+                }
+            }
             const node = {
                 typ: exports.EnumToken.DeclarationNodeType,
                 // @ts-ignore
@@ -16196,6 +16211,13 @@ function eq(a, b) {
     return true;
 }
 
+var WalkerOptionEnum;
+(function (WalkerOptionEnum) {
+    WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 0] = "Ignore";
+    WalkerOptionEnum[WalkerOptionEnum["Stop"] = 1] = "Stop";
+    WalkerOptionEnum[WalkerOptionEnum["Children"] = 2] = "Children";
+    WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 3] = "IgnoreChildren";
+})(WalkerOptionEnum || (WalkerOptionEnum = {}));
 var WalkerValueEvent;
 (function (WalkerValueEvent) {
     WalkerValueEvent[WalkerValueEvent["Enter"] = 0] = "Enter";
@@ -16214,10 +16236,10 @@ function* walk(node, filter) {
         let option = null;
         if (filter != null) {
             option = filter(node);
-            if (option === 'ignore') {
+            if (option === WalkerOptionEnum.Ignore) {
                 continue;
             }
-            if (option === 'stop') {
+            if (option === WalkerOptionEnum.Stop) {
                 break;
             }
         }
@@ -16226,7 +16248,7 @@ function* walk(node, filter) {
             // @ts-ignore
             yield { node, parent: map.get(node), root };
         }
-        if (option !== 'ignore-children' && 'chi' in node) {
+        if (option !== WalkerOptionEnum.IgnoreChildren && 'chi' in node) {
             parents.unshift(...node.chi);
             for (const child of node.chi.slice()) {
                 map.set(child, node);
@@ -16258,19 +16280,20 @@ function* walkValues(values, root = null, filter, reverse) {
             event: WalkerValueEvent.Enter
         };
     }
+    const eventType = filter.event ?? WalkerValueEvent.Enter;
     while (stack.length > 0) {
         let value = reverse ? stack.pop() : stack.shift();
         let option = null;
-        if (filter.fn != null && filter.event == WalkerValueEvent.Enter) {
+        if (filter.fn != null && eventType == WalkerValueEvent.Enter) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value) ?? root, WalkerValueEvent.Enter);
-                if (option === 'ignore') {
+                option = filter.fn(value, map.get(value) ?? root);
+                if (option === WalkerOptionEnum.Ignore) {
                     continue;
                 }
-                if (option === 'stop') {
+                if (option === WalkerOptionEnum.Stop) {
                     break;
                 }
                 // @ts-ignore
@@ -16279,8 +16302,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 }
             }
         }
-        // @ts-ignore
-        if (filter.event == WalkerValueEvent.Enter && option !== 'children') {
+        if (eventType == WalkerValueEvent.Enter && option !== WalkerOptionEnum.Children) {
             yield {
                 value,
                 parent: map.get(value) ?? root,
@@ -16290,7 +16312,7 @@ function* walkValues(values, root = null, filter, reverse) {
                 root: root ?? null
             };
         }
-        if (option !== 'ignore-children' && 'chi' in value) {
+        if (option !== WalkerOptionEnum.IgnoreChildren && 'chi' in value) {
             const sliced = value.chi.slice();
             for (const child of sliced) {
                 map.set(child, value);
@@ -16303,24 +16325,23 @@ function* walkValues(values, root = null, filter, reverse) {
             }
         }
         else if (value.typ == exports.EnumToken.BinaryExpressionTokenType) {
-            map.set(value.l, map.get(value) ?? root);
-            map.set(value.r, map.get(value) ?? root);
+            map.set(value.l, value);
+            map.set(value.r, value);
             stack.unshift(value.l, value.r);
         }
-        if (filter.event == WalkerValueEvent.Leave && filter.fn != null) {
+        if (eventType == WalkerValueEvent.Leave && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
                 (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
                 (typeof filter.type == 'function' && filter.type(value));
             if (isValid) {
-                option = filter.fn(value, map.get(value), WalkerValueEvent.Leave);
+                option = filter.fn(value, map.get(value));
                 // @ts-ignore
                 if (option != null && 'typ' in option) {
                     map.set(option, map.get(value) ?? root);
                 }
             }
         }
-        // @ts-ignore
-        if (filter.event == WalkerValueEvent.Leave && option !== 'children') {
+        if (eventType == WalkerValueEvent.Leave && option !== WalkerOptionEnum.Children) {
             yield {
                 value,
                 parent: map.get(value) ?? root,
@@ -17774,7 +17795,6 @@ class ComputeCalcExpressionFeature {
         if (!('chi' in ast)) {
             return;
         }
-        // @ts-ignore
         for (const node of ast.chi) {
             if (node.typ != exports.EnumToken.DeclarationNodeType) {
                 continue;
@@ -17782,15 +17802,18 @@ class ComputeCalcExpressionFeature {
             const set = new Set;
             for (const { value, parent } of walkValues(node.val, node, {
                 event: WalkerValueEvent.Enter,
-                fn(node, parent, event) {
+                // @ts-ignore
+                fn(node, parent) {
                     if (parent != null &&
+                        // @ts-ignore
                         parent.typ == exports.EnumToken.DeclarationNodeType &&
+                        // @ts-ignore
                         parent.val.length == 1 &&
                         node.typ == exports.EnumToken.FunctionTokenType &&
                         mathFuncs.includes(node.val) &&
                         node.chi.length == 1 &&
                         node.chi[0].typ == exports.EnumToken.IdenTokenType) {
-                        return 'ignore';
+                        return WalkerOptionEnum.Ignore;
                     }
                     if ((node.typ == exports.EnumToken.FunctionTokenType && node.val == 'var') || (!mathFuncs.includes(parent.val) && [exports.EnumToken.ColorTokenType, exports.EnumToken.DeclarationNodeType, exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.StyleSheetNodeType].includes(parent?.typ))) {
                         return null;
@@ -17812,7 +17835,7 @@ class ComputeCalcExpressionFeature {
                             // @ts-ignore
                             node[key] = values;
                         }
-                        return 'ignore';
+                        return WalkerOptionEnum.Ignore;
                     }
                     return null;
                 }

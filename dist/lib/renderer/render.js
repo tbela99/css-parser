@@ -6,7 +6,7 @@ import { EnumToken, funcLike } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
-import { colorMix } from './color/colormix.js';
+import { colorMix } from './color/color-mix.js';
 import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
@@ -344,7 +344,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     if (value != null) {
                         token = value;
                     }
-                    else {
+                    else if (!token.chi.some(t => t.typ == EnumToken.CommaTokenType)) {
                         token.chi = children.reduce((acc, curr, index) => {
                             if (acc.length > 0) {
                                 acc.push({ typ: EnumToken.CommaTokenType });
@@ -369,8 +369,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 if (token.val == 'color') {
                     if (token.chi[0].typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(token.chi[0].val.toLowerCase())) {
-                        // @ts-ignore
-                        return reduceHexValue(srgb2hexvalues(...color2srgbvalues(token)));
+                        const values = color2srgbvalues(token);
+                        if (Array.isArray(values) && values.every(t => !Number.isNaN(t))) {
+                            // @ts-ignore
+                            return reduceHexValue(srgb2hexvalues(...values));
+                        }
                     }
                 }
                 if (token.cal != null) {

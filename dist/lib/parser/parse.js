@@ -2,7 +2,7 @@ import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexC
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
-import { walkValues, walk } from '../ast/walk.js';
+import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
@@ -710,6 +710,21 @@ async function parseNode(results, context, stats, options, errors, src, map, raw
                     location: { src, ...position }
                 });
                 return null;
+            }
+            for (const { value: token } of walkValues(value, null, {
+                fn: (node) => node.typ == EnumToken.FunctionTokenType && node.val == 'calc' ? WalkerOptionEnum.IgnoreChildren : null,
+                type: EnumToken.FunctionTokenType
+            })) {
+                if (token.typ == EnumToken.FunctionTokenType && token.val == 'calc') {
+                    for (const { value: node, parent } of walkValues(token.chi, token)) {
+                        // fix expressions starting with '/' or '*' such as '/4' in (1 + 1)/4
+                        if (node.typ == EnumToken.LiteralTokenType && node.val.length > 0) {
+                            if (node.val[0] == '/' || node.val[0] == '*') {
+                                parent.chi.splice(parent.chi.indexOf(node), 1, { typ: node.val[0] == '/' ? EnumToken.Div : EnumToken.Mul }, ...parseString(node.val.slice(1)));
+                            }
+                        }
+                    }
+                }
             }
             const node = {
                 typ: EnumToken.DeclarationNodeType,

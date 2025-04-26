@@ -313,7 +313,7 @@ export function hsl2srgbvalues(h: number, s: number, l: number, a: number | null
 
 export function lab2srgb(token: ColorToken): number[] | null{
 
-    const [l, a, b, alpha] = getLABComponents(token);
+    const [l, a, b, alpha] = getLABComponents(token) ?? [];
 
     if (l == null || a == null || b == null) {
 

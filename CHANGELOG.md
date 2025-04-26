@@ -2,6 +2,7 @@
 
 # v1.0.0
 
+- [x] current color parse error when used in color functions
 - [x] minification : CSS transform module level 2
   - [x] translate
   - [x] scale

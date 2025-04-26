@@ -77,15 +77,23 @@ export function evaluate(tokens: Token[]): Token[] {
 
     if (nodes.length <= 1) {
 
-        // @ts-ignore
-        if (nodes.length == 1 && nodes[0].typ == EnumToken.IdenTokenType && typeof Math[(<IdentToken>nodes[0]).val.toUpperCase()] == 'number') {
+        if (nodes.length == 1) {
 
-            return [{
-                ...nodes[0],
-                // @ts-ignore
-                val: ('' + Math[(<IdentToken>nodes[0]).val.toUpperCase()] as number),
-                typ: EnumToken.NumberTokenType
-            }];
+            if (nodes[0].typ == EnumToken.BinaryExpressionTokenType) {
+
+                return inlineExpression(nodes[0]);
+            }
+
+            // @ts-ignore
+            if (nodes[0].typ == EnumToken.IdenTokenType && typeof Math[(<IdentToken>nodes[0]).val.toUpperCase()] == 'number') {
+
+                return [{
+                    ...nodes[0],
+                    // @ts-ignore
+                    val: ('' + Math[(<IdentToken>nodes[0]).val.toUpperCase()] as number),
+                    typ: EnumToken.NumberTokenType
+                }];
+            }
         }
 
         return nodes;
@@ -256,7 +264,7 @@ function doEvaluate(l: Token, r: Token, op: EnumToken.Add | EnumToken.Sub | Enum
 
     // @ts-ignore
     const val: number | FractionToken = compute(v1, v2, op);
-    // typ = typeof val == 'number' ? EnumToken.NumberTokenType : EnumToken.FractionTokenType;
+
     const token = {
         ...(l.typ == EnumToken.NumberTokenType ? r : l),
         typ,
@@ -590,7 +598,7 @@ export function evaluateFunc(token: FunctionToken): Token[] {
  * convert BinaryExpression into an array
  * @param token
  */
-function inlineExpression(token: Token): Token[] {
+export function inlineExpression(token: Token): Token[] {
 
     const result: Token[] = [];
 

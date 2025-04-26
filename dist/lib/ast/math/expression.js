@@ -39,14 +39,19 @@ function evaluate(tokens) {
         return tokens;
     }
     if (nodes.length <= 1) {
-        // @ts-ignore
-        if (nodes.length == 1 && nodes[0].typ == EnumToken.IdenTokenType && typeof Math[nodes[0].val.toUpperCase()] == 'number') {
-            return [{
-                    ...nodes[0],
-                    // @ts-ignore
-                    val: '' + Math[nodes[0].val.toUpperCase()],
-                    typ: EnumToken.NumberTokenType
-                }];
+        if (nodes.length == 1) {
+            if (nodes[0].typ == EnumToken.BinaryExpressionTokenType) {
+                return inlineExpression(nodes[0]);
+            }
+            // @ts-ignore
+            if (nodes[0].typ == EnumToken.IdenTokenType && typeof Math[nodes[0].val.toUpperCase()] == 'number') {
+                return [{
+                        ...nodes[0],
+                        // @ts-ignore
+                        val: '' + Math[nodes[0].val.toUpperCase()],
+                        typ: EnumToken.NumberTokenType
+                    }];
+            }
         }
         return nodes;
     }
@@ -427,6 +432,10 @@ function inlineExpression(token) {
  * @param token
  */
 function evaluateExpression(token) {
+    // if (token.typ == EnumToken.ParensTokenType) {
+    //
+    //     return evaluateExpression(buildExpression((token as ParensToken).chi));
+    // }
     if (token.typ != EnumToken.BinaryExpressionTokenType) {
         return token;
     }
@@ -513,4 +522,4 @@ function factor(tokens, ops) {
     return tokens;
 }
 
-export { evaluate, evaluateFunc };
+export { evaluate, evaluateFunc, inlineExpression };

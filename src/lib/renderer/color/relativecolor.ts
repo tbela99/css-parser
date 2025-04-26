@@ -1,5 +1,4 @@
 import type {
-    AngleToken,
     BinaryExpressionToken,
     ColorToken,
     FunctionToken,
@@ -121,7 +120,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
             // @ts-ignore
             for (const k of walkValues([object.h])) {
 
-                if (k.value.typ == EnumToken.AngleTokenType && (k.value as AngleToken).unit == 'deg') {
+                if (k.value.typ == EnumToken.AngleTokenType && k.value.unit == 'deg') {
 
                     // @ts-ignore
                     k.value.typ = EnumToken.NumberTokenType;
@@ -149,32 +148,28 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
                     expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>key];
                 }
             }
+
         } else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
 
-            // expr[<RelativeColorTypes>key] = exp;
-            // @ts-ignore
         } else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
 
-            // @ts-ignore
             if (typeof values[<RelativeColorTypes>exp.val] == 'number') {
 
                 expr[<RelativeColorTypes>key] = {
                     typ: EnumToken.NumberTokenType,
-                    // @ts-ignore
                     val: reduceNumber(<number>values[<RelativeColorTypes>exp.val])
                 };
             } else {
 
-                // @ts-ignore
                 expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
             }
+
         } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val)) {
 
             for (let {value, parent} of walkValues((exp as FunctionToken).chi, exp)) {
 
                 if (parent == null) {
 
-                    // @ts-ignore
                     parent = exp;
                 }
 
@@ -215,36 +210,27 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 }
 
 function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
-    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
 
-        if ((parent as BinaryExpressionToken).l == value) {
+    for (const {value:  val, parent: pr} of walkValues([parent])) {
 
-            (parent as BinaryExpressionToken).l = newValue;
-        } else {
+        if (val.typ == value.typ && (val as IdentToken).val == (value as IdentToken).val) {
 
-            (parent as BinaryExpressionToken).r = newValue;
-        }
-    } else {
+            if (pr!.typ == EnumToken.BinaryExpressionTokenType) {
 
-        for (let i = 0; i < (parent as FunctionToken | ParensToken).chi.length; i++) {
+                if ((pr as BinaryExpressionToken).l == val) {
 
-            if ((parent as FunctionToken | ParensToken).chi[i] == value) {
+                    (pr as BinaryExpressionToken).l = newValue
+                }
 
-                (parent as FunctionToken | ParensToken).chi.splice(i, 1, newValue);
-                break;
+                else {
+
+                    (pr as BinaryExpressionToken).r = newValue;
+                }
             }
 
-            if ((parent as FunctionToken | ParensToken).chi[i].typ == EnumToken.BinaryExpressionTokenType) {
+            else {
 
-                if (((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).l == value) {
-
-                    ((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).l = newValue;
-                    break;
-                } else if (((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).r == value) {
-
-                    ((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).r = newValue;
-                    break
-                }
+                (pr as FunctionToken | ParensToken).chi.splice((pr as FunctionToken | ParensToken).chi.indexOf(val), 1, newValue);
             }
         }
     }

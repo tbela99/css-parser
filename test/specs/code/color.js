@@ -1296,4 +1296,51 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
  transform: rotateY(180deg)
 }`));
     });
+
+    it('current color #131', function () {
+        return transform(`
+ 
+  .now {
+  color: color(from green srgb r g calc((r + g + b)/4)  / 0.5);
+}
+`, {beautify: true}).then(result => expect(result.code).equals(`.now {
+ color: #00802080
+}`));
+    });
+
+    it('current color #132', function () {
+        return transform(`
+ 
+  .from {
+    --top:  transform: translate3d(0,0,0);
+    transform: translate(0, 0);
+    background-color:color(from green srgb r g calc((r + g + b)/4)  / 0.5); /* #7fb77f */
+}
+  .to {
+    --top:  transform: translate3d(0,0,0);
+    transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
+    color: color-mix(in lab, oklch(from currentColor l c calc(h/2) ) 80%, #f00 50%);
+    border-color: color-mix(in lab, oklab(from currentColor l a calc(b/2) ) 80%, #f00 50%);
+    background-color:color(from currentcolor srgb r calc((g + b)/2) b / 0.5);
+    outline-color:color(from currentColor a98-rgb r calc((g + b)/2) b / 0.8);
+    accent-color: color-mix(in lab, oklab(from currentColor l a calc(b/2) ) 80%, #f00 50%);
+    accent-color: color-mix(in lab, lab(from currentColor l a calc(b/2) ) 80%, #f00 50%);
+}
+    
+`, {beautify: true}).then(result => expect(result.code).equals(`.from,.to {
+ --top: transform: translate3d(0,0,0)
+}
+.to {
+ transform: scale3d(.5,1,1.7)rotate3d(1,1,1,67deg);
+ color: color-mix(in lab,oklch(from currentcolor l c calc(h/2)) 80%,red 50%);
+ border-color: color-mix(in lab,oklab(from currentcolor l a calc(b/2)) 80%,red 50%);
+ background-color: color(from currentcolor srgb r calc((g + b)/2) b/.5);
+ outline-color: color(from currentcolor a98-rgb r calc((g + b)/2) b/.8);
+ accent-color: color-mix(in lab,lab(from currentcolor l a calc(b/2)) 80%,red 50%)
+}
+.from {
+ transform: none;
+ background-color: #00802080
+}`));
+    });
 }

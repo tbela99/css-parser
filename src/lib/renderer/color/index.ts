@@ -3,7 +3,7 @@ export * from './rgb.ts';
 export * from './hex.ts';
 export * from './hwb.ts';
 export * from './hsl.ts';
-export * from './colormix.ts';
+export * from './color-mix.ts';
 export * from './oklab.ts';
 export * from './oklch.ts';
 export * from './srgb.ts';

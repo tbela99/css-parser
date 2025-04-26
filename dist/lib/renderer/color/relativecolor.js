@@ -98,23 +98,19 @@ function computeComponentValue(expr, converted, values) {
         }
         else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) ;
         else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
-            // @ts-ignore
             if (typeof values[exp.val] == 'number') {
                 expr[key] = {
                     typ: EnumToken.NumberTokenType,
-                    // @ts-ignore
                     val: reduceNumber(values[exp.val])
                 };
             }
             else {
-                // @ts-ignore
                 expr[key] = values[exp.val];
             }
         }
         else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes(exp.val)) {
             for (let { value, parent } of walkValues(exp.chi, exp)) {
                 if (parent == null) {
-                    // @ts-ignore
                     parent = exp;
                 }
                 if (value.typ == EnumToken.PercentageTokenType) {
@@ -146,29 +142,18 @@ function computeComponentValue(expr, converted, values) {
     return expr;
 }
 function replaceValue(parent, value, newValue) {
-    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-        if (parent.l == value) {
-            parent.l = newValue;
-        }
-        else {
-            parent.r = newValue;
-        }
-    }
-    else {
-        for (let i = 0; i < parent.chi.length; i++) {
-            if (parent.chi[i] == value) {
-                parent.chi.splice(i, 1, newValue);
-                break;
+    for (const { value: val, parent: pr } of walkValues([parent])) {
+        if (val.typ == value.typ && val.val == value.val) {
+            if (pr.typ == EnumToken.BinaryExpressionTokenType) {
+                if (pr.l == val) {
+                    pr.l = newValue;
+                }
+                else {
+                    pr.r = newValue;
+                }
             }
-            if (parent.chi[i].typ == EnumToken.BinaryExpressionTokenType) {
-                if (parent.chi[i].l == value) {
-                    parent.chi[i].l = newValue;
-                    break;
-                }
-                else if (parent.chi[i].r == value) {
-                    parent.chi[i].r = newValue;
-                    break;
-                }
+            else {
+                pr.chi.splice(pr.chi.indexOf(val), 1, newValue);
             }
         }
     }

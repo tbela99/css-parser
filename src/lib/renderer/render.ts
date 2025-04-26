@@ -566,7 +566,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     if (value != null) {
 
                         token = value;
-                    } else {
+                    } else if (!(token as ColorToken).chi!.some(t => t.typ == EnumToken.CommaTokenType)) {
 
                         (token as ColorToken).chi = children.reduce((acc, curr, index) => {
 
@@ -605,8 +605,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                     if ((<IdentToken>(<Token[]>(token as ColorToken).chi)[0]).typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(<ColorSpace>((<Token[]>(token as ColorToken).chi)[0] as IdentToken).val.toLowerCase())) {
 
-                        // @ts-ignore
-                        return reduceHexValue(srgb2hexvalues(...color2srgbvalues(token as ColorToken)));
+                        const values = color2srgbvalues(token as ColorToken) as number[];
+
+                        if (Array.isArray(values) && values.every(t => !Number.isNaN(t))) {
+
+                            // @ts-ignore
+                            return reduceHexValue(srgb2hexvalues(...values));
+                        }
                     }
                 }
 

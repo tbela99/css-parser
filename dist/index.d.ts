@@ -153,7 +153,7 @@ declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
  * @param reverse
  */
 declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
-    event: WalkerValueEvent;
+    event?: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
 }, reverse?: boolean): Generator<WalkAttributesResult>;
@@ -1006,13 +1006,13 @@ export declare interface PropertyListOptions {
     computeShorthand?: boolean;
 }
 
-export declare type WalkerOption = 'ignore' | 'stop' | 'children' | 'ignore-children' | Token | null;
+export declare type WalkerOption = WalkerOptionEnum | Token | null;
 /**
  * returned value:
- * - 'ignore': ignore this node and its children
- * - 'stop': stop walking the tree
- * - 'children': walk the children and ignore the node itself
- * - 'ignore-children': walk the node and ignore children
+ * - WalkerOptionEnum.Ignore: ignore this node and its children
+ * - WalkerOptionEnum.Stop: stop walking the tree
+ * - WalkerOptionEnum.Children: walk the children and ignore the node itself
+ * - WalkerOptionEnum.IgnoreChildren: walk the node and ignore children
  */
 export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
@@ -1023,7 +1023,7 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - 'children': walk the children and ignore the node itself
  * - 'ignore-children': walk the node and ignore children
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
     node: AstNode;
