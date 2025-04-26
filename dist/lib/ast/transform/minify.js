@@ -1,12 +1,11 @@
 import { multiply, identity, epsilon, decompose, round, toZero } from './utils.js';
 import { EnumToken } from '../types.js';
-import { eq } from '../../parser/utils/eq.js';
 import { computeMatrix } from './compute.js';
 import { parseMatrix } from './matrix.js';
 
 // translate → rotate → skew → scale
 function minify(matrix) {
-    const decomposed = /* is2DMatrix(matrix) ? decompose2(matrix) : */ decompose(matrix);
+    const decomposed = decompose(matrix);
     if (decomposed == null) {
         return null;
     }
@@ -262,7 +261,7 @@ function minify(matrix) {
         });
     }
     // identity
-    return result.length == 0 || eq(result, identity()) ? [
+    return result.length == 0 || (result.length == 1 && eqMatrix(identity(), result)) ? [
         {
             typ: EnumToken.IdenTokenType,
             val: 'none'
@@ -273,17 +272,14 @@ function eqMatrix(a, b) {
     let mat = identity();
     let tmp = identity();
     // @ts-ignore
-    const data = parseMatrix(a);
-    // console.error({data});
+    const data = Array.isArray(a) ? a : parseMatrix(a);
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
-        // console.error({transform: renderToken(transform), tmp});
         if (tmp == null) {
             return false;
         }
         mat = multiply(mat, tmp);
     }
-    // console.error({mat});
     if (mat == null) {
         return false;
     }

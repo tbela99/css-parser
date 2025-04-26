@@ -1,5 +1,5 @@
-import {EnumToken} from "../../ast";
-import type {Token} from "../../../@types";
+import {EnumToken} from "../../ast/index.ts";
+import type {Token} from "../../../@types/index.d.ts";
 
 export function stripCommaToken(tokenList: Token[]): Token[] | null {
 

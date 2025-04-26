@@ -7,10 +7,10 @@ import type {
     MinifyFeatureOptions,
     Token
 } from "../../../@types/index.d.ts";
-import {EnumToken} from "../types";
-import {consumeWhitespace} from "../../validation/utils";
+import {EnumToken} from "../types.ts";
+import {consumeWhitespace} from "../../validation/utils/index.ts";
 import {compute} from "../transform/compute.ts";
-import {filterValues, renderToken} from "../../renderer";
+import {filterValues, renderToken} from "../../renderer/index.ts";
 import {eqMatrix} from "../transform/minify.ts";
 
 export class TransformCssFeature {
@@ -46,8 +46,7 @@ export class TransformCssFeature {
             node = ast.chi[i] as AstNode | AstDeclaration;
 
             if (
-                node.typ != EnumToken.DeclarationNodeType ||
-                (!node.nam.startsWith('--') && !node.nam.match(/^(-[a-z]+-)?transform$/))) {
+                node.typ != EnumToken.DeclarationNodeType || !(node as AstDeclaration).nam.match(/^(-[a-z]+-)?transform$/)) {
 
                 continue;
             }
@@ -63,7 +62,7 @@ export class TransformCssFeature {
                 return;
             }
 
-            let r : Token[][] = [filterValues((node as AstDeclaration).val.slice())];
+            let r: Token[][] = [filterValues((node as AstDeclaration).val.slice())];
 
             if (eqMatrix(matrix as FunctionToken, cumulative)) {
 
@@ -75,19 +74,11 @@ export class TransformCssFeature {
                 r.push(minified);
             }
 
-            // console.error(JSON.stringify({
-            //     matrix:  renderToken(matrix),
-            //     cumulative: cumulative.reduce((acc, curr) => acc + renderToken(curr), ''),
-            //     minified: minified.reduce((acc, curr) => acc + renderToken(curr), ''),
-            //     r: r[0].reduce((acc, curr) => acc + renderToken(curr), ''),
-            //     all: r.map(r => r.reduce((acc, curr) => acc + renderToken(curr), ''))
-            // }, null, 1));
+            const l: number = renderToken(matrix).length;
 
-            const l =  renderToken(matrix).length;
+            (node as AstDeclaration).val = r.reduce((acc: Token[], curr: Token[]): Token[] => {
 
-            (node as AstDeclaration).val = r.reduce((acc, curr) => {
-
-                if (curr.reduce((acc, t) => acc + renderToken(t), '').length < l) {
+                if (curr.reduce((acc: string, t: Token) => acc + renderToken(t), '').length < l) {
 
                     return curr;
                 }

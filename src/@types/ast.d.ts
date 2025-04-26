@@ -1,4 +1,4 @@
-import {EnumToken} from "../lib";
+import {EnumToken} from "../lib/index.ts";
 import {Token} from "./token.d.ts";
 
 export declare interface Position {
@@ -49,7 +49,7 @@ export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstNode>;
 }
 
 export declare interface AstInvalidAtRule extends BaseToken {

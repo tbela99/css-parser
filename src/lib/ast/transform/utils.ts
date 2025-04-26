@@ -170,7 +170,7 @@ export function round(number: number): number {
 // translate → rotate → skew → scale
 export function decompose(original: Matrix): DecomposedMatrix3D | null {
 
-    const matrix = original.flat();
+    const matrix: number[] = original.flat();
 
     // Normalize last row
     if (matrix[15] === 0) {
@@ -346,7 +346,7 @@ export function toZero(v: [number, number] | [number, number, number] | [number,
 
     for (let i = 0; i < v.length; i++) {
 
-        if (Math.abs(v[i]) <= 1e-5) {
+        if (Math.abs(v[i]) <= epsilon) {
 
             v[i] = 0;
         } else {

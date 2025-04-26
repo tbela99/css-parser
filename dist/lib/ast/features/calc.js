@@ -1,5 +1,5 @@
 import { EnumToken } from '../types.js';
-import { walkValues, WalkerValueEvent } from '../walk.js';
+import { walkValues, WalkerValueEvent, WalkerOptionEnum } from '../walk.js';
 import { evaluate } from '../math/expression.js';
 import { renderToken } from '../../renderer/render.js';
 import { mathFuncs } from '../../syntax/syntax.js';
@@ -18,7 +18,6 @@ class ComputeCalcExpressionFeature {
         if (!('chi' in ast)) {
             return;
         }
-        // @ts-ignore
         for (const node of ast.chi) {
             if (node.typ != EnumToken.DeclarationNodeType) {
                 continue;
@@ -26,15 +25,18 @@ class ComputeCalcExpressionFeature {
             const set = new Set;
             for (const { value, parent } of walkValues(node.val, node, {
                 event: WalkerValueEvent.Enter,
-                fn(node, parent, event) {
+                // @ts-ignore
+                fn(node, parent) {
                     if (parent != null &&
+                        // @ts-ignore
                         parent.typ == EnumToken.DeclarationNodeType &&
+                        // @ts-ignore
                         parent.val.length == 1 &&
                         node.typ == EnumToken.FunctionTokenType &&
                         mathFuncs.includes(node.val) &&
                         node.chi.length == 1 &&
                         node.chi[0].typ == EnumToken.IdenTokenType) {
-                        return 'ignore';
+                        return WalkerOptionEnum.Ignore;
                     }
                     if ((node.typ == EnumToken.FunctionTokenType && node.val == 'var') || (!mathFuncs.includes(parent.val) && [EnumToken.ColorTokenType, EnumToken.DeclarationNodeType, EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.StyleSheetNodeType].includes(parent?.typ))) {
                         return null;
@@ -56,7 +58,7 @@ class ComputeCalcExpressionFeature {
                             // @ts-ignore
                             node[key] = values;
                         }
-                        return 'ignore';
+                        return WalkerOptionEnum.Ignore;
                     }
                     return null;
                 }

@@ -1,8 +1,8 @@
-import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace, splitTokenList} from "../utils";
-import {validateURL} from "../syntaxes/url";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
+import {validateURL} from "../syntaxes/url.ts";
 
 
 export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -70,9 +70,9 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             result = validateURL(t[0]);
 
-            if (result.valid == ValidationLevel.Drop) {
+            if (result?.valid == ValidationLevel.Drop) {
 
-                return result;
+                return result as ValidationSyntaxResult;
             }
 
             continue;

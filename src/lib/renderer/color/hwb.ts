@@ -1,16 +1,16 @@
-import {hsl2hsv} from "./hsv";
+import {hsl2hsv} from "./hsv.ts";
 import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {getComponents} from "./utils";
-import {getAngle, getNumber} from "./color";
-import {EnumToken} from "../../ast";
-import {lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb";
+import {getComponents} from "./utils/index.ts";
+import {getAngle, getNumber} from "./color.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb.ts";
 
 export function rgb2hwb(token: ColorToken): number[] {
 
     // @ts-ignore
     return srgb2hwb(...getComponents(token).map((t: Token, index: number): number => {
 
-        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == 'none') {
+        if (index == 3 && t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == 'none') {
             return 1;
         }
 
@@ -23,7 +23,7 @@ export function hsl2hwb(token: ColorToken): number[] {
     // @ts-ignore
     return hsl2hwbvalues(...getComponents(token).map((t: Token, index: number) => {
 
-        if (index == 3 && (t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
+        if (index == 3 && (t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == 'none')) {
             return 1;
         }
 

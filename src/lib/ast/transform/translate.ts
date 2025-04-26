@@ -11,7 +11,7 @@ export function translateX(x: number, from: Matrix): Matrix {
 
 export function translateY(y: number, from: Matrix): Matrix {
 
-    const matrix: Matrix = identity()
+    const matrix: Matrix = identity();
     matrix[3][1] = y;
 
     return multiply(from, matrix) as Matrix;

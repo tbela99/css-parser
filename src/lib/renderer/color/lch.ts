@@ -1,8 +1,8 @@
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {getComponents} from "./utils";
-import {getAngle, getNumber} from "./color";
-import {EnumToken} from "../../ast";
-import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab, xyz2lab} from "./lab";
+import {getComponents} from "./utils/index.ts";
+import {getAngle, getNumber} from "./color.ts";
+import {EnumToken} from "../../ast/index.ts";
+import {getLABComponents, hex2lab, hsl2lab, hwb2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab, xyz2lab} from "./lab.ts";
 
 export function hex2lch(token: ColorToken): number[] {
 
@@ -84,15 +84,20 @@ export function srgb2lchvalues(r: number, g: number, blue: number, alpha?: numbe
     return alpha == null || alpha == 1 ? [l, c, h] : [l, c, h, alpha];
 }
 
-export function getLCHComponents(token: ColorToken): number[] {
+export function getLCHComponents(token: ColorToken): number[] | null {
 
-    const components: Token[] = getComponents(token);
+    const components: Token[] | null = getComponents(token);
+
+    if (components == null) {
+
+        return null;
+    }
 
     for (let i = 0; i < components.length; i++) {
 
         if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
 
-            return [];
+            return null;
         }
     }
 

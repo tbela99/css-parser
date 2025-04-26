@@ -1,8 +1,8 @@
 import type {ColorToken, IdentToken, NumberToken, PercentageToken} from "../../../@types/index.d.ts";
-import {EnumToken} from "../../ast";
-import {getNumber, minmax} from "./color";
-import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb";
-import {getComponents, NAMES_COLORS} from "./utils";
+import {EnumToken} from "../../ast/index.ts";
+import {getNumber, minmax} from "./color.ts";
+import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb.ts";
+import {getComponents, NAMES_COLORS} from "./utils/index.ts";
 
 function toHexString(acc: string, value: number): string {
 
@@ -91,37 +91,50 @@ export function rgb2hex(token: ColorToken) {
 
 export function hsl2hex(token: ColorToken) {
 
-    return `${hsl2rgb(token).reduce(toHexString, '#')}`;
+    const t = hsl2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 
-export function hwb2hex(token: ColorToken): string {
+export function hwb2hex(token: ColorToken): string | null{
 
-    return `${hwb2rgb(token).reduce(toHexString, '#')}`;
+    const t = hwb2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 
-export function cmyk2hex(token: ColorToken): string {
+export function cmyk2hex(token: ColorToken): string | null {
 
-    return `#${cmyk2rgb(token).reduce(toHexString, '')}`;
+    const t = cmyk2rgb(token);
+    return t == null ? null : `#${t.reduce(toHexString, '')}`;
 }
 
-export function oklab2hex(token: ColorToken): string {
+export function oklab2hex(token: ColorToken): string | null {
 
-    return `${oklab2rgb(token).reduce(toHexString, '#')}`;
+    const t = oklab2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 
-export function oklch2hex(token: ColorToken): string {
+export function oklch2hex(token: ColorToken): string | null {
 
-    return `${oklch2rgb(token).reduce(toHexString, '#')}`;
+    const value = oklch2rgb(token);
+
+    if (value == null) {
+
+        return null;
+    }
+
+    return `${value.reduce(toHexString, '#')}`;
 }
 
-export function lab2hex(token: ColorToken): string {
+export function lab2hex(token: ColorToken): string | null{
 
-    return `${lab2rgb(token).reduce(toHexString, '#')}`;
+    const t = lab2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 
-export function lch2hex(token: ColorToken): string {
+export function lch2hex(token: ColorToken): string | null {
 
-    return `${lch2rgb(token).reduce(toHexString, '#')}`;
+    const t = lch2rgb(token);
+    return t == null ? null : `${t.reduce(toHexString, '#')}`;
 }
 
 export function srgb2hexvalues(r: number, g: number, b: number, alpha?: number | null): string {

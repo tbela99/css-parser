@@ -171,21 +171,21 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
                 let k: number;
 
-                for (k = 0; k < node.chi.length; k++) {
+                for (k = 0; k < (node as AstKeyFrameRule).chi.length; k++) {
 
-                    if (node.chi[k].typ == EnumToken.DeclarationNodeType) {
+                    if ((node as AstKeyFrameRule).chi[k].typ == EnumToken.DeclarationNodeType) {
 
-                        let l: number = (node.chi[k] as AstDeclaration).val.length;
+                        let l: number = ((node as AstKeyFrameRule).chi[k] as AstDeclaration).val.length;
 
                         while (l--) {
 
-                            if ((node.chi[k] as AstDeclaration).val[l].typ == EnumToken.ImportantTokenType) {
+                            if (((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ == EnumToken.ImportantTokenType) {
 
-                                node.chi.splice(k--, 1);
+                                (node as AstKeyFrameRule).chi.splice(k--, 1);
                                 break;
                             }
 
-                            if ([EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes((node.chi[k] as AstDeclaration).val[l].typ)) {
+                            if ([EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(((node as AstKeyFrameRule).chi[k] as AstDeclaration).val[l].typ)) {
 
                                 continue;
                             }
@@ -1167,9 +1167,9 @@ function fixSelector(node: AstRule) {
 
                 while (i--) {
 
-                    if (attr.value.chi[i].typ == EnumToken.LiteralTokenType && (<LiteralToken>attr.value.chi[i]).val == '&') {
+                    if ((attr.value as PseudoClassFunctionToken).chi[i].typ == EnumToken.LiteralTokenType && (<LiteralToken>(attr.value as PseudoClassFunctionToken).chi[i]).val == '&') {
 
-                        attr.value.chi.splice(i, 1);
+                        (attr.value as PseudoClassFunctionToken).chi.splice(i, 1);
                     }
                 }
             }

@@ -87,6 +87,7 @@ function compute(a, b, op) {
             r2 = l1.r.val * r1.l.val;
             break;
     }
+    // @ts-ignore
     const a2 = simplify(l2, r2);
     if (a2[1] == 1) {
         return a2[0];

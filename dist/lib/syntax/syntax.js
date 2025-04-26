@@ -418,7 +418,9 @@ function isColor(token) {
     }
     let isLegacySyntax = false;
     if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+        // @ts-ignore
         if (token.val == 'light-dark') {
+            // @ts-ignore
             const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
             if (children.length != 2) {
                 return false;
@@ -427,7 +429,9 @@ function isColor(token) {
                 return true;
             }
         }
+        // @ts-ignore
         if (token.val == 'color') {
+            // @ts-ignore
             const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
             const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';
             if (children.length < 4 || children.length > 8) {
@@ -476,73 +480,79 @@ function isColor(token) {
             }
             return true;
         }
-        else if (token.val == 'color-mix') {
-            const children = token.chi.reduce((acc, t) => {
-                if (t.typ == EnumToken.CommaTokenType) {
-                    acc.push([]);
-                }
-                else {
-                    if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
-                        acc[acc.length - 1].push(t);
+        else { // @ts-ignore
+            if (token.val == 'color-mix') {
+                // @ts-ignore
+                const children = token.chi.reduce((acc, t) => {
+                    if (t.typ == EnumToken.CommaTokenType) {
+                        acc.push([]);
                     }
-                }
-                return acc;
-            }, [[]]);
-            if (children.length == 3) {
-                if (children[0].length > 3 ||
-                    children[0][0].typ != EnumToken.IdenTokenType ||
-                    children[0][0].val != 'in' ||
-                    !isColorspace(children[0][1]) ||
-                    (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
-                    children[1].length > 2 ||
-                    children[1][0].typ != EnumToken.ColorTokenType ||
-                    children[2].length > 2 ||
-                    children[2][0].typ != EnumToken.ColorTokenType) {
-                    return false;
-                }
-                if (children[1].length == 2) {
-                    if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
-                        return false;
-                    }
-                }
-                if (children[2].length == 2) {
-                    if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            return false;
-        }
-        else {
-            const keywords = ['from', 'none'];
-            if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
-                keywords.push('alpha', ...token.val.slice(-3).split(''));
-            }
-            // @ts-ignore
-            for (const v of token.chi) {
-                if (v.typ == EnumToken.CommaTokenType) {
-                    isLegacySyntax = true;
-                }
-                if (v.typ == EnumToken.IdenTokenType) {
-                    if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
-                        return false;
-                    }
-                    if (keywords.includes(v.val)) {
-                        if (isLegacySyntax) {
-                            return false;
+                    else {
+                        if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                            acc[acc.length - 1].push(t);
                         }
-                        if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                    }
+                    return acc;
+                }, [[]]);
+                if (children.length == 3) {
+                    if (children[0].length > 3 ||
+                        children[0][0].typ != EnumToken.IdenTokenType ||
+                        children[0][0].val != 'in' ||
+                        !isColorspace(children[0][1]) ||
+                        (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
+                        children[1].length > 2 ||
+                        children[1][0].typ != EnumToken.ColorTokenType ||
+                        children[2].length > 2 ||
+                        children[2][0].typ != EnumToken.ColorTokenType) {
+                        return false;
+                    }
+                    if (children[1].length == 2) {
+                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
                             return false;
                         }
                     }
-                    continue;
+                    if (children[2].length == 2) {
+                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
+                            return false;
+                        }
+                    }
+                    return true;
                 }
-                if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
-                    continue;
+                return false;
+            }
+            else {
+                const keywords = ['from', 'none'];
+                // @ts-ignore
+                if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                    // @ts-ignore
+                    keywords.push('alpha', ...token.val.slice(-3).split(''));
                 }
-                if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
-                    return false;
+                // @ts-ignore
+                for (const v of token.chi) {
+                    if (v.typ == EnumToken.CommaTokenType) {
+                        isLegacySyntax = true;
+                    }
+                    if (v.typ == EnumToken.IdenTokenType) {
+                        if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+                            return false;
+                        }
+                        if (keywords.includes(v.val)) {
+                            if (isLegacySyntax) {
+                                return false;
+                            }
+                            // @ts-ignore
+                            if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                                return false;
+                            }
+                        }
+                        continue;
+                    }
+                    if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
+                        continue;
+                    }
+                    if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+                        return false;
+                    }
                 }
             }
         }

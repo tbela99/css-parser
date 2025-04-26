@@ -1,6 +1,7 @@
 import type {
     AstDeclaration,
     DimensionToken,
+    IdentToken,
     LiteralToken,
     NumberToken,
     ShorthandPropertyType,
@@ -93,7 +94,7 @@ export class PropertySet {
 
                     if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
 
-                        if (token.typ == EnumToken.IdenTokenType&& this.config.keywords.includes(token.val)) {
+                        if (token.typ == EnumToken.IdenTokenType&& this.config.keywords.includes((token as IdentToken).val)) {
 
                             if (tokens.length == 0) {
 

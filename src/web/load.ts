@@ -1,4 +1,4 @@
-import {matchUrl, resolve} from "../lib/fs";
+import {matchUrl, resolve} from "../lib/fs/index.ts";
 
 function parseResponse(response: Response) {
 

@@ -3,9 +3,9 @@ import {identity, Matrix, multiply} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {length2Px} from "./convert.ts";
 import {transformFunctions} from "../../syntax/index.ts";
-import {stripCommaToken} from "../../validation/utils";
+import {stripCommaToken} from "../../validation/utils/index.ts";
 import {translate, translate3d, translateX, translateY, translateZ} from "./translate.ts";
-import {getAngle, getNumber} from "../../renderer/color";
+import {getAngle, getNumber} from "../../renderer/color/index.ts";
 import {rotate, rotate3D} from "./rotate.ts";
 import {scale, scale3d, scaleX, scaleY, scaleZ} from "./scale.ts";
 import {minify} from "./minify.ts";
@@ -107,7 +107,7 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                 const valCount: number = (transformList[i] as FunctionToken).val == 'translate3d' || (transformList[i] as FunctionToken).val == 'translate' ? 3 : 1;
 
-                if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && children[0].val == 'none') {
+                if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'none') {
 
                     values.fill(0, 0, valCount);
 
@@ -248,7 +248,7 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                         return null;
                     }
 
-                    values.push(getNumber(child));
+                    values.push(getNumber(child as NumberToken));
                 }
 
                 if (values.length == 0) {
@@ -355,9 +355,9 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                         continue;
                     }
 
-                    if (child.typ == EnumToken.IdenTokenType && child.val == 'none') {
+                    if (child.typ == EnumToken.IdenTokenType && (child as IdentToken).val == 'none') {
 
-                        values.push(child);
+                        values.push(child as IdentToken);
                         continue;
                     }
 
@@ -382,7 +382,7 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                 break;
 
             case 'matrix3d':
-                // return null;
+            // return null;
 
             case 'matrix': {
 

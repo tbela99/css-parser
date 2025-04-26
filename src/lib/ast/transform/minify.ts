@@ -1,14 +1,13 @@
 import {decompose, epsilon, identity, Matrix, multiply, round, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
-import {FunctionToken, Token} from "../../../@types";
-import {eq} from "../../parser/utils/eq.ts";
+import type {FunctionToken, Token} from "../../../@types/index.d.ts";
 import {computeMatrix} from "./compute.ts";
 import {parseMatrix} from "./matrix.ts";
 
 // translate → rotate → skew → scale
 export function minify(matrix: Matrix): Token[] | null {
 
-    const decomposed = /* is2DMatrix(matrix) ? decompose2(matrix) : */ decompose(matrix);
+    const decomposed = decompose(matrix);
 
     if (decomposed == null) {
 
@@ -314,7 +313,7 @@ export function minify(matrix: Matrix): Token[] | null {
     }
 
     // identity
-    return result.length == 0 || eq(result, identity()) ? [
+    return result.length == 0 || (result.length == 1 && eqMatrix(identity(), result)) ? [
         {
             typ: EnumToken.IdenTokenType,
             val: 'none'
@@ -322,21 +321,17 @@ export function minify(matrix: Matrix): Token[] | null {
     ] : result;
 }
 
-export function eqMatrix(a: FunctionToken, b: Token[]): boolean {
+export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 
     let mat: Matrix = identity();
     let tmp: Matrix = identity();
 
     // @ts-ignore
-    const data = parseMatrix(a) as Matrix;
-
-    // console.error({data});
+    const data = Array.isArray(a) ? a : parseMatrix(a) as Matrix;
 
     for (const transform of b) {
 
         tmp = computeMatrix([transform], identity()) as Matrix;
-
-        // console.error({transform: renderToken(transform), tmp});
 
         if (tmp == null) {
 
@@ -345,8 +340,6 @@ export function eqMatrix(a: FunctionToken, b: Token[]): boolean {
 
         mat = multiply(mat, tmp);
     }
-
-    // console.error({mat});
 
     if (mat == null) {
 
@@ -365,5 +358,4 @@ export function eqMatrix(a: FunctionToken, b: Token[]): boolean {
     }
 
     return true;
-
 }

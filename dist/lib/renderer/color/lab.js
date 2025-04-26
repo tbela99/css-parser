@@ -87,6 +87,9 @@ function lch2labvalues(l, c, h, a = null) {
 }
 function getLABComponents(token) {
     const components = getComponents(token);
+    if (components == null) {
+        return null;
+    }
     for (let i = 0; i < components.length; i++) {
         if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
             return [];

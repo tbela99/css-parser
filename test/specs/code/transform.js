@@ -445,7 +445,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 }`));
         });
 
-        it('matrix #25', function () {
+        it('matrix #26', function () {
             const nesting1 = `
 
   .now {
@@ -474,6 +474,22 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
                 computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: matrix3d(-.6,1.34788,0,0,-2.34788,-.6,0,0,0,0,1,0,0,0,10,1)
+}`));
+        });
+
+        it('matrix #27', function () {
+            const nesting1 = `
+
+  .now {
+  
+  transform: rotate3d(0,0,1,-10deg)   
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true
+            }).then((result) => expect(result.code).equals(`.now {
+ transform: rotate3d(0,0,1,-10deg)
 }`));
         });
     });

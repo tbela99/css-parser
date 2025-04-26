@@ -43,9 +43,9 @@ class ComputePrefixFeature {
                     for (const { value } of walkValues(node.val)) {
                         if (value.typ == EnumToken.IdenTokenType && value.val.charAt(0) == '-' && value.val.charAt(1) != '-') {
                             // @ts-ignore
-                            const values = config.declarations[node.nam].ast.slice();
+                            const values = config.declarations[node.nam].ast?.slice?.();
                             const match = value.val.match(/^-(.*?)-(.*)$/);
-                            if (match != null) {
+                            if (values != null && match != null) {
                                 const val = matchToken({ ...value, val: match[2] }, values);
                                 if (val != null) {
                                     // @ts-ignore

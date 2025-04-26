@@ -27,16 +27,14 @@ $ deno add @tbela99/css-parser
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - fast and efficient minification without unsafe transforms,
   see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-- minify colors.
-- support css color level 4 & 5: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
+- minify colors: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
   relative color
 - generate nested css rules
 - convert nested css rules to legacy syntax
 - generate sourcemap
 - compute css shorthands. see supported properties list below
-- experimental minification : css transform module level 2
-- evaluate math functions: calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(), acos(),
-  atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
+- css transform functions minification
+- evaluate math functions: calc(), clamp(), min(), max(), etc.
 - inline css variables
 - remove duplicate properties
 - flatten @import rules

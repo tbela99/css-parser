@@ -1,4 +1,4 @@
-import { is2DMatrix, toZero, round, identity } from './utils.js';
+import { toZero, is2DMatrix, identity } from './utils.js';
 import { EnumToken } from '../types.js';
 import { reduceNumber } from '../../renderer/render.js';
 import { eq } from '../../parser/utils/eq.js';
@@ -13,12 +13,13 @@ function parseMatrix(mat) {
     if (mat.typ == EnumToken.IdenTokenType) {
         return mat.val == 'none' ? identity() : null;
     }
-    const children = mat.chi.filter(t => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType);
+    const children = mat.chi.filter((t) => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType);
     const values = [];
     for (const child of children) {
         if (child.typ != EnumToken.NumberTokenType) {
             return null;
         }
+        // @ts-ignore
         values.push(getNumber(child));
     }
     // @ts-ignore
@@ -28,7 +29,6 @@ function parseMatrix(mat) {
 function matrix(values) {
     const matrix = identity();
     if (values.length === 6) {
-        // matrix(scaleX(), skewY(), skewX(), scaleY(), translateX(), translateY())
         matrix[0][0] = values[0];
         matrix[0][1] = values[1];
         matrix[1][0] = values[2];
@@ -55,11 +55,13 @@ function matrix(values) {
         matrix[3][3] = values[15];
     }
     else {
-        throw new RangeError('expecting 6 or 16 values');
+        return null;
     }
     return matrix;
 }
 function serialize(matrix) {
+    matrix = matrix.map(t => toZero(t.slice()));
+    // @ts-ignore
     if (eq(matrix, identity())) {
         return {
             typ: EnumToken.IdenTokenType,
@@ -71,20 +73,20 @@ function serialize(matrix) {
         return {
             typ: EnumToken.FunctionTokenType,
             val: 'matrix',
-            chi: toZero([
+            chi: [
                 matrix[0][0],
                 matrix[0][1],
                 matrix[1][0],
                 matrix[1][1],
                 matrix[3][0],
                 matrix[3][1]
-            ]).reduce((acc, t) => {
+            ].reduce((acc, t) => {
                 if (acc.length > 0) {
                     acc.push({ typ: EnumToken.CommaTokenType });
                 }
                 acc.push({
                     typ: EnumToken.NumberTokenType,
-                    val: reduceNumber(t.toPrecision(6))
+                    val: reduceNumber(t)
                 });
                 return acc;
             }, [])
@@ -99,7 +101,7 @@ function serialize(matrix) {
             }
             acc.push({
                 typ: EnumToken.NumberTokenType,
-                val: reduceNumber(round(curr))
+                val: reduceNumber(curr)
             });
             return acc;
         }, [])

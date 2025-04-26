@@ -1,7 +1,7 @@
-import type {AstKeyframAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
+import type {AstKeyframAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace} from "../utils";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace} from "../utils/index.ts";
 
 export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 

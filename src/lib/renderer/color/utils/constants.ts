@@ -1,5 +1,5 @@
 import type {ColorSpace, IdentToken} from "../../../../@types/index.d.ts";
-import {EnumToken} from "../../../ast";
+import {EnumToken} from "../../../ast/index.ts";
 
 export const colorRange = {
 

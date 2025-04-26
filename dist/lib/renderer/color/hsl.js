@@ -17,6 +17,9 @@ function hex2hsl(token) {
 }
 function rgb2hsl(token) {
     const chi = getComponents(token);
+    if (chi == null) {
+        return null;
+    }
     // @ts-ignore
     let t = chi[0];
     // @ts-ignore
@@ -75,12 +78,14 @@ function lch2hsl(token) {
     return rgb2hslvalues(...lch2rgb(token));
 }
 function oklab2hsl(token) {
+    const t = oklab2rgb(token);
     // @ts-ignore
-    return rgb2hslvalues(...oklab2rgb(token));
+    return t == null ? null : rgb2hslvalues(...t);
 }
 function oklch2hsl(token) {
+    const t = oklch2rgb(token);
     // @ts-ignore
-    return rgb2hslvalues(...oklch2rgb(token));
+    return t == null ? null : rgb2hslvalues(...t);
 }
 function rgb2hslvalues(r, g, b, a = null) {
     return srgb2hsl(r / 255, g / 255, b / 255, a);

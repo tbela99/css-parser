@@ -1,7 +1,7 @@
-import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types";
+import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {ValidationLevel} from "../../ast";
-import {validateFamilyName} from "../syntaxes";
+import {ValidationLevel} from "../../ast/index.ts";
+import {validateFamilyName} from "../syntaxes/index.ts";
 
 
 export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {

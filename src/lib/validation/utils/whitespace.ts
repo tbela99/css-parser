@@ -1,4 +1,4 @@
-import {EnumToken} from "../../ast";
+import {EnumToken} from "../../ast/index.ts";
 import type {Token} from "../../../@types/token.d.ts";
 
 export function consumeWhitespace(tokens: Token[]): boolean {

@@ -7,12 +7,12 @@ import type {
     PercentageToken,
     Token
 } from "../../../@types/index.d.ts";
-import {convert, getNumber} from "./color";
-import {EnumToken, walkValues} from "../../ast";
-import {reduceNumber} from "../render";
-import {evaluate, evaluateFunc} from "../../ast/math";
-import {colorRange} from "./utils";
-import {mathFuncs} from "../../syntax";
+import {convert, getNumber} from "./color.ts";
+import {EnumToken, walkValues} from "../../ast/index.ts";
+import {reduceNumber} from "../render.ts";
+import {evaluate, evaluateFunc} from "../../ast/math/index.ts";
+import {colorRange} from "./utils/index.ts";
+import {mathFuncs} from "../../syntax/index.ts";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';
 type HSLKeyType = 'h' | 's' | 'l' | 'alpha';
@@ -148,9 +148,9 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
                     expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>key];
                 }
             }
+
         } else if ([EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.LengthTokenType].includes(exp.typ)) {
 
-            // expr[<RelativeColorTypes>key] = exp;
         } else if (exp.typ == EnumToken.IdenTokenType && exp.val in values) {
 
             if (typeof values[<RelativeColorTypes>exp.val] == 'number') {
@@ -163,6 +163,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 
                 expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
             }
+
         } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val)) {
 
             for (let {value, parent} of walkValues((exp as FunctionToken).chi, exp)) {
@@ -209,36 +210,27 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
 }
 
 function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
-    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
 
-        if ((parent as BinaryExpressionToken).l == value) {
+    for (const {value:  val, parent: pr} of walkValues([parent])) {
 
-            (parent as BinaryExpressionToken).l = newValue;
-        } else {
+        if (val.typ == value.typ && (val as IdentToken).val == (value as IdentToken).val) {
 
-            (parent as BinaryExpressionToken).r = newValue;
-        }
-    } else {
+            if (pr!.typ == EnumToken.BinaryExpressionTokenType) {
 
-        for (let i = 0; i < (parent as FunctionToken | ParensToken).chi.length; i++) {
+                if ((pr as BinaryExpressionToken).l == val) {
 
-            if ((parent as FunctionToken | ParensToken).chi[i] == value) {
+                    (pr as BinaryExpressionToken).l = newValue
+                }
 
-                (parent as FunctionToken | ParensToken).chi.splice(i, 1, newValue);
-                break;
+                else {
+
+                    (pr as BinaryExpressionToken).r = newValue;
+                }
             }
 
-            if ((parent as FunctionToken | ParensToken).chi[i].typ == EnumToken.BinaryExpressionTokenType) {
+            else {
 
-                if (((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).l == value) {
-
-                    ((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).l = newValue;
-                    break;
-                } else if (((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).r == value) {
-
-                    ((parent as FunctionToken | ParensToken).chi[i] as BinaryExpressionToken).r = newValue;
-                    break
-                }
+                (pr as FunctionToken | ParensToken).chi.splice((pr as FunctionToken | ParensToken).chi.indexOf(val), 1, newValue);
             }
         }
     }

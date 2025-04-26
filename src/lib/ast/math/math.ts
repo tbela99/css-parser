@@ -1,6 +1,6 @@
 import type {FractionToken} from "../../../@types/index.d.ts";
-import {EnumToken} from "../types";
-import {reduceNumber} from "../../renderer";
+import {EnumToken} from "../types.ts";
+import {reduceNumber} from "../../renderer/index.ts";
 
 export function gcd (x: number, y: number): number {
 
@@ -130,6 +130,7 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
 
     }
 
+    // @ts-ignore
     const a2: [number, number] = simplify(l2 as number, r2 as number);
 
     if (a2[1] == 1) {

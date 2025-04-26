@@ -1,8 +1,8 @@
-import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types";
-import type {ValidationSyntaxResult} from "../../../@types/validation";
-import {EnumToken, ValidationLevel} from "../../ast";
-import {consumeWhitespace} from "../utils";
-import {validateAtRuleMediaQueryList} from "./media";
+import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
+import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
+import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {consumeWhitespace} from "../utils/index.ts";
+import {validateAtRuleMediaQueryList} from "./media.ts";
 
 export function validateAtRuleCustomMedia(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 

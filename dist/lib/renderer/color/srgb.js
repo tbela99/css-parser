@@ -44,7 +44,7 @@ function srgbvalues(token) {
     return null;
 }
 function rgb2srgb(token) {
-    return getComponents(token).map((t, index) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255);
+    return getComponents(token)?.map?.((t, index) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255) ?? null;
 }
 function hex2srgb(token) {
     const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
@@ -59,7 +59,10 @@ function xyz2srgb(x, y, z) {
     return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z));
 }
 function hwb2srgb(token) {
-    const { h: hue, s: white, l: black, a: alpha } = hslvalues(token);
+    const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
+    if (hue == null || white == null || black == null) {
+        return [];
+    }
     const rgb = hsl2srgbvalues(hue, 1, .5);
     for (let i = 0; i < 3; i++) {
         rgb[i] *= (1 - white - black);
@@ -71,11 +74,17 @@ function hwb2srgb(token) {
     return rgb;
 }
 function hsl2srgb(token) {
-    let { h, s, l, a } = hslvalues(token);
+    let { h, s, l, a } = hslvalues(token) ?? {};
+    if (h == null || s == null || l == null) {
+        return null;
+    }
     return hsl2srgbvalues(h, s, l, a);
 }
 function cmyk2srgb(token) {
     const components = getComponents(token);
+    if (components == null) {
+        return null;
+    }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
@@ -107,7 +116,10 @@ function cmyk2srgb(token) {
     return rgb;
 }
 function oklab2srgb(token) {
-    const [l, a, b, alpha] = getOKLABComponents(token);
+    const [l, a, b, alpha] = getOKLABComponents(token) ?? [];
+    if (l == null || a == null || b == null) {
+        return null;
+    }
     const rgb = OKLab_to_sRGB(l, a, b);
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);
@@ -115,7 +127,7 @@ function oklab2srgb(token) {
     return rgb;
 }
 function oklch2srgb(token) {
-    const [l, c, h, alpha] = getOKLCHComponents(token) ?? {};
+    const [l, c, h, alpha] = getOKLCHComponents(token) ?? [];
     if (l == null || c == null || h == null) {
         return null;
     }
@@ -128,6 +140,9 @@ function oklch2srgb(token) {
 }
 function hslvalues(token) {
     const components = getComponents(token);
+    if (components == null) {
+        return null;
+    }
     let t;
     // @ts-ignore
     let h = getAngle(components[0]);
@@ -202,7 +217,10 @@ function hsl2srgbvalues(h, s, l, a = null) {
     return values;
 }
 function lab2srgb(token) {
-    const [l, a, b, alpha] = getLABComponents(token);
+    const [l, a, b, alpha] = getLABComponents(token) ?? [];
+    if (l == null || a == null || b == null) {
+        return null;
+    }
     const rgb = Lab_to_sRGB(l, a, b);
     if (alpha != null && alpha != 1) {
         rgb.push(alpha);
@@ -212,6 +230,9 @@ function lab2srgb(token) {
 function lch2srgb(token) {
     // @ts-ignore
     const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
+    if (l == null || a == null || b == null) {
+        return null;
+    }
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
     const rgb = Lab_to_sRGB(l, a, b);
     if (alpha != 1) {
