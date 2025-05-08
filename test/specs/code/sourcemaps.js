@@ -16,16 +16,12 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
         it('sourcemap file #1', async () => {
 
-            return parse(file, options).then(result => {
+            return parse(file, options).then(async result => {
 
                 const output = render(result.ast, {...options, minify: false, removeComments: true});
-
-                return readFile(`${dir}/files/sourcemap/line-awesome-sourcemap.css`, {encoding: 'utf-8'}).
-                then(expected => expect(`/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(output.map))} */`).equals(expected));
+                return readFile(`${dir}/files/sourcemap/line-awesome-sourcemap.css`, {encoding: 'utf-8'}).then(expected => expect(`/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(output.map))} */`).equals(expected));
 
             })
         });
     });
-
-
 }

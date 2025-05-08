@@ -4,6 +4,9 @@ var ValidationLevel;
     ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
     ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
 })(ValidationLevel || (ValidationLevel = {}));
+/**
+ * token types enum
+ */
 var EnumToken;
 (function (EnumToken) {
     EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";

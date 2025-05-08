@@ -7,9 +7,10 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { hslvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function hex2hsl(token) {
     // @ts-ignore

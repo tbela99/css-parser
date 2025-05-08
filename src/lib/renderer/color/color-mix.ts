@@ -8,7 +8,7 @@ import {srgb2hsl} from "./hsl.ts";
 import {srgb2hwb} from "./hwb.ts";
 import {srgb2lab} from "./lab.ts";
 import {srgb2p3values} from "./p3.ts";
-import {getComponents} from "./utils/index.ts";
+import {ColorKind, getComponents} from "./utils/index.ts";
 import {srgb2oklch} from "./oklch.ts";
 import {srgb2oklab} from "./oklab.ts";
 import {srgb2a98values} from "./a98rgb.ts";
@@ -308,9 +308,12 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     }
 
     const lchSpaces: string[] = ['lch', 'oklch'];
+    const colorSpace1 = ColorKind[color1.kin].toLowerCase().replaceAll('_', '-');
+    const colorSpace2 = ColorKind[color2.kin].toLowerCase().replaceAll('_', '-');
+
 
     // powerless
-    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+    if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace.val)) {
 
         if ((components1[2].typ == EnumToken.IdenTokenType && (components1[2] as IdentToken).val == 'none') || values1[2] == 0) {
 
@@ -319,7 +322,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     }
 
     // powerless
-    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+    if (lchSpaces.includes(colorSpace2) || lchSpaces.includes(colorSpace.val)) {
 
         if ((components2[2].typ == EnumToken.IdenTokenType && (components2[2] as IdentToken).val == 'none') || values2[2] == 0) {
 
@@ -373,7 +376,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                         val: String(v)
                     }
                 }),
-                kin: 'lch'
+                kin: ColorKind.LCH
             };
 
         case 'srgb':
@@ -382,13 +385,13 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'rec2020':
 
             // @ts-ignore
-            return <ColorToken>{
+            return {
                 typ: EnumToken.ColorTokenType,
                 val: 'color',
                 chi: calculate(),
-                kin: 'color',
+                kin: ColorKind.COLOR,
                 cal: 'col'
-            };
+            } as ColorToken;
 
         case 'rgb':
         case 'hsl':
@@ -436,7 +439,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace.val,
                 chi: calculate().slice(1),
-                kin: colorSpace.val
+                kin: ColorKind[colorSpace.val.toLowerCase().replaceAll('-', '_') as keyof typeof ColorKind]
             };
 
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {

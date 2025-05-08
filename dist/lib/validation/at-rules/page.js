@@ -2,9 +2,10 @@ import { ValidationLevel, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import { splitTokenList } from '../utils/list.js';
 
 function validateAtRulePage(atRule, options, root) {

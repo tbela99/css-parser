@@ -1,7 +1,7 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import {COLORS_NAMES, getComponents} from "./utils/index.ts";
+import {ColorKind, COLORS_NAMES, getComponents} from "./utils/index.ts";
 import type {
     ColorToken,
     DimensionToken,
@@ -23,35 +23,35 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
     switch (token.kin) {
 
-        case 'lit':
-        case 'hex':
+        case ColorKind.LIT:
+        case ColorKind.HEX:
             return hex2srgb(token);
 
-        case 'rgb':
-        case 'rgba':
+        case ColorKind.RGB:
+        case ColorKind.RGBA:
             return rgb2srgb(token);
 
-        case 'hsl':
-        case 'hsla':
+        case ColorKind.HSL:
+        case ColorKind.HSLA:
             return hsl2srgb(token);
 
-        case 'hwb':
+        case ColorKind.HWB:
 
             return hwb2srgb(token);
 
-        case 'lab':
+        case ColorKind.LAB:
             return lab2srgb(token);
 
-        case 'lch':
+        case ColorKind.LCH:
             return lch2srgb(token);
 
-        case 'oklab':
+        case ColorKind.OKLAB:
             return oklab2srgb(token);
 
-        case 'oklch':
+        case ColorKind.OKLCH:
             return oklch2srgb(token);
 
-        case 'color':
+        case ColorKind.COLOR:
             return color2srgbvalues(token);
     }
 
@@ -65,7 +65,7 @@ export function rgb2srgb(token: ColorToken): number[] | null {
 
 export function hex2srgb(token: ColorToken): number[] {
 
-    const value: string = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb: number[] = [];
 
     for (let i = 1; i < value.length; i += 2) {

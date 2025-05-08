@@ -1132,10 +1132,7 @@ function matchSelectors(selector1: string[][], selector2: string[][], parentType
             }
         }
 
-        // @todo: check hasCompoundSelector && curr[0] == '&' && curr[1] == ' '
-
         acc.push(match.length == 0 ? ['&'] : (hasCompoundSelector && curr[0] != '&' && (curr.length == 0 || !combinators.includes(curr[0].charAt(0))) ? ['&'].concat(curr) : curr))
-
         return acc;
     }
 
@@ -1237,6 +1234,11 @@ function wrapNodes(previous: AstRule, node: AstRule, match: MatchedSelector, ast
 
 function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOptions = {}) {
 
+    if (!('cache' in options)) {
+
+        options.cache = new WeakMap<AstNode, string>();
+    }
+
     let node1: AstRule = n1;
     let node2: AstRule = n2;
     let exchanged: boolean = false;
@@ -1252,13 +1254,11 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
     let j: number = node2.chi.length;
 
     if (i == 0 || j == 0) {
-        // @ts-ignore
+
         return null;
     }
-    // @ts-ignore
-    const raw1: RawSelectorTokens = <RawSelectorTokens>node1.raw;
 
-    // @ts-ignore
+    const raw1: RawSelectorTokens = <RawSelectorTokens>node1.raw;
     const raw2: RawSelectorTokens = <RawSelectorTokens>node2.raw;
 
     if (raw1 != null && raw2 != null) {
@@ -1336,14 +1336,29 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
         }
     }
 
-    // @ts-ignore
+    const css1: string = options.cache!.get(node1  ) as string;
+    const css2: string = options.cache!.get(node2) as string;
+
     node1 = {...node1, chi: node1.chi.slice()};
     node2 = {...node2, chi: node2.chi.slice()};
+
+    if (css1 != null) {
+
+        options.cache!.set(node1, css1);
+    }
+
+    if (css2 != null) {
+
+        options.cache!.set(node2, css2);
+    }
+
     if (raw1 != null) {
+
         Object.defineProperty(node1, 'raw', {...definedPropertySettings, value: raw1});
     }
 
     if (raw2 != null) {
+
         Object.defineProperty(node2, 'raw', {...definedPropertySettings, value: raw2});
     }
 
@@ -1372,27 +1387,45 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
 
             if ((<AstDeclaration>node1.chi[i]).nam == (<AstDeclaration>node2.chi[j]).nam) {
 
-                if (eq(node1.chi[i], node2.chi[j])) {
+                if (node1.chi[i].typ == node2.chi[j].typ && eq(node1.chi[i], node2.chi[j])) {
 
                     intersect.push(node1.chi[i] as AstDeclaration);
                     node1.chi.splice(i, 1);
                     node2.chi.splice(j, 1);
+
+                    options.cache!.delete(node1);
+                    options.cache!.delete(node2);
                     break;
                 }
             }
         }
     }
 
-    // @ts-ignore
     const result = (intersect.length == 0 ? null : {
         ...node1,
         // @ts-ignore
-        sel: [...new Set([...(n1?.raw?.reduce(reducer, []) ?? splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) ?? splitRule(n2.sel))])].join(','),
+        sel: [...new Set([...(n1?.raw?.reduce(reducer , []) ?? splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) ?? splitRule(n2.sel))])].join(','),
         chi: intersect.reverse()
     });
 
-    if (result == null || [n1, n2].reduce((acc: number, curr: AstRule): number => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0) <= [node1, node2, result].reduce((acc: number, curr: AstRule): number => curr.chi.length == 0 ? acc : acc + doRender(curr, options).code.length, 0)) {
-        // @ts-ignore
+    if (result == null || [n1, n2].reduce((acc: number, curr: AstRule): number => {
+
+        let css: string = options.cache!.get(curr) as string;
+
+        if (css == null) {
+
+            css = doRender(curr, options).code;
+            options.cache!.set(curr, css);
+        }
+
+        return curr.chi.length == 0 ? acc : acc + css.length
+    }, 0) <= [node1, node2, result].reduce((acc: number, curr: AstRule): number => {
+
+        const css = doRender(curr, options).code;
+
+        return curr.chi.length == 0 ? acc : acc + css.length
+    }, 0)) {
+
         return null;
     }
 
@@ -1406,10 +1439,7 @@ function reduceRuleSelector(node: AstRule) {
         Object.defineProperty(node, 'raw', {...definedPropertySettings, value: splitRule(node.sel)})
     }
 
-    // @ts-ignore
-    // if (node.raw != null) {
-    // @ts-ignore
-    let optimized: OptimizedSelector = <OptimizedSelector>reduceSelector(node.raw.reduce((acc, curr) => {
+    let optimized: OptimizedSelector = <OptimizedSelector>reduceSelector(node.raw!.reduce((acc, curr) => {
         acc.push(curr.slice());
         return acc;
     }, <string[][]>[]));
@@ -1430,7 +1460,6 @@ function reduceRuleSelector(node: AstRule) {
         }
 
         const unique: Set<string> = new Set;
-
         const raw: string[][] = [
             [
                 optimized.optimized[0], ':is('
@@ -1456,7 +1485,6 @@ function reduceRuleSelector(node: AstRule) {
 
         if (sel.length < node.sel.length) {
             node.sel = sel;
-            // node.raw = raw;
             Object.defineProperty(node, 'raw', {...definedPropertySettings, value: raw});
         }
     }

@@ -1,3 +1,6 @@
+/**
+ * token types enum
+ */
 declare enum EnumToken {
     CommentTokenType = 0,
     CDOCOMMTokenType = 1,
@@ -131,9 +134,9 @@ declare enum EnumToken {
  * @param nestingContent
  * @param context
  */
-declare function minify(ast: AstNode, options?: ParserOptions | MinifyFeatureOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+declare function minify(ast: AstNode$1, options?: ParserOptions | MinifyFeatureOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
     [key: string]: any;
-}): AstNode;
+}): AstNode$1;
 
 declare enum WalkerOptionEnum {
     Ignore = 0,
@@ -150,7 +153,7 @@ declare enum WalkerValueEvent {
  * @param node
  * @param filter
  */
-declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
+declare function walk(node: AstNode$1, filter?: WalkerFilter): Generator<WalkResult>;
 /**
  * walk ast values
  * @param values
@@ -158,7 +161,7 @@ declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
  * @param filter
  * @param reverse
  */
-declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
+declare function walkValues(values: Token[], root?: AstNode$1 | Token | null, filter?: WalkerValueFilter | {
     event?: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
@@ -168,7 +171,7 @@ declare function walkValues(values: Token[], root?: AstNode | Token | null, filt
  * expand nested css ast
  * @param ast
  */
-declare function expand(ast: AstNode): AstNode;
+declare function expand(ast: AstNode$1): AstNode$1;
 
 /**
  * render ast token
@@ -196,6 +199,34 @@ declare function parseString(src: string, options?: {
  * @param options
  */
 declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
+
+declare enum ColorKind {
+    SYS = 0,
+    DPSYS = 1,
+    LIT = 2,
+    HEX = 3,
+    RGB = 4,
+    RGBA = 5,
+    HSL = 6,
+    HSLA = 7,
+    HWB = 8,
+    DEVICE_CMYK = 9,
+    OKLAB = 10,
+    OKLCH = 11,
+    LAB = 12,
+    LCH = 13,
+    COLOR = 14,
+    SRGB = 15,
+    PROPHOTO_RGB = 16,
+    A98_RGB = 17,
+    REC2020 = 18,
+    DISPLAY_P3 = 19,
+    SRGB_LINEAR = 20,
+    XYZ = 21,
+    XYZ_D50 = 22,
+    XYZ_D65 = 23,
+    LIGHT_DARK = 24
+}
 
 export declare interface LiteralToken extends BaseToken {
 
@@ -571,26 +602,6 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
-export declare type ColorKind =
-    'sys'
-    | 'dpsys'
-    | 'lit'
-    | 'hex'
-    | 'rgb'
-    | 'rgba'
-    | 'hsl'
-    | 'hsla'
-    | 'hwb'
-    | 'device-cmyk'
-    | 'oklab'
-    | 'oklch'
-    | 'lab'
-    | 'lch'
-    | 'color'
-    | 'light-dark';
-
-// export declare type HueInterpolationMethod = 'shorter' | 'longer' | 'increasing' | 'decreasing';
-
 export declare interface ColorToken extends BaseToken {
 
     typ: EnumToken.ColorTokenType;
@@ -855,7 +866,7 @@ export declare interface Position {
 export declare interface Location {
 
     sta: Position;
-    // end: Position;
+    end: Position;
     src: string;
 }
 
@@ -893,14 +904,14 @@ export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
     sel: string;
-    chi: Array<AstNode>;
+    chi: Array<AstNode$1>;
 }
 
 export declare interface AstInvalidAtRule extends BaseToken {
 
     typ: EnumToken.InvalidAtRuleTokenType;
     val: string;
-    chi?: Array<AstNode>;
+    chi?: Array<AstNode$1>;
 }
 
 export declare interface AstKeyFrameRule extends BaseToken {
@@ -949,7 +960,7 @@ export declare interface AstKeyframAtRule extends BaseToken {
 
 export declare interface AstRuleList extends BaseToken {
 
-    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
     chi: Array<BaseToken | AstComment>;
 }
 
@@ -958,7 +969,7 @@ export declare interface AstRuleStyleSheet extends AstRuleList {
     chi: Array<AstRuleList | AstComment>
 }
 
-export declare type AstNode =
+export declare type AstNode$1 =
     AstRuleStyleSheet
     | AstRuleList
     | AstComment
@@ -1020,7 +1031,7 @@ export declare type WalkerOption = WalkerOptionEnum | Token | null;
  * - WalkerOptionEnum.Children: walk the children and ignore the node itself
  * - WalkerOptionEnum.IgnoreChildren: walk the node and ignore children
  */
-export declare type WalkerFilter = (node: AstNode) => WalkerOption;
+export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
 
 /**
  * returned value:
@@ -1029,19 +1040,19 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - 'children': walk the children and ignore the node itself
  * - 'ignore-children': walk the node and ignore children
  */
-export declare type WalkerValueFilter = (node: AstNode | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode$1 | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
-    node: AstNode;
+    node: AstNode$1;
     parent?: AstRuleList;
-    root?: AstNode;
+    root?: AstNode$1;
 }
 
 export declare interface WalkAttributesResult {
     value: Token;
     previousValue: Token | null;
     nextValue: Token | null;
-    root?: AstNode;
+    root?: AstNode$1;
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
     list: Token[] | null;
 }
@@ -1051,11 +1062,7 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
-    location?: {
-        src: string,
-        lin: number,
-        col: number;
-    };
+    location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];
 }
@@ -1083,7 +1090,7 @@ interface MinifyOptions {
 export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
 
     src?: string;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     removeCharset?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
@@ -1099,6 +1106,7 @@ export declare interface ParserOptions extends MinifyOptions, ValidationOptions,
     visitor?: VisitorNodeMap;
     signal?: AbortSignal;
     setParent?: boolean;
+    cache?: WeakMap<AstNode, string>;
 }
 
 export declare interface MinifyFeatureOptions extends ParserOptions {
@@ -1138,7 +1146,7 @@ export declare interface RenderOptions {
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
@@ -1193,7 +1201,8 @@ export declare interface TokenizeResult {
     token: string;
     len: number;
     hint?: EnumToken;
-    position: Position;
+    sta: Position;
+    end: Position;
     bytesIn: number;
 }
 
@@ -1207,18 +1216,33 @@ export declare interface SourceMapObject {
     mappings: string;
 }
 
+/**
+ * return dirname
+ * @param path
+ */
 declare function dirname(path: string): string;
+/**
+ * resolve path
+ * @param url
+ * @param currentDirectory
+ * @param cwd
+ */
 declare function resolve(url: string, currentDirectory: string, cwd?: string): {
     absolute: string;
     relative: string;
 };
 
+/**
+ * load file
+ * @param url
+ * @param currentFile
+ */
 declare function load(url: string, currentFile?: string): Promise<string>;
 
 /**
  * render ast node
  */
-declare function render(data: AstNode, options?: RenderOptions): RenderResult;
+declare function render(data: AstNode$1, options?: RenderOptions): RenderResult;
 /**
  * parse css
  */

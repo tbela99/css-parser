@@ -48,6 +48,7 @@ import {isLength} from "../syntax/index.ts";
 import {validateSelector} from "./selector.ts";
 import {validateImage} from "./syntaxes/index.ts";
 import {renderToken} from "../../web/index.ts";
+import {ColorKind} from "../renderer/color/utils";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -999,7 +1000,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
         case ValidationTokenEnum.Keyword:
 
             valid = (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare((syntax as ValidationKeywordToken).val, 'en', {sensitivity: 'base'}) == 0) ||
-                (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == 'lit' && (syntax as ValidationKeywordToken).val.localeCompare((token as ColorToken).val as string, 'en', {sensitivity: 'base'}) == 0);
+                (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.LIT && (syntax as ValidationKeywordToken).val.localeCompare((token as ColorToken).val as string, 'en', {sensitivity: 'base'}) == 0);
 
             result = {
                 valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
@@ -1307,7 +1308,7 @@ function doValidateSyntax(syntax: ValidationToken, token: Token | AstNode, token
 
             } else if ('hex-color' == (syntax as ValidationPropertyToken).val) {
 
-                valid = token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == 'hex';
+                valid = token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.HEX;
 
                 result = {
                     valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,

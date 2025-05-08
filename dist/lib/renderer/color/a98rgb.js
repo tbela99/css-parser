@@ -5,9 +5,10 @@ import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { srgb2xyz } from './xyz.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function a98rgb2srgbvalues(r, g, b, a = null) {
     //  @ts-ignore

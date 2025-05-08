@@ -11,7 +11,7 @@ export declare interface Position {
 export declare interface Location {
 
     sta: Position;
-    // end: Position;
+    end: Position;
     src: string;
 }
 
@@ -112,7 +112,7 @@ export declare interface AstKeyframAtRule extends BaseToken {
 
 export declare interface AstRuleList extends BaseToken {
 
-    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
     chi: Array<BaseToken | AstComment>;
 }
 

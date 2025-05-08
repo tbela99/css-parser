@@ -1,6 +1,6 @@
 import type {ColorToken} from "../../../@types/index.d.ts";
 import {minmax} from "./color.ts";
-import {COLORS_NAMES} from "./utils/index.ts";
+import {ColorKind, COLORS_NAMES} from "./utils/index.ts";
 import {expandHexValue} from "./hex.ts";
 import {cmyk2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, oklab2srgb, oklch2srgb} from "./srgb.ts";
 
@@ -11,7 +11,7 @@ export function srgb2rgb(value: number): number {
 
 export function hex2rgb(token: ColorToken): number[] {
 
-    const value: string = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb: number[] = [];
 
     for (let i = 1; i < value.length; i += 2) {

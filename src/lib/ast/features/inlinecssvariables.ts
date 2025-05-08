@@ -113,7 +113,7 @@ export class InlineCssVariablesFeature {
 
                     let recursive: boolean = false;
 
-                    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+                    for (const {value} of walkValues((<AstDeclaration>node).val)) {
 
                         if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
 
@@ -126,7 +126,6 @@ export class InlineCssVariablesFeature {
 
                         replace(node, variableScope);
                     }
-
 
                 } else {
 
@@ -187,13 +186,10 @@ export class InlineCssVariablesFeature {
 
                     if (parent.chi?.length == 0 && 'parent' in parent) {
 
-                        // @ts-ignore
-                        for (i = 0; i < (<AstRule>parent.parent).chi?.length; i++) {
+                        for (i = 0; i < (<AstRule>parent.parent).chi.length; i++) {
 
-                            // @ts-ignore
                             if ((<AstRule>parent.parent).chi[i] == parent) {
 
-                                // @ts-ignore
                                 (<AstRule>parent.parent).chi.splice(i, 1);
                                 break;
                             }

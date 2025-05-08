@@ -3,15 +3,15 @@ import type {
     AttrToken,
     ErrorDescription,
     FunctionToken,
+    Location,
     ParensToken,
-    Position,
     StringToken,
     Token
 } from "../../../@types/index.d.ts";
 import {EnumToken, walkValues} from "../../ast/index.ts";
 import {isWhiteSpace} from "../../syntax/syntax.ts";
 
-export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescription[], src: string, position: Position): AstDeclaration | null {
+export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescription[], location: Location): AstDeclaration | null {
 
     while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
         node.val.shift();
@@ -22,7 +22,7 @@ export function parseDeclarationNode(node: AstDeclaration, errors: ErrorDescript
         errors.push(<ErrorDescription>{
             action: 'drop',
             message: 'doParse: invalid declaration',
-            location: {src, ...position}
+            location
         });
 
         return null;

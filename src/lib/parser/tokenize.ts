@@ -2,7 +2,39 @@ import type {Position, TokenizeResult} from "../../@types/index.d.ts";
 import {EnumToken} from "../ast/index.ts";
 import {isDigit, isNewLine, isNonPrintable, isWhiteSpace} from "../syntax/index.ts";
 
-declare type InputStream = string;
+const enum TokenMap {
+
+    SLASH = 47, // '/'
+    AMPERSAND = 38, // '&', AMPERSAND
+    LOWERTHAN = 60, // '<', LESS THAN
+    HASH = 35, // '#', HASH
+    REVERSE_SOLIDUS = 92, // '\', REVERSE SOLIDUS
+    DOUBLE_QUOTE = 34, // '"', DOUBLEQ
+    SINGLE_QUOTE = 39, // "'", SINGLEQ
+    // ^
+    CIRCUMFLEX = 94, // '^', CIRC
+    TILDA = 126, // '~', TILDE
+    PIPE = 124, // '|', PIPE
+    DOLLAR = 36, // '$', DOLLAR
+    GREATER_THAN = 62, // '>', GREATERTHAN
+    DOT = 46, // '.', DOT
+    PLUS = 43, // '+', PLUS
+    STAR = 42, // '*', STAR
+    COLON = 58, // ':', COLON
+    COMMA = 44, // ',', COMMA
+    EQUAL = 61, // '=', EQUAL
+    CLOSE_PAREN = 41, // ')', CLOSE PARENTHESIS
+    OPEN_PAREN = 40, // '(', OPEN PARENTHESIS
+    OPEN_BRACKET = 91, // '[', OPEN BRACKET PARE
+    CLOSE_BRACKET = 93,     // N
+    OPEN_CURLY_BRACE = 123, // '{', OPEN CURLY BRACE
+    CLOSE_CURLY_BRACE = 125, // '}', CLOSE CURLY BRACE
+    SEMICOLON = 59, // ';', SEMICOLON
+    EXCLAMATION = 33, // '!', EXCLAMATION
+
+}
+
+declare type InputStream = Uint8Array;
 
 declare interface ParseInfo {
 
@@ -30,13 +62,19 @@ function pushToken(token: string, parseInfo: ParseInfo, hint?: EnumToken): Token
         token,
         len: parseInfo.currentPosition.ind - parseInfo.position.ind,
         hint,
-        position: {...parseInfo.position},
+        sta: {...parseInfo.position},
+        end: {...parseInfo.currentPosition},
         bytesIn: parseInfo.currentPosition.ind + 1
-    };
+    } as TokenizeResult;
 
     parseInfo.position.ind = parseInfo.currentPosition.ind;
     parseInfo.position.lin = parseInfo.currentPosition.lin;
     parseInfo.position.col = Math.max(parseInfo.currentPosition.col, 1);
+
+    if (result.end.col == 0) {
+
+        result.end.col = 1
+    }
 
     return result;
 }
@@ -217,20 +255,25 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
         currentPosition: {ind: -1, lin: 1, col: 0}
     };
 
-    let value;
+    let value: string;
     let buffer: string = '';
+    let charCode: number;
     while (value = next(parseInfo)) {
 
-        if (isWhiteSpace(value.charCodeAt(0))) {
+        charCode = value.charCodeAt(0);
+
+        if (isWhiteSpace(charCode)) {
 
             if (buffer.length > 0) {
 
                 yield pushToken(buffer, parseInfo);
                 buffer = '';
             }
+
             while (value = next(parseInfo)) {
 
-                if (!isWhiteSpace(value.charCodeAt(0))) {
+                charCode = value.charCodeAt(0);
+                if (!isWhiteSpace(charCode)) {
                     break;
                 }
             }
@@ -239,8 +282,10 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
             buffer = '';
         }
-        switch (value) {
-            case '/':
+
+        switch (charCode) {
+
+            case TokenMap.SLASH:
 
                 if (buffer.length > 0) {
 
@@ -287,7 +332,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                 break;
 
-            case '&':
+            case TokenMap.AMPERSAND:
 
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);
@@ -297,7 +342,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 yield pushToken(value, parseInfo);
                 break;
 
-            case '<':
+            case TokenMap.LOWERTHAN:
 
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);
@@ -339,7 +384,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                 break;
 
-            case '#':
+            case TokenMap.HASH:
 
                 if (buffer.length > 0) {
 
@@ -350,30 +395,35 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 buffer += value;
                 break;
 
-            case '\\':
+            case TokenMap.REVERSE_SOLIDUS:
 
                 // EOF
                 if (!(value = next(parseInfo))) {
+
                     // end of stream ignore \\
                     if (buffer.length > 0) {
 
                         yield pushToken(buffer, parseInfo);
                         buffer = '';
                     }
+
                     break;
                 }
 
                 buffer += prev(parseInfo) + value;
                 break;
-            case '"':
-            case "'":
-                yield* consumeString(value, buffer, parseInfo);
+
+            case  TokenMap.SINGLE_QUOTE:
+            case TokenMap.DOUBLE_QUOTE:
+
+                yield* consumeString(value as '"' | "'", buffer, parseInfo);
                 buffer = '';
                 break;
-            case '^':
-            case '~':
-            case '|':
-            case '$':
+
+            case TokenMap.CIRCUMFLEX:
+            case TokenMap.TILDA:
+            case TokenMap.PIPE:
+            case TokenMap.DOLLAR:
 
                 if (buffer.length > 0) {
 
@@ -381,7 +431,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                     buffer = '';
                 }
 
-                if (value == '|') {
+                if (charCode == TokenMap.PIPE) {
 
                     if (peek(parseInfo) == '|') {
 
@@ -398,7 +448,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                     }
 
                     buffer = '';
-                    break;
+                    continue;
                 }
 
                 if (buffer.length > 0) {
@@ -409,6 +459,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 buffer += value;
 
                 if (!(value = peek(parseInfo))) {
+
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                     break;
@@ -421,18 +472,18 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 if (peek(parseInfo) == '=') {
 
                     next(parseInfo);
-                    switch (buffer.charAt(0)) {
+                    switch (buffer.charCodeAt(0)) {
 
-                        case '~':
+                        case TokenMap.TILDA:
                             yield pushToken(buffer, parseInfo, EnumToken.IncludeMatchTokenType);
                             break;
-                        case '^':
+                        case TokenMap.CIRCUMFLEX:
                             yield pushToken(buffer, parseInfo, EnumToken.StartMatchTokenType);
                             break;
-                        case '$':
+                        case TokenMap.DOLLAR:
                             yield pushToken(buffer, parseInfo, EnumToken.EndMatchTokenType);
                             break;
-                        case '|':
+                        case TokenMap.PIPE:
                             yield pushToken(buffer, parseInfo, EnumToken.DashMatchTokenType);
                             break;
                     }
@@ -445,7 +496,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 buffer = '';
                 break;
 
-            case '>':
+            case TokenMap.GREATER_THAN:
 
                 if (buffer !== '') {
                     yield pushToken(buffer, parseInfo);
@@ -463,7 +514,8 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                 consumeWhiteSpace(parseInfo);
                 break;
-            case '.':
+
+            case TokenMap.DOT:
 
                 const codepoint = peek(parseInfo).charCodeAt(0);
 
@@ -475,11 +527,12 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                 buffer += value;
                 break;
-            case '+':
-            case '*':
-            case ':':
-            case ',':
-            case '=':
+
+            case TokenMap.PLUS:
+            case TokenMap.STAR:
+            case TokenMap.COLON:
+            case TokenMap.COMMA:
+            case TokenMap.EQUAL:
 
                 if (buffer.length > 0 && buffer != ':') {
 
@@ -523,7 +576,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 }
 
                 break;
-            case ')':
+            case TokenMap.CLOSE_PAREN:
 
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);
@@ -532,7 +585,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                 yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
                 break;
-            case '(':
+            case TokenMap.OPEN_PAREN:
 
                 if (buffer.length == 0) {
 
@@ -551,7 +604,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                     consumeWhiteSpace(parseInfo);
                     value = peek(parseInfo);
 
-                    let cp: number;
+                    // let cp: number;
                     let whitespace: string = '';
                     let hasWhiteSpace = false;
                     let errorState = false;
@@ -565,14 +618,14 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                         while (value = next(parseInfo)) {
 
-                            cp = value.charCodeAt(0);
+                            charCode = value.charCodeAt(0);
 
                             // consume an invalid string
                             if (inquote) {
 
                                 buffer += value;
 
-                                if (isNewLine(cp)) {
+                                if (isNewLine(charCode)) {
 
                                     hasNewLine = true;
 
@@ -594,11 +647,11 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                                         break;
                                     }
 
-                                    cp = value.charCodeAt(0);
+                                    charCode = value.charCodeAt(0);
                                 }
 
                                 // '\\'
-                                if (cp == 0x5c) {
+                                if (charCode == 0x5c) {
 
                                     buffer += next(parseInfo);
                                 } else if (value == quote) {
@@ -611,7 +664,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                             if (!inquote) {
 
-                                if (isWhiteSpace(cp)) {
+                                if (isWhiteSpace(charCode)) {
 
                                     whitespace += value;
 
@@ -636,10 +689,10 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                                     }
                                 }
 
-                                cp = value.charCodeAt(0);
+                                charCode = value.charCodeAt(0);
 
                                 // ')'
-                                if (cp == 0x29) {
+                                if (charCode == 0x29) {
 
                                     yield pushToken(buffer, parseInfo, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
                                     yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
@@ -649,15 +702,15 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                                 while (value = next(parseInfo)) {
 
-                                    cp = value.charCodeAt(0);
+                                    charCode = value.charCodeAt(0);
 
-                                    if (cp == 0x5c) {
+                                    if (charCode == 0x5c) {
 
                                         buffer += value + next(parseInfo);
                                         continue;
                                     }
 
-                                    if (cp == 0x29) {
+                                    if (charCode == 0x29) {
 
                                         yield pushToken(buffer, parseInfo, EnumToken.BadStringTokenType);
                                         yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
@@ -687,10 +740,10 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                         while (value = next(parseInfo)) {
 
-                            cp = value.charCodeAt(0);
+                            charCode = value.charCodeAt(0);
 
                             // ')'
-                            if (cp == 0x29) {
+                            if (charCode == 0x29) {
 
                                 yield pushToken(buffer, parseInfo, EnumToken.UrlTokenTokenType);
                                 yield pushToken('', parseInfo, EnumToken.EndParensTokenType);
@@ -698,7 +751,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                                 break;
                             }
 
-                            if (isWhiteSpace(cp)) {
+                            if (isWhiteSpace(charCode)) {
 
                                 hasWhiteSpace = true;
                                 whitespace = value;
@@ -711,13 +764,13 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                                 continue;
                             }
 
-                            if (isNonPrintable(cp) ||
+                            if (isNonPrintable(charCode) ||
                                 // '"'
-                                cp == 0x22 ||
+                                charCode == 0x22 ||
                                 // "'"
-                                cp == 0x27 ||
+                                charCode == 0x27 ||
                                 // \('
-                                cp == 0x28 ||
+                                charCode == 0x28 ||
                                 hasWhiteSpace) {
 
                                 errorState = true;
@@ -729,16 +782,16 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
 
                                 while (value = peek(parseInfo)) {
 
-                                    cp = value.charCodeAt(0);
+                                    charCode = value.charCodeAt(0);
 
-                                    if (cp == 0x5c) {
+                                    if (charCode == 0x5c) {
 
                                         buffer += next(parseInfo, 2);
                                         continue;
                                     }
 
                                     // ')'
-                                    if (cp == 0x29) {
+                                    if (charCode == 0x29) {
 
                                         break;
                                     }
@@ -769,11 +822,11 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 buffer = '';
                 break;
 
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-            case ';':
+            case TokenMap.OPEN_BRACKET:
+            case TokenMap.CLOSE_BRACKET:
+            case TokenMap.OPEN_CURLY_BRACE:
+            case TokenMap.CLOSE_CURLY_BRACE:
+            case TokenMap.SEMICOLON:
 
                 if (buffer.length > 0) {
 
@@ -784,7 +837,7 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                 yield pushToken(value, parseInfo);
                 break;
 
-            case '!':
+            case  TokenMap.EXCLAMATION:
 
                 if (buffer.length > 0) {
 
@@ -812,5 +865,5 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
         yield pushToken(buffer, parseInfo);
     }
 
-    // yield pushToken('', EnumToken.EOFTokenType);
+    yield pushToken('', parseInfo, EnumToken.EOFTokenType);
 }

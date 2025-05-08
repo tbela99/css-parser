@@ -1,5 +1,5 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
-import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Position} from "./ast.d.ts";
+import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib/index.ts";
@@ -17,11 +17,7 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
-    location?: {
-        src: string,
-        lin: number,
-        col: number;
-    };
+    location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];
 }
@@ -60,7 +56,7 @@ export interface MinifyOptions {
 export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
 
     src?: string;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     removeCharset?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
@@ -76,6 +72,7 @@ export declare interface ParserOptions extends MinifyOptions, ValidationOptions,
     visitor?: VisitorNodeMap;
     signal?: AbortSignal;
     setParent?: boolean;
+    cache?: WeakMap<AstNode, string>;
 }
 
 export declare interface MinifyFeatureOptions extends ParserOptions {
@@ -104,7 +101,7 @@ export declare interface RenderOptions {
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
@@ -159,7 +156,8 @@ export declare interface TokenizeResult {
     token: string;
     len: number;
     hint?: EnumToken;
-    position: Position;
+    sta: Position;
+    end: Position;
     bytesIn: number;
 }
 

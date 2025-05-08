@@ -4,9 +4,10 @@ import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { srgb2lsrgbvalues } from './srgb.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function XYZ_to_lin_sRGB(x, y, z) {
     // convert XYZ to linear-light sRGB

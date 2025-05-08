@@ -1,10 +1,12 @@
-import { COLORS_NAMES } from './utils/constants.js';
+import { ColorKind, COLORS_NAMES } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { expandHexValue } from './hex.js';
 import { lch2labvalues, Lab_to_sRGB, getLABComponents } from './lab.js';
 import { OKLab_to_sRGB, getOKLABComponents } from './oklab.js';
@@ -12,33 +14,32 @@ import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
 import { XYZ_to_lin_sRGB } from './xyz.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
 function srgbvalues(token) {
     switch (token.kin) {
-        case 'lit':
-        case 'hex':
+        case ColorKind.LIT:
+        case ColorKind.HEX:
             return hex2srgb(token);
-        case 'rgb':
-        case 'rgba':
+        case ColorKind.RGB:
+        case ColorKind.RGBA:
             return rgb2srgb(token);
-        case 'hsl':
-        case 'hsla':
+        case ColorKind.HSL:
+        case ColorKind.HSLA:
             return hsl2srgb(token);
-        case 'hwb':
+        case ColorKind.HWB:
             return hwb2srgb(token);
-        case 'lab':
+        case ColorKind.LAB:
             return lab2srgb(token);
-        case 'lch':
+        case ColorKind.LCH:
             return lch2srgb(token);
-        case 'oklab':
+        case ColorKind.OKLAB:
             return oklab2srgb(token);
-        case 'oklch':
+        case ColorKind.OKLCH:
             return oklch2srgb(token);
-        case 'color':
+        case ColorKind.COLOR:
             return color2srgbvalues(token);
     }
     return null;
@@ -47,7 +48,7 @@ function rgb2srgb(token) {
     return getComponents(token)?.map?.((t, index) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255) ?? null;
 }
 function hex2srgb(token) {
-    const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);

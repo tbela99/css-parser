@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.1
+
+- [x] inline sourcemap
+
 # v1.0.0
 
 - [x] current color parse error when used in color functions

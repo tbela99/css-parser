@@ -3,6 +3,7 @@ import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
+import '../parser/tokenize.js';
 import '../parser/utils/config.js';
 import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
 

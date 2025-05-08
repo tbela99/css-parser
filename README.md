@@ -205,7 +205,7 @@ Include ParseOptions and RenderOptions
 
 > Sourcemap Options
 
-- sourcemap: boolean, optional. generate sourcemap
+- sourcemap: boolean | 'inline', optional. generate sourcemap. 
 
 > Misc Options
 

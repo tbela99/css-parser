@@ -1,4 +1,8 @@
 const matchUrl = /^(https?:)?\/\//;
+/**
+ * return dirname
+ * @param path
+ */
 function dirname(path) {
     if (path == '/' || path === '') {
         return path;
@@ -47,6 +51,12 @@ function splitPath(result) {
     }
     return { parts, i };
 }
+/**
+ * resolve path
+ * @param url
+ * @param currentDirectory
+ * @param cwd
+ */
 function resolve(url, currentDirectory, cwd) {
     if (matchUrl.test(url)) {
         return {

@@ -1,4 +1,4 @@
-import type {ColorSpace, IdentToken} from "../../../../@types/index.d.ts";
+import type {IdentToken} from "../../../../@types/index.d.ts";
 import {EnumToken} from "../../../ast/index.ts";
 
 export const colorRange = {
@@ -29,7 +29,38 @@ export const colorRange = {
     }
 }
 
-export const colorFuncColorSpace: ColorSpace[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
+// xyz-d65 is an alias for xyz
+// display-p3 is an alias for srgb
+export enum ColorKind {
+
+    SYS,
+    DPSYS,
+    LIT,
+    HEX,
+    RGB,
+    RGBA,
+    HSL,
+    HSLA,
+    HWB,
+    DEVICE_CMYK,
+    OKLAB,
+    OKLCH,
+    LAB,
+    LCH,
+    COLOR,
+    SRGB,
+    PROPHOTO_RGB,
+    A98_RGB,
+    REC2020,
+    DISPLAY_P3,
+    SRGB_LINEAR,
+    XYZ,
+    XYZ_D50,
+    XYZ_D65,
+    LIGHT_DARK
+}
+
+export const colorFuncColorSpace: string[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 export const powerlessColorComponent: IdentToken = {typ: EnumToken.IdenTokenType, val: 'none'};
 
 export const D50: number[] = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];

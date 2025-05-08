@@ -5,9 +5,10 @@ import '../../validation/parser/parse.js';
 import '../minify.js';
 import { walkValues } from '../walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import '../../validation/syntaxes/complex-selector.js';
 
 const config = getSyntaxConfig();

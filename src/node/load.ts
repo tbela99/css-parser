@@ -11,6 +11,11 @@ function parseResponse(response: Response) {
     return response.text();
 }
 
+/**
+ * load file
+ * @param url
+ * @param currentFile
+ */
 export async function load(url: string, currentFile: string = '.'): Promise<string> {
 
     const resolved = resolve(url, currentFile);

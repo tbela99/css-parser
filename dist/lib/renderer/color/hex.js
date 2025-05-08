@@ -2,12 +2,13 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { minmax, getNumber } from './color.js';
 import { hsl2rgb, hwb2rgb, cmyk2rgb, oklab2rgb, oklch2rgb, lab2rgb, lch2rgb } from './rgb.js';
 import { NAMES_COLORS } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function toHexString(acc, value) {
     return acc + value.toString(16).padStart(2, '0');

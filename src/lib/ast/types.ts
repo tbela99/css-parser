@@ -4,6 +4,9 @@ export enum ValidationLevel {
     Lenient/* preserve unknown at-rules, declarations and pseudo-classes */
 }
 
+/**
+ * token types enum
+ */
 export enum EnumToken {
     CommentTokenType,
     CDOCOMMTokenType,

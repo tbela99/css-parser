@@ -63,7 +63,7 @@ class InlineCssVariablesFeature {
                     info.parent.add(ast);
                     variableScope.set(node.nam, info);
                     let recursive = false;
-                    for (const { value, parent: parentValue } of walkValues(node.val)) {
+                    for (const { value } of walkValues(node.val)) {
                         if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
                             recursive = true;
                             break;
@@ -112,11 +112,8 @@ class InlineCssVariablesFeature {
                         }
                     }
                     if (parent.chi?.length == 0 && 'parent' in parent) {
-                        // @ts-ignore
-                        for (i = 0; i < parent.parent.chi?.length; i++) {
-                            // @ts-ignore
+                        for (i = 0; i < parent.parent.chi.length; i++) {
                             if (parent.parent.chi[i] == parent) {
-                                // @ts-ignore
                                 parent.parent.chi.splice(i, 1);
                                 break;
                             }

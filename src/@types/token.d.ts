@@ -1,5 +1,6 @@
 import type {AstDeclaration, BaseToken} from "./ast.d.ts";
 import {EnumToken} from "../lib/index.ts";
+import {ColorKind} from "../lib/renderer/color/utils";
 
 export declare interface LiteralToken extends BaseToken {
 
@@ -374,41 +375,6 @@ export declare interface ImportantToken extends BaseToken {
 
     typ: EnumToken.ImportantTokenType;
 }
-
-export declare type ColorKind =
-    'sys'
-    | 'dpsys'
-    | 'lit'
-    | 'hex'
-    | 'rgb'
-    | 'rgba'
-    | 'hsl'
-    | 'hsla'
-    | 'hwb'
-    | 'device-cmyk'
-    | 'oklab'
-    | 'oklch'
-    | 'lab'
-    | 'lch'
-    | 'color'
-    | 'light-dark';
-// xyz-d65 is an alias for xyz
-// display-p3 is an alias for srgb
-export declare type ColorSpace =
-    'srgb' | "prophoto-rgb" | "a98-rgb" | 'rec2020'
-    | 'display-p3'
-    | 'srgb-linear'
-    | 'lab'
-    | 'oklab'
-    | 'xyz'
-    | 'xyz-d50'
-    | 'xyz-d65'
-    | 'hsl'
-    | 'hwb'
-    | 'lch'
-    | 'oklch';
-
-// export declare type HueInterpolationMethod = 'shorter' | 'longer' | 'increasing' | 'decreasing';
 
 export declare interface ColorToken extends BaseToken {
 

@@ -3,11 +3,12 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../../parser/parse.js';
-import { mathFuncs } from '../../syntax/syntax.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 import { reduceNumber } from '../render.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
-import { colorRange } from './utils/constants.js';
+import { ColorKind, colorRange } from './utils/constants.js';
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let r;
@@ -18,13 +19,12 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let values = {};
     // colorFuncColorSpace x,y,z or r,g,b
     const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
-    // @ts-ignore
-    const converted = convert(original, relativeKeys);
+    const converted = convert(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_')]);
     if (converted == null) {
         return null;
     }
     const children = converted.chi.filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(t.typ));
-    [r, g, b, alpha] = converted.kin == 'color' ? children.slice(1) : children;
+    [r, g, b, alpha] = converted.kin == ColorKind.COLOR ? children.slice(1) : children;
     values = {
         [names[0]]: getValue(r, converted, names[0]),
         [names[1]]: getValue(g, converted, names[1]), // string,
@@ -56,9 +56,10 @@ function getValue(t, converted, component) {
     }
     if (t.typ == EnumToken.PercentageTokenType) {
         let value = getNumber(t);
-        if (converted.kin in colorRange) {
+        let colorSpace = ColorKind[converted.kin].toLowerCase().replaceAll('-', '_');
+        if (colorSpace in colorRange) {
             // @ts-ignore
-            value *= colorRange[converted.kin][component].at(-1);
+            value *= colorRange[colorSpace][component].at(-1);
         }
         return {
             typ: EnumToken.NumberTokenType,
@@ -71,7 +72,6 @@ function computeComponentValue(expr, converted, values) {
     for (const object of [values, expr]) {
         if ('h' in object) {
             // normalize hue
-            // @ts-ignore
             for (const k of walkValues([object.h])) {
                 if (k.value.typ == EnumToken.AngleTokenType && k.value.unit == 'deg') {
                     // @ts-ignore

@@ -2,8 +2,9 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../parse.js';
-import { mathFuncs } from '../../syntax/syntax.js';
+import '../tokenize.js';
 import './config.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 

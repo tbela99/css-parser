@@ -11,7 +11,6 @@ import type {
     AttrToken,
     BinaryExpressionToken,
     ClassSelectorToken,
-    ColorSpace,
     ColorToken,
     CommentToken,
     DashedIdentToken,
@@ -65,7 +64,7 @@ import {
 } from "./color/index.ts";
 import {EnumToken, expand, funcLike} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
-import {colorFuncColorSpace, getComponents} from "./color/utils/index.ts";
+import {colorFuncColorSpace, ColorKind, getComponents} from "./color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax/index.ts";
 
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
@@ -206,6 +205,11 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
     if (sourcemap != null) {
 
         result.map = sourcemap;
+
+        if (options.sourcemap === 'inline') {
+
+            result.code += `\n/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(result.map))} */`;
+        }
     }
 
     return result;
@@ -214,7 +218,13 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
-    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(node.typ)) {
+
+
+
+    if ([
+        EnumToken.RuleNodeType, EnumToken.AtRuleNodeType,
+        EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType
+    ].includes(node.typ)) {
 
         let src: string = (<Location>node.loc)?.src ?? '';
         let output: string = <string>options.output ?? '';
@@ -536,7 +546,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.ColorTokenType:
 
-            if ((token as ColorToken).kin == 'light-dark') {
+            if ((token as ColorToken).kin == ColorKind.LIGHT_DARK) {
 
                 return (token as ColorToken).val + '(' + ((token as ColorToken).chi as Token[]).reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ')';
             }
@@ -603,7 +613,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 if ((token as ColorToken).val == 'color') {
 
-                    if ((<IdentToken>(<Token[]>(token as ColorToken).chi)[0]).typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(<ColorSpace>((<Token[]>(token as ColorToken).chi)[0] as IdentToken).val.toLowerCase())) {
+                    if ((<IdentToken>(<Token[]>(token as ColorToken).chi)[0]).typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(((<Token[]>(token as ColorToken).chi)[0] as IdentToken).val.toLowerCase())) {
 
                         const values = color2srgbvalues(token as ColorToken) as number[];
 
@@ -652,7 +662,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     }, '') + ')';
                 }
 
-                if ((token as ColorToken).kin == 'lit' && (token as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
+                if ((token as ColorToken).kin == ColorKind.LIT && (token as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
 
                     return 'currentcolor';
                 }
@@ -664,7 +674,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                     return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
                 }
 
-                let value: string | null = (token as ColorToken).kin == 'hex' ? (token as ColorToken).val.toLowerCase() : ((token as ColorToken).kin == 'lit' ? COLORS_NAMES[(token as ColorToken).val.toLowerCase()] : '');
+                let value: string | null = (token as ColorToken).kin == ColorKind.HEX ? (token as ColorToken).val.toLowerCase() : ((token as ColorToken).kin == ColorKind.LIT ? COLORS_NAMES[(token as ColorToken).val.toLowerCase()] : '');
 
                 if ((token as ColorToken).val == 'rgb' || (token as ColorToken).val == 'rgba') {
 
@@ -682,7 +692,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 } else if ((token as ColorToken).val == 'oklab') {
 
                     value = oklab2hex(token as ColorToken);
-                    ;
                 } else if ((token as ColorToken).val == 'oklch') {
 
                     value = oklch2hex(token as ColorToken);
@@ -700,7 +709,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 }
             }
 
-            if (['hex', 'lit', 'sys', 'dpsys'].includes((token as ColorToken).kin)) {
+
+            if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes((token as ColorToken).kin)) {
 
                 return (token as ColorToken).val;
             }
@@ -730,7 +740,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 return (token as FunctionToken).chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
             }
 
-            // @ts-ignore
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ (token as FunctionToken).val ?? '') + '(' + (token as FunctionToken).chi.reduce(reducer, '') + ')';
 
         case EnumToken.MatchExpressionTokenType:
@@ -1062,10 +1071,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.MediaFeatureOrTokenType:
             return 'or';
-
-        // default:
-        //
-        //     throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }
 
     errors?.push({action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}`});
