@@ -42,7 +42,8 @@ export enum ValidationTokenEnum {
     DeclarationDefinitionToken,
     SemiColon,
     Character,
-    ColumnArrayToken
+    // ColumnArrayToken,
+    InfinityToken,
 }
 
 export const enum ValidationSyntaxGroupEnum {
@@ -73,7 +74,7 @@ export interface ValidationToken {
     isRepeatableGroup?: boolean;
     occurence?: {
         min: number;
-        max: number;
+        max: number | null;
     }
 }
 
@@ -92,6 +93,11 @@ export interface ValidationStringToken extends ValidationToken {
 
     typ: ValidationTokenEnum.StringToken;
     val: string;
+}
+
+export interface ValidationInfinityToken extends ValidationToken {
+
+    typ: ValidationTokenEnum.InfinityToken;
 }
 
 export interface ValidationSemiColonToken extends ValidationToken {
@@ -235,11 +241,11 @@ export interface ValidationColumnToken extends ValidationToken {
     r: ValidationToken[];
 }
 
-export interface ValidationColumnArrayToken extends ValidationToken {
-
-    typ: ValidationTokenEnum.ColumnArrayToken,
-    chi: ValidationToken[];
-}
+// export interface ValidationColumnArrayToken extends ValidationToken {
+//
+//     typ: ValidationTokenEnum.ColumnArrayToken,
+//     chi: ValidationToken[];
+// }
 
 export interface ValidationDeclarationToken extends ValidationToken {
 

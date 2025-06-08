@@ -38,7 +38,7 @@ class TransformCssFeature {
             consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {};
             if (matrix == null || cumulative == null || minified == null) {
-                return;
+                continue;
             }
             let r = [filterValues(node.val.slice())];
             if (eqMatrix(matrix, cumulative)) {

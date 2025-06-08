@@ -37,6 +37,7 @@ export interface ValidationOptions {
 
     validation?: boolean;
     lenient?: boolean;
+    cycles?: WeakMap<Token, WeakSet<Token>>;
 }
 
 export interface MinifyOptions {

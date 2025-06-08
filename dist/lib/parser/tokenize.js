@@ -3,7 +3,7 @@ import '../ast/minify.js';
 import '../ast/walk.js';
 import './parse.js';
 import './utils/config.js';
-import { isWhiteSpace, isNewLine, isDigit, isNonPrintable } from '../syntax/syntax.js';
+import { isWhiteSpace, isIdentStart, isIdent, isNewLine, isDigit, isNonPrintable } from '../syntax/syntax.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 
@@ -36,6 +36,7 @@ var TokenMap;
     TokenMap[TokenMap["CLOSE_CURLY_BRACE"] = 125] = "CLOSE_CURLY_BRACE";
     TokenMap[TokenMap["SEMICOLON"] = 59] = "SEMICOLON";
     TokenMap[TokenMap["EXCLAMATION"] = 33] = "EXCLAMATION";
+    TokenMap[TokenMap["AT"] = 64] = "AT";
 })(TokenMap || (TokenMap = {}));
 function consumeWhiteSpace(parseInfo) {
     let count = 0;
@@ -48,7 +49,7 @@ function consumeWhiteSpace(parseInfo) {
 function pushToken(token, parseInfo, hint) {
     const result = {
         token,
-        len: parseInfo.currentPosition.ind - parseInfo.position.ind,
+        len: parseInfo.currentPosition.ind - parseInfo.position.ind - 1,
         hint,
         sta: { ...parseInfo.position },
         end: { ...parseInfo.currentPosition },
@@ -142,6 +143,9 @@ function* consumeString(quoteStr, buffer, parseInfo) {
         yield pushToken(buffer + quote, parseInfo, EnumToken.StringTokenType);
     }
 }
+function match(parseInfo, input) {
+    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + input.length + 1) == input;
+}
 function peek(parseInfo, count = 1) {
     if (count == 1) {
         return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
@@ -210,18 +214,18 @@ function* tokenize(stream) {
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
-                    if (peek(parseInfo) != '*') {
+                    if (!match(parseInfo, '*')) {
                         yield pushToken(value, parseInfo);
                         break;
                     }
                 }
                 buffer += value;
-                if (peek(parseInfo) == '*') {
+                if (match(parseInfo, '*')) {
                     buffer += next(parseInfo);
                     while (value = next(parseInfo)) {
                         if (value == '*') {
                             buffer += value;
-                            if (peek(parseInfo) == '/') {
+                            if (match(parseInfo, '/')) {
                                 yield pushToken(buffer + next(parseInfo), parseInfo, EnumToken.CommentTokenType);
                                 buffer = '';
                                 break;
@@ -249,17 +253,17 @@ function* tokenize(stream) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(parseInfo) == '=') {
+                if (match(parseInfo, '=')) {
                     yield pushToken('', parseInfo, EnumToken.LteTokenType);
                     next(parseInfo);
                     break;
                 }
                 buffer += value;
-                if (peek(parseInfo, 3) == '!--') {
+                if (match(parseInfo, '!--')) {
                     buffer += next(parseInfo, 3);
                     while (value = next(parseInfo)) {
                         buffer += value;
-                        if (value == '-' && peek(parseInfo, 2) == '->') {
+                        if (value == '-' && match(parseInfo, '->')) {
                             break;
                         }
                     }
@@ -305,11 +309,11 @@ function* tokenize(stream) {
                     buffer = '';
                 }
                 if (charCode == 124 /* TokenMap.PIPE */) {
-                    if (peek(parseInfo) == '|') {
+                    if (match(parseInfo, '|')) {
                         next(parseInfo);
                         yield pushToken('', parseInfo, EnumToken.ColumnCombinatorTokenType);
                     }
-                    else if (peek(parseInfo) == '=') {
+                    else if (match(parseInfo, '=')) {
                         buffer += next(parseInfo);
                         yield pushToken(buffer, parseInfo);
                     }
@@ -333,7 +337,7 @@ function* tokenize(stream) {
                 // ^=
                 // $=
                 // |=
-                if (peek(parseInfo) == '=') {
+                if (match(parseInfo, '=')) {
                     next(parseInfo);
                     switch (buffer.charCodeAt(0)) {
                         case 126 /* TokenMap.TILDA */:
@@ -360,7 +364,7 @@ function* tokenize(stream) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(parseInfo) == '=') {
+                if (match(parseInfo, '=')) {
                     yield pushToken('', parseInfo, EnumToken.GteTokenType);
                     next(parseInfo);
                 }
@@ -378,9 +382,9 @@ function* tokenize(stream) {
                 }
                 buffer += value;
                 break;
+            case 58 /* TokenMap.COLON */:
             case 43 /* TokenMap.PLUS */:
             case 42 /* TokenMap.STAR */:
-            case 58 /* TokenMap.COLON */:
             case 44 /* TokenMap.COMMA */:
             case 61 /* TokenMap.EQUAL */:
                 if (buffer.length > 0 && buffer != ':') {
@@ -594,7 +598,7 @@ function* tokenize(stream) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(parseInfo, 9) == 'important') {
+                if (match(parseInfo, 'important')) {
                     yield pushToken('', parseInfo, EnumToken.ImportantTokenType);
                     next(parseInfo, 9);
                     buffer = '';
@@ -602,8 +606,42 @@ function* tokenize(stream) {
                 }
                 buffer = '!';
                 break;
+            case 64 /* TokenMap.AT */:
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                buffer = value;
+                {
+                    let val = peek(parseInfo);
+                    if (val == '-' || isIdentStart(val.charCodeAt(0))) {
+                        buffer = next(parseInfo);
+                        val = peek(parseInfo);
+                        while (isIdent(val) || val == '-') {
+                            buffer += next(parseInfo);
+                            val = peek(parseInfo);
+                        }
+                        yield pushToken(buffer, parseInfo, EnumToken.AtRuleTokenType);
+                        buffer = '';
+                    }
+                }
+                break;
             default:
                 buffer += value;
+                if (buffer.length == 1) {
+                    if (buffer == 'h') {
+                        if (match(parseInfo, 'ttp://') || match(parseInfo, 'ttps://')) {
+                            let val = peek(parseInfo);
+                            while (val != ')' && val != ';' && !isWhiteSpace(val.charCodeAt(0))) {
+                                buffer += next(parseInfo);
+                                val = peek(parseInfo);
+                            }
+                            yield pushToken(buffer, parseInfo);
+                            buffer = '';
+                            break;
+                        }
+                    }
+                }
                 break;
         }
     }

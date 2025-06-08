@@ -361,6 +361,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
         while ([EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
             tokens.shift();
         }
+        rawTokens.shift();
         if (atRule.val == 'import') {
             // only @charset and @layer are accepted before @import
             // @ts-ignore
@@ -438,7 +439,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
         if (atRule.val == 'charset') {
             let spaces = 0;
             // https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
-            for (let k = 1; k < rawTokens.length; k++) {
+            for (let k = 0; k < rawTokens.length; k++) {
                 if (rawTokens[k].hint == EnumToken.WhitespaceTokenType) {
                     spaces += rawTokens[k].len;
                     continue;
@@ -1161,14 +1162,14 @@ function getTokenType(val, hint) {
         };
     }
     if (isIdent(val)) {
-        if (systemColors.has(val.toLowerCase())) {
+        if (systemColors.has(v)) {
             return {
                 typ: EnumToken.ColorTokenType,
                 val,
                 kin: ColorKind.SYS
             };
         }
-        if (deprecatedSystemColors.has(val.toLowerCase())) {
+        if (deprecatedSystemColors.has(v)) {
             return {
                 typ: EnumToken.ColorTokenType,
                 val,

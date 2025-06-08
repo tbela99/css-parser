@@ -59,7 +59,7 @@ export class TransformCssFeature {
 
             if (matrix == null || cumulative == null || minified == null) {
 
-                return;
+                continue;
             }
 
             let r: Token[][] = [filterValues((node as AstDeclaration).val.slice())];

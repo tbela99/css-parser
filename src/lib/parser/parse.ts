@@ -110,6 +110,7 @@ import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
 import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
+import {evaluateSyntax} from "../validation/syntax.ts";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -601,6 +602,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             tokens.shift();
         }
 
+        rawTokens.shift();
+
         if (atRule.val == 'import') {
 
             // only @charset and @layer are accepted before @import
@@ -703,7 +706,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             let spaces: number = 0;
 
             // https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
-            for (let k = 1; k < rawTokens.length; k++) {
+            for (let k = 0; k < rawTokens.length; k++) {
 
                 if (rawTokens[k].hint == EnumToken.WhitespaceTokenType) {
 
@@ -768,7 +771,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
         };
 
         Object.defineProperties(node, {
-            tokens: {...definedPropertySettings, enumerable: false, value: tokens.slice()},
+            tokens: {...definedPropertySettings, enumerable: false, value: t.slice()},
             raw: {...definedPropertySettings, value: raw}
         });
 
@@ -1117,11 +1120,29 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
             if (result != null) {
 
+                console.error(renderToken(result));
+
+                if (options.validation) {
+
+                    const valid = evaluateSyntax(result, options);
+
+                    if (valid.valid == ValidationLevel.Drop) {
+
+                        errors.push(<ErrorDescription>{
+                            action: 'drop',
+                            message: valid.error,
+                            location: map.get(valid.node as Token) ?? valid.node?.loc ?? result.loc
+                        });
+
+                        return null;
+                    }
+                }
+
                 context.chi!.push(result);
                 Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
             }
 
-            return node;
+            return null;
         }
     }
 }
@@ -1260,10 +1281,23 @@ function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
                 continue;
             }
 
+
             for (let i = nameIndex + 1; i < (value as FunctionToken | ParensToken).chi.length; i++) {
 
                 if ((value as FunctionToken | ParensToken).chi[i].typ == EnumToken.CommentTokenType || (value as FunctionToken | ParensToken).chi[i].typ == EnumToken.WhitespaceTokenType) {
 
+                    continue;
+                }
+
+                if ((value as FunctionToken | ParensToken).chi[i].typ == EnumToken.LiteralTokenType && ((value as FunctionToken | ParensToken).chi[i] as LiteralToken).val.startsWith(':') && isDimension(((value as FunctionToken | ParensToken).chi[i] as LiteralToken).val.slice(1))) {
+
+                    (value as ParensToken | FunctionToken).chi.splice(i, 1, {
+                            typ: EnumToken.ColonTokenType,
+                        },
+                        Object.assign((value as FunctionToken | ParensToken).chi[i], parseDimension(((value as FunctionToken | ParensToken).chi[i] as LiteralToken).val.slice(1)))
+                    );
+
+                    i--;
                     continue;
                 }
 
@@ -1681,7 +1715,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (isIdent(val)) {
 
-        if (systemColors.has(val.toLowerCase())) {
+        if (systemColors.has(v)) {
             return <ColorToken>{
                 typ: EnumToken.ColorTokenType,
                 val,
@@ -1689,7 +1723,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
             };
         }
 
-        if (deprecatedSystemColors.has(val.toLowerCase())) {
+        if (deprecatedSystemColors.has(v)) {
             return <ColorToken>{
                 typ: EnumToken.ColorTokenType,
                 val,

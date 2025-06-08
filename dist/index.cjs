@@ -6622,6 +6622,7 @@ var TokenMap;
     TokenMap[TokenMap["CLOSE_CURLY_BRACE"] = 125] = "CLOSE_CURLY_BRACE";
     TokenMap[TokenMap["SEMICOLON"] = 59] = "SEMICOLON";
     TokenMap[TokenMap["EXCLAMATION"] = 33] = "EXCLAMATION";
+    TokenMap[TokenMap["AT"] = 64] = "AT";
 })(TokenMap || (TokenMap = {}));
 function consumeWhiteSpace(parseInfo) {
     let count = 0;
@@ -6634,7 +6635,7 @@ function consumeWhiteSpace(parseInfo) {
 function pushToken(token, parseInfo, hint) {
     const result = {
         token,
-        len: parseInfo.currentPosition.ind - parseInfo.position.ind,
+        len: parseInfo.currentPosition.ind - parseInfo.position.ind - 1,
         hint,
         sta: { ...parseInfo.position },
         end: { ...parseInfo.currentPosition },
@@ -6728,6 +6729,9 @@ function* consumeString(quoteStr, buffer, parseInfo) {
         yield pushToken(buffer + quote, parseInfo, exports.EnumToken.StringTokenType);
     }
 }
+function match(parseInfo, input) {
+    return parseInfo.stream.slice(parseInfo.currentPosition.ind + 1, parseInfo.currentPosition.ind + input.length + 1) == input;
+}
 function peek(parseInfo, count = 1) {
     if (count == 1) {
         return parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1);
@@ -6796,18 +6800,18 @@ function* tokenize$1(stream) {
                 if (buffer.length > 0) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
-                    if (peek(parseInfo) != '*') {
+                    if (!match(parseInfo, '*')) {
                         yield pushToken(value, parseInfo);
                         break;
                     }
                 }
                 buffer += value;
-                if (peek(parseInfo) == '*') {
+                if (match(parseInfo, '*')) {
                     buffer += next(parseInfo);
                     while (value = next(parseInfo)) {
                         if (value == '*') {
                             buffer += value;
-                            if (peek(parseInfo) == '/') {
+                            if (match(parseInfo, '/')) {
                                 yield pushToken(buffer + next(parseInfo), parseInfo, exports.EnumToken.CommentTokenType);
                                 buffer = '';
                                 break;
@@ -6835,17 +6839,17 @@ function* tokenize$1(stream) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(parseInfo) == '=') {
+                if (match(parseInfo, '=')) {
                     yield pushToken('', parseInfo, exports.EnumToken.LteTokenType);
                     next(parseInfo);
                     break;
                 }
                 buffer += value;
-                if (peek(parseInfo, 3) == '!--') {
+                if (match(parseInfo, '!--')) {
                     buffer += next(parseInfo, 3);
                     while (value = next(parseInfo)) {
                         buffer += value;
-                        if (value == '-' && peek(parseInfo, 2) == '->') {
+                        if (value == '-' && match(parseInfo, '->')) {
                             break;
                         }
                     }
@@ -6891,11 +6895,11 @@ function* tokenize$1(stream) {
                     buffer = '';
                 }
                 if (charCode == 124 /* TokenMap.PIPE */) {
-                    if (peek(parseInfo) == '|') {
+                    if (match(parseInfo, '|')) {
                         next(parseInfo);
                         yield pushToken('', parseInfo, exports.EnumToken.ColumnCombinatorTokenType);
                     }
-                    else if (peek(parseInfo) == '=') {
+                    else if (match(parseInfo, '=')) {
                         buffer += next(parseInfo);
                         yield pushToken(buffer, parseInfo);
                     }
@@ -6919,7 +6923,7 @@ function* tokenize$1(stream) {
                 // ^=
                 // $=
                 // |=
-                if (peek(parseInfo) == '=') {
+                if (match(parseInfo, '=')) {
                     next(parseInfo);
                     switch (buffer.charCodeAt(0)) {
                         case 126 /* TokenMap.TILDA */:
@@ -6946,7 +6950,7 @@ function* tokenize$1(stream) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(parseInfo) == '=') {
+                if (match(parseInfo, '=')) {
                     yield pushToken('', parseInfo, exports.EnumToken.GteTokenType);
                     next(parseInfo);
                 }
@@ -6964,9 +6968,9 @@ function* tokenize$1(stream) {
                 }
                 buffer += value;
                 break;
+            case 58 /* TokenMap.COLON */:
             case 43 /* TokenMap.PLUS */:
             case 42 /* TokenMap.STAR */:
-            case 58 /* TokenMap.COLON */:
             case 44 /* TokenMap.COMMA */:
             case 61 /* TokenMap.EQUAL */:
                 if (buffer.length > 0 && buffer != ':') {
@@ -7180,7 +7184,7 @@ function* tokenize$1(stream) {
                     yield pushToken(buffer, parseInfo);
                     buffer = '';
                 }
-                if (peek(parseInfo, 9) == 'important') {
+                if (match(parseInfo, 'important')) {
                     yield pushToken('', parseInfo, exports.EnumToken.ImportantTokenType);
                     next(parseInfo, 9);
                     buffer = '';
@@ -7188,8 +7192,42 @@ function* tokenize$1(stream) {
                 }
                 buffer = '!';
                 break;
+            case 64 /* TokenMap.AT */:
+                if (buffer.length > 0) {
+                    yield pushToken(buffer, parseInfo);
+                    buffer = '';
+                }
+                buffer = value;
+                {
+                    let val = peek(parseInfo);
+                    if (val == '-' || isIdentStart(val.charCodeAt(0))) {
+                        buffer = next(parseInfo);
+                        val = peek(parseInfo);
+                        while (isIdent(val) || val == '-') {
+                            buffer += next(parseInfo);
+                            val = peek(parseInfo);
+                        }
+                        yield pushToken(buffer, parseInfo, exports.EnumToken.AtRuleTokenType);
+                        buffer = '';
+                    }
+                }
+                break;
             default:
                 buffer += value;
+                if (buffer.length == 1) {
+                    if (buffer == 'h') {
+                        if (match(parseInfo, 'ttp://') || match(parseInfo, 'ttps://')) {
+                            let val = peek(parseInfo);
+                            while (val != ')' && val != ';' && !isWhiteSpace(val.charCodeAt(0))) {
+                                buffer += next(parseInfo);
+                                val = peek(parseInfo);
+                            }
+                            yield pushToken(buffer, parseInfo);
+                            buffer = '';
+                            break;
+                        }
+                    }
+                }
                 break;
         }
     }
@@ -7515,6 +7553,9 @@ var declarations = {
 	"align-tracks": {
 		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#"
 	},
+	"alignment-baseline": {
+		syntax: "baseline | alphabetic | ideographic | middle | central | mathematical | text-before-edge | text-after-edge"
+	},
 	all: {
 		syntax: "initial | inherit | unset | revert | revert-layer"
 	},
@@ -7613,6 +7654,9 @@ var declarations = {
 	},
 	"background-size": {
 		syntax: "<bg-size>#"
+	},
+	"baseline-shift": {
+		syntax: "<length-percentage> | sub | super | baseline"
 	},
 	"block-size": {
 		syntax: "<'width'>"
@@ -7933,7 +7977,7 @@ var declarations = {
 		syntax: "none | <custom-ident>+"
 	},
 	"container-type": {
-		syntax: "normal | size | inline-size"
+		syntax: "normal | [ [ size | inline-size ] || scroll-state ]"
 	},
 	content: {
 		syntax: "normal | none | [ <content-replacement> | <content-list> ] [/ [ <string> | <counter> ]+ ]?"
@@ -8020,7 +8064,7 @@ var declarations = {
 		syntax: "<'opacity'>"
 	},
 	font: {
-		syntax: "[ [ <'font-style'> || <font-variant-css21> || <'font-weight'> || <'font-stretch'> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'> ] | caption | icon | menu | message-box | small-caption | status-bar"
+		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name>"
 	},
 	"font-family": {
 		syntax: "[ <family-name> | <generic-family> ]#"
@@ -8041,7 +8085,7 @@ var declarations = {
 		syntax: "normal | light | dark | <palette-identifier> | <palette-mix()>"
 	},
 	"font-size": {
-		syntax: "<absolute-size> | <relative-size> | <length-percentage>"
+		syntax: "<absolute-size> | <relative-size> | <length-percentage [0,∞]> | math"
 	},
 	"font-size-adjust": {
 		syntax: "none | [ ex-height | cap-height | ch-width | ic-width | ic-height ]? [ from-font | <number> ]"
@@ -8099,6 +8143,9 @@ var declarations = {
 	},
 	"font-weight": {
 		syntax: "<font-weight-absolute> | bolder | lighter"
+	},
+	"font-width": {
+		syntax: "normal | <percentage [0,∞]> | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded"
 	},
 	"forced-color-adjust": {
 		syntax: "auto | none | preserve-parent-color"
@@ -8415,6 +8462,9 @@ var declarations = {
 	"object-position": {
 		syntax: "<position>"
 	},
+	"object-view-box": {
+		syntax: "none | <basic-shape-rect>"
+	},
 	offset: {
 		syntax: "[ <'offset-position'>? [ <'offset-path'> [ <'offset-distance'> || <'offset-rotate'> ]? ]? ]! [ / <'offset-anchor'> ]?"
 	},
@@ -8616,6 +8666,9 @@ var declarations = {
 	"ruby-merge": {
 		syntax: "separate | collapse | auto"
 	},
+	"ruby-overhang": {
+		syntax: "auto | none"
+	},
 	"ruby-position": {
 		syntax: "[ alternate || [ over | under ] ] | inter-character"
 	},
@@ -8630,6 +8683,9 @@ var declarations = {
 	},
 	"scroll-behavior": {
 		syntax: "auto | smooth"
+	},
+	"scroll-initial-target": {
+		syntax: "none | nearest"
 	},
 	"scroll-margin": {
 		syntax: "<length>{1,4}"
@@ -8765,6 +8821,9 @@ var declarations = {
 	},
 	stroke: {
 		syntax: "<paint>"
+	},
+	"stroke-color": {
+		syntax: "<color>"
 	},
 	"stroke-dasharray": {
 		syntax: "none | <dasharray>"
@@ -8944,7 +9003,7 @@ var declarations = {
 		syntax: "baseline | sub | super | text-top | text-bottom | middle | top | bottom | <percentage> | <length>"
 	},
 	"view-timeline": {
-		syntax: "[ <'view-timeline-name'> <'view-timeline-axis'>? ]#"
+		syntax: "[ <'view-timeline-name'> [ <'view-timeline-axis'> || <'view-timeline-inset'> ]? ]#"
 	},
 	"view-timeline-axis": {
 		syntax: "[ block | inline | x | y ]#"
@@ -8953,7 +9012,10 @@ var declarations = {
 		syntax: "[ [ auto | <length-percentage> ]{1,2} ]#"
 	},
 	"view-timeline-name": {
-		syntax: "none | <dashed-ident>#"
+		syntax: "[ none | <dashed-ident> ]#"
+	},
+	"view-transition-class": {
+		syntax: "none | <custom-ident>+"
 	},
 	"view-transition-name": {
 		syntax: "none | <custom-ident>"
@@ -9051,7 +9113,7 @@ var functions = {
 		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2})"
 	},
 	"conic-gradient": {
-		syntax: "conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )"
+		syntax: "conic-gradient( [ <conic-gradient-syntax> ] )"
 	},
 	contrast: {
 		syntax: "contrast( [ <number> | <percentage> ]? )"
@@ -9067,6 +9129,9 @@ var functions = {
 	},
 	"cross-fade": {
 		syntax: "cross-fade( <cf-mixing-image> , <cf-final-image>? )"
+	},
+	"cubic-bezier": {
+		syntax: "cubic-bezier( [ <number [0,1]>, <number> ]#{2} )"
 	},
 	"drop-shadow": {
 		syntax: "drop-shadow( [ <color>? && <length>{2,3} ] )"
@@ -9131,8 +9196,11 @@ var functions = {
 	"light-dark": {
 		syntax: "light-dark( <color>, <color> )"
 	},
+	linear: {
+		syntax: "linear( [ <number> && <percentage>{0,2} ]# )"
+	},
 	"linear-gradient": {
-		syntax: "linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )"
+		syntax: "linear-gradient( [ <linear-gradient-syntax> ] )"
 	},
 	log: {
 		syntax: "log( <calc-sum>, <calc-sum>? )"
@@ -9183,7 +9251,7 @@ var functions = {
 		syntax: "pow( <calc-sum>, <calc-sum> )"
 	},
 	"radial-gradient": {
-		syntax: "radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )"
+		syntax: "radial-gradient( [ <radial-gradient-syntax> ] )"
 	},
 	ray: {
 		syntax: "ray( <angle> && <ray-size>? && contain? && [at <position>]? )"
@@ -9195,13 +9263,13 @@ var functions = {
 		syntax: "rem( <calc-sum>, <calc-sum> )"
 	},
 	"repeating-conic-gradient": {
-		syntax: "repeating-conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )"
+		syntax: "repeating-conic-gradient( [ <conic-gradient-syntax> ] )"
 	},
 	"repeating-linear-gradient": {
-		syntax: "repeating-linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )"
+		syntax: "repeating-linear-gradient( [ <linear-gradient-syntax> ] )"
 	},
 	"repeating-radial-gradient": {
-		syntax: "repeating-radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )"
+		syntax: "repeating-radial-gradient( [ <radial-gradient-syntax> ] )"
 	},
 	rgb: {
 		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? ) | rgb( [ <number> | <percentage> | none ]{3} [ / [ <alpha-value> | none ] ]? )"
@@ -9268,6 +9336,9 @@ var functions = {
 	},
 	sqrt: {
 		syntax: "sqrt( <calc-sum> )"
+	},
+	steps: {
+		syntax: "steps( <integer>, <step-position>? )"
 	},
 	symbols: {
 		syntax: "symbols( <symbols-type>? [ <string> | <image> ]+ )"
@@ -9344,13 +9415,13 @@ var syntaxes = {
 		syntax: "<angle> | <percentage>"
 	},
 	"angular-color-hint": {
-		syntax: "<angle-percentage>"
+		syntax: "<angle-percentage> | <zero>"
 	},
 	"angular-color-stop": {
-		syntax: "<color> && <color-stop-angle>?"
+		syntax: "<color> <color-stop-angle>?"
 	},
 	"angular-color-stop-list": {
-		syntax: "[ <angular-color-stop> [, <angular-color-hint>]? ]# , <angular-color-stop>"
+		syntax: "<angular-color-stop> , [ <angular-color-hint>? , <angular-color-stop> ]#?"
 	},
 	"animateable-feature": {
 		syntax: "scroll-position | contents | <custom-ident>"
@@ -9392,7 +9463,10 @@ var syntaxes = {
 		syntax: "[ first | last ]? baseline"
 	},
 	"basic-shape": {
-		syntax: "<inset()> | <circle()> | <ellipse()> | <polygon()> | <path()>"
+		syntax: "<inset()> | <xywh()> | <rect()> | <circle()> | <ellipse()> | <polygon()> | <path()>"
+	},
+	"basic-shape-rect": {
+		syntax: "<inset()> | <rect()> | <xywh()>"
 	},
 	"bg-clip": {
 		syntax: "<visual-box> | border-area | text"
@@ -9479,13 +9553,13 @@ var syntaxes = {
 		syntax: "<color-stop-length> | <color-stop-angle>"
 	},
 	"color-stop-angle": {
-		syntax: "<angle-percentage>{1,2}"
+		syntax: "[ <angle-percentage> | <zero> ]{1,2}"
 	},
 	"color-stop-length": {
 		syntax: "<length-percentage>{1,2}"
 	},
 	"color-stop-list": {
-		syntax: "[ <linear-color-stop> [, <linear-color-hint>]? ]# , <linear-color-stop>"
+		syntax: "<linear-color-stop> , [ <linear-color-hint>? , <linear-color-stop> ]#?"
 	},
 	"colorspace-params": {
 		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
@@ -9518,7 +9592,19 @@ var syntaxes = {
 		syntax: "<compound-selector>#"
 	},
 	"conic-gradient()": {
-		syntax: "conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )"
+		syntax: "conic-gradient( [ <conic-gradient-syntax> ] )"
+	},
+	"conic-gradient-syntax": {
+		syntax: "[ [ [ from [ <angle> | <zero> ] ]? [ at <position> ]? ] || <color-interpolation-method> ]? , <angular-color-stop-list>"
+	},
+	"container-condition": {
+		syntax: "[ <container-name>? <container-query>? ]!"
+	},
+	"container-name": {
+		syntax: "<custom-ident>"
+	},
+	"container-query": {
+		syntax: "not <query-in-parens> | <query-in-parens> [ [ and <query-in-parens> ]* | [ or <query-in-parens> ]* ]"
 	},
 	"content-distribution": {
 		syntax: "space-between | space-around | space-evenly | stretch"
@@ -9565,8 +9651,11 @@ var syntaxes = {
 	"cross-fade()": {
 		syntax: "cross-fade( <cf-mixing-image> , <cf-final-image>? )"
 	},
-	"cubic-bezier-timing-function": {
-		syntax: "ease | ease-in | ease-out | ease-in-out | cubic-bezier(<number [0,1]>, <number>, <number [0,1]>, <number>)"
+	"cubic-bezier()": {
+		syntax: "cubic-bezier( [ <number [0,1]>, <number> ]#{2} )"
+	},
+	"cubic-bezier-easing-function": {
+		syntax: "ease | ease-in | ease-out | ease-in-out | <cubic-bezier()>"
 	},
 	"custom-color-space": {
 		syntax: "<dashed-ident>"
@@ -9608,7 +9697,7 @@ var syntaxes = {
 		syntax: "drop-shadow( [ <color>? && <length>{2,3} ] )"
 	},
 	"easing-function": {
-		syntax: "linear | <cubic-bezier-timing-function> | <step-timing-function>"
+		syntax: "<linear-easing-function> | <cubic-bezier-easing-function> | <step-easing-function>"
 	},
 	"east-asian-variant-values": {
 		syntax: "[ jis78 | jis83 | jis90 | jis04 | simplified | traditional ]"
@@ -9621,9 +9710,6 @@ var syntaxes = {
 	},
 	"ellipse()": {
 		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
-	},
-	"ending-shape": {
-		syntax: "circle | ellipse"
 	},
 	"env()": {
 		syntax: "env( <custom-ident> , <declaration-value>? )"
@@ -9682,23 +9768,32 @@ var syntaxes = {
 	"font-stretch-absolute": {
 		syntax: "normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded | <percentage>"
 	},
-	"font-variant-css21": {
-		syntax: "[ normal | small-caps ]"
+	"font-variant-css2": {
+		syntax: "normal | small-caps"
 	},
 	"font-weight-absolute": {
 		syntax: "normal | bold | <number [1,1000]>"
 	},
+	"font-width-css3": {
+		syntax: "normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded"
+	},
+	"form-control-identifier": {
+		syntax: "select"
+	},
 	"frequency-percentage": {
 		syntax: "<frequency> | <percentage>"
+	},
+	"generic-complete": {
+		syntax: "serif | sans-serif | system-ui | cursive | fantasy | math | monospace"
 	},
 	"general-enclosed": {
 		syntax: "[ <function-token> <any-value> ) ] | ( <ident> <any-value> )"
 	},
 	"generic-family": {
-		syntax: "serif | sans-serif | cursive | fantasy | monospace"
+		syntax: "<generic-complete> | <generic-incomplete> | emoji | fangsong"
 	},
-	"generic-name": {
-		syntax: "serif | sans-serif | cursive | fantasy | monospace"
+	"generic-incomplete": {
+		syntax: "ui-serif | ui-sans-serif | ui-monospace | ui-rounded"
 	},
 	"geometry-box": {
 		syntax: "<shape-box> | fill-box | stroke-box | view-box"
@@ -9739,9 +9834,6 @@ var syntaxes = {
 	"id-selector": {
 		syntax: "<hash-token>"
 	},
-	integer: {
-		syntax: "<number-token>"
-	},
 	image: {
 		syntax: "<url> | <image()> | <image-set()> | <element()> | <paint()> | <cross-fade()> | <gradient>"
 	},
@@ -9766,17 +9858,17 @@ var syntaxes = {
 	"inset()": {
 		syntax: "inset( <length-percentage>{1,4} [ round <'border-radius'> ]? )"
 	},
+	integer: {
+		syntax: "<number-token>"
+	},
 	"invert()": {
 		syntax: "invert( [ <number> | <percentage> ]? )"
 	},
 	"keyframe-block": {
 		syntax: "<keyframe-selector># {\n  <declaration-list>\n}"
 	},
-	"keyframe-block-list": {
-		syntax: "<keyframe-block>+"
-	},
 	"keyframe-selector": {
-		syntax: "from | to | <percentage> | <timeline-range-name> <percentage>"
+		syntax: "from | to | <percentage [0,100]> | <timeline-range-name> <percentage>"
 	},
 	"keyframes-name": {
 		syntax: "<custom-ident> | <string>"
@@ -9817,14 +9909,23 @@ var syntaxes = {
 	"line-width": {
 		syntax: "<length> | thin | medium | thick"
 	},
+	"linear()": {
+		syntax: "linear( [ <number> && <percentage>{0,2} ]# )"
+	},
 	"linear-color-hint": {
 		syntax: "<length-percentage>"
 	},
 	"linear-color-stop": {
 		syntax: "<color> <color-stop-length>?"
 	},
+	"linear-easing-function": {
+		syntax: "linear | <linear()>"
+	},
 	"linear-gradient()": {
-		syntax: "linear-gradient( [ [ <angle> | to <side-or-corner> ] || <color-interpolation-method> ]? , <color-stop-list> )"
+		syntax: "linear-gradient( [ <linear-gradient-syntax> ] )"
+	},
+	"linear-gradient-syntax": {
+		syntax: "[ [ <angle> | <zero> | to <side-or-corner> ] || <color-interpolation-method> ]? , <color-stop-list>"
 	},
 	"log()": {
 		syntax: "log( <calc-sum>, <calc-sum>? )"
@@ -9910,15 +10011,6 @@ var syntaxes = {
 	"n-dimension": {
 		syntax: "<dimension-token>"
 	},
-	"ndash-dimension": {
-		syntax: "<dimension-token>"
-	},
-	"ndashdigit-dimension": {
-		syntax: "<dimension-token>"
-	},
-	"ndashdigit-ident": {
-		syntax: "<ident-token>"
-	},
 	"name-repeat": {
 		syntax: "repeat( [ <integer [1,∞]> | auto-fill ], <line-names>+ )"
 	},
@@ -9927,6 +10019,15 @@ var syntaxes = {
 	},
 	"namespace-prefix": {
 		syntax: "<ident>"
+	},
+	"ndash-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndashdigit-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndashdigit-ident": {
+		syntax: "<ident-token>"
 	},
 	"ns-prefix": {
 		syntax: "[ <ident-token> | '*' ]? '|'"
@@ -10036,6 +10137,9 @@ var syntaxes = {
 	"pseudo-page": {
 		syntax: ": [ left | right | first | blank ]"
 	},
+	"query-in-parens": {
+		syntax: "( <container-query> ) | ( <size-feature> ) | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
+	},
 	quote: {
 		syntax: "open-quote | close-quote | no-open-quote | no-close-quote"
 	},
@@ -10043,7 +10147,13 @@ var syntaxes = {
 		syntax: "closest-corner | closest-side | farthest-corner | farthest-side"
 	},
 	"radial-gradient()": {
-		syntax: "radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )"
+		syntax: "radial-gradient( [ <radial-gradient-syntax> ] )"
+	},
+	"radial-gradient-syntax": {
+		syntax: "[ [ [ <radial-shape> || <radial-size> ]? [ at <position> ]? ] || <color-interpolation-method> ]? , <color-stop-list>"
+	},
+	"radial-shape": {
+		syntax: "circle | ellipse"
 	},
 	"radial-size": {
 		syntax: "<radial-extent> | <length [0,∞]> | <length-percentage [0,∞]>{2}"
@@ -10057,6 +10167,9 @@ var syntaxes = {
 	"ray-size": {
 		syntax: "closest-side | closest-corner | farthest-side | farthest-corner | sides"
 	},
+	"rect()": {
+		syntax: "rect( [ <length-percentage> | auto ]{4} [ round <'border-radius'> ]? )"
+	},
 	"rectangular-color-space": {
 		syntax: "srgb | srgb-linear | display-p3 | a98-rgb | prophoto-rgb | rec2020 | lab | oklab | xyz | xyz-d50 | xyz-d65"
 	},
@@ -10069,9 +10182,6 @@ var syntaxes = {
 	"relative-size": {
 		syntax: "larger | smaller"
 	},
-	"rect()": {
-		syntax: "rect( [ <length-percentage> | auto ]{4} [ round <'border-radius'> ]? )"
-	},
 	"rem()": {
 		syntax: "rem( <calc-sum>, <calc-sum> )"
 	},
@@ -10079,13 +10189,13 @@ var syntaxes = {
 		syntax: "repeat-x | repeat-y | [ repeat | space | round | no-repeat ]{1,2}"
 	},
 	"repeating-conic-gradient()": {
-		syntax: "repeating-conic-gradient( [ from <angle> ]? [ at <position> ]?, <angular-color-stop-list> )"
+		syntax: "repeating-conic-gradient( [ <conic-gradient-syntax> ] )"
 	},
 	"repeating-linear-gradient()": {
-		syntax: "repeating-linear-gradient( [ <angle> | to <side-or-corner> ]? , <color-stop-list> )"
+		syntax: "repeating-linear-gradient( [ <linear-gradient-syntax> ] )"
 	},
 	"repeating-radial-gradient()": {
-		syntax: "repeating-radial-gradient( [ <ending-shape> || <size> ]? [ at <position> ]? , <color-stop-list> )"
+		syntax: "repeating-radial-gradient( [ <radial-gradient-syntax> ] )"
 	},
 	"reversed-counter-name": {
 		syntax: "reversed( <counter-name> )"
@@ -10146,6 +10256,15 @@ var syntaxes = {
 	},
 	scroller: {
 		syntax: "root | nearest | self"
+	},
+	"scroll-state-feature": {
+		syntax: "<media-query-list>"
+	},
+	"scroll-state-in-parens": {
+		syntax: "( <scroll-state-query> ) | ( <scroll-state-feature> ) | <general-enclosed>"
+	},
+	"scroll-state-query": {
+		syntax: "not <scroll-state-in-parens> | <scroll-state-in-parens> [ [ and <scroll-state-in-parens> ]* | [ or <scroll-state-in-parens> ]* ] | <scroll-state-feature>  "
 	},
 	"selector-list": {
 		syntax: "<complex-selector-list>"
@@ -10213,6 +10332,9 @@ var syntaxes = {
 	size: {
 		syntax: "closest-side | farthest-side | closest-corner | farthest-corner | <length> | <length-percentage>{2}"
 	},
+	"size-feature": {
+		syntax: "<media-query-list>"
+	},
 	"skew()": {
 		syntax: "skew( [ <angle> | <zero> ] , [ <angle> | <zero> ]? )"
 	},
@@ -10228,8 +10350,20 @@ var syntaxes = {
 	"step-position": {
 		syntax: "jump-start | jump-end | jump-none | jump-both | start | end"
 	},
-	"step-timing-function": {
-		syntax: "step-start | step-end | steps(<integer>[, <step-position>]?)"
+	"step-easing-function": {
+		syntax: "step-start | step-end | <steps()>"
+	},
+	"steps()": {
+		syntax: "steps( <integer>, <step-position>? )"
+	},
+	"style-feature": {
+		syntax: "<declaration>"
+	},
+	"style-in-parens": {
+		syntax: "( <style-query> ) | ( <style-feature> ) | <general-enclosed>"
+	},
+	"style-query": {
+		syntax: "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ] | <style-feature> "
 	},
 	"subclass-selector": {
 		syntax: "<id-selector> | <class-selector> | <attribute-selector> | <pseudo-class-selector>"
@@ -10260,6 +10394,9 @@ var syntaxes = {
 	},
 	"system-color": {
 		syntax: "AccentColor | AccentColorText | ActiveText | ButtonBorder | ButtonFace | ButtonText | Canvas | CanvasText | Field | FieldText | GrayText | Highlight | HighlightText | LinkText | Mark | MarkText | SelectedItem | SelectedItemText | VisitedText"
+	},
+	"system-family-name": {
+		syntax: "caption | icon | menu | message-box | small-caption | status-bar"
 	},
 	"tan()": {
 		syntax: "tan( <calc-sum> )"
@@ -10503,6 +10640,9 @@ var selectors = {
 	":only-of-type": {
 		syntax: ":only-of-type"
 	},
+	":open": {
+		syntax: ":open"
+	},
 	":optional": {
 		syntax: ":optional"
 	},
@@ -10556,6 +10696,9 @@ var selectors = {
 	},
 	":target": {
 		syntax: ":target"
+	},
+	":target-current": {
+		syntax: ":target-current"
 	},
 	":target-within": {
 		syntax: ":target-within"
@@ -10659,6 +10802,9 @@ var selectors = {
 	"::before": {
 		syntax: "::before"
 	},
+	"::checkmark": {
+		syntax: "::checkmark"
+	},
 	"::cue": {
 		syntax: "::cue"
 	},
@@ -10695,8 +10841,20 @@ var selectors = {
 	"::part()": {
 		syntax: "::part( <ident>+ )"
 	},
+	"::picker-icon": {
+		syntax: "::picker-icon"
+	},
+	"::picker()": {
+		syntax: "::picker( <form-control-identifier>+ )"
+	},
 	"::placeholder": {
 		syntax: "::placeholder"
+	},
+	"::scroll-marker": {
+		syntax: "::scroll-marker"
+	},
+	"::scroll-marker-group": {
+		syntax: "::scroll-marker-group"
 	},
 	"::selection": {
 		syntax: "::selection"
@@ -10734,7 +10892,7 @@ var atRules = {
 		syntax: "@counter-style <counter-style-name> {\n  [ system: <counter-system>; ] ||\n  [ symbols: <counter-symbols>; ] ||\n  [ additive-symbols: <additive-symbols>; ] ||\n  [ negative: <negative-symbol>; ] ||\n  [ prefix: <prefix>; ] ||\n  [ suffix: <suffix>; ] ||\n  [ range: <range>; ] ||\n  [ pad: <padding>; ] ||\n  [ speak-as: <speak-as>; ] ||\n  [ fallback: <counter-style-name>; ]\n}",
 		descriptors: {
 			"additive-symbols": {
-				syntax: "[ <integer> && <symbol> ]#"
+				syntax: "[ <integer [0,∞]> && <symbol> ]#"
 			},
 			fallback: {
 				syntax: "<counter-style-name>"
@@ -10743,7 +10901,7 @@ var atRules = {
 				syntax: "<symbol> <symbol>?"
 			},
 			pad: {
-				syntax: "<integer> && <symbol>"
+				syntax: "<integer [0,∞]> && <symbol>"
 			},
 			prefix: {
 				syntax: "<symbol>"
@@ -10764,6 +10922,9 @@ var atRules = {
 				syntax: "cyclic | numeric | alphabetic | symbolic | additive | [ fixed <integer>? ] | [ extends <counter-style-name> ]"
 			}
 		}
+	},
+	"@container": {
+		syntax: "@container <container-condition># {\n  <block-contents>\n}"
 	},
 	"@document": {
 		syntax: "@document [ <url> | url-prefix(<string>) | domain(<string>) | media-document(<string>) | regexp(<string>) ]# {\n  <group-rule-body>\n}"
@@ -10833,7 +10994,7 @@ var atRules = {
 		syntax: "@import [ <string> | <url> ]\n        [ layer | layer(<layer-name>) ]?\n        [ supports( [ <supports-condition> | <declaration> ] ) ]?\n        <media-query-list>? ;"
 	},
 	"@keyframes": {
-		syntax: "@keyframes <keyframes-name> {\n  <keyframe-block-list>\n}"
+		syntax: "@keyframes <keyframes-name> {\n  <qualified-rule-list>\n}"
 	},
 	"@layer": {
 		syntax: "@layer [ <layer-name># | <layer-name>?  {\n  <stylesheet>\n} ]"
@@ -10857,7 +11018,7 @@ var atRules = {
 				syntax: "upright | rotate-left | rotate-right "
 			},
 			size: {
-				syntax: "<length>{1,2} | auto | [ <page-size> || [ portrait | landscape ] ]"
+				syntax: "<length [0,∞]>{1,2} | auto | [ <page-size> || [ portrait | landscape ] ]"
 			}
 		}
 	},
@@ -10950,6 +11111,7 @@ var ValidationTokenEnum;
     ValidationTokenEnum[ValidationTokenEnum["SemiColon"] = 38] = "SemiColon";
     ValidationTokenEnum[ValidationTokenEnum["Character"] = 39] = "Character";
     ValidationTokenEnum[ValidationTokenEnum["ColumnArrayToken"] = 40] = "ColumnArrayToken";
+    ValidationTokenEnum[ValidationTokenEnum["InfinityToken"] = 41] = "InfinityToken";
 })(ValidationTokenEnum || (ValidationTokenEnum = {}));
 var ValidationSyntaxGroupEnum;
 (function (ValidationSyntaxGroupEnum) {
@@ -11010,6 +11172,13 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
         let chr = syntax.charAt(i);
         move(currentPosition, chr);
         switch (chr) {
+            case '∞':
+                if (buffer.length > 0) {
+                    yield getTokenType$1(buffer, position, currentPosition);
+                }
+                yield getTokenType$1(chr, position, currentPosition);
+                buffer = '';
+                break;
             case '\\':
                 if (buffer.length > 0) {
                     yield getTokenType$1(buffer, position, currentPosition);
@@ -11341,8 +11510,9 @@ function matchCurlBraces(syntax, iterator) {
         if (i > 0 && it.typ == ValidationTokenEnum.Block && it.chi[0]?.typ == ValidationTokenEnum.Number) {
             items[i - 1].occurence = {
                 min: +it.chi[0].val,
-                max: +(it.chi[2] ?? it.chi[0]).val
+                max: it.chi[2]?.typ == ValidationTokenEnum.InfinityToken ? Number.POSITIVE_INFINITY : +(it.chi[2] ?? it.chi[0]).val
             };
+            console.error(items[i - 1]);
             items.splice(i--, 1);
             continue;
         }
@@ -11509,6 +11679,11 @@ function matchToken$1(syntax, iterator, validationToken) {
         return children;
     }
     while ((item = iterator.next()) && !item.done) {
+        if (Array.isArray(item.value)) {
+            // @ts-ignore
+            children.push(matchToken$1(syntax, item.value[Symbol.iterator](), validationToken));
+            continue;
+        }
         if (item.value.typ == validationToken) {
             if (item.value.typ == ValidationTokenEnum.Pipe) {
                 token = Object.defineProperty({
@@ -11598,6 +11773,7 @@ function matchToken$1(syntax, iterator, validationToken) {
             return children;
         }
         else {
+            // @ts-ignore
             children.push(item.value);
             if ('chi' in item.value) {
                 // @ts-ignore
@@ -11613,14 +11789,14 @@ function matchToken$1(syntax, iterator, validationToken) {
     }
     return children;
 }
-function parseTokens$1(syntax, iterator) {
+function parseSyntaxTokens(syntax, iterator) {
     const items = [];
     let item;
     let i;
     while ((item = iterator.next()) && !item.done) {
         if (Array.isArray(item.value)) {
             // @ts-ignore
-            item.value = parseTokens$1(syntax, item.value[Symbol.iterator]());
+            item.value = parseSyntaxTokens(syntax, item.value[Symbol.iterator]());
         }
         switch (item.value.typ) {
             case ValidationTokenEnum.Star:
@@ -11653,7 +11829,7 @@ function parseTokens$1(syntax, iterator) {
                 else if (item.value.typ == ValidationTokenEnum.OpenCurlyBrace) {
                     items[i].occurence = {
                         min: 0,
-                        max: 0
+                        max: null
                     };
                     while ((item = iterator.next()) && !item.done) {
                         if (item.value.typ == ValidationTokenEnum.Number) {
@@ -11674,7 +11850,7 @@ function parseTokens$1(syntax, iterator) {
                 }
                 break;
             case ValidationTokenEnum.Pipe:
-                item.value.chi = item.value.chi.map((t) => parseTokens$1(syntax, t[Symbol.iterator]()));
+                item.value.chi = item.value.chi.map((t) => parseSyntaxTokens(syntax, t[Symbol.iterator]()));
                 items.push(item.value);
                 break;
             default:
@@ -11685,13 +11861,13 @@ function parseTokens$1(syntax, iterator) {
     for (i = 0; i < items.length; i++) {
         if ('chi' in items[i]) {
             // @ts-ignore
-            items[i].chi = parseTokens$1(syntax, items[i].chi[Symbol.iterator]());
+            items[i].chi = parseSyntaxTokens(syntax, items[i].chi[Symbol.iterator]());
         }
         else if ('l' in items[i]) {
             // @ts-ignore
-            items[i].l = parseTokens$1(syntax, items[i].l[Symbol.iterator]());
+            items[i].l = parseSyntaxTokens(syntax, items[i].l[Symbol.iterator]());
             // @ts-ignore
-            items[i].r = parseTokens$1(syntax, items[i].r[Symbol.iterator]());
+            items[i].r = parseSyntaxTokens(syntax, items[i].r[Symbol.iterator]());
         }
         if (items[i].isOptional || items[i].isRepeatable) {
             if (i <= 1) {
@@ -11738,18 +11914,24 @@ function doParseSyntax(syntax, iterator, context) {
     // @ts-ignore
     context.chi = matchCurlBraces(syntax, context.chi[Symbol.iterator]());
     // @ts-ignore
-    context.chi = matchToken$1(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column);
-    // @ts-ignore
     context.chi = matchToken$1(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Pipe);
     // @ts-ignore
-    context.chi = parseTokens$1(syntax, context.chi[Symbol.iterator]());
+    context.chi = matchToken$1(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column);
     // @ts-ignore
     context.chi = matchToken$1(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Ampersand);
+    // @ts-ignore
+    context.chi = parseSyntaxTokens(syntax, context.chi[Symbol.iterator]());
     return context;
 }
 function getTokenType$1(token, position, currentPosition) {
     const pos = { ...position };
     Object.assign(position, currentPosition);
+    // '∞'
+    if (token == '\u221e') {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.InfinityToken,
+        }, 'pos', { ...objectProperties, value: pos });
+    }
     if (token.charAt(0) == '"' || token.charAt(0) == "'") {
         return Object.defineProperty({
             typ: ValidationTokenEnum.StringToken,
@@ -11882,7 +12064,7 @@ function getTokenType$1(token, position, currentPosition) {
             return Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
                 val: match[1],
-                range: [+match[3], match[4] == '∞' ? Infinity : +match[4]]
+                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
             }, 'pos', { ...objectProperties, value: pos });
         }
         return Object.defineProperty({
@@ -15071,6 +15253,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
         while ([exports.EnumToken.WhitespaceTokenType].includes(tokens[0]?.typ)) {
             tokens.shift();
         }
+        rawTokens.shift();
         if (atRule.val == 'import') {
             // only @charset and @layer are accepted before @import
             // @ts-ignore
@@ -15148,7 +15331,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
         if (atRule.val == 'charset') {
             let spaces = 0;
             // https://developer.mozilla.org/en-US/docs/Web/CSS/@charset
-            for (let k = 1; k < rawTokens.length; k++) {
+            for (let k = 0; k < rawTokens.length; k++) {
                 if (rawTokens[k].hint == exports.EnumToken.WhitespaceTokenType) {
                     spaces += rawTokens[k].len;
                     continue;
@@ -15871,14 +16054,14 @@ function getTokenType(val, hint) {
         };
     }
     if (isIdent(val)) {
-        if (systemColors.has(val.toLowerCase())) {
+        if (systemColors.has(v)) {
             return {
                 typ: exports.EnumToken.ColorTokenType,
                 val,
                 kin: ColorKind.SYS
             };
         }
-        if (deprecatedSystemColors.has(val.toLowerCase())) {
+        if (deprecatedSystemColors.has(v)) {
             return {
                 typ: exports.EnumToken.ColorTokenType,
                 val,
@@ -19057,7 +19240,7 @@ class TransformCssFeature {
             consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {};
             if (matrix == null || cumulative == null || minified == null) {
-                return;
+                continue;
             }
             let r = [filterValues(node.val.slice())];
             if (eqMatrix(matrix, cumulative)) {

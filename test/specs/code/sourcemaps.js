@@ -4,7 +4,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
     describe('sourcemap', function () {
 
-        const dir = dirname(new URL(import.meta.url).pathname) + '/../..';
+        const dir = import.meta.dirname + '/../..';
         const file = `@import '${dir}/files/css/line-awesome.css`;
         const options = {
             // minify: true,
@@ -20,8 +20,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
                 const output = render(result.ast, {...options, minify: false, removeComments: true});
                 return readFile(`${dir}/files/sourcemap/line-awesome-sourcemap.css`, {encoding: 'utf-8'}).then(expected => expect(`/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(output.map))} */`).equals(expected));
-
-            })
+            });
         });
     });
 }

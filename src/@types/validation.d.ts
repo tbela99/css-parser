@@ -17,12 +17,14 @@ export interface ValidationSelectorOptions extends ValidationOptions {
 
 export declare interface ValidationConfiguration {
 
-    declarations: Record<ValidationSyntaxGroupEnum.Declarations, ValidationSyntaxNode>;
-    functions: Record<ValidationSyntaxGroupEnum.Functions, ValidationSyntaxNode>;
-    syntaxes: Record<ValidationSyntaxGroupEnum.Syntaxes, ValidationSyntaxNode>;
-    selectors: Record<ValidationSyntaxGroupEnum.Selectors, ValidationSyntaxNode>;
-    atRules: Record<ValidationSyntaxGroupEnum.AtRules, ValidationSyntaxNode>;
+    [ValidationSyntaxGroupEnum.Declarations]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.Functions]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.Syntaxes]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.Selectors]: ValidationSyntaxNode;
+    [ValidationSyntaxGroupEnum.AtRules]: ValidationSyntaxNode;
 }
+
+//= Record<keyof ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
 
 export interface ValidationResult {
 
@@ -37,4 +39,22 @@ export interface ValidationSyntaxResult extends ValidationResult {
     syntax: ValidationToken | string | null;
     tokens: Token[] | AstNode[];
     matches: Token[] | AstNode[];
+    context: Context<Token>;
+}
+
+export interface Context<Type> {
+
+    index: number;
+
+    current<Type>(): Type | null;
+
+    peek<Type>(): Type | null;
+
+    next<Type>(): Type | null;
+
+    tokens<Type>(): Type[];
+
+    clone(): Context;
+
+    done(): boolean;
 }

@@ -51,6 +51,13 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
         let chr = syntax.charAt(i);
         move(currentPosition, chr);
         switch (chr) {
+            case '∞':
+                if (buffer.length > 0) {
+                    yield getTokenType(buffer, position, currentPosition);
+                }
+                yield getTokenType(chr, position, currentPosition);
+                buffer = '';
+                break;
             case '\\':
                 if (buffer.length > 0) {
                     yield getTokenType(buffer, position, currentPosition);
@@ -382,8 +389,9 @@ function matchCurlBraces(syntax, iterator) {
         if (i > 0 && it.typ == ValidationTokenEnum.Block && it.chi[0]?.typ == ValidationTokenEnum.Number) {
             items[i - 1].occurence = {
                 min: +it.chi[0].val,
-                max: +(it.chi[2] ?? it.chi[0]).val
+                max: it.chi[2]?.typ == ValidationTokenEnum.InfinityToken ? Number.POSITIVE_INFINITY : +(it.chi[2] ?? it.chi[0]).val
             };
+            console.error(items[i - 1]);
             items.splice(i--, 1);
             continue;
         }
@@ -550,6 +558,11 @@ function matchToken(syntax, iterator, validationToken) {
         return children;
     }
     while ((item = iterator.next()) && !item.done) {
+        if (Array.isArray(item.value)) {
+            // @ts-ignore
+            children.push(matchToken(syntax, item.value[Symbol.iterator](), validationToken));
+            continue;
+        }
         if (item.value.typ == validationToken) {
             if (item.value.typ == ValidationTokenEnum.Pipe) {
                 token = Object.defineProperty({
@@ -639,6 +652,7 @@ function matchToken(syntax, iterator, validationToken) {
             return children;
         }
         else {
+            // @ts-ignore
             children.push(item.value);
             if ('chi' in item.value) {
                 // @ts-ignore
@@ -654,14 +668,14 @@ function matchToken(syntax, iterator, validationToken) {
     }
     return children;
 }
-function parseTokens(syntax, iterator) {
+function parseSyntaxTokens(syntax, iterator) {
     const items = [];
     let item;
     let i;
     while ((item = iterator.next()) && !item.done) {
         if (Array.isArray(item.value)) {
             // @ts-ignore
-            item.value = parseTokens(syntax, item.value[Symbol.iterator]());
+            item.value = parseSyntaxTokens(syntax, item.value[Symbol.iterator]());
         }
         switch (item.value.typ) {
             case ValidationTokenEnum.Star:
@@ -694,7 +708,7 @@ function parseTokens(syntax, iterator) {
                 else if (item.value.typ == ValidationTokenEnum.OpenCurlyBrace) {
                     items[i].occurence = {
                         min: 0,
-                        max: 0
+                        max: null
                     };
                     while ((item = iterator.next()) && !item.done) {
                         if (item.value.typ == ValidationTokenEnum.Number) {
@@ -715,7 +729,7 @@ function parseTokens(syntax, iterator) {
                 }
                 break;
             case ValidationTokenEnum.Pipe:
-                item.value.chi = item.value.chi.map((t) => parseTokens(syntax, t[Symbol.iterator]()));
+                item.value.chi = item.value.chi.map((t) => parseSyntaxTokens(syntax, t[Symbol.iterator]()));
                 items.push(item.value);
                 break;
             default:
@@ -726,13 +740,13 @@ function parseTokens(syntax, iterator) {
     for (i = 0; i < items.length; i++) {
         if ('chi' in items[i]) {
             // @ts-ignore
-            items[i].chi = parseTokens(syntax, items[i].chi[Symbol.iterator]());
+            items[i].chi = parseSyntaxTokens(syntax, items[i].chi[Symbol.iterator]());
         }
         else if ('l' in items[i]) {
             // @ts-ignore
-            items[i].l = parseTokens(syntax, items[i].l[Symbol.iterator]());
+            items[i].l = parseSyntaxTokens(syntax, items[i].l[Symbol.iterator]());
             // @ts-ignore
-            items[i].r = parseTokens(syntax, items[i].r[Symbol.iterator]());
+            items[i].r = parseSyntaxTokens(syntax, items[i].r[Symbol.iterator]());
         }
         if (items[i].isOptional || items[i].isRepeatable) {
             if (i <= 1) {
@@ -779,18 +793,24 @@ function doParseSyntax(syntax, iterator, context) {
     // @ts-ignore
     context.chi = matchCurlBraces(syntax, context.chi[Symbol.iterator]());
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column);
-    // @ts-ignore
     context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Pipe);
     // @ts-ignore
-    context.chi = parseTokens(syntax, context.chi[Symbol.iterator]());
+    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column);
     // @ts-ignore
     context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Ampersand);
+    // @ts-ignore
+    context.chi = parseSyntaxTokens(syntax, context.chi[Symbol.iterator]());
     return context;
 }
 function getTokenType(token, position, currentPosition) {
     const pos = { ...position };
     Object.assign(position, currentPosition);
+    // '∞'
+    if (token == '\u221e') {
+        return Object.defineProperty({
+            typ: ValidationTokenEnum.InfinityToken,
+        }, 'pos', { ...objectProperties, value: pos });
+    }
     if (token.charAt(0) == '"' || token.charAt(0) == "'") {
         return Object.defineProperty({
             typ: ValidationTokenEnum.StringToken,
@@ -923,7 +943,7 @@ function getTokenType(token, position, currentPosition) {
             return Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
                 val: match[1],
-                range: [+match[3], match[4] == '∞' ? Infinity : +match[4]]
+                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
             }, 'pos', { ...objectProperties, value: pos });
         }
         return Object.defineProperty({
