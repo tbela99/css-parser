@@ -10,6 +10,7 @@ import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import '../../validation/syntaxes/complex-selector.js';
+import '../../validation/syntax.js';
 
 const config = getSyntaxConfig();
 class ComputePrefixFeature {

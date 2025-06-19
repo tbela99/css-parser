@@ -3,6 +3,7 @@ import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Location, Positio
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib/index.ts";
+import type {Token} from "./token";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
@@ -17,6 +18,7 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
+    syntax?: string;
     location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];
@@ -37,7 +39,11 @@ export interface ValidationOptions {
 
     validation?: boolean;
     lenient?: boolean;
-    cycles?: WeakMap<Token, WeakSet<Token>>;
+    visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isRepeatable?:boolean | null;
+    isList?:boolean | null;
+    occurence?:boolean | null;
+    atLeastOnce?: boolean | null;
 }
 
 export interface MinifyOptions {

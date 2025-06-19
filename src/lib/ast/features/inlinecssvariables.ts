@@ -5,6 +5,7 @@ import type {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
+    BinaryExpressionToken,
     CommentToken,
     DashedIdentToken,
     FunctionToken,
@@ -17,7 +18,34 @@ import {EnumToken} from "../types.ts";
 import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
 
+function inlineExpression(token: Token): Token[] {
+
+    const result: Token[] = [];
+
+    if (token.typ == EnumToken.BinaryExpressionTokenType) {
+
+        result.push({
+            typ: EnumToken.ParensTokenType,
+            chi: [...inlineExpression((token as BinaryExpressionToken).l), {typ: (token as BinaryExpressionToken).op}, ...inlineExpression((token as BinaryExpressionToken).r)]
+        });
+
+    } else {
+
+        result.push(token);
+    }
+
+    return result;
+}
+
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
+
+    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+
+        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+
+            parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
+        }
+    }
 
     for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
 
@@ -41,6 +69,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
                                 break;
                             }
                         }
+
                     } else {
 
                         (<AstDeclaration>node).val = info.node.val.slice();

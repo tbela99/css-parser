@@ -771,7 +771,7 @@ var declarations = {
 		syntax: "ltr | rtl"
 	},
 	display: {
-		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy>"
+		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy>| <-non-standard-display>"
 	},
 	"dominant-baseline": {
 		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top"
@@ -987,7 +987,7 @@ var declarations = {
 		syntax: "from-image | <angle> | [ <angle>? flip ]"
 	},
 	"image-rendering": {
-		syntax: "auto | crisp-edges | pixelated | smooth"
+		syntax: "auto | crisp-edges | pixelated | smooth| optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
 	},
 	"image-resolution": {
 		syntax: "[ from-image || <resolution> ] && snap?"
@@ -1380,7 +1380,7 @@ var declarations = {
 		syntax: "auto | none | visiblePainted | visibleFill | visibleStroke | visible | painted | fill | stroke | all | inherit"
 	},
 	position: {
-		syntax: "static | relative | absolute | sticky | fixed"
+		syntax: "static | relative | absolute | sticky | fixed| -webkit-sticky"
 	},
 	"position-anchor": {
 		syntax: "auto | <anchor-name>"
@@ -1822,6 +1822,165 @@ var declarations = {
 	},
 	zoom: {
 		syntax: "normal | reset | <number [0,∞]> || <percentage [0,∞]>"
+	},
+	"-moz-background-clip": {
+		syntax: "padding | border"
+	},
+	"-moz-border-radius-bottomleft": {
+		syntax: "<'border-bottom-left-radius'>"
+	},
+	"-moz-border-radius-bottomright": {
+		syntax: "<'border-bottom-right-radius'>"
+	},
+	"-moz-border-radius-topleft": {
+		syntax: "<'border-top-left-radius'>"
+	},
+	"-moz-border-radius-topright": {
+		syntax: "<'border-bottom-right-radius'>"
+	},
+	"-moz-control-character-visibility": {
+		syntax: "visible | hidden"
+	},
+	"-moz-osx-font-smoothing": {
+		syntax: "auto | grayscale"
+	},
+	"-moz-user-select": {
+		syntax: "none | text | all | -moz-none"
+	},
+	"-ms-flex-align": {
+		syntax: "start | end | center | baseline | stretch"
+	},
+	"-ms-flex-item-align": {
+		syntax: "auto | start | end | center | baseline | stretch"
+	},
+	"-ms-flex-line-pack": {
+		syntax: "start | end | center | justify | distribute | stretch"
+	},
+	"-ms-flex-negative": {
+		syntax: "<'flex-shrink'>"
+	},
+	"-ms-flex-pack": {
+		syntax: "start | end | center | justify | distribute"
+	},
+	"-ms-flex-order": {
+		syntax: "<integer>"
+	},
+	"-ms-flex-positive": {
+		syntax: "<'flex-grow'>"
+	},
+	"-ms-flex-preferred-size": {
+		syntax: "<'flex-basis'>"
+	},
+	"-ms-interpolation-mode": {
+		syntax: "nearest-neighbor | bicubic"
+	},
+	"-ms-grid-column-align": {
+		syntax: "start | end | center | stretch"
+	},
+	"-ms-grid-row-align": {
+		syntax: "start | end | center | stretch"
+	},
+	"-ms-hyphenate-limit-last": {
+		syntax: "none | always | column | page | spread"
+	},
+	"-webkit-background-clip": {
+		syntax: "[ <visual-box> | border | padding | content | text ]#"
+	},
+	"-webkit-column-break-after": {
+		syntax: "always | auto | avoid"
+	},
+	"-webkit-column-break-before": {
+		syntax: "always | auto | avoid"
+	},
+	"-webkit-column-break-inside": {
+		syntax: "always | auto | avoid"
+	},
+	"-webkit-font-smoothing": {
+		syntax: "auto | none | antialiased | subpixel-antialiased"
+	},
+	"-webkit-mask-box-image": {
+		syntax: "[ <url> | <gradient> | none ] [ <length-percentage>{4} <-webkit-mask-box-repeat>{2} ]?"
+	},
+	"-webkit-print-color-adjust": {
+		syntax: "economy | exact"
+	},
+	"-webkit-text-security": {
+		syntax: "none | circle | disc | square"
+	},
+	"-webkit-user-drag": {
+		syntax: "none | element | auto"
+	},
+	behavior: {
+		syntax: "<url>+"
+	},
+	cue: {
+		syntax: "<'cue-before'> <'cue-after'>?"
+	},
+	"cue-after": {
+		syntax: "<url> <decibel>? | none"
+	},
+	"cue-before": {
+		syntax: "<url> <decibel>? | none"
+	},
+	"glyph-orientation-horizontal": {
+		syntax: "<angle>"
+	},
+	"glyph-orientation-vertical": {
+		syntax: "<angle>"
+	},
+	kerning: {
+		syntax: "auto | <svg-length>"
+	},
+	pause: {
+		syntax: "<'pause-before'> <'pause-after'>?"
+	},
+	"pause-after": {
+		syntax: "<time> | none | x-weak | weak | medium | strong | x-strong"
+	},
+	"pause-before": {
+		syntax: "<time> | none | x-weak | weak | medium | strong | x-strong"
+	},
+	"position-try-options": {
+		syntax: "<'position-try-fallbacks'>"
+	},
+	rest: {
+		syntax: "<'rest-before'> <'rest-after'>?"
+	},
+	"rest-after": {
+		syntax: "<time> | none | x-weak | weak | medium | strong | x-strong"
+	},
+	"rest-before": {
+		syntax: "<time> | none | x-weak | weak | medium | strong | x-strong"
+	},
+	speak: {
+		syntax: "auto | never | always"
+	},
+	"voice-balance": {
+		syntax: "<number> | left | center | right | leftwards | rightwards"
+	},
+	"voice-duration": {
+		syntax: "auto | <time>"
+	},
+	"voice-family": {
+		syntax: "[ [ <family-name> | <generic-voice> ] , ]* [ <family-name> | <generic-voice> ] | preserve"
+	},
+	"voice-pitch": {
+		syntax: "<frequency> && absolute | [ [ x-low | low | medium | high | x-high ] || [ <frequency> | <semitones> | <percentage> ] ]"
+	},
+	"voice-range": {
+		syntax: "<frequency> && absolute | [ [ x-low | low | medium | high | x-high ] || [ <frequency> | <semitones> | <percentage> ] ]"
+	},
+	"voice-rate": {
+		syntax: "[ normal | x-slow | slow | medium | fast | x-fast ] || <percentage>"
+	},
+	"voice-stress": {
+		syntax: "normal | strong | moderate | none | reduced"
+	},
+	"voice-volume": {
+		syntax: "silent | [ [ x-soft | soft | medium | loud | x-loud ] || <decibel> ]"
+	},
+	"white-space-trim": {
+		syntax: "none | discard-before || discard-after || discard-inner"
 	}
 };
 var functions = {
@@ -3254,6 +3413,204 @@ var syntaxes = {
 	},
 	"xyz-params": {
 		syntax: "<xyz> [ <number> | <percentage> | none ]{3}"
+	},
+	"-legacy-gradient": {
+		syntax: "<-webkit-gradient()> | <-legacy-linear-gradient> | <-legacy-repeating-linear-gradient> | <-legacy-radial-gradient> | <-legacy-repeating-radial-gradient>"
+	},
+	"-legacy-linear-gradient": {
+		syntax: "-moz-linear-gradient( <-legacy-linear-gradient-arguments> ) | -webkit-linear-gradient( <-legacy-linear-gradient-arguments> ) | -o-linear-gradient( <-legacy-linear-gradient-arguments> )"
+	},
+	"-legacy-repeating-linear-gradient": {
+		syntax: "-moz-repeating-linear-gradient( <-legacy-linear-gradient-arguments> ) | -webkit-repeating-linear-gradient( <-legacy-linear-gradient-arguments> ) | -o-repeating-linear-gradient( <-legacy-linear-gradient-arguments> )"
+	},
+	"-legacy-linear-gradient-arguments": {
+		syntax: "[ <angle> | <side-or-corner> ]? , <color-stop-list>"
+	},
+	"-legacy-radial-gradient": {
+		syntax: "-moz-radial-gradient( <-legacy-radial-gradient-arguments> ) | -webkit-radial-gradient( <-legacy-radial-gradient-arguments> ) | -o-radial-gradient( <-legacy-radial-gradient-arguments> )"
+	},
+	"-legacy-repeating-radial-gradient": {
+		syntax: "-moz-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -webkit-repeating-radial-gradient( <-legacy-radial-gradient-arguments> ) | -o-repeating-radial-gradient( <-legacy-radial-gradient-arguments> )"
+	},
+	"-legacy-radial-gradient-arguments": {
+		syntax: "[ <position> , ]? [ [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ] , ]? <color-stop-list>"
+	},
+	"-legacy-radial-gradient-size": {
+		syntax: "closest-side | closest-corner | farthest-side | farthest-corner | contain | cover"
+	},
+	"-legacy-radial-gradient-shape": {
+		syntax: "circle | ellipse"
+	},
+	"-non-standard-font": {
+		syntax: "-apple-system-body | -apple-system-headline | -apple-system-subheadline | -apple-system-caption1 | -apple-system-caption2 | -apple-system-footnote | -apple-system-short-body | -apple-system-short-headline | -apple-system-short-subheadline | -apple-system-short-caption1 | -apple-system-short-footnote | -apple-system-tall-body"
+	},
+	"-non-standard-color": {
+		syntax: "-moz-ButtonDefault | -moz-ButtonHoverFace | -moz-ButtonHoverText | -moz-CellHighlight | -moz-CellHighlightText | -moz-Combobox | -moz-ComboboxText | -moz-Dialog | -moz-DialogText | -moz-dragtargetzone | -moz-EvenTreeRow | -moz-Field | -moz-FieldText | -moz-html-CellHighlight | -moz-html-CellHighlightText | -moz-mac-accentdarkestshadow | -moz-mac-accentdarkshadow | -moz-mac-accentface | -moz-mac-accentlightesthighlight | -moz-mac-accentlightshadow | -moz-mac-accentregularhighlight | -moz-mac-accentregularshadow | -moz-mac-chrome-active | -moz-mac-chrome-inactive | -moz-mac-focusring | -moz-mac-menuselect | -moz-mac-menushadow | -moz-mac-menutextselect | -moz-MenuHover | -moz-MenuHoverText | -moz-MenuBarText | -moz-MenuBarHoverText | -moz-nativehyperlinktext | -moz-OddTreeRow | -moz-win-communicationstext | -moz-win-mediatext | -moz-activehyperlinktext | -moz-default-background-color | -moz-default-color | -moz-hyperlinktext | -moz-visitedhyperlinktext | -webkit-activelink | -webkit-focus-ring-color | -webkit-link | -webkit-text"
+	},
+	"-non-standard-image-rendering": {
+		syntax: "optimize-contrast | -moz-crisp-edges | -o-crisp-edges | -webkit-optimize-contrast"
+	},
+	"-non-standard-overflow": {
+		syntax: "overlay | -moz-scrollbars-none | -moz-scrollbars-horizontal | -moz-scrollbars-vertical | -moz-hidden-unscrollable"
+	},
+	"-non-standard-size": {
+		syntax: "intrinsic | min-intrinsic | -webkit-fill-available | -webkit-fit-content | -webkit-min-content | -webkit-max-content  | -moz-available | -moz-fit-content | -moz-min-content | -moz-max-content"
+	},
+	"-webkit-gradient()": {
+		syntax: "-webkit-gradient( <-webkit-gradient-type>, <-webkit-gradient-point> [, <-webkit-gradient-point> | , <-webkit-gradient-radius>, <-webkit-gradient-point> ] [, <-webkit-gradient-radius>]? [, <-webkit-gradient-color-stop>]* )"
+	},
+	"-webkit-gradient-color-stop": {
+		syntax: "from( <color> ) | color-stop( [ <number-zero-one> | <percentage> ] , <color> ) | to( <color> )"
+	},
+	"-webkit-gradient-point": {
+		syntax: "[ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ]"
+	},
+	"-webkit-gradient-radius": {
+		syntax: "<length> | <percentage>"
+	},
+	"-webkit-gradient-type": {
+		syntax: "linear | radial"
+	},
+	"-webkit-mask-box-repeat": {
+		syntax: "repeat | stretch | round"
+	},
+	"-ms-filter-function-list": {
+		syntax: "<-ms-filter-function>+"
+	},
+	"-ms-filter-function": {
+		syntax: "<-ms-filter-function-progid> | <-ms-filter-function-legacy>"
+	},
+	"-ms-filter-function-progid": {
+		syntax: "'progid:' [ <ident-token> '.' ]* [ <ident-token> | <function-token> <any-value>? ) ]"
+	},
+	"-ms-filter-function-legacy": {
+		syntax: "<ident-token> | <function-token> <any-value>? )"
+	},
+	age: {
+		syntax: "child | young | old"
+	},
+	"attr-name": {
+		syntax: "<wq-name>"
+	},
+	"attr-fallback": {
+		syntax: "<any-value>"
+	},
+	bottom: {
+		syntax: "<length> | auto"
+	},
+	"generic-voice": {
+		syntax: "[ <age>? <gender> <integer>? ]"
+	},
+	gender: {
+		syntax: "male | female | neutral"
+	},
+	"generic-script-specific": {
+		syntax: "generic(kai) | generic(fangsong) | generic(nastaliq)"
+	},
+	"-non-standard-generic-family": {
+		syntax: "-apple-system | BlinkMacSystemFont"
+	},
+	"intrinsic-size-keyword": {
+		syntax: "min-content | max-content | fit-content"
+	},
+	left: {
+		syntax: "<length> | auto"
+	},
+	"device-cmyk()": {
+		syntax: "<legacy-device-cmyk-syntax> | <modern-device-cmyk-syntax>"
+	},
+	"legacy-device-cmyk-syntax": {
+		syntax: "device-cmyk( <number>#{4} )"
+	},
+	"modern-device-cmyk-syntax": {
+		syntax: "device-cmyk( <cmyk-component>{4} [ / [ <alpha-value> | none ] ]? )"
+	},
+	"cmyk-component": {
+		syntax: "<number> | <percentage> | none"
+	},
+	"color-space": {
+		syntax: "<rectangular-color-space> | <polar-color-space> | <custom-color-space>"
+	},
+	right: {
+		syntax: "<length> | auto"
+	},
+	"forgiving-selector-list": {
+		syntax: "<complex-real-selector-list>"
+	},
+	"forgiving-relative-selector-list": {
+		syntax: "<relative-real-selector-list>"
+	},
+	"complex-real-selector-list": {
+		syntax: "<complex-real-selector>#"
+	},
+	"simple-selector-list": {
+		syntax: "<simple-selector>#"
+	},
+	"relative-real-selector-list": {
+		syntax: "<relative-real-selector>#"
+	},
+	"complex-selector-unit": {
+		syntax: "[ <compound-selector>? <pseudo-compound-selector>* ]!"
+	},
+	"complex-real-selector": {
+		syntax: "<compound-selector> [ <combinator>? <compound-selector> ]*"
+	},
+	"relative-real-selector": {
+		syntax: "<combinator>? <complex-real-selector>"
+	},
+	"pseudo-compound-selector": {
+		syntax: " <pseudo-element-selector> <pseudo-class-selector>*"
+	},
+	"simple-selector": {
+		syntax: "<type-selector> | <subclass-selector>"
+	},
+	"legacy-pseudo-element-selector": {
+		syntax: " ':' [before | after | first-line | first-letter]"
+	},
+	"svg-length": {
+		syntax: "<percentage> | <length> | <number>"
+	},
+	"svg-writing-mode": {
+		syntax: "lr-tb | rl-tb | tb-rl | lr | rl | tb"
+	},
+	top: {
+		syntax: "<length> | auto"
+	},
+	x: {
+		syntax: "<number>"
+	},
+	y: {
+		syntax: "<number>"
+	},
+	declaration: {
+		syntax: "<ident-token> : <declaration-value>? [ '!' important ]?"
+	},
+	"declaration-list": {
+		syntax: "[ <declaration>? ';' ]* <declaration>?"
+	},
+	url: {
+		syntax: "url( <string> <url-modifier>* ) | <url-token>"
+	},
+	"url-modifier": {
+		syntax: "<ident> | <function-token> <any-value> )"
+	},
+	"number-zero-one": {
+		syntax: "<number [0,1]>"
+	},
+	"number-one-or-greater": {
+		syntax: "<number [1,∞]>"
+	},
+	"xyz-space": {
+		syntax: "xyz | xyz-d50 | xyz-d65"
+	},
+	"style-condition": {
+		syntax: "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ]"
+	},
+	"-non-standard-display": {
+		syntax: "-ms-inline-flexbox | -ms-grid | -ms-inline-grid | -webkit-flex | -webkit-inline-flex | -webkit-box | -webkit-inline-box | -moz-inline-stack | -moz-box | -moz-inline-box"
+	},
+	"inset-area": {
+		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
 	}
 };
 var selectors = {
@@ -3819,6 +4176,20 @@ var atRules = {
 				syntax: "none | <custom-ident>+"
 			}
 		}
+	},
+	charset: {
+		syntax: "<string>"
+	},
+	container: {
+		syntax: "[ <container-name> ]? <container-condition>"
+	},
+	nest: {
+		syntax: "<complex-selector-list>"
+	},
+	scope: {
+		syntax: "[ ( <scope-start> ) ]? [ to ( <scope-end> ) ]?"
+	},
+	"position-try": {
 	}
 };
 var config = {

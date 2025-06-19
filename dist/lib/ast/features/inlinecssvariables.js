@@ -1,8 +1,31 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { renderToken } from '../../renderer/render.js';
+import '../../renderer/color/utils/constants.js';
+import '../minify.js';
+import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 
+function inlineExpression(token) {
+    const result = [];
+    if (token.typ == EnumToken.BinaryExpressionTokenType) {
+        result.push({
+            typ: EnumToken.ParensTokenType,
+            chi: [...inlineExpression(token.l), { typ: token.op }, ...inlineExpression(token.r)]
+        });
+    }
+    else {
+        result.push(token);
+    }
+    return result;
+}
 function replace(node, variableScope) {
+    for (const { value, parent: parentValue } of walkValues(node.val)) {
+        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+            parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
+        }
+    }
     for (const { value, parent: parentValue } of walkValues(node.val)) {
         if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
             if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {

@@ -77,7 +77,6 @@ for (const [key, value] of Object.entries(patches.types)) {
     }
 }
 
-
 await writeFile(import.meta.dirname + '/../src/lib/validation/config.json', JSON.stringify(json, null, 1));
 console.debug(json);
 

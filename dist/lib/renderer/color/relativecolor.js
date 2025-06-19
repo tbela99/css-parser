@@ -7,8 +7,8 @@ import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { mathFuncs } from '../../syntax/syntax.js';
 import { reduceNumber } from '../render.js';
-import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
 import { ColorKind, colorRange } from './utils/constants.js';
+import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
 
 function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let r;
@@ -159,4 +159,4 @@ function replaceValue(parent, value, newValue) {
     }
 }
 
-export { parseRelativeColor };
+export { parseRelativeColor, replaceValue };

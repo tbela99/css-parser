@@ -32,13 +32,12 @@ export interface ValidationResult {
     node: AstNode | Token | null;
     syntax: ValidationToken | string | null;
     error: string;
+    cycle?: boolean;
 }
 
 export interface ValidationSyntaxResult extends ValidationResult {
 
     syntax: ValidationToken | string | null;
-    tokens: Token[] | AstNode[];
-    matches: Token[] | AstNode[];
     context: Context<Token>;
 }
 

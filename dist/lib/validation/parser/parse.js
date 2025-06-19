@@ -188,66 +188,99 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
         yield getTokenType(buffer, position, currentPosition);
     }
 }
-function columnCallback(token, parent, key) {
-    if (key == WalkValidationTokenKeyTypeEnum.Prelude) {
-        return WalkValidationTokenEnum.IgnoreAll;
-    }
-    if (token.typ == ValidationTokenEnum.ColumnToken || token.typ == ValidationTokenEnum.Whitespace) {
-        return WalkValidationTokenEnum.IgnoreNode;
-    }
-    return WalkValidationTokenEnum.IgnoreChildren;
-}
-function toColumnArray(ast, parent) {
-    const result = new Map;
-    // @ts-ignore
-    for (const { token } of walkValidationToken(ast, null, columnCallback)) {
-        result.set(JSON.stringify(token), token);
-    }
-    const node = {
-        typ: ValidationTokenEnum.ColumnArrayToken,
-        chi: [...result.values()]
-    };
-    if (parent != null) {
-        replaceNode(parent, ast, node);
-    }
-    return node;
-}
-function replaceNode(parent, target, node) {
-    if ('l' in parent && parent.l == target) {
-        parent.l = node;
-    }
-    if ('r' in parent && parent.r == target) {
-        parent.r = node;
-    }
-    if ('chi' in parent) {
-        // @ts-ignore
-        for (let i = 0; i < parent.chi.length; i++) {
-            // @ts-ignore
-            if (parent.chi[i] == target) {
-                // @ts-ignore
-                parent.chi[i] = node;
-                break;
-            }
-        }
-    }
-}
-function transform(context) {
-    for (const { token, parent } of walkValidationToken(context)) {
-        switch (token.typ) {
-            case ValidationTokenEnum.ColumnToken:
-                toColumnArray(token, parent);
-                break;
-        }
-    }
-    return context;
-}
+// function toColumnArray(ast: ValidationColumnToken, parent?: ValidationToken): ValidationToken {
+//
+//     const result = new Map;
+//
+//     // @ts-ignore
+//     for (const {token} of walkValidationToken(ast, null, columnCallback)) {
+//
+//         if (token.typ == ValidationTokenEnum.ColumnToken) {
+//
+//
+//             result.set(JSON.stringify((token as ValidationColumnToken).l), (token as ValidationColumnToken).l);
+//             result.set(JSON.stringify((token as ValidationColumnToken).r), (token as ValidationColumnToken).r);
+//
+//             console.error({parent})
+//             continue;
+//         }
+//
+//         result.set(JSON.stringify(token), token);
+//     }
+//
+//     const node = {
+//         typ: ValidationTokenEnum.ColumnArrayToken,
+//         chi: [...result.values()]
+//     } as ValidationColumnArrayToken;
+//
+//     if (parent != null) {
+//
+//         replaceNode(parent, ast, node);
+//     }
+//
+//     return node;
+// }
+// function replaceNode(parent: ValidationToken, target: ValidationToken, node: ValidationToken) {
+//
+//     if (Array.isArray(parent)) {
+//
+//         for (let i = 0; i < parent.length; i++) {
+//
+//             if (parent[i] == target) {
+//
+//                 parent[i] = node;
+//                 return;
+//             }
+//         }
+//     }
+//
+//     if ('l' in parent && parent.l == target) {
+//
+//         parent.l = node;
+//     }
+//
+//     if ('r' in parent && parent.r == target) {
+//
+//         parent.r = node;
+//     }
+//
+//     if ('chi' in parent) {
+//
+//         // @ts-ignore
+//         for (let i = 0; i < parent.chi.length; i++) {
+//
+//             // @ts-ignore
+//             if (parent.chi[i] == target) {
+//
+//                 // @ts-ignore
+//                 parent.chi[i] = node;
+//                 break;
+//             }
+//         }
+//     }
+// }
+// function transform(context: ValidationContext): ValidationToken {
+//
+//     for (const {token, parent} of walkValidationToken(context)) {
+//
+//         switch (token.typ) {
+//
+//             case ValidationTokenEnum.ColumnToken:
+//
+//                 toColumnArray(token as ValidationColumnToken, parent as ValidationToken);
+//                 break
+//         }
+//     }
+//
+//     return context;
+// }
 function parseSyntax(syntax) {
     const root = Object.defineProperty({
         typ: ValidationTokenEnum.Root,
         chi: []
     }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
     // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
-    return minify(transform(doParseSyntax(syntax, tokenize(syntax), root)));
+    return minify(doParseSyntax(syntax, tokenize(syntax), root));
 }
 function matchParens(syntax, iterator) {
     let item;
@@ -255,6 +288,7 @@ function matchParens(syntax, iterator) {
     let items = [];
     let match = 0;
     while ((item = iterator.next()) && !item.done) {
+        // console.error(JSON.stringify({match, val: item.value,func}, null, 1));
         switch (item.value.typ) {
             case ValidationTokenEnum.OpenParenthesis:
                 if (match > 0) {
@@ -262,7 +296,7 @@ function matchParens(syntax, iterator) {
                 }
                 else if (match == 0) {
                     func = items.at(-1);
-                    if (func == null) {
+                    if (func == null || func.val == null || func.val === '') {
                         func = Object.defineProperty({
                             typ: ValidationTokenEnum.Parens,
                             val: '',
@@ -379,6 +413,10 @@ function matchCurlBraces(syntax, iterator) {
                 else {
                     items.push(item.value);
                 }
+                if ('chi' in item.value) {
+                    // @ts-ignore
+                    item.value.chi = matchCurlBraces(syntax, item.value.chi[Symbol.iterator]());
+                }
                 break;
         }
     }
@@ -391,7 +429,6 @@ function matchCurlBraces(syntax, iterator) {
                 min: +it.chi[0].val,
                 max: it.chi[2]?.typ == ValidationTokenEnum.InfinityToken ? Number.POSITIVE_INFINITY : +(it.chi[2] ?? it.chi[0]).val
             };
-            console.error(items[i - 1]);
             items.splice(i--, 1);
             continue;
         }
@@ -514,8 +551,17 @@ function matchAtRule(syntax, iterator) {
     return children;
 }
 function matchToken(syntax, iterator, validationToken) {
+    if (iterator.length == 0) {
+        return [];
+    }
+    if (Array.isArray(iterator[0])) {
+        const result = [];
+        for (let i = 0; i < iterator.length; i++) {
+            result.push(matchToken(syntax, iterator[i], validationToken));
+        }
+        return result;
+    }
     let children = [];
-    let item;
     let token = null;
     let i;
     if (validationToken == ValidationTokenEnum.Ampersand) {
@@ -546,47 +592,44 @@ function matchToken(syntax, iterator, validationToken) {
             }
             else if ('chi' in children[i]) {
                 // @ts-ignore
-                children[i].chi = matchToken(syntax, children[i].chi[Symbol.iterator](), validationToken);
+                children[i].chi = matchToken(syntax, children[i].chi, validationToken);
             }
             else if ('l' in children[i]) {
                 // @ts-ignore
-                children[i].l = matchToken(syntax, children[i].l[Symbol.iterator](), validationToken);
+                children[i].l = matchToken(syntax, children[i].l, validationToken);
                 // @ts-ignore
-                children[i].r = matchToken(syntax, children[i].r[Symbol.iterator](), validationToken);
+                children[i].r = matchToken(syntax, children[i].r, validationToken);
             }
         }
         return children;
     }
-    while ((item = iterator.next()) && !item.done) {
-        if (Array.isArray(item.value)) {
-            // @ts-ignore
-            children.push(matchToken(syntax, item.value[Symbol.iterator](), validationToken));
-            continue;
-        }
-        if (item.value.typ == validationToken) {
-            if (item.value.typ == ValidationTokenEnum.Pipe) {
+    let item;
+    for (i = 0; i < iterator.length; i++) {
+        item = iterator[i];
+        if (item.typ == validationToken) {
+            if (item.typ == ValidationTokenEnum.Pipe) {
                 token = Object.defineProperty({
                     typ: ValidationTokenEnum.PipeToken,
-                    chi: [matchToken(syntax, children.slice()[Symbol.iterator](), validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
+                    chi: [matchToken(syntax, children.slice(), validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
                     // @ts-ignore
                     // l: matchToken(syntaxes, children.slice()[Symbol.iterator](), validationToken),
                     // r: matchToken(syntaxes, iterator, validationToken)
                 }, 'pos', {
                     ...objectProperties,
-                    value: item.value.pos
+                    value: item.pos
                 });
                 children.length = 0;
-                while ((item = iterator.next()) && !item.done) {
-                    if (item.value.typ == ValidationTokenEnum.Pipe) {
-                        token.chi.push(matchToken(syntax, children.slice()[Symbol.iterator](), validationToken));
+                while ((item = iterator[++i]) != null) {
+                    if (item.typ == ValidationTokenEnum.Pipe) {
+                        token.chi.push(matchToken(syntax, children.slice(), validationToken));
                         children.length = 0;
                     }
                     else {
-                        children.push(item.value);
+                        children.push(item);
                     }
                 }
                 if (children.length > 0) {
-                    token.chi.push(matchToken(syntax, children.slice()[Symbol.iterator](), validationToken));
+                    token.chi.push(matchToken(syntax, children.slice(), validationToken));
                 }
                 token.chi.sort((a, b) => {
                     if (a.some((t) => t.isList)) {
@@ -626,26 +669,27 @@ function matchToken(syntax, iterator, validationToken) {
             else {
                 token = Object.defineProperty({
                     typ: ValidationTokenEnum.ColumnToken,
-                    l: matchToken(syntax, children.slice()[Symbol.iterator](), validationToken),
-                    r: matchToken(syntax, iterator, validationToken)
+                    l: matchToken(syntax, children.slice(), validationToken),
+                    r: matchToken(syntax, iterator.slice(i + 1), validationToken)
                 }, 'pos', {
                     ...objectProperties,
-                    value: item.value.pos
+                    value: item.pos
                 });
+                i = iterator.length;
             }
             children.length = 0;
             children.push(token);
-            while ((item = iterator.next()) && !item.done) {
-                children.push(item.value);
-                if ('chi' in item.value) {
+            while ((item = iterator[++i]) != null) {
+                children.push(item);
+                if ('chi' in item) {
                     // @ts-ignore
-                    item.value.chi = matchToken(syntax, item.value.chi[Symbol.iterator](), validationToken);
+                    item.chi = matchToken(syntax, item.chi, validationToken);
                 }
-                else if ('l' in item.value) {
+                else if ('l' in item) {
                     // @ts-ignore
-                    item.value.l = matchToken(syntax, item.value.l[Symbol.iterator](), validationToken);
+                    item.l = matchToken(syntax, item.l, validationToken);
                     // @ts-ignore
-                    item.value.r = matchToken(syntax, item.value.r[Symbol.iterator](), validationToken);
+                    item.r = matchToken(syntax, item.r, validationToken);
                 }
             }
             // @ts-ignore
@@ -653,16 +697,15 @@ function matchToken(syntax, iterator, validationToken) {
         }
         else {
             // @ts-ignore
-            children.push(item.value);
-            if ('chi' in item.value) {
+            children.push(item);
+            if ('chi' in item) {
                 // @ts-ignore
-                item.value.chi = matchToken(syntax, item.value.chi[Symbol.iterator](), validationToken);
+                item.chi = matchToken(syntax, item.chi, validationToken);
             }
-            else if ('l' in item.value) {
+            else if ('l' in item) {
+                item.l = matchToken(syntax, item.l, validationToken);
                 // @ts-ignore
-                item.value.l = matchToken(syntax, item.value.l[Symbol.iterator](), validationToken);
-                // @ts-ignore
-                item.value.r = matchToken(syntax, item.value.r[Symbol.iterator](), validationToken);
+                item.r = matchToken(syntax, item.r, validationToken);
             }
         }
     }
@@ -715,7 +758,7 @@ function parseSyntaxTokens(syntax, iterator) {
                             // @ts-ignore
                             if (items[i].occurence.min == 0) {
                                 // @ts-ignore
-                                items[i].occurence.min = +item.value.val;
+                                items[i].occurence.min = items[i].occurence.max = +item.value.val;
                             }
                             else {
                                 // @ts-ignore
@@ -748,38 +791,64 @@ function parseSyntaxTokens(syntax, iterator) {
             // @ts-ignore
             items[i].r = parseSyntaxTokens(syntax, items[i].r[Symbol.iterator]());
         }
-        if (items[i].isOptional || items[i].isRepeatable) {
-            if (i <= 1) {
-                let k = i;
-                while (++k < items.length) {
-                    if (items[k].typ == ValidationTokenEnum.Whitespace) {
-                        continue;
-                    }
-                    if (items[k].typ == ValidationTokenEnum.Comma) {
-                        items.splice(i, k - i + 1, Object.defineProperty({
-                            typ: ValidationTokenEnum.Bracket,
-                            chi: items.slice(i, k + 1)
-                        }, 'pos', { ...objectProperties, value: items[i].pos }));
-                    }
-                    break;
+        if (items[i].typ != ValidationTokenEnum.Bracket && (items[i].isOptional || items[i].isRepeatable)) {
+            // if (i <= 1) {
+            // let k: number = i;
+            // while (++k < items.length) {
+            //
+            //     if (items[k].typ == ValidationTokenEnum.Whitespace) {
+            //
+            //         continue;
+            //     }
+            //
+            //     // if (items[k].typ == ValidationTokenEnum.Comma) {
+            //     //
+            //     //     const wrapper = Object.defineProperty({
+            //     //
+            //     //         typ: ValidationTokenEnum.Bracket,
+            //     //         chi: items.slice(i, k + 1)
+            //     //     }, 'pos', {...objectProperties, value: items[i].pos}) as ValidationBracketToken;
+            //     //
+            //     //     if (items[i].isOptional) {
+            //     //
+            //     //         wrapper.isOptional = true;
+            //     //         delete items[i].isOptional;
+            //     //     } else if (items[i].isRepeatable) {
+            //     //
+            //     //         wrapper.isRepeatable = true;
+            //     //         delete items[i].isRepeatable;
+            //     //     }
+            //     //
+            //     //     items.splice(i, k - i + 1, wrapper);
+            //     // }
+            //
+            //     break;
+            // }
+            // } else {
+            let k = i;
+            while (--k > 0) {
+                if (items[k].typ == ValidationTokenEnum.Whitespace) {
+                    continue;
                 }
-            }
-            else {
-                let k = i;
-                while (--k > 0) {
-                    if (items[k].typ == ValidationTokenEnum.Whitespace) {
-                        continue;
+                if (items[k].typ == ValidationTokenEnum.Comma) {
+                    const wrapper = Object.defineProperty({
+                        typ: ValidationTokenEnum.Bracket,
+                        chi: items.slice(k, i + 1)
+                    }, 'pos', { ...objectProperties, value: items[k].pos });
+                    if (items[i].isOptional) {
+                        wrapper.isOptional = true;
+                        delete items[i].isOptional;
                     }
-                    if (items[k].typ == ValidationTokenEnum.Comma) {
-                        items.splice(k, i - k + 1, Object.defineProperty({
-                            typ: ValidationTokenEnum.Bracket,
-                            chi: items.slice(k, i + 1)
-                        }, 'pos', { ...objectProperties, value: items[k].pos }));
-                        i = k - 1;
+                    if (items[i].isRepeatable) {
+                        wrapper.isRepeatable = true;
+                        delete items[i].isRepeatable;
                     }
-                    break;
+                    items.splice(k, i - k + 1, wrapper);
+                    i = k - 1;
                 }
+                break;
             }
+            // }
         }
     }
     return items;
@@ -793,11 +862,11 @@ function doParseSyntax(syntax, iterator, context) {
     // @ts-ignore
     context.chi = matchCurlBraces(syntax, context.chi[Symbol.iterator]());
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Pipe);
+    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Pipe);
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column);
+    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Column);
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Ampersand);
+    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Ampersand);
     // @ts-ignore
     context.chi = parseSyntaxTokens(syntax, context.chi[Symbol.iterator]());
     return context;
@@ -969,6 +1038,104 @@ function move(position, chr) {
     }
     return position;
 }
+function renderSyntax(token, parent) {
+    let glue;
+    switch (token.typ) {
+        case ValidationTokenEnum.InfinityToken:
+            // '∞'
+            return '\u221e';
+        case ValidationTokenEnum.Root:
+            return token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '');
+        case ValidationTokenEnum.Whitespace:
+            return ' ';
+        case ValidationTokenEnum.ValidationFunctionDefinition:
+            return '<' + token.val + '()>';
+        case ValidationTokenEnum.HashMark:
+            return '#';
+        case ValidationTokenEnum.Pipe:
+            return '|';
+        case ValidationTokenEnum.Column:
+            return '||';
+        case ValidationTokenEnum.PipeToken:
+            return token.chi.reduce((acc, curr) => acc + (acc.trim().length > 0 ? '|' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '');
+        case ValidationTokenEnum.ColumnToken:
+        case ValidationTokenEnum.AmpersandToken:
+            glue = token.typ == ValidationTokenEnum.ColumnToken ? '||' : '&&';
+            return token.l.reduce((acc, curr) => acc + renderSyntax(curr), '') +
+                glue +
+                token.r.reduce((acc, curr) => acc + renderSyntax(curr), '');
+        case ValidationTokenEnum.Function:
+        case ValidationTokenEnum.PseudoClassFunctionToken:
+        case ValidationTokenEnum.Parens:
+            return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ')' + renderAttributes(token);
+        case ValidationTokenEnum.Comma:
+            return ',';
+        case ValidationTokenEnum.Keyword:
+            return token.val + renderAttributes(token);
+        case ValidationTokenEnum.OpenBracket:
+            return '[';
+        case ValidationTokenEnum.Ampersand:
+            return '&&';
+        case ValidationTokenEnum.QuestionMark:
+            return '?';
+        case ValidationTokenEnum.Separator:
+            return '/';
+        case ValidationTokenEnum.Bracket:
+            return '[' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
+        case ValidationTokenEnum.PropertyType:
+            return '<' + token.val + '>' + renderAttributes(token);
+        case ValidationTokenEnum.DeclarationType:
+            return "<'" + token.val + "'>" + renderAttributes(token);
+        case ValidationTokenEnum.Number:
+        case ValidationTokenEnum.PseudoClassToken:
+        case ValidationTokenEnum.StringToken:
+            return token.val + '';
+        case ValidationTokenEnum.SemiColon:
+            return ';';
+        case ValidationTokenEnum.AtRule:
+            return '@' + token.val;
+        case ValidationTokenEnum.AtRuleDefinition:
+            return '@' + token.val +
+                (token.prelude == null ? '' : ' ' + token.prelude.reduce((acc, curr) => acc + renderSyntax(curr), '')) +
+                (token.chi == null ? '' : ' {\n' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '')).slice(1, -1) + '\n}';
+        case ValidationTokenEnum.Block:
+            return '{' + token.chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
+        case ValidationTokenEnum.DeclarationDefinitionToken:
+            return token.nam + ': ' + renderSyntax(token.val);
+        // case ValidationTokenEnum.ColumnArrayToken:
+        //
+        //     return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
+        default:
+            throw new Error('Unhandled token: ' + JSON.stringify({ token }, null, 1));
+    }
+}
+function renderAttributes(token) {
+    let result = '';
+    if (token.isList) {
+        result += '#';
+    }
+    if (token.isOptional) {
+        result += '?';
+    }
+    if (token.isRepeatableGroup) {
+        result += '!';
+    }
+    if (token.isRepeatable) {
+        result += '*';
+    }
+    if (token.atLeastOnce) {
+        result += '+';
+    }
+    if (token.occurence != null) {
+        if (token.occurence.max == null || token.occurence.max == token.occurence.min || Number.isNaN(token.occurence.max)) {
+            result += '{' + token.occurence.min + '}';
+        }
+        else {
+            result += '{' + token.occurence.min + ',' + (Number.isFinite(token.occurence.max) ? token.occurence.max : '\u221e') + '}';
+        }
+    }
+    return result;
+}
 function minify(ast) {
     if (Array.isArray(ast)) {
         // @ts-ignore
@@ -1029,44 +1196,5 @@ function minify(ast) {
     }
     return ast;
 }
-function* walkValidationToken(token, parent, callback, key) {
-    if (Array.isArray(token)) {
-        for (const child of token) {
-            yield* walkValidationToken(child, parent, callback, WalkValidationTokenKeyTypeEnum.Array);
-        }
-        return;
-    }
-    let action = null;
-    if (callback != null) {
-        // @ts-ignore
-        action = callback(token, parent, key);
-    }
-    if (action != WalkValidationTokenEnum.IgnoreNode && action != WalkValidationTokenEnum.IgnoreAll) {
-        yield { token, parent };
-    }
-    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'prelude' in token) {
-        for (const child of token.prelude) {
-            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Prelude);
-        }
-    }
-    if (action != WalkValidationTokenEnum.IgnoreChildren && 'chi' in token) {
-        // @ts-ignore
-        for (const child of token.chi) {
-            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Children);
-        }
-    }
-    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'l' in token) {
-        // @ts-ignore
-        for (const child of token.l) {
-            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Left);
-        }
-    }
-    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'r' in token) {
-        // @ts-ignore
-        for (const child of token.r) {
-            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Right);
-        }
-    }
-}
 
-export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, walkValidationToken };
+export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, renderSyntax };

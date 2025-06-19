@@ -184,8 +184,7 @@ html, body, div, span, applet, object, iframe,
 }
 `).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.pure-table-bordered tbody>tr:last-child>td {
  border-width: 0;
- border-color: #34edc7;
- border-style: medium
+ border-color: #34edc7
 }`));
         });
 

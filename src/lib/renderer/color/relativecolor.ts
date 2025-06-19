@@ -208,7 +208,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
     return <Record<RelativeColorTypes, Token>>expr;
 }
 
-function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
+export function replaceValue(parent: FunctionToken | ParensToken | BinaryExpressionToken, value: Token, newValue: Token) {
 
     for (const {value: val, parent: pr} of walkValues([parent])) {
 

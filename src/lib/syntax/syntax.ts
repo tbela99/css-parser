@@ -465,7 +465,7 @@ export function isColor(token: Token): boolean {
 
     let isLegacySyntax: boolean = false;
 
-    if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).chi.length > 0 && colorsFunc.includes((token as FunctionToken).val)) {
+    if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).chi.length > 0 && colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
 
         // @ts-ignore
         if ((token as ColorToken).val == 'light-dark') {

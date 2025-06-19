@@ -7,6 +7,7 @@ import { replaceCompound } from './expand.js';
 import { isIdent, isFunction, isWhiteSpace, isIdentStart } from '../syntax/syntax.js';
 import { eq } from '../parser/utils/eq.js';
 import { doRender, renderToken } from '../renderer/render.js';
+import '../renderer/color/utils/constants.js';
 import * as index from './features/index.js';
 
 const combinators = ['+', '>', '~', '||', '|'];

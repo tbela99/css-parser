@@ -10,8 +10,7 @@ import { validateAtRuleMediaQueryList } from './media.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { validateLayerName } from '../syntaxes/layer-name.js';
 import '../syntaxes/complex-selector.js';
-import '../parser/types.js';
-import '../parser/parse.js';
+import '../syntax.js';
 import '../config.js';
 import { validateAtRuleSupportsConditions } from './supports.js';
 

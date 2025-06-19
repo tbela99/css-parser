@@ -1,6 +1,12 @@
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
 import { reduceNumber } from '../../renderer/render.js';
+import '../../renderer/color/utils/constants.js';
+import '../minify.js';
+import '../walk.js';
+import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { mathFuncs } from '../../syntax/syntax.js';
 
 /**
@@ -517,4 +523,4 @@ function factor(tokens, ops) {
     return tokens;
 }
 
-export { evaluate, evaluateFunc, inlineExpression };
+export { buildExpression, evaluate, evaluateFunc, inlineExpression };

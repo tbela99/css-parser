@@ -111,6 +111,8 @@ import type {ValidationResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
 import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
 import {evaluateSyntax} from "../validation/syntax.ts";
+import {splitTokenList} from "../validation/utils";
+import {buildExpression} from "../ast/math";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -997,6 +999,12 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 if (name == null && [EnumToken.IdenTokenType, EnumToken.DashedIdenTokenType].includes(tokens[i].typ)) {
 
                     name = tokens.slice(0, i + 1);
+                    // value = tokens.slice(i + 2);
+
+                } else if (name == null && tokens[i].typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS].includes((<ColorToken>tokens[i]).kin)) {
+
+                    name = tokens.slice(0, i + 1);
+                    tokens[i].typ = EnumToken.IdenTokenType;
 
                 } else if (name != null && funcLike.concat([
                     EnumToken.LiteralTokenType,
@@ -1004,9 +1012,19 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     EnumToken.PseudoClassTokenType, EnumToken.PseudoClassFuncTokenType
                 ]).includes(tokens[i].typ)) {
 
-                    if ((<IdentToken>tokens[i]).val.charAt(0) == ':') {
+                    if ((<IdentToken>tokens[i]).val?.charAt?.(0) == ':') {
 
                         Object.assign(tokens[i], getTokenType((<IdentToken>tokens[i]).val.slice(1)));
+
+                        if ('chi' in tokens[i]) {
+
+                            (<FunctionToken>tokens[i]).typ = EnumToken.FunctionTokenType;
+                        }
+
+                        tokens.splice(i, 0, {typ: EnumToken.ColonTokenType});
+                        // i++;
+                        i--;
+                        continue;
                     }
 
                     if ('chi' in tokens[i]) {
@@ -1021,8 +1039,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         resolve: options.resolve,
                         cwd: options.cwd
                     });
-
-                    break;
                 }
 
                 if (tokens[i].typ == EnumToken.ColonTokenType) {
@@ -1120,8 +1136,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
             if (result != null) {
 
-                console.error(renderToken(result));
-
                 if (options.validation) {
 
                     const valid = evaluateSyntax(result, options);
@@ -1131,6 +1145,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         errors.push(<ErrorDescription>{
                             action: 'drop',
                             message: valid.error,
+                            syntax: valid.syntax,
                             location: map.get(valid.node as Token) ?? valid.node?.loc ?? result.loc
                         });
 
@@ -1295,6 +1310,21 @@ function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
                             typ: EnumToken.ColonTokenType,
                         },
                         Object.assign((value as FunctionToken | ParensToken).chi[i], parseDimension(((value as FunctionToken | ParensToken).chi[i] as LiteralToken).val.slice(1)))
+                    );
+
+                    i--;
+                    continue;
+                }
+
+                if (nameIndex != -1 && (value as FunctionToken | ParensToken).chi[i].typ == EnumToken.PseudoClassTokenType) {
+
+                    (value as ParensToken | FunctionToken).chi.splice(i, 1, {
+                            typ: EnumToken.ColonTokenType,
+                        },
+                        Object.assign((value as FunctionToken | ParensToken).chi[i], {
+                            typ: EnumToken.IdenTokenType,
+                            val: ((value as FunctionToken | ParensToken).chi[i] as LiteralToken).val.slice(1)
+                        })
                     );
 
                     i--;
@@ -1776,7 +1806,19 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
 
     for (let i = 0; i < tokens.length; i++) {
 
+        if (tokens[i].typ == EnumToken.LiteralTokenType && ['/', '*'].includes((tokens[i] as LiteralToken).val.charAt(0)) && isNumber((tokens[i] as LiteralToken).val.slice(1))) {
+
+            tokens.splice(i, 1, {
+                typ: EnumToken.LiteralTokenType,
+                val: (tokens[i] as LiteralToken).val.charAt(0)
+            }, {
+                typ: EnumToken.NumberTokenType,
+                val: (tokens[i] as LiteralToken).val.slice(1)
+            });
+        }
+
         const t: Token = tokens[i];
+
 
         if (t.typ == EnumToken.PseudoClassFuncTokenType) {
 
@@ -2091,6 +2133,16 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                         delete value.val;
                     }
                 }
+
+                t.chi = splitTokenList(t.chi).reduce((acc: Token[], t: Token[]): Token[] => {
+
+                    if (acc.length > 0) {
+                        acc.push({typ: EnumToken.CommaTokenType});
+                    }
+
+                    acc.push(buildExpression(t));
+                    return acc;
+                }, []);
 
             } else if (t.typ == EnumToken.FunctionTokenType && ['minmax', 'fit-content', 'repeat'].includes((<FunctionToken>t).val)) {
 

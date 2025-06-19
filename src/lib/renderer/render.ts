@@ -64,10 +64,8 @@ import {
 } from "./color/index.ts";
 import {EnumToken, expand, funcLike} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
-import {colorFuncColorSpace, ColorKind, getComponents} from "./color/utils/index.ts";
+import {colorFuncColorSpace, ColorKind, colorsFunc, getComponents} from "./color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax/index.ts";
-
-export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 
 export function reduceNumber(val: string | number): string {
 
@@ -601,6 +599,9 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                         // @ts-ignore
                         const color: ColorToken = chi[1];
                         const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor((token as ColorToken).val == 'color' ? (<IdentToken>chi[offset]).val : <string>(token as ColorToken).val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+
+
+                        // console.error(JSON.stringify({token,components}, null, 1));
 
                         if (components != null) {
 

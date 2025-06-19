@@ -1,11 +1,3 @@
-import { EnumToken } from '../../../ast/types.js';
-import '../../../ast/minify.js';
-import '../../../ast/walk.js';
-import '../../../parser/parse.js';
-import '../../../parser/tokenize.js';
-import '../../../parser/utils/config.js';
-import '../../sourcemap/lib/encode.js';
-
 const colorRange = {
     lab: {
         l: [0, 100],
@@ -58,8 +50,8 @@ var ColorKind;
     ColorKind[ColorKind["XYZ_D65"] = 23] = "XYZ_D65";
     ColorKind[ColorKind["LIGHT_DARK"] = 24] = "LIGHT_DARK";
 })(ColorKind || (ColorKind = {}));
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-({ typ: EnumToken.IdenTokenType});
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
 const k = Math.pow(29, 3) / Math.pow(3, 3);
 const e = Math.pow(6, 3) / Math.pow(29, 3);
@@ -225,4 +217,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, deprecatedSystemColors, e, k, systemColors };
+export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, colorsFunc, deprecatedSystemColors, e, k, systemColors };

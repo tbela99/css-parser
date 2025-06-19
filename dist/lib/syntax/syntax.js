@@ -1,11 +1,11 @@
-import { colorsFunc } from '../renderer/render.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, colorsFunc } from '../renderer/color/utils/constants.js';
+import '../renderer/sourcemap/lib/encode.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -418,7 +418,7 @@ function isColor(token) {
         return token.val.toLowerCase() in COLORS_NAMES;
     }
     let isLegacySyntax = false;
-    if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
+    if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val.toLowerCase())) {
         // @ts-ignore
         if (token.val == 'light-dark') {
             // @ts-ignore

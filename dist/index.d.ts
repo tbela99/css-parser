@@ -185,21 +185,6 @@ declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
-/**
- * parse string
- * @param src
- * @param options
- */
-declare function parseString(src: string, options?: {
-    location: boolean;
-}): Token[];
-/**
- * parse token list
- * @param tokens
- * @param options
- */
-declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
-
 declare enum ColorKind {
     SYS = 0,
     DPSYS = 1,
@@ -227,6 +212,21 @@ declare enum ColorKind {
     XYZ_D65 = 23,
     LIGHT_DARK = 24
 }
+
+/**
+ * parse string
+ * @param src
+ * @param options
+ */
+declare function parseString(src: string, options?: {
+    location: boolean;
+}): Token[];
+/**
+ * parse token list
+ * @param tokens
+ * @param options
+ */
+declare function parseTokens(tokens: Token[], options?: ParseTokenOptions): Token[];
 
 export declare interface LiteralToken extends BaseToken {
 
@@ -1062,6 +1062,7 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
+    syntax?: string;
     location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];
@@ -1071,6 +1072,11 @@ interface ValidationOptions {
 
     validation?: boolean;
     lenient?: boolean;
+    visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isRepeatable?:boolean | null;
+    isList?:boolean | null;
+    occurence?:boolean | null;
+    atLeastOnce?: boolean | null;
 }
 
 interface MinifyOptions {

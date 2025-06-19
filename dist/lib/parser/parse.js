@@ -1,4 +1,4 @@
-import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
+import { isNumber, webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -7,14 +7,17 @@ import { expand } from '../ast/expand.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
 import { ColorKind, COLORS_NAMES, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
+import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
 import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
 import { validateSelector } from '../validation/selector.js';
 import { validateAtRule } from '../validation/atrule.js';
+import { splitTokenList } from '../validation/utils/list.js';
 import '../validation/syntaxes/complex-selector.js';
 import { validateKeyframeSelector } from '../validation/syntaxes/keyframe-selector.js';
+import { evaluateSyntax } from '../validation/syntax.js';
 import { validateAtRuleKeyframes } from '../validation/at-rules/keyframes.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -486,7 +489,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             val: raw.join('')
         };
         Object.defineProperties(node, {
-            tokens: { ...definedPropertySettings, enumerable: false, value: tokens.slice() },
+            tokens: { ...definedPropertySettings, enumerable: false, value: t.slice() },
             raw: { ...definedPropertySettings, value: raw }
         });
         if (delim.typ == EnumToken.BlockStartTokenType) {
@@ -646,14 +649,26 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 }
                 if (name == null && [EnumToken.IdenTokenType, EnumToken.DashedIdenTokenType].includes(tokens[i].typ)) {
                     name = tokens.slice(0, i + 1);
+                    // value = tokens.slice(i + 2);
+                }
+                else if (name == null && tokens[i].typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS].includes(tokens[i].kin)) {
+                    name = tokens.slice(0, i + 1);
+                    tokens[i].typ = EnumToken.IdenTokenType;
                 }
                 else if (name != null && funcLike.concat([
                     EnumToken.LiteralTokenType,
                     EnumToken.IdenTokenType, EnumToken.DashedIdenTokenType,
                     EnumToken.PseudoClassTokenType, EnumToken.PseudoClassFuncTokenType
                 ]).includes(tokens[i].typ)) {
-                    if (tokens[i].val.charAt(0) == ':') {
+                    if (tokens[i].val?.charAt?.(0) == ':') {
                         Object.assign(tokens[i], getTokenType(tokens[i].val.slice(1)));
+                        if ('chi' in tokens[i]) {
+                            tokens[i].typ = EnumToken.FunctionTokenType;
+                        }
+                        tokens.splice(i, 0, { typ: EnumToken.ColonTokenType });
+                        // i++;
+                        i--;
+                        continue;
                     }
                     if ('chi' in tokens[i]) {
                         tokens[i].typ = EnumToken.FunctionTokenType;
@@ -665,7 +680,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                         resolve: options.resolve,
                         cwd: options.cwd
                     });
-                    break;
                 }
                 if (tokens[i].typ == EnumToken.ColonTokenType) {
                     name = tokens.slice(0, i);
@@ -734,10 +748,22 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             }
             const result = parseDeclarationNode(node, errors, location);
             if (result != null) {
+                if (options.validation) {
+                    const valid = evaluateSyntax(result, options);
+                    if (valid.valid == ValidationLevel.Drop) {
+                        errors.push({
+                            action: 'drop',
+                            message: valid.error,
+                            syntax: valid.syntax,
+                            location: map.get(valid.node) ?? valid.node?.loc ?? result.loc
+                        });
+                        return null;
+                    }
+                }
                 context.chi.push(result);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             }
-            return node;
+            return null;
         }
     }
 }
@@ -833,6 +859,23 @@ function parseAtRulePrelude(tokens, atRule) {
             }
             for (let i = nameIndex + 1; i < value.chi.length; i++) {
                 if (value.chi[i].typ == EnumToken.CommentTokenType || value.chi[i].typ == EnumToken.WhitespaceTokenType) {
+                    continue;
+                }
+                if (value.chi[i].typ == EnumToken.LiteralTokenType && value.chi[i].val.startsWith(':') && isDimension(value.chi[i].val.slice(1))) {
+                    value.chi.splice(i, 1, {
+                        typ: EnumToken.ColonTokenType,
+                    }, Object.assign(value.chi[i], parseDimension(value.chi[i].val.slice(1))));
+                    i--;
+                    continue;
+                }
+                if (nameIndex != -1 && value.chi[i].typ == EnumToken.PseudoClassTokenType) {
+                    value.chi.splice(i, 1, {
+                        typ: EnumToken.ColonTokenType,
+                    }, Object.assign(value.chi[i], {
+                        typ: EnumToken.IdenTokenType,
+                        val: value.chi[i].val.slice(1)
+                    }));
+                    i--;
                     continue;
                 }
                 valueIndex = i;
@@ -1212,6 +1255,15 @@ function getTokenType(val, hint) {
  */
 function parseTokens(tokens, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i].typ == EnumToken.LiteralTokenType && ['/', '*'].includes(tokens[i].val.charAt(0)) && isNumber(tokens[i].val.slice(1))) {
+            tokens.splice(i, 1, {
+                typ: EnumToken.LiteralTokenType,
+                val: tokens[i].val.charAt(0)
+            }, {
+                typ: EnumToken.NumberTokenType,
+                val: tokens[i].val.slice(1)
+            });
+        }
         const t = tokens[i];
         if (t.typ == EnumToken.PseudoClassFuncTokenType) {
             if (t.val.slice(1) in webkitPseudoAliasMap) {
@@ -1446,6 +1498,13 @@ function parseTokens(tokens, options = {}) {
                         delete value.val;
                     }
                 }
+                t.chi = splitTokenList(t.chi).reduce((acc, t) => {
+                    if (acc.length > 0) {
+                        acc.push({ typ: EnumToken.CommaTokenType });
+                    }
+                    acc.push(buildExpression(t));
+                    return acc;
+                }, []);
             }
             else if (t.typ == EnumToken.FunctionTokenType && ['minmax', 'fit-content', 'repeat'].includes(t.val)) {
                 // @ts-ignore

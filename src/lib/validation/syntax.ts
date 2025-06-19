@@ -29,12 +29,15 @@ import type {
 } from "../../@types/index.d.ts";
 import type {Context, ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {EnumToken, funcLike, ValidationLevel} from "../ast/index.ts";
-import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
+import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web/index.ts";
-import {ColorKind} from "../renderer/color/utils/index.ts";
+import {ColorKind, deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
 import {mathFuncs} from "../syntax";
 
 const config: ValidationConfiguration = getSyntaxConfig();
+
+// @ts-ignore
+const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarations].all.syntax.trim().split(/[\s|]+/g);
 
 export function createContext(input: Token[]): Context<Token> {
 
@@ -91,7 +94,19 @@ export function createContext(input: Token[]): Context<Token> {
         index: -1,
         peek<Token>(): Token | null {
 
-            return result[this.index + 1] as Token ?? null;
+            let index: number = this.index + 1;
+
+            if (index >= result.length) {
+
+                return null;
+            }
+
+            if (result[index]?.typ == EnumToken.WhitespaceTokenType) {
+
+                index++;
+            }
+
+            return result[index] as Token ?? null;
         },
         done(): boolean {
 
@@ -103,7 +118,20 @@ export function createContext(input: Token[]): Context<Token> {
         },
         next<Token>(): Token | null {
 
-            return this.index >= result.length ? null : result[++this.index] as Token
+            let index: number = this.index + 1;
+
+            if (index >= result.length) {
+
+                return null;
+            }
+
+            if (result[index]?.typ == EnumToken.WhitespaceTokenType) {
+
+                index++;
+            }
+
+            this.index = index;
+            return result[this.index] as Token ?? null;
         },
         tokens<Token>(): Token[] {
 
@@ -164,7 +192,7 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
                     }
                 }
 
-                result = doEvaluateSyntax(ast, createContext(values), {...options, cycles: new WeakMap()});
+                result = doEvaluateSyntax(ast, createContext(values), {...options, visited: new WeakMap()});
 
                 if (result.valid == ValidationLevel.Valid && !result.context.done()) {
 
@@ -180,12 +208,16 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
                             ...result,
                             valid: ValidationLevel.Drop,
                             node: token,
+                            syntax: getSyntax(ValidationSyntaxGroupEnum.Declarations, (node as AstDeclaration).nam),
                             error: `unexpected token: '${renderToken(token)}'`,
                         }
                     }
                 }
 
-                return result;
+                return {
+                    ...result,
+                    syntax: getSyntax(ValidationSyntaxGroupEnum.Declarations, (node as AstDeclaration).nam)
+                };
             }
 
             break;
@@ -202,12 +234,37 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
 
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
         node,
         syntax: null,
-        error: '',
-        tokens: []
+        error: ''
+    } as ValidationSyntaxResult;
+}
+
+function clearVisited(token: Token, syntax: ValidationToken, key: string, options: ValidationOptions): void {
+
+    options.visited!.get(token)?.get?.(key)?.delete(syntax);
+}
+
+function isVisited(token: Token, syntax: ValidationToken, key: string, options: ValidationOptions): boolean {
+
+    if (options.visited!.get(token)?.get?.(key)?.has(syntax)) {
+
+        return true
     }
+
+    if (!options.visited!.has(token)) {
+
+        options.visited!.set(token, new Map<string, Set<ValidationToken>>());
+    }
+
+    if (!options.visited!.get(token)!.has(key)) {
+
+        options.visited!.get(token)!.set(key, new Set<ValidationToken>());
+    }
+
+    options.visited!.get(token)!.get(key)!.add(syntax);
+
+    return false;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Values_and_Units/Value_definition_syntax
@@ -216,6 +273,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let syntax: ValidationToken;
     let i: number = 0;
     let result: ValidationSyntaxResult;
+    let token: Token | null = null;
 
     for (; i < syntaxes.length; i++) {
 
@@ -223,13 +281,15 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
 
         if (context.done()) {
 
-            if (syntax.typ == ValidationTokenEnum.Whitespace || syntax.isOptional) {
+            if (syntax.typ == ValidationTokenEnum.Whitespace || syntax.isOptional || syntax.isRepeatable) {
 
                 continue;
             }
 
             break;
         }
+
+        token = context.peek<Token>() as Token;
 
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
 
@@ -239,24 +299,39 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
             }
 
             continue;
-        } else if (syntax.isList) {
+        } else if (options.isList !== false && syntax.isList) {
 
             result = matchList(syntax, context, options);
 
-        } else if (syntax.isRepeatable) {
+        } else if (options.isRepeatable !== false && syntax.isRepeatable) {
 
             result = matchRepeatable(syntax, context, options);
-        } else if (syntax.occurence != null) {
+        } else if (options.occurence !== false && syntax.occurence != null) {
 
             result = matchOccurence(syntax, context, options);
-        } else if (syntax.atLeastOnce) {
+        } else if (options.atLeastOnce !== false && syntax.atLeastOnce) {
 
             result = matchAtLeastOnce(syntax, context, options);
         } else {
 
+            if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
+
+                return {
+                    valid: ValidationLevel.Drop,
+                    node: token,
+                    syntax,
+                    error: `cyclic dependency: ${renderSyntax(syntax)}`,
+                    context
+                }
+            }
+
             result = match(syntax, context, options);
+
+            if (result.valid == ValidationLevel.Valid) {
+
+                clearVisited(token, syntax, 'doEvaluateSyntax', options);
+            }
         }
-        // }
 
         if (result.valid == ValidationLevel.Drop) {
 
@@ -274,25 +349,23 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     return {
 
         valid: ValidationLevel.Valid,
-        matches: [],
         node: null,
         syntax: syntaxes[i - 1],
         error: '',
-        tokens: context.tokens<Token>(),
         context
     }
 }
 
 function matchAtLeastOnce(syntax: ValidationToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
-    const {atLeastOnce, ...s} = syntax;
+    // const {atLeastOnce, ...s} = syntax;
 
     let success: boolean = false;
     let result: ValidationSyntaxResult;
 
     while (!context.done()) {
 
-        result = match(s, context.clone(), options);
+        result = match(syntax, context.clone(), {...options, atLeastOnce: false} as ValidationOptions);
 
         if (result.valid == ValidationLevel.Valid) {
 
@@ -306,24 +379,22 @@ function matchAtLeastOnce(syntax: ValidationToken, context: Context<Token>, opti
 
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax,
-        error: success ? '' : `could not match atLeastOnce: ${renderSyntax(s)}`,
-        tokens: context.tokens<Token>(),
+        error: success ? '' : `could not match atLeastOnce: ${renderSyntax(syntax)}`,
         context
     }
 }
 
 function matchRepeatable(syntax: ValidationToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
-    const {isRepeatable, ...s} = syntax;
+    // const {isRepeatable, ...s} = syntax;
 
     let result: ValidationSyntaxResult;
 
     while (!context.done()) {
 
-        result = match(s, context.clone(), options);
+        result = match(syntax, context.clone(), {...options, isRepeatable: false} as ValidationOptions);
 
         if (result.valid == ValidationLevel.Valid) {
 
@@ -337,11 +408,9 @@ function matchRepeatable(syntax: ValidationToken, context: Context<Token>, optio
     return {
 
         valid: ValidationLevel.Valid,
-        matches: [],
         node: null,
         syntax,
         error: '',
-        tokens: context.tokens<Token>(),
         context
     }
 }
@@ -349,7 +418,7 @@ function matchRepeatable(syntax: ValidationToken, context: Context<Token>, optio
 function matchList(syntax: ValidationToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
     // syntax.occurence
-    const {isList, occurence, ...s} = syntax;
+    // const {isList, occurence, ...s} = syntax;
 
     let success: boolean = false;
     let result: ValidationSyntaxResult;
@@ -368,16 +437,18 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
                 node: context.peek(),
                 syntax,
-                error: `could not match list: ${renderSyntax(s)}`,
-                tokens: context.tokens<Token>(),
+                error: `could not match list: ${renderSyntax(syntax)}`,
                 context
             }
         }
 
-        result = doEvaluateSyntax([s], createContext(tokens), options);
+        result = doEvaluateSyntax([syntax], createContext(tokens), {
+            ...options,
+            isList: false,
+            occurence: false
+        } as ValidationOptions);
 
         if (result.valid == ValidationLevel.Valid) {
 
@@ -401,23 +472,21 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
 
     success = count > 0;
 
-    if (count && occurence != null) {
+    if (count && syntax.occurence != null) {
 
-        success = count >= occurence.min;
+        success = count >= syntax.occurence.min;
 
-        if (success && occurence.max != null) {
+        if (success && syntax.occurence.max != null) {
 
-            success = count <= occurence.max;
+            success = count <= syntax.occurence.max;
         }
     }
 
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax,
         error: '',
-        tokens: context.tokens<Token>(),
         context
     }
 }
@@ -427,11 +496,11 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
     let counter: number = 0;
     let result: ValidationSyntaxResult;
 
-    const {occurence, ...s} = syntax;
+    // const {occurence, ...s} = syntax;
 
     do {
 
-        result = match(s, context.clone(), options);
+        result = match(syntax, context.clone(), {...options, occurence: false} as ValidationOptions);
 
         if (result.valid == ValidationLevel.Drop) {
 
@@ -456,11 +525,9 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
 
     return {
         valid: sucesss ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax,
         error: sucesss ? '' : `expected ${renderSyntax(syntax)} ${syntax.occurence!.min} to ${syntax.occurence!.max} occurences, got ${counter}`,
-        tokens: context.tokens<Token>(),
         context
     }
 }
@@ -470,26 +537,6 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
     let success: boolean = false;
     let result: ValidationSyntaxResult;
     let token: Token | null = context.peek() as Token;
-
-    if (options.cycles!.has(token) && options.cycles!.get(token)!.has(syntax)) {
-
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: token,
-            syntax,
-            error: '',
-            tokens: context.tokens<Token>(),
-            context
-        }
-    }
-
-    if (!options.cycles!.has(token)) {
-
-        options.cycles!.set(token, new WeakSet<Token>());
-    }
-
-    options.cycles!.get(token)!.add(syntax);
 
     switch (syntax.typ) {
 
@@ -526,11 +573,9 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             return {
                 valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-                matches: [],
                 node: context.current(),
                 syntax,
                 error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
-                tokens: context.tokens<Token>(),
                 context
             }
         }
@@ -545,11 +590,9 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
                 node: null,
                 syntax,
                 error: '',
-                tokens: context.tokens<Token>(),
                 context
             }
         }
@@ -557,7 +600,13 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
     if ((token?.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var')) {
 
-        const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, 'var')?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), options);
+        const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, 'var')?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), {
+            ...options,
+            isRepeatable: null,
+            isList: null,
+            occurence: null,
+            atLeastOnce: null
+        } as ValidationOptions);
 
         if (result.valid == ValidationLevel.Valid) {
 
@@ -573,24 +622,33 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             success = (token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType) &&
                 ((token as IdentToken).val == (syntax as ValidationKeywordToken).val ||
-                    ((token as IdentToken).val.charAt(0) == '-' && (token as IdentToken).val.replace(/(^-[a-z]+-)/, '') == (syntax as ValidationKeywordToken).val) ||
+                    (syntax as ValidationKeywordToken).val.localeCompare((token as IdentToken).val, undefined, {sensitivity: 'base'}) == 0 ||
                     // config.declarations.all
-                    ['initial', 'inherit', 'unset', 'revert', 'revert-layer'].includes((token as IdentToken).val));
+                    allValues.includes((token as IdentToken).val.toLowerCase()));
+
+            if (!success && token.typ == EnumToken.ColorTokenType) {
+
+                success = (token as ColorToken).val != null &&
+                    (
+                        (token.kin == ColorKind.SYS && systemColors.has((token as ColorToken).val.toLowerCase())) ||
+                        (token.kin == ColorKind.DPSYS && deprecatedSystemColors.has((token as ColorToken).val.toLowerCase()))
+                    );
+            }
 
             if (success) {
 
                 context.next();
+
+                return {
+                    valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+                    node: token,
+                    syntax,
+                    error: success ? '' : `expected keyword: '${(syntax as ValidationKeywordToken).val}', got ${renderToken(token)}`,
+                    context
+                }
             }
 
-            return {
-                valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-                matches: [],
-                node: token,
-                syntax,
-                error: success ? '' : `expected keyword: '${(syntax as ValidationKeywordToken).val}', got ${renderToken(token)}`,
-                tokens: context.tokens<Token>(),
-                context
-            }
+            break;
 
         case ValidationTokenEnum.PropertyType:
 
@@ -599,32 +657,48 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
         case ValidationTokenEnum.ValidationFunctionDefinition:
 
             token = context.peek() as Token;
+
             if (token.typ == EnumToken.ParensTokenType || !funcLike.concat(EnumToken.ColorTokenType) || (!('chi' in token))) {
 
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
                     node: context.next(),
                     syntax,
                     error: `expected function or color token, got ${renderToken(token)}`,
-                    tokens: context.tokens<Token>(),
                     context
                 }
             }
 
-            result = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi as ValidationToken[], createContext((token as FunctionToken).chi), options);
+        {
+
+            result = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi as ValidationToken[], createContext((token as FunctionToken).chi), {
+                ...options,
+                isRepeatable: null,
+                isList: null,
+                occurence: null,
+                atLeastOnce: null
+            } as ValidationOptions);
 
             if (result.valid == ValidationLevel.Valid) {
 
                 context.next();
-            }
 
-            result.context = context;
-            return result;
+                result.context = context;
+                return result;
+            }
+        }
+
+            break;
 
         case ValidationTokenEnum.DeclarationType:
 
-            return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, (syntax as ValidationDeclarationToken).val) as ValidationToken[], context, options);
+            return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, (syntax as ValidationDeclarationToken).val) as ValidationToken[], context, {
+                ...options,
+                isRepeatable: null,
+                isList: null,
+                occurence: null,
+                atLeastOnce: null
+            } as ValidationOptions);
 
         case ValidationTokenEnum.Parens:
 
@@ -634,7 +708,13 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 break;
             }
 
-            return doEvaluateSyntax((syntax as ValidationParensToken).chi as ValidationToken[], createContext((token as ParensToken).chi), options);
+            return doEvaluateSyntax((syntax as ValidationParensToken).chi as ValidationToken[], createContext((token as ParensToken).chi), {
+                ...options,
+                isRepeatable: null,
+                isList: null,
+                occurence: null,
+                atLeastOnce: null
+            } as ValidationOptions);
 
         case ValidationTokenEnum.Function:
 
@@ -644,7 +724,20 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 break;
             }
 
-            return doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, (syntax as ValidationFunctionToken).val)?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], context, options);
+            success = doEvaluateSyntax((syntax as ValidationFunctionToken).chi, createContext((token as FunctionToken).chi), {
+                ...options,
+                isRepeatable: null,
+                isList: null,
+                occurence: null,
+                atLeastOnce: null
+            } as ValidationOptions).valid == ValidationLevel.Valid;
+
+            if (success) {
+
+                context.next();
+            }
+
+            break;
 
         case ValidationTokenEnum.Comma:
 
@@ -679,11 +772,8 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             break;
 
-        // case ValidationTokenEnum.ColumnArrayToken:
-        //
-        //     return anyOf((syntax as ValidationColumnArrayToken).chi, context);
-
         case ValidationTokenEnum.Separator: {
+
             const token = context.peek() as Token;
             success = token?.typ == EnumToken.LiteralTokenType && (token as LiteralToken).val == '/';
 
@@ -691,40 +781,41 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
                 context.next();
             }
-
-            return {
-                valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-                matches: [],
-                node: context.current(),
-                syntax,
-                error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
-                tokens: context.tokens<Token>(),
-                context
-            }
-
         }
+
+            break;
 
         default:
 
             throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)} : ${renderToken(context.peek() as Token)} : ${JSON.stringify(syntax, null, 1)} | ${JSON.stringify(context.peek(), null, 1)}`);
     }
 
+    if (!success && token.typ == EnumToken.IdenTokenType && allValues.includes((token as IdentToken).val.toLowerCase())) {
+
+        success = true;
+        context.next();
+    }
+
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax,
         error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${renderToken(context!.peek() as Token)}'`,
-        tokens: context.tokens<Token>(),
         context
     };
 }
 
 function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
-    if (!['calc-sum', 'color-base', 'system-color', 'deprecated-system-color'].includes(syntax.val) && syntax.val in config[ValidationSyntaxGroupEnum.Syntaxes]) {
+    if (!['length-percentage', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color'].includes(syntax.val) && syntax.val in config[ValidationSyntaxGroupEnum.Syntaxes]) {
 
-        return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntax.val) as ValidationToken[], context, options);
+        return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntax.val) as ValidationToken[], context, {
+            ...options,
+            isRepeatable: null,
+            isList: null,
+            occurence: null,
+            atLeastOnce: null
+        } as ValidationOptions);
     }
 
     let success: boolean = true;
@@ -735,10 +826,12 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         case 'calc-sum':
 
             success = (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes((token as FunctionToken).val)) ||
-            [EnumToken.BinaryExpressionTokenType,EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.DimensionTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.TimeTokenType, EnumToken.ResolutionTokenType, EnumToken.FrequencyTokenType].includes(token.typ);
+                // @ts-ignore
+                (token.typ == EnumToken.IdenTokenType && typeof Math[(token as IdentToken).val.toUpperCase()] == 'number') ||
+                [EnumToken.BinaryExpressionTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.DimensionTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.TimeTokenType, EnumToken.ResolutionTokenType, EnumToken.FrequencyTokenType].includes(token.typ);
 
             if (!success) {
-                console.error(token, success);
+                console.error({syntax, token, success});
                 throw new Error(`Not implemented : ${JSON.stringify(syntax, null, 1)} : ${JSON.stringify(context.peek(), null, 1)}`);
             }
 
@@ -822,7 +915,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         case 'number':
         case 'number-token':
 
-            success = token.typ == EnumToken.NumberTokenType || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.NumberTokenType;
 
             if ('range' in syntax) {
 
@@ -851,6 +944,11 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
             success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
+        case 'resolution':
+
+            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            break;
+
         case 'hash-token':
 
             success = token.typ == EnumToken.HashTokenType;
@@ -866,10 +964,10 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
             success = token.typ == EnumToken.TimeTokenType || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
-        case 'url':
-
-            success = token.typ == EnumToken.UrlFunctionTokenType || token.typ == EnumToken.StringTokenType;
-            break;
+        // case 'url':
+        //
+        //     success = token.typ == EnumToken.UrlFunctionTokenType || token.typ == EnumToken.StringTokenType;
+        //     break;
 
         case 'zero':
 
@@ -881,6 +979,30 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
             throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)}\n${JSON.stringify(syntax, null, 1)}`);
     }
 
+
+    if (!success &&
+        token.typ == EnumToken.FunctionTokenType &&
+        ['length-percentage', 'length', 'number', 'number-token', 'angle', 'percentage', 'dimension'].includes((syntax as ValidationPropertyToken).val)) {
+
+        if (!success) {
+
+            success = mathFuncs.includes((token as FunctionToken).val.toLowerCase()) &&
+                doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (token as FunctionToken).val + '()')?.[0] as ValidationFunctionToken).chi ?? [], createContext((token as FunctionToken).chi), {
+                    ...options,
+                    isRepeatable: null,
+                    isList: null,
+                    occurence: null,
+                    atLeastOnce: null
+                }).valid == ValidationLevel.Valid;
+        }
+    }
+
+
+    if (!success && token.typ == EnumToken.IdenTokenType) {
+
+        success = allValues.includes((token as IdentToken).val.toLowerCase());
+    }
+
     if (success) {
 
         context.next();
@@ -888,11 +1010,9 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: token,
         syntax,
         error: success ? '' : `expected '${syntax.val}', got ${renderToken(token)}`,
-        tokens: context.tokens<Token>(),
         context
     }
 }
@@ -906,9 +1026,19 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
 
     for (i = 0; i < syntaxes.length; i++) {
 
+        if (context.peek<Token>()?.typ == EnumToken.WhitespaceTokenType) {
+
+            context.next();
+        }
+
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
 
         if (result.valid == ValidationLevel.Valid) {
+
+            if (result.context.done()) {
+
+                return result;
+            }
 
             matched.push(result);
         }
@@ -916,17 +1046,15 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
 
     if (matched.length > 0) {
 
-        // pick the longest match
+        // pick the best match
         matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
     }
 
     return matched[0] ?? {
         valid: ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax: null,
-        error: success ? '' : `could not match someOf: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
-        tokens: context.tokens(),
+        error: success ? '' : `could not match someOf: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
         context
     }
 }
@@ -957,11 +1085,9 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
 
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax: null,
         error: success ? '' : `could not match anyOf: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
-        tokens: context.tokens<Token>(),
         context
     }
 }
@@ -987,11 +1113,9 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
 
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        matches: [],
         node: context.current(),
         syntax: syntax?.[0]?.[0] ?? null,
         error: `could not match allOf: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
-        tokens: context.tokens<Token>(),
         context
     }
 }

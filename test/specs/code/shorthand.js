@@ -395,9 +395,9 @@ background-image: url("logo.png");
     border-left-width: 0;
     border-right-width: 0;
     border-color: #34edc7;
-    border-style: medium;
+    border-style: none;
 }
-`).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td{border-width:0;border-color:#34edc7;border-style:medium}`));
+`).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td{border:#34edc7 0}`));
     });
 
 }

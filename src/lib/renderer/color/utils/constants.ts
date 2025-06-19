@@ -1,6 +1,3 @@
-import type {IdentToken} from "../../../../@types/index.d.ts";
-import {EnumToken} from "../../../ast/index.ts";
-
 export const colorRange = {
 
     lab: {
@@ -59,10 +56,8 @@ export enum ColorKind {
     XYZ_D65,
     LIGHT_DARK
 }
-
+export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 export const colorFuncColorSpace: string[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-export const powerlessColorComponent: IdentToken = {typ: EnumToken.IdenTokenType, val: 'none'};
-
 export const D50: number[] = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
 
 export const k: number = Math.pow(29, 3) / Math.pow(3, 3);

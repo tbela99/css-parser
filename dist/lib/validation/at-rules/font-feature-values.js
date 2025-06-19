@@ -8,8 +8,7 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { validateFamilyName } from '../syntaxes/family-name.js';
 import '../syntaxes/complex-selector.js';
-import '../parser/types.js';
-import '../parser/parse.js';
+import '../syntax.js';
 import '../config.js';
 
 function validateAtRuleFontFeatureValues(atRule, options, root) {

@@ -1,5 +1,5 @@
 import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { ColorKind, colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
+import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
 import { EnumToken, funcLike } from '../ast/types.js';
@@ -11,7 +11,6 @@ import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -367,6 +366,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         // @ts-ignore
                         const color = chi[1];
                         const components = parseRelativeColor(token.val == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+                        // console.error(JSON.stringify({token,components}, null, 1));
                         if (components != null) {
                             token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
                             delete token.cal;
@@ -692,4 +692,4 @@ function filterValues(values) {
     return values;
 }
 
-export { colorsFunc, doRender, filterValues, reduceNumber, renderToken };
+export { doRender, filterValues, reduceNumber, renderToken };
