@@ -232,6 +232,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+        case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:
         case EnumToken.InvalidAtRuleTokenType:
             return '';

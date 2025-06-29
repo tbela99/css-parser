@@ -31,8 +31,8 @@ import type {Context, ValidationConfiguration, ValidationSyntaxResult} from "../
 import {EnumToken, funcLike, ValidationLevel} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web/index.ts";
-import {ColorKind, deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
-import {mathFuncs} from "../syntax";
+import {ColorKind, colorsFunc, deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
+import {mathFuncs, wildCardFuncs} from "../syntax";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -44,49 +44,62 @@ export function createContext(input: Token[]): Context<Token> {
     const values: Token[] = input.slice();
     const result: Token[] = [];
 
-    if (values.length > 1) {
+    // if (values.length > 1) {
+    //
+    //     // if context contains 'var()' then match it last
+    //     const vars: Token[] = [];
+    //     const w: string[] = wildCardFuncs.concat(['calc']);
+    //
+    //     let i: number = 0;
+    //
+    //     for (; i < values.length; i++) {
+    //
+    //         if (values[i].typ == EnumToken.FunctionTokenType && w.includes((values[i] as FunctionToken).val)) {
+    //
+    //             vars.push(values[i]);
+    //             values.splice(i, 1);
+    //
+    //             if (values[i]?.typ == EnumToken.WhitespaceTokenType) {
+    //
+    //                 vars.push(values[i]);
+    //                 values.splice(i, 1);
+    //
+    //                 if (i > 0) {
+    //
+    //                     i--;
+    //                 }
+    //             }
+    //
+    //             i--;
+    //             continue;
+    //         }
+    //
+    //         if (values[i].typ == EnumToken.CommaTokenType) {
+    //
+    //             if (vars.length > 0) {
+    //
+    //                 result.push(...vars);
+    //                 vars.length = 0;
+    //             }
+    //         }
+    //
+    //         result.push(values[i]);
+    //     }
+    //
+    //     if (vars.length > 0) {
+    //
+    //         result.push(...vars);
+    //     }
+    // } else {
+    //
+    //     result.push(...values);
+    // }
 
-        // if context contains 'var()' then match it last
-        const vars: Token[] = [];
+    result.push(...values);
 
-        let i: number = 0;
+    if (result.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
 
-        for (; i < values.length; i++) {
-
-            if (values[i].typ == EnumToken.FunctionTokenType && ['var', 'calc'].includes((values[i] as FunctionToken).val)) {
-
-                vars.push(values[i]);
-                values.splice(i, 1);
-
-                if (values[i]?.typ == EnumToken.WhitespaceTokenType) {
-
-                    vars.push(values[i]);
-                    values.splice(i, 1);
-                }
-
-                i--;
-                continue;
-            }
-
-            if (values[i].typ == EnumToken.CommaTokenType) {
-
-                if (vars.length > 0) {
-
-                    result.push(...vars.reverse());
-                    vars.length = 0;
-                }
-            }
-
-            result.push(values[i]);
-        }
-
-        if (vars.length > 0) {
-
-            result.push(...vars.reverse());
-        }
-    } else {
-
-        result.push(...values);
+        result.pop();
     }
 
     return {
@@ -107,6 +120,16 @@ export function createContext(input: Token[]): Context<Token> {
             }
 
             return result[index] as Token ?? null;
+        },
+        update<Token>(context: Context<Token>) {
+
+            // @ts-ignore
+            const newIndex: number = result.indexOf(context.current<Token>() as Token);
+
+            if (newIndex != -1) {
+
+                this.index = newIndex;
+            }
         },
         done(): boolean {
 
@@ -137,6 +160,10 @@ export function createContext(input: Token[]): Context<Token> {
 
             return result as Token[];
         },
+        slice<Token>(): Token[] {
+
+            return result.slice(this.index + 1) as Token[];
+        },
         clone(): Context<Token> {
 
             const context = createContext(input.slice());
@@ -147,7 +174,7 @@ export function createContext(input: Token[]): Context<Token> {
     }
 }
 
-export function evaluateSyntax(node: AstNode, options: ValidationOptions): ValidationSyntaxResult {
+export function evaluateSyntax(node: AstNode, options: ValidationOptions, parent: AstNode): ValidationSyntaxResult {
 
     let ast: ValidationToken[] | null;
     let result;
@@ -222,10 +249,33 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
 
             break;
 
+        case EnumToken.RuleNodeType: {
+
+            let isNested: boolean = parent.typ == EnumToken.RuleNodeType;
+
+            if (!isNested) {
+
+                let pr = parent.parent;
+
+                while (pr != null && !isNested) {
+
+                    isNested = pr.typ == EnumToken.RuleNodeType;
+                    pr = pr.parent;
+                }
+            }
+
+            ast = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, isNested ? 'relative-selector-list' : 'selector-list');
+
+            return doEvaluateSyntax(ast as ValidationToken[], createContext(node.tokens as Token[]), {
+                ...options,
+                visited: new WeakMap()
+            });
+        }
+
         case EnumToken.AtRuleNodeType:
-        case EnumToken.RuleNodeType:
         case EnumToken.KeyframeAtRuleNodeType:
         case EnumToken.KeyFrameRuleNodeType:
+
 
         default:
 
@@ -274,6 +324,9 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let i: number = 0;
     let result: ValidationSyntaxResult;
     let token: Token | null = null;
+
+    // console.error(syntaxes, syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '>> '), context.peek());
+    // console.error(new Error('blame'));
 
     for (; i < syntaxes.length; i++) {
 
@@ -343,7 +396,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
             return result;
         }
 
-        context = result.context as Context<Token>;
+        context.update(result.context as Context<Token>);
     }
 
     return {
@@ -370,7 +423,7 @@ function matchAtLeastOnce(syntax: ValidationToken, context: Context<Token>, opti
         if (result.valid == ValidationLevel.Valid) {
 
             success = true;
-            context = result.context as Context<Token>;
+            context.update(result.context as Context<Token>);
             continue;
         }
 
@@ -398,7 +451,7 @@ function matchRepeatable(syntax: ValidationToken, context: Context<Token>, optio
 
         if (result.valid == ValidationLevel.Valid) {
 
-            context = result.context as Context<Token>;
+            context.update(result.context as Context<Token>);
             continue;
         }
 
@@ -508,7 +561,7 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
         }
 
         counter++;
-        context = result.context as Context<Token>;
+        context.update(result.context as Context<Token>);
     }
 
     while (result.valid == ValidationLevel.Valid && !context.done());
@@ -555,25 +608,25 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
         case ValidationTokenEnum.ColumnToken: {
 
             let success: boolean = false;
-            let result: ValidationSyntaxResult = anyOf(flatten(syntax as ValidationColumnToken), context.clone(), options);
+            let result: ValidationSyntaxResult = anyOf(flatten(syntax as ValidationColumnToken), context, options);
 
             if (result.valid == ValidationLevel.Valid) {
 
                 success = true;
-                context = result.context as Context<Token>;
+                context.update(result.context as Context<Token>);
             }
 
-            result = anyOf(flatten(syntax as ValidationColumnToken), context.clone(), options);
-
-            if (result.valid == ValidationLevel.Valid) {
-
-                success = true;
-                context = result.context as Context<Token>;
-            }
+            // result = anyOf(flatten(syntax as ValidationColumnToken), context, options);
+            //
+            // if (result.valid == ValidationLevel.Valid) {
+            //
+            //     success = true;
+            //     context.update(result.context as Context<Token>);
+            // }
 
             return {
                 valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-                node: context.current(),
+                node: context.next(),
                 syntax,
                 error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
                 context
@@ -598,9 +651,9 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
         }
     }
 
-    if ((token?.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var')) {
+    if (syntax.typ != ValidationTokenEnum.PropertyType && (token?.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val))) {
 
-        const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, 'var')?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), {
+        const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, (token as FunctionToken).val)?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), {
             ...options,
             isRepeatable: null,
             isList: null,
@@ -708,36 +761,15 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 break;
             }
 
-            return doEvaluateSyntax((syntax as ValidationParensToken).chi as ValidationToken[], createContext((token as ParensToken).chi), {
-                ...options,
-                isRepeatable: null,
-                isList: null,
-                occurence: null,
-                atLeastOnce: null
-            } as ValidationOptions);
-
-        case ValidationTokenEnum.Function:
-
-            token = context.peek() as Token;
-            if ((syntax as ValidationFunctionToken).val != 'var' && (syntax as ValidationFunctionToken).val != (token as FunctionToken).val) {
-
-                break;
-            }
-
-            success = doEvaluateSyntax((syntax as ValidationFunctionToken).chi, createContext((token as FunctionToken).chi), {
+            success = doEvaluateSyntax((syntax as ValidationParensToken).chi as ValidationToken[], createContext((token as ParensToken).chi), {
                 ...options,
                 isRepeatable: null,
                 isList: null,
                 occurence: null,
                 atLeastOnce: null
             } as ValidationOptions).valid == ValidationLevel.Valid;
-
-            if (success) {
-
-                context.next();
-            }
-
             break;
+
 
         case ValidationTokenEnum.Comma:
 
@@ -784,8 +816,50 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
         }
 
             break;
-
         default:
+
+            token = context.peek() as Token;
+
+            if (!wildCardFuncs.includes((syntax as ValidationFunctionToken).val) && (syntax as ValidationFunctionToken).val != (token as FunctionToken).val) {
+
+                break;
+            }
+
+            if (token.typ != EnumToken.ParensTokenType && funcLike.includes(token.typ)) {
+
+                success = doEvaluateSyntax((syntax as ValidationFunctionToken).chi, createContext((token as FunctionToken).chi), {
+                    ...options,
+                    isRepeatable: null,
+                    isList: null,
+                    occurence: null,
+                    atLeastOnce: null
+                } as ValidationOptions).valid == ValidationLevel.Valid;
+
+                if (success) {
+
+                    context.next();
+                }
+                break;
+            }
+
+            if (syntax.typ == ValidationTokenEnum.Function) {
+
+                // console.error({token})
+
+                success = funcLike.includes(token.typ) && doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionToken).val + '()')?.[0] as ValidationFunctionToken)?.chi as ValidationToken[]    , createContext((token as FunctionToken).chi), {
+                    ...options,
+                    isRepeatable: null,
+                    isList: null,
+                    occurence: null,
+                    atLeastOnce: null
+                } as ValidationOptions).valid == ValidationLevel.Valid;
+
+                if (success) {
+
+                    context.next();
+                }
+                break;
+            }
 
             throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)} : ${renderToken(context.peek() as Token)} : ${JSON.stringify(syntax, null, 1)} | ${JSON.stringify(context.peek(), null, 1)}`);
     }
@@ -798,7 +872,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
     return {
         valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${renderToken(context!.peek() as Token)}'`,
         context
@@ -807,19 +881,54 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
 function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
-    if (!['length-percentage', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color'].includes(syntax.val) && syntax.val in config[ValidationSyntaxGroupEnum.Syntaxes]) {
+    if (!['length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color'].includes(syntax.val)) {
 
-        return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntax.val) as ValidationToken[], context, {
+        if (syntax.val in config[ValidationSyntaxGroupEnum.Syntaxes]) {
+
+            // console.error(`>> ${renderSyntax(syntax)}`);
+            return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntax.val) as ValidationToken[], context, {
+                ...options,
+                isRepeatable: null,
+                isList: null,
+                occurence: null,
+                atLeastOnce: null
+            } as ValidationOptions);
+        }
+
+        // if (syntax.val in config[ValidationSyntaxGroupEnum.Declarations]) {
+        //
+        //     return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntax.val) as ValidationToken[], context, {
+        //         ...options,
+        //         isRepeatable: null,
+        //         isList: null,
+        //         occurence: null,
+        //         atLeastOnce: null
+        //     } as ValidationOptions);
+        // }
+    }
+
+
+
+    let success: boolean = true;
+    let token: Token = context.peek() as Token;
+
+    if ((token?.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val))) {
+
+        const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, (token as FunctionToken).val)?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), {
             ...options,
             isRepeatable: null,
             isList: null,
             occurence: null,
             atLeastOnce: null
         } as ValidationOptions);
-    }
 
-    let success: boolean = true;
-    let token: Token = context.peek() as Token;
+        if (result.valid == ValidationLevel.Valid) {
+
+            context.next();
+        }
+
+        return {...result, context}
+    }
 
     switch (syntax.val) {
 
@@ -830,10 +939,10 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                 (token.typ == EnumToken.IdenTokenType && typeof Math[(token as IdentToken).val.toUpperCase()] == 'number') ||
                 [EnumToken.BinaryExpressionTokenType, EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.DimensionTokenType, EnumToken.LengthTokenType, EnumToken.AngleTokenType, EnumToken.TimeTokenType, EnumToken.ResolutionTokenType, EnumToken.FrequencyTokenType].includes(token.typ);
 
-            if (!success) {
-                console.error({syntax, token, success});
-                throw new Error(`Not implemented : ${JSON.stringify(syntax, null, 1)} : ${JSON.stringify(context.peek(), null, 1)}`);
-            }
+            // if (!success) {
+            //     console.error({syntax, token, success});
+            //     throw new Error(`Not implemented : ${JSON.stringify(syntax, null, 1)} : ${JSON.stringify(context.peek(), null, 1)}`);
+            // }
 
             break;
 
@@ -849,7 +958,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'url-token':
 
-            success = token.typ == EnumToken.UrlTokenTokenType || token.typ == EnumToken.StringTokenType || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var');
+            success = token.typ == EnumToken.UrlTokenTokenType || token.typ == EnumToken.StringTokenType || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         // case 'intrinsic-size-keyword':
@@ -858,6 +967,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         //     break;
 
         case 'ident':
+        case 'ident-token':
         case 'custom-ident':
 
             success = token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType;
@@ -871,23 +981,35 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'system-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.SYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var');
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.SYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'deprecated-system-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.DPSYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var');
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.DPSYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'color':
         case 'color-base':
 
-            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('transparent', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var');
+            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('transparent', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+
+            if (!success && token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
+
+                success = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, (token as FunctionToken).val)?.[0] as ValidationFunctionToken)?.chi as ValidationToken[], createContext((token as FunctionToken).chi), {
+                    ...options,
+                    isRepeatable: null,
+                    isList: null,
+                    occurence: null,
+                    atLeastOnce: null
+                } as ValidationOptions).valid == ValidationLevel.Valid
+            }
+
             break;
 
         case 'hex-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.HEX) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var');
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'integer':
@@ -911,6 +1033,11 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                 EnumToken.FrequencyTokenType
             ].includes(token.typ) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
+
+        case 'flex':
+
+            success = token.typ == EnumToken.FlexTokenType || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            break
 
         case 'number':
         case 'number-token':
@@ -956,7 +1083,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'string':
 
-            success = token.typ == EnumToken.StringTokenType || token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'var');
+            success = token.typ == EnumToken.StringTokenType || token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'time':
@@ -987,7 +1114,8 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         if (!success) {
 
             success = mathFuncs.includes((token as FunctionToken).val.toLowerCase()) &&
-                doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (token as FunctionToken).val + '()')?.[0] as ValidationFunctionToken).chi ?? [], createContext((token as FunctionToken).chi), {
+                // (token as FunctionToken).val + '()' in config[ValidationSyntaxGroupEnum.Syntaxes] &&
+                doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (token as FunctionToken).val + '()')?.[0] as ValidationFunctionToken)?.chi ?? [], createContext((token as FunctionToken).chi), {
                     ...options,
                     isRepeatable: null,
                     isList: null,
@@ -1002,6 +1130,24 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         success = allValues.includes((token as IdentToken).val.toLowerCase());
     }
+
+    // if (!success && wildCardFuncs.includes((token as FunctionToken).val.toLowerCase())) {
+    //
+    //     const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, (token as FunctionToken).val)?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), {
+    //         ...options,
+    //         isRepeatable: null,
+    //         isList: null,
+    //         occurence: null,
+    //         atLeastOnce: null
+    //     } as ValidationOptions);
+    //
+    //     if (result.valid == ValidationLevel.Valid) {
+    //
+    //         context.next();
+    //     }
+
+    //     return {...result, context}
+    // }
 
     if (success) {
 
@@ -1024,6 +1170,8 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
     let success: boolean = false;
     const matched: ValidationSyntaxResult[] = [];
 
+    // match var() only if no matches
+
     for (i = 0; i < syntaxes.length; i++) {
 
         if (context.peek<Token>()?.typ == EnumToken.WhitespaceTokenType) {
@@ -1035,14 +1183,16 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
 
         if (result.valid == ValidationLevel.Valid) {
 
-            if (result.context.done()) {
-
-                return result;
-            }
+            // if (result.context.done()) {
+            //
+            //     return result;
+            // }
 
             matched.push(result);
         }
     }
+
+    // console.error({matched});
 
     if (matched.length > 0) {
 
@@ -1072,7 +1222,7 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
         if (result.valid == ValidationLevel.Valid) {
 
             success = true;
-            context = result.context as Context<Token>;
+            context.update(result.context as Context<Token>);
 
             i = 0;
 
@@ -1095,15 +1245,63 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
 function allOf(syntax: ValidationToken[][], context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
     let result: ValidationSyntaxResult;
-    let i: number = 0;
+    let i: number;
 
-    for (; i < syntax.length; i++) {
+    // sort tokens -> wildCard -> last
+    // 1px var(...) 2px => 1px 2px var(...)
+    const slice: Token[] = context.slice<Token>();
+    const vars: Token[] = [];
+    const tokens: Token[] = [];
 
-        result = doEvaluateSyntax(syntax[i], context.clone(), options);
+    for (i = 0; i < slice.length; i++) {
+
+        if (slice[i].typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((slice[i] as FunctionToken).val.toLowerCase())) {
+
+            vars.push(slice[i]);
+            slice.splice(i, 1);
+
+            if (slice[i]?.typ == EnumToken.WhitespaceTokenType) {
+
+                vars.push(slice[i]);
+                slice.splice(i, 1);
+
+                if (i > 0) {
+
+                    i--;
+                }
+            }
+
+            if (i > 0) {
+
+                i--;
+            }
+
+            continue;
+        }
+
+        if (slice[i].typ == EnumToken.CommaTokenType || (slice[i].typ == EnumToken.LiteralTokenType && (slice[i] as LiteralToken).val == '/')) {
+
+            tokens.push(...vars);
+            vars.length = 0;
+        }
+
+        tokens.push(slice[i]);
+    }
+
+    if (vars.length > 0) {
+
+        tokens.push(...vars);
+    }
+
+    const con: Context<Token> = createContext(tokens);
+
+    for (i=0; i < syntax.length; i++) {
+
+        result = doEvaluateSyntax(syntax[i], con.clone(), options);
 
         if (result.valid == ValidationLevel.Valid) {
 
-            context = result.context as Context<Token>;
+            con.update(result.context as Context<Token>);
             syntax.splice(i, 1);
             i = -1;
         }
@@ -1116,7 +1314,7 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
         node: context.current(),
         syntax: syntax?.[0]?.[0] ?? null,
         error: `could not match allOf: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
-        context
+        context: success ? con : context
     }
 }
 

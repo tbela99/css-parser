@@ -1779,7 +1779,7 @@ var declarations = {
 		syntax: "none | <custom-ident>+"
 	},
 	"view-transition-name": {
-		syntax: "none | <custom-ident>"
+		syntax: "none | <custom-ident> | match-element"
 	},
 	visibility: {
 		syntax: "visible | hidden | collapse"

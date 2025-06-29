@@ -47,11 +47,15 @@ export interface Context<Type> {
 
     current<Type>(): Type | null;
 
+    update<Type>(context: Context<Type>): void;
+
     peek<Type>(): Type | null;
 
     next<Type>(): Type | null;
 
     tokens<Type>(): Type[];
+
+    slice<Type>(): Type[];
 
     clone(): Context;
 

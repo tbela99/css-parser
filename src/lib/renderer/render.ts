@@ -397,6 +397,7 @@ function renderAstNode(data: AstNode, options: RenderOptions, sourcemap: SourceM
 
             return (<AstRule>data).sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
 
+        case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:
         case EnumToken.InvalidAtRuleTokenType:
 

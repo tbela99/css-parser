@@ -33,7 +33,8 @@ const mediaTypes = ['all', 'print', 'screen',
     /* deprecated */
     'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
 // https://www.w3.org/TR/css-values-4/#math-function
-const mathFuncs = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+const mathFuncs = ['minmax', 'repeat', 'fit-content', 'calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+const wildCardFuncs = ['var', 'env'];
 const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];
 const webkitPseudoAliasMap = {
     '-webkit-autofill': 'autofill',
@@ -831,4 +832,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseDimension, pseudoElements, transformFunctions, webkitExtensions, webkitPseudoAliasMap };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseDimension, pseudoElements, transformFunctions, webkitExtensions, webkitPseudoAliasMap, wildCardFuncs };

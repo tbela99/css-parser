@@ -134,6 +134,7 @@ var EnumToken;
     EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
+    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 17] = "InvalidDeclarationNodeType";
 })(EnumToken || (EnumToken = {}));
 const funcLike = [
     EnumToken.ParensTokenType,

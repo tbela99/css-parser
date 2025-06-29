@@ -122,7 +122,8 @@ declare enum EnumToken {
     CommentNodeType = 0,
     CDOCOMMNodeType = 1,
     TimingFunction = 17,
-    TimelineFunction = 16
+    TimelineFunction = 16,
+    InvalidDeclarationNodeType = 17
 }
 
 /**
@@ -907,11 +908,10 @@ export declare interface AstInvalidRule extends BaseToken {
     chi: Array<AstNode$1>;
 }
 
-export declare interface AstInvalidAtRule extends BaseToken {
+export declare interface AstInvalidDeclaration extends BaseToken {
 
-    typ: EnumToken.InvalidAtRuleTokenType;
-    val: string;
-    chi?: Array<AstNode$1>;
+    typ: EnumToken.InvalidDeclarationNodeType;
+    val: Array<AstNode$1>;
 }
 
 export declare interface AstKeyFrameRule extends BaseToken {
@@ -938,14 +938,14 @@ export declare interface AstAtRule extends BaseToken {
     typ: EnumToken.AtRuleNodeType,
     nam: string;
     val: string;
-    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
+    chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
 export declare interface AstKeyframeRule extends BaseToken {
 
     typ: EnumToken.KeyFrameRuleNodeType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
 }
@@ -979,7 +979,7 @@ export declare type AstNode$1 =
     | AstKeyframAtRule
     | AstKeyFrameRule
     | AstInvalidRule
-    | AstInvalidAtRule;
+    | AstInvalidDeclaration;
 
 /**
  * Declaration visitor handler

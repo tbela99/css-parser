@@ -44,7 +44,8 @@ export const mediaTypes: string[] = ['all', 'print', 'screen',
     'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
 
 // https://www.w3.org/TR/css-values-4/#math-function
-export const mathFuncs: string[] = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+export const mathFuncs: string[] = ['minmax', 'repeat', 'fit-content', 'calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+export const wildCardFuncs: string[] = ['var', 'env'];
 
 export const pseudoElements: string[] = [':before', ':after', ':first-line', ':first-letter'];
 export const webkitPseudoAliasMap: Record<string, string> = {

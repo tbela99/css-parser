@@ -133,6 +133,7 @@ export enum EnumToken {
     CDOCOMMNodeType = CDOCOMMTokenType,
     TimingFunction = TimingFunctionTokenType,
     TimelineFunction = TimelineFunctionTokenType,
+    InvalidDeclarationNodeType,
 }
 
 export const funcLike: EnumToken[] = [

@@ -3,7 +3,7 @@ import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Location, Positio
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib/index.ts";
-import type {Token} from "./token";
+import type {Token} from "./token.d.ts";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
