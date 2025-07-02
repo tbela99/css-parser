@@ -30,7 +30,7 @@ export const combinators: string[] = ['+', '>', '~', '||', '|'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
 const notEndingWith: string[] = ['(', '['].concat(combinators);
 // @ts-ignore
-const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering)
+const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering);
 
 /**
  * minify ast

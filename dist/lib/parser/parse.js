@@ -1,4 +1,4 @@
-import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
+import { webkitPseudoAliasMap, isIdentStart, isIdent, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, funcLike, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -6,17 +6,18 @@ import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { ColorKind, COLORS_NAMES, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, ColorKind, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
 import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
+import { validateSelector } from '../validation/selector.js';
+import { validateAtRule } from '../validation/atrule.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import '../validation/syntaxes/complex-selector.js';
 import { validateKeyframeSelector } from '../validation/syntaxes/keyframe-selector.js';
 import { evaluateSyntax } from '../validation/syntax.js';
-import { validateAtRule } from '../validation/atrule.js';
 import { validateAtRuleKeyframes } from '../validation/at-rules/keyframes.js';
 
 const urlTokenMatcher = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
@@ -614,7 +615,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             // console.error(doRender(node), location);
             if (options.validation) {
                 // @ts-ignore
-                const valid = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : evaluateSyntax(node, options, context);
+                const valid = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
                 if (valid.valid != ValidationLevel.Valid) {
                     // @ts-ignore
                     node.typ = EnumToken.InvalidRuleTokenType;
@@ -809,6 +810,33 @@ function parseAtRulePrelude(tokens, atRule) {
             value.typ == EnumToken.WhitespaceTokenType ||
             value.typ == EnumToken.CommaTokenType) {
             continue;
+        }
+        if (value.typ == EnumToken.PseudoClassFuncTokenType || value.typ == EnumToken.PseudoClassTokenType) {
+            if (parent?.typ == EnumToken.ParensTokenType) {
+                const index = parent.chi.indexOf(value);
+                let i = index;
+                while (i--) {
+                    if (parent.chi[i].typ == EnumToken.IdenTokenType || parent.chi[i].typ == EnumToken.DashedIdenTokenType) {
+                        break;
+                    }
+                }
+                if (i >= 0) {
+                    const token = getTokenType(parent.chi[index].val.slice(1) + (funcLike.includes(parent.chi[index].typ) ? '(' : ''));
+                    parent.chi[index].val = token.val;
+                    parent.chi[index].typ = token.typ;
+                    if (parent.chi[index].typ == EnumToken.FunctionTokenType && isColor(parent.chi[index])) {
+                        parseColor(parent.chi[index]);
+                    }
+                    parent.chi.splice(i, index - i + 1, {
+                        typ: EnumToken.MediaQueryConditionTokenType,
+                        l: parent.chi[i],
+                        r: parent.chi.slice(index),
+                        op: {
+                            typ: EnumToken.ColonTokenType
+                        }
+                    });
+                }
+            }
         }
         if (atRule.val == 'page' && value.typ == EnumToken.PseudoClassTokenType) {
             if ([':left', ':right', ':first', ':blank'].includes(value.val)) {
@@ -1537,34 +1565,7 @@ function parseTokens(tokens, options = {}) {
             }
             // @ts-ignore
             if (options.parseColor && t.typ == EnumToken.FunctionTokenType && isColor(t)) {
-                // @ts-ignore
-                t.typ = EnumToken.ColorTokenType;
-                // @ts-ignore
-                t.kin = ColorKind[t.val.replaceAll('-', '_').toUpperCase()];
-                // @ts-ignore
-                if (t.chi[0].typ == EnumToken.IdenTokenType) {
-                    // @ts-ignore
-                    if (t.chi[0].val == 'from') {
-                        // @ts-ignore
-                        t.cal = 'rel';
-                    }
-                    // @ts-ignore
-                    else if (t.val == 'color-mix' && t.chi[0].val == 'in') {
-                        // @ts-ignore
-                        t.cal = 'mix';
-                    }
-                    else { // @ts-ignore
-                        if (t.val == 'color') {
-                            // @ts-ignore
-                            t.cal = 'col';
-                        }
-                    }
-                }
-                const filter = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
-                if (t.val != 'light-dark') {
-                    filter.push(EnumToken.CommaTokenType);
-                }
-                t.chi = t.chi.filter((t) => !filter.includes(t.typ));
+                parseColor(t);
                 continue;
             }
             if (t.typ == EnumToken.UrlFunctionTokenType) {

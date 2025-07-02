@@ -236,10 +236,10 @@ export function hslvalues(token: ColorToken): { h: number, s: number, l: number,
 
     let a = null;
 
-    if (token.chi?.length == 4) {
+    if (components.length == 4) {
 
         // @ts-ignore
-        t = token.chi[3];
+        t = components[3];
 
         // @ts-ignore
         a = getNumber(t);

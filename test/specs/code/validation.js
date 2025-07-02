@@ -484,6 +484,14 @@ html, body, div, span, applet, object, iframe,
             return parse(`@namespace svg url('http://www.w3.org/2000/svg')"
 `, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@namespace svg url(http://www.w3.org/2000/svg);`));
         });
+
+        it('supports validation #19', function () {
+            return transform(`@supports (color:color-mix(in oklab,black,black)) {
+
+.hsl { color: hsl(195, 100%, 50%); }
+}
+`, {validation: true}).then(result => expect(result.code).equals(`@supports (color:color-mix(in oklab,black,black)){.hsl{color:#00bfff}}`));
+        });
     });
 
 }

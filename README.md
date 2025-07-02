@@ -1030,7 +1030,3 @@ console.debug(await transform(css, options));
 // .foo{width:3px}
 
 ```
-
----
-
-Thanks to [Jetbrains](https://jetbrains.com) for sponsoring this project with a free license

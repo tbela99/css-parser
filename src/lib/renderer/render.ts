@@ -135,7 +135,8 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
         }),
         ...(minify ? {
             removeEmpty: true,
-            removeComments: true
+            removeComments: true,
+            minify: true
         } : {
             removeEmpty: false,
             removeComments: false,
@@ -216,7 +217,6 @@ export function doRender(data: AstNode, options: RenderOptions = {}): RenderResu
 function updateSourceMap(node: AstRuleList | AstComment, options: RenderOptions, cache: {
     [p: string]: any
 }, sourcemap: SourceMap, position: Position, str: string) {
-
 
 
     if ([
@@ -545,7 +545,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.ColorTokenType:
 
-            if ((token as ColorToken).kin == ColorKind.LIGHT_DARK) {
+            if ((token as ColorToken).kin == ColorKind.LIGHT_DARK || ('chi' in token && !options.convertColor)) {
 
                 return (token as ColorToken).val + '(' + ((token as ColorToken).chi as Token[]).reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ')';
             }
@@ -561,7 +561,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                             acc.push([t]);
                         } else {
 
-                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
 
                                 acc[acc.length - 1].push(t);
                             }
@@ -600,9 +600,6 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                         // @ts-ignore
                         const color: ColorToken = chi[1];
                         const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor((token as ColorToken).val == 'color' ? (<IdentToken>chi[offset]).val : <string>(token as ColorToken).val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
-
-
-                        // console.error(JSON.stringify({token,components}, null, 1));
 
                         if (components != null) {
 
@@ -650,14 +647,26 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         const val: string = renderToken(curr, options, cache);
 
-                        if ([EnumToken.LiteralTokenType, EnumToken.CommaTokenType].includes(curr.typ)) {
+                        if (curr.typ == EnumToken.LiteralTokenType && (curr as LiteralToken).val == '/') {
 
-                            return acc + val;
+                            return acc.trimEnd() + '/';
+                        }
+
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+
+                            const v:  string = acc.at(-1) as string;
+
+                            if (v == ' ' || v == ',' || v == '/') {
+
+                                return acc;
+                            }
+
+                            return acc.trimEnd() + ' ';
                         }
 
                         if (acc.length > 0) {
 
-                            return acc + (['/', ','].includes(<string>acc.at(-1)) ? '' : ' ') + val;
+                            return acc + (['/', ',', ' '].includes(<string>acc.at(-1)) ? '' : ' ') + val;
                         }
 
                         return val;
@@ -673,7 +682,20 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 if (Array.isArray((token as ColorToken).chi) && (token as ColorToken).chi!.some((t: Token): boolean => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray((t as ColorToken).chi)))) {
 
-                    return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
+                    return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token, index: number, array: Token[]): string => {
+
+                        if (curr.typ == EnumToken.Literal && (curr as LiteralToken).val == '/') {
+
+                            return acc.trimEnd() + '/';
+                        }
+
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+
+                            return acc.endsWith('/') || acc.endsWith(' ') ? acc : acc + ' ';
+                        }
+
+                        return acc + renderToken(curr, options, cache)
+                    }, '') + ')';
                 }
 
                 let value: string | null = (token as ColorToken).kin == ColorKind.HEX ? (token as ColorToken).val.toLowerCase() : ((token as ColorToken).kin == ColorKind.LIT ? COLORS_NAMES[(token as ColorToken).val.toLowerCase()] : '');
@@ -819,6 +841,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.DescendantCombinatorTokenType:
         case EnumToken.WhitespaceTokenType:
+
             return ' ';
 
         case EnumToken.ColonTokenType:

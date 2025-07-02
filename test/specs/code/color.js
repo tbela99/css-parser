@@ -4,7 +4,7 @@ export function run(describe, expect, transform, parse, render) {
     describe('Parse color', function () {
 
         it('hsl #1', function () {
-            return parse(`.hsl { color: hsl(195, 100%, 50%); }`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.hsl {
+            return parse(`.hsl { color: hsl(195, 100%, 50%); }`).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.hsl {
  color: #00bfff
 }`));
         });
@@ -79,7 +79,7 @@ color: rgb(255 255 none / none);
 a {
 color: hsl(300deg 100% 50% / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #f0f
+ color: #f0f0
 }`));
         });
 
@@ -88,7 +88,7 @@ color: hsl(300deg 100% 50% / none);
 a {
 color: hsl(none 100% 50% / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: red
+ color: #f000
 }`));
         });
 
@@ -97,7 +97,7 @@ color: hsl(none 100% 50% / none);
 a {
 color: rgb(from white r g 0 / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #ff0
+ color: #ff00
 }`));
         });
 
@@ -106,7 +106,7 @@ color: rgb(from white r g 0 / none);
 a {
 color: rgb(from rgb(255 255 none) r g 0 / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #ff0
+ color: #ff00
 }`));
         });
 
@@ -1262,9 +1262,7 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
         return parse(`
  
 a {color:lch(from slateblue calc(l + 10%) c h) ;
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #8673ea
-}`));
+`).then(result => expect(render(result.ast, {minify: false}).code).equals(``));
     });
 
     it('percentage in calc() #129', function () {

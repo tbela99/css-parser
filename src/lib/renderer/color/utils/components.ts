@@ -25,7 +25,7 @@ export function getComponents(token: ColorToken): Token[] | null {
             continue;
         }
 
-        if (child.typ == EnumToken.ColorTokenType && (child as ColorToken).val == 'currentcolor') {
+        if (child.typ == EnumToken.ColorTokenType && (child as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
 
             return null;
         }

@@ -211,7 +211,8 @@ declare enum ColorKind {
     XYZ = 21,
     XYZ_D50 = 22,
     XYZ_D65 = 23,
-    LIGHT_DARK = 24
+    LIGHT_DARK = 24,
+    COLOR_MIX = 25
 }
 
 /**

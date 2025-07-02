@@ -13,6 +13,7 @@ import {
     isPseudo,
     mathFuncs,
     mediaTypes,
+    parseColor,
     parseDimension,
     pseudoElements,
     webkitPseudoAliasMap
@@ -107,7 +108,7 @@ import type {
     WhitespaceToken
 } from "../../@types/index.d.ts";
 import {ColorKind, deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
-import {validateAtRule} from "../validation/index.ts";
+import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
 import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
@@ -761,6 +762,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
         }
 
         const t: Token[] = parseAtRulePrelude(parseTokens(tokens, {minify: options.minify}), atRule) as Token[];
+
         const raw: string[] = t.reduce((acc: string[], curr: Token) => {
 
             acc.push(renderToken(curr, {removeComments: true}));
@@ -955,7 +957,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             if (options.validation) {
 
                 // @ts-ignore
-                const valid: ValidationResult = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : evaluateSyntax(node, options, context);
+                const valid: ValidationResult = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context);
 
                 if (valid.valid != ValidationLevel.Valid) {
 
@@ -1222,6 +1224,45 @@ function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
         ) {
 
             continue;
+        }
+
+        if (value.typ == EnumToken.PseudoClassFuncTokenType || value.typ == EnumToken.PseudoClassTokenType) {
+
+            if (parent?.typ == EnumToken.ParensTokenType) {
+
+                const index: number = parent.chi.indexOf(value);
+                let i: number = index;
+
+                while (i--) {
+
+                    if (parent.chi[i].typ == EnumToken.IdenTokenType || parent.chi[i].typ == EnumToken.DashedIdenTokenType) {
+
+                        break;
+                    }
+                }
+
+                if (i >= 0) {
+
+                    const token: Token = getTokenType((parent.chi[index] as PseudoClassToken | PseudoClassFunctionToken).val.slice(1) + (funcLike.includes(parent.chi[index].typ) ? '(' : ''));
+
+                    (parent.chi[index] as PseudoClassToken | PseudoClassFunctionToken).val = (token as PseudoClassToken | PseudoClassFunctionToken).val;
+                    (parent.chi[index] as PseudoClassToken | PseudoClassFunctionToken).typ = (token as PseudoClassToken | PseudoClassFunctionToken).typ;
+
+                    if (parent.chi[index].typ == EnumToken.FunctionTokenType && isColor(parent.chi[index])) {
+
+                        parseColor(parent.chi[index]);
+                    }
+
+                    parent.chi.splice(i, index - i + 1, {
+                        typ: EnumToken.MediaQueryConditionTokenType,
+                        l: parent.chi[i],
+                        r: parent.chi.slice(index),
+                        op: {
+                            typ: EnumToken.ColonTokenType
+                        } as ColonToken
+                    } as MediaQueryConditionToken)
+                }
+            }
         }
 
         if (atRule.val == 'page' && value.typ == EnumToken.PseudoClassTokenType) {
@@ -2189,42 +2230,8 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
             // @ts-ignore
             if (options.parseColor && t.typ == EnumToken.FunctionTokenType && isColor(t)) {
 
-                // @ts-ignore
-                t.typ = EnumToken.ColorTokenType;
-                // @ts-ignore
-                (t as ColorToken).kin = ColorKind[t.val.replaceAll('-', '_').toUpperCase()];
 
-                // @ts-ignore
-                if (((t as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {
-
-                    // @ts-ignore
-                    if (((t as ColorToken).chi as Token[])[0].val == 'from') {
-
-                        // @ts-ignore
-                        (t as ColorToken).cal = 'rel';
-                    }
-
-                    // @ts-ignore
-                    else if ((t as ColorToken).val == 'color-mix' && ((t as ColorToken).chi as Token[])[0].val == 'in') {
-
-                        // @ts-ignore
-                        (t as ColorToken).cal = 'mix';
-                    } else { // @ts-ignore
-                        if ((t as ColorToken).val == 'color') {
-                            // @ts-ignore
-                            (t as ColorToken).cal = 'col';
-                        }
-                    }
-                }
-
-                const filter: EnumToken[] = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
-
-                if ((t as FunctionToken).val != 'light-dark') {
-
-                    filter.push(EnumToken.CommaTokenType);
-                }
-
-                (t as FunctionToken).chi = (t as FunctionToken).chi.filter((t: Token): boolean => !filter.includes(t.typ));
+                parseColor(t);
                 continue;
             }
 

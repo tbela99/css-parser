@@ -3,6 +3,7 @@
 ## v1.1.0
 
 - [x] inline sourcemap
+- [ ] validation using mdn-data
 
 # v1.0.0
 

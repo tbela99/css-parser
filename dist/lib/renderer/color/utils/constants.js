@@ -49,6 +49,7 @@ var ColorKind;
     ColorKind[ColorKind["XYZ_D50"] = 22] = "XYZ_D50";
     ColorKind[ColorKind["XYZ_D65"] = 23] = "XYZ_D65";
     ColorKind[ColorKind["LIGHT_DARK"] = 24] = "LIGHT_DARK";
+    ColorKind[ColorKind["COLOR_MIX"] = 25] = "COLOR_MIX";
 })(ColorKind || (ColorKind = {}));
 const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];

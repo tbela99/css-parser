@@ -30,9 +30,12 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         [names[1]]: getValue(g, converted, names[1]), // string,
         [names[2]]: getValue(b, converted, names[2]),
         // @ts-ignore
-        alpha: alpha == null || (alpha.typ == EnumToken.IdenTokenType && alpha.val == 'none') ? {
+        alpha: alpha == null ? {
             typ: EnumToken.NumberTokenType,
             val: '1'
+        } : (alpha.typ == EnumToken.IdenTokenType && alpha.val == 'none') ? {
+            typ: EnumToken.NumberTokenType,
+            val: '0'
         } : (alpha.typ == EnumToken.PercentageTokenType ? {
             typ: EnumToken.NumberTokenType,
             val: String(getNumber(alpha))
@@ -43,9 +46,12 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
         [names[1]]: getValue(gExp, converted, names[1]),
         [names[2]]: getValue(bExp, converted, names[2]),
         // @ts-ignore
-        alpha: getValue(aExp == null || (aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') ? {
+        alpha: getValue(aExp == null ? {
             typ: EnumToken.NumberTokenType,
             val: '1'
+        } : (aExp.typ == EnumToken.IdenTokenType && aExp.val == 'none') ? {
+            typ: EnumToken.NumberTokenType,
+            val: '0'
         } : aExp)
     };
     return computeComponentValue(keys, converted, values);

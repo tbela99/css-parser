@@ -6,6 +6,7 @@ import '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 
 function inlineExpression(token) {
     const result = [];
@@ -66,11 +67,8 @@ class InlineCssVariablesFeature {
         const variableScope = context.variableScope;
         // @ts-ignore
         for (const node of ast.chi) {
-            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
-                continue;
-            }
             if (node.typ != EnumToken.DeclarationNodeType) {
-                break;
+                continue;
             }
             // css variable
             if (node.nam.startsWith('--')) {
@@ -87,7 +85,7 @@ class InlineCssVariablesFeature {
                     variableScope.set(node.nam, info);
                     let recursive = false;
                     for (const { value } of walkValues(node.val)) {
-                        if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
+                        if (value?.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(value.val) || value.val == 'var')) {
                             recursive = true;
                             break;
                         }

@@ -23,7 +23,7 @@ function getComponents(token) {
         ].includes(child.typ)) {
             continue;
         }
-        if (child.typ == EnumToken.ColorTokenType && child.val == 'currentcolor') {
+        if (child.typ == EnumToken.ColorTokenType && child.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
             return null;
         }
         result.push(child);

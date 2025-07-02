@@ -156,9 +156,9 @@ function hslvalues(token) {
     // @ts-ignore
     let l = getNumber(t);
     let a = null;
-    if (token.chi?.length == 4) {
+    if (components.length == 4) {
         // @ts-ignore
-        t = token.chi[3];
+        t = components[3];
         // @ts-ignore
         a = getNumber(t);
     }

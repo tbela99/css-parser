@@ -54,7 +54,8 @@ export enum ColorKind {
     XYZ,
     XYZ_D50,
     XYZ_D65,
-    LIGHT_DARK
+    LIGHT_DARK,
+    COLOR_MIX
 }
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 export const colorFuncColorSpace: string[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];

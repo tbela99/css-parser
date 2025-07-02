@@ -17,6 +17,7 @@ import type {
 import {EnumToken} from "../types.ts";
 import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
+import {mathFuncs} from "../../syntax";
 
 function inlineExpression(token: Token): Token[] {
 
@@ -105,20 +106,14 @@ export class InlineCssVariablesFeature {
         }
 
         const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes((<AstRule>ast).sel);
-
         const variableScope = context.variableScope;
 
         // @ts-ignore
         for (const node of ast.chi) {
 
-            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
-
-                continue;
-            }
-
             if (node.typ != EnumToken.DeclarationNodeType) {
 
-                break;
+                continue;
             }
 
             // css variable
@@ -139,12 +134,11 @@ export class InlineCssVariablesFeature {
 
                     variableScope.set((<AstDeclaration>node).nam, info);
 
-
                     let recursive: boolean = false;
 
                     for (const {value} of walkValues((<AstDeclaration>node).val)) {
 
-                        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+                        if (value?.typ == EnumToken.FunctionTokenType && (mathFuncs.includes((<FunctionToken>value).val) || (<FunctionToken>value).val == 'var')) {
 
                             recursive = true;
                             break;
