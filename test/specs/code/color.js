@@ -1310,12 +1310,12 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
         return transform(`
  
   .from {
-    --top:  transform: translate3d(0,0,0);
+    --top:  translate3d(0,0,0);
     transform: translate(0, 0);
     background-color:color(from green srgb r g calc((r + g + b)/4)  / 0.5); /* #7fb77f */
 }
   .to {
-    --top:  transform: translate3d(0,0,0);
+    --top:   translate3d(0,0,0);
     transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
     color: color-mix(in lab, oklch(from currentColor l c calc(h/2) ) 80%, #f00 50%);
     border-color: color-mix(in lab, oklab(from currentColor l a calc(b/2) ) 80%, #f00 50%);
@@ -1326,7 +1326,7 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
 }
     
 `, {beautify: true}).then(result => expect(result.code).equals(`.from,.to {
- --top: transform: translate3d(0,0,0)
+ --top: translate3d(0,0,0)
 }
 .to {
  transform: scale3d(.5,1,1.7)rotate3d(1,1,1,67deg);

@@ -19,7 +19,7 @@ import {
     webkitPseudoAliasMap
 } from "../syntax/index.ts";
 import {parseDeclarationNode} from './utils/index.ts';
-import {renderToken} from "../renderer/index.ts";
+import {colorsFunc, renderToken} from "../renderer/index.ts";
 import {COLORS_NAMES} from "../renderer/color/index.ts";
 import {
     combinators,
@@ -952,8 +952,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             context.chi.push(node);
             Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
-            // console.error(doRender(node), location);
-
             if (options.validation) {
 
                 // @ts-ignore
@@ -1053,6 +1051,11 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         if ('chi' in tokens[i]) {
 
                             (<FunctionToken>tokens[i]).typ = EnumToken.FunctionTokenType;
+
+                            if (colorsFunc.includes((tokens[i] as FunctionToken).val) && isColor(tokens[i])){
+
+                                parseColor(tokens[i]);
+                            }
                         }
 
                         tokens.splice(i, 0, {typ: EnumToken.ColonTokenType});
@@ -1101,6 +1104,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     }
                 }
             }
+
+            // console.error(JSON.stringify({tokens}, null, 1));
 
             const nam: string = renderToken(name.shift() as Token, {removeComments: true})
 
@@ -1185,6 +1190,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                     // @ts-ignore
                     const valid = evaluateSyntax(result, options, context);
+
+                    // console.error(valid);
 
                     if (valid.valid == ValidationLevel.Drop) {
 

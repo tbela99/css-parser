@@ -3924,10 +3924,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         if (curr.typ == exports.EnumToken.LiteralTokenType && curr.val == '/') {
                             return acc.trimEnd() + '/';
                         }
+                        if (curr.typ == exports.EnumToken.CommaTokenType) {
+                            return acc.trimEnd() + ',';
+                        }
                         if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
                             const v = acc.at(-1);
                             if (v == ' ' || v == ',' || v == '/') {
-                                return acc;
+                                return acc.trimEnd();
                             }
                             return acc.trimEnd() + ' ';
                         }
@@ -3946,8 +3949,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         if (curr.typ == exports.EnumToken.Literal && curr.val == '/') {
                             return acc.trimEnd() + '/';
                         }
+                        if (curr.typ == exports.EnumToken.CommaTokenType) {
+                            return acc.trimEnd() + ',';
+                        }
                         if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
-                            return acc.endsWith('/') || acc.endsWith(' ') ? acc : acc + ' ';
+                            return /[,\/\s]/.test(acc.at(-1)) ? acc.trimEnd() : acc.trimEnd() + ' ';
                         }
                         return acc + renderToken(curr, options, cache);
                     }, '') + ')';
@@ -17020,7 +17026,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-            // console.error(doRender(node), location);
             if (options.validation) {
                 // @ts-ignore
                 const valid = ruleType == exports.EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
@@ -17096,6 +17101,9 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                         Object.assign(tokens[i], getTokenType(tokens[i].val.slice(1)));
                         if ('chi' in tokens[i]) {
                             tokens[i].typ = exports.EnumToken.FunctionTokenType;
+                            if (colorsFunc.includes(tokens[i].val) && isColor(tokens[i])) {
+                                parseColor(tokens[i]);
+                            }
                         }
                         tokens.splice(i, 0, { typ: exports.EnumToken.ColonTokenType });
                         // i++;
@@ -17129,6 +17137,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     }
                 }
             }
+            // console.error(JSON.stringify({tokens}, null, 1));
             const nam = renderToken(name.shift(), { removeComments: true });
             if (value == null || (!nam.startsWith('--') && value.length == 0)) {
                 errors.push({
@@ -17189,6 +17198,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 if (options.validation) {
                     // @ts-ignore
                     const valid = evaluateSyntax(result, options, context);
+                    // console.error(valid);
                     if (valid.valid == ValidationLevel.Drop) {
                         errors.push({
                             action: 'drop',
@@ -21471,6 +21481,15 @@ function splitRule(buffer) {
                 str = '';
             }
             result.push([]);
+            continue;
+        }
+        if (chr == '.') {
+            if (str !== '') {
+                // @ts-ignore
+                result.at(-1).push(str);
+                str = '';
+            }
+            str += chr;
             continue;
         }
         if (chr == ':') {

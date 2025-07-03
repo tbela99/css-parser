@@ -1,5 +1,3 @@
-export const specialValues: string[] = ['inherit', 'initial', 'unset', 'revert', 'revert-layer'];
-
 export enum ValidationTokenEnum {
 
     Root,

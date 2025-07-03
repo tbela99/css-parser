@@ -399,10 +399,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         if (curr.typ == EnumToken.LiteralTokenType && curr.val == '/') {
                             return acc.trimEnd() + '/';
                         }
+                        if (curr.typ == EnumToken.CommaTokenType) {
+                            return acc.trimEnd() + ',';
+                        }
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
                             const v = acc.at(-1);
                             if (v == ' ' || v == ',' || v == '/') {
-                                return acc;
+                                return acc.trimEnd();
                             }
                             return acc.trimEnd() + ' ';
                         }
@@ -421,8 +424,11 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                         if (curr.typ == EnumToken.Literal && curr.val == '/') {
                             return acc.trimEnd() + '/';
                         }
+                        if (curr.typ == EnumToken.CommaTokenType) {
+                            return acc.trimEnd() + ',';
+                        }
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
-                            return acc.endsWith('/') || acc.endsWith(' ') ? acc : acc + ' ';
+                            return /[,\/\s]/.test(acc.at(-1)) ? acc.trimEnd() : acc.trimEnd() + ' ';
                         }
                         return acc + renderToken(curr, options, cache);
                     }, '') + ')';

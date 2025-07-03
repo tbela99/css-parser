@@ -602,6 +602,15 @@ function splitRule(buffer) {
             result.push([]);
             continue;
         }
+        if (chr == '.') {
+            if (str !== '') {
+                // @ts-ignore
+                result.at(-1).push(str);
+                str = '';
+            }
+            str += chr;
+            continue;
+        }
         if (chr == ':') {
             if (str !== '') {
                 // @ts-ignore

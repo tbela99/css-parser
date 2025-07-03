@@ -652,13 +652,18 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                             return acc.trimEnd() + '/';
                         }
 
+                        if (curr.typ == EnumToken.CommaTokenType) {
+
+                            return acc.trimEnd() + ',';
+                        }
+
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
 
-                            const v:  string = acc.at(-1) as string;
+                            const v: string = acc.at(-1) as string;
 
                             if (v == ' ' || v == ',' || v == '/') {
 
-                                return acc;
+                                return acc.trimEnd();
                             }
 
                             return acc.trimEnd() + ' ';
@@ -689,9 +694,14 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                             return acc.trimEnd() + '/';
                         }
 
+                        if (curr.typ == EnumToken.CommaTokenType) {
+
+                            return acc.trimEnd() + ',';
+                        }
+
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
 
-                            return acc.endsWith('/') || acc.endsWith(' ') ? acc : acc + ' ';
+                            return /[,\/\s]/.test(acc.at(-1) as string) ? acc.trimEnd() : acc.trimEnd() + ' ';
                         }
 
                         return acc + renderToken(curr, options, cache)

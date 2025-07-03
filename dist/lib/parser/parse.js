@@ -6,7 +6,7 @@ import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { COLORS_NAMES, ColorKind, systemColors, deprecatedSystemColors } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, ColorKind, systemColors, deprecatedSystemColors, colorsFunc } from '../renderer/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
@@ -612,7 +612,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-            // console.error(doRender(node), location);
             if (options.validation) {
                 // @ts-ignore
                 const valid = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
@@ -688,6 +687,9 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                         Object.assign(tokens[i], getTokenType(tokens[i].val.slice(1)));
                         if ('chi' in tokens[i]) {
                             tokens[i].typ = EnumToken.FunctionTokenType;
+                            if (colorsFunc.includes(tokens[i].val) && isColor(tokens[i])) {
+                                parseColor(tokens[i]);
+                            }
                         }
                         tokens.splice(i, 0, { typ: EnumToken.ColonTokenType });
                         // i++;
@@ -721,6 +723,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     }
                 }
             }
+            // console.error(JSON.stringify({tokens}, null, 1));
             const nam = renderToken(name.shift(), { removeComments: true });
             if (value == null || (!nam.startsWith('--') && value.length == 0)) {
                 errors.push({
@@ -781,6 +784,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 if (options.validation) {
                     // @ts-ignore
                     const valid = evaluateSyntax(result, options, context);
+                    // console.error(valid);
                     if (valid.valid == ValidationLevel.Drop) {
                         errors.push({
                             action: 'drop',
