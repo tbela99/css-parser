@@ -39,7 +39,6 @@ import type {
     AstComment,
     AstDeclaration,
     AstInvalidAtRule,
-    AstInvalidDeclaration,
     AstInvalidRule,
     AstKeyframAtRule,
     AstKeyFrameRule,
@@ -1116,19 +1115,20 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     message: 'doParse: invalid declaration',
                     location
                 });
-                const node = <AstInvalidDeclaration>{
-                    typ: EnumToken.InvalidDeclarationNodeType,
-                    nam,
-                    val: []
-                }
 
-                if (options.sourcemap) {
+                // const node = <AstInvalidDeclaration>{
+                //     typ: EnumToken.InvalidDeclarationNodeType,
+                //     nam,
+                //     val: []
+                // }
+                //
+                // if (options.sourcemap) {
+                //
+                //     node.loc = location;
+                //     node.loc.end = {...map.get(delim)!.end};
+                // }
 
-                    node.loc = location;
-                    node.loc.end = {...map.get(delim)!.end};
-                }
-
-                context.chi!.push(node);
+                // context.chi!.push(node);
                 return null;
             }
 

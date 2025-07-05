@@ -845,6 +845,24 @@ export function splitRule(buffer: string): string[][] {
             continue;
         }
 
+        if (combinators.includes(chr)) {
+
+            if (str !== '') {
+                // @ts-ignore
+                result.at(-1).push(str);
+                str = '';
+            }
+
+            if (chr == '|' && buffer.charAt(i + 1) == '|') {
+
+                chr += buffer.charAt(++i);
+            }
+
+            // @ts-ignore
+            result.at(-1).push(chr);
+            continue;
+        }
+
         if (chr == ':') {
 
             if (str !== '') {

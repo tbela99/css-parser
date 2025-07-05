@@ -27,7 +27,7 @@ export enum ValidationTokenEnum {
     AtLeastOnce,
     Separator,
     Exclamation,
-    Ampersand, // not used in the parser, but used in the data
+    Ampersand,
     PipeToken,
     ColumnToken,
     AmpersandToken,
@@ -40,7 +40,6 @@ export enum ValidationTokenEnum {
     DeclarationDefinitionToken,
     SemiColon,
     Character,
-    // ColumnArrayToken,
     InfinityToken,
 }
 

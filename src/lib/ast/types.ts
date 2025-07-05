@@ -105,6 +105,7 @@ export enum EnumToken {
     PseudoPageTokenType,
     PseudoElementTokenType,
     KeyframeAtRuleNodeType,
+    InvalidDeclarationNodeType,
     /* aliases */
     Time = TimeTokenType,
     Iden = IdenTokenType,
@@ -133,7 +134,6 @@ export enum EnumToken {
     CDOCOMMNodeType = CDOCOMMTokenType,
     TimingFunction = TimingFunctionTokenType,
     TimelineFunction = TimelineFunctionTokenType,
-    InvalidDeclarationNodeType,
 }
 
 export const funcLike: EnumToken[] = [

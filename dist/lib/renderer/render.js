@@ -420,12 +420,13 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 clamp(token);
                 if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
+                    const replaceSemiColon = /^((rgba?)|(hsla?)|(hwb)|((ok)?lab)|((ok)?lch))$/i.test(token.val);
                     return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr, index, array) => {
                         if (curr.typ == EnumToken.Literal && curr.val == '/') {
                             return acc.trimEnd() + '/';
                         }
                         if (curr.typ == EnumToken.CommaTokenType) {
-                            return acc.trimEnd() + ',';
+                            return acc.trimEnd() + (replaceSemiColon ? ' ' : ',');
                         }
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
                             return /[,\/\s]/.test(acc.at(-1)) ? acc.trimEnd() : acc.trimEnd() + ' ';

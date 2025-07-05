@@ -731,16 +731,18 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     message: 'doParse: invalid declaration',
                     location
                 });
-                const node = {
-                    typ: EnumToken.InvalidDeclarationNodeType,
-                    nam,
-                    val: []
-                };
-                if (options.sourcemap) {
-                    node.loc = location;
-                    node.loc.end = { ...map.get(delim).end };
-                }
-                context.chi.push(node);
+                // const node = <AstInvalidDeclaration>{
+                //     typ: EnumToken.InvalidDeclarationNodeType,
+                //     nam,
+                //     val: []
+                // }
+                //
+                // if (options.sourcemap) {
+                //
+                //     node.loc = location;
+                //     node.loc.end = {...map.get(delim)!.end};
+                // }
+                // context.chi!.push(node);
                 return null;
             }
             for (const { value: token } of walkValues(value, null, {

@@ -106,6 +106,7 @@ var EnumToken;
     EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
     EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
     EnumToken[EnumToken["KeyframeAtRuleNodeType"] = 93] = "KeyframeAtRuleNodeType";
+    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -134,7 +135,6 @@ var EnumToken;
     EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
-    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 17] = "InvalidDeclarationNodeType";
 })(EnumToken || (EnumToken = {}));
 const funcLike = [
     EnumToken.ParensTokenType,

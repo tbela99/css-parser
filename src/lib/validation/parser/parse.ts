@@ -316,110 +316,6 @@ function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}
     }
 }
 
-function columnCallback(token: ValidationToken, parent: ValidationToken, key: WalkValidationTokenKeyTypeEnum) {
-
-    if (key == WalkValidationTokenKeyTypeEnum.Prelude) {
-
-        return WalkValidationTokenEnum.IgnoreAll;
-    }
-
-    if (token.typ == ValidationTokenEnum.Column || token.typ == ValidationTokenEnum.Whitespace) {
-
-        return WalkValidationTokenEnum.IgnoreNode
-    }
-
-    return WalkValidationTokenEnum.IgnoreChildren
-}
-
-// function toColumnArray(ast: ValidationColumnToken, parent?: ValidationToken): ValidationToken {
-//
-//     const result = new Map;
-//
-//     // @ts-ignore
-//     for (const {token} of walkValidationToken(ast, null, columnCallback)) {
-//
-//         if (token.typ == ValidationTokenEnum.ColumnToken) {
-//
-//
-//             result.set(JSON.stringify((token as ValidationColumnToken).l), (token as ValidationColumnToken).l);
-//             result.set(JSON.stringify((token as ValidationColumnToken).r), (token as ValidationColumnToken).r);
-//
-//             console.error({parent})
-//             continue;
-//         }
-//
-//         result.set(JSON.stringify(token), token);
-//     }
-//
-//     const node = {
-//         typ: ValidationTokenEnum.ColumnArrayToken,
-//         chi: [...result.values()]
-//     } as ValidationColumnArrayToken;
-//
-//     if (parent != null) {
-//
-//         replaceNode(parent, ast, node);
-//     }
-//
-//     return node;
-// }
-
-// function replaceNode(parent: ValidationToken, target: ValidationToken, node: ValidationToken) {
-//
-//     if (Array.isArray(parent)) {
-//
-//         for (let i = 0; i < parent.length; i++) {
-//
-//             if (parent[i] == target) {
-//
-//                 parent[i] = node;
-//                 return;
-//             }
-//         }
-//     }
-//
-//     if ('l' in parent && parent.l == target) {
-//
-//         parent.l = node;
-//     }
-//
-//     if ('r' in parent && parent.r == target) {
-//
-//         parent.r = node;
-//     }
-//
-//     if ('chi' in parent) {
-//
-//         // @ts-ignore
-//         for (let i = 0; i < parent.chi.length; i++) {
-//
-//             // @ts-ignore
-//             if (parent.chi[i] == target) {
-//
-//                 // @ts-ignore
-//                 parent.chi[i] = node;
-//                 break;
-//             }
-//         }
-//     }
-// }
-
-// function transform(context: ValidationContext): ValidationToken {
-//
-//     for (const {token, parent} of walkValidationToken(context)) {
-//
-//         switch (token.typ) {
-//
-//             case ValidationTokenEnum.ColumnToken:
-//
-//                 toColumnArray(token as ValidationColumnToken, parent as ValidationToken);
-//                 break
-//         }
-//     }
-//
-//     return context;
-// }
-
 export function parseSyntax(syntax: string): ValidationRootToken {
 
     const root: ValidationRootToken = Object.defineProperty({
@@ -1030,6 +926,7 @@ function matchToken(syntax: string, iterator: ValidationToken[] | ValidationToke
             children.length = 0;
             children.push(token);
 
+
             while ((item = iterator[++i] as ValidationToken) != null) {
 
                 children.push(item as ValidationToken);
@@ -1174,43 +1071,6 @@ function parseSyntaxTokens(syntax: string, iterator: Iterator<ValidationTokenIte
         }
 
         if (items[i].typ != ValidationTokenEnum.Bracket && (items[i].isOptional || items[i].isRepeatable)) {
-
-            // if (i <= 1) {
-
-            // let k: number = i;
-
-            // while (++k < items.length) {
-            //
-            //     if (items[k].typ == ValidationTokenEnum.Whitespace) {
-            //
-            //         continue;
-            //     }
-            //
-            //     // if (items[k].typ == ValidationTokenEnum.Comma) {
-            //     //
-            //     //     const wrapper = Object.defineProperty({
-            //     //
-            //     //         typ: ValidationTokenEnum.Bracket,
-            //     //         chi: items.slice(i, k + 1)
-            //     //     }, 'pos', {...objectProperties, value: items[i].pos}) as ValidationBracketToken;
-            //     //
-            //     //     if (items[i].isOptional) {
-            //     //
-            //     //         wrapper.isOptional = true;
-            //     //         delete items[i].isOptional;
-            //     //     } else if (items[i].isRepeatable) {
-            //     //
-            //     //         wrapper.isRepeatable = true;
-            //     //         delete items[i].isRepeatable;
-            //     //     }
-            //     //
-            //     //     items.splice(i, k - i + 1, wrapper);
-            //     // }
-            //
-            //     break;
-            // }
-
-            // } else {
 
             let k: number = i;
 
@@ -1698,25 +1558,7 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
         for (let i = 0; i < ast.length; i++) {
 
-            // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
-
-            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
-
             minify(ast[i]);
-            // }
-
-            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
-            //
-            //     minify(j);
-            // }
-
-            // } else
-
-            //     if ('chi' in ast[i]) {
-            //
-            //     minify((ast[i] as ValidationFunctionToken | ValidationBracketToken).chi as ValidationToken[]);
-            //
-            // } else
 
             if (ast[i].typ == ValidationTokenEnum.Whitespace && ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
 
@@ -1742,19 +1584,11 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
         return ast;
 
     }
-    // else {
-
-    // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast.typ)) {
-
-    // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
 
     if ('l' in ast) {
 
         minify((ast as ValidationColumnToken | ValidationAmpersandToken).l);
     }
-    // }
-
-    // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
 
     if ('r' in ast) {
 

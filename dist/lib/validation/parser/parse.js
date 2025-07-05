@@ -188,92 +188,6 @@ function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPositio
         yield getTokenType(buffer, position, currentPosition);
     }
 }
-// function toColumnArray(ast: ValidationColumnToken, parent?: ValidationToken): ValidationToken {
-//
-//     const result = new Map;
-//
-//     // @ts-ignore
-//     for (const {token} of walkValidationToken(ast, null, columnCallback)) {
-//
-//         if (token.typ == ValidationTokenEnum.ColumnToken) {
-//
-//
-//             result.set(JSON.stringify((token as ValidationColumnToken).l), (token as ValidationColumnToken).l);
-//             result.set(JSON.stringify((token as ValidationColumnToken).r), (token as ValidationColumnToken).r);
-//
-//             console.error({parent})
-//             continue;
-//         }
-//
-//         result.set(JSON.stringify(token), token);
-//     }
-//
-//     const node = {
-//         typ: ValidationTokenEnum.ColumnArrayToken,
-//         chi: [...result.values()]
-//     } as ValidationColumnArrayToken;
-//
-//     if (parent != null) {
-//
-//         replaceNode(parent, ast, node);
-//     }
-//
-//     return node;
-// }
-// function replaceNode(parent: ValidationToken, target: ValidationToken, node: ValidationToken) {
-//
-//     if (Array.isArray(parent)) {
-//
-//         for (let i = 0; i < parent.length; i++) {
-//
-//             if (parent[i] == target) {
-//
-//                 parent[i] = node;
-//                 return;
-//             }
-//         }
-//     }
-//
-//     if ('l' in parent && parent.l == target) {
-//
-//         parent.l = node;
-//     }
-//
-//     if ('r' in parent && parent.r == target) {
-//
-//         parent.r = node;
-//     }
-//
-//     if ('chi' in parent) {
-//
-//         // @ts-ignore
-//         for (let i = 0; i < parent.chi.length; i++) {
-//
-//             // @ts-ignore
-//             if (parent.chi[i] == target) {
-//
-//                 // @ts-ignore
-//                 parent.chi[i] = node;
-//                 break;
-//             }
-//         }
-//     }
-// }
-// function transform(context: ValidationContext): ValidationToken {
-//
-//     for (const {token, parent} of walkValidationToken(context)) {
-//
-//         switch (token.typ) {
-//
-//             case ValidationTokenEnum.ColumnToken:
-//
-//                 toColumnArray(token as ValidationColumnToken, parent as ValidationToken);
-//                 break
-//         }
-//     }
-//
-//     return context;
-// }
 function parseSyntax(syntax) {
     const root = Object.defineProperty({
         typ: ValidationTokenEnum.Root,
@@ -792,39 +706,6 @@ function parseSyntaxTokens(syntax, iterator) {
             items[i].r = parseSyntaxTokens(syntax, items[i].r[Symbol.iterator]());
         }
         if (items[i].typ != ValidationTokenEnum.Bracket && (items[i].isOptional || items[i].isRepeatable)) {
-            // if (i <= 1) {
-            // let k: number = i;
-            // while (++k < items.length) {
-            //
-            //     if (items[k].typ == ValidationTokenEnum.Whitespace) {
-            //
-            //         continue;
-            //     }
-            //
-            //     // if (items[k].typ == ValidationTokenEnum.Comma) {
-            //     //
-            //     //     const wrapper = Object.defineProperty({
-            //     //
-            //     //         typ: ValidationTokenEnum.Bracket,
-            //     //         chi: items.slice(i, k + 1)
-            //     //     }, 'pos', {...objectProperties, value: items[i].pos}) as ValidationBracketToken;
-            //     //
-            //     //     if (items[i].isOptional) {
-            //     //
-            //     //         wrapper.isOptional = true;
-            //     //         delete items[i].isOptional;
-            //     //     } else if (items[i].isRepeatable) {
-            //     //
-            //     //         wrapper.isRepeatable = true;
-            //     //         delete items[i].isRepeatable;
-            //     //     }
-            //     //
-            //     //     items.splice(i, k - i + 1, wrapper);
-            //     // }
-            //
-            //     break;
-            // }
-            // } else {
             let k = i;
             while (--k > 0) {
                 if (items[k].typ == ValidationTokenEnum.Whitespace) {
@@ -1147,20 +1028,7 @@ function minify(ast) {
             ast.pop();
         }
         for (let i = 0; i < ast.length; i++) {
-            // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
-            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
             minify(ast[i]);
-            // }
-            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
-            //
-            //     minify(j);
-            // }
-            // } else
-            //     if ('chi' in ast[i]) {
-            //
-            //     minify((ast[i] as ValidationFunctionToken | ValidationBracketToken).chi as ValidationToken[]);
-            //
-            // } else
             if (ast[i].typ == ValidationTokenEnum.Whitespace && ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
                 ast.splice(i + 1, 1);
                 i--;
@@ -1177,14 +1045,9 @@ function minify(ast) {
         }
         return ast;
     }
-    // else {
-    // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast.typ)) {
-    // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
     if ('l' in ast) {
         minify(ast.l);
     }
-    // }
-    // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
     if ('r' in ast) {
         minify(ast.r);
     }

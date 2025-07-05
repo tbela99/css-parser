@@ -8,7 +8,7 @@ import '../parser/tokenize.js';
 import '../parser/utils/config.js';
 import { wildCardFuncs, mathFuncs } from '../syntax/syntax.js';
 import { renderToken } from '../renderer/render.js';
-import { systemColors, deprecatedSystemColors, ColorKind, colorsFunc } from '../renderer/color/utils/constants.js';
+import { ColorKind, colorsFunc } from '../renderer/color/utils/constants.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
 import './syntaxes/complex-selector.js';
 
@@ -88,6 +88,8 @@ function createContext(input) {
             // @ts-ignore
             const newIndex = result.indexOf(context.current());
             if (newIndex != -1) {
+                // console.error({newIndex, v: result[newIndex]});
+                // console.error(new Error('update'))
                 this.index = newIndex;
             }
         },
@@ -220,7 +222,8 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
-    // console.error(syntaxes, syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '>> '), context.peek());
+    //
+    // console.error(syntaxes, `>> s\n`, syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '>> '), '\n>> ', context.peek());
     // console.error(new Error('blame'));
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
@@ -413,11 +416,12 @@ function match(syntax, context, options) {
         case ValidationTokenEnum.AmpersandToken:
             return allOf(flatten(syntax), context, options);
         case ValidationTokenEnum.ColumnToken: {
-            let success = false;
+            // let success: boolean = false;
             let result = anyOf(flatten(syntax), context, options);
             if (result.valid == ValidationLevel.Valid) {
-                success = true;
-                context.update(result.context);
+                return result;
+                // success = true;
+                // context.update(result.context as Context<Token>);
             }
             // result = anyOf(flatten(syntax as ValidationColumnToken), context, options);
             //
@@ -427,10 +431,10 @@ function match(syntax, context, options) {
             //     context.update(result.context as Context<Token>);
             // }
             return {
-                valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+                valid: ValidationLevel.Drop,
                 node: context.next(),
                 syntax,
-                error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek())}'`,
+                error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek())}'`,
                 context
             };
         }
@@ -468,11 +472,14 @@ function match(syntax, context, options) {
                     syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 ||
                     // config.declarations.all
                     allValues.includes(token.val.toLowerCase()));
-            if (!success && token.typ == EnumToken.ColorTokenType) {
-                success = token.val != null &&
-                    ((token.kin == ColorKind.SYS && systemColors.has(token.val.toLowerCase())) ||
-                        (token.kin == ColorKind.DPSYS && deprecatedSystemColors.has(token.val.toLowerCase())));
-            }
+            // if (!success && token.typ == EnumToken.ColorTokenType) {
+            //
+            //     success = (token as ColorToken).val != null &&
+            //         (
+            //             (token.kin == ColorKind.SYS && systemColors.has((token as ColorToken).val.toLowerCase())) ||
+            //             (token.kin == ColorKind.DPSYS && deprecatedSystemColors.has((token as ColorToken).val.toLowerCase()))
+            //         );
+            // }
             if (success) {
                 context.next();
                 return {
@@ -579,7 +586,6 @@ function match(syntax, context, options) {
                 break;
             }
             if (syntax.typ == ValidationTokenEnum.Function) {
-                // console.error({token})
                 success = funcLike.includes(token.typ) && doEvaluateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0]?.chi, createContext(token.chi), {
                     ...options,
                     isRepeatable: null,
@@ -618,16 +624,6 @@ function matchPropertyType(syntax, context, options) {
                 atLeastOnce: null
             });
         }
-        // if (syntax.val in config[ValidationSyntaxGroupEnum.Declarations]) {
-        //
-        //     return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntax.val) as ValidationToken[], context, {
-        //         ...options,
-        //         isRepeatable: null,
-        //         isList: null,
-        //         occurence: null,
-        //         atLeastOnce: null
-        //     } as ValidationOptions);
-        // }
     }
     let success = true;
     let token = context.peek();
@@ -809,21 +805,19 @@ function someOf(syntaxes, context, options) {
     let i;
     let success = false;
     const matched = [];
-    // match var() only if no matches
     for (i = 0; i < syntaxes.length; i++) {
         if (context.peek()?.typ == EnumToken.WhitespaceTokenType) {
             context.next();
         }
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
         if (result.valid == ValidationLevel.Valid) {
-            // if (result.context.done()) {
-            //
-            //     return result;
-            // }
+            success = true;
+            if (result.context.done()) {
+                return result;
+            }
             matched.push(result);
         }
     }
-    // console.error({matched});
     if (matched.length > 0) {
         // pick the best match
         matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
@@ -841,14 +835,17 @@ function anyOf(syntaxes, context, options) {
     let i;
     let success = false;
     for (i = 0; i < syntaxes.length; i++) {
+        // console.error(syntaxes.reduce((acc, curr, index) => acc + (index > 0 ? ' <--> ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') , `>> `));
+        // console.error(syntaxes[i].reduce((acc, curr) => acc + renderSyntax(curr), `>> ${i} <--> `));
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
         if (result.valid == ValidationLevel.Valid) {
             success = true;
             context.update(result.context);
-            i = 0;
-            if (context.done()) {
+            if (result.context.done()) {
                 return result;
             }
+            syntaxes.splice(i, 1);
+            i = -1;
         }
     }
     return {
@@ -913,16 +910,18 @@ function allOf(syntax, context, options) {
 function flatten(syntax) {
     const stack = [syntax.l, syntax.r];
     const data = [];
+    let s;
     let i = 0;
     for (; i < stack.length; i++) {
         if (stack[i].length == 1 && stack[i][0].typ == syntax.typ) {
-            stack.push(stack[i][0].l, stack[i][0].r);
+            s = stack[i][0];
+            stack.splice(i--, 1, s.l, s.r);
         }
         else {
             data.push(stack[i]);
         }
     }
-    return data.sort((a, b) => a.length == 1 && a[0].occurence != null ? 1 : b.length == 1 && b[0].occurence != null ? 1 : -1);
+    return data; //.sort((a, b) => b.length - a.length);
 }
 
 export { createContext, doEvaluateSyntax, evaluateSyntax };

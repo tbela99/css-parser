@@ -31,7 +31,7 @@ import type {Context, ValidationConfiguration, ValidationSyntaxResult} from "../
 import {EnumToken, funcLike, ValidationLevel} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web/index.ts";
-import {ColorKind, colorsFunc, deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
+import {ColorKind, colorsFunc} from "../renderer/color/utils/index.ts";
 import {mathFuncs, wildCardFuncs} from "../syntax";
 
 const config: ValidationConfiguration = getSyntaxConfig();
@@ -128,6 +128,8 @@ export function createContext(input: Token[]): Context<Token> {
 
             if (newIndex != -1) {
 
+                // console.error({newIndex, v: result[newIndex]});
+                // console.error(new Error('update'))
                 this.index = newIndex;
             }
         },
@@ -324,8 +326,8 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let i: number = 0;
     let result: ValidationSyntaxResult;
     let token: Token | null = null;
-
-    // console.error(syntaxes, syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '>> '), context.peek());
+    //
+    // console.error(syntaxes, `>> s\n`, syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '>> '), '\n>> ', context.peek());
     // console.error(new Error('blame'));
 
     for (; i < syntaxes.length; i++) {
@@ -607,13 +609,16 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
         case ValidationTokenEnum.ColumnToken: {
 
-            let success: boolean = false;
+            // let success: boolean = false;
+
             let result: ValidationSyntaxResult = anyOf(flatten(syntax as ValidationColumnToken), context, options);
 
             if (result.valid == ValidationLevel.Valid) {
 
-                success = true;
-                context.update(result.context as Context<Token>);
+                return result;
+
+                // success = true;
+                // context.update(result.context as Context<Token>);
             }
 
             // result = anyOf(flatten(syntax as ValidationColumnToken), context, options);
@@ -625,10 +630,10 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
             // }
 
             return {
-                valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+                valid: ValidationLevel.Drop,
                 node: context.next(),
                 syntax,
-                error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
+                error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
                 context
             }
         }
@@ -679,14 +684,14 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                     // config.declarations.all
                     allValues.includes((token as IdentToken).val.toLowerCase()));
 
-            if (!success && token.typ == EnumToken.ColorTokenType) {
-
-                success = (token as ColorToken).val != null &&
-                    (
-                        (token.kin == ColorKind.SYS && systemColors.has((token as ColorToken).val.toLowerCase())) ||
-                        (token.kin == ColorKind.DPSYS && deprecatedSystemColors.has((token as ColorToken).val.toLowerCase()))
-                    );
-            }
+            // if (!success && token.typ == EnumToken.ColorTokenType) {
+            //
+            //     success = (token as ColorToken).val != null &&
+            //         (
+            //             (token.kin == ColorKind.SYS && systemColors.has((token as ColorToken).val.toLowerCase())) ||
+            //             (token.kin == ColorKind.DPSYS && deprecatedSystemColors.has((token as ColorToken).val.toLowerCase()))
+            //         );
+            // }
 
             if (success) {
 
@@ -844,9 +849,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             if (syntax.typ == ValidationTokenEnum.Function) {
 
-                // console.error({token})
-
-                success = funcLike.includes(token.typ) && doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionToken).val + '()')?.[0] as ValidationFunctionToken)?.chi as ValidationToken[]    , createContext((token as FunctionToken).chi), {
+                success = funcLike.includes(token.typ) && doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionToken).val + '()')?.[0] as ValidationFunctionToken)?.chi as ValidationToken[], createContext((token as FunctionToken).chi), {
                     ...options,
                     isRepeatable: null,
                     isList: null,
@@ -894,19 +897,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                 atLeastOnce: null
             } as ValidationOptions);
         }
-
-        // if (syntax.val in config[ValidationSyntaxGroupEnum.Declarations]) {
-        //
-        //     return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntax.val) as ValidationToken[], context, {
-        //         ...options,
-        //         isRepeatable: null,
-        //         isList: null,
-        //         occurence: null,
-        //         atLeastOnce: null
-        //     } as ValidationOptions);
-        // }
     }
-
 
 
     let success: boolean = true;
@@ -1170,8 +1161,6 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
     let success: boolean = false;
     const matched: ValidationSyntaxResult[] = [];
 
-    // match var() only if no matches
-
     for (i = 0; i < syntaxes.length; i++) {
 
         if (context.peek<Token>()?.typ == EnumToken.WhitespaceTokenType) {
@@ -1183,16 +1172,16 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
 
         if (result.valid == ValidationLevel.Valid) {
 
-            // if (result.context.done()) {
-            //
-            //     return result;
-            // }
+            success = true;
+
+            if (result.context.done()) {
+
+                return result;
+            }
 
             matched.push(result);
         }
     }
-
-    // console.error({matched});
 
     if (matched.length > 0) {
 
@@ -1217,6 +1206,9 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
 
     for (i = 0; i < syntaxes.length; i++) {
 
+        // console.error(syntaxes.reduce((acc, curr, index) => acc + (index > 0 ? ' <--> ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') , `>> `));
+        // console.error(syntaxes[i].reduce((acc, curr) => acc + renderSyntax(curr), `>> ${i} <--> `));
+
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
 
         if (result.valid == ValidationLevel.Valid) {
@@ -1224,12 +1216,13 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
             success = true;
             context.update(result.context as Context<Token>);
 
-            i = 0;
-
-            if (context.done()) {
+            if (result.context.done()) {
 
                 return result;
             }
+
+            syntaxes.splice(i, 1);
+            i = -1;
         }
     }
 
@@ -1295,7 +1288,7 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
 
     const con: Context<Token> = createContext(tokens);
 
-    for (i=0; i < syntax.length; i++) {
+    for (i = 0; i < syntax.length; i++) {
 
         result = doEvaluateSyntax(syntax[i], con.clone(), options);
 
@@ -1322,18 +1315,20 @@ function flatten(syntax: ValidationAmpersandToken | ValidationColumnToken): Vali
 
     const stack: ValidationToken[][] = [syntax.l, syntax.r];
     const data: ValidationToken[][] = [];
+    let s: ValidationAmpersandToken | ValidationColumnToken;
     let i: number = 0;
 
     for (; i < stack.length; i++) {
 
         if (stack[i].length == 1 && stack[i][0].typ == syntax.typ) {
 
-            stack.push((stack[i][0] as ValidationAmpersandToken | ValidationColumnToken).l, (stack[i][0] as ValidationAmpersandToken).r);
+            s = stack[i][0] as ValidationAmpersandToken | ValidationColumnToken;
+            stack.splice(i--, 1, s.l, s.r);
         } else {
 
             data.push(stack[i]);
         }
     }
 
-    return data.sort((a, b) => a.length == 1 && a[0].occurence != null ? 1 : b.length == 1 && b[0].occurence != null ? 1 : -1);
+    return data; //.sort((a, b) => b.length - a.length);
 }

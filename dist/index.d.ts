@@ -96,6 +96,7 @@ declare enum EnumToken {
     PseudoPageTokenType = 91,
     PseudoElementTokenType = 92,
     KeyframeAtRuleNodeType = 93,
+    InvalidDeclarationNodeType = 94,
     Time = 25,
     Iden = 7,
     EOF = 48,
@@ -122,8 +123,7 @@ declare enum EnumToken {
     CommentNodeType = 0,
     CDOCOMMNodeType = 1,
     TimingFunction = 17,
-    TimelineFunction = 16,
-    InvalidDeclarationNodeType = 17
+    TimelineFunction = 16
 }
 
 /**

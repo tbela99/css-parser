@@ -687,6 +687,8 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 if (Array.isArray((token as ColorToken).chi) && (token as ColorToken).chi!.some((t: Token): boolean => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray((t as ColorToken).chi)))) {
 
+                    const replaceSemiColon: boolean = /^((rgba?)|(hsla?)|(hwb)|((ok)?lab)|((ok)?lch))$/i.test((token as ColorToken).val);
+
                     return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token, index: number, array: Token[]): string => {
 
                         if (curr.typ == EnumToken.Literal && (curr as LiteralToken).val == '/') {
@@ -696,7 +698,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         if (curr.typ == EnumToken.CommaTokenType) {
 
-                            return acc.trimEnd() + ',';
+                            return acc.trimEnd() + (replaceSemiColon ? ' ' : ',');
                         }
 
                         if (curr.typ == EnumToken.WhitespaceTokenType) {
