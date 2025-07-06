@@ -136,14 +136,3 @@ export enum EnumToken {
     TimelineFunction = TimelineFunctionTokenType,
 }
 
-export const funcLike: EnumToken[] = [
-    EnumToken.ParensTokenType,
-    EnumToken.FunctionTokenType,
-    EnumToken.UrlFunctionTokenType,
-    EnumToken.StartParensTokenType,
-    EnumToken.ImageFunctionTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType,
-    EnumToken.GridTemplateFuncTokenType
-];

@@ -1,10 +1,10 @@
-import { EnumToken, funcLike } from '../ast/types.js';
+import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { COLORS_NAMES, colorsFunc, ColorKind } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, colorsFunc, funcLike, ColorKind } from '../renderer/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import '../renderer/sourcemap/lib/encode.js';
 
@@ -39,8 +39,9 @@ const wildCardFuncs = ['var', 'env'];
 const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];
 const webkitPseudoAliasMap = {
     '-webkit-autofill': 'autofill',
-    '-webkit-any': 'is',
-    '-moz-any': 'is',
+    '-webkit-any()': 'is',
+    '-moz-any()': 'is',
+    '-webkit-any-link': 'any-link',
     '-webkit-border-after': 'border-block-end',
     '-webkit-border-after-color': 'border-block-end-color',
     '-webkit-border-after-style': 'border-block-end-style',

@@ -1,8 +1,8 @@
 import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
+import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES, funcLike } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { EnumToken, funcLike } from '../ast/types.js';
+import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -483,7 +483,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
                 // @ts-ignore
                 token.chi[0].val?.typ != EnumToken.FractionTokenType) {
-                return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
+                return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '') + ')';
             }
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.MatchExpressionTokenType:

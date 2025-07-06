@@ -28,10 +28,10 @@ import type {
     ValidationOptions
 } from "../../@types/index.d.ts";
 import type {Context, ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation.d.ts";
-import {EnumToken, funcLike, ValidationLevel} from "../ast/index.ts";
+import {EnumToken, ValidationLevel} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web/index.ts";
-import {ColorKind, colorsFunc} from "../renderer/color/utils/index.ts";
+import {ColorKind, colorsFunc, funcLike} from "../renderer/color/utils/index.ts";
 import {mathFuncs, wildCardFuncs} from "../syntax";
 
 const config: ValidationConfiguration = getSyntaxConfig();
@@ -42,60 +42,7 @@ const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarat
 export function createContext(input: Token[]): Context<Token> {
 
     const values: Token[] = input.slice();
-    const result: Token[] = [];
-
-    // if (values.length > 1) {
-    //
-    //     // if context contains 'var()' then match it last
-    //     const vars: Token[] = [];
-    //     const w: string[] = wildCardFuncs.concat(['calc']);
-    //
-    //     let i: number = 0;
-    //
-    //     for (; i < values.length; i++) {
-    //
-    //         if (values[i].typ == EnumToken.FunctionTokenType && w.includes((values[i] as FunctionToken).val)) {
-    //
-    //             vars.push(values[i]);
-    //             values.splice(i, 1);
-    //
-    //             if (values[i]?.typ == EnumToken.WhitespaceTokenType) {
-    //
-    //                 vars.push(values[i]);
-    //                 values.splice(i, 1);
-    //
-    //                 if (i > 0) {
-    //
-    //                     i--;
-    //                 }
-    //             }
-    //
-    //             i--;
-    //             continue;
-    //         }
-    //
-    //         if (values[i].typ == EnumToken.CommaTokenType) {
-    //
-    //             if (vars.length > 0) {
-    //
-    //                 result.push(...vars);
-    //                 vars.length = 0;
-    //             }
-    //         }
-    //
-    //         result.push(values[i]);
-    //     }
-    //
-    //     if (vars.length > 0) {
-    //
-    //         result.push(...vars);
-    //     }
-    // } else {
-    //
-    //     result.push(...values);
-    // }
-
-    result.push(...values);
+    const result: Token[] = values.slice();
 
     if (result.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
 

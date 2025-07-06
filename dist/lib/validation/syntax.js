@@ -1,6 +1,6 @@
 import { ValidationTokenEnum } from './parser/types.js';
 import { renderSyntax } from './parser/parse.js';
-import { EnumToken, ValidationLevel, funcLike } from '../ast/types.js';
+import { EnumToken, ValidationLevel } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
@@ -8,7 +8,7 @@ import '../parser/tokenize.js';
 import '../parser/utils/config.js';
 import { wildCardFuncs, mathFuncs } from '../syntax/syntax.js';
 import { renderToken } from '../renderer/render.js';
-import { ColorKind, colorsFunc } from '../renderer/color/utils/constants.js';
+import { funcLike, ColorKind, colorsFunc } from '../renderer/color/utils/constants.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
 import './syntaxes/complex-selector.js';
 
@@ -17,58 +17,7 @@ const config = getSyntaxConfig();
 const allValues = getSyntaxConfig()["declarations" /* ValidationSyntaxGroupEnum.Declarations */].all.syntax.trim().split(/[\s|]+/g);
 function createContext(input) {
     const values = input.slice();
-    const result = [];
-    // if (values.length > 1) {
-    //
-    //     // if context contains 'var()' then match it last
-    //     const vars: Token[] = [];
-    //     const w: string[] = wildCardFuncs.concat(['calc']);
-    //
-    //     let i: number = 0;
-    //
-    //     for (; i < values.length; i++) {
-    //
-    //         if (values[i].typ == EnumToken.FunctionTokenType && w.includes((values[i] as FunctionToken).val)) {
-    //
-    //             vars.push(values[i]);
-    //             values.splice(i, 1);
-    //
-    //             if (values[i]?.typ == EnumToken.WhitespaceTokenType) {
-    //
-    //                 vars.push(values[i]);
-    //                 values.splice(i, 1);
-    //
-    //                 if (i > 0) {
-    //
-    //                     i--;
-    //                 }
-    //             }
-    //
-    //             i--;
-    //             continue;
-    //         }
-    //
-    //         if (values[i].typ == EnumToken.CommaTokenType) {
-    //
-    //             if (vars.length > 0) {
-    //
-    //                 result.push(...vars);
-    //                 vars.length = 0;
-    //             }
-    //         }
-    //
-    //         result.push(values[i]);
-    //     }
-    //
-    //     if (vars.length > 0) {
-    //
-    //         result.push(...vars);
-    //     }
-    // } else {
-    //
-    //     result.push(...values);
-    // }
-    result.push(...values);
+    const result = values.slice();
     if (result.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
         result.pop();
     }

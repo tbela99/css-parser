@@ -136,16 +136,5 @@ var EnumToken;
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
-const funcLike = [
-    EnumToken.ParensTokenType,
-    EnumToken.FunctionTokenType,
-    EnumToken.UrlFunctionTokenType,
-    EnumToken.StartParensTokenType,
-    EnumToken.ImageFunctionTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType,
-    EnumToken.GridTemplateFuncTokenType
-];
 
-export { EnumToken, ValidationLevel, funcLike };
+export { EnumToken, ValidationLevel };

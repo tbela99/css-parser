@@ -10,8 +10,14 @@ import '../../parser/utils/config.js';
 import { mathFuncs } from '../../syntax/syntax.js';
 
 class ComputeCalcExpressionFeature {
-    static get ordering() {
+    get ordering() {
         return 1;
+    }
+    get preProcess() {
+        return false;
+    }
+    get postProcess() {
+        return true;
     }
     static register(options) {
         if (options.computeCalcExpression) {

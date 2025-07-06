@@ -11,8 +11,14 @@ import { compute } from '../transform/compute.js';
 import { eqMatrix } from '../transform/minify.js';
 
 class TransformCssFeature {
-    static get ordering() {
+    get ordering() {
         return 4;
+    }
+    get preProcess() {
+        return false;
+    }
+    get postProcess() {
+        return true;
     }
     static register(options) {
         // @ts-ignore

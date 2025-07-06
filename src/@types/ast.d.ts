@@ -41,8 +41,8 @@ export declare interface AstRule extends BaseToken {
     typ: EnumToken.RuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
-    optimized?: OptimizedSelector;
-    raw?: RawSelectorTokens;
+    optimized?: OptimizedSelector | null;
+    raw?: RawSelectorTokens | null;
 }
 
 export declare interface AstInvalidRule extends BaseToken {

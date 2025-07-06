@@ -25,6 +25,7 @@ import type {
 } from "../../@types/index.d.ts";
 import {EnumToken} from "./types.ts";
 import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/index.ts";
+import {FeatureWalkMode} from "./features/type.ts";
 
 export const combinators: string[] = ['+', '>', '~', '||', '|'];
 export const definedPropertySettings = {configurable: true, enumerable: false, writable: true};
@@ -41,21 +42,14 @@ const features: MinifyFeature[] = <MinifyFeature[]>Object.values(allFeatures).so
  * @param nestingContent
  * @param context
  */
-export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
+export function minify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
     [key: string]: any
 } = {}): AstNode {
 
-    if (!('nodes' in context)) {
+    let preprocess: boolean = false;
+    let postprocess: boolean = false;
 
-        context.nodes = <Set<AstNode>>new Set;
-    }
-
-    if (context.nodes.has(ast)) {
-
-        return ast;
-    }
-
-    context.nodes.add(ast);
+    let parents: Array<AstNode>;
 
     if (!('features' in <MinifyFeatureOptions>options)) {
 
@@ -73,36 +67,170 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
             feature.register(options);
         }
+
+        options.features!.sort((a, b) => a.ordering - b.ordering);
     }
 
-    function reducer(acc: string[], curr: string[], index: number, array: string[][]): string[] {
+    for (const feature of options!.features as MinifyFeature[]) {
 
-        // trim :is()
-        if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
-
-            curr = curr.slice(1, -1);
+        if (feature.preProcess) {
+            preprocess = true;
         }
 
-        if (curr[0] == '&') {
+        if (feature.postProcess) {
+            postprocess = true;
+        }
+    }
 
-            if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
+    if (preprocess) {
 
-                curr.splice(0, 2);
-            } else if (combinators.includes(curr[1])) {
+        parents = [<AstRuleStyleSheet>ast];
 
-                curr.shift();
+        for (const parent of parents) {
+
+            if (parent.typ == EnumToken.CommentTokenType ||
+                parent.typ == EnumToken.CDOCOMMTokenType) {
+
+                Object.defineProperty(parent, 'parent', {
+                    ...definedPropertySettings,
+                    value: parent
+                })
+                continue;
             }
-        } else if (ast.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
+
+            for (const feature of options.features as MinifyFeature[]) {
+
+                if (!feature.preProcess) {
+                    continue;
+                }
+
+                feature.run(<AstRule | AstAtRule>parent, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Pre);
+            }
+
+            if (('chi' in parent)) {
+
+                // @ts-ignore
+                for (const node of parent.chi) {
+
+                    parents.push(Object.defineProperty(node, 'parent', {
+                        ...definedPropertySettings,
+                        value: parent
+                    }) as AstNode);
+                }
+            }
+        }
+
+        for (const feature of options.features as MinifyFeature[]) {
+
+            if (feature.preProcess && 'cleanup' in feature) {
+
+                // @ts-ignore
+                feature.cleanup(<AstRuleStyleSheet>ast, options, context, FeatureWalkMode.Pre);
+            }
+        }
+    }
+
+    doMinify(ast, options, recursive, errors, nestingContent, context);
+
+    parents = [<AstRuleStyleSheet>ast];
+
+    for (const parent of parents ) {
+
+        // parent = parents.shift() as AstNode;
+
+        if (parent.typ == EnumToken.CommentTokenType ||
+            parent.typ == EnumToken.CDOCOMMTokenType) {
+            continue;
+        }
+
+        if (postprocess) {
+
+            for (const feature of options.features as MinifyFeature[]) {
+
+                if (!feature.postProcess) {
+                    continue;
+                }
+
+                feature.run(<AstRule | AstAtRule>parent, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent.parent ?? ast, context, FeatureWalkMode.Post);
+            }
+        }
+
+        if (('chi' in parent)) {
+
+            // @ts-ignore
+            for (const node of parent.chi) {
+
+                parents.push(Object.defineProperty(node, 'parent', {
+                    ...definedPropertySettings,
+                    value: parent
+                }) as AstNode);
+            }
+        }
+    }
+
+    if (postprocess) {
+
+        for (const feature of options.features as MinifyFeature[]) {
+
+            if (feature.postProcess && 'cleanup' in feature) {
+
+                // @ts-ignore
+                feature.cleanup(<AstRuleStyleSheet>ast, options, context, FeatureWalkMode.Post);
+            }
+        }
+    }
+
+    return ast;
+}
+
+function reduce(acc: string[], curr: string[], index: number, array: string[][]): string[] {
+
+    // trim :is()
+    if (array.length == 1 && array[0][0] == ':is(' && array[0].at(-1) == ')') {
+
+        curr = curr.slice(1, -1);
+    }
+
+    if (curr[0] == '&') {
+
+        if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
+
+            curr.splice(0, 2);
+        } else if (combinators.includes(curr[1])) {
+
+            curr.shift();
+        }
+    } else { // @ts-ignore
+        if (this.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
 
             curr.unshift('&', ' ');
         }
-
-        acc.push(curr.join(''));
-        return acc;
     }
 
-    // @ts-ignore
+    acc.push(curr.join(''));
+    return acc;
+}
+
+function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean = false, errors?: ErrorDescription[], nestingContent?: boolean, context: {
+    [key: string]: any
+} = {}): AstNode {
+
+    if (!('nodes' in context)) {
+
+        context.nodes = <Set<AstNode>>new Set;
+    }
+
+    if (context.nodes.has(ast)) {
+
+        return ast;
+    }
+
+    context.nodes.add(ast);
+
+// @ts-ignore
     if ('chi' in ast && ast.chi.length > 0) {
+
+        const reducer = reduce.bind(ast);
 
         if (!nestingContent) {
 
@@ -153,7 +281,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
                 if ((<AstKeyframAtRule>node).chi.length > 0) {
 
-                    minify(node, options, true, errors, nestingContent, context);
+                    doMinify(node, options, true, errors, nestingContent, context);
                 }
             }
 
@@ -225,7 +353,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                 // @ts-ignore
                 if (!hasDeclaration(node)) {
 
-                    minify(node, options, recursive, errors, nestingContent, context);
+                    doMinify(node, options, recursive, errors, nestingContent, context);
                 }
 
                 previous = node;
@@ -296,7 +424,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                         nodeIndex = --i;
                         // @ts-ignore
                         previous = ast.chi[nodeIndex];
-                        minify(<AstRule>wrapper, options, recursive, errors, nestingContent, context);
+                        doMinify(<AstRule>wrapper, options, recursive, errors, nestingContent, context);
                         continue;
                     }
                     // @ts-ignore
@@ -430,7 +558,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                                     // @ts-ignore
                                     // minifyRule(node, <MinifyOptions>options, ast, context);
                                     // } else {
-                                    minify(node, options, recursive, errors, nestingContent, context);
+                                    doMinify(node, options, recursive, errors, nestingContent, context);
                                 }
 
                                 i--;
@@ -499,7 +627,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                             // minifyRule(previous, <MinifyOptions>options, ast, context);
                             // } else {
 
-                            minify(previous, options, recursive, errors, nestingContent, context);
+                            doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 } else {
@@ -513,7 +641,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                             // minifyRule(previous, <MinifyOptions>options, ast, context);
                             // } else {
 
-                            minify(previous, options, recursive, errors, nestingContent, context);
+                            doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
@@ -521,7 +649,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
 
             // else if ('chi' in node) {
             //
-            //     minify(node, options, recursive, errors, nestingContent, context);
+            //     doMinify(node, options, recursive, errors, nestingContent, context);
             // }
 
             if (!nestingContent &&
@@ -547,7 +675,7 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
                 // @ts-ignore
                 if (!(node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam != 'font-face')) {
 
-                    minify(node, options, recursive, errors, nestingContent, context);
+                    doMinify(node, options, recursive, errors, nestingContent, context);
                 }
             }
         }
@@ -563,61 +691,9 @@ export function minify(ast: AstNode, options: ParserOptions | MinifyFeatureOptio
         }
     }
 
-    if (ast.typ == EnumToken.StyleSheetNodeType) {
-
-        let parent: AstRule | AstAtRule | AstRuleStyleSheet;
-        let parents: Array<AstRule | AstAtRule | AstRuleStyleSheet> = [<AstRuleStyleSheet>ast];
-
-        while (parents.length > 0) {
-
-            parent = <AstRule | AstAtRule | AstRuleStyleSheet>parents.shift();
-
-            // @ts-ignore
-            for (let k = 0; k < parent.chi.length; k++) {
-
-                // @ts-ignore
-                const node = parent.chi[k];
-
-                if (!('chi' in node) || node.typ == EnumToken.StyleSheetNodeType || (node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam == 'font-face')) {
-
-                    continue;
-                }
-
-                // @ts-ignore
-                if (<AstRule | AstAtRule>node.chi.length > 0) {
-
-                    parents.push(<AstRule | AstAtRule | AstRuleStyleSheet>node);
-
-                    Object.defineProperty(node, 'parent', {...definedPropertySettings, value: parent});
-
-                    for (const feature of (<MinifyFeatureOptions>options).features) {
-
-                        feature.run(<AstRule | AstAtRule>node, options, <AstRule | AstAtRule | AstRuleStyleSheet>parent, context);
-                    }
-                }
-
-                // @ts-ignore
-                if (options.removeEmpty && node.chi.length == 0) {
-
-                    // @ts-ignore
-                    parent.chi.splice(k, 1);
-                    k--;
-                }
-            }
-        }
-
-        for (const feature of (<MinifyFeatureOptions>options).features) {
-
-            if ('cleanup' in feature) {
-
-                // @ts-ignore
-                feature.cleanup(<AstRuleStyleSheet>ast, options, context);
-            }
-        }
-    }
-
     return ast;
 }
+
 
 function hasDeclaration(node: AstRule): boolean {
 
@@ -1366,7 +1442,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
         }
     }
 
-    const css1: string = options.cache!.get(node1  ) as string;
+    const css1: string = options.cache!.get(node1) as string;
     const css2: string = options.cache!.get(node2) as string;
 
     node1 = {...node1, chi: node1.chi.slice()};
@@ -1434,7 +1510,7 @@ function diff(n1: AstRule, n2: AstRule, reducer: Function, options: ParserOption
     const result = (intersect.length == 0 ? null : {
         ...node1,
         // @ts-ignore
-        sel: [...new Set([...(n1?.raw?.reduce(reducer , []) ?? splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) ?? splitRule(n2.sel))])].join(','),
+        sel: [...new Set([...(n1?.raw?.reduce(reducer, []) ?? splitRule(n1.sel)).concat(n2?.raw?.reduce(reducer, []) ?? splitRule(n2.sel))])].join(','),
         chi: intersect.reverse()
     });
 

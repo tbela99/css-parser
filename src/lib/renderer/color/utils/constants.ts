@@ -1,3 +1,5 @@
+import {EnumToken} from "../../../ast";
+
 export const colorRange = {
 
     lab: {
@@ -57,6 +59,19 @@ export enum ColorKind {
     LIGHT_DARK,
     COLOR_MIX
 }
+
+export const funcLike: EnumToken[] = [
+    EnumToken.ParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType,
+    EnumToken.GridTemplateFuncTokenType
+];
+
 export const colorsFunc: string[] = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 export const colorFuncColorSpace: string[] = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
 export const D50: number[] = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];

@@ -4,7 +4,7 @@ import type {
     AstNode,
     AstRule,
     FunctionToken,
-    MinifyFeatureOptions,
+    ParserOptions,
     Token
 } from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
@@ -15,11 +15,19 @@ import {eqMatrix} from "../transform/minify.ts";
 
 export class TransformCssFeature {
 
-    static get ordering(): number {
+     get ordering(): number {
         return 4;
     }
 
-    static register(options: MinifyFeatureOptions): void {
+    get preProcess(): boolean {
+        return false;
+    }
+
+    get postProcess(): boolean {
+        return true;
+    }
+
+    static register(options: ParserOptions): void {
 
         // @ts-ignore
         if (options.computeTransform) {

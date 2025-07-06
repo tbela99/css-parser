@@ -4,6 +4,7 @@ import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
 import {EnumToken} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
+import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
@@ -60,7 +61,7 @@ export interface MinifyOptions {
     pass?: number;
 }
 
-export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
+export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
 
     src?: string;
     sourcemap?: boolean | 'inline';
@@ -82,18 +83,20 @@ export declare interface ParserOptions extends MinifyOptions, ValidationOptions,
     cache?: WeakMap<AstNode, string>;
 }
 
-export declare interface MinifyFeatureOptions extends ParserOptions {
+export declare interface MinifyFeatureOptions  {
 
-    features: MinifyFeature[];
+    features?: MinifyFeature[];
 }
 
 export declare interface MinifyFeature {
 
     ordering: number;
+    preProcess: boolean;
+    postProcess: boolean;
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) => void;
+    }, mode: FeatureWalkMode) => void;
 }
 
 export declare interface ResolvedPath {
@@ -181,6 +184,7 @@ export declare interface VariableScopeInfo {
     declarationCount: number;
     replaceable: boolean;
     node: AstDeclaration;
+    values: Token[];
 }
 
 export declare interface SourceMapObject {

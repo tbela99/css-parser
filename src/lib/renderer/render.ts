@@ -62,9 +62,9 @@ import {
     rgb2hex,
     srgb2hexvalues
 } from "./color/index.ts";
-import {EnumToken, expand, funcLike} from "../ast/index.ts";
+import {EnumToken, expand} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
-import {colorFuncColorSpace, ColorKind, colorsFunc, getComponents} from "./color/utils/index.ts";
+import {colorFuncColorSpace, ColorKind, colorsFunc, funcLike, getComponents} from "./color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax/index.ts";
 
 export function reduceNumber(val: string | number): string {
@@ -773,7 +773,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 // @ts-ignore
                 (<FractionToken>(<NumberToken>(token as FunctionToken).chi[0] as NumberToken).val as FractionToken)?.typ != EnumToken.FractionTokenType) {
 
-                return (token as FunctionToken).chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '')
+                return (token as FunctionToken).val + '(' + (token as FunctionToken).chi.reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache, reducer), '') + ')'
             }
 
             return (/* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/ (token as FunctionToken).val ?? '') + '(' + (token as FunctionToken).chi.reduce(reducer, '') + ')';

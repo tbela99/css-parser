@@ -15,8 +15,7 @@ import {
     mediaTypes,
     parseColor,
     parseDimension,
-    pseudoElements,
-    webkitPseudoAliasMap
+    pseudoElements
 } from "../syntax/index.ts";
 import {parseDeclarationNode} from './utils/index.ts';
 import {colorsFunc, renderToken} from "../renderer/index.ts";
@@ -26,7 +25,6 @@ import {
     definedPropertySettings,
     EnumToken,
     expand,
-    funcLike,
     minify,
     ValidationLevel,
     walk,
@@ -106,7 +104,7 @@ import type {
     UrlToken,
     WhitespaceToken
 } from "../../@types/index.d.ts";
-import {ColorKind, deprecatedSystemColors, systemColors} from "../renderer/color/utils/index.ts";
+import {ColorKind, deprecatedSystemColors, funcLike, systemColors} from "../renderer/color/utils/index.ts";
 import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
@@ -381,6 +379,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                 const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
 
+                    // console.error({url, src: options.src, resolved: options.resolve!(url, options.src as string)})
+
                     return doParse(src, Object.assign({}, options, {
                         minify: false,
                         setParent: false,
@@ -397,7 +397,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
             } catch (error) {
 
-                console.error(error);
+                // console.error(error);
 
                 // @ts-ignore
                 errors.push({action: 'ignore', message: 'doParse: ' + error.message as string, error});
@@ -1019,7 +1019,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 }
             }
 
-            parseTokens(tokens, {parseColor: true});
+            parseTokens(tokens, {...options, parseColor: true});
 
             for (i = 0; i < tokens.length; i++) {
 
@@ -1896,24 +1896,11 @@ function getTokenType(val: string, hint?: EnumToken): Token {
  */
 export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
 
+    let key: string;
+
     for (let i = 0; i < tokens.length; i++) {
 
         const t: Token = tokens[i];
-
-        if (t.typ == EnumToken.PseudoClassFuncTokenType) {
-
-            if ((t as PseudoClassFunctionToken).val.slice(1) in webkitPseudoAliasMap) {
-
-                (t as PseudoClassFunctionToken).val = ':' + webkitPseudoAliasMap[(t as PseudoClassFunctionToken).val.slice(1)];
-            }
-
-        } else if (t.typ == EnumToken.PseudoClassTokenType) {
-
-            if ((t as PseudoClassToken).val.slice(1) in webkitPseudoAliasMap) {
-
-                (t as PseudoClassToken).val = ':' + webkitPseudoAliasMap[(t as PseudoClassToken).val.slice(1)];
-            }
-        }
 
         if (t.typ == EnumToken.WhitespaceTokenType && ((i == 0 ||
                 i + 1 == tokens.length ||
@@ -1932,14 +1919,9 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
 
                 if (typ == EnumToken.FunctionTokenType) {
 
-                    (<PseudoClassFunctionToken>tokens[i + 1]).val = ':' + ((<PseudoClassFunctionToken>tokens[i + 1]).val in webkitPseudoAliasMap ? webkitPseudoAliasMap[(<PseudoClassFunctionToken>tokens[i + 1]).val] : (<PseudoClassFunctionToken>tokens[i + 1]).val);
                     tokens[i + 1].typ = EnumToken.PseudoClassFuncTokenType;
                 } else if (typ == EnumToken.IdenTokenType) {
 
-                    if ((<PseudoClassToken>tokens[i + 1]).val in webkitPseudoAliasMap) {
-
-                        (<PseudoClassToken>tokens[i + 1]).val = webkitPseudoAliasMap[(<PseudoClassToken>tokens[i + 1]).val];
-                    }
                     (<PseudoClassToken>tokens[i + 1]).val = ':' + (<PseudoClassToken>tokens[i + 1]).val;
                     tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
                 }
@@ -2243,14 +2225,25 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
             }
 
             if (t.typ == EnumToken.UrlFunctionTokenType) {
+
                 // @ts-ignore
                 if ((t as FunctionURLToken).chi[0]?.typ == EnumToken.StringTokenType) {
                     // @ts-ignore
                     const value = t.chi[0].val.slice(1, -1);
+
                     // @ts-ignore
                     if ((t as FunctionURLToken).chi[0].val.slice(1, 5) != 'data:' && urlTokenMatcher.test(value)) {
                         // @ts-ignore
                         (t as FunctionURLToken).chi[0].typ = EnumToken.UrlTokenTokenType;
+
+
+                        // console.error({t, v: t.chi[0], value,
+                        //     src: options.src,
+                        //     resolved: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : null,
+                        //     val2: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value});
+                        //
+                        // console.error(new Error('resolved'));
+
                         // @ts-ignore
                         (t as FunctionURLToken).chi[0].val = options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value;
                     }

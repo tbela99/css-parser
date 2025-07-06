@@ -5,9 +5,9 @@ import type {
     AstRule,
     BinaryExpressionToken,
     FunctionToken,
-    MinifyFeatureOptions,
     NumberToken,
     ParensToken,
+    ParserOptions,
     Token,
     WalkerOption
 } from "../../../@types/index.d.ts";
@@ -19,11 +19,19 @@ import {mathFuncs} from "../../syntax/index.ts";
 
 export class ComputeCalcExpressionFeature {
 
-    static get ordering(): number {
+     get ordering(): number {
         return 1;
     }
 
-    static register(options: MinifyFeatureOptions): void {
+    get preProcess(): boolean {
+        return false;
+    }
+
+    get postProcess(): boolean {
+        return true;
+    }
+
+    static register(options: ParserOptions): void {
 
         if (options.computeCalcExpression) {
 

@@ -135,7 +135,7 @@ declare enum EnumToken {
  * @param nestingContent
  * @param context
  */
-declare function minify(ast: AstNode$1, options?: ParserOptions | MinifyFeatureOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+declare function minify(ast: AstNode$1, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
     [key: string]: any;
 }): AstNode$1;
 
@@ -898,8 +898,8 @@ export declare interface AstRule extends BaseToken {
     typ: EnumToken.RuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
-    optimized?: OptimizedSelector;
-    raw?: RawSelectorTokens;
+    optimized?: OptimizedSelector | null;
+    raw?: RawSelectorTokens | null;
 }
 
 export declare interface AstInvalidRule extends BaseToken {
@@ -1024,6 +1024,11 @@ export declare interface PropertyListOptions {
     computeShorthand?: boolean;
 }
 
+declare enum FeatureWalkMode {
+    Pre = 0,
+    Post = 1
+}
+
 export declare type WalkerOption = WalkerOptionEnum | Token | null;
 /**
  * returned value:
@@ -1094,7 +1099,7 @@ interface MinifyOptions {
     pass?: number;
 }
 
-export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
+export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
 
     src?: string;
     sourcemap?: boolean | 'inline';
@@ -1116,9 +1121,9 @@ export declare interface ParserOptions extends MinifyOptions, ValidationOptions,
     cache?: WeakMap<AstNode, string>;
 }
 
-export declare interface MinifyFeatureOptions extends ParserOptions {
+export declare interface MinifyFeatureOptions  {
 
-    features: MinifyFeature[];
+    features?: MinifyFeature[];
 }
 
 export declare interface MinifyFeature {
@@ -1135,10 +1140,12 @@ export declare interface MinifyFeature {
 export declare interface MinifyFeature {
 
     ordering: number;
+    preProcess: boolean;
+    postProcess: boolean;
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) => void;
+    }, mode: FeatureWalkMode) => void;
 }
 
 export declare interface ResolvedPath {

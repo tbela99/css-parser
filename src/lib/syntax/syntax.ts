@@ -15,8 +15,8 @@ import type {
     PercentageToken,
     Token
 } from "../../@types/index.d.ts";
-import {EnumToken, funcLike, WalkerOptionEnum, walkValues} from "../ast/index.ts";
-import {ColorKind} from "../renderer/color/utils";
+import {EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
+import {ColorKind, funcLike} from "../renderer/color/utils";
 import {buildExpression} from "../ast/math";
 
 // '\\'
@@ -51,48 +51,50 @@ export const mathFuncs: string[] = ['minmax', 'repeat', 'fit-content', 'calc', '
 export const wildCardFuncs: string[] = ['var', 'env'];
 
 export const pseudoElements: string[] = [':before', ':after', ':first-line', ':first-letter'];
-export const webkitPseudoAliasMap: Record<string, string> = {
-    '-webkit-autofill': 'autofill',
-    '-webkit-any': 'is',
-    '-moz-any': 'is',
-    '-webkit-border-after': 'border-block-end',
-    '-webkit-border-after-color': 'border-block-end-color',
-    '-webkit-border-after-style': 'border-block-end-style',
-    '-webkit-border-after-width': 'border-block-end-width',
-    '-webkit-border-before': 'border-block-start',
-    '-webkit-border-before-color': 'border-block-start-color',
-    '-webkit-border-before-style': 'border-block-start-style',
-    '-webkit-border-before-width': 'border-block-start-width',
-    '-webkit-border-end': 'border-inline-end',
-    '-webkit-border-end-color': 'border-inline-end-color',
-    '-webkit-border-end-style': 'border-inline-end-style',
-    '-webkit-border-end-width': 'border-inline-end-width',
-    '-webkit-border-start': 'border-inline-start',
-    '-webkit-border-start-color': 'border-inline-start-color',
-    '-webkit-border-start-style': 'border-inline-start-style',
-    '-webkit-border-start-width': 'border-inline-start-width',
-    '-webkit-box-align': 'align-items',
-    '-webkit-box-direction': 'flex-direction',
-    '-webkit-box-flex': 'flex-grow',
-    '-webkit-box-lines': 'flex-flow',
-    '-webkit-box-ordinal-group': 'order',
-    '-webkit-box-orient': 'flex-direction',
-    '-webkit-box-pack': 'justify-content',
-    '-webkit-column-break-after': 'break-after',
-    '-webkit-column-break-before': 'break-before',
-    '-webkit-column-break-inside': 'break-inside',
-    '-webkit-font-feature-settings': 'font-feature-settings',
-    '-webkit-hyphenate-character': 'hyphenate-character',
-    '-webkit-initial-letter': 'initial-letter',
-    '-webkit-margin-end': 'margin-block-end',
-    '-webkit-margin-start': 'margin-block-start',
-    '-webkit-padding-after': 'padding-block-end',
-    '-webkit-padding-before': 'padding-block-start',
-    '-webkit-padding-end': 'padding-inline-end',
-    '-webkit-padding-start': 'padding-inline-start',
-    '-webkit-min-device-pixel-ratio': 'min-resolution',
-    '-webkit-max-device-pixel-ratio': 'max-resolution'
-}
+export const webkitPseudoAliasMap: Record<string, string> =
+    {
+        '-webkit-autofill': 'autofill',
+        '-webkit-any()': 'is',
+        '-moz-any()': 'is',
+        '-webkit-any-link': 'any-link',
+        '-webkit-border-after': 'border-block-end',
+        '-webkit-border-after-color': 'border-block-end-color',
+        '-webkit-border-after-style': 'border-block-end-style',
+        '-webkit-border-after-width': 'border-block-end-width',
+        '-webkit-border-before': 'border-block-start',
+        '-webkit-border-before-color': 'border-block-start-color',
+        '-webkit-border-before-style': 'border-block-start-style',
+        '-webkit-border-before-width': 'border-block-start-width',
+        '-webkit-border-end': 'border-inline-end',
+        '-webkit-border-end-color': 'border-inline-end-color',
+        '-webkit-border-end-style': 'border-inline-end-style',
+        '-webkit-border-end-width': 'border-inline-end-width',
+        '-webkit-border-start': 'border-inline-start',
+        '-webkit-border-start-color': 'border-inline-start-color',
+        '-webkit-border-start-style': 'border-inline-start-style',
+        '-webkit-border-start-width': 'border-inline-start-width',
+        '-webkit-box-align': 'align-items',
+        '-webkit-box-direction': 'flex-direction',
+        '-webkit-box-flex': 'flex-grow',
+        '-webkit-box-lines': 'flex-flow',
+        '-webkit-box-ordinal-group': 'order',
+        '-webkit-box-orient': 'flex-direction',
+        '-webkit-box-pack': 'justify-content',
+        '-webkit-column-break-after': 'break-after',
+        '-webkit-column-break-before': 'break-before',
+        '-webkit-column-break-inside': 'break-inside',
+        '-webkit-font-feature-settings': 'font-feature-settings',
+        '-webkit-hyphenate-character': 'hyphenate-character',
+        '-webkit-initial-letter': 'initial-letter',
+        '-webkit-margin-end': 'margin-block-end',
+        '-webkit-margin-start': 'margin-block-start',
+        '-webkit-padding-after': 'padding-block-end',
+        '-webkit-padding-before': 'padding-block-start',
+        '-webkit-padding-end': 'padding-inline-end',
+        '-webkit-padding-start': 'padding-inline-start',
+        '-webkit-min-device-pixel-ratio': 'min-resolution',
+        '-webkit-max-device-pixel-ratio': 'max-resolution'
+    }
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar

@@ -4000,6 +4000,12 @@ var selectors = {
 	},
 	"::view-transition-old()": {
 		syntax: "::view-transition-old([ '*' | <custom-ident> ])"
+	},
+	":-webkit-any()": {
+		syntax: ":-webkit-any( <forgiving-selector-list> )"
+	},
+	":-webkit-any-link": {
+		syntax: ":-webkit-any-link"
 	}
 };
 var atRules = {

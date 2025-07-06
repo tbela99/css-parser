@@ -1134,7 +1134,7 @@ html { --base:  oklch(52.6% 0.115 44.6deg) }
     });
 
     it('lch(from var(--color) calc(l / 2) c h) #111', function () {
-        return parse(`
+        return transform(`
 html { 
 --color: green;
   --darker-accent: lch(from var(--color) calc(l / 2) c h); 
@@ -1142,9 +1142,9 @@ html {
 .foo {
 background: var(--darker-accent);
 }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+`, {inlineCssVariables: true, removeComments: false, beautify: true}).then(result => expect(result.code).equals(`html {
  /* --color: green */
- /* --darker-accent: lch(from green calc(l/2) c h) */
+ /* --darker-accent: lch(from var(--color) calc(l/2) c h) */
 }
 .foo {
  background: #004500
@@ -1206,7 +1206,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
     });
 
     it('light-dark() #126', function () {
-        return parse(`
+        return transform(`
 :root {
 --light: #fff;
 --dark: #000;
@@ -1224,8 +1224,15 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
 /* Custom properties */
 .c {
     color: light-dark(var(--dark), var(--light));
+    
+    .dq {
+        color: light-dark(var(--dark), var(--light));
     }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+    
+    /* line height */
+    line-height:1
+    }
+`, {inlineCssVariables: true, beautify: true, removeComments: false}).then(result => expect(result.code).equals(`:root {
  /* --light: #fff */
  /* --dark: #000 */
 }
@@ -1239,7 +1246,12 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
 }
 /* Custom properties */
 .c {
- color: light-dark(#000,#fff)
+ color: light-dark(#000,#fff);
+ /* line height */
+ line-height: 1;
+ .dq {
+  color: light-dark(#000,#fff)
+ }
 }`));
     });
 

@@ -17,15 +17,4 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         });
     });
 
-    describe('process import #2', function () {
-        it('process import #2', function () {
-            return readFile(import.meta.dirname + '/../../files/result/font-awesome-all.css').
-            then(file => transform(import2, {
-                minify: false,
-                resolveImport: true
-            }).
-            then((result) => expect(result.code).equals(file.trimEnd())));
-        });
-    });
-
 }

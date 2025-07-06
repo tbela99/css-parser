@@ -67,26 +67,41 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
         it('prefixed properties #4', function () {
             return transform(`
 
+   a:any-link {
+  border: 1px solid blue;
+  color: orange;
+}
+
+/* WebKit browsers */
+a:-webkit-any-link {
+  border: 1px solid blue;
+  color: orange;
+}
+
 @media screen {
         
 :root {
 
   --color: red;
   }
-    .foo:-webkit-any-link {
+    .foo:-webkit-any-link, .foo:-webkit-any(p, span) {
             height: calc(100px * 2/ 15);
             -webkit-appearance: none;;
-  -moz-window-shadow: menu;
     }
 }
-`, {removePrefix: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@media screen {
+`, {removePrefix: true, beautify: true}).then(result => expect(result.code).equals(`a:any-link {
+ border: 1px solid blue;
+ color: orange
+}
+@media screen {
  :root {
   --color: red
  }
- .foo:-webkit-any-link {
-  height: calc(40px/3);
-  appearance: none;
-  -moz-window-shadow: menu
+ .foo {
+  &:any-link,&p,&span {
+   height: calc(40px/3);
+   appearance: none
+  }
  }
 }`));
         });
