@@ -7,7 +7,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             const css = `
 @import 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.css`;
 
-            return readFile(import.meta.dirname + '/../../files/result/font-awesome-all.css', {encoding: 'utf-8'}).
+            return readFile((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + '/../../files/result/font-awesome-all.css', {encoding: 'utf-8'}).
             then(content => transform(css, {minify: false, resolveImport: true}).then(result => expect(result.code).equals(content)));
         });
 

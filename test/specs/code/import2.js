@@ -8,7 +8,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
     describe('process import #2', function () {
         it('process import #1', function () {
-            return readFile(import.meta.dirname + '/../../files/result/font-awesome-all.css').
+            return readFile((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + '/../../files/result/font-awesome-all.css').
             then(file => transform(import1, {
                 minify: false,
                 resolveImport: true
