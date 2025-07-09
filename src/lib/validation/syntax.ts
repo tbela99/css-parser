@@ -205,9 +205,9 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions, parent
         case EnumToken.KeyframeAtRuleNodeType:
         case EnumToken.KeyFrameRuleNodeType:
 
-        default:
-
-            throw new Error(`Not implemented: ${node.typ}`);
+        // default:
+        //
+        //     throw new Error(`Not implemented: ${node.typ}`);
     }
 
     return {

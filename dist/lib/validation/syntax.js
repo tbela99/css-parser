@@ -125,8 +125,9 @@ function evaluateSyntax(node, options, parent) {
         case EnumToken.AtRuleNodeType:
         case EnumToken.KeyframeAtRuleNodeType:
         case EnumToken.KeyFrameRuleNodeType:
-        default:
-            throw new Error(`Not implemented: ${node.typ}`);
+        // default:
+        //
+        //     throw new Error(`Not implemented: ${node.typ}`);
     }
     return {
         valid: ValidationLevel.Valid,
