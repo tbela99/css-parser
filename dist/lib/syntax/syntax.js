@@ -413,14 +413,9 @@ function isHueInterpolationMethod(token) {
     return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token.val);
 }
 function isIdentColor(token) {
-    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.HEX, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
+    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
 }
 function isColor(token) {
-    // console.error(JSON.stringify({token}, null, 1));
-    // if (token.typ == EnumToken.ColorTokenType) {
-    //
-    //     return true;
-    // }
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
         return token.val.toLowerCase() in COLORS_NAMES;
@@ -591,10 +586,6 @@ function isColor(token) {
     return false;
 }
 function parseColor(token) {
-    // if (!isColor(token)) {
-    //
-    //     return token;
-    // }
     // @ts-ignore
     token.typ = EnumToken.ColorTokenType;
     // @ts-ignore
@@ -618,12 +609,6 @@ function parseColor(token) {
             }
         }
     }
-    // const filter: EnumToken[] = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
-    // if ((token as FunctionToken).val != 'light-dark') {
-    //
-    //     filter.push(EnumToken.CommaTokenType);
-    // }
-    // (token as FunctionToken).chi = (token as FunctionToken).chi.filter((t: Token): boolean => !filter.includes(t.typ));
     return token;
 }
 function isLetter(codepoint) {
@@ -855,31 +840,6 @@ function isHexColor(name) {
     }
     return true;
 }
-/*
-export function isHexDigit(name: string): boolean {
-
-    if (name.length || name.length > 6) {
-
-        return false;
-    }
-
-    for (let chr of name) {
-
-        let codepoint = <number>chr.charCodeAt(0);
-
-        if (!isDigit(codepoint) &&
-            // A F
-            !(codepoint >= 0x41 && codepoint <= 0x46) &&
-            // a f
-            !(codepoint >= 0x61 && codepoint <= 0x66)) {
-
-            return false;
-        }
-    }
-
-    return true;
-}
-*/
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }

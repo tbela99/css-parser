@@ -23,7 +23,7 @@ $ deno add @tbela99/css-parser
 ## Features
 
 - no dependency
-- partial css validation based upon mdn-data: at-rules and selectors validation
+- CSS validation based upon mdn-data
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - fast and efficient minification without unsafe transforms,
   see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
@@ -706,7 +706,7 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Minification
 
-- [x] minify keyframs
+- [x] minify keyframes
 - [x] minify transform
 - [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
   acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()

@@ -459,17 +459,10 @@ export function isHueInterpolationMethod(token: Token): boolean {
 
 export function isIdentColor(token: Token): boolean {
 
-    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.HEX, ColorKind.LIT].includes((token as ColorToken).kin) && isIdent((token as ColorToken).val);
+    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes((token as ColorToken).kin) && isIdent((token as ColorToken).val);
 }
 
 export function isColor(token: Token): boolean {
-
-    // console.error(JSON.stringify({token}, null, 1));
-
-    // if (token.typ == EnumToken.ColorTokenType) {
-    //
-    //     return true;
-    // }
 
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
@@ -725,11 +718,6 @@ export function isColor(token: Token): boolean {
 
 export function parseColor(token: Token) {
 
-    // if (!isColor(token)) {
-    //
-    //     return token;
-    // }
-
     // @ts-ignore
     token.typ = EnumToken.ColorTokenType;
 
@@ -758,15 +746,6 @@ export function parseColor(token: Token) {
             }
         }
     }
-
-    // const filter: EnumToken[] = [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType];
-
-    // if ((token as FunctionToken).val != 'light-dark') {
-    //
-    //     filter.push(EnumToken.CommaTokenType);
-    // }
-
-    // (token as FunctionToken).chi = (token as FunctionToken).chi.filter((t: Token): boolean => !filter.includes(t.typ));
 
     return token;
 }
@@ -1117,31 +1096,6 @@ export function isHexColor(name: string): boolean {
     return true;
 }
 
-/*
-export function isHexDigit(name: string): boolean {
-
-    if (name.length || name.length > 6) {
-
-        return false;
-    }
-
-    for (let chr of name) {
-
-        let codepoint = <number>chr.charCodeAt(0);
-
-        if (!isDigit(codepoint) &&
-            // A F
-            !(codepoint >= 0x41 && codepoint <= 0x46) &&
-            // a f
-            !(codepoint >= 0x61 && codepoint <= 0x66)) {
-
-            return false;
-        }
-    }
-
-    return true;
-}
-*/
 export function isFunction(name: string): boolean {
 
     return name.endsWith('(') && isIdent(name.slice(0, -1));
