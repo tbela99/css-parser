@@ -60,6 +60,7 @@ export enum ColorKind {
     COLOR_MIX
 }
 
+export const generalEnclosedFunc: string[] = ['selector', 'font-tech', 'font-format', 'media', 'supports']
 export const funcLike: EnumToken[] = [
     EnumToken.ParensTokenType,
     EnumToken.FunctionTokenType,

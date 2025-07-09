@@ -7,6 +7,7 @@ import {
     isHash,
     isHexColor,
     isIdent,
+    isIdentColor,
     isIdentStart,
     isNumber,
     isPercentage,
@@ -845,7 +846,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
         }
 
         context.chi!.push(node);
-
         Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
         return node;
@@ -990,8 +990,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             return node;
         } else {
 
-            // console.error(JSON.stringify({tokens}, null, 1));
-
             let name: Token[] | null = null;
             let value: Token[] | null = null;
             let i: number = 0;
@@ -1051,7 +1049,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                             (<FunctionToken>tokens[i]).typ = EnumToken.FunctionTokenType;
 
-                            if (colorsFunc.includes((tokens[i] as FunctionToken).val) && isColor(tokens[i])){
+                            if (colorsFunc.includes((tokens[i] as FunctionToken).val) && isColor(tokens[i])) {
 
                                 parseColor(tokens[i]);
                             }
@@ -1075,7 +1073,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                     name = tokens.slice(0, i);
                     value = tokens.slice(i + 1);
-
                     break;
                 }
             }
@@ -1103,8 +1100,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     }
                 }
             }
-
-            // console.error(JSON.stringify({tokens}, null, 1));
 
             const nam: string = renderToken(name.shift() as Token, {removeComments: true})
 
@@ -1160,11 +1155,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 val: value
             }
 
-            //
-            // console.error(JSON.stringify({
-            //     tokens
-            // }, null, 1));
-
             if (options.sourcemap) {
 
                 node.loc = location;
@@ -1195,11 +1185,13 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                     if (valid.valid == ValidationLevel.Drop) {
 
+                        // console.error(doRender(result), result.val, location);
+
                         errors.push(<ErrorDescription>{
                             action: 'drop',
                             message: valid.error,
                             syntax: valid.syntax,
-                            location: map.get(valid.node as Token) ?? valid.node?.loc ?? result.loc
+                            location: map.get(valid.node as Token) ?? valid.node?.loc ?? result.loc ?? location
                         });
 
                         return null;
@@ -1387,7 +1379,6 @@ function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
 
                 continue;
             }
-
 
             for (let i = nameIndex + 1; i < (value as FunctionToken | ParensToken).chi.length; i++) {
 
@@ -1896,8 +1887,6 @@ function getTokenType(val: string, hint?: EnumToken): Token {
  */
 export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): Token[] {
 
-    let key: string;
-
     for (let i = 0; i < tokens.length; i++) {
 
         const t: Token = tokens[i];
@@ -2080,7 +2069,17 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                         },
                         l: (<Token[]>(t as AttrStartToken).chi)[lower],
                         r: (<Token[]>(t as AttrStartToken).chi)[upper]
-                    };
+                    }
+
+                    if (isIdentColor(((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).l)) {
+
+                        ((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).l.typ = EnumToken.IdenTokenType;
+                    }
+
+                    if (isIdentColor(((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).r)) {
+
+                        ((<Token[]>(t as AttrStartToken).chi)[m] as MatchExpressionToken).r.typ = EnumToken.IdenTokenType;
+                    }
 
                     (<Token[]>(t as AttrStartToken).chi).splice(upper, 1);
                     (<Token[]>(t as AttrStartToken).chi).splice(lower, 1);
@@ -2218,7 +2217,6 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
 
             // @ts-ignore
             if (options.parseColor && t.typ == EnumToken.FunctionTokenType && isColor(t)) {
-
 
                 parseColor(t);
                 continue;

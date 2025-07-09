@@ -201,10 +201,11 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                         EnumToken.EqualMatchTokenType, EnumToken.DashMatchTokenType,
                         EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
                         EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes((children[0] as MatchExpressionToken).op.typ) ||
-                    ![
+                    !([
                         EnumToken.StringTokenType,
                         EnumToken.IdenTokenType
-                    ].includes((children[0] as MatchExpressionToken).r.typ)) {
+                    ].includes((children[0] as MatchExpressionToken).r.typ)
+                    )) {
 
                     // @ts-ignore
                     return {

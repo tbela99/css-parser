@@ -1,4 +1,4 @@
-import { isIdentStart, isIdent, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
+import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, ValidationLevel } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -645,7 +645,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             return node;
         }
         else {
-            // console.error(JSON.stringify({tokens}, null, 1));
             let name = null;
             let value = null;
             let i = 0;
@@ -724,7 +723,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     }
                 }
             }
-            // console.error(JSON.stringify({tokens}, null, 1));
             const nam = renderToken(name.shift(), { removeComments: true });
             if (value == null || (!nam.startsWith('--') && value.length == 0)) {
                 errors.push({
@@ -766,10 +764,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 nam,
                 val: value
             };
-            //
-            // console.error(JSON.stringify({
-            //     tokens
-            // }, null, 1));
             if (options.sourcemap) {
                 node.loc = location;
                 node.loc.end = { ...map.get(delim).end };
@@ -789,11 +783,12 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     const valid = evaluateSyntax(result, options, context);
                     // console.error(valid);
                     if (valid.valid == ValidationLevel.Drop) {
+                        // console.error(doRender(result), result.val, location);
                         errors.push({
                             action: 'drop',
                             message: valid.error,
                             syntax: valid.syntax,
-                            location: map.get(valid.node) ?? valid.node?.loc ?? result.loc
+                            location: map.get(valid.node) ?? valid.node?.loc ?? result.loc ?? location
                         });
                         return null;
                     }
@@ -1454,6 +1449,12 @@ function parseTokens(tokens, options = {}) {
                         l: t.chi[lower],
                         r: t.chi[upper]
                     };
+                    if (isIdentColor(t.chi[m].l)) {
+                        t.chi[m].l.typ = EnumToken.IdenTokenType;
+                    }
+                    if (isIdentColor(t.chi[m].r)) {
+                        t.chi[m].r.typ = EnumToken.IdenTokenType;
+                    }
                     t.chi.splice(upper, 1);
                     t.chi.splice(lower, 1);
                     upper = m;

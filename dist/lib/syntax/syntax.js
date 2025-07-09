@@ -412,6 +412,9 @@ function isHueInterpolationMethod(token) {
     }
     return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token.val);
 }
+function isIdentColor(token) {
+    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.HEX, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
+}
 function isColor(token) {
     // console.error(JSON.stringify({token}, null, 1));
     // if (token.typ == EnumToken.ColorTokenType) {
@@ -893,4 +896,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoElements, transformFunctions, webkitExtensions, webkitPseudoAliasMap, wildCardFuncs };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoElements, transformFunctions, webkitExtensions, webkitPseudoAliasMap, wildCardFuncs };

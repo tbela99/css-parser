@@ -4,7 +4,7 @@ import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import '../../renderer/color/utils/constants.js';
+import { generalEnclosedFunc } from '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
@@ -62,7 +62,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             continue;
         }
         while (split.length > 0) {
-            if (split[0].typ != EnumToken.FunctionTokenType || !['media', 'supports', 'font-tech', 'font-format'].includes(split[0].val)) {
+            if (split[0].typ != EnumToken.FunctionTokenType || !generalEnclosedFunc.includes(split[0].val)) {
                 result = {
                     valid: ValidationLevel.Drop,
                     matches: [],
@@ -89,7 +89,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                     break;
                 }
             }
-            else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)) {
+            else if (generalEnclosedFunc.includes(split[0].val)) {
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {
                     result = {

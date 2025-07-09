@@ -406,7 +406,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1)));
 `).then((result) => expect(result.code).equals(`@import "whatever.css" supports((selector(h2>p)) and (font-tech(color-COLRv1)));`));
         });
 
-        it('import #27', function () {
+        it('import #28', function () {
             return transform(`
 
 
@@ -431,7 +431,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 
 
     describe('@document', function () {
-        it('document #29', function () {
+        it('document #30', function () {
             return transform(`
 @document url("https://www.example.com/")
 {
@@ -446,7 +446,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
  }
 }`));
         });
-        it('document #30', function () {
+        it('document #31', function () {
             return transform(`
 
 @document url("http://www.w3.org/"),
@@ -480,7 +480,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 
 
     describe('@keyframes', function () {
-        it('keyframes #31', function () {
+        it('keyframes #32', function () {
             return transform(`
 
     @-webkit-keyframes flash {
@@ -505,7 +505,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
 
-        it('keyframes #32', function () {
+        it('keyframes #33', function () {
             return transform(`
 
 @keyframes slide-right {
@@ -557,7 +557,7 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
 
-        it('keyframes #33', function () {
+        it('keyframes #34', function () {
             return transform(`
 
 @keyframes slide-right {

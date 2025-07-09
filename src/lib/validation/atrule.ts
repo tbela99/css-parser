@@ -178,7 +178,6 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
             }
         }
 
-
         return validateAtRulePageMarginBox(atRule, options, root);
     }
 

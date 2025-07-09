@@ -6,7 +6,7 @@ import '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { wildCardFuncs, mathFuncs } from '../syntax/syntax.js';
+import { wildCardFuncs, isIdentColor, mathFuncs } from '../syntax/syntax.js';
 import { renderToken } from '../renderer/render.js';
 import { funcLike, ColorKind, colorsFunc } from '../renderer/color/utils/constants.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
@@ -137,6 +137,30 @@ function evaluateSyntax(node, options, parent) {
             });
         }
         case EnumToken.AtRuleNodeType:
+            {
+                ast = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + node.nam);
+                if (ast == null) {
+                    const success = options.lenient !== false;
+                    return {
+                        valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+                        node,
+                        syntax: null,
+                        error: success ? '' : `unknown atRule: @${node.nam}`,
+                        context: createContext([])
+                    };
+                }
+                let result;
+                let v = ast[0];
+                // @ts-ignore
+                if (v.prelude != null) {
+                    result = doEvaluateSyntax(v.prelude, createContext(node.tokens), {
+                        ...options,
+                        visited: new WeakMap()
+                    });
+                    console.error({ result });
+                }
+            }
+            break;
         case EnumToken.KeyframeAtRuleNodeType:
         case EnumToken.KeyFrameRuleNodeType:
         default:
@@ -562,7 +586,10 @@ function match(syntax, context, options) {
     };
 }
 function matchPropertyType(syntax, context, options) {
-    if (!['length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color'].includes(syntax.val)) {
+    if (![
+        'length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color',
+        'pseudo-class-selector', 'pseudo-element-selector'
+    ].includes(syntax.val)) {
         if (syntax.val in config["syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */]) {
             // console.error(`>> ${renderSyntax(syntax)}`);
             return doEvaluateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val), context, {
@@ -616,7 +643,7 @@ function matchPropertyType(syntax, context, options) {
         case 'ident':
         case 'ident-token':
         case 'custom-ident':
-            success = token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType;
+            success = token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType || isIdentColor(token);
             break;
         case 'dashed-ident':
         case 'custom-property-name':
@@ -700,6 +727,24 @@ function matchPropertyType(syntax, context, options) {
         //     break;
         case 'zero':
             success = token.val == '0' || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            break;
+        case 'pseudo-element-selector':
+            success = token.typ == EnumToken.PseudoElementTokenType;
+            break;
+        case 'pseudo-class-selector':
+            success = token.typ == EnumToken.PseudoClassTokenType || token.typ == EnumToken.PseudoClassFuncTokenType;
+            if (success) {
+                success = token.val + (token.typ == EnumToken.PseudoClassTokenType ? '' : '()') in config["selectors" /* ValidationSyntaxGroupEnum.Selectors */];
+                if (success && token.typ == EnumToken.PseudoClassFuncTokenType) {
+                    success = doEvaluateSyntax(getParsedSyntax("selectors" /* ValidationSyntaxGroupEnum.Selectors */, token.val + '()')?.[0]?.chi ?? [], createContext(token.chi), {
+                        ...options,
+                        isRepeatable: null,
+                        isList: null,
+                        occurence: null,
+                        atLeastOnce: null
+                    }).valid == ValidationLevel.Valid;
+                }
+            }
             break;
         default:
             throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)}\n${JSON.stringify(syntax, null, 1)}`);

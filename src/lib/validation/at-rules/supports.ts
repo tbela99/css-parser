@@ -222,17 +222,23 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         return validateSupportCondition(atRule, (token as MediaFeatureNotToken).val);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes((token as FunctionToken).val))) {
 
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: token,
-            syntax: '@' + atRule.nam,
-            error: 'expected supports condition-in-parens',
-            tokens: []
-        };
+    // if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && generalEnclosedFunc.includes((token as FunctionToken).val))) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: ValidationLevel.Drop,
+    //         matches: [],
+    //         node: token,
+    //         syntax: '@' + atRule.nam,
+    //         error: 'expected supports condition-in-parens',
+    //         tokens: []
+    //     };
+    // }
+
+    if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
+
+        return validateComplexSelector(parseSelector((token as FunctionToken).chi));
     }
 
     const chi: Token[] = (token as FunctionToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
@@ -293,6 +299,11 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 }
 
 function validateSupportFeature(token: Token): ValidationSyntaxResult {
+
+    if (token.typ == EnumToken.MediaFeatureNotTokenType) {
+
+        return validateSupportFeature((token as MediaFeatureNotToken).val);
+    }
 
     if (token.typ == EnumToken.FunctionTokenType) {
 

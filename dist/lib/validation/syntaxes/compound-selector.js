@@ -157,10 +157,10 @@ function validateCompoundSelector(tokens, root, options) {
                         EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
                         EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType
                     ].includes(children[0].op.typ) ||
-                    ![
+                    !([
                         EnumToken.StringTokenType,
                         EnumToken.IdenTokenType
-                    ].includes(children[0].r.typ)) {
+                    ].includes(children[0].r.typ))) {
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,

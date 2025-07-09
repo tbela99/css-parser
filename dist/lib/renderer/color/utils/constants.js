@@ -59,6 +59,7 @@ var ColorKind;
     ColorKind[ColorKind["LIGHT_DARK"] = 24] = "LIGHT_DARK";
     ColorKind[ColorKind["COLOR_MIX"] = 25] = "COLOR_MIX";
 })(ColorKind || (ColorKind = {}));
+const generalEnclosedFunc = ['selector', 'font-tech', 'font-format', 'media', 'supports'];
 const funcLike = [
     EnumToken.ParensTokenType,
     EnumToken.FunctionTokenType,
@@ -237,4 +238,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, k, systemColors };
+export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, k, systemColors };

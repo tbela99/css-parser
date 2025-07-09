@@ -7,7 +7,6 @@ export * as expand from './expand.js';
 export * as grid from './grid.js';
 export * as import1 from './import1.js';
 export * as import2 from './import2.js';
-export * as import3 from './import3.js';
 export * as malformed from './malformed.js';
 export * as nesting from './nesting.js';
 export * as prefix from './prefix.js';

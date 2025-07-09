@@ -4,6 +4,7 @@ import {EnumToken, ValidationLevel} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {validateMediaCondition, validateMediaFeature} from "./media.ts";
 import {validateSupportCondition} from "./supports.ts";
+import {generalEnclosedFunc} from "../../renderer/color/utils";
 
 export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -76,7 +77,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
         while (split.length > 0) {
 
-            if (split[0].typ != EnumToken.FunctionTokenType || !['media', 'supports', 'font-tech', 'font-format'].includes((split[0] as FunctionToken).val)) {
+            if (split[0].typ != EnumToken.FunctionTokenType || !generalEnclosedFunc.includes((split[0] as FunctionToken).val)) {
 
                 result = {
                     valid: ValidationLevel.Drop,
@@ -111,7 +112,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
                     break;
                 }
 
-            } else if (['supports', 'font-tech', 'font-format'].includes((split[0] as FunctionToken).val)) {
+            } else if (generalEnclosedFunc.includes((split[0] as FunctionToken).val)) {
 
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {

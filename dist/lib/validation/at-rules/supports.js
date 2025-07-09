@@ -174,16 +174,20 @@ function validateSupportCondition(atRule, token) {
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
         return validateSupportCondition(atRule, token.val);
     }
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes(token.val))) {
-        // @ts-ignore
-        return {
-            valid: ValidationLevel.Drop,
-            matches: [],
-            node: token,
-            syntax: '@' + atRule.nam,
-            error: 'expected supports condition-in-parens',
-            tokens: []
-        };
+    // if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && generalEnclosedFunc.includes((token as FunctionToken).val))) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: ValidationLevel.Drop,
+    //         matches: [],
+    //         node: token,
+    //         syntax: '@' + atRule.nam,
+    //         error: 'expected supports condition-in-parens',
+    //         tokens: []
+    //     };
+    // }
+    if (token.typ == EnumToken.FunctionTokenType && token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
+        return validateComplexSelector(parseSelector(token.chi));
     }
     const chi = token.chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
     if (chi.length != 1) {
@@ -233,6 +237,9 @@ function validateSupportCondition(atRule, token) {
     };
 }
 function validateSupportFeature(token) {
+    if (token.typ == EnumToken.MediaFeatureNotTokenType) {
+        return validateSupportFeature(token.val);
+    }
     if (token.typ == EnumToken.FunctionTokenType) {
         if (token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
             return validateComplexSelector(parseSelector(token.chi));

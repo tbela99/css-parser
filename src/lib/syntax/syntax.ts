@@ -457,6 +457,11 @@ export function isHueInterpolationMethod(token: Token): boolean {
     return ['shorter', 'longer', 'increasing', 'decreasing'].includes((token as IdentToken).val);
 }
 
+export function isIdentColor(token: Token): boolean {
+
+    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.HEX, ColorKind.LIT].includes((token as ColorToken).kin) && isIdent((token as ColorToken).val);
+}
+
 export function isColor(token: Token): boolean {
 
     // console.error(JSON.stringify({token}, null, 1));
