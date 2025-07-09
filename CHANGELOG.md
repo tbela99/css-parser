@@ -3,7 +3,8 @@
 ## v1.1.0
 
 - [x] inline sourcemap
-- [ ] validation using mdn-data
+- [x] validation using mdn-data
+- [ ] prefix removal
 
 # v1.0.0
 

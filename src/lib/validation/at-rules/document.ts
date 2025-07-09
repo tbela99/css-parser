@@ -12,11 +12,10 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: 'expecting at-rule prelude',
-            tokens: []
+            error: 'expecting at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -30,11 +29,10 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: 'expecting at-rule prelude',
-            tokens
+            error: 'expecting at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -44,11 +42,10 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             };
         }
 
@@ -58,11 +55,10 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
-                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + (t[0] as FunctionToken).val,
-                tokens
+                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + (t[0] as FunctionToken).val
             }
         }
 
@@ -87,11 +83,10 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@document',
-                error: 'expecting string argument',
-                tokens
+                error: 'expecting string argument'
             }
         }
 
@@ -102,10 +97,9 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@document',
-        error: '',
-        tokens
+        error: ''
     }
 }

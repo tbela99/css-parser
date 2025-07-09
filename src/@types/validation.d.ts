@@ -38,7 +38,7 @@ export interface ValidationResult {
 export interface ValidationSyntaxResult extends ValidationResult {
 
     syntax: ValidationToken | string | null;
-    context: Context<Token>;
+    context: Context<Token> | Token[];
 }
 
 export interface Context<Type> {
@@ -57,7 +57,7 @@ export interface Context<Type> {
 
     slice<Type>(): Type[];
 
-    clone(): Context;
+    clone<Type>(): Context<Type>;
 
     done(): boolean;
 }

@@ -13,11 +13,10 @@ function validateAtRuleKeyframes(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting at-rule prelude',
-            tokens: []
+            error: 'expecting at-rule prelude'
         };
     }
     const tokens = atRule.tokens.slice();
@@ -26,22 +25,20 @@ function validateAtRuleKeyframes(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting at-rule prelude',
-            tokens
+            error: 'expecting at-rule prelude'
         };
     }
     if (![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting ident or string token',
-            tokens
+            error: 'expecting ident or string token'
         };
     }
     tokens.shift();
@@ -50,21 +47,19 @@ function validateAtRuleKeyframes(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: tokens[0],
             syntax: '@keyframes',
-            error: 'unexpected token',
-            tokens
+            error: 'unexpected token'
         };
     }
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@keyframes',
-        error: '',
-        tokens
+        error: ''
     };
 }
 

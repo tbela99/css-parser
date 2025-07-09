@@ -15,11 +15,10 @@ function validateAtRuleDocument(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: 'expecting at-rule prelude',
-            tokens: []
+            error: 'expecting at-rule prelude'
         };
     }
     const tokens = atRule.tokens.slice();
@@ -29,33 +28,30 @@ function validateAtRuleDocument(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: 'expecting at-rule prelude',
-            tokens
+            error: 'expecting at-rule prelude'
         };
     }
     for (const t of splitTokenList(tokens)) {
         if (t.length != 1) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             };
         }
         // @ts-ignore
         if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
-                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val,
-                tokens
+                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val
             };
         }
         if (t[0].typ == EnumToken.UrlFunctionTokenType) {
@@ -71,11 +67,10 @@ function validateAtRuleDocument(atRule, options, root) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@document',
-                error: 'expecting string argument',
-                tokens
+                error: 'expecting string argument'
             };
         }
         tokens.shift();
@@ -84,11 +79,10 @@ function validateAtRuleDocument(atRule, options, root) {
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@document',
-        error: '',
-        tokens
+        error: ''
     };
 }
 

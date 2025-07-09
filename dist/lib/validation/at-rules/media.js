@@ -15,7 +15,7 @@ function validateAtRuleMedia(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: null,
             error: '',
@@ -28,11 +28,10 @@ function validateAtRuleMedia(atRule, options, root) {
     if (slice.length == 0) {
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
@@ -43,21 +42,19 @@ function validateAtRuleMedia(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         };
     }
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 function validateAtRuleMediaQueryList(tokenList, atRule) {
@@ -76,11 +73,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             // @ts-ignore
             result = {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@media',
-                error: 'unexpected token',
-                tokens: []
+                error: 'unexpected token'
             };
             continue;
         }
@@ -94,11 +90,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 else {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expecting media feature or media condition',
-                        tokens: []
+                        error: 'expecting media feature or media condition'
                     };
                 }
                 if (result.valid == ValidationLevel.Drop) {
@@ -115,11 +110,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                     // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expected media query list',
-                        tokens: []
+                        error: 'expected media query list'
                     };
                     break;
                 }
@@ -128,11 +122,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected and/or',
-                    tokens: []
+                    error: 'expected and/or'
                 };
                 break;
             }
@@ -143,11 +136,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens: []
+                    error: 'mixing and/or not allowed at the same level'
                 };
                 break;
             }
@@ -157,11 +149,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected media-condition',
-                    tokens: []
+                    error: 'expected media-condition'
                 };
                 break;
             }
@@ -177,11 +168,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
     if (matched.length == 0) {
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected media query list',
-            tokens: []
+            error: 'expected media query list'
         };
     }
     tokenList.length = 0;
@@ -202,11 +192,10 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 function validateCustomMediaCondition(token, atRule) {

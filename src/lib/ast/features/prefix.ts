@@ -12,7 +12,7 @@ import {
     ValidationTokenEnum
 } from '../../validation/index.ts'
 import {walkValues} from "../walk.ts";
-import {webkitPseudoAliasMap} from "../../syntax";
+import {webkitPseudoAliasMap} from "../../syntax/index.ts";
 import {splitRule} from "../minify.ts";
 
 const config = getSyntaxConfig();

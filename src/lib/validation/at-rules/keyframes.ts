@@ -10,11 +10,10 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting at-rule prelude',
-            tokens: []
+            error: 'expecting at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -27,11 +26,10 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting at-rule prelude',
-            tokens
+            error: 'expecting at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -40,11 +38,10 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting ident or string token',
-            tokens
+            error: 'expecting ident or string token'
         } as ValidationSyntaxResult;
     }
 
@@ -56,21 +53,19 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: tokens[0],
             syntax: '@keyframes',
-            error: 'unexpected token',
-            tokens
+            error: 'unexpected token'
         }
     }
 
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@keyframes',
-        error: '',
-        tokens
+        error: ''
     }
 }

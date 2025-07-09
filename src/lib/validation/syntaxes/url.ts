@@ -11,12 +11,11 @@ export function validateURL(token: Token): ValidationSyntaxResult {
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: '',
-            tokens: []
+            error: ''
         }
     }
 
@@ -25,12 +24,11 @@ export function validateURL(token: Token): ValidationSyntaxResult {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'expected url()',
-            tokens: []
+            error: 'expected url()'
         }
     }
 
@@ -43,12 +41,11 @@ export function validateURL(token: Token): ValidationSyntaxResult {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: children[0] ?? token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'expected url-token',
-            tokens: children
+            error: 'expected url-token'
         }
     }
 
@@ -61,23 +58,21 @@ export function validateURL(token: Token): ValidationSyntaxResult {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: children[0] ?? token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'unexpected token',
-            tokens: children
+            error: 'unexpected token'
         }
     }
 
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: token,
         // @ts-ignore
         syntax: 'url()',
-        error: '',
-        tokens: []
+        error: ''
     }
 }

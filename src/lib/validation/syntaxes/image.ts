@@ -15,15 +15,14 @@ export function validateImage(token: Token): ValidationSyntaxResult {
 
     if (token.typ == EnumToken.ImageFunctionTokenType) {
 
-        return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (token as FunctionImageToken).val + '()') as ValidationToken[],createContext( (token as FunctionImageToken).chi));
+        return doEvaluateSyntax(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (token as FunctionImageToken).val + '()') as ValidationToken[],createContext( (token as FunctionImageToken).chi), {});
     }
 
     return {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         node: token,
         syntax: 'image()',
-        error: 'expected <image> or <url>',
-        tokens: []
+        error: 'expected <image> or <url>'
     }
 }

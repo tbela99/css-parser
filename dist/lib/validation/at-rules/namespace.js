@@ -14,22 +14,20 @@ function validateAtRuleNamespace(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'expected at-rule prelude',
-            tokens: []
+            error: 'expected at-rule prelude'
         };
     }
     if ('chi' in atRule) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'unexpected at-rule body',
-            tokens: []
+            error: 'unexpected at-rule body'
         };
     }
     const tokens = atRule.tokens.slice();
@@ -42,11 +40,10 @@ function validateAtRuleNamespace(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'expected string or url()',
-            tokens
+            error: 'expected string or url()'
         };
     }
     if (tokens[0].typ != EnumToken.StringTokenType) {
@@ -65,21 +62,19 @@ function validateAtRuleNamespace(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: tokens[0],
             syntax: '@namespace',
-            error: 'unexpected token',
-            tokens
+            error: 'unexpected token'
         };
     }
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@namespace',
-        error: '',
-        tokens
+        error: ''
     };
 }
 

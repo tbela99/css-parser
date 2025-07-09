@@ -12,22 +12,20 @@ function validateAtRulePageMarginBox(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected margin-box body',
-            tokens: []
+            error: 'expected margin-box body'
         };
     }
     for (const token of atRule.chi) {
@@ -35,22 +33,20 @@ function validateAtRulePageMarginBox(atRule, options, root) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: token,
                 syntax: 'declaration-list',
-                error: 'expected margin-box body',
-                tokens: []
+                error: 'expected margin-box body'
             };
         }
     }
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: null,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 

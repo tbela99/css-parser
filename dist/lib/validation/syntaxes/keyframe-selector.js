@@ -15,44 +15,40 @@ function validateKeyframeSelector(tokens, options) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: null,
             syntax: null,
-            error: 'expected keyframe selector',
-            tokens
+            error: 'expected keyframe selector'
         };
     }
     for (const t of splitTokenList(tokens)) {
         if (t.length != 1) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0] ?? null,
                 syntax: null,
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             };
         }
         if (t[0].typ != EnumToken.PercentageTokenType && !(t[0].typ == EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0],
                 syntax: null,
-                error: 'expected keyframe selector',
-                tokens
+                error: 'expected keyframe selector'
             };
         }
     }
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: null,
         // @ts-ignore
         syntax: null,
-        error: '',
-        tokens
+        error: ''
     };
 }
 

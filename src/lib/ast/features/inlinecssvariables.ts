@@ -16,7 +16,7 @@ import type {
 import {EnumToken} from "../types.ts";
 import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
-import {mathFuncs} from "../../syntax";
+import {mathFuncs} from "../../syntax/index.ts";
 import {splitRule} from "../minify.ts";
 
 function inlineExpression(token: Token): Token[] {

@@ -1,8 +1,8 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
-import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
+import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken} from "../lib/index.ts";
+import {EnumToken, ValidationToken} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 

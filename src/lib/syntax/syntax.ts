@@ -17,7 +17,7 @@ import type {
 } from "../../@types/index.d.ts";
 import {EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
 import {ColorKind, funcLike} from "../renderer/color/utils";
-import {buildExpression} from "../ast/math";
+import {buildExpression} from "../ast/math/index.ts";
 
 // '\\'
 const REVERSE_SOLIDUS = 0x5c;

@@ -12,11 +12,10 @@ export function validateAtRuleCustomMedia(atRule: AstAtRule, options: Validation
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: null,
-            error: '',
-            tokens: []
+            error: ''
         } as ValidationSyntaxResult;
     }
 
@@ -28,11 +27,10 @@ export function validateAtRuleCustomMedia(atRule: AstAtRule, options: Validation
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@custom-media',
-            error: 'expecting dashed identifier',
-            tokens: []
+            error: 'expecting dashed identifier'
         }
     }
 
@@ -46,11 +44,10 @@ export function validateAtRuleCustomMedia(atRule: AstAtRule, options: Validation
 
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@custom-media',
-            error: '',
-            tokens: []
+            error: ''
         }
     }
 

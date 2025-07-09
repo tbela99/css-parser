@@ -12,11 +12,10 @@ export function validateKeyframeSelector(tokens: Token[], options: ValidationOpt
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: null,
             syntax: null,
-            error: 'expected keyframe selector',
-            tokens
+            error: 'expected keyframe selector'
         }
     }
 
@@ -26,11 +25,10 @@ export function validateKeyframeSelector(tokens: Token[], options: ValidationOpt
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0] ?? null,
                 syntax: null,
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             }
         }
 
@@ -38,11 +36,10 @@ export function validateKeyframeSelector(tokens: Token[], options: ValidationOpt
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: t[0],
                 syntax: null,
-                error: 'expected keyframe selector',
-                tokens
+                error: 'expected keyframe selector'
             }
         }
     }
@@ -50,11 +47,10 @@ export function validateKeyframeSelector(tokens: Token[], options: ValidationOpt
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: null,
         // @ts-ignore
         syntax: null,
-        error: '',
-        tokens
+        error: ''
     }
 }

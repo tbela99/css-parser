@@ -15,11 +15,10 @@ function validateAtRuleCustomMedia(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: null,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     const queries = atRule.tokens.slice();
@@ -27,11 +26,10 @@ function validateAtRuleCustomMedia(atRule, options, root) {
     if (queries.length == 0 || queries[0].typ != EnumToken.DashedIdenTokenType) {
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@custom-media',
-            error: 'expecting dashed identifier',
-            tokens: []
+            error: 'expecting dashed identifier'
         };
     }
     queries.shift();
@@ -40,11 +38,10 @@ function validateAtRuleCustomMedia(atRule, options, root) {
         atRule.tokens = [];
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@custom-media',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     return result;

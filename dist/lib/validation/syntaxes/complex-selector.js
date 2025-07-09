@@ -21,12 +21,11 @@ function validateComplexSelector(tokens, root, options) {
     if (tokens.length == 0) {
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expected selector',
-            tokens
+            error: 'expected selector'
         };
     }
     // const config = getSyntaxConfig();
@@ -43,11 +42,10 @@ function validateComplexSelector(tokens, root, options) {
     // @ts-ignore
     return result ?? {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         node: root,
         syntax: null,
-        error: 'expecting compound-selector',
-        tokens
+        error: 'expecting compound-selector'
     };
 }
 

@@ -13,24 +13,22 @@ function validateURL(token) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     if (token.typ != EnumToken.UrlFunctionTokenType) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'expected url()',
-            tokens: []
+            error: 'expected url()'
         };
     }
     const children = token.chi.slice();
@@ -39,12 +37,11 @@ function validateURL(token) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: children[0] ?? token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'expected url-token',
-            tokens: children
+            error: 'expected url-token'
         };
     }
     children.shift();
@@ -53,23 +50,21 @@ function validateURL(token) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: children[0] ?? token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'unexpected token',
-            tokens: children
+            error: 'unexpected token'
         };
     }
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: token,
         // @ts-ignore
         syntax: 'url()',
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 

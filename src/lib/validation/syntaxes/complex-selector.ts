@@ -19,12 +19,11 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expected selector',
-            tokens
+            error: 'expected selector'
         }
     }
 
@@ -49,10 +48,9 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
     // @ts-ignore
     return result ?? {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         node: root,
         syntax: null,
-        error: 'expecting compound-selector',
-        tokens
+        error: 'expecting compound-selector'
     }
 }

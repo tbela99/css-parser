@@ -25,7 +25,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             // @ts-ignore
@@ -52,12 +52,11 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     // @ts-ignore
                     node: tokens[0],
                     syntax: null,
-                    error: 'nested selector not allowed',
-                    tokens
+                    error: 'nested selector not allowed'
                 }
             }
 
@@ -94,12 +93,11 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'unknown pseudo-class: ' + (tokens[0] as PseudoClassFunctionToken).val + '()',
-                        tokens
+                        error: 'unknown pseudo-class: ' + (tokens[0] as PseudoClassFunctionToken).val + '()'
                     }
                 }
             }
@@ -128,12 +126,11 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'unknown pseudo-class: ' + (tokens[0] as PseudoClassToken | PseudoElementToken).val,
-                        tokens
+                        error: 'unknown pseudo-class: ' + (tokens[0] as PseudoClassToken | PseudoElementToken).val
                     }
                 }
             }
@@ -154,11 +151,10 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: null,
-                    error: 'invalid attribute selector',
-                    tokens
+                    error: 'invalid attribute selector'
                 }
             }
 
@@ -171,11 +167,10 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: null,
-                    error: 'invalid attribute selector',
-                    tokens
+                    error: 'invalid attribute selector'
                 }
             }
 
@@ -185,11 +180,10 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid <attribute-selector>',
-                        tokens
+                        error: 'invalid <attribute-selector>'
                     }
                 }
 
@@ -210,11 +204,10 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid attribute selector',
-                        tokens
+                        error: 'invalid attribute selector'
                     }
                 }
 
@@ -223,11 +216,10 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid attribute selector',
-                        tokens
+                        error: 'invalid attribute selector'
                     }
                 }
             }
@@ -241,13 +233,12 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: tokens[0],
                 // @ts-ignore
                 syntax: null,
-                error: 'expected compound selector',
-                tokens
+                error: 'expected compound selector'
             }
         }
 
@@ -256,23 +247,21 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
     return match == 0 ? {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             // @ts-ignore
             syntax: null,
-            error: 'expected compound selector',
-            tokens
+            error: 'expected compound selector'
         } as ValidationSyntaxResult :
         // @ts-ignore
         {
             valid: ValidationLevel.Valid,
-            matches: [] as Token[],
+            context: [] as Token[],
             // @ts-ignore
             node: root as Token,
             // @ts-ignore
             syntax: null,
-            error: null,
-            tokens
+            error: null
         } as ValidationSyntaxResult
 }

@@ -12892,7 +12892,7 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: root,
                 // @ts-ignore
@@ -12912,12 +12912,11 @@
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'nested selector not allowed',
-                        tokens
+                        error: 'nested selector not allowed'
                     };
                 }
                 match++;
@@ -12945,12 +12944,11 @@
                         // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             // @ts-ignore
                             node: tokens[0],
                             syntax: null,
-                            error: 'unknown pseudo-class: ' + tokens[0].val + '()',
-                            tokens
+                            error: 'unknown pseudo-class: ' + tokens[0].val + '()'
                         };
                     }
                 }
@@ -12972,12 +12970,11 @@
                         // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             // @ts-ignore
                             node: tokens[0],
                             syntax: null,
-                            error: 'unknown pseudo-class: ' + tokens[0].val,
-                            tokens
+                            error: 'unknown pseudo-class: ' + tokens[0].val
                         };
                     }
                 }
@@ -12992,11 +12989,10 @@
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid attribute selector',
-                        tokens
+                        error: 'invalid attribute selector'
                     };
                 }
                 if (![
@@ -13007,22 +13003,20 @@
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid attribute selector',
-                        tokens
+                        error: 'invalid attribute selector'
                     };
                 }
                 if (children[0].typ == exports.EnumToken.MatchExpressionTokenType) {
                     if (children.length != 1) {
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0],
                             syntax: null,
-                            error: 'invalid <attribute-selector>',
-                            tokens
+                            error: 'invalid <attribute-selector>'
                         };
                     }
                     if (![
@@ -13041,22 +13035,20 @@
                         // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0],
                             syntax: null,
-                            error: 'invalid attribute selector',
-                            tokens
+                            error: 'invalid attribute selector'
                         };
                     }
                     if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
                         // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0],
                             syntax: null,
-                            error: 'invalid attribute selector',
-                            tokens
+                            error: 'invalid attribute selector'
                         };
                     }
                 }
@@ -13067,37 +13059,34 @@
             if (length == tokens.length) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     // @ts-ignore
                     node: tokens[0],
                     // @ts-ignore
                     syntax: null,
-                    error: 'expected compound selector',
-                    tokens
+                    error: 'expected compound selector'
                 };
             }
             length = tokens.length;
         }
         return match == 0 ? {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             // @ts-ignore
             syntax: null,
-            error: 'expected compound selector',
-            tokens
+            error: 'expected compound selector'
         } :
             // @ts-ignore
             {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: root,
                 // @ts-ignore
                 syntax: null,
-                error: null,
-                tokens
+                error: null
             };
     }
 
@@ -13112,12 +13101,11 @@
         if (tokens.length == 0) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: root,
                 syntax: null,
-                error: 'expected selector',
-                tokens
+                error: 'expected selector'
             };
         }
         // const config = getSyntaxConfig();
@@ -13134,11 +13122,10 @@
         // @ts-ignore
         return result ?? {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: root,
             syntax: null,
-            error: 'expecting compound-selector',
-            tokens
+            error: 'expecting compound-selector'
         };
     }
 
@@ -13220,12 +13207,11 @@
         if (tokens.length == 0) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: root,
                 syntax: null,
-                error: 'expecting complex selector list',
-                tokens
+                error: 'expecting complex selector list'
             };
         }
         let result = null;
@@ -13238,12 +13224,11 @@
         // @ts-ignore
         return result ?? {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expecting complex selector list',
-            tokens
+            error: 'expecting complex selector list'
         };
     }
 
@@ -13253,44 +13238,40 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: null,
-                error: 'expected keyframe selector',
-                tokens
+                error: 'expected keyframe selector'
             };
         }
         for (const t of splitTokenList(tokens)) {
             if (t.length != 1) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: t[0] ?? null,
                     syntax: null,
-                    error: 'unexpected token',
-                    tokens
+                    error: 'unexpected token'
                 };
             }
             if (t[0].typ != exports.EnumToken.PercentageTokenType && !(t[0].typ == exports.EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: t[0],
                     syntax: null,
-                    error: 'expected keyframe selector',
-                    tokens
+                    error: 'expected keyframe selector'
                 };
             }
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             // @ts-ignore
             syntax: null,
-            error: '',
-            tokens
+            error: ''
         };
     }
 
@@ -13420,46 +13401,8 @@
                     };
                 }
                 break;
-            case exports.EnumToken.RuleNodeType: {
-                let isNested = parent.typ == exports.EnumToken.RuleNodeType;
-                if (!isNested) {
-                    let pr = parent.parent;
-                    while (pr != null && !isNested) {
-                        isNested = pr.typ == exports.EnumToken.RuleNodeType;
-                        pr = pr.parent;
-                    }
-                }
-                ast = getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, isNested ? 'relative-selector-list' : 'selector-list');
-                return doEvaluateSyntax(ast, createContext(node.tokens), {
-                    ...options,
-                    visited: new WeakMap()
-                });
-            }
+            case exports.EnumToken.RuleNodeType:
             case exports.EnumToken.AtRuleNodeType:
-                {
-                    ast = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, '@' + node.nam);
-                    if (ast == null) {
-                        const success = options.lenient !== false;
-                        return {
-                            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
-                            node,
-                            syntax: null,
-                            error: success ? '' : `unknown atRule: @${node.nam}`,
-                            context: createContext([])
-                        };
-                    }
-                    let result;
-                    let v = ast[0];
-                    // @ts-ignore
-                    if (v.prelude != null) {
-                        result = doEvaluateSyntax(v.prelude, createContext(node.tokens), {
-                            ...options,
-                            visited: new WeakMap()
-                        });
-                        console.error({ result });
-                    }
-                }
-                break;
             case exports.EnumToken.KeyframeAtRuleNodeType:
             case exports.EnumToken.KeyFrameRuleNodeType:
             default:
@@ -13494,9 +13437,6 @@
         let i = 0;
         let result;
         let token = null;
-        //
-        // console.error(syntaxes, `>> s\n`, syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '>> '), '\n>> ', context.peek());
-        // console.error(new Error('blame'));
         for (; i < syntaxes.length; i++) {
             syntax = syntaxes[i];
             if (context.done()) {
@@ -13556,7 +13496,6 @@
         };
     }
     function matchAtLeastOnce(syntax, context, options) {
-        // const {atLeastOnce, ...s} = syntax;
         let success = false;
         let result;
         while (!context.done()) {
@@ -13577,7 +13516,6 @@
         };
     }
     function matchRepeatable(syntax, context, options) {
-        // const {isRepeatable, ...s} = syntax;
         let result;
         while (!context.done()) {
             result = match(syntax, context.clone(), { ...options, isRepeatable: false });
@@ -13596,8 +13534,6 @@
         };
     }
     function matchList(syntax, context, options) {
-        // syntax.occurence
-        // const {isList, occurence, ...s} = syntax;
         let success = false;
         let result;
         let count = 0;
@@ -13653,7 +13589,6 @@
     function matchOccurence(syntax, context, options) {
         let counter = 0;
         let result;
-        // const {occurence, ...s} = syntax;
         do {
             result = match(syntax, context.clone(), { ...options, occurence: false });
             if (result.valid == ValidationLevel.Drop) {
@@ -13688,20 +13623,10 @@
             case ValidationTokenEnum.AmpersandToken:
                 return allOf(flatten(syntax), context, options);
             case ValidationTokenEnum.ColumnToken: {
-                // let success: boolean = false;
                 let result = anyOf(flatten(syntax), context, options);
                 if (result.valid == ValidationLevel.Valid) {
                     return result;
-                    // success = true;
-                    // context.update(result.context as Context<Token>);
                 }
-                // result = anyOf(flatten(syntax as ValidationColumnToken), context, options);
-                //
-                // if (result.valid == ValidationLevel.Valid) {
-                //
-                //     success = true;
-                //     context.update(result.context as Context<Token>);
-                // }
                 return {
                     valid: ValidationLevel.Drop,
                     node: context.next(),
@@ -13744,14 +13669,6 @@
                         syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 ||
                         // config.declarations.all
                         allValues.includes(token.val.toLowerCase()));
-                // if (!success && token.typ == EnumToken.ColorTokenType) {
-                //
-                //     success = (token as ColorToken).val != null &&
-                //         (
-                //             (token.kin == ColorKind.SYS && systemColors.has((token as ColorToken).val.toLowerCase())) ||
-                //             (token.kin == ColorKind.DPSYS && deprecatedSystemColors.has((token as ColorToken).val.toLowerCase()))
-                //         );
-                // }
                 if (success) {
                     context.next();
                     return {
@@ -13870,7 +13787,7 @@
                     }
                     break;
                 }
-                throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)} : ${renderToken(context.peek())} : ${JSON.stringify(syntax, null, 1)} | ${JSON.stringify(context.peek(), null, 1)}`);
+            // throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)} : ${renderToken(context.peek() as Token)} : ${JSON.stringify(syntax, null, 1)} | ${JSON.stringify(context.peek(), null, 1)}`);
         }
         if (!success && token.typ == exports.EnumToken.IdenTokenType && allValues.includes(token.val.toLowerCase())) {
             success = true;
@@ -13890,7 +13807,6 @@
             'pseudo-class-selector', 'pseudo-element-selector'
         ].includes(syntax.val)) {
             if (syntax.val in config$2["syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */]) {
-                // console.error(`>> ${renderSyntax(syntax)}`);
                 return doEvaluateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val), context, {
                     ...options,
                     isRepeatable: null,
@@ -13921,10 +13837,6 @@
                     // @ts-ignore
                     (token.typ == exports.EnumToken.IdenTokenType && typeof Math[token.val.toUpperCase()] == 'number') ||
                     [exports.EnumToken.BinaryExpressionTokenType, exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.DimensionTokenType, exports.EnumToken.LengthTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.TimeTokenType, exports.EnumToken.ResolutionTokenType, exports.EnumToken.FrequencyTokenType].includes(token.typ);
-                // if (!success) {
-                //     console.error({syntax, token, success});
-                //     throw new Error(`Not implemented : ${JSON.stringify(syntax, null, 1)} : ${JSON.stringify(context.peek(), null, 1)}`);
-                // }
                 break;
             case 'declaration-value':
                 while (!context.done()) {
@@ -13935,10 +13847,6 @@
             case 'url-token':
                 success = token.typ == exports.EnumToken.UrlTokenTokenType || token.typ == exports.EnumToken.StringTokenType || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
                 break;
-            // case 'intrinsic-size-keyword':
-            //
-            //     success = token.typ == EnumToken.IdenTokenType && ['auto', 'min-content', 'max-content', 'fit-content'].includes((token as IdentToken).val);
-            //     break;
             case 'ident':
             case 'ident-token':
             case 'custom-ident':
@@ -14020,10 +13928,6 @@
             case 'time':
                 success = token.typ == exports.EnumToken.TimeTokenType || (token.typ == exports.EnumToken.FunctionTokenType && token.val == 'calc');
                 break;
-            // case 'url':
-            //
-            //     success = token.typ == EnumToken.UrlFunctionTokenType || token.typ == EnumToken.StringTokenType;
-            //     break;
             case 'zero':
                 success = token.val == '0' || (token.typ == exports.EnumToken.FunctionTokenType && token.val == 'calc');
                 break;
@@ -14045,8 +13949,9 @@
                     }
                 }
                 break;
-            default:
-                throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)}\n${JSON.stringify(syntax, null, 1)}`);
+            // default:
+            //
+            //     throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)}\n${JSON.stringify(syntax, null, 1)}`);
         }
         if (!success &&
             token.typ == exports.EnumToken.FunctionTokenType &&
@@ -14066,22 +13971,6 @@
         if (!success && token.typ == exports.EnumToken.IdenTokenType) {
             success = allValues.includes(token.val.toLowerCase());
         }
-        // if (!success && wildCardFuncs.includes((token as FunctionToken).val.toLowerCase())) {
-        //
-        //     const result: ValidationSyntaxResult = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, (token as FunctionToken).val)?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), {
-        //         ...options,
-        //         isRepeatable: null,
-        //         isList: null,
-        //         occurence: null,
-        //         atLeastOnce: null
-        //     } as ValidationOptions);
-        //
-        //     if (result.valid == ValidationLevel.Valid) {
-        //
-        //         context.next();
-        //     }
-        //     return {...result, context}
-        // }
         if (success) {
             context.next();
         }
@@ -14128,8 +14017,6 @@
         let i;
         let success = false;
         for (i = 0; i < syntaxes.length; i++) {
-            // console.error(syntaxes.reduce((acc, curr, index) => acc + (index > 0 ? ' <--> ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') , `>> `));
-            // console.error(syntaxes[i].reduce((acc, curr) => acc + renderSyntax(curr), `>> ${i} <--> `));
             result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
             if (result.valid == ValidationLevel.Valid) {
                 success = true;
@@ -14214,7 +14101,7 @@
                 data.push(stack[i]);
             }
         }
-        return data; //.sort((a, b) => b.length - a.length);
+        return data;
     }
 
     function validateURL(token) {
@@ -14222,24 +14109,22 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: token,
                 // @ts-ignore
                 syntax: 'url()',
-                error: '',
-                tokens: []
+                error: ''
             };
         }
         if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: token,
                 // @ts-ignore
                 syntax: 'url()',
-                error: 'expected url()',
-                tokens: []
+                error: 'expected url()'
             };
         }
         const children = token.chi.slice();
@@ -14248,12 +14133,11 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: children[0] ?? token,
                 // @ts-ignore
                 syntax: 'url()',
-                error: 'expected url-token',
-                tokens: children
+                error: 'expected url-token'
             };
         }
         children.shift();
@@ -14262,23 +14146,21 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: children[0] ?? token,
                 // @ts-ignore
                 syntax: 'url()',
-                error: 'unexpected token',
-                tokens: children
+                error: 'unexpected token'
             };
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
 
@@ -14318,7 +14200,7 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: null,
                 error: '',
@@ -14331,11 +14213,10 @@
         if (slice.length == 0) {
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@media',
-                error: '',
-                tokens: []
+                error: ''
             };
         }
         result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
@@ -14346,21 +14227,19 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@media',
-                error: 'expected at-rule body',
-                tokens: []
+                error: 'expected at-rule body'
             };
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     function validateAtRuleMediaQueryList(tokenList, atRule) {
@@ -14379,11 +14258,10 @@
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'unexpected token',
-                    tokens: []
+                    error: 'unexpected token'
                 };
                 continue;
             }
@@ -14397,11 +14275,10 @@
                     else {
                         result = {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0] ?? atRule,
                             syntax: '@media',
-                            error: 'expecting media feature or media condition',
-                            tokens: []
+                            error: 'expecting media feature or media condition'
                         };
                     }
                     if (result.valid == ValidationLevel.Drop) {
@@ -14418,11 +14295,10 @@
                         // @ts-ignore
                         result = {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0] ?? atRule,
                             syntax: '@media',
-                            error: 'expected media query list',
-                            tokens: []
+                            error: 'expected media query list'
                         };
                         break;
                     }
@@ -14431,11 +14307,10 @@
                     // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expected and/or',
-                        tokens: []
+                        error: 'expected and/or'
                     };
                     break;
                 }
@@ -14446,11 +14321,10 @@
                     // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'mixing and/or not allowed at the same level',
-                        tokens: []
+                        error: 'mixing and/or not allowed at the same level'
                     };
                     break;
                 }
@@ -14460,11 +14334,10 @@
                     // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expected media-condition',
-                        tokens: []
+                        error: 'expected media-condition'
                     };
                     break;
                 }
@@ -14480,11 +14353,10 @@
         if (matched.length == 0) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@media',
-                error: 'expected media query list',
-                tokens: []
+                error: 'expected media query list'
             };
         }
         tokenList.length = 0;
@@ -14505,11 +14377,10 @@
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     function validateCustomMediaCondition(token, atRule) {
@@ -14707,22 +14578,20 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
-                error: '',
-                tokens: []
+                error: ''
             };
         }
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected margin-box body',
-                tokens: []
+                error: 'expected margin-box body'
             };
         }
         for (const token of atRule.chi) {
@@ -14730,22 +14599,20 @@
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: token,
                     syntax: 'declaration-list',
-                    error: 'expected margin-box body',
-                    tokens: []
+                    error: 'expected margin-box body'
                 };
             }
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
 
@@ -14773,21 +14640,19 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected at-rule body',
-                tokens: []
+                error: 'expected at-rule body'
             };
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     function validateAtRuleSupportsConditions(atRule, tokenList) {
@@ -14797,7 +14662,7 @@
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
                     error: 'unexpected token',
@@ -14837,7 +14702,7 @@
                         //
                         //     return  {
                         //         valid: ValidationLevel.Drop,
-                        //         matches: [],
+                        //         context: [],
                         //         node: tokens[0] ?? atRule,
                         //         syntax: '@' + atRule.nam,
                         //         // @ts-ignore
@@ -14855,11 +14720,10 @@
                         // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0] ?? previousToken ?? atRule,
                             syntax: '@' + atRule.nam,
-                            error: 'expected whitespace',
-                            tokens: []
+                            error: 'expected whitespace'
                         };
                     }
                 }
@@ -14867,22 +14731,20 @@
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@' + atRule.nam,
-                        error: 'expected and/or',
-                        tokens: []
+                        error: 'expected and/or'
                     };
                 }
                 if (tokens.length == 1) {
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@' + atRule.nam,
-                        error: 'expected supports-condition',
-                        tokens: []
+                        error: 'expected supports-condition'
                     };
                 }
                 tokens.shift();
@@ -14890,40 +14752,26 @@
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@' + atRule.nam,
-                        error: 'expected whitespace',
-                        tokens: []
+                        error: 'expected whitespace'
                     };
                 }
             }
         }
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     function validateSupportCondition(atRule, token) {
         if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
             return validateSupportCondition(atRule, token.val);
         }
-        // if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && generalEnclosedFunc.includes((token as FunctionToken).val))) {
-        //
-        //     // @ts-ignore
-        //     return {
-        //         valid: ValidationLevel.Drop,
-        //         matches: [],
-        //         node: token,
-        //         syntax: '@' + atRule.nam,
-        //         error: 'expected supports condition-in-parens',
-        //         tokens: []
-        //     };
-        // }
         if (token.typ == exports.EnumToken.FunctionTokenType && token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
             return validateComplexSelector(parseSelector(token.chi));
         }
@@ -14935,11 +14783,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
-                error: '',
-                tokens: []
+                error: ''
             };
         }
         if (chi[0].typ == exports.EnumToken.MediaFeatureNotTokenType) {
@@ -14950,28 +14797,25 @@
             return chi[0].l.typ == exports.EnumToken.IdenTokenType && chi[0].op.typ == exports.EnumToken.ColonTokenType ?
                 {
                     valid: ValidationLevel.Valid,
-                    matches: [],
+                    context: [],
                     node: null,
                     syntax: 'supports-condition',
-                    error: '',
-                    tokens: []
+                    error: ''
                 } : {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: token,
                 syntax: 'supports-condition',
-                error: 'expected supports condition-in-parens',
-                tokens: []
+                error: 'expected supports condition-in-parens'
             };
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: token,
             syntax: 'supports-condition',
-            error: 'expected supports condition-in-parens',
-            tokens: []
+            error: 'expected supports condition-in-parens'
         };
     }
     function validateSupportFeature(token) {
@@ -14988,19 +14832,17 @@
                 return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                     {
                         valid: ValidationLevel.Valid,
-                        matches: [],
+                        context: [],
                         node: token,
                         syntax: 'font-tech',
-                        error: '',
-                        tokens: []
+                        error: ''
                     } :
                     {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: token,
                         syntax: 'font-tech',
-                        error: 'expected font-tech',
-                        tokens: []
+                        error: 'expected font-tech'
                     };
             }
             if (token.val.localeCompare('font-format', undefined, { sensitivity: 'base' }) == 0) {
@@ -15009,30 +14851,27 @@
                 return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                     {
                         valid: ValidationLevel.Valid,
-                        matches: [],
+                        context: [],
                         node: token,
                         syntax: 'font-format',
-                        error: '',
-                        tokens: []
+                        error: ''
                     } :
                     {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: token,
                         syntax: 'font-format',
-                        error: 'expected font-format',
-                        tokens: []
+                        error: 'expected font-format'
                     };
             }
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: token,
             syntax: '@supports',
-            error: 'expected feature',
-            tokens: []
+            error: 'expected feature'
         };
     }
 
@@ -15041,22 +14880,20 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
-                error: 'expected @import media query list',
-                tokens: []
+                error: 'expected @import media query list'
             };
         }
         if ('chi' in atRule) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
-                error: 'unexpected at-rule body',
-                tokens: []
+                error: 'unexpected at-rule body'
             };
         }
         const tokens = atRule.tokens.filter((t) => ![exports.EnumToken.CommentTokenType].includes(t.typ));
@@ -15064,11 +14901,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
-                error: 'expected @import media query list',
-                tokens: []
+                error: 'expected @import media query list'
             };
         }
         if (tokens[0].typ == exports.EnumToken.StringTokenType) {
@@ -15082,11 +14918,10 @@
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
-                    error: 'invalid url()',
-                    tokens
+                    error: 'invalid url()'
                 };
             }
             else {
@@ -15096,11 +14931,10 @@
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: '@' + atRule.nam,
-                        error: 'expecting whitespace',
-                        tokens
+                        error: 'expecting whitespace'
                     };
                 }
             }
@@ -15112,11 +14946,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'expecting url() or string',
-                tokens
+                error: 'expecting url() or string'
             };
         }
         if (tokens.length > 0) {
@@ -15130,11 +14963,10 @@
                         // @ts-ignore
                         return {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: tokens[0],
                             syntax: '@' + atRule.nam,
-                            error: 'expecting whitespace',
-                            tokens
+                            error: 'expecting whitespace'
                         };
                     }
                 }
@@ -15163,60 +14995,16 @@
                 }
             }
         }
-        // if (tokens.length > 0) {
-        //
-        //     // @ts-ignore
-        //     if (tokens[0].typ == EnumToken.AtRuleTokenType) {
-        //
-        //         if ((tokens[0] as AstAtRule).nam != 'supports') {
-        //
-        //             // @ts-ignore
-        //             return {
-        //                 valid: ValidationLevel.Drop,
-        //                 matches: [],
-        //                 node: tokens[0],
-        //                 syntax: '@' + atRule.nam,
-        //                 error: 'expecting @supports or media query list',
-        //                 tokens
-        //             }
-        //         }
-        //
-        //         // @ts-ignore
-        //         const result: ValidationSyntaxResult = validateAtRuleSupports(tokens[0] as AstAtRule, options, atRule);
-        //
-        //         if (result.valid == ValidationLevel.Drop) {
-        //
-        //             return result;
-        //         }
-        //
-        //         tokens.shift();
-        //
-        //         // @ts-ignore
-        //         if (!consumeWhitespace(tokens)) {
-        //
-        //             // @ts-ignore
-        //             return {
-        //                 valid: ValidationLevel.Drop,
-        //                 matches: [],
-        //                 node: tokens[0],
-        //                 syntax: '@' + atRule.nam,
-        //                 error: 'expecting whitespace',
-        //                 tokens
-        //             }
-        //         }
-        //     }
-        // }
         if (tokens.length > 0) {
             return validateAtRuleMediaQueryList(tokens, atRule);
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
 
@@ -15279,22 +15067,20 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@namespace',
-                error: 'expected at-rule prelude',
-                tokens: []
+                error: 'expected at-rule prelude'
             };
         }
         if ('chi' in atRule) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@namespace',
-                error: 'unexpected at-rule body',
-                tokens: []
+                error: 'unexpected at-rule body'
             };
         }
         const tokens = atRule.tokens.slice();
@@ -15307,11 +15093,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@namespace',
-                error: 'expected string or url()',
-                tokens
+                error: 'expected string or url()'
             };
         }
         if (tokens[0].typ != exports.EnumToken.StringTokenType) {
@@ -15330,21 +15115,19 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@namespace',
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             };
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: '',
-            tokens
+            error: ''
         };
     }
 
@@ -15353,11 +15136,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@document',
-                error: 'expecting at-rule prelude',
-                tokens: []
+                error: 'expecting at-rule prelude'
             };
         }
         const tokens = atRule.tokens.slice();
@@ -15367,33 +15149,30 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@document',
-                error: 'expecting at-rule prelude',
-                tokens
+                error: 'expecting at-rule prelude'
             };
         }
         for (const t of splitTokenList(tokens)) {
             if (t.length != 1) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: t[0] ?? atRule,
                     syntax: '@document',
-                    error: 'unexpected token',
-                    tokens
+                    error: 'unexpected token'
                 };
             }
             // @ts-ignore
             if ((t[0].typ != exports.EnumToken.FunctionTokenType && t[0].typ != exports.EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: t[0] ?? atRule,
                     syntax: '@document',
-                    error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val,
-                    tokens
+                    error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val
                 };
             }
             if (t[0].typ == exports.EnumToken.UrlFunctionTokenType) {
@@ -15409,11 +15188,10 @@
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: '@document',
-                    error: 'expecting string argument',
-                    tokens
+                    error: 'expecting string argument'
                 };
             }
             tokens.shift();
@@ -15422,11 +15200,10 @@
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: '',
-            tokens
+            error: ''
         };
     }
 
@@ -15435,11 +15212,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@keyframes',
-                error: 'expecting at-rule prelude',
-                tokens: []
+                error: 'expecting at-rule prelude'
             };
         }
         const tokens = atRule.tokens.slice();
@@ -15448,22 +15224,20 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@keyframes',
-                error: 'expecting at-rule prelude',
-                tokens
+                error: 'expecting at-rule prelude'
             };
         }
         if (![exports.EnumToken.StringTokenType, exports.EnumToken.IdenTokenType].includes(tokens[0].typ)) {
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@keyframes',
-                error: 'expecting ident or string token',
-                tokens
+                error: 'expecting ident or string token'
             };
         }
         tokens.shift();
@@ -15472,21 +15246,19 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@keyframes',
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             };
         }
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: '',
-            tokens
+            error: ''
         };
     }
 
@@ -15497,7 +15269,7 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@when',
                 error: '',
@@ -15512,7 +15284,7 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@when',
                 error: 'expected at-rule body',
@@ -15521,11 +15293,10 @@
         }
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@when',
-            error: '',
-            tokens: result.tokens
+            error: ''
         };
     }
     // media() = media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )
@@ -15544,7 +15315,7 @@
                 if (split[0].typ != exports.EnumToken.FunctionTokenType || !generalEnclosedFunc.includes(split[0].val)) {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: '@when',
                         error: 'unexpected token',
@@ -15559,11 +15330,10 @@
                     if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
                         result = {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: split[0] ?? atRule,
                             syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                            error: 'unexpected token',
-                            tokens: []
+                            error: 'unexpected token'
                         };
                         break;
                     }
@@ -15573,11 +15343,10 @@
                     if (!validateSupportCondition(atRule, split[0])) {
                         result = {
                             valid: ValidationLevel.Drop,
-                            matches: [],
+                            context: [],
                             node: split[0] ?? atRule,
                             syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                            error: 'unexpected token',
-                            tokens: []
+                            error: 'unexpected token'
                         };
                         break;
                     }
@@ -15593,7 +15362,7 @@
                 if (![exports.EnumToken.MediaFeatureAndTokenType, exports.EnumToken.MediaFeatureOrTokenType].includes(split[0].typ)) {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: '@when',
                         error: 'expecting and/or media-condition',
@@ -15609,7 +15378,7 @@
                 if (split.length == 0) {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: '@when',
                         error: 'expecting media-condition',
@@ -15628,12 +15397,11 @@
         if (matched.length == 0) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: result?.node ?? atRule,
                 syntax: '@when',
-                error: 'invalid at-rule body',
-                tokens: []
+                error: 'invalid at-rule body'
             };
         }
         tokenList.length = 0;
@@ -15647,11 +15415,10 @@
         }
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@when',
-            error: '',
-            tokens: tokenList
+            error: ''
         };
     }
 
@@ -15664,11 +15431,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected supports query list',
-                tokens: []
+                error: 'expected supports query list'
             };
         }
         const result = validateAtRuleContainerQueryList(atRule.tokens, atRule);
@@ -15679,20 +15445,18 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected at-rule body',
-                tokens: []
+                error: 'expected at-rule body'
             };
         }
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
             error: '',
-            tokens: []
         };
     }
     function validateAtRuleContainerQueryList(tokens, atRule) {
@@ -15700,11 +15464,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query list',
-                tokens
+                error: 'expected container query list'
             };
         }
         let result = null;
@@ -15714,11 +15477,10 @@
             if (queries.length == 0) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query list',
-                    tokens
+                    error: 'expected container query list'
                 };
             }
             result = null;
@@ -15729,11 +15491,10 @@
                 if (queries.length == 0) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: atRule,
                         syntax: '@' + atRule.nam,
-                        error: 'expected container query list',
-                        tokens
+                        error: 'expected container query list'
                     };
                 }
                 if (queries[0].typ == exports.EnumToken.IdenTokenType) {
@@ -15750,11 +15511,10 @@
                 if (token?.typ != exports.EnumToken.ParensTokenType && (token?.typ != exports.EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
-                        error: 'expected container query-in-parens',
-                        tokens
+                        error: 'expected container query-in-parens'
                     };
                 }
                 if (token?.typ == exports.EnumToken.ParensTokenType) {
@@ -15778,11 +15538,10 @@
                 if (token?.typ != exports.EnumToken.MediaFeatureAndTokenType && token?.typ != exports.EnumToken.MediaFeatureOrTokenType) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
-                        error: 'expecting and/or container query token',
-                        tokens
+                        error: 'expecting and/or container query token'
                     };
                 }
                 if (tokenType == null) {
@@ -15791,11 +15550,10 @@
                 if (tokenType == null || tokenType != token?.typ) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
-                        error: 'mixing and/or not allowed at the same level',
-                        tokens
+                        error: 'mixing and/or not allowed at the same level'
                     };
                 }
                 queries.shift();
@@ -15803,22 +15561,20 @@
                 if (queries.length == 0) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
-                        error: 'expected container query-in-parens',
-                        tokens
+                        error: 'expected container query-in-parens'
                     };
                 }
             }
         }
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens
+            error: ''
         };
     }
     function validateContainerStyleFeature(tokens, atRule) {
@@ -15832,21 +15588,19 @@
                 (tokens[0].typ == exports.EnumToken.MediaQueryConditionTokenType && tokens[0].op.typ == exports.EnumToken.ColonTokenType)) {
                 return {
                     valid: ValidationLevel.Valid,
-                    matches: [],
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: '',
-                    tokens
+                    error: ''
                 };
             }
         }
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query features',
-            tokens
+            error: 'expected container query features'
         };
     }
     function validateContainerSizeFeature(tokens, atRule) {
@@ -15855,11 +15609,10 @@
         if (tokens.length == 0) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query features',
-                tokens
+                error: 'expected container query features'
             };
         }
         if (tokens.length == 1) {
@@ -15873,20 +15626,18 @@
             if (![exports.EnumToken.DashedIdenTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(tokens[0].typ)) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query features',
-                    tokens
+                    error: 'expected container query features'
                 };
             }
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: '',
-                tokens
+                error: ''
             };
         }
         return validateAtRuleContainerQueryStyleInParams(tokens, atRule);
@@ -15897,11 +15648,10 @@
         if (tokens.length == 0) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query features',
-                tokens
+                error: 'expected container query features'
             };
         }
         let token = tokens[0];
@@ -15915,11 +15665,10 @@
             if (tokens[0].typ != exports.EnumToken.ParensTokenType) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query-in-parens',
-                    tokens
+                    error: 'expected container query-in-parens'
                 };
             }
             const slices = tokens[0].chi.slice();
@@ -15934,11 +15683,10 @@
                 else if (![exports.EnumToken.DashedIdenTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(slices[0].typ)) {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: atRule,
                         syntax: '@' + atRule.nam,
-                        error: 'expected container query features',
-                        tokens
+                        error: 'expected container query features'
                     };
                 }
             }
@@ -15956,11 +15704,10 @@
             if (![exports.EnumToken.MediaFeatureAndTokenType, exports.EnumToken.MediaFeatureOrTokenType].includes(tokens[0].typ)) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expecting and/or container query token',
-                    tokens
+                    error: 'expecting and/or container query token'
                 };
             }
             if (tokenType == null) {
@@ -15969,11 +15716,10 @@
             if (tokenType != tokens[0].typ) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens
+                    error: 'mixing and/or not allowed at the same level'
                 };
             }
             tokens.shift();
@@ -15981,21 +15727,19 @@
             if (tokens.length == 0) {
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query-in-parens',
-                    tokens
+                    error: 'expected container query-in-parens'
                 };
             }
         }
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens
+            error: ''
         };
     }
 
@@ -16005,11 +15749,10 @@
             // @ts-ignore
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: null,
                 syntax: null,
-                error: '',
-                tokens: []
+                error: ''
             };
         }
         const queries = atRule.tokens.slice();
@@ -16017,11 +15760,10 @@
         if (queries.length == 0 || queries[0].typ != exports.EnumToken.DashedIdenTokenType) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@custom-media',
-                error: 'expecting dashed identifier',
-                tokens: []
+                error: 'expecting dashed identifier'
             };
         }
         queries.shift();
@@ -16030,11 +15772,10 @@
             atRule.tokens = [];
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@custom-media',
-                error: '',
-                tokens: []
+                error: ''
             };
         }
         return result;
@@ -16959,7 +16700,7 @@
                     // console.error(doRender(result), result.val, location);
                     if (options.validation) {
                         // @ts-ignore
-                        const valid = evaluateSyntax(result, options, context);
+                        const valid = evaluateSyntax(result, options);
                         // console.error(valid);
                         if (valid.valid == ValidationLevel.Drop) {
                             // console.error(doRender(result), result.val, location);

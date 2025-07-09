@@ -22,11 +22,10 @@ export function validateAtRuleContainer(atRule: AstAtRule, options: ValidationOp
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected supports query list',
-            tokens: []
+            error: 'expected supports query list'
         } as ValidationSyntaxResult;
     }
 
@@ -42,21 +41,19 @@ export function validateAtRuleContainer(atRule: AstAtRule, options: ValidationOp
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         } as ValidationSyntaxResult;
     }
 
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
         error: '',
-        tokens: []
     } as ValidationSyntaxResult;
 }
 
@@ -67,11 +64,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query list',
-            tokens
+            error: 'expected container query list'
         } as ValidationSyntaxResult;
     }
 
@@ -86,11 +82,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query list',
-                tokens
+                error: 'expected container query list'
             }
         }
 
@@ -106,11 +101,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query list',
-                    tokens
+                    error: 'expected container query list'
                 }
             }
 
@@ -136,11 +130,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query-in-parens',
-                    tokens
+                    error: 'expected container query-in-parens'
                 }
             }
 
@@ -174,11 +167,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expecting and/or container query token',
-                    tokens
+                    error: 'expecting and/or container query token'
                 }
             }
 
@@ -191,11 +183,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens
+                    error: 'mixing and/or not allowed at the same level'
                 }
             }
 
@@ -206,11 +197,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query-in-parens',
-                    tokens
+                    error: 'expected container query-in-parens'
                 }
             }
         }
@@ -218,11 +208,10 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens
+        error: ''
     }
 }
 
@@ -244,22 +233,20 @@ function validateContainerStyleFeature(tokens: Token[], atRule: AstAtRule): Vali
 
             return {
                 valid: ValidationLevel.Valid,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: '',
-                tokens
+                error: ''
             }
         }
     }
 
     return {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: 'expected container query features',
-        tokens
+        error: 'expected container query features'
     }
 }
 
@@ -272,11 +259,10 @@ function validateContainerSizeFeature(tokens: Token[], atRule: AstAtRule): Valid
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query features',
-            tokens
+            error: 'expected container query features'
         }
     }
 
@@ -298,21 +284,19 @@ function validateContainerSizeFeature(tokens: Token[], atRule: AstAtRule): Valid
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query features',
-                tokens
+                error: 'expected container query features'
             }
         }
 
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens
+            error: ''
         }
     }
 
@@ -328,11 +312,10 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query features',
-            tokens
+            error: 'expected container query features'
         }
     }
 
@@ -353,11 +336,10 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query-in-parens',
-                tokens
+                error: 'expected container query-in-parens'
             }
         }
 
@@ -379,11 +361,10 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query features',
-                    tokens
+                    error: 'expected container query features'
                 }
             }
         } else {
@@ -408,11 +389,10 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'expecting and/or container query token',
-                tokens
+                error: 'expecting and/or container query token'
             }
         }
 
@@ -425,11 +405,10 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'mixing and/or not allowed at the same level',
-                tokens
+                error: 'mixing and/or not allowed at the same level'
             }
         }
 
@@ -440,21 +419,19 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'expected container query-in-parens',
-                tokens
+                error: 'expected container query-in-parens'
             }
         }
     }
 
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens
+        error: ''
     }
 }

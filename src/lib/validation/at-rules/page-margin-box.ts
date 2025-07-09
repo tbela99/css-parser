@@ -10,11 +10,10 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         } as ValidationSyntaxResult;
     }
 
@@ -23,11 +22,10 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected margin-box body',
-            tokens: []
+            error: 'expected margin-box body'
         } as ValidationSyntaxResult;
     }
 
@@ -38,11 +36,10 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
             // @ts-ignore
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: token,
                 syntax: 'declaration-list',
-                error: 'expected margin-box body',
-                tokens: []
+                error: 'expected margin-box body'
             } as ValidationSyntaxResult;
         }
     }
@@ -50,10 +47,9 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: null,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     } as ValidationSyntaxResult;
 }

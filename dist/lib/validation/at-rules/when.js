@@ -18,7 +18,7 @@ function validateAtRuleWhen(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@when',
             error: '',
@@ -33,7 +33,7 @@ function validateAtRuleWhen(atRule, options, root) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@when',
             error: 'expected at-rule body',
@@ -42,11 +42,10 @@ function validateAtRuleWhen(atRule, options, root) {
     }
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: result.tokens
+        error: ''
     };
 }
 // media() = media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )
@@ -65,7 +64,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             if (split[0].typ != EnumToken.FunctionTokenType || !generalEnclosedFunc.includes(split[0].val)) {
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'unexpected token',
@@ -80,11 +79,10 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                 if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     };
                     break;
                 }
@@ -94,11 +92,10 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                 if (!validateSupportCondition(atRule, split[0])) {
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     };
                     break;
                 }
@@ -114,7 +111,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             if (![EnumToken.MediaFeatureAndTokenType, EnumToken.MediaFeatureOrTokenType].includes(split[0].typ)) {
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting and/or media-condition',
@@ -130,7 +127,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             if (split.length == 0) {
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting media-condition',
@@ -149,12 +146,11 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
     if (matched.length == 0) {
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: result?.node ?? atRule,
             syntax: '@when',
-            error: 'invalid at-rule body',
-            tokens: []
+            error: 'invalid at-rule body'
         };
     }
     tokenList.length = 0;
@@ -168,11 +164,10 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
     }
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: tokenList
+        error: ''
     };
 }
 

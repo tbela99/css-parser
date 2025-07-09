@@ -12,11 +12,10 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'expected at-rule prelude',
-            tokens: []
+            error: 'expected at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -25,11 +24,10 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'unexpected at-rule body',
-            tokens: []
+            error: 'unexpected at-rule body'
         } as ValidationSyntaxResult;
     }
 
@@ -48,11 +46,10 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'expected string or url()',
-            tokens
+            error: 'expected string or url()'
         } as ValidationSyntaxResult;
     }
 
@@ -78,21 +75,19 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: tokens[0],
             syntax: '@namespace',
-            error: 'unexpected token',
-            tokens
+            error: 'unexpected token'
         } as ValidationSyntaxResult;
     }
 
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@namespace',
-        error: '',
-        tokens
+        error: ''
     }
 }

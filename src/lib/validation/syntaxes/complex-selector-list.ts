@@ -15,12 +15,11 @@ export function validateComplexSelectorList(tokens: Token[], root?: AstAtRule | 
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expecting complex selector list',
-            tokens
+            error: 'expecting complex selector list'
         }
     }
 
@@ -39,11 +38,10 @@ export function validateComplexSelectorList(tokens: Token[], root?: AstAtRule | 
     // @ts-ignore
     return result ?? {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         // @ts-ignore
         node: root,
         syntax: null,
-        error: 'expecting complex selector list',
-        tokens
+        error: 'expecting complex selector list'
     };
 }

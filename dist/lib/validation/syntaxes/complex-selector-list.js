@@ -16,12 +16,11 @@ function validateComplexSelectorList(tokens, root, options) {
     if (tokens.length == 0) {
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expecting complex selector list',
-            tokens
+            error: 'expecting complex selector list'
         };
     }
     let result = null;
@@ -34,12 +33,11 @@ function validateComplexSelectorList(tokens, root, options) {
     // @ts-ignore
     return result ?? {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         // @ts-ignore
         node: root,
         syntax: null,
-        error: 'expecting complex selector list',
-        tokens
+        error: 'expecting complex selector list'
     };
 }
 

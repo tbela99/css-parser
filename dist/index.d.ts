@@ -135,9 +135,9 @@ declare enum EnumToken {
  * @param nestingContent
  * @param context
  */
-declare function minify(ast: AstNode$1, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
     [key: string]: any;
-}): AstNode$1;
+}): AstNode;
 
 declare enum WalkerOptionEnum {
     Ignore = 0,
@@ -154,7 +154,7 @@ declare enum WalkerValueEvent {
  * @param node
  * @param filter
  */
-declare function walk(node: AstNode$1, filter?: WalkerFilter): Generator<WalkResult>;
+declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
 /**
  * walk ast values
  * @param values
@@ -162,7 +162,7 @@ declare function walk(node: AstNode$1, filter?: WalkerFilter): Generator<WalkRes
  * @param filter
  * @param reverse
  */
-declare function walkValues(values: Token[], root?: AstNode$1 | Token | null, filter?: WalkerValueFilter | {
+declare function walkValues(values: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | {
     event?: WalkerValueEvent;
     fn?: WalkerValueFilter;
     type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
@@ -172,7 +172,7 @@ declare function walkValues(values: Token[], root?: AstNode$1 | Token | null, fi
  * expand nested css ast
  * @param ast
  */
-declare function expand(ast: AstNode$1): AstNode$1;
+declare function expand(ast: AstNode): AstNode;
 
 /**
  * render ast token
@@ -858,6 +858,69 @@ export declare type Token =
     | AttrToken
     | EOFToken;
 
+declare enum ValidationTokenEnum {
+    Root = 0,
+    Keyword = 1,
+    PropertyType = 2,
+    DeclarationType = 3,
+    AtRule = 4,
+    ValidationFunctionDefinition = 5,
+    OpenBracket = 6,
+    CloseBracket = 7,
+    OpenParenthesis = 8,
+    CloseParenthesis = 9,
+    Comma = 10,
+    Pipe = 11,
+    Column = 12,
+    Star = 13,
+    OpenCurlyBrace = 14,
+    CloseCurlyBrace = 15,
+    HashMark = 16,
+    QuestionMark = 17,
+    Function = 18,
+    Number = 19,
+    Whitespace = 20,
+    Parenthesis = 21,
+    Bracket = 22,
+    Block = 23,
+    AtLeastOnce = 24,
+    Separator = 25,
+    Exclamation = 26,
+    Ampersand = 27,
+    PipeToken = 28,
+    ColumnToken = 29,
+    AmpersandToken = 30,
+    Parens = 31,
+    PseudoClassToken = 32,
+    PseudoClassFunctionToken = 33,
+    StringToken = 34,
+    AtRuleDefinition = 35,
+    DeclarationNameToken = 36,
+    DeclarationDefinitionToken = 37,
+    SemiColon = 38,
+    Character = 39,
+    InfinityToken = 40
+}
+interface Position$1 {
+    ind: number;
+    lin: number;
+    col: number;
+}
+interface ValidationToken {
+    typ: ValidationTokenEnum;
+    pos: Position$1;
+    isList?: boolean;
+    text?: string;
+    isRepeatable?: boolean;
+    atLeastOnce?: boolean;
+    isOptional?: boolean;
+    isRepeatableGroup?: boolean;
+    occurence?: {
+        min: number;
+        max: number | null;
+    };
+}
+
 export declare interface Position {
 
     ind: number;
@@ -906,13 +969,13 @@ export declare interface AstInvalidRule extends BaseToken {
 
     typ: EnumToken.InvalidRuleTokenType;
     sel: string;
-    chi: Array<AstNode$1>;
+    chi: Array<AstNode>;
 }
 
 export declare interface AstInvalidDeclaration extends BaseToken {
 
     typ: EnumToken.InvalidDeclarationNodeType;
-    val: Array<AstNode$1>;
+    val: Array<AstNode>;
 }
 
 export declare interface AstKeyFrameRule extends BaseToken {
@@ -970,7 +1033,7 @@ export declare interface AstRuleStyleSheet extends AstRuleList {
     chi: Array<AstRuleList | AstComment>
 }
 
-export declare type AstNode$1 =
+export declare type AstNode =
     AstRuleStyleSheet
     | AstRuleList
     | AstComment
@@ -1037,7 +1100,7 @@ export declare type WalkerOption = WalkerOptionEnum | Token | null;
  * - WalkerOptionEnum.Children: walk the children and ignore the node itself
  * - WalkerOptionEnum.IgnoreChildren: walk the node and ignore children
  */
-export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
+export declare type WalkerFilter = (node: AstNode) => WalkerOption;
 
 /**
  * returned value:
@@ -1046,19 +1109,19 @@ export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
  * - 'children': walk the children and ignore the node itself
  * - 'ignore-children': walk the node and ignore children
  */
-export declare type WalkerValueFilter = (node: AstNode$1 | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
+export declare type WalkerValueFilter = (node: AstNode | Token, parent?: FunctionToken | ParensToken | BinaryExpressionToken, event?: WalkerValueEvent) => WalkerOption | null;
 
 export declare interface WalkResult {
-    node: AstNode$1;
+    node: AstNode;
     parent?: AstRuleList;
-    root?: AstNode$1;
+    root?: AstNode;
 }
 
 export declare interface WalkAttributesResult {
     value: Token;
     previousValue: Token | null;
     nextValue: Token | null;
-    root?: AstNode$1;
+    root?: AstNode;
     parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
     list: Token[] | null;
 }
@@ -1256,7 +1319,7 @@ declare function load(url: string, currentFile?: string): Promise<string>;
 /**
  * render ast node
  */
-declare function render(data: AstNode$1, options?: RenderOptions): RenderResult;
+declare function render(data: AstNode, options?: RenderOptions): RenderResult;
 /**
  * parse css
  */

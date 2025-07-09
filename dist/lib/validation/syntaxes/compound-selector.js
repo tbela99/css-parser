@@ -15,7 +15,7 @@ function validateCompoundSelector(tokens, root, options) {
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             // @ts-ignore
@@ -35,12 +35,11 @@ function validateCompoundSelector(tokens, root, options) {
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     // @ts-ignore
                     node: tokens[0],
                     syntax: null,
-                    error: 'nested selector not allowed',
-                    tokens
+                    error: 'nested selector not allowed'
                 };
             }
             match++;
@@ -68,12 +67,11 @@ function validateCompoundSelector(tokens, root, options) {
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'unknown pseudo-class: ' + tokens[0].val + '()',
-                        tokens
+                        error: 'unknown pseudo-class: ' + tokens[0].val + '()'
                     };
                 }
             }
@@ -95,12 +93,11 @@ function validateCompoundSelector(tokens, root, options) {
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         // @ts-ignore
                         node: tokens[0],
                         syntax: null,
-                        error: 'unknown pseudo-class: ' + tokens[0].val,
-                        tokens
+                        error: 'unknown pseudo-class: ' + tokens[0].val
                     };
                 }
             }
@@ -115,11 +112,10 @@ function validateCompoundSelector(tokens, root, options) {
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: null,
-                    error: 'invalid attribute selector',
-                    tokens
+                    error: 'invalid attribute selector'
                 };
             }
             if (![
@@ -130,22 +126,20 @@ function validateCompoundSelector(tokens, root, options) {
                 // @ts-ignore
                 return {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0],
                     syntax: null,
-                    error: 'invalid attribute selector',
-                    tokens
+                    error: 'invalid attribute selector'
                 };
             }
             if (children[0].typ == EnumToken.MatchExpressionTokenType) {
                 if (children.length != 1) {
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid <attribute-selector>',
-                        tokens
+                        error: 'invalid <attribute-selector>'
                     };
                 }
                 if (![
@@ -164,22 +158,20 @@ function validateCompoundSelector(tokens, root, options) {
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid attribute selector',
-                        tokens
+                        error: 'invalid attribute selector'
                     };
                 }
                 if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
                     // @ts-ignore
                     return {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0],
                         syntax: null,
-                        error: 'invalid attribute selector',
-                        tokens
+                        error: 'invalid attribute selector'
                     };
                 }
             }
@@ -190,37 +182,34 @@ function validateCompoundSelector(tokens, root, options) {
         if (length == tokens.length) {
             return {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 // @ts-ignore
                 node: tokens[0],
                 // @ts-ignore
                 syntax: null,
-                error: 'expected compound selector',
-                tokens
+                error: 'expected compound selector'
             };
         }
         length = tokens.length;
     }
     return match == 0 ? {
         valid: ValidationLevel.Drop,
-        matches: [],
+        context: [],
         // @ts-ignore
         node: root,
         // @ts-ignore
         syntax: null,
-        error: 'expected compound selector',
-        tokens
+        error: 'expected compound selector'
     } :
         // @ts-ignore
         {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: root,
             // @ts-ignore
             syntax: null,
-            error: null,
-            tokens
+            error: null
         };
 }
 

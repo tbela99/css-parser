@@ -780,7 +780,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 // console.error(doRender(result), result.val, location);
                 if (options.validation) {
                     // @ts-ignore
-                    const valid = evaluateSyntax(result, options, context);
+                    const valid = evaluateSyntax(result, options);
                     // console.error(valid);
                     if (valid.valid == ValidationLevel.Drop) {
                         // console.error(doRender(result), result.val, location);

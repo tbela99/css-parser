@@ -17,7 +17,7 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@when',
             error: '',
@@ -37,7 +37,7 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@when',
             error: 'expected at-rule body',
@@ -47,11 +47,10 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
 
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: result.tokens
+        error: ''
     }
 }
 
@@ -81,7 +80,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'unexpected token',
@@ -102,11 +101,10 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     }
 
                     break;
@@ -119,11 +117,10 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     }
 
                     break;
@@ -147,7 +144,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting and/or media-condition',
@@ -170,7 +167,7 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting media-condition',
@@ -196,12 +193,11 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             // @ts-ignore
             node: result?.node ?? atRule,
             syntax: '@when',
-            error: 'invalid at-rule body',
-            tokens: []
+            error: 'invalid at-rule body'
         }
     }
 
@@ -221,10 +217,9 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: tokenList
+        error: ''
     }
 }

@@ -111,8 +111,8 @@ import type {ValidationResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
 import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
 import {evaluateSyntax} from "../validation/syntax.ts";
-import {splitTokenList} from "../validation/utils";
-import {buildExpression} from "../ast/math";
+import {splitTokenList} from "../validation/utils/index.ts";
+import {buildExpression} from "../ast/math/index.ts";
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];

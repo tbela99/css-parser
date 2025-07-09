@@ -22,7 +22,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
         // @ts-ignore
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: null,
             syntax: null,
             error: '',
@@ -40,11 +40,10 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
         return {
             valid: ValidationLevel.Valid,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: '',
-            tokens: []
+            error: ''
         }
     }
 
@@ -60,22 +59,20 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
         // @ts-ignore
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         }
     }
 
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     }
 }
 
@@ -101,11 +98,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
             // @ts-ignore
             result = {
                 valid: ValidationLevel.Drop,
-                matches: [],
+                context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@media',
-                error: 'unexpected token',
-                tokens: []
+                error: 'unexpected token'
             } as ValidationSyntaxResult;
             continue;
         }
@@ -124,11 +120,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expecting media feature or media condition',
-                        tokens: []
+                        error: 'expecting media feature or media condition'
                     }
                 }
 
@@ -154,11 +149,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                     // @ts-ignore
                     result = {
                         valid: ValidationLevel.Drop,
-                        matches: [],
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expected media query list',
-                        tokens: []
+                        error: 'expected media query list'
                     }
 
                     break;
@@ -168,11 +162,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected and/or',
-                    tokens: []
+                    error: 'expected and/or'
                 }
 
                 break;
@@ -188,11 +181,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens: []
+                    error: 'mixing and/or not allowed at the same level'
                 }
 
                 break;
@@ -207,11 +199,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                 // @ts-ignore
                 result = {
                     valid: ValidationLevel.Drop,
-                    matches: [],
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected media-condition',
-                    tokens: []
+                    error: 'expected media-condition'
                 }
 
                 break;
@@ -235,11 +226,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
         return {
             valid: ValidationLevel.Drop,
-            matches: [],
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected media query list',
-            tokens: []
+            error: 'expected media query list'
         };
     }
 
@@ -271,11 +261,10 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
     // @ts-ignore
     return {
         valid: ValidationLevel.Valid,
-        matches: [],
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     }
 }
 
