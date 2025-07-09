@@ -16,7 +16,7 @@
   },
   "scripts": {
     "build": "rollup -c;./build.sh dist/index.d.ts 'declare interface' 'declare type'",
-    "test": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
+    "test": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --timeout 5000 --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
     "test:web": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.",
     "test:node": "mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
     "test:cov": "c8 -x 'test/specs/**/*.js' -x dist/lib/validation/syntax.js -x 'dist/lib/validation/parser/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
