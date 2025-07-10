@@ -2,7 +2,7 @@ import {VisitorNodeMap} from "./visitor.d.ts";
 import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken, ValidationToken} from "../lib/index.ts";
+import {EnumToken, ValidationLevel, ValidationToken} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 
@@ -38,7 +38,7 @@ export declare interface MinifyFeature {
 
 export interface ValidationOptions {
 
-    validation?: boolean;
+    validation?: boolean | ValidationLevel;
     lenient?: boolean;
     visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
     isRepeatable?:boolean | null;

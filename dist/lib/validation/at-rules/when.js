@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -17,7 +17,7 @@ function validateAtRuleWhen(atRule, options, root) {
     if (slice.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@when',
@@ -26,13 +26,13 @@ function validateAtRuleWhen(atRule, options, root) {
         };
     }
     const result = validateAtRuleWhenQueryList(atRule.tokens, atRule);
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@when',
@@ -41,7 +41,7 @@ function validateAtRuleWhen(atRule, options, root) {
         };
     }
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@when',
@@ -63,7 +63,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
         while (split.length > 0) {
             if (split[0].typ != EnumToken.FunctionTokenType || !generalEnclosedFunc.includes(split[0].val)) {
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
@@ -78,7 +78,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                 // result = valida
                 if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
@@ -91,7 +91,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
@@ -110,7 +110,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             }
             if (![EnumToken.MediaFeatureAndTokenType, EnumToken.MediaFeatureOrTokenType].includes(split[0].typ)) {
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
@@ -126,7 +126,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             consumeWhitespace(split);
             if (split.length == 0) {
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
@@ -145,7 +145,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
     }
     if (matched.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: result?.node ?? atRule,
@@ -163,7 +163,7 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
         tokenList.push(...match);
     }
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@when',

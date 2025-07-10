@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
@@ -26,7 +26,7 @@ function validateAtRule(atRule, options, root) {
     if (atRule.nam == 'charset') {
         const valid = atRule.val.match(/^"[a-zA-Z][a-zA-Z0-9_-]+"$/i) != null;
         return {
-            valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: valid ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: atRule,
             syntax: null,
             error: ''
@@ -34,7 +34,7 @@ function validateAtRule(atRule, options, root) {
     }
     if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: atRule,
             syntax: '@' + atRule.nam,
             error: ''
@@ -79,7 +79,7 @@ function validateAtRule(atRule, options, root) {
     if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
         if (!('tokens' in atRule)) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected prelude'
@@ -87,7 +87,7 @@ function validateAtRule(atRule, options, root) {
         }
         if (!('chi' in atRule)) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected body'
@@ -96,7 +96,7 @@ function validateAtRule(atRule, options, root) {
         const chi = atRule.tokens.filter((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommentTokenType);
         if (chi.length != 1) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
@@ -105,7 +105,7 @@ function validateAtRule(atRule, options, root) {
         if (chi[0].typ != EnumToken.DashedIdenTokenType) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
@@ -113,7 +113,7 @@ function validateAtRule(atRule, options, root) {
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: atRule,
             syntax: '@' + atRule.nam,
             error: ''
@@ -127,7 +127,7 @@ function validateAtRule(atRule, options, root) {
         if (!(root == null || (root.typ == EnumToken.AtRuleNodeType && root.nam == 'page'))) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@page',
                 error: 'not allowed here'
@@ -147,14 +147,14 @@ function validateAtRule(atRule, options, root) {
     if (!(name in config.atRules)) {
         if (options.lenient) {
             return {
-                valid: ValidationLevel.Lenient,
+                valid: SyntaxValidationResult.Lenient,
                 node: atRule,
                 syntax: null,
                 error: ''
             };
         }
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             node: atRule,
             syntax: null,
             error: 'unknown at-rule'
@@ -163,7 +163,7 @@ function validateAtRule(atRule, options, root) {
     const syntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, name)?.[0];
     if ('chi' in syntax && !('chi' in atRule)) {
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             node: atRule,
             syntax,
             error: 'missing at-rule body'
@@ -174,7 +174,7 @@ function validateAtRule(atRule, options, root) {
     //     return validateSyntax(syntax.prelude as ValidationToken[], atRule.tokens as Token[], root, options);
     // }
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         node: null,
         syntax,
         error: ''

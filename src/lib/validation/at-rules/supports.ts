@@ -10,7 +10,7 @@ import type {
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {colorFontTech, fontFeaturesTech, fontFormat} from "../../syntax/index.ts";
 import {validateComplexSelector} from "../syntaxes/complex-selector.ts";
@@ -23,7 +23,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -48,7 +48,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -58,7 +58,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -76,7 +76,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@' + atRule.nam,
@@ -92,7 +92,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
             result = validateSupportCondition(atRule, tokens[0]);
 
             // supports-condition
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
 
                 previousToken = tokens[0];
                 tokens.shift();
@@ -100,7 +100,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 result = validateSupportFeature(tokens[0]);
 
-                if (/*result == null || */ result.valid == ValidationLevel.Valid) {
+                if (/*result == null || */ result.valid == SyntaxValidationResult.Valid) {
 
                     previousToken = tokens[0];
                     tokens.shift();
@@ -110,7 +110,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                         result = validateAtRuleSupportsConditions(atRule, (tokens[0] as ParensToken).chi);
 
-                        if (/* result == null || */ result.valid == ValidationLevel.Valid) {
+                        if (/* result == null || */ result.valid == SyntaxValidationResult.Valid) {
 
                             previousToken = tokens[0];
                             tokens.shift();
@@ -150,7 +150,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? previousToken ?? atRule,
                         syntax: '@' + atRule.nam,
@@ -163,7 +163,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -175,7 +175,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -189,7 +189,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -200,7 +200,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
     }
 
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -230,7 +230,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -249,13 +249,13 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         return chi[0].l.typ == EnumToken.IdenTokenType && (chi[0] as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType ?
 
             {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: null,
                 syntax: 'supports-condition',
                 error: ''
             } : {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: token,
                 syntax: 'supports-condition',
@@ -265,7 +265,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: token,
         syntax: 'supports-condition',
@@ -294,14 +294,14 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
                 {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     context: [],
                     node: token,
                     syntax: 'font-tech',
                     error: ''
                 } :
                 {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: token,
                     syntax: 'font-tech',
@@ -316,14 +316,14 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
                 {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     context: [],
                     node: token,
                     syntax: 'font-format',
                     error: ''
                 } :
                 {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: token,
                     syntax: 'font-format',
@@ -334,7 +334,7 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: token,
         syntax: '@supports',

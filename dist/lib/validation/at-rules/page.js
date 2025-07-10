@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -13,7 +13,7 @@ function validateAtRulePage(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: null,
             syntax: '@page',
@@ -26,7 +26,7 @@ function validateAtRulePage(atRule, options, root) {
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@page',
@@ -45,7 +45,7 @@ function validateAtRulePage(atRule, options, root) {
             if (tokens[0].typ != EnumToken.WhitespaceTokenType) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@page',
@@ -64,7 +64,7 @@ function validateAtRulePage(atRule, options, root) {
                 if (tokens[0].typ != EnumToken.WhitespaceTokenType) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@page',
@@ -77,7 +77,7 @@ function validateAtRulePage(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: atRule,
         syntax: '@page',

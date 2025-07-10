@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -15,7 +15,7 @@ function validateFamilyName(tokens, atRule) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: null,
@@ -26,7 +26,7 @@ function validateFamilyName(tokens, atRule) {
     if (tokens[0].typ == EnumToken.CommaTokenType) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: tokens[0],
             syntax: null,
@@ -42,7 +42,7 @@ function validateFamilyName(tokens, atRule) {
             if (tokens.length == 0) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node,
                     syntax: null,
@@ -55,7 +55,7 @@ function validateFamilyName(tokens, atRule) {
         if (![EnumToken.IdenTokenType, EnumToken.StringTokenType].includes(node.typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node,
                 syntax: null,
@@ -69,7 +69,7 @@ function validateFamilyName(tokens, atRule) {
         if (tokens.length > 0 && node.typ == EnumToken.BadStringTokenType && tokens[0].typ != EnumToken.CommaTokenType) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[0],
                 syntax: null,
@@ -80,7 +80,7 @@ function validateFamilyName(tokens, atRule) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: null,
         syntax: null,

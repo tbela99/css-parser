@@ -1,4 +1,4 @@
-import {ValidationLevel, ValidationSyntaxGroupEnum} from "../lib/index.ts";
+import {SyntaxValidationResult, ValidationSyntaxGroupEnum} from "../lib/index.ts";
 import type {AstNode} from "./ast.d.ts";
 import type {Token} from "./token.d.ts";
 import type {ValidationToken} from "../lib/validation/parser/index.ts";
@@ -28,7 +28,7 @@ export declare interface ValidationConfiguration {
 
 export interface ValidationResult {
 
-    valid: ValidationLevel;
+    valid: SyntaxValidationResult;
     node: AstNode | Token | null;
     syntax: ValidationToken | string | null;
     error: string;

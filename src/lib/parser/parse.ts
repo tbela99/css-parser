@@ -27,6 +27,7 @@ import {
     EnumToken,
     expand,
     minify,
+    SyntaxValidationResult,
     ValidationLevel,
     walk,
     WalkerOptionEnum,
@@ -38,6 +39,7 @@ import type {
     AstComment,
     AstDeclaration,
     AstInvalidAtRule,
+    AstInvalidDeclaration,
     AstInvalidRule,
     AstKeyframAtRule,
     AstKeyFrameRule,
@@ -107,7 +109,7 @@ import type {
 } from "../../@types/index.d.ts";
 import {ColorKind, deprecatedSystemColors, funcLike, systemColors} from "../renderer/color/utils/index.ts";
 import {validateAtRule, validateSelector} from "../validation/index.ts";
-import type {ValidationResult} from "../../@types/validation.d.ts";
+import type {ValidationResult, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
 import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
 import {evaluateSyntax} from "../validation/syntax.ts";
@@ -166,10 +168,15 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: true,
+        validation: ValidationLevel.Default,
         lenient: true,
         ...options
-    };
+    }
+
+    if (typeof options.validation == 'boolean') {
+
+        options.validation = options.validation ? ValidationLevel.All : ValidationLevel.None;
+    }
 
     if (options.expandNestingRules) {
 
@@ -795,7 +802,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             node.loc.end = {...map.get(delim)!.end};
         }
 
-        if (options.validation) {
+        // if (options.validation) {
 
             let isValid: boolean = true;
 
@@ -816,8 +823,14 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             }
 
             // @ts-ignore
-            const valid: ValidationResult = isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(<AstKeyframAtRule>node, options, context) : validateAtRule(node, options, context)) : {
-                valid: ValidationLevel.Drop,
+            const valid: ValidationResult = options.validation == ValidationLevel.None ? {
+                valid: SyntaxValidationResult.Valid,
+                error: '',
+                matches: [] ,
+                node,
+                syntax: '@' + node.nam
+            } as ValidationResult : isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(<AstKeyframAtRule>node, options, context as AstNode) : validateAtRule(node, options, context as AstNode)) : {
+                valid: SyntaxValidationResult.Drop,
                 node,
                 matches: [] as Token[],
                 syntax: '@' + node.nam,
@@ -825,7 +838,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 tokens
             } as ValidationResult;
 
-            if (valid.valid == ValidationLevel.Drop) {
+            if (valid.valid == SyntaxValidationResult.Drop) {
 
                 errors.push({
                     action: 'drop',
@@ -843,10 +856,10 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     removeComments: true
                 }), '');
             }
-        }
+        // }
 
         context.chi!.push(node);
-        Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
+        Object.defineProperties(node, {parent:{...definedPropertySettings, value: context}, validSyntax: {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid}});
 
         return node;
     } else {
@@ -951,12 +964,17 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             context.chi.push(node);
             Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
-            if (options.validation) {
+            // if (options.validation) {
 
                 // @ts-ignore
-                const valid: ValidationResult = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context);
+                const valid: ValidationResult = options.validation == ValidationLevel.None ? {
+                    valid: SyntaxValidationResult.Valid,
+                    node,
+                    matches: [], syntax: null,
+                    error: null
+                } as ValidationResult : ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context as AstNode);
 
-                if (valid.valid != ValidationLevel.Valid) {
+                if (valid.valid != SyntaxValidationResult.Valid) {
 
                     // @ts-ignore
                     node.typ = EnumToken.InvalidRuleTokenType;
@@ -969,24 +987,25 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         location
                     });
                 }
-            } else {
+            // } else {
+            //
+            //     Object.defineProperty(node, 'tokens', {
+            //         ...definedPropertySettings,
+            //         enumerable: false,
+            //         value: tokens.slice()
+            //     });
+            //
+            //     let raw: string[][] = [...uniq.values()];
+            //
+            //     Object.defineProperty(node, 'raw', {
+            //         enumerable: false,
+            //         configurable: true,
+            //         writable: true,
+            //         value: raw
+            //     });
+            // }
 
-                Object.defineProperty(node, 'tokens', {
-                    ...definedPropertySettings,
-                    enumerable: false,
-                    value: tokens.slice()
-                });
-
-                let raw: string[][] = [...uniq.values()];
-
-                Object.defineProperty(node, 'raw', {
-                    enumerable: false,
-                    configurable: true,
-                    writable: true,
-                    value: raw
-                });
-            }
-
+            Object.defineProperty(node, 'validSyntax', {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid});
             return node;
         } else {
 
@@ -1111,19 +1130,23 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     location
                 });
 
-                // const node = <AstInvalidDeclaration>{
-                //     typ: EnumToken.InvalidDeclarationNodeType,
-                //     nam,
-                //     val: []
-                // }
-                //
-                // if (options.sourcemap) {
-                //
-                //     node.loc = location;
-                //     node.loc.end = {...map.get(delim)!.end};
-                // }
+                if (options.lenient) {
 
-                // context.chi!.push(node);
+                    const node = <AstInvalidDeclaration>{
+                        typ: EnumToken.InvalidDeclarationNodeType,
+                        nam,
+                        val: []
+                    }
+
+                    if (options.sourcemap) {
+
+                        node.loc = location;
+                        node.loc.end = {...map.get(delim)!.end};
+                    }
+
+                    context.chi!.push(node);
+                }
+
                 return null;
             }
 
@@ -1162,7 +1185,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             }
 
             // do not allow declarations in style sheets
-            if (context.typ == EnumToken.StyleSheetNodeType && options.validation) {
+            if (context.typ == EnumToken.StyleSheetNodeType && options.lenient) {
 
                 // @ts-ignore
                 node.typ = EnumToken.InvalidDeclarationNodeType;
@@ -1172,20 +1195,19 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
             const result: AstDeclaration | null = parseDeclarationNode(node, errors, location);
 
+            Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
+
             if (result != null) {
 
                 // console.error(doRender(result), result.val, location);
 
-                if (options.validation) {
+                if (options.validation == ValidationLevel.All) {
 
-                    // @ts-ignore
-                    const valid = evaluateSyntax(result, options, context);
+                    const valid: ValidationSyntaxResult = evaluateSyntax(result, options, context as AstNode);
 
-                    // console.error(valid);
+                    Object.defineProperty(result, 'validSyntax', {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid});
 
-                    if (valid.valid == ValidationLevel.Drop) {
-
-                        // console.error(doRender(result), result.val, location);
+                    if (valid.valid == SyntaxValidationResult.Drop) {
 
                         errors.push(<ErrorDescription>{
                             action: 'drop',
@@ -1194,12 +1216,17 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             location: map.get(valid.node as Token) ?? valid.node?.loc ?? result.loc ?? location
                         });
 
-                        return null;
+                        if (!options.lenient) {
+
+                            return null;
+                        }
+
+                        // @ts-ignore
+                        node.typ = EnumToken.InvalidDeclarationNodeType;
                     }
                 }
 
                 context.chi!.push(result);
-                Object.defineProperty(result, 'parent', {...definedPropertySettings, value: context});
             }
 
             return null;

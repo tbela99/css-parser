@@ -1,6 +1,6 @@
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -14,7 +14,7 @@ function validateKeyframeSelector(tokens, options) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: null,
             syntax: null,
@@ -24,7 +24,7 @@ function validateKeyframeSelector(tokens, options) {
     for (const t of splitTokenList(tokens)) {
         if (t.length != 1) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: t[0] ?? null,
                 syntax: null,
@@ -33,7 +33,7 @@ function validateKeyframeSelector(tokens, options) {
         }
         if (t[0].typ != EnumToken.PercentageTokenType && !(t[0].typ == EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: t[0],
                 syntax: null,
@@ -43,7 +43,7 @@ function validateKeyframeSelector(tokens, options) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: null,
         // @ts-ignore

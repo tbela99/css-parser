@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 
 export function validateAtRuleCounterStyle(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -9,7 +9,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@counter-style',
@@ -24,7 +24,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@counter-style',
@@ -37,7 +37,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: tokens[1] ?? atRule,
             syntax: '@counter-style',
@@ -50,7 +50,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: tokens[0],
             syntax: '@counter-style',
@@ -63,7 +63,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@counter-style',
@@ -74,7 +74,7 @@ export function validateAtRuleCounterStyle(atRule: AstAtRule, options: Validatio
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: atRule,
         syntax: '@counter-style',

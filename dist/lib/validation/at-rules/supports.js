@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import { parseSelector } from '../../parser/parse.js';
@@ -16,7 +16,7 @@ function validateAtRuleSupports(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -34,7 +34,7 @@ function validateAtRuleSupports(atRule, options, root) {
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -43,7 +43,7 @@ function validateAtRuleSupports(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -56,7 +56,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@' + atRule.nam,
@@ -68,20 +68,20 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
         while (tokens.length > 0) {
             result = validateSupportCondition(atRule, tokens[0]);
             // supports-condition
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 previousToken = tokens[0];
                 tokens.shift();
             }
             else {
                 result = validateSupportFeature(tokens[0]);
-                if ( /*result == null || */result.valid == ValidationLevel.Valid) {
+                if ( /*result == null || */result.valid == SyntaxValidationResult.Valid) {
                     previousToken = tokens[0];
                     tokens.shift();
                 }
                 else {
                     if (tokens[0].typ == EnumToken.ParensTokenType) {
                         result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
-                        if ( /* result == null || */result.valid == ValidationLevel.Valid) {
+                        if ( /* result == null || */result.valid == SyntaxValidationResult.Valid) {
                             previousToken = tokens[0];
                             tokens.shift();
                             // continue;
@@ -114,7 +114,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? previousToken ?? atRule,
                         syntax: '@' + atRule.nam,
@@ -125,7 +125,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -135,7 +135,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             if (tokens.length == 1) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -146,7 +146,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
             if (!consumeWhitespace(tokens)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -156,7 +156,7 @@ function validateAtRuleSupportsConditions(atRule, tokenList) {
         }
     }
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -177,7 +177,7 @@ function validateSupportCondition(atRule, token) {
     if (chi[0].typ == EnumToken.IdenTokenType) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -191,13 +191,13 @@ function validateSupportCondition(atRule, token) {
         // @ts-ignore
         return chi[0].l.typ == EnumToken.IdenTokenType && chi[0].op.typ == EnumToken.ColonTokenType ?
             {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: null,
                 syntax: 'supports-condition',
                 error: ''
             } : {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: token,
             syntax: 'supports-condition',
@@ -206,7 +206,7 @@ function validateSupportCondition(atRule, token) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: token,
         syntax: 'supports-condition',
@@ -226,14 +226,14 @@ function validateSupportFeature(token) {
             // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                 {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     context: [],
                     node: token,
                     syntax: 'font-tech',
                     error: ''
                 } :
                 {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: token,
                     syntax: 'font-tech',
@@ -245,14 +245,14 @@ function validateSupportFeature(token) {
             // @ts-ignore
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                 {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     context: [],
                     node: token,
                     syntax: 'font-format',
                     error: ''
                 } :
                 {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: token,
                     syntax: 'font-format',
@@ -262,7 +262,7 @@ function validateSupportFeature(token) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: token,
         syntax: '@supports',

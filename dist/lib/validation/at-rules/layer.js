@@ -1,4 +1,4 @@
-import { ValidationLevel } from '../../ast/types.js';
+import { SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -16,7 +16,7 @@ function validateAtRuleLayer(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: atRule,
             syntax: '@layer',

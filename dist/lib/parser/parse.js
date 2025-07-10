@@ -1,6 +1,6 @@
 import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import './utils/config.js';
-import { EnumToken, ValidationLevel } from '../ast/types.js';
+import { EnumToken, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -65,10 +65,13 @@ async function doParse(iterator, options = {}) {
         inlineCssVariables: false,
         setParent: true,
         removePrefix: false,
-        validation: true,
+        validation: ValidationLevel.Default,
         lenient: true,
         ...options
     };
+    if (typeof options.validation == 'boolean') {
+        options.validation = options.validation ? ValidationLevel.All : ValidationLevel.None;
+    }
     if (options.expandNestingRules) {
         options.nestingRules = false;
     }
@@ -502,44 +505,49 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             node.loc = loc;
             node.loc.end = { ...map.get(delim).end };
         }
-        if (options.validation) {
-            let isValid = true;
-            if (node.nam == 'else') {
-                const prev = getLastNode(context);
-                if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes(prev.nam)) {
-                    if (prev.nam == 'else') {
-                        isValid = Array.isArray(prev.tokens) && prev.tokens.length > 0;
-                    }
+        // if (options.validation) {
+        let isValid = true;
+        if (node.nam == 'else') {
+            const prev = getLastNode(context);
+            if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes(prev.nam)) {
+                if (prev.nam == 'else') {
+                    isValid = Array.isArray(prev.tokens) && prev.tokens.length > 0;
                 }
-                else {
-                    isValid = false;
-                }
-            }
-            // @ts-ignore
-            const valid = isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
-                valid: ValidationLevel.Drop,
-                node,
-                syntax: '@' + node.nam,
-                error: '@' + node.nam + ' not allowed here'};
-            if (valid.valid == ValidationLevel.Drop) {
-                errors.push({
-                    action: 'drop',
-                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
-                    // @ts-ignore
-                    location: { src, ...(map.get(valid.node) ?? location) }
-                });
-                // @ts-ignore
-                node.typ = EnumToken.InvalidAtRuleTokenType;
             }
             else {
-                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
-                    minify: false,
-                    removeComments: true
-                }), '');
+                isValid = false;
             }
         }
+        // @ts-ignore
+        const valid = options.validation == ValidationLevel.None ? {
+            valid: SyntaxValidationResult.Valid,
+            error: '',
+            node,
+            syntax: '@' + node.nam
+        } : isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
+            valid: SyntaxValidationResult.Drop,
+            node,
+            syntax: '@' + node.nam,
+            error: '@' + node.nam + ' not allowed here'};
+        if (valid.valid == SyntaxValidationResult.Drop) {
+            errors.push({
+                action: 'drop',
+                message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                // @ts-ignore
+                location: { src, ...(map.get(valid.node) ?? location) }
+            });
+            // @ts-ignore
+            node.typ = EnumToken.InvalidAtRuleTokenType;
+        }
+        else {
+            node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
+                minify: false,
+                removeComments: true
+            }), '');
+        }
+        // }
         context.chi.push(node);
-        Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
+        Object.defineProperties(node, { parent: { ...definedPropertySettings, value: context }, validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid } });
         return node;
     }
     else {
@@ -613,35 +621,41 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-            if (options.validation) {
+            // if (options.validation) {
+            // @ts-ignore
+            const valid = options.validation == ValidationLevel.None ? {
+                valid: SyntaxValidationResult.Valid,
+                error: null
+            } : ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
+            if (valid.valid != SyntaxValidationResult.Valid) {
                 // @ts-ignore
-                const valid = ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
-                if (valid.valid != ValidationLevel.Valid) {
+                node.typ = EnumToken.InvalidRuleTokenType;
+                node.sel = tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
+                errors.push({
+                    action: 'drop',
+                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
                     // @ts-ignore
-                    node.typ = EnumToken.InvalidRuleTokenType;
-                    node.sel = tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
-                    errors.push({
-                        action: 'drop',
-                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
-                        // @ts-ignore
-                        location
-                    });
-                }
-            }
-            else {
-                Object.defineProperty(node, 'tokens', {
-                    ...definedPropertySettings,
-                    enumerable: false,
-                    value: tokens.slice()
-                });
-                let raw = [...uniq.values()];
-                Object.defineProperty(node, 'raw', {
-                    enumerable: false,
-                    configurable: true,
-                    writable: true,
-                    value: raw
+                    location
                 });
             }
+            // } else {
+            //
+            //     Object.defineProperty(node, 'tokens', {
+            //         ...definedPropertySettings,
+            //         enumerable: false,
+            //         value: tokens.slice()
+            //     });
+            //
+            //     let raw: string[][] = [...uniq.values()];
+            //
+            //     Object.defineProperty(node, 'raw', {
+            //         enumerable: false,
+            //         configurable: true,
+            //         writable: true,
+            //         value: raw
+            //     });
+            // }
+            Object.defineProperty(node, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
             return node;
         }
         else {
@@ -730,18 +744,18 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     message: 'doParse: invalid declaration',
                     location
                 });
-                // const node = <AstInvalidDeclaration>{
-                //     typ: EnumToken.InvalidDeclarationNodeType,
-                //     nam,
-                //     val: []
-                // }
-                //
-                // if (options.sourcemap) {
-                //
-                //     node.loc = location;
-                //     node.loc.end = {...map.get(delim)!.end};
-                // }
-                // context.chi!.push(node);
+                if (options.lenient) {
+                    const node = {
+                        typ: EnumToken.InvalidDeclarationNodeType,
+                        nam,
+                        val: []
+                    };
+                    if (options.sourcemap) {
+                        node.loc = location;
+                        node.loc.end = { ...map.get(delim).end };
+                    }
+                    context.chi.push(node);
+                }
                 return null;
             }
             for (const { value: token } of walkValues(value, null, {
@@ -769,32 +783,34 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 node.loc.end = { ...map.get(delim).end };
             }
             // do not allow declarations in style sheets
-            if (context.typ == EnumToken.StyleSheetNodeType && options.validation) {
+            if (context.typ == EnumToken.StyleSheetNodeType && options.lenient) {
                 // @ts-ignore
                 node.typ = EnumToken.InvalidDeclarationNodeType;
                 context.chi.push(node);
                 return null;
             }
             const result = parseDeclarationNode(node, errors, location);
+            Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             if (result != null) {
                 // console.error(doRender(result), result.val, location);
-                if (options.validation) {
-                    // @ts-ignore
+                if (options.validation == ValidationLevel.All) {
                     const valid = evaluateSyntax(result, options);
-                    // console.error(valid);
-                    if (valid.valid == ValidationLevel.Drop) {
-                        // console.error(doRender(result), result.val, location);
+                    Object.defineProperty(result, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
+                    if (valid.valid == SyntaxValidationResult.Drop) {
                         errors.push({
                             action: 'drop',
                             message: valid.error,
                             syntax: valid.syntax,
                             location: map.get(valid.node) ?? valid.node?.loc ?? result.loc ?? location
                         });
-                        return null;
+                        if (!options.lenient) {
+                            return null;
+                        }
+                        // @ts-ignore
+                        node.typ = EnumToken.InvalidDeclarationNodeType;
                     }
                 }
                 context.chi.push(result);
-                Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             }
             return null;
         }

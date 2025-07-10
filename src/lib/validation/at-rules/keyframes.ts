@@ -1,6 +1,6 @@
 import type {AstKeyframAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 
 export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -9,7 +9,7 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@keyframes',
@@ -25,7 +25,7 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@keyframes',
@@ -37,7 +37,7 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@keyframes',
@@ -52,7 +52,7 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: tokens[0],
             syntax: '@keyframes',
@@ -62,7 +62,7 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@keyframes',

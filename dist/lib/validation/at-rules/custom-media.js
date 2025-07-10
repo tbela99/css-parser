@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -14,7 +14,7 @@ function validateAtRuleCustomMedia(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: null,
@@ -25,7 +25,7 @@ function validateAtRuleCustomMedia(atRule, options, root) {
     consumeWhitespace(queries);
     if (queries.length == 0 || queries[0].typ != EnumToken.DashedIdenTokenType) {
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@custom-media',
@@ -34,10 +34,10 @@ function validateAtRuleCustomMedia(atRule, options, root) {
     }
     queries.shift();
     const result = validateAtRuleMediaQueryList(queries, atRule);
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
         atRule.tokens = [];
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@custom-media',

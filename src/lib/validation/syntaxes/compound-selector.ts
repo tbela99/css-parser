@@ -13,7 +13,7 @@ import type {
     ValidationSelectorOptions,
     ValidationSyntaxResult
 } from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 import {mozExtensions, webkitExtensions} from "../../syntax/index.ts";
 import {getSyntaxConfig} from "../config.ts";
@@ -24,7 +24,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -51,7 +51,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     // @ts-ignore
                     node: tokens[0],
@@ -92,7 +92,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         // @ts-ignore
                         node: tokens[0],
@@ -125,7 +125,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         // @ts-ignore
                         node: tokens[0],
@@ -150,7 +150,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: null,
@@ -166,7 +166,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: null,
@@ -179,7 +179,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 if (children.length != 1) {
 
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -203,7 +203,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -215,7 +215,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -232,7 +232,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
         if (length == tokens.length) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 // @ts-ignore
                 node: tokens[0],
@@ -246,7 +246,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
     }
 
     return match == 0 ? {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -256,7 +256,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
         } as ValidationSyntaxResult :
         // @ts-ignore
         {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [] as Token[],
             // @ts-ignore
             node: root as Token,

@@ -1,8 +1,16 @@
-export enum ValidationLevel {
+export enum SyntaxValidationResult {
     Valid,
     Drop,
     Lenient/* preserve unknown at-rules, declarations and pseudo-classes */
 }
+
+export enum ValidationLevel {
+
+    None,
+    Default, // selectors + at-rules
+    All // selectors + at-rules + declarations
+}
+
 
 /**
  * token types enum

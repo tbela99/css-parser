@@ -1271,10 +1271,10 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
     });
 
     it('percentage in calc() #128', function () {
-        return parse(`
+        return transform(`
  
 a {color:lch(from slateblue calc(l + 10%) c h) ;
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(``));
+`, {minify: false, validation: true}).then(result => expect(result.code).equals(``));
     });
 
     it('percentage in calc() #129', function () {

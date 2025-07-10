@@ -11,7 +11,7 @@ import type {
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
 export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -21,7 +21,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: null,
@@ -39,7 +39,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
     if (slice.length == 0) {
 
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@media',
@@ -49,7 +49,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
     result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
 
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
 
         return result;
     }
@@ -58,7 +58,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@media',
@@ -68,7 +68,7 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@media',
@@ -97,7 +97,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
             // @ts-ignore
             result = {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@media',
@@ -119,7 +119,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                 } else {
 
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
@@ -127,7 +127,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                     }
                 }
 
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
 
                     break;
                 }
@@ -148,7 +148,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                     // @ts-ignore
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
@@ -161,7 +161,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
@@ -180,7 +180,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
@@ -198,7 +198,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
@@ -225,7 +225,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
     if (matched.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@media',
@@ -260,7 +260,7 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@media',

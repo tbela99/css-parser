@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 
 
 export function validateAtRulePageMarginBox(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -9,7 +9,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -21,7 +21,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -35,7 +35,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: token,
                 syntax: 'declaration-list',
@@ -46,7 +46,7 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: null,
         syntax: '@' + atRule.nam,

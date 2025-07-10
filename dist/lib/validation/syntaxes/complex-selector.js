@@ -1,6 +1,6 @@
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
-import { EnumToken, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -20,7 +20,7 @@ function validateComplexSelector(tokens, root, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -35,13 +35,13 @@ function validateComplexSelector(tokens, root, options) {
     // const combinators: EnumToken[] = combinatorsTokens.filter((t: EnumToken) => t != EnumToken.DescendantCombinatorTokenType);
     for (const t of splitTokenList(tokens, combinatorsTokens)) {
         result = validateCompoundSelector(t, root, options);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
     }
     // @ts-ignore
     return result ?? {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: root,
         syntax: null,

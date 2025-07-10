@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -18,7 +18,7 @@ function validateAtRuleImport(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -28,7 +28,7 @@ function validateAtRuleImport(atRule, options, root) {
     if ('chi' in atRule) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -39,7 +39,7 @@ function validateAtRuleImport(atRule, options, root) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -56,7 +56,7 @@ function validateAtRuleImport(atRule, options, root) {
         if (slice.length != 1 || ![EnumToken.StringTokenType, EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
@@ -69,7 +69,7 @@ function validateAtRuleImport(atRule, options, root) {
             if (!consumeWhitespace(tokens)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
@@ -84,7 +84,7 @@ function validateAtRuleImport(atRule, options, root) {
     else {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: tokens[0],
             syntax: '@' + atRule.nam,
@@ -101,7 +101,7 @@ function validateAtRuleImport(atRule, options, root) {
                 if (!consumeWhitespace(tokens)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: '@' + atRule.nam,
@@ -115,7 +115,7 @@ function validateAtRuleImport(atRule, options, root) {
             // @ts-ignore
             if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
                 const result = validateLayerName(tokens[0].chi);
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 tokens.shift();
@@ -125,7 +125,7 @@ function validateAtRuleImport(atRule, options, root) {
             // @ts-ignore
             if ('supports'.localeCompare(tokens[0]?.val, undefined, { sensitivity: 'base' }) == 0) {
                 const result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 tokens.shift();
@@ -139,7 +139,7 @@ function validateAtRuleImport(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: null,
         syntax: '@' + atRule.nam,

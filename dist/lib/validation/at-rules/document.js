@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -14,7 +14,7 @@ function validateAtRuleDocument(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@document',
@@ -27,7 +27,7 @@ function validateAtRuleDocument(atRule, options, root) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@document',
@@ -37,7 +37,7 @@ function validateAtRuleDocument(atRule, options, root) {
     for (const t of splitTokenList(tokens)) {
         if (t.length != 1) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
@@ -47,7 +47,7 @@ function validateAtRuleDocument(atRule, options, root) {
         // @ts-ignore
         if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
@@ -56,7 +56,7 @@ function validateAtRuleDocument(atRule, options, root) {
         }
         if (t[0].typ == EnumToken.UrlFunctionTokenType) {
             result = validateURL(t[0]);
-            if (result?.valid == ValidationLevel.Drop) {
+            if (result?.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
             continue;
@@ -66,7 +66,7 @@ function validateAtRuleDocument(atRule, options, root) {
         if (children.length != 1 || (children[0].typ != EnumToken.StringTokenType && children[0].typ != EnumToken.UrlTokenTokenType)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@document',
@@ -78,7 +78,7 @@ function validateAtRuleDocument(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@document',

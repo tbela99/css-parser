@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {validateURL} from "../syntaxes/url.ts";
 
@@ -11,7 +11,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@document',
@@ -28,7 +28,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@document',
@@ -41,7 +41,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
         if (t.length != 1) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
@@ -54,7 +54,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
         if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare((t[0] as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0)) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
@@ -66,7 +66,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             result = validateURL(t[0]);
 
-            if (result?.valid == ValidationLevel.Drop) {
+            if (result?.valid == SyntaxValidationResult.Drop) {
 
                 return result as ValidationSyntaxResult;
             }
@@ -82,7 +82,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@document',
@@ -96,7 +96,7 @@ export function validateAtRuleDocument(atRule: AstAtRule, options: ValidationOpt
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@document',

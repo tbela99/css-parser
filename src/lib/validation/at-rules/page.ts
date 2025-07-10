@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {splitTokenList} from "../utils/index.ts";
 
 export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -10,7 +10,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: null,
             syntax: '@page',
@@ -26,7 +26,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@page',
@@ -52,7 +52,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@page',
@@ -78,7 +78,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@page',
@@ -92,7 +92,7 @@ export function validateAtRulePage(atRule: AstAtRule, options: ValidationOptions
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: atRule,
         syntax: '@page',

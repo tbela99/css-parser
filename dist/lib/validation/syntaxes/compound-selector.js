@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -14,7 +14,7 @@ function validateCompoundSelector(tokens, root, options) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -34,7 +34,7 @@ function validateCompoundSelector(tokens, root, options) {
             if (!options?.nestedSelector) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     // @ts-ignore
                     node: tokens[0],
@@ -66,7 +66,7 @@ function validateCompoundSelector(tokens, root, options) {
                 if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         // @ts-ignore
                         node: tokens[0],
@@ -92,7 +92,7 @@ function validateCompoundSelector(tokens, root, options) {
                 if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         // @ts-ignore
                         node: tokens[0],
@@ -111,7 +111,7 @@ function validateCompoundSelector(tokens, root, options) {
             if (children.length == 0) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: null,
@@ -125,7 +125,7 @@ function validateCompoundSelector(tokens, root, options) {
             ].includes(children[0].typ)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: null,
@@ -135,7 +135,7 @@ function validateCompoundSelector(tokens, root, options) {
             if (children[0].typ == EnumToken.MatchExpressionTokenType) {
                 if (children.length != 1) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -157,7 +157,7 @@ function validateCompoundSelector(tokens, root, options) {
                     ].includes(children[0].r.typ))) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -167,7 +167,7 @@ function validateCompoundSelector(tokens, root, options) {
                 if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -181,7 +181,7 @@ function validateCompoundSelector(tokens, root, options) {
         }
         if (length == tokens.length) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 // @ts-ignore
                 node: tokens[0],
@@ -193,7 +193,7 @@ function validateCompoundSelector(tokens, root, options) {
         length = tokens.length;
     }
     return match == 0 ? {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         // @ts-ignore
         node: root,
@@ -203,7 +203,7 @@ function validateCompoundSelector(tokens, root, options) {
     } :
         // @ts-ignore
         {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             // @ts-ignore
             node: root,

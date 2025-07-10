@@ -9,7 +9,7 @@ import type {
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
 const validateContainerScrollStateFeature = validateContainerSizeFeature;
@@ -21,7 +21,7 @@ export function validateAtRuleContainer(atRule: AstAtRule, options: ValidationOp
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -31,7 +31,7 @@ export function validateAtRuleContainer(atRule: AstAtRule, options: ValidationOp
 
     const result: ValidationSyntaxResult = validateAtRuleContainerQueryList(atRule.tokens, atRule);
 
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
 
         return result;
     }
@@ -40,7 +40,7 @@ export function validateAtRuleContainer(atRule: AstAtRule, options: ValidationOp
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -49,7 +49,7 @@ export function validateAtRuleContainer(atRule: AstAtRule, options: ValidationOp
     }
 
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -63,7 +63,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -81,7 +81,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
         if (queries.length == 0) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -100,7 +100,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
             if (queries.length == 0) {
 
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
@@ -129,7 +129,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
             if (token?.typ != EnumToken.ParensTokenType && (token?.typ != EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes((token as FunctionToken).val))) {
 
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
@@ -148,7 +148,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
                 result = validateContainerStyleFeature((token as FunctionToken).chi, atRule);
             }
 
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
 
                 return result;
             }
@@ -166,7 +166,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
             if (token?.typ != EnumToken.MediaFeatureAndTokenType && token?.typ != EnumToken.MediaFeatureOrTokenType) {
 
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
@@ -182,7 +182,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
             if (tokenType == null ||tokenType != token?.typ) {
 
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
@@ -196,7 +196,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
             if (queries.length == 0) {
 
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
@@ -207,7 +207,7 @@ function validateAtRuleContainerQueryList(tokens: Token[], atRule: AstAtRule): V
     }
 
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -232,7 +232,7 @@ function validateContainerStyleFeature(tokens: Token[], atRule: AstAtRule): Vali
             (tokens[0].typ == EnumToken.MediaQueryConditionTokenType && (tokens[0] as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType)) {
 
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -242,7 +242,7 @@ function validateContainerStyleFeature(tokens: Token[], atRule: AstAtRule): Vali
     }
 
     return {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
@@ -258,7 +258,7 @@ function validateContainerSizeFeature(tokens: Token[], atRule: AstAtRule): Valid
     if (tokens.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -283,7 +283,7 @@ function validateContainerSizeFeature(tokens: Token[], atRule: AstAtRule): Valid
         if (![EnumToken.DashedIdenTokenType, EnumToken.MediaQueryConditionTokenType].includes(tokens[0].typ)) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -292,7 +292,7 @@ function validateContainerSizeFeature(tokens: Token[], atRule: AstAtRule): Valid
         }
 
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -311,7 +311,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
     if (tokens.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -335,7 +335,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
         if (tokens[0].typ != EnumToken.ParensTokenType) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -353,14 +353,14 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
                 result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
 
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
 
                     return result;
                 }
             } else if (![EnumToken.DashedIdenTokenType, EnumToken.MediaQueryConditionTokenType].includes(slices[0].typ)) {
 
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
@@ -371,7 +371,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
 
             result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
 
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
 
                 return result;
             }
@@ -388,7 +388,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
         if (![EnumToken.MediaFeatureAndTokenType, EnumToken.MediaFeatureOrTokenType].includes(tokens[0].typ)) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
@@ -404,7 +404,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
         if (tokenType != tokens[0].typ) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
@@ -418,7 +418,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
         if (tokens.length == 0) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
@@ -428,7 +428,7 @@ function validateAtRuleContainerQueryStyleInParams(tokens: Token[], atRule: AstA
     }
 
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: atRule,
         syntax: '@' + atRule.nam,

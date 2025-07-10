@@ -21,6 +21,7 @@ export declare interface BaseToken {
     loc?: Location;
     tokens?: Token[];
     parent?: AstRuleList;
+    validSyntax?: boolean;
 }
 
 export declare interface AstComment extends BaseToken {

@@ -1,4 +1,4 @@
-import { EnumToken, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -15,7 +15,7 @@ function validateKeyframeBlockList(tokens, atRule, options) {
     while (i + 1 < tokens.length) {
         if (tokens[++i].typ == EnumToken.CommaTokenType) {
             result = validateKeyframeSelector(tokens.slice(j, i));
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
             j = i + 1;

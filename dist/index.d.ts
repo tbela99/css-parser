@@ -1,3 +1,8 @@
+declare enum ValidationLevel {
+    None = 0,
+    Default = 1,// selectors + at-rules
+    All = 2
+}
 /**
  * token types enum
  */
@@ -941,6 +946,7 @@ export declare interface BaseToken {
     loc?: Location;
     tokens?: Token[];
     parent?: AstRuleList;
+    validSyntax?: boolean;
 }
 
 export declare interface AstComment extends BaseToken {
@@ -1139,7 +1145,7 @@ export declare interface ErrorDescription {
 
 interface ValidationOptions {
 
-    validation?: boolean;
+    validation?: boolean | ValidationLevel;
     lenient?: boolean;
     visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
     isRepeatable?:boolean | null;
@@ -1329,4 +1335,4 @@ declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResu
  */
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };
+export { EnumToken, ValidationLevel, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };

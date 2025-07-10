@@ -1,6 +1,6 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types/index.d.ts";
 import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {ValidationLevel} from "../../ast/index.ts";
+import {SyntaxValidationResult} from "../../ast/index.ts";
 import {validateRelativeSelector} from "./relative-selector.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 
@@ -17,7 +17,7 @@ export function validateRelativeSelectorList(tokens: Token[], root?: AstAtRule |
     if (tokens.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             // @ts-ignore
             node: root,
@@ -33,7 +33,7 @@ export function validateRelativeSelectorList(tokens: Token[], root?: AstAtRule |
         if (t.length == 0) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 // @ts-ignore
                 node: root,
@@ -46,13 +46,13 @@ export function validateRelativeSelectorList(tokens: Token[], root?: AstAtRule |
 
         const result: ValidationSyntaxResult = validateRelativeSelector(t, root, options);
 
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
     }
 
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         // @ts-ignore
         node: root,

@@ -167,9 +167,13 @@ Include ParseOptions and RenderOptions
 
 > Validation Options
 
-- validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the
-  selector is validated at this time.
-- lenient: boolean, optional. ignore unknown at-rules, pseudo-classes and declarations.
+- validation: ValidationLevel | boolean, optional. enable validation. permitted values are:
+  - ValidationLevel.None: no validation
+  - ValidationLevel.Default: validate selectors and at-rules (default)
+  - ValidationLevel.All. validate everything
+  - true: same as ValidationLevel.All. 
+  - false: same as ValidationLevel.None
+- lenient: boolean, optional. preserve invalid tokens.
 
 > Sourcemap Options
 

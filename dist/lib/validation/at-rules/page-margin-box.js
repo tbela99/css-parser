@@ -1,4 +1,4 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -11,7 +11,7 @@ function validateAtRulePageMarginBox(atRule, options, root) {
     if (Array.isArray(atRule.tokens) && atRule.tokens.length > 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -21,7 +21,7 @@ function validateAtRulePageMarginBox(atRule, options, root) {
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -32,7 +32,7 @@ function validateAtRulePageMarginBox(atRule, options, root) {
         if (![EnumToken.DeclarationNodeType, EnumToken.CommentNodeType, EnumToken.WhitespaceTokenType].includes(token.typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: token,
                 syntax: 'declaration-list',
@@ -42,7 +42,7 @@ function validateAtRulePageMarginBox(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: null,
         syntax: '@' + atRule.nam,

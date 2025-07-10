@@ -1,4 +1,4 @@
-import { EnumToken, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -12,7 +12,7 @@ function validateURL(token) {
     if (token.typ == EnumToken.UrlTokenTokenType) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: token,
             // @ts-ignore
@@ -23,7 +23,7 @@ function validateURL(token) {
     if (token.typ != EnumToken.UrlFunctionTokenType) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: token,
             // @ts-ignore
@@ -36,7 +36,7 @@ function validateURL(token) {
     if (children.length == 0 || ![EnumToken.UrlTokenTokenType, EnumToken.StringTokenType, EnumToken.HashTokenType].includes(children[0].typ)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: children[0] ?? token,
             // @ts-ignore
@@ -49,7 +49,7 @@ function validateURL(token) {
     if (children.length > 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: children[0] ?? token,
             // @ts-ignore
@@ -59,7 +59,7 @@ function validateURL(token) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: token,
         // @ts-ignore

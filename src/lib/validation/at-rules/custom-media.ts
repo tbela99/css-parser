@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 import {validateAtRuleMediaQueryList} from "./media.ts";
 
@@ -11,7 +11,7 @@ export function validateAtRuleCustomMedia(atRule: AstAtRule, options: Validation
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: null,
@@ -26,7 +26,7 @@ export function validateAtRuleCustomMedia(atRule: AstAtRule, options: Validation
     if (queries.length == 0  || queries[0].typ != EnumToken.DashedIdenTokenType) {
 
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@custom-media',
@@ -38,12 +38,12 @@ export function validateAtRuleCustomMedia(atRule: AstAtRule, options: Validation
 
     const result: ValidationSyntaxResult = validateAtRuleMediaQueryList(queries, atRule);
 
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
 
         atRule.tokens = [];
 
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@custom-media',

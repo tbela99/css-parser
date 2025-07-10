@@ -1,6 +1,6 @@
 import type {FunctionURLToken, Token} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 
 
@@ -10,7 +10,7 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: token,
             // @ts-ignore
@@ -23,7 +23,7 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: token,
             // @ts-ignore
@@ -40,7 +40,7 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: children[0] ?? token,
             // @ts-ignore
@@ -57,7 +57,7 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: children[0] ?? token,
             // @ts-ignore
@@ -68,7 +68,7 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         context: [],
         node: token,
         // @ts-ignore

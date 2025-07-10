@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {ValidationLevel} from "../../ast/index.ts";
+import {SyntaxValidationResult} from "../../ast/index.ts";
 import {validateFamilyName} from "../syntaxes/index.ts";
 
 
@@ -10,7 +10,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -21,7 +21,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
 
     const result = validateFamilyName(atRule.tokens, atRule);
 
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
 
         return result;
     }
@@ -30,7 +30,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -41,7 +41,7 @@ export function validateAtRuleFontFeatureValues(atRule: AstAtRule, options: Vali
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: atRule,
         syntax: '@' + atRule.nam,

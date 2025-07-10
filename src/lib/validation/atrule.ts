@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../@types/index.d.ts";
 import type {ValidationConfiguration, ValidationResult} from "../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../ast/index.ts";
 import {getParsedSyntax, getSyntaxConfig} from "./config.ts";
 import {ValidationSyntaxGroupEnum, ValidationToken} from "./parser/index.ts";
 import {
@@ -28,7 +28,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
         return {
 
-            valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: valid ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: atRule,
             syntax: null,
             error: ''
@@ -38,7 +38,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
     if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {
 
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: atRule,
             syntax: '@' + atRule.nam,
             error: ''
@@ -110,7 +110,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
         if (!('tokens' in atRule)) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected prelude'
@@ -120,7 +120,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
         if (!('chi' in atRule)) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected body'
@@ -132,7 +132,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
         if (chi.length != 1) {
 
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
@@ -143,7 +143,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
@@ -152,7 +152,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: atRule,
             syntax: '@' + atRule.nam,
             error: ''
@@ -171,7 +171,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: '@page',
                 error: 'not allowed here'
@@ -200,7 +200,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
         if (options.lenient) {
 
             return {
-                valid: ValidationLevel.Lenient,
+                valid: SyntaxValidationResult.Lenient,
                 node: atRule,
                 syntax: null,
                 error: ''
@@ -209,7 +209,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
         return {
 
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             node: atRule,
             syntax: null,
             error: 'unknown at-rule'
@@ -221,7 +221,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
     if ('chi' in syntax && !('chi' in atRule)) {
 
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             node: atRule,
             syntax,
             error: 'missing at-rule body'
@@ -235,7 +235,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
     return {
 
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         node: null,
         syntax,
         error: ''

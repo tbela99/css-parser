@@ -4,12 +4,18 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.CSSParser = {}));
 })(this, (function (exports) { 'use strict';
 
-    var ValidationLevel;
+    var SyntaxValidationResult;
+    (function (SyntaxValidationResult) {
+        SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
+        SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
+        SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
+    })(SyntaxValidationResult || (SyntaxValidationResult = {}));
+    exports.ValidationLevel = void 0;
     (function (ValidationLevel) {
-        ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
-        ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
-        ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
-    })(ValidationLevel || (ValidationLevel = {}));
+        ValidationLevel[ValidationLevel["None"] = 0] = "None";
+        ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+        ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
+    })(exports.ValidationLevel || (exports.ValidationLevel = {}));
     /**
      * token types enum
      */
@@ -12688,7 +12694,7 @@
             if (slice[i].length == 0) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: tokens,
                     node: null,
                     syntax: null,
@@ -12700,7 +12706,7 @@
                 if (slice[i][j].typ != exports.EnumToken.IdenTokenType && slice[i][j].typ != exports.EnumToken.ClassSelectorTokenType) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         matches: tokens,
                         node: slice[i][j],
                         syntax: '<layer-name>',
@@ -12712,7 +12718,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: tokens,
             node: null,
             syntax: null,
@@ -12773,7 +12779,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: atRule,
                 syntax: null,
@@ -12784,7 +12790,7 @@
         if (tokens[0].typ == exports.EnumToken.CommaTokenType) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[0],
                 syntax: null,
@@ -12800,7 +12806,7 @@
                 if (tokens.length == 0) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         matches: [],
                         node,
                         syntax: null,
@@ -12813,7 +12819,7 @@
             if (![exports.EnumToken.IdenTokenType, exports.EnumToken.StringTokenType].includes(node.typ)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node,
                     syntax: null,
@@ -12827,7 +12833,7 @@
             if (tokens.length > 0 && node.typ == exports.EnumToken.BadStringTokenType && tokens[0].typ != exports.EnumToken.CommaTokenType) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node: tokens[0],
                     syntax: null,
@@ -12838,7 +12844,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: null,
             syntax: null,
@@ -12851,7 +12857,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 // @ts-ignore
                 node: root,
@@ -12871,7 +12877,7 @@
                 if (!options?.nestedSelector) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         // @ts-ignore
                         node: tokens[0],
@@ -12903,7 +12909,7 @@
                     if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             // @ts-ignore
                             node: tokens[0],
@@ -12929,7 +12935,7 @@
                     if (!options?.lenient || /^(:?)-webkit-/.test(tokens[0].val)) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             // @ts-ignore
                             node: tokens[0],
@@ -12948,7 +12954,7 @@
                 if (children.length == 0) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -12962,7 +12968,7 @@
                 ].includes(children[0].typ)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: null,
@@ -12972,7 +12978,7 @@
                 if (children[0].typ == exports.EnumToken.MatchExpressionTokenType) {
                     if (children.length != 1) {
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0],
                             syntax: null,
@@ -12994,7 +13000,7 @@
                         ].includes(children[0].r.typ))) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0],
                             syntax: null,
@@ -13004,7 +13010,7 @@
                     if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0],
                             syntax: null,
@@ -13018,7 +13024,7 @@
             }
             if (length == tokens.length) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     // @ts-ignore
                     node: tokens[0],
@@ -13030,7 +13036,7 @@
             length = tokens.length;
         }
         return match == 0 ? {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -13040,7 +13046,7 @@
         } :
             // @ts-ignore
             {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 // @ts-ignore
                 node: root,
@@ -13060,7 +13066,7 @@
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 // @ts-ignore
                 node: root,
@@ -13075,13 +13081,13 @@
         // const combinators: EnumToken[] = combinatorsTokens.filter((t: EnumToken) => t != EnumToken.DescendantCombinatorTokenType);
         for (const t of splitTokenList(tokens, combinatorsTokens)) {
             result = validateCompoundSelector(t, root, options);
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
         }
         // @ts-ignore
         return result ?? {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: root,
             syntax: null,
@@ -13121,7 +13127,7 @@
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 // @ts-ignore
                 node: root,
@@ -13134,7 +13140,7 @@
         for (const t of splitTokenList(tokens)) {
             if (t.length == 0) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     // @ts-ignore
                     node: root,
@@ -13145,12 +13151,12 @@
                 };
             }
             const result = validateRelativeSelector(t, root, options);
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             // @ts-ignore
             node: root,
@@ -13166,7 +13172,7 @@
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 // @ts-ignore
                 node: root,
@@ -13177,13 +13183,13 @@
         let result = null;
         for (const t of splitTokenList(tokens)) {
             result = validateSelector$1(t, root, options);
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
         }
         // @ts-ignore
         return result ?? {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -13197,7 +13203,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: null,
                 syntax: null,
@@ -13207,7 +13213,7 @@
         for (const t of splitTokenList(tokens)) {
             if (t.length != 1) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: t[0] ?? null,
                     syntax: null,
@@ -13216,7 +13222,7 @@
             }
             if (t[0].typ != exports.EnumToken.PercentageTokenType && !(t[0].typ == exports.EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: t[0],
                     syntax: null,
@@ -13226,7 +13232,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             // @ts-ignore
@@ -13242,7 +13248,7 @@
         while (i + 1 < tokens.length) {
             if (tokens[++i].typ == exports.EnumToken.CommaTokenType) {
                 result = validateKeyframeSelector(tokens.slice(j, i));
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 j = i + 1;
@@ -13340,7 +13346,7 @@
                         }
                     }
                     result = doEvaluateSyntax(ast, createContext(values), { ...options, visited: new WeakMap() });
-                    if (result.valid == ValidationLevel.Valid && !result.context.done()) {
+                    if (result.valid == SyntaxValidationResult.Valid && !result.context.done()) {
                         let token = null;
                         while ((token = result.context.next()) != null) {
                             if (token.typ == exports.EnumToken.WhitespaceTokenType || token.typ == exports.EnumToken.CommentTokenType) {
@@ -13348,7 +13354,7 @@
                             }
                             return {
                                 ...result,
-                                valid: ValidationLevel.Drop,
+                                valid: SyntaxValidationResult.Drop,
                                 node: token,
                                 syntax: getSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, node.nam),
                                 error: `unexpected token: '${renderToken(token)}'`,
@@ -13370,7 +13376,7 @@
             //     throw new Error(`Not implemented: ${node.typ}`);
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node,
             syntax: null,
             error: ''
@@ -13428,7 +13434,7 @@
             else {
                 if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         node: token,
                         syntax,
                         error: `cyclic dependency: ${renderSyntax(syntax)}`,
@@ -13436,11 +13442,11 @@
                     };
                 }
                 result = match(syntax, context, options);
-                if (result.valid == ValidationLevel.Valid) {
+                if (result.valid == SyntaxValidationResult.Valid) {
                     clearVisited(token, syntax, 'doEvaluateSyntax', options);
                 }
             }
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 if (syntax.isOptional) {
                     continue;
                 }
@@ -13449,7 +13455,7 @@
             context.update(result.context);
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: null,
             syntax: syntaxes[i - 1],
             error: '',
@@ -13461,7 +13467,7 @@
         let result;
         while (!context.done()) {
             result = match(syntax, context.clone(), { ...options, atLeastOnce: false });
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 success = true;
                 context.update(result.context);
                 continue;
@@ -13469,7 +13475,7 @@
             break;
         }
         return {
-            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: context.current(),
             syntax,
             error: success ? '' : `could not match atLeastOnce: ${renderSyntax(syntax)}`,
@@ -13480,14 +13486,14 @@
         let result;
         while (!context.done()) {
             result = match(syntax, context.clone(), { ...options, isRepeatable: false });
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 context.update(result.context);
                 continue;
             }
             break;
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: null,
             syntax,
             error: '',
@@ -13506,7 +13512,7 @@
             }
             if (tokens.length == 0) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: context.peek(),
                     syntax,
                     error: `could not match list: ${renderSyntax(syntax)}`,
@@ -13518,7 +13524,7 @@
                 isList: false,
                 occurence: false
             });
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 context = con.clone();
                 count++;
                 // pop comma
@@ -13540,7 +13546,7 @@
             }
         }
         return {
-            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: context.current(),
             syntax,
             error: '',
@@ -13552,12 +13558,12 @@
         let result;
         do {
             result = match(syntax, context.clone(), { ...options, occurence: false });
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 break;
             }
             counter++;
             context.update(result.context);
-        } while (result.valid == ValidationLevel.Valid && !context.done());
+        } while (result.valid == SyntaxValidationResult.Valid && !context.done());
         let sucesss = counter >= syntax.occurence.min;
         if (sucesss && syntax.occurence.max != null) {
             if (Number.isFinite(syntax.occurence.max)) {
@@ -13565,7 +13571,7 @@
             }
         }
         return {
-            valid: sucesss ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: sucesss ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: context.current(),
             syntax,
             error: sucesss ? '' : `expected ${renderSyntax(syntax)} ${syntax.occurence.min} to ${syntax.occurence.max} occurences, got ${counter}`,
@@ -13585,11 +13591,11 @@
                 return allOf(flatten(syntax), context, options);
             case ValidationTokenEnum.ColumnToken: {
                 let result = anyOf(flatten(syntax), context, options);
-                if (result.valid == ValidationLevel.Valid) {
+                if (result.valid == SyntaxValidationResult.Valid) {
                     return result;
                 }
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: context.next(),
                     syntax,
                     error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek())}'`,
@@ -13602,7 +13608,7 @@
             // @ts-ignore
             if (syntax?.typ == ValidationTokenEnum.Whitespace) {
                 return {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     node: null,
                     syntax,
                     error: '',
@@ -13618,7 +13624,7 @@
                 occurence: null,
                 atLeastOnce: null
             });
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 context.next();
             }
             return { ...result, context };
@@ -13633,7 +13639,7 @@
                 if (success) {
                     context.next();
                     return {
-                        valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+                        valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
                         node: token,
                         syntax,
                         error: success ? '' : `expected keyword: '${syntax.val}', got ${renderToken(token)}`,
@@ -13647,7 +13653,7 @@
                 token = context.peek();
                 if (token.typ == exports.EnumToken.ParensTokenType || !funcLike.concat(exports.EnumToken.ColorTokenType) || (!('chi' in token))) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         node: context.next(),
                         syntax,
                         error: `expected function or color token, got ${renderToken(token)}`,
@@ -13662,7 +13668,7 @@
                         occurence: null,
                         atLeastOnce: null
                     });
-                    if (result.valid == ValidationLevel.Valid) {
+                    if (result.valid == SyntaxValidationResult.Valid) {
                         context.next();
                         result.context = context;
                         return result;
@@ -13688,7 +13694,7 @@
                     isList: null,
                     occurence: null,
                     atLeastOnce: null
-                }).valid == ValidationLevel.Valid;
+                }).valid == SyntaxValidationResult.Valid;
                 break;
             case ValidationTokenEnum.Comma:
                 success = context.peek()?.typ == exports.EnumToken.CommaTokenType;
@@ -13729,7 +13735,7 @@
                         isList: null,
                         occurence: null,
                         atLeastOnce: null
-                    }).valid == ValidationLevel.Valid;
+                    }).valid == SyntaxValidationResult.Valid;
                     if (success) {
                         context.next();
                     }
@@ -13742,7 +13748,7 @@
                         isList: null,
                         occurence: null,
                         atLeastOnce: null
-                    }).valid == ValidationLevel.Valid;
+                    }).valid == SyntaxValidationResult.Valid;
                     if (success) {
                         context.next();
                     }
@@ -13755,7 +13761,7 @@
             context.next();
         }
         return {
-            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: context.peek(),
             syntax,
             error: success ? '' : `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${renderToken(context.peek())}'`,
@@ -13787,7 +13793,7 @@
                 occurence: null,
                 atLeastOnce: null
             });
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 context.next();
             }
             return { ...result, context };
@@ -13833,7 +13839,7 @@
                         isList: null,
                         occurence: null,
                         atLeastOnce: null
-                    }).valid == ValidationLevel.Valid;
+                    }).valid == SyntaxValidationResult.Valid;
                 }
                 break;
             case 'hex-color':
@@ -13906,7 +13912,7 @@
                             isList: null,
                             occurence: null,
                             atLeastOnce: null
-                        }).valid == ValidationLevel.Valid;
+                        }).valid == SyntaxValidationResult.Valid;
                     }
                 }
                 break;
@@ -13926,7 +13932,7 @@
                         isList: null,
                         occurence: null,
                         atLeastOnce: null
-                    }).valid == ValidationLevel.Valid;
+                    }).valid == SyntaxValidationResult.Valid;
             }
         }
         if (!success && token.typ == exports.EnumToken.IdenTokenType) {
@@ -13936,7 +13942,7 @@
             context.next();
         }
         return {
-            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: token,
             syntax,
             error: success ? '' : `expected '${syntax.val}', got ${renderToken(token)}`,
@@ -13953,7 +13959,7 @@
                 context.next();
             }
             result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 success = true;
                 if (result.context.done()) {
                     return result;
@@ -13966,7 +13972,7 @@
             matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
         }
         return matched[0] ?? {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             node: context.current(),
             syntax: null,
             error: success ? '' : `could not match someOf: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
@@ -13979,7 +13985,7 @@
         let success = false;
         for (i = 0; i < syntaxes.length; i++) {
             result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 success = true;
                 context.update(result.context);
                 if (result.context.done()) {
@@ -13990,7 +13996,7 @@
             }
         }
         return {
-            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: context.current(),
             syntax: null,
             error: success ? '' : `could not match anyOf: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
@@ -14033,7 +14039,7 @@
         const con = createContext(tokens);
         for (i = 0; i < syntax.length; i++) {
             result = doEvaluateSyntax(syntax[i], con.clone(), options);
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
                 con.update(result.context);
                 syntax.splice(i, 1);
                 i = -1;
@@ -14041,7 +14047,7 @@
         }
         const success = syntax.length == 0;
         return {
-            valid: success ? ValidationLevel.Valid : ValidationLevel.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: context.current(),
             syntax: syntax?.[0]?.[0] ?? null,
             error: `could not match allOf: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
@@ -14069,7 +14075,7 @@
         if (token.typ == exports.EnumToken.UrlTokenTokenType) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: token,
                 // @ts-ignore
@@ -14080,7 +14086,7 @@
         if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: token,
                 // @ts-ignore
@@ -14093,7 +14099,7 @@
         if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: children[0] ?? token,
                 // @ts-ignore
@@ -14106,7 +14112,7 @@
         if (children.length > 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: children[0] ?? token,
                 // @ts-ignore
@@ -14116,7 +14122,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: token,
             // @ts-ignore
@@ -14160,7 +14166,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: null,
                 syntax: null,
@@ -14173,7 +14179,7 @@
         consumeWhitespace(slice);
         if (slice.length == 0) {
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: atRule,
                 syntax: '@media',
@@ -14181,13 +14187,13 @@
             };
         }
         result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@media',
@@ -14196,7 +14202,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@media',
@@ -14218,7 +14224,7 @@
             if (tokens.length == 0) {
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
@@ -14235,14 +14241,14 @@
                     }
                     else {
                         result = {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0] ?? atRule,
                             syntax: '@media',
                             error: 'expecting media feature or media condition'
                         };
                     }
-                    if (result.valid == ValidationLevel.Drop) {
+                    if (result.valid == SyntaxValidationResult.Drop) {
                         break;
                     }
                     result = null;
@@ -14255,7 +14261,7 @@
                     if (previousToken?.typ != exports.EnumToken.ParensTokenType) {
                         // @ts-ignore
                         result = {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0] ?? atRule,
                             syntax: '@media',
@@ -14267,7 +14273,7 @@
                 else if (![exports.EnumToken.MediaFeatureOrTokenType, exports.EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
                     // @ts-ignore
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
@@ -14281,7 +14287,7 @@
                 if (mediaFeatureType.typ != tokens[0].typ) {
                     // @ts-ignore
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
@@ -14294,7 +14300,7 @@
                 if (tokens.length == 0) {
                     // @ts-ignore
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
@@ -14313,7 +14319,7 @@
         }
         if (matched.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@media',
@@ -14337,7 +14343,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@media',
@@ -14392,7 +14398,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: atRule,
                 syntax: '@counter-style',
@@ -14404,7 +14410,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: atRule,
                 syntax: '@counter-style',
@@ -14415,7 +14421,7 @@
         if (tokens.length > 1) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[1] ?? atRule,
                 syntax: '@counter-style',
@@ -14426,7 +14432,7 @@
         if (![exports.EnumToken.IdenTokenType, exports.EnumToken.DashedIdenTokenType].includes(tokens[0].typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[0],
                 syntax: '@counter-style',
@@ -14437,7 +14443,7 @@
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: atRule,
                 syntax: '@counter-style',
@@ -14447,7 +14453,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: atRule,
             syntax: '@counter-style',
@@ -14461,7 +14467,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 matches: [],
                 node: null,
                 syntax: '@page',
@@ -14474,7 +14480,7 @@
             if (tokens.length == 0) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@page',
@@ -14493,7 +14499,7 @@
                 if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         matches: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@page',
@@ -14512,7 +14518,7 @@
                     if (tokens[0].typ != exports.EnumToken.WhitespaceTokenType) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             matches: [],
                             node: tokens[0] ?? atRule,
                             syntax: '@page',
@@ -14525,7 +14531,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: atRule,
             syntax: '@page',
@@ -14538,7 +14544,7 @@
         if (Array.isArray(atRule.tokens) && atRule.tokens.length > 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
@@ -14548,7 +14554,7 @@
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -14559,7 +14565,7 @@
             if (![exports.EnumToken.DeclarationNodeType, exports.EnumToken.CommentNodeType, exports.EnumToken.WhitespaceTokenType].includes(token.typ)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: token,
                     syntax: 'declaration-list',
@@ -14569,7 +14575,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -14582,7 +14588,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -14600,7 +14606,7 @@
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -14609,7 +14615,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -14622,7 +14628,7 @@
             if (tokens.length == 0) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
@@ -14634,20 +14640,20 @@
             while (tokens.length > 0) {
                 result = validateSupportCondition(atRule, tokens[0]);
                 // supports-condition
-                if (result.valid == ValidationLevel.Valid) {
+                if (result.valid == SyntaxValidationResult.Valid) {
                     previousToken = tokens[0];
                     tokens.shift();
                 }
                 else {
                     result = validateSupportFeature(tokens[0]);
-                    if ( /*result == null || */result.valid == ValidationLevel.Valid) {
+                    if ( /*result == null || */result.valid == SyntaxValidationResult.Valid) {
                         previousToken = tokens[0];
                         tokens.shift();
                     }
                     else {
                         if (tokens[0].typ == exports.EnumToken.ParensTokenType) {
                             result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
-                            if ( /* result == null || */result.valid == ValidationLevel.Valid) {
+                            if ( /* result == null || */result.valid == SyntaxValidationResult.Valid) {
                                 previousToken = tokens[0];
                                 tokens.shift();
                                 // continue;
@@ -14680,7 +14686,7 @@
                     if (previousToken?.typ != exports.EnumToken.ParensTokenType) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0] ?? previousToken ?? atRule,
                             syntax: '@' + atRule.nam,
@@ -14691,7 +14697,7 @@
                 if (![exports.EnumToken.MediaFeatureOrTokenType, exports.EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@' + atRule.nam,
@@ -14701,7 +14707,7 @@
                 if (tokens.length == 1) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@' + atRule.nam,
@@ -14712,7 +14718,7 @@
                 if (!consumeWhitespace(tokens)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@' + atRule.nam,
@@ -14722,7 +14728,7 @@
             }
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -14743,7 +14749,7 @@
         if (chi[0].typ == exports.EnumToken.IdenTokenType) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
@@ -14757,13 +14763,13 @@
             // @ts-ignore
             return chi[0].l.typ == exports.EnumToken.IdenTokenType && chi[0].op.typ == exports.EnumToken.ColonTokenType ?
                 {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     context: [],
                     node: null,
                     syntax: 'supports-condition',
                     error: ''
                 } : {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: token,
                 syntax: 'supports-condition',
@@ -14772,7 +14778,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: token,
             syntax: 'supports-condition',
@@ -14792,14 +14798,14 @@
                 // @ts-ignore
                 return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                     {
-                        valid: ValidationLevel.Valid,
+                        valid: SyntaxValidationResult.Valid,
                         context: [],
                         node: token,
                         syntax: 'font-tech',
                         error: ''
                     } :
                     {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: token,
                         syntax: 'font-tech',
@@ -14811,14 +14817,14 @@
                 // @ts-ignore
                 return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
                     {
-                        valid: ValidationLevel.Valid,
+                        valid: SyntaxValidationResult.Valid,
                         context: [],
                         node: token,
                         syntax: 'font-format',
                         error: ''
                     } :
                     {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: token,
                         syntax: 'font-format',
@@ -14828,7 +14834,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: token,
             syntax: '@supports',
@@ -14840,7 +14846,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
@@ -14850,7 +14856,7 @@
         if ('chi' in atRule) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
@@ -14861,7 +14867,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: null,
                 syntax: '@' + atRule.nam,
@@ -14878,7 +14884,7 @@
             if (slice.length != 1 || ![exports.EnumToken.StringTokenType, exports.EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
@@ -14891,7 +14897,7 @@
                 if (!consumeWhitespace(tokens)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: tokens[0],
                         syntax: '@' + atRule.nam,
@@ -14906,7 +14912,7 @@
         else {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
@@ -14923,7 +14929,7 @@
                     if (!consumeWhitespace(tokens)) {
                         // @ts-ignore
                         return {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: tokens[0],
                             syntax: '@' + atRule.nam,
@@ -14937,7 +14943,7 @@
                 // @ts-ignore
                 if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
                     const result = validateLayerName(tokens[0].chi);
-                    if (result.valid == ValidationLevel.Drop) {
+                    if (result.valid == SyntaxValidationResult.Drop) {
                         return result;
                     }
                     tokens.shift();
@@ -14947,7 +14953,7 @@
                 // @ts-ignore
                 if ('supports'.localeCompare(tokens[0]?.val, undefined, { sensitivity: 'base' }) == 0) {
                     const result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
-                    if (result.valid == ValidationLevel.Drop) {
+                    if (result.valid == SyntaxValidationResult.Drop) {
                         return result;
                     }
                     tokens.shift();
@@ -14961,7 +14967,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -14974,7 +14980,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 matches: [],
                 node: atRule,
                 syntax: '@layer',
@@ -14989,7 +14995,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: null,
                 syntax: '@' + atRule.nam,
@@ -14998,13 +15004,13 @@
             };
         }
         const result = validateFamilyName(atRule.tokens, atRule);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15014,7 +15020,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -15027,7 +15033,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@namespace',
@@ -15037,7 +15043,7 @@
         if ('chi' in atRule) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@namespace',
@@ -15053,7 +15059,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@namespace',
@@ -15062,7 +15068,7 @@
         }
         if (tokens[0].typ != exports.EnumToken.StringTokenType) {
             const result = validateURL(tokens[0]);
-            if (result.valid != ValidationLevel.Valid) {
+            if (result.valid != SyntaxValidationResult.Valid) {
                 return result;
             }
             tokens.shift();
@@ -15075,7 +15081,7 @@
         if (tokens.length > 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@namespace',
@@ -15084,7 +15090,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@namespace',
@@ -15096,7 +15102,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@document',
@@ -15109,7 +15115,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@document',
@@ -15119,7 +15125,7 @@
         for (const t of splitTokenList(tokens)) {
             if (t.length != 1) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: t[0] ?? atRule,
                     syntax: '@document',
@@ -15129,7 +15135,7 @@
             // @ts-ignore
             if ((t[0].typ != exports.EnumToken.FunctionTokenType && t[0].typ != exports.EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: t[0] ?? atRule,
                     syntax: '@document',
@@ -15138,7 +15144,7 @@
             }
             if (t[0].typ == exports.EnumToken.UrlFunctionTokenType) {
                 result = validateURL(t[0]);
-                if (result?.valid == ValidationLevel.Drop) {
+                if (result?.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 continue;
@@ -15148,7 +15154,7 @@
             if (children.length != 1 || (children[0].typ != exports.EnumToken.StringTokenType && children[0].typ != exports.EnumToken.UrlTokenTokenType)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: '@document',
@@ -15160,7 +15166,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@document',
@@ -15172,7 +15178,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@keyframes',
@@ -15184,7 +15190,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@keyframes',
@@ -15194,7 +15200,7 @@
         if (![exports.EnumToken.StringTokenType, exports.EnumToken.IdenTokenType].includes(tokens[0].typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@keyframes',
@@ -15206,7 +15212,7 @@
         if (tokens.length > 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: tokens[0],
                 syntax: '@keyframes',
@@ -15215,7 +15221,7 @@
         }
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@keyframes',
@@ -15229,7 +15235,7 @@
         if (slice.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: atRule,
                 syntax: '@when',
@@ -15238,13 +15244,13 @@
             };
         }
         const result = validateAtRuleWhenQueryList(atRule.tokens, atRule);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@when',
@@ -15253,7 +15259,7 @@
             };
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@when',
@@ -15275,7 +15281,7 @@
             while (split.length > 0) {
                 if (split[0].typ != exports.EnumToken.FunctionTokenType || !generalEnclosedFunc.includes(split[0].val)) {
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: split[0] ?? atRule,
                         syntax: '@when',
@@ -15290,7 +15296,7 @@
                     // result = valida
                     if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
                         result = {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: split[0] ?? atRule,
                             syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
@@ -15303,7 +15309,7 @@
                     // result = valida
                     if (!validateSupportCondition(atRule, split[0])) {
                         result = {
-                            valid: ValidationLevel.Drop,
+                            valid: SyntaxValidationResult.Drop,
                             context: [],
                             node: split[0] ?? atRule,
                             syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
@@ -15322,7 +15328,7 @@
                 }
                 if (![exports.EnumToken.MediaFeatureAndTokenType, exports.EnumToken.MediaFeatureOrTokenType].includes(split[0].typ)) {
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: split[0] ?? atRule,
                         syntax: '@when',
@@ -15338,7 +15344,7 @@
                 consumeWhitespace(split);
                 if (split.length == 0) {
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: split[0] ?? atRule,
                         syntax: '@when',
@@ -15357,7 +15363,7 @@
         }
         if (matched.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 // @ts-ignore
                 node: result?.node ?? atRule,
@@ -15375,7 +15381,7 @@
             tokenList.push(...match);
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@when',
@@ -15391,7 +15397,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15399,13 +15405,13 @@
             };
         }
         const result = validateAtRuleContainerQueryList(atRule.tokens, atRule);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
         if (!('chi' in atRule)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15413,7 +15419,7 @@
             };
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -15424,7 +15430,7 @@
         if (tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15437,7 +15443,7 @@
             consumeWhitespace(queries);
             if (queries.length == 0) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
@@ -15451,7 +15457,7 @@
             while (queries.length > 0) {
                 if (queries.length == 0) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: atRule,
                         syntax: '@' + atRule.nam,
@@ -15471,7 +15477,7 @@
                 }
                 if (token?.typ != exports.EnumToken.ParensTokenType && (token?.typ != exports.EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
@@ -15487,7 +15493,7 @@
                 else {
                     result = validateContainerStyleFeature(token.chi, atRule);
                 }
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 queries.shift();
@@ -15498,7 +15504,7 @@
                 token = queries[0];
                 if (token?.typ != exports.EnumToken.MediaFeatureAndTokenType && token?.typ != exports.EnumToken.MediaFeatureOrTokenType) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
@@ -15510,7 +15516,7 @@
                 }
                 if (tokenType == null || tokenType != token?.typ) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
@@ -15521,7 +15527,7 @@
                 consumeWhitespace(queries);
                 if (queries.length == 0) {
                     return {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: queries[0],
                         syntax: '@' + atRule.nam,
@@ -15531,7 +15537,7 @@
             }
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -15548,7 +15554,7 @@
             if ([exports.EnumToken.DashedIdenTokenType, exports.EnumToken.IdenTokenType].includes(tokens[0].typ) ||
                 (tokens[0].typ == exports.EnumToken.MediaQueryConditionTokenType && tokens[0].op.typ == exports.EnumToken.ColonTokenType)) {
                 return {
-                    valid: ValidationLevel.Valid,
+                    valid: SyntaxValidationResult.Valid,
                     context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
@@ -15557,7 +15563,7 @@
             }
         }
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -15569,7 +15575,7 @@
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15586,7 +15592,7 @@
             }
             if (![exports.EnumToken.DashedIdenTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(tokens[0].typ)) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
@@ -15594,7 +15600,7 @@
                 };
             }
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15608,7 +15614,7 @@
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
@@ -15625,7 +15631,7 @@
             }
             if (tokens[0].typ != exports.EnumToken.ParensTokenType) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
@@ -15637,13 +15643,13 @@
             if (slices.length == 1) {
                 if ([exports.EnumToken.MediaFeatureNotTokenType, exports.EnumToken.ParensTokenType].includes(slices[0].typ)) {
                     result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
-                    if (result.valid == ValidationLevel.Drop) {
+                    if (result.valid == SyntaxValidationResult.Drop) {
                         return result;
                     }
                 }
                 else if (![exports.EnumToken.DashedIdenTokenType, exports.EnumToken.MediaQueryConditionTokenType].includes(slices[0].typ)) {
                     result = {
-                        valid: ValidationLevel.Drop,
+                        valid: SyntaxValidationResult.Drop,
                         context: [],
                         node: atRule,
                         syntax: '@' + atRule.nam,
@@ -15653,7 +15659,7 @@
             }
             else {
                 result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
             }
@@ -15664,7 +15670,7 @@
             }
             if (![exports.EnumToken.MediaFeatureAndTokenType, exports.EnumToken.MediaFeatureOrTokenType].includes(tokens[0].typ)) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
@@ -15676,7 +15682,7 @@
             }
             if (tokenType != tokens[0].typ) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
@@ -15687,7 +15693,7 @@
             consumeWhitespace(tokens);
             if (tokens.length == 0) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
@@ -15696,7 +15702,7 @@
             }
         }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -15709,7 +15715,7 @@
         if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: null,
                 syntax: null,
@@ -15720,7 +15726,7 @@
         consumeWhitespace(queries);
         if (queries.length == 0 || queries[0].typ != exports.EnumToken.DashedIdenTokenType) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 context: [],
                 node: atRule,
                 syntax: '@custom-media',
@@ -15729,10 +15735,10 @@
         }
         queries.shift();
         const result = validateAtRuleMediaQueryList(queries, atRule);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             atRule.tokens = [];
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 context: [],
                 node: atRule,
                 syntax: '@custom-media',
@@ -15746,7 +15752,7 @@
         if (atRule.nam == 'charset') {
             const valid = atRule.val.match(/^"[a-zA-Z][a-zA-Z0-9_-]+"$/i) != null;
             return {
-                valid: valid ? ValidationLevel.Valid : ValidationLevel.Drop,
+                valid: valid ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: null,
                 error: ''
@@ -15754,7 +15760,7 @@
         }
         if (['font-face', 'view-transition', 'starting-style'].includes(atRule.nam)) {
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: ''
@@ -15799,7 +15805,7 @@
         if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
             if (!('tokens' in atRule)) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: atRule,
                     syntax: '@' + atRule.nam,
                     error: 'expected prelude'
@@ -15807,7 +15813,7 @@
             }
             if (!('chi' in atRule)) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: atRule,
                     syntax: '@' + atRule.nam,
                     error: 'expected body'
@@ -15816,7 +15822,7 @@
             const chi = atRule.tokens.filter((t) => t.typ != exports.EnumToken.WhitespaceTokenType && t.typ != exports.EnumToken.CommentTokenType);
             if (chi.length != 1) {
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: atRule,
                     syntax: '@' + atRule.nam,
                     error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
@@ -15825,7 +15831,7 @@
             if (chi[0].typ != exports.EnumToken.DashedIdenTokenType) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: atRule,
                     syntax: '@' + atRule.nam,
                     error: 'expected ' + (atRule.nam == 'property' ? 'custom-property-name' : 'dashed-ident')
@@ -15833,7 +15839,7 @@
             }
             // @ts-ignore
             return {
-                valid: ValidationLevel.Valid,
+                valid: SyntaxValidationResult.Valid,
                 node: atRule,
                 syntax: '@' + atRule.nam,
                 error: ''
@@ -15847,7 +15853,7 @@
             if (!(root == null || (root.typ == exports.EnumToken.AtRuleNodeType && root.nam == 'page'))) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     node: atRule,
                     syntax: '@page',
                     error: 'not allowed here'
@@ -15867,14 +15873,14 @@
         if (!(name in config.atRules)) {
             if (options.lenient) {
                 return {
-                    valid: ValidationLevel.Lenient,
+                    valid: SyntaxValidationResult.Lenient,
                     node: atRule,
                     syntax: null,
                     error: ''
                 };
             }
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax: null,
                 error: 'unknown at-rule'
@@ -15883,7 +15889,7 @@
         const syntax = getParsedSyntax("atRules" /* ValidationSyntaxGroupEnum.AtRules */, name)?.[0];
         if ('chi' in syntax && !('chi' in atRule)) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 node: atRule,
                 syntax,
                 error: 'missing at-rule body'
@@ -15894,7 +15900,7 @@
         //     return validateSyntax(syntax.prelude as ValidationToken[], atRule.tokens as Token[], root, options);
         // }
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             node: null,
             syntax,
             error: ''
@@ -15946,10 +15952,13 @@
             inlineCssVariables: false,
             setParent: true,
             removePrefix: false,
-            validation: true,
+            validation: exports.ValidationLevel.Default,
             lenient: true,
             ...options
         };
+        if (typeof options.validation == 'boolean') {
+            options.validation = options.validation ? exports.ValidationLevel.All : exports.ValidationLevel.None;
+        }
         if (options.expandNestingRules) {
             options.nestingRules = false;
         }
@@ -16383,44 +16392,49 @@
                 node.loc = loc;
                 node.loc.end = { ...map.get(delim).end };
             }
-            if (options.validation) {
-                let isValid = true;
-                if (node.nam == 'else') {
-                    const prev = getLastNode(context);
-                    if (prev != null && prev.typ == exports.EnumToken.AtRuleNodeType && ['when', 'else'].includes(prev.nam)) {
-                        if (prev.nam == 'else') {
-                            isValid = Array.isArray(prev.tokens) && prev.tokens.length > 0;
-                        }
+            // if (options.validation) {
+            let isValid = true;
+            if (node.nam == 'else') {
+                const prev = getLastNode(context);
+                if (prev != null && prev.typ == exports.EnumToken.AtRuleNodeType && ['when', 'else'].includes(prev.nam)) {
+                    if (prev.nam == 'else') {
+                        isValid = Array.isArray(prev.tokens) && prev.tokens.length > 0;
                     }
-                    else {
-                        isValid = false;
-                    }
-                }
-                // @ts-ignore
-                const valid = isValid ? (node.typ == exports.EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
-                    valid: ValidationLevel.Drop,
-                    node,
-                    syntax: '@' + node.nam,
-                    error: '@' + node.nam + ' not allowed here'};
-                if (valid.valid == ValidationLevel.Drop) {
-                    errors.push({
-                        action: 'drop',
-                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
-                        // @ts-ignore
-                        location: { src, ...(map.get(valid.node) ?? location) }
-                    });
-                    // @ts-ignore
-                    node.typ = exports.EnumToken.InvalidAtRuleTokenType;
                 }
                 else {
-                    node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
-                        minify: false,
-                        removeComments: true
-                    }), '');
+                    isValid = false;
                 }
             }
+            // @ts-ignore
+            const valid = options.validation == exports.ValidationLevel.None ? {
+                valid: SyntaxValidationResult.Valid,
+                error: '',
+                node,
+                syntax: '@' + node.nam
+            } : isValid ? (node.typ == exports.EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(node) : validateAtRule(node, options, context)) : {
+                valid: SyntaxValidationResult.Drop,
+                node,
+                syntax: '@' + node.nam,
+                error: '@' + node.nam + ' not allowed here'};
+            if (valid.valid == SyntaxValidationResult.Drop) {
+                errors.push({
+                    action: 'drop',
+                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                    // @ts-ignore
+                    location: { src, ...(map.get(valid.node) ?? location) }
+                });
+                // @ts-ignore
+                node.typ = exports.EnumToken.InvalidAtRuleTokenType;
+            }
+            else {
+                node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
+                    minify: false,
+                    removeComments: true
+                }), '');
+            }
+            // }
             context.chi.push(node);
-            Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
+            Object.defineProperties(node, { parent: { ...definedPropertySettings, value: context }, validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid } });
             return node;
         }
         else {
@@ -16494,35 +16508,41 @@
                 // @ts-ignore
                 context.chi.push(node);
                 Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-                if (options.validation) {
+                // if (options.validation) {
+                // @ts-ignore
+                const valid = options.validation == exports.ValidationLevel.None ? {
+                    valid: SyntaxValidationResult.Valid,
+                    error: null
+                } : ruleType == exports.EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
+                if (valid.valid != SyntaxValidationResult.Valid) {
                     // @ts-ignore
-                    const valid = ruleType == exports.EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens) : validateSelector(tokens, options, context);
-                    if (valid.valid != ValidationLevel.Valid) {
+                    node.typ = exports.EnumToken.InvalidRuleTokenType;
+                    node.sel = tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
+                    errors.push({
+                        action: 'drop',
+                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
                         // @ts-ignore
-                        node.typ = exports.EnumToken.InvalidRuleTokenType;
-                        node.sel = tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '');
-                        errors.push({
-                            action: 'drop',
-                            message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
-                            // @ts-ignore
-                            location
-                        });
-                    }
-                }
-                else {
-                    Object.defineProperty(node, 'tokens', {
-                        ...definedPropertySettings,
-                        enumerable: false,
-                        value: tokens.slice()
-                    });
-                    let raw = [...uniq.values()];
-                    Object.defineProperty(node, 'raw', {
-                        enumerable: false,
-                        configurable: true,
-                        writable: true,
-                        value: raw
+                        location
                     });
                 }
+                // } else {
+                //
+                //     Object.defineProperty(node, 'tokens', {
+                //         ...definedPropertySettings,
+                //         enumerable: false,
+                //         value: tokens.slice()
+                //     });
+                //
+                //     let raw: string[][] = [...uniq.values()];
+                //
+                //     Object.defineProperty(node, 'raw', {
+                //         enumerable: false,
+                //         configurable: true,
+                //         writable: true,
+                //         value: raw
+                //     });
+                // }
+                Object.defineProperty(node, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
                 return node;
             }
             else {
@@ -16611,18 +16631,18 @@
                         message: 'doParse: invalid declaration',
                         location
                     });
-                    // const node = <AstInvalidDeclaration>{
-                    //     typ: EnumToken.InvalidDeclarationNodeType,
-                    //     nam,
-                    //     val: []
-                    // }
-                    //
-                    // if (options.sourcemap) {
-                    //
-                    //     node.loc = location;
-                    //     node.loc.end = {...map.get(delim)!.end};
-                    // }
-                    // context.chi!.push(node);
+                    if (options.lenient) {
+                        const node = {
+                            typ: exports.EnumToken.InvalidDeclarationNodeType,
+                            nam,
+                            val: []
+                        };
+                        if (options.sourcemap) {
+                            node.loc = location;
+                            node.loc.end = { ...map.get(delim).end };
+                        }
+                        context.chi.push(node);
+                    }
                     return null;
                 }
                 for (const { value: token } of walkValues(value, null, {
@@ -16650,32 +16670,34 @@
                     node.loc.end = { ...map.get(delim).end };
                 }
                 // do not allow declarations in style sheets
-                if (context.typ == exports.EnumToken.StyleSheetNodeType && options.validation) {
+                if (context.typ == exports.EnumToken.StyleSheetNodeType && options.lenient) {
                     // @ts-ignore
                     node.typ = exports.EnumToken.InvalidDeclarationNodeType;
                     context.chi.push(node);
                     return null;
                 }
                 const result = parseDeclarationNode(node, errors, location);
+                Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
                 if (result != null) {
                     // console.error(doRender(result), result.val, location);
-                    if (options.validation) {
-                        // @ts-ignore
+                    if (options.validation == exports.ValidationLevel.All) {
                         const valid = evaluateSyntax(result, options);
-                        // console.error(valid);
-                        if (valid.valid == ValidationLevel.Drop) {
-                            // console.error(doRender(result), result.val, location);
+                        Object.defineProperty(result, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
+                        if (valid.valid == SyntaxValidationResult.Drop) {
                             errors.push({
                                 action: 'drop',
                                 message: valid.error,
                                 syntax: valid.syntax,
                                 location: map.get(valid.node) ?? valid.node?.loc ?? result.loc ?? location
                             });
-                            return null;
+                            if (!options.lenient) {
+                                return null;
+                            }
+                            // @ts-ignore
+                            node.typ = exports.EnumToken.InvalidDeclarationNodeType;
                         }
                     }
                     context.chi.push(result);
-                    Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
                 }
                 return null;
             }

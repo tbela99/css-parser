@@ -1,6 +1,6 @@
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import type {FunctionImageToken, Token} from "../../../@types/index.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {createContext, doEvaluateSyntax} from "../syntax.ts";
 import {getParsedSyntax} from "../config.ts";
 import {ValidationSyntaxGroupEnum, ValidationToken} from "../parser/index.ts";
@@ -19,7 +19,7 @@ export function validateImage(token: Token): ValidationSyntaxResult {
     }
 
     return {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         node: token,
         syntax: 'image()',

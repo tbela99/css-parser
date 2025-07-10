@@ -1,4 +1,4 @@
-import { EnumToken, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -21,7 +21,7 @@ function validateLayerName(tokens) {
         if (slice[i].length == 0) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: tokens,
                 node: null,
                 syntax: null,
@@ -33,7 +33,7 @@ function validateLayerName(tokens) {
             if (slice[i][j].typ != EnumToken.IdenTokenType && slice[i][j].typ != EnumToken.ClassSelectorTokenType) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: tokens,
                     node: slice[i][j],
                     syntax: '<layer-name>',
@@ -45,7 +45,7 @@ function validateLayerName(tokens) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: tokens,
         node: null,
         syntax: null,

@@ -1,8 +1,14 @@
+var SyntaxValidationResult;
+(function (SyntaxValidationResult) {
+    SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
+    SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
+    SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
+})(SyntaxValidationResult || (SyntaxValidationResult = {}));
 var ValidationLevel;
 (function (ValidationLevel) {
-    ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
-    ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
-    ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
+    ValidationLevel[ValidationLevel["None"] = 0] = "None";
+    ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+    ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
 })(ValidationLevel || (ValidationLevel = {}));
 /**
  * token types enum
@@ -137,4 +143,4 @@ var EnumToken;
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
 
-export { EnumToken, ValidationLevel };
+export { EnumToken, SyntaxValidationResult, ValidationLevel };

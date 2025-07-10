@@ -182,8 +182,11 @@ html, body, div, span, applet, object, iframe,
     border-color: #34edc7;
     border-style: medium;
 }
-`).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.pure-table-bordered tbody>tr:last-child>td {
- border-width: 0;
+`, {minify: false, validation: true}).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border-bottom-width: 0;
+ border-top-width: 0;
+ border-left-width: 0;
+ border-right-width: 0;
  border-color: #34edc7
 }`));
         });

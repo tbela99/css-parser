@@ -1,4 +1,4 @@
-import { ValidationLevel } from '../../ast/types.js';
+import { SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -15,7 +15,7 @@ function validateRelativeSelectorList(tokens, root, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             // @ts-ignore
             node: root,
@@ -28,7 +28,7 @@ function validateRelativeSelectorList(tokens, root, options) {
     for (const t of splitTokenList(tokens)) {
         if (t.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 // @ts-ignore
                 node: root,
@@ -39,12 +39,12 @@ function validateRelativeSelectorList(tokens, root, options) {
             };
         }
         const result = validateRelativeSelector(t, root, options);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
     }
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         // @ts-ignore
         node: root,

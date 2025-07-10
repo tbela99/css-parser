@@ -1,4 +1,4 @@
-import { ValidationLevel } from '../../ast/types.js';
+import { SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -15,7 +15,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: null,
             syntax: '@' + atRule.nam,
@@ -24,13 +24,13 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
         };
     }
     const result = validateFamilyName(atRule.tokens, atRule);
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -40,7 +40,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: atRule,
         syntax: '@' + atRule.nam,

@@ -1,4 +1,4 @@
-import { ValidationLevel } from '../../ast/types.js';
+import { SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -15,7 +15,7 @@ function validateComplexSelectorList(tokens, root, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             context: [],
             // @ts-ignore
             node: root,
@@ -26,13 +26,13 @@ function validateComplexSelectorList(tokens, root, options) {
     let result = null;
     for (const t of splitTokenList(tokens)) {
         result = validateSelector(t, root, options);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
     }
     // @ts-ignore
     return result ?? {
-        valid: ValidationLevel.Drop,
+        valid: SyntaxValidationResult.Drop,
         context: [],
         // @ts-ignore
         node: root,

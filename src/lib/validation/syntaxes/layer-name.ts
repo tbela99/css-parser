@@ -1,5 +1,5 @@
 import type {Token} from "../../../@types/index.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 
 export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
@@ -23,7 +23,7 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: tokens,
                 node: null,
                 syntax: null,
@@ -38,7 +38,7 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: tokens,
                     node: slice[i][j],
                     syntax: '<layer-name>',
@@ -51,7 +51,7 @@ export function validateLayerName(tokens: Token[]): ValidationSyntaxResult {
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: tokens,
         node: null,
         syntax: null,
