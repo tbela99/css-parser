@@ -179,17 +179,6 @@
                             </label>
                         </div>
                         <div class="form-check">
-                            <label class="form-check-label" for="parseoptionsValidation">
-                                Validation
-                                <select class="form-select" id="parseoptionsValidation"
-                                        name="parseoptions[validation]">
-                                    <option value="0">None</option>
-                                    <option selected value="1">Default</option>
-                                    <option value="2">All</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="form-check">
                             <input checked class="form-check-input" id="parseoptionsLenient"
                                    name="parseoptions[lenient]" type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionsLenient">
@@ -215,6 +204,17 @@
                                    type="checkbox" value="">
                             <label class="form-check-label" for="parseoptionssourcemap">
                                 Sourcemap
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <label class="form-check-label" for="parseoptionsValidation">
+                                Validation
+                                <select class="form-select" id="parseoptionsValidation"
+                                        name="parseoptions[validation]">
+                                    <option value="0">None</option>
+                                    <option selected value="1">Default</option>
+                                    <option value="2">All</option>
+                                </select>
                             </label>
                         </div>
                         <hr>
@@ -459,7 +459,9 @@
         return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units?.[e] ?? s[e]);
     }
 
-    css.addEventListener('change', async () => {
+    css.addEventListener('change', async (e) => {
+
+        e.stopPropagation();
 
         const parseOptions = {};
         const renderOptions = {};
@@ -475,18 +477,20 @@
 
             let value;
 
-            for (const option of document.querySelectorAll('input[type=checkbox][name],select[name]')) {
+            for (const option of document.querySelectorAll('input[type=checkbox][name],select[name="parseoptions[validation]"]')) {
 
                 value  = option.tagName === 'SELECT' ? +option.value : option.checked;
 
                 if (option.name.startsWith('renderoptions[')) {
 
-                    renderOptions[option.name.slice('renderoptions['.length, -1)] = option.checked;
+                    renderOptions[option.name.slice('renderoptions['.length, -1)] = value;
                 } else if (option.name.startsWith('parseoptions[')) {
 
-                    parseOptions[option.name.slice('parseoptions['.length, -1)] = option.checked;
+                    parseOptions[option.name.slice('parseoptions['.length, -1)] = value;
                 }
             }
+
+            console.error({parseOptions, renderOptions});
 
             console.debug('parsing');
             const startTime = performance.now();
@@ -638,11 +642,11 @@ console.debug({parsed, rendered});`;
         }
     });
 
-    document.querySelector('#optionsWrapper').addEventListener('click', (event) => {
+    document.querySelector('#optionsWrapper').addEventListener('change', (event) => {
 
         event.stopPropagation();
 
-        if (event.target.matches('input[type=checkbox][name]')) {
+        if (event.target.matches('input[type=checkbox][name],select[name="parseoptions[validation]"]')) {
 
             css.dispatchEvent(new Event('change'));
         }
