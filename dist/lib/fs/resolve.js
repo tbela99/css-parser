@@ -1,6 +1,6 @@
 const matchUrl = /^(https?:)?\/\//;
 /**
- * return dirname
+ * return the directory name of a path
  * @param path
  */
 function dirname(path) {

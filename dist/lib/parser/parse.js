@@ -1146,7 +1146,7 @@ function parseSelector(tokens) {
 //     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
 // }
 /**
- * parse string
+ * parse css string
  * @param src
  * @param options
  */
@@ -1328,7 +1328,7 @@ function getTokenType(val, hint) {
     };
 }
 /**
- * parse token list
+ * parse token array into a tree structure
  * @param tokens
  * @param options
  */

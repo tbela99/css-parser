@@ -1692,7 +1692,7 @@ export function parseSelector(tokens: Token[]): Token[] {
 // }
 
 /**
- * parse string
+ * parse css string
  * @param src
  * @param options
  */
@@ -1913,7 +1913,7 @@ function getTokenType(val: string, hint?: EnumToken): Token {
 }
 
 /**
- * parse token list
+ * parse token array into a tree structure
  * @param tokens
  * @param options
  */

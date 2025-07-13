@@ -1,3 +1,6 @@
+/**
+ * validation level enum
+ */
 declare enum ValidationLevel {
     None = 0,
     Default = 1,// selectors + at-rules
@@ -161,7 +164,7 @@ declare enum WalkerValueEvent {
  */
 declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
 /**
- * walk ast values
+ * walk ast node value tokens
  * @param values
  * @param root
  * @param filter
@@ -221,7 +224,7 @@ declare enum ColorKind {
 }
 
 /**
- * parse string
+ * parse css string
  * @param src
  * @param options
  */
@@ -229,7 +232,7 @@ declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
 /**
- * parse token list
+ * parse token array into a tree structure
  * @param tokens
  * @param options
  */
@@ -1300,7 +1303,7 @@ export declare interface SourceMapObject {
 }
 
 /**
- * return dirname
+ * return the directory name of a path
  * @param path
  */
 declare function dirname(path: string): string;

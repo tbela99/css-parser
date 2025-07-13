@@ -4,6 +4,9 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
+/**
+ * validation level enum
+ */
 var ValidationLevel;
 (function (ValidationLevel) {
     ValidationLevel[ValidationLevel["None"] = 0] = "None";

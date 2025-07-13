@@ -1,9 +1,13 @@
+
 export enum SyntaxValidationResult {
     Valid,
     Drop,
     Lenient/* preserve unknown at-rules, declarations and pseudo-classes */
 }
 
+/**
+ * validation level enum
+ */
 export enum ValidationLevel {
 
     None,

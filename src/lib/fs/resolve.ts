@@ -1,7 +1,7 @@
 export const matchUrl: RegExp = /^(https?:)?\/\//;
 
 /**
- * return dirname
+ * return the directory name of a path
  * @param path
  */
 export function dirname(path: string): string {

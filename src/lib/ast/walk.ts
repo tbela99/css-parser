@@ -77,7 +77,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 }
 
 /**
- * walk ast values
+ * walk ast node value tokens
  * @param values
  * @param root
  * @param filter

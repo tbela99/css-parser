@@ -9,6 +9,9 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
+/**
+ * validation level enum
+ */
 exports.ValidationLevel = void 0;
 (function (ValidationLevel) {
     ValidationLevel[ValidationLevel["None"] = 0] = "None";
@@ -13349,7 +13352,7 @@ function validateKeyframeBlockList(tokens, atRule, options) {
 
 const matchUrl = /^(https?:)?\/\//;
 /**
- * return dirname
+ * return the directory name of a path
  * @param path
  */
 function dirname(path) {
@@ -17244,7 +17247,7 @@ function parseSelector(tokens) {
 //     return doParse(`.x{${src}`, options).then((result: ParseResult) => <AstDeclaration[]>(<AstRule>result.ast.chi[0]).chi.filter(t => t.typ == EnumToken.DeclarationNodeType));
 // }
 /**
- * parse string
+ * parse css string
  * @param src
  * @param options
  */
@@ -17426,7 +17429,7 @@ function getTokenType(val, hint) {
     };
 }
 /**
- * parse token list
+ * parse token array into a tree structure
  * @param tokens
  * @param options
  */
@@ -17828,7 +17831,7 @@ function* walk(node, filter) {
     }
 }
 /**
- * walk ast values
+ * walk ast node value tokens
  * @param values
  * @param root
  * @param filter
@@ -18308,7 +18311,7 @@ class ComputePrefixFeature {
             }
             let hasPrefix = false;
             for (const { value } of walkValues(node.val)) {
-                if ((value.typ == exports.EnumToken.IdenTokenType || funcLike.includes(value.typ)) && value.val.match(/^-([^-]+)-(.+)$/) != null) {
+                if ((value.typ == exports.EnumToken.IdenTokenType || (value.typ != exports.EnumToken.ParensTokenType && funcLike.includes(value.typ))) && value.val.match(/^-([^-]+)-(.+)$/) != null) {
                     if (value.val.endsWith('-gradient')) {
                         // not supported yet
                         break;

@@ -44,7 +44,7 @@ function* walk(node, filter) {
     }
 }
 /**
- * walk ast values
+ * walk ast node value tokens
  * @param values
  * @param root
  * @param filter

@@ -100,7 +100,7 @@ class ComputePrefixFeature {
             }
             let hasPrefix = false;
             for (const { value } of walkValues(node.val)) {
-                if ((value.typ == EnumToken.IdenTokenType || funcLike.includes(value.typ)) && value.val.match(/^-([^-]+)-(.+)$/) != null) {
+                if ((value.typ == EnumToken.IdenTokenType || (value.typ != EnumToken.ParensTokenType && funcLike.includes(value.typ))) && value.val.match(/^-([^-]+)-(.+)$/) != null) {
                     if (value.val.endsWith('-gradient')) {
                         // not supported yet
                         break;

@@ -166,7 +166,7 @@ export class ComputePrefixFeature {
 
             for (const {value} of walkValues((<AstDeclaration>node).val)) {
 
-                if ((value.typ == EnumToken.IdenTokenType || funcLike.includes(value.typ)) && (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/) != null) {
+                if ((value.typ == EnumToken.IdenTokenType || (value.typ != EnumToken.ParensTokenType && funcLike.includes(value.typ))) && (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/) != null) {
 
                     if ((value as IdentToken | FunctionToken).val.endsWith('-gradient')) {
 
