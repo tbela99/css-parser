@@ -38,6 +38,7 @@ $ deno add @tbela99/css-parser
 - inline css variables
 - remove duplicate properties
 - flatten @import rules
+- experimental CSS prefix removal
 
 ## Playground
 
@@ -95,7 +96,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.0.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.1.0/web';
 
 
     const css = `
@@ -165,14 +166,18 @@ Include ParseOptions and RenderOptions
   in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
+> CSS Prefix Removal Options
+
+- removePrefix: boolean, optional. remove CSS prefixes.
+
 > Validation Options
 
 - validation: ValidationLevel | boolean, optional. enable validation. permitted values are:
-  - ValidationLevel.None: no validation
-  - ValidationLevel.Default: validate selectors and at-rules (default)
-  - ValidationLevel.All. validate everything
-  - true: same as ValidationLevel.All. 
-  - false: same as ValidationLevel.None
+    - ValidationLevel.None: no validation
+    - ValidationLevel.Default: validate selectors and at-rules (default)
+    - ValidationLevel.All. validate all nodes
+    - true: same as ValidationLevel.All.
+    - false: same as ValidationLevel.None
 - lenient: boolean, optional. preserve invalid tokens.
 
 > Sourcemap Options

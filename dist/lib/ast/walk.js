@@ -1,5 +1,3 @@
-import { EnumToken } from './types.js';
-
 var WalkerOptionEnum;
 (function (WalkerOptionEnum) {
     WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 0] = "Ignore";
@@ -113,10 +111,38 @@ function* walkValues(values, root = null, filter, reverse) {
                 stack.unshift(...sliced);
             }
         }
-        else if (value.typ == EnumToken.BinaryExpressionTokenType) {
-            map.set(value.l, value);
-            map.set(value.r, value);
-            stack.unshift(value.l, value.r);
+        else {
+            const values = [];
+            if ('l' in value && value.l != null) {
+                // @ts-ignore
+                values.push(value.l);
+                // @ts-ignore
+                map.set(value.l, value);
+            }
+            if ('op' in value && typeof value.op == 'object') {
+                values.push(value.op);
+                // @ts-ignore
+                map.set(value.op, value);
+            }
+            if ('r' in value && value.r != null) {
+                if (Array.isArray(value.r)) {
+                    for (const r of value.r) {
+                        // @ts-ignore
+                        values.push(r);
+                        // @ts-ignore
+                        map.set(r, value);
+                    }
+                }
+                else {
+                    // @ts-ignore
+                    values.push(value.r);
+                    // @ts-ignore
+                    map.set(value.r, value);
+                }
+            }
+            if (values.length > 0) {
+                stack.unshift(...values);
+            }
         }
         if (eventType == WalkerValueEvent.Leave && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||

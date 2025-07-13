@@ -125,7 +125,7 @@ export function createContext(input: Token[]): Context<Token> {
     }
 }
 
-export function evaluateSyntax(node: AstNode, options: ValidationOptions, parent: AstNode): ValidationSyntaxResult {
+export function evaluateSyntax(node: AstNode, options: ValidationOptions, parent?: AstNode): ValidationSyntaxResult {
 
     let ast: ValidationToken[] | null;
     let result;

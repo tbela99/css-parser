@@ -1239,7 +1239,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
  * @param tokens
  * @param atRule
  */
-function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
+export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtRule): Token[] {
 
     // @ts-ignore
     for (const {value, parent} of walkValues(tokens, null, null, true)) {
@@ -1377,6 +1377,11 @@ function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken): Token[] {
                 array.splice(startIndex + 1, index - startIndex);
                 continue;
             }
+        }
+
+        if (value.typ == EnumToken.FunctionTokenType && value.val == 'selector') {
+
+            parseSelector(value.chi);
         }
 
         if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes((<FunctionToken>value).val))) {

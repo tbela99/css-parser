@@ -1,4 +1,4 @@
-import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
+import { isColor, parseColor, isIdent, mediaTypes, isDimension, parseDimension, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isHexColor, isHash, isIdentStart, isIdentColor, mathFuncs } from '../syntax/syntax.js';
 import './utils/config.js';
 import { EnumToken, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
@@ -6,7 +6,7 @@ import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, COLORS_NAMES, ColorKind, systemColors, deprecatedSystemColors, colorsFunc } from '../renderer/color/utils/constants.js';
+import { funcLike, ColorKind, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../renderer/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
@@ -916,6 +916,9 @@ function parseAtRulePrelude(tokens, atRule) {
                 continue;
             }
         }
+        if (value.typ == EnumToken.FunctionTokenType && value.val == 'selector') {
+            parseSelector(value.chi);
+        }
         if (value.typ == EnumToken.ParensTokenType || (value.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
             let i;
             let nameIndex = -1;
@@ -1645,4 +1648,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };

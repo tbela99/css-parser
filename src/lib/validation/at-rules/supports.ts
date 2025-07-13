@@ -13,8 +13,6 @@ import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {colorFontTech, fontFeaturesTech, fontFormat} from "../../syntax/index.ts";
-import {validateComplexSelector} from "../syntaxes/complex-selector.ts";
-import {parseSelector} from "../../parser/index.ts";
 
 export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -217,7 +215,13 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
     if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
 
-        return validateComplexSelector(parseSelector((token as FunctionToken).chi));
+        return {
+            valid: SyntaxValidationResult.Valid,
+            context: [],
+            node: token,
+            syntax: '@' + atRule.nam,
+            error: ''
+        }
     }
 
     const chi: Token[] = (token as FunctionToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
@@ -284,7 +288,13 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
 
         if ((token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
 
-            return validateComplexSelector(parseSelector((token as FunctionToken).chi));
+            return {
+                valid: SyntaxValidationResult.Valid,
+                context: [],
+                node: token,
+                syntax: 'selector',
+                error: ''
+            }
         }
 
         if ((token as FunctionToken).val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {

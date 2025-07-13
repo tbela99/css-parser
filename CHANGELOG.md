@@ -3,8 +3,8 @@
 ## v1.1.0
 
 - [x] inline sourcemap
-- [x] validation using mdn-data
-- [ ] prefix removal
+- [x] CSS validation using mdn-data
+- [x] prefix removal now remove prefixes from all nodes. prefixed linear gradients are not supported
 
 # v1.0.0
 

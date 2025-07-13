@@ -13,6 +13,7 @@ import type {
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
+import {generalEnclosedFunc} from "../../renderer/color/utils";
 
 export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -297,7 +298,7 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
         return validateMediaCondition((token as MediaFeatureNotToken).val, atRule);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes((token as FunctionToken).val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && generalEnclosedFunc.includes((token as FunctionToken).val))) {
 
         return false;
     }

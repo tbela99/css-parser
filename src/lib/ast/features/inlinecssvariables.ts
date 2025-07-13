@@ -44,6 +44,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
         if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
 
+            // @ts-ignore
             parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
         }
     }

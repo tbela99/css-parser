@@ -624,6 +624,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return val + 's';
             }
+            if (token.typ == EnumToken.ResolutionTokenType && unit == 'dppx') {
+                unit = 'x';
+            }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:

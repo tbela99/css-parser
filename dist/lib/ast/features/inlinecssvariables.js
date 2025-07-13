@@ -24,6 +24,7 @@ function inlineExpression(token) {
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
         if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+            // @ts-ignore
             parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
         }
     }

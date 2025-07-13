@@ -32,6 +32,6 @@ export declare interface WalkAttributesResult {
     previousValue: Token | null;
     nextValue: Token | null;
     root?: AstNode;
-    parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
+    parent: AstNode | Token | null;
     list: Token[] | null;
 }

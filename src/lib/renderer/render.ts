@@ -993,6 +993,11 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 return val + 's';
             }
 
+            if (token.typ == EnumToken.ResolutionTokenType && unit == 'dppx') {
+
+                unit = 'x';
+            }
+
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
 
         case EnumToken.FlexTokenType:

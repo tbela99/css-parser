@@ -1,7 +1,7 @@
 import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
-import { parseSelector } from '../../parser/parse.js';
+import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { colorFontTech, fontFeaturesTech, fontFormat } from '../../syntax/syntax.js';
@@ -9,7 +9,6 @@ import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
-import { validateComplexSelector } from '../syntaxes/complex-selector.js';
 
 function validateAtRuleSupports(atRule, options, root) {
     // media-query-list
@@ -168,7 +167,13 @@ function validateSupportCondition(atRule, token) {
         return validateSupportCondition(atRule, token.val);
     }
     if (token.typ == EnumToken.FunctionTokenType && token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
-        return validateComplexSelector(parseSelector(token.chi));
+        return {
+            valid: SyntaxValidationResult.Valid,
+            context: [],
+            node: token,
+            syntax: '@' + atRule.nam,
+            error: ''
+        };
     }
     const chi = token.chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
     if (chi.length != 1) {
@@ -219,7 +224,13 @@ function validateSupportFeature(token) {
     }
     if (token.typ == EnumToken.FunctionTokenType) {
         if (token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
-            return validateComplexSelector(parseSelector(token.chi));
+            return {
+                valid: SyntaxValidationResult.Valid,
+                context: [],
+                node: token,
+                syntax: 'selector',
+                error: ''
+            };
         }
         if (token.val.localeCompare('font-tech', undefined, { sensitivity: 'base' }) == 0) {
             const chi = token.chi.filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));

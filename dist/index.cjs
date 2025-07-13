@@ -4156,6 +4156,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return val + 's';
             }
+            if (token.typ == exports.EnumToken.ResolutionTokenType && unit == 'dppx') {
+                unit = 'x';
+            }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case exports.EnumToken.FlexTokenType:
         case exports.EnumToken.PercentageTokenType:
@@ -4276,11 +4279,30 @@ const mediaTypes = ['all', 'print', 'screen',
 const mathFuncs = ['minmax', 'repeat', 'fit-content', 'calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
 const wildCardFuncs = ['var', 'env'];
 const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];
-const webkitPseudoAliasMap = {
-    '-webkit-autofill': 'autofill',
-    '-webkit-any()': 'is',
-    '-moz-any()': 'is',
-    '-webkit-any-link': 'any-link',
+// https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
+// https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
+const pseudoAliasMap = {
+    '-ms-grid-columns': 'grid-template-columns',
+    '-ms-grid-rows': 'grid-template-rows',
+    '-ms-grid-row': 'grid-row-start',
+    '-ms-grid-column': 'grid-column-start',
+    '-ms-grid-row-align': 'align-self',
+    '-ms-grid-row-span': 'grid-row-end',
+    '-ms-grid-column-span': 'grid-column-end',
+    '-ms-grid-column-align': 'justify-self',
+    ':-ms-input-placeholder': '::placeholder',
+    '::-ms-input-placeholder': '::placeholder',
+    ':-moz-any()': ':is',
+    '-moz-user-modify': 'user-modify',
+    '-moz-background-clip': 'background-clip',
+    '-moz-background-origin': 'background-origin',
+    '-ms-input-placeholder': 'placeholder',
+    ':-webkit-autofill': ':autofill',
+    ':-webkit-any()': ':is',
+    '::-webkit-input-placeholder': '::placeholder',
+    '::-webkit-file-upload-button': '::file-selector-button',
+    '::-moz-placeholder': '::placeholder',
+    ':-webkit-any-link': ':any-link',
     '-webkit-border-after': 'border-block-end',
     '-webkit-border-after-color': 'border-block-end-color',
     '-webkit-border-after-style': 'border-block-end-style',
@@ -4317,7 +4339,75 @@ const webkitPseudoAliasMap = {
     '-webkit-padding-end': 'padding-inline-end',
     '-webkit-padding-start': 'padding-inline-start',
     '-webkit-min-device-pixel-ratio': 'min-resolution',
-    '-webkit-max-device-pixel-ratio': 'max-resolution'
+    '-webkit-max-device-pixel-ratio': 'max-resolution',
+    '-webkit-font-smoothing': 'font-smooth',
+    '-webkit-line-clamp': 'line-clamp',
+    ':-webkit-autofill-strong-password': ':autofill',
+    ':-webkit-full-page-media': ':fullscreen',
+    ':-webkit-full-screen': ':fullscreen',
+    ':-webkit-full-screen-ancestor': ':fullscreen',
+    ':-webkit-full-screen-document': ':fullscreen',
+    ':-webkit-full-screen-controls-hidden': ':fullscreen',
+    '-moz-background-inline-policy': 'box-decoration-break',
+    '-moz-background-size': 'background-size',
+    '-moz-border-end': 'border-inline-end',
+    '-moz-border-end-color': 'border-inline-end-color',
+    '-moz-border-end-style': 'border-inline-end-style',
+    '-moz-border-end-width': 'border-inline-end-width',
+    '-moz-border-image': 'border-inline-end-width',
+    '-moz-border-start': 'border-inline-start',
+    '-moz-border-start-color': 'border-inline-start-color',
+    '-moz-border-start-style': 'border-inline-start-style',
+    '-moz-border-start-width': 'border-inline-start-width',
+    '-moz-column-count': 'column-count',
+    '-moz-column-fill': 'column-fill',
+    '-moz-column-gap': 'column-gap',
+    '-moz-column-width': 'column-width',
+    '-moz-column-rule': 'column-rule',
+    '-moz-column-rule-width': 'column-rule-width',
+    '-moz-column-rule-style': 'column-rule-style',
+    '-moz-column-rule-color': 'column-rule-color',
+    '-moz-margin-end': 'margin-inline-end',
+    '-moz-margin-start': 'margin-inline-start',
+    '-moz-opacity': 'opacity',
+    '-moz-outline': 'outline',
+    '-moz-outline-color': 'outline-color',
+    '-moz-outline-offset': 'outline-offset',
+    '-moz-outline-style': 'outline-style',
+    '-moz-outline-width': 'outline-width',
+    '-moz-padding-end': 'padding-inline-end',
+    '-moz-padding-start': 'padding-inline-start',
+    '-moz-tab-size': 'tab-size',
+    '-moz-text-align-last': 'text-align-last',
+    '-moz-text-decoration-color': 'text-decoration-color',
+    '-moz-text-decoration-line': 'text-decoration-line',
+    '-moz-text-decoration-style': 'text-decoration-style',
+    '-moz-transition': 'transition',
+    '-moz-transition-delay': 'transition-delay',
+    '-moz-transition-duration': 'transition-duration',
+    '-moz-transition-property': 'transition-property',
+    '-moz-transition-timing-function': 'transition-timing-function',
+    '-moz-user-select': 'user-select',
+    '-moz-initial': 'initial',
+    '-moz-linear-gradient()': 'linear-gradient',
+    '-moz-radial-gradient()': 'radial-gradient',
+    '-moz-element()': 'element',
+    '-moz-crisp-edges': 'crisp-edges',
+    '-moz-calc()': 'calc',
+    '-moz-min-content': 'min-content',
+    '-moz-fit-content': 'fit-content',
+    '-moz-max-content': 'max-content',
+    '-moz-available': 'stretch',
+    ':-moz-any-link': ':any-link',
+    ':-moz-full-screen': ':fullscreen',
+    ':-moz-full-screen-ancestor': ':fullscreen',
+    ':-moz-placeholder': ':placeholder-shown',
+    ':-moz-read-only': ':read-only',
+    ':-moz-read-write': ':read-write',
+    ':-moz-submit-invalid': ':invalid',
+    ':-moz-ui-invalid': ':user-invalid',
+    ':-moz-ui-valid': ':user-valid',
+    '::-moz-selection': '::selection',
 };
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
@@ -14476,7 +14566,7 @@ function validateMediaCondition(token, atRule) {
     if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
         return validateMediaCondition(token.val, atRule);
     }
-    if (token.typ != exports.EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == exports.EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes(token.val))) {
+    if (token.typ != exports.EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == exports.EnumToken.FunctionTokenType && generalEnclosedFunc.includes(token.val))) {
         return false;
     }
     const chi = token.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
@@ -14849,7 +14939,13 @@ function validateSupportCondition(atRule, token) {
         return validateSupportCondition(atRule, token.val);
     }
     if (token.typ == exports.EnumToken.FunctionTokenType && token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
-        return validateComplexSelector(parseSelector(token.chi));
+        return {
+            valid: SyntaxValidationResult.Valid,
+            context: [],
+            node: token,
+            syntax: '@' + atRule.nam,
+            error: ''
+        };
     }
     const chi = token.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType && t.typ != exports.EnumToken.WhitespaceTokenType);
     if (chi.length != 1) {
@@ -14900,7 +14996,13 @@ function validateSupportFeature(token) {
     }
     if (token.typ == exports.EnumToken.FunctionTokenType) {
         if (token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
-            return validateComplexSelector(parseSelector(token.chi));
+            return {
+                valid: SyntaxValidationResult.Valid,
+                context: [],
+                node: token,
+                syntax: 'selector',
+                error: ''
+            };
         }
         if (token.val.localeCompare('font-tech', undefined, { sensitivity: 'base' }) == 0) {
             const chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
@@ -16912,6 +17014,9 @@ function parseAtRulePrelude(tokens, atRule) {
                 continue;
             }
         }
+        if (value.typ == exports.EnumToken.FunctionTokenType && value.val == 'selector') {
+            parseSelector(value.chi);
+        }
         if (value.typ == exports.EnumToken.ParensTokenType || (value.typ == exports.EnumToken.FunctionTokenType && ['media', 'supports', 'style', 'scroll-state'].includes(value.val))) {
             let i;
             let nameIndex = -1;
@@ -17790,10 +17895,38 @@ function* walkValues(values, root = null, filter, reverse) {
                 stack.unshift(...sliced);
             }
         }
-        else if (value.typ == exports.EnumToken.BinaryExpressionTokenType) {
-            map.set(value.l, value);
-            map.set(value.r, value);
-            stack.unshift(value.l, value.r);
+        else {
+            const values = [];
+            if ('l' in value && value.l != null) {
+                // @ts-ignore
+                values.push(value.l);
+                // @ts-ignore
+                map.set(value.l, value);
+            }
+            if ('op' in value && typeof value.op == 'object') {
+                values.push(value.op);
+                // @ts-ignore
+                map.set(value.op, value);
+            }
+            if ('r' in value && value.r != null) {
+                if (Array.isArray(value.r)) {
+                    for (const r of value.r) {
+                        // @ts-ignore
+                        values.push(r);
+                        // @ts-ignore
+                        map.set(r, value);
+                    }
+                }
+                else {
+                    // @ts-ignore
+                    values.push(value.r);
+                    // @ts-ignore
+                    map.set(value.r, value);
+                }
+            }
+            if (values.length > 0) {
+                stack.unshift(...values);
+            }
         }
         if (eventType == WalkerValueEvent.Leave && filter.fn != null) {
             const isValid = filter.type == null || value.typ == filter.type ||
@@ -18091,27 +18224,43 @@ function replaceCompoundLiteral(selector, replace) {
 const config$1 = getSyntaxConfig();
 function replacePseudo(tokens) {
     return tokens.map((raw) => raw.map(r => {
-        if (r.startsWith(':-')) {
-            const i = r.indexOf('(');
-            let key = i != -1 ? r.slice(1, i) + '()' : r.slice(1);
-            if (key in webkitPseudoAliasMap) {
-                return ':' + webkitPseudoAliasMap[key] + (i == -1 ? '' : r.slice(i));
+        if (r.includes('(')) {
+            const index = r.indexOf('(');
+            const name = r.slice(0, index) + '()';
+            if (name in pseudoAliasMap) {
+                return pseudoAliasMap[name] + r.slice(index);
             }
+            return r;
         }
-        return r;
+        return r in pseudoAliasMap && pseudoAliasMap[r] in config$1["selectors" /* ValidationSyntaxGroupEnum.Selectors */] ? pseudoAliasMap[r] : r;
     }));
 }
-function replaceAstNodes(tokens) {
-    for (const { value } of walkValues(tokens)) {
-        if (value.typ == exports.EnumToken.PseudoClassFuncTokenType || value.typ == exports.EnumToken.PseudoClassTokenType) {
-            if (value.val.startsWith(':-')) {
-                let key = value.val.slice(1) + (value.typ == exports.EnumToken.PseudoClassFuncTokenType ? '()' : '');
-                if (key in webkitPseudoAliasMap) {
-                    value.val = ':' + webkitPseudoAliasMap[key];
+function replaceAstNodes(tokens, root) {
+    let result = false;
+    for (const { value, parent } of walkValues(tokens, root)) {
+        if (value.typ == exports.EnumToken.IdenTokenType || value.typ == exports.EnumToken.PseudoClassFuncTokenType || value.typ == exports.EnumToken.PseudoClassTokenType || value.typ == exports.EnumToken.PseudoElementTokenType) {
+            let key = value.val + (value.typ == exports.EnumToken.PseudoClassFuncTokenType ? '()' : '');
+            if (key in pseudoAliasMap) {
+                const isPseudClass = pseudoAliasMap[key].startsWith('::');
+                value.val = pseudoAliasMap[key];
+                if (value.typ == exports.EnumToken.IdenTokenType &&
+                    ['min-resolution', 'max-resolution'].includes(value.val) &&
+                    parent?.typ == exports.EnumToken.MediaQueryConditionTokenType &&
+                    parent.r?.[0]?.typ == exports.EnumToken.NumberTokenType) {
+                    Object.assign(parent.r?.[0], {
+                        typ: exports.EnumToken.ResolutionTokenType,
+                        unit: 'x',
+                    });
                 }
+                else if (isPseudClass && value.typ == exports.EnumToken.PseudoElementTokenType) {
+                    // @ts-ignore
+                    value.typ = exports.EnumToken.PseudoClassTokenType;
+                }
+                result = true;
             }
         }
     }
+    return result;
 }
 class ComputePrefixFeature {
     get ordering() {
@@ -18146,11 +18295,61 @@ class ComputePrefixFeature {
             if (node.nam.charAt(0) == '-') {
                 const match = node.nam.match(/^-([^-]+)-(.+)$/);
                 if (match != null) {
-                    const nam = match[2];
-                    if (nam.toLowerCase() in config$1.declarations) {
-                        node.nam = nam;
-                        replaceAstNodes(node.val);
+                    let nam = match[2];
+                    if (!(nam in config$1.declarations)) {
+                        if (node.nam in pseudoAliasMap) {
+                            nam = pseudoAliasMap[node.nam];
+                        }
                     }
+                    if (nam in config$1.declarations) {
+                        node.nam = nam;
+                    }
+                }
+            }
+            let hasPrefix = false;
+            for (const { value } of walkValues(node.val)) {
+                if ((value.typ == exports.EnumToken.IdenTokenType || funcLike.includes(value.typ)) && value.val.match(/^-([^-]+)-(.+)$/) != null) {
+                    if (value.val.endsWith('-gradient')) {
+                        // not supported yet
+                        break;
+                    }
+                    hasPrefix = true;
+                    break;
+                }
+            }
+            if (hasPrefix) {
+                const nodes = structuredClone(node.val);
+                for (const { value } of walkValues(nodes)) {
+                    if ((value.typ == exports.EnumToken.IdenTokenType || funcLike.includes(value.typ))) {
+                        const match = value.val.match(/^-([^-]+)-(.+)$/);
+                        if (match == null) {
+                            continue;
+                        }
+                        value.val = match[2];
+                    }
+                }
+                if (SyntaxValidationResult.Valid == evaluateSyntax({ ...node, val: nodes }, {}).valid) {
+                    node.val = nodes;
+                }
+            }
+        }
+        else if (node.typ == exports.EnumToken.AtRuleNodeType || node.typ == exports.EnumToken.KeyframeAtRuleNodeType) {
+            if (node.nam.startsWith('-')) {
+                const match = node.nam.match(/^-([^-]+)-(.+)$/);
+                if (match != null && '@' + match[2] in config$1.atRules) {
+                    node.nam = match[2];
+                }
+            }
+            if (node.typ == exports.EnumToken.AtRuleNodeType && node.val !== '') {
+                if (node.tokens == null) {
+                    Object.defineProperty(node, 'tokens', {
+                        // @ts-ignore
+                        ...definedPropertySettings,
+                        value: parseAtRulePrelude(parseString(node.val), node),
+                    });
+                }
+                if (replaceAstNodes(node.tokens)) {
+                    node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr), '');
                 }
             }
         }
@@ -18174,6 +18373,7 @@ function inlineExpression(token) {
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
         if (value.typ == exports.EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+            // @ts-ignore
             parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
         }
     }
