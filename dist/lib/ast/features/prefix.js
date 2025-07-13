@@ -1,19 +1,68 @@
-import { EnumToken } from '../types.js';
+import { EnumToken, SyntaxValidationResult } from '../types.js';
 import { getSyntaxConfig } from '../../validation/config.js';
-import { ValidationTokenEnum } from '../../validation/parser/types.js';
+import '../../validation/parser/types.js';
 import '../../validation/parser/parse.js';
-import '../minify.js';
+import { splitRule, definedPropertySettings } from '../minify.js';
 import { walkValues } from '../walk.js';
-import '../../parser/parse.js';
-import '../../renderer/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import { parseAtRulePrelude, parseString } from '../../parser/parse.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { pseudoAliasMap } from '../../syntax/syntax.js';
+import { renderToken } from '../../renderer/render.js';
+import { funcLike } from '../../renderer/color/utils/constants.js';
 import '../../validation/syntaxes/complex-selector.js';
+import { evaluateSyntax } from '../../validation/syntax.js';
 
 const config = getSyntaxConfig();
+function replacePseudo(tokens) {
+    return tokens.map((raw) => raw.map(r => {
+        if (r.includes('(')) {
+            const index = r.indexOf('(');
+            const name = r.slice(0, index) + '()';
+            if (name in pseudoAliasMap) {
+                return pseudoAliasMap[name] + r.slice(index);
+            }
+            return r;
+        }
+        return r in pseudoAliasMap && pseudoAliasMap[r] in config["selectors" /* ValidationSyntaxGroupEnum.Selectors */] ? pseudoAliasMap[r] : r;
+    }));
+}
+function replaceAstNodes(tokens, root) {
+    let result = false;
+    for (const { value, parent } of walkValues(tokens, root)) {
+        if (value.typ == EnumToken.IdenTokenType || value.typ == EnumToken.PseudoClassFuncTokenType || value.typ == EnumToken.PseudoClassTokenType || value.typ == EnumToken.PseudoElementTokenType) {
+            let key = value.val + (value.typ == EnumToken.PseudoClassFuncTokenType ? '()' : '');
+            if (key in pseudoAliasMap) {
+                const isPseudClass = pseudoAliasMap[key].startsWith('::');
+                value.val = pseudoAliasMap[key];
+                if (value.typ == EnumToken.IdenTokenType &&
+                    ['min-resolution', 'max-resolution'].includes(value.val) &&
+                    parent?.typ == EnumToken.MediaQueryConditionTokenType &&
+                    parent.r?.[0]?.typ == EnumToken.NumberTokenType) {
+                    Object.assign(parent.r?.[0], {
+                        typ: EnumToken.ResolutionTokenType,
+                        unit: 'x',
+                    });
+                }
+                else if (isPseudClass && value.typ == EnumToken.PseudoElementTokenType) {
+                    // @ts-ignore
+                    value.typ = EnumToken.PseudoClassTokenType;
+                }
+                result = true;
+            }
+        }
+    }
+    return result;
+}
 class ComputePrefixFeature {
-    static get ordering() {
+    get ordering() {
         return 2;
+    }
+    get preProcess() {
+        return true;
+    }
+    get postProcess() {
+        return false;
     }
     static register(options) {
         if (options.removePrefix) {
@@ -21,101 +70,83 @@ class ComputePrefixFeature {
             options.features.push(new ComputePrefixFeature(options));
         }
     }
-    run(ast) {
-        // @ts-ignore
-        const j = ast.chi.length;
-        let k = 0;
-        // @ts-ignore
-        for (; k < j; k++) {
-            // @ts-ignore
-            const node = ast.chi[k];
-            if (node.typ == EnumToken.DeclarationNodeType) {
-                if (node.nam.charAt(0) == '-') {
-                    const match = node.nam.match(/^-([^-]+)-(.+)$/);
-                    if (match != null) {
-                        const nam = match[2];
-                        if (nam.toLowerCase() in config.declarations) {
-                            node.nam = nam;
+    run(node) {
+        if (node.typ == EnumToken.RuleNodeType) {
+            node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? ',' : '') + curr.join(''), '');
+            if (node.raw != null) {
+                node.raw = replacePseudo(node.raw);
+            }
+            if (node.optimized != null) {
+                node.optimized.selector = replacePseudo(node.optimized.selector);
+            }
+            if (node.tokens != null) {
+                replaceAstNodes(node.tokens);
+            }
+        }
+        else if (node.typ == EnumToken.DeclarationNodeType) {
+            if (node.nam.charAt(0) == '-') {
+                const match = node.nam.match(/^-([^-]+)-(.+)$/);
+                if (match != null) {
+                    let nam = match[2];
+                    if (!(nam in config.declarations)) {
+                        if (node.nam in pseudoAliasMap) {
+                            nam = pseudoAliasMap[node.nam];
                         }
                     }
-                }
-                if (node.nam.toLowerCase() in config.declarations) {
-                    for (const { value } of walkValues(node.val)) {
-                        if (value.typ == EnumToken.IdenTokenType && value.val.charAt(0) == '-' && value.val.charAt(1) != '-') {
-                            // @ts-ignore
-                            const values = config.declarations[node.nam].ast?.slice?.();
-                            const match = value.val.match(/^-(.*?)-(.*)$/);
-                            if (values != null && match != null) {
-                                const val = matchToken({ ...value, val: match[2] }, values);
-                                if (val != null) {
-                                    // @ts-ignore
-                                    value.val = val.val;
-                                }
-                            }
-                        }
+                    if (nam in config.declarations) {
+                        node.nam = nam;
                     }
                 }
             }
-        }
-        return ast;
-    }
-}
-function matchToken(token, matches) {
-    let result;
-    for (let i = 0; i < matches.length; i++) {
-        switch (matches[i].typ) {
-            case ValidationTokenEnum.Whitespace:
-            case ValidationTokenEnum.Comma:
-                break;
-            case ValidationTokenEnum.Keyword:
-                if (token.typ == EnumToken.IdenTokenType && token.val == matches[i].val) {
-                    return token;
-                }
-                break;
-            case ValidationTokenEnum.PropertyType:
-                if (['ident', 'custom-ident'].includes(matches[i].val)) {
-                    if (token.typ == EnumToken.IdenTokenType && token.val == matches[i].val) {
-                        return token;
+            let hasPrefix = false;
+            for (const { value } of walkValues(node.val)) {
+                if ((value.typ == EnumToken.IdenTokenType || (value.typ != EnumToken.ParensTokenType && funcLike.includes(value.typ))) && value.val.match(/^-([^-]+)-(.+)$/) != null) {
+                    if (value.val.endsWith('-gradient')) {
+                        // not supported yet
+                        break;
                     }
+                    hasPrefix = true;
+                    break;
                 }
-                else {
-                    const val = matches[i].val;
-                    if (val in config.declarations || val in config.syntaxes) {
-                        // @ts-ignore
-                        result = matchToken(token, (config.syntaxes[val] ?? config.declarations[val]).ast.slice());
-                        if (result != null) {
-                            return result;
+            }
+            if (hasPrefix) {
+                const nodes = structuredClone(node.val);
+                for (const { value } of walkValues(nodes)) {
+                    if ((value.typ == EnumToken.IdenTokenType || funcLike.includes(value.typ))) {
+                        const match = value.val.match(/^-([^-]+)-(.+)$/);
+                        if (match == null) {
+                            continue;
                         }
+                        value.val = match[2];
                     }
                 }
-                break;
-            case ValidationTokenEnum.PipeToken:
-                for (let j = 0; j < matches[i].chi.length; j++) {
-                    result = matchToken(token, matches[i].chi[j]);
-                    if (result != null) {
-                        return result;
-                    }
+                if (SyntaxValidationResult.Valid == evaluateSyntax({ ...node, val: nodes }, {}).valid) {
+                    node.val = nodes;
                 }
-                break;
-            case ValidationTokenEnum.ColumnToken:
-            case ValidationTokenEnum.AmpersandToken:
-                result = matchToken(token, matches[i].l);
-                if (result == null) {
-                    result = matchToken(token, matches[i].r);
-                }
-                if (result != null) {
-                    return result;
-                }
-                break;
-            case ValidationTokenEnum.Bracket:
-                result = matchToken(token, matches[i].chi);
-                if (result != null) {
-                    return result;
-                }
-                break;
+            }
         }
+        else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframeAtRuleNodeType) {
+            if (node.nam.startsWith('-')) {
+                const match = node.nam.match(/^-([^-]+)-(.+)$/);
+                if (match != null && '@' + match[2] in config.atRules) {
+                    node.nam = match[2];
+                }
+            }
+            if (node.typ == EnumToken.AtRuleNodeType && node.val !== '') {
+                if (node.tokens == null) {
+                    Object.defineProperty(node, 'tokens', {
+                        // @ts-ignore
+                        ...definedPropertySettings,
+                        value: parseAtRulePrelude(parseString(node.val), node),
+                    });
+                }
+                if (replaceAstNodes(node.tokens)) {
+                    node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr), '');
+                }
+            }
+        }
+        return node;
     }
-    return null;
 }
 
 export { ComputePrefixFeature };

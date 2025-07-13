@@ -1,13 +1,13 @@
 import type {ColorToken, NumberToken, Token} from "../../../../@types/index.d.ts";
 import {EnumToken} from "../../../ast/index.ts";
-import {COLORS_NAMES} from "./constants.ts";
+import {ColorKind, COLORS_NAMES} from "./constants.ts";
 import {expandHexValue} from "../hex.ts";
 
 export function getComponents(token: ColorToken): Token[] | null {
 
-    if (token.kin == 'hex' || token.kin == 'lit') {
+    if (token.kin == ColorKind.HEX || token.kin == ColorKind.LIT) {
 
-        const value: string = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+        const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t: string) => {
 
@@ -25,7 +25,7 @@ export function getComponents(token: ColorToken): Token[] | null {
             continue;
         }
 
-        if (child.typ == EnumToken.ColorTokenType && (child as ColorToken).val == 'currentcolor') {
+        if (child.typ == EnumToken.ColorTokenType && (child as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
 
             return null;
         }

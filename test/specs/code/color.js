@@ -4,7 +4,7 @@ export function run(describe, expect, transform, parse, render) {
     describe('Parse color', function () {
 
         it('hsl #1', function () {
-            return parse(`.hsl { color: hsl(195, 100%, 50%); }`).then(result => expect(render(result.ast, {minify: false}).code).equals(`.hsl {
+            return parse(`.hsl { color: hsl(195, 100%, 50%); }`).then(result => expect(render(result.ast, {beautify: true}).code).equals(`.hsl {
  color: #00bfff
 }`));
         });
@@ -79,7 +79,7 @@ color: rgb(255 255 none / none);
 a {
 color: hsl(300deg 100% 50% / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #f0f
+ color: #f0f0
 }`));
         });
 
@@ -88,7 +88,7 @@ color: hsl(300deg 100% 50% / none);
 a {
 color: hsl(none 100% 50% / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: red
+ color: #f000
 }`));
         });
 
@@ -97,7 +97,7 @@ color: hsl(none 100% 50% / none);
 a {
 color: rgb(from white r g 0 / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #ff0
+ color: #ff00
 }`));
         });
 
@@ -106,7 +106,7 @@ color: rgb(from white r g 0 / none);
 a {
 color: rgb(from rgb(255 255 none) r g 0 / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #ff0
+ color: #ff00
 }`));
         });
 
@@ -1134,7 +1134,7 @@ html { --base:  oklch(52.6% 0.115 44.6deg) }
     });
 
     it('lch(from var(--color) calc(l / 2) c h) #111', function () {
-        return parse(`
+        return transform(`
 html { 
 --color: green;
   --darker-accent: lch(from var(--color) calc(l / 2) c h); 
@@ -1142,9 +1142,9 @@ html {
 .foo {
 background: var(--darker-accent);
 }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`html {
+`, {inlineCssVariables: true, removeComments: false, beautify: true}).then(result => expect(result.code).equals(`html {
  /* --color: green */
- /* --darker-accent: lch(from green calc(l/2) c h) */
+ /* --darker-accent: lch(from var(--color) calc(l/2) c h) */
 }
 .foo {
  background: #004500
@@ -1206,7 +1206,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
     });
 
     it('light-dark() #126', function () {
-        return parse(`
+        return transform(`
 :root {
 --light: #fff;
 --dark: #000;
@@ -1224,8 +1224,15 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
 /* Custom properties */
 .c {
     color: light-dark(var(--dark), var(--light));
+    
+    .dq {
+        color: light-dark(var(--dark), var(--light));
     }
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+    
+    /* line height */
+    line-height:1
+    }
+`, {inlineCssVariables: true, beautify: true, removeComments: false}).then(result => expect(result.code).equals(`:root {
  /* --light: #fff */
  /* --dark: #000 */
 }
@@ -1239,7 +1246,12 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
 }
 /* Custom properties */
 .c {
- color: light-dark(#000,#fff)
+ color: light-dark(#000,#fff);
+ /* line height */
+ line-height: 1;
+ .dq {
+  color: light-dark(#000,#fff)
+ }
 }`));
     });
 
@@ -1259,12 +1271,10 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
     });
 
     it('percentage in calc() #128', function () {
-        return parse(`
+        return transform(`
  
 a {color:lch(from slateblue calc(l + 10%) c h) ;
-`).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #8673ea
-}`));
+`, {minify: false, validation: true}).then(result => expect(result.code).equals(``));
     });
 
     it('percentage in calc() #129', function () {
@@ -1312,12 +1322,12 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
         return transform(`
  
   .from {
-    --top:  transform: translate3d(0,0,0);
+    --top:  translate3d(0,0,0);
     transform: translate(0, 0);
     background-color:color(from green srgb r g calc((r + g + b)/4)  / 0.5); /* #7fb77f */
 }
   .to {
-    --top:  transform: translate3d(0,0,0);
+    --top:   translate3d(0,0,0);
     transform: scaleX(.5)scaleY(1)scaleZ(1.7)rotate3d(1,1,1,67deg);
     color: color-mix(in lab, oklch(from currentColor l c calc(h/2) ) 80%, #f00 50%);
     border-color: color-mix(in lab, oklab(from currentColor l a calc(b/2) ) 80%, #f00 50%);
@@ -1328,7 +1338,7 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
 }
     
 `, {beautify: true}).then(result => expect(result.code).equals(`.from,.to {
- --top: transform: translate3d(0,0,0)
+ --top: translate3d(0,0,0)
 }
 .to {
  transform: scale3d(.5,1,1.7)rotate3d(1,1,1,67deg);

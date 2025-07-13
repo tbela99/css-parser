@@ -1,10 +1,12 @@
-import {EnumToken} from "../types.ts";
+import {EnumToken, SyntaxValidationResult} from "../types.ts";
 import type {
     AstAtRule,
     AstDeclaration,
+    AstNode,
     AstRule,
+    FunctionToken,
     IdentToken,
-    MinifyFeatureOptions,
+    ParserOptions,
     Token
 } from "../../../@types/index.d.ts";
 import {
@@ -15,20 +17,96 @@ import {
     ValidationKeywordToken,
     ValidationPipeToken,
     ValidationPropertyToken,
+    ValidationSyntaxGroupEnum,
     ValidationToken,
     ValidationTokenEnum
 } from '../../validation/index.ts'
 import {walkValues} from "../walk.ts";
+import {pseudoAliasMap} from "../../syntax/index.ts";
+import {definedPropertySettings, splitRule} from "../minify.ts";
+import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
+import {renderToken} from "../../renderer/index.ts";
+import {parseAtRulePrelude, parseString} from "../../parser/index.ts";
+import {funcLike} from "../../renderer/color/utils/index.ts";
+import {evaluateSyntax} from "../../validation/syntax.ts";
 
-const config = getSyntaxConfig();
+const config: ValidationConfiguration = getSyntaxConfig();
+
+function replacePseudo(tokens: string[][]): string[][] {
+
+    return tokens.map((raw) => raw.map(r => {
+
+        if (r.includes('(')) {
+
+            const index = r.indexOf('(');
+            const name = r.slice(0, index) + '()';
+
+            if (name in pseudoAliasMap) {
+
+                return pseudoAliasMap[name] + r.slice(index);
+            }
+
+            return r;
+        }
+
+        return r in pseudoAliasMap && pseudoAliasMap[r] in config[ValidationSyntaxGroupEnum.Selectors] ? pseudoAliasMap[r] : r;
+    }));
+}
+
+function replaceAstNodes(tokens: Token[], root?: AstNode): boolean {
+
+    let result: boolean = false;
+    for (const {value, parent} of walkValues(tokens, root)) {
+
+        if (value.typ == EnumToken.IdenTokenType || value.typ == EnumToken.PseudoClassFuncTokenType || value.typ == EnumToken.PseudoClassTokenType || value.typ == EnumToken.PseudoElementTokenType) {
+
+            let key: string = value.val + (value.typ == EnumToken.PseudoClassFuncTokenType ? '()' : '');
+
+            if (key in pseudoAliasMap) {
+
+                const isPseudClass: boolean = pseudoAliasMap[key].startsWith('::');
+                value.val = pseudoAliasMap[key];
+
+                if (value.typ == EnumToken.IdenTokenType &&
+                    ['min-resolution', 'max-resolution'].includes(value.val) &&
+                    parent?.typ == EnumToken.MediaQueryConditionTokenType &&
+                    parent.r?.[0]?.typ == EnumToken.NumberTokenType) {
+
+                    Object.assign(parent.r?.[0], {
+
+                        typ: EnumToken.ResolutionTokenType,
+                        unit: 'x',
+                    });
+
+                } else if (isPseudClass && value.typ == EnumToken.PseudoElementTokenType) {
+
+                    // @ts-ignore
+                    value.typ = EnumToken.PseudoClassTokenType;
+                }
+
+                result = true;
+            }
+        }
+    }
+
+    return result;
+}
 
 export class ComputePrefixFeature {
 
-    static get ordering() {
+    get ordering() {
         return 2;
     }
 
-    static register(options: MinifyFeatureOptions) {
+    get preProcess(): boolean {
+        return true;
+    }
+
+    get postProcess(): boolean {
+        return false;
+    }
+
+    static register(options: ParserOptions) {
 
         if (options.removePrefix) {
 
@@ -37,61 +115,125 @@ export class ComputePrefixFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule) {
+    run(node: AstNode) {
 
-        // @ts-ignore
-        const j: number = ast.chi.length;
-        let k: number = 0;
-        // @ts-ignore
-        for (; k < j; k++) {
+        if (node.typ == EnumToken.RuleNodeType) {
 
-            // @ts-ignore
-            const node = ast.chi[k];
+            (node as AstRule).sel = replacePseudo(splitRule((node as AstRule).sel)).reduce((acc, curr, index) => acc + (index > 0 ? ',' : '') + curr.join(''), '');
 
-            if (node.typ == EnumToken.DeclarationNodeType) {
+            if ((node as AstRule).raw != null) {
 
-                if ((<AstDeclaration>node).nam.charAt(0) == '-') {
+                (node as AstRule).raw = replacePseudo((node as AstRule).raw as string[][]);
+            }
 
-                    const match = (<AstDeclaration>node).nam.match(/^-([^-]+)-(.+)$/);
+            if ((node as AstRule).optimized != null) {
 
-                    if (match != null) {
+                (node as AstRule).optimized!.selector = replacePseudo((node as AstRule).optimized!.selector as string[][]);
+            }
 
-                        const nam: string = match[2];
+            if ((node as AstRule).tokens != null) {
 
-                        if (nam.toLowerCase() in config.declarations) {
+                replaceAstNodes((node as AstRule).tokens as Token[]);
+            }
 
-                            (<AstDeclaration>node).nam = nam;
+        } else if (node.typ == EnumToken.DeclarationNodeType) {
+
+            if ((<AstDeclaration>node).nam.charAt(0) == '-') {
+
+                const match = (<AstDeclaration>node).nam.match(/^-([^-]+)-(.+)$/);
+
+                if (match != null) {
+
+                    let nam: string = match[2];
+
+                    if (!(nam in config.declarations)) {
+
+                        if ( (<AstDeclaration>node).nam in pseudoAliasMap) {
+
+                            nam = pseudoAliasMap[ (<AstDeclaration>node).nam];
+
                         }
+                    }
+
+                    if (nam in config.declarations ) {
+
+                        (<AstDeclaration>node).nam = nam;
+                    }
+                }
+            }
+
+            let hasPrefix: boolean = false;
+
+            for (const {value} of walkValues((<AstDeclaration>node).val)) {
+
+                if ((value.typ == EnumToken.IdenTokenType || (value.typ != EnumToken.ParensTokenType && funcLike.includes(value.typ))) && (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/) != null) {
+
+                    if ((value as IdentToken | FunctionToken).val.endsWith('-gradient')) {
+
+                        // not supported yet
+                        break;
+                    }
+
+                    hasPrefix = true;
+                    break;
+                }
+            }
+
+            if (hasPrefix) {
+
+                const nodes = structuredClone(node.val);
+
+                for (const {value} of walkValues(nodes)) {
+
+                    if ((value.typ == EnumToken.IdenTokenType || funcLike.includes(value.typ))) {
+
+                        const match = (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/);
+
+                        if (match == null) {
+
+                            continue;
+                        }
+
+                        (value as IdentToken | FunctionToken).val = match[2];
                     }
                 }
 
-                if ((<AstDeclaration>node).nam.toLowerCase() in config.declarations) {
+                if (SyntaxValidationResult.Valid == evaluateSyntax({...node, val: nodes}, {}).valid) {
 
-                    for (const {value} of walkValues((<AstDeclaration>node).val)) {
+                    (<AstDeclaration>node).val = nodes;
+                }
+            }
 
-                        if (value.typ == EnumToken.IdenTokenType && (value as IdentToken).val.charAt(0) == '-' && (value as IdentToken).val.charAt(1) != '-') {
+        } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframeAtRuleNodeType) {
 
-                            // @ts-ignore
-                            const values: ValidationToken[] = config.declarations[(<AstDeclaration>node).nam].ast?.slice?.() as ValidationToken[];
-                            const match = (value as IdentToken).val.match(/^-(.*?)-(.*)$/);
+            if ((node as AstAtRule).nam.startsWith('-')) {
 
-                            if (values != null && match != null) {
+                const match = (node as AstAtRule).nam.match(/^-([^-]+)-(.+)$/);
 
-                                const val = matchToken({...value, val: match[2]} as Token, values);
+                if (match != null && '@' + match[2] in config.atRules) {
 
-                                if (val != null) {
+                    (node as AstAtRule).nam = match[2];
+                }
+            }
 
-                                    // @ts-ignore
-                                    value.val = val.val;
-                                }
-                            }
-                        }
-                    }
+            if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== '') {
+
+                if ((node as AstAtRule).tokens == null) {
+
+                    Object.defineProperty(node, 'tokens', {
+                        // @ts-ignore
+                        ...definedPropertySettings,
+                        value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
+                    })
+                }
+
+                if (replaceAstNodes((node as AstAtRule).tokens as Token[])) {
+                    (node as AstAtRule).val = ((node as AstAtRule).tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr), '');
                 }
             }
         }
 
-        return ast;
+        return node;
     }
 }
 

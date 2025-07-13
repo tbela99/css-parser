@@ -6,9 +6,10 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { lch2srgb, lab2srgb, oklch2srgb, oklab2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function rgb2hwb(token) {
     // @ts-ignore

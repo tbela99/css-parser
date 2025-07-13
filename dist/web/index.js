@@ -1,17 +1,19 @@
-export { EnumToken } from '../lib/ast/types.js';
+export { EnumToken, ValidationLevel } from '../lib/ast/types.js';
 export { minify } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
 export { expand } from '../lib/ast/expand.js';
 import { doRender } from '../lib/renderer/render.js';
 export { renderToken } from '../lib/renderer/render.js';
+import '../lib/renderer/color/utils/constants.js';
 import { doParse } from '../lib/parser/parse.js';
 export { parseString, parseTokens } from '../lib/parser/parse.js';
-import '../lib/renderer/color/utils/constants.js';
+import '../lib/parser/tokenize.js';
 import '../lib/parser/utils/config.js';
 import '../lib/validation/config.js';
 import '../lib/validation/parser/types.js';
 import '../lib/validation/parser/parse.js';
 import '../lib/validation/syntaxes/complex-selector.js';
+import '../lib/validation/syntax.js';
 import { dirname, resolve } from '../lib/fs/resolve.js';
 import { load } from './load.js';
 

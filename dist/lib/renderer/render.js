@@ -1,8 +1,8 @@
 import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { colorFuncColorSpace, COLORS_NAMES } from './color/utils/constants.js';
+import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES, funcLike } from './color/utils/constants.js';
 import { getComponents } from './color/utils/components.js';
 import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { EnumToken, funcLike } from '../ast/types.js';
+import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
@@ -11,7 +11,6 @@ import { parseRelativeColor } from './color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
 
-const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 function reduceNumber(val) {
     val = String(+val);
     if (val === '0') {
@@ -59,7 +58,8 @@ function doRender(data, options = {}) {
         }),
         ...(minify ? {
             removeEmpty: true,
-            removeComments: true
+            removeComments: true,
+            minify: true
         } : {
             removeEmpty: false,
             removeComments: false,
@@ -105,11 +105,17 @@ function doRender(data, options = {}) {
     }
     if (sourcemap != null) {
         result.map = sourcemap;
+        if (options.sourcemap === 'inline') {
+            result.code += `\n/*# sourceMappingURL=data:application/json,${encodeURIComponent(JSON.stringify(result.map))} */`;
+        }
     }
     return result;
 }
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
-    if ([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType, EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType].includes(node.typ)) {
+    if ([
+        EnumToken.RuleNodeType, EnumToken.AtRuleNodeType,
+        EnumToken.KeyFrameRuleNodeType, EnumToken.KeyframeAtRuleNodeType
+    ].includes(node.typ)) {
         let src = node.loc?.src ?? '';
         let output = options.output ?? '';
         if (!(src in cache)) {
@@ -227,6 +233,7 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
                 return `@${data.nam}${data.val === '' ? '' : options.indent || ' '}${data.val}${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
             }
             return data.sel + `${options.indent}{${options.newLine}` + (children === '' ? '' : indentSub + children + options.newLine) + indent + `}`;
+        case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:
         case EnumToken.InvalidAtRuleTokenType:
             return '';
@@ -324,7 +331,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.Div:
             return '/';
         case EnumToken.ColorTokenType:
-            if (token.kin == 'light-dark') {
+            if (token.kin == ColorKind.LIGHT_DARK || ('chi' in token && !options.convertColor)) {
                 return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + ')';
             }
             if (options.convertColor) {
@@ -334,7 +341,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             acc.push([t]);
                         }
                         else {
-                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
                                 acc[acc.length - 1].push(t);
                             }
                         }
@@ -389,23 +396,45 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     }
                     return clamp(token).val + '(' + (slice ? token.chi.slice(0, -2) : token.chi).reduce((acc, curr) => {
                         const val = renderToken(curr, options, cache);
-                        if ([EnumToken.LiteralTokenType, EnumToken.CommaTokenType].includes(curr.typ)) {
-                            return acc + val;
+                        if (curr.typ == EnumToken.LiteralTokenType && curr.val == '/') {
+                            return acc.trimEnd() + '/';
+                        }
+                        if (curr.typ == EnumToken.CommaTokenType) {
+                            return acc.trimEnd() + ',';
+                        }
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+                            const v = acc.at(-1);
+                            if (v == ' ' || v == ',' || v == '/') {
+                                return acc.trimEnd();
+                            }
+                            return acc.trimEnd() + ' ';
                         }
                         if (acc.length > 0) {
-                            return acc + (['/', ','].includes(acc.at(-1)) ? '' : ' ') + val;
+                            return acc + (['/', ',', ' '].includes(acc.at(-1)) ? '' : ' ') + val;
                         }
                         return val;
                     }, '') + ')';
                 }
-                if (token.kin == 'lit' && token.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
+                if (token.kin == ColorKind.LIT && token.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
                     return 'currentcolor';
                 }
                 clamp(token);
                 if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
-                    return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
+                    const replaceSemiColon = /^((rgba?)|(hsla?)|(hwb)|((ok)?lab)|((ok)?lch))$/i.test(token.val);
+                    return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr, index, array) => {
+                        if (curr.typ == EnumToken.Literal && curr.val == '/') {
+                            return acc.trimEnd() + '/';
+                        }
+                        if (curr.typ == EnumToken.CommaTokenType) {
+                            return acc.trimEnd() + (replaceSemiColon ? ' ' : ',');
+                        }
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+                            return /[,\/\s]/.test(acc.at(-1)) ? acc.trimEnd() : acc.trimEnd() + ' ';
+                        }
+                        return acc + renderToken(curr, options, cache);
+                    }, '') + ')';
                 }
-                let value = token.kin == 'hex' ? token.val.toLowerCase() : (token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : '');
+                let value = token.kin == ColorKind.HEX ? token.val.toLowerCase() : (token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : '');
                 if (token.val == 'rgb' || token.val == 'rgba') {
                     value = rgb2hex(token);
                 }
@@ -434,7 +463,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     return reduceHexValue(value);
                 }
             }
-            if (['hex', 'lit', 'sys', 'dpsys'].includes(token.kin)) {
+            if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes(token.kin)) {
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
@@ -454,9 +483,8 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(token.chi[0].typ) &&
                 // @ts-ignore
                 token.chi[0].val?.typ != EnumToken.FractionTokenType) {
-                return token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '');
+                return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache, reducer), '') + ')';
             }
-            // @ts-ignore
             return ( /* options.minify && 'Pseudo-class-func' == token.typ && token.val.slice(0, 2) == '::' ? token.val.slice(1) :*/token.val ?? '') + '(' + token.chi.reduce(reducer, '') + ')';
         case EnumToken.MatchExpressionTokenType:
             return renderToken(token.l, options, cache, reducer, errors) +
@@ -596,6 +624,9 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 }
                 return val + 's';
             }
+            if (token.typ == EnumToken.ResolutionTokenType && unit == 'dppx') {
+                unit = 'x';
+            }
             return val.includes('/') ? val.replace('/', unit + '/') : val + unit;
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
@@ -670,9 +701,6 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             return 'and';
         case EnumToken.MediaFeatureOrTokenType:
             return 'or';
-        // default:
-        //
-        //     throw new Error(`render: unexpected token ${JSON.stringify(token, null, 1)}`);
     }
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
@@ -690,4 +718,4 @@ function filterValues(values) {
     return values;
 }
 
-export { colorsFunc, doRender, filterValues, reduceNumber, renderToken };
+export { doRender, filterValues, reduceNumber, renderToken };

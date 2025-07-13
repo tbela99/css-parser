@@ -77,7 +77,7 @@ export function* walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResul
 }
 
 /**
- * walk ast values
+ * walk ast node value tokens
  * @param values
  * @param root
  * @param filter
@@ -174,12 +174,51 @@ export function* walkValues(values: Token[], root: AstNode | Token | null = null
                 stack.unshift(...sliced);
             }
 
-        } else if (value.typ == EnumToken.BinaryExpressionTokenType) {
+        } else {
 
-            map.set( (value as BinaryExpressionToken).l, value);
-            map.set( (value as BinaryExpressionToken).r, value);
+            const values: Token[] = [];
 
-            stack.unshift( (value as BinaryExpressionToken).l, (value as BinaryExpressionToken).r);
+            if ('l' in value && value.l != null) {
+
+                // @ts-ignore
+                values.push(value.l);
+                // @ts-ignore
+                map.set(value.l, value);
+            }
+
+            if ('op' in value && typeof value.op == 'object') {
+
+                values.push(value.op);
+                // @ts-ignore
+                map.set(value .op, value);
+            }
+
+            if ('r' in value && value.r != null) {
+
+                if (Array.isArray(value.r)) {
+
+                    for (const r of value.r) {
+
+                        // @ts-ignore
+                        values.push(r);
+                        // @ts-ignore
+                        map.set(r, value);
+                    }
+                }
+
+                else {
+
+                    // @ts-ignore
+                    values.push(value.r);
+                    // @ts-ignore
+                    map.set(value.r, value);
+                }
+            }
+
+            if (values.length > 0) {
+
+                stack.unshift(...values);
+            }
         }
 
         if (eventType == WalkerValueEvent.Leave && filter.fn != null) {

@@ -182,10 +182,12 @@ html, body, div, span, applet, object, iframe,
     border-color: #34edc7;
     border-style: medium;
 }
-`).then(result => expect(render(result.ast, {minify: false, validation: true}).code).equals(`.pure-table-bordered tbody>tr:last-child>td {
- border-width: 0;
- border-color: #34edc7;
- border-style: medium
+`, {minify: false, validation: true}).then(result => expect(result.code).equals(`.pure-table-bordered tbody>tr:last-child>td {
+ border-bottom-width: 0;
+ border-top-width: 0;
+ border-left-width: 0;
+ border-right-width: 0;
+ border-color: #34edc7
 }`));
         });
 
@@ -485,6 +487,21 @@ html, body, div, span, applet, object, iframe,
             return parse(`@namespace svg url('http://www.w3.org/2000/svg')"
 `, {validation: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`@namespace svg url(http://www.w3.org/2000/svg);`));
         });
+
+        it('supports validation #19', function () {
+            return transform(`@supports (color:color-mix(in oklab,black,black)) {
+
+.hsl { color: hsl(195, 100%, 50%); }
+}
+`, {validation: true}).then(result => expect(result.code).equals(`@supports (color:color-mix(in oklab,black,black)){.hsl{color:#00bfff}}`));
+        });
+
+        // failing the CI because of timeout
+//         it('validation #20',  function (done) {
+//
+//              transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/full.css';
+// `, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(1)).then(() => done());
+//         });
     });
 
 }

@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {ValidationLevel} from "../../ast/index.ts";
+import {SyntaxValidationResult} from "../../ast/index.ts";
 import {validateLayerName} from "../syntaxes/index.ts";
 
 
@@ -11,7 +11,7 @@ export function validateAtRuleLayer(atRule: AstAtRule, options: ValidationOption
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
+            valid: SyntaxValidationResult.Valid,
             matches: [],
             node: atRule,
             syntax: '@layer',

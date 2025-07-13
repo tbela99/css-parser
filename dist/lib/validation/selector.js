@@ -2,14 +2,14 @@ import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
+import '../parser/tokenize.js';
+import '../parser/utils/config.js';
 import '../renderer/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
-import '../parser/utils/config.js';
 import { validateRelativeSelectorList } from './syntaxes/relative-selector-list.js';
 import './syntaxes/complex-selector.js';
 import { validateKeyframeBlockList } from './syntaxes/keyframe-block-list.js';
-import './parser/types.js';
-import './parser/parse.js';
+import './syntax.js';
 import './config.js';
 import { validateSelectorList } from './syntaxes/selector-list.js';
 

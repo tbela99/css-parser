@@ -11,8 +11,9 @@ import type {
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
+import {generalEnclosedFunc} from "../../renderer/color/utils";
 
 export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -21,8 +22,8 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: null,
             syntax: null,
             error: '',
@@ -39,18 +40,17 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
     if (slice.length == 0) {
 
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: '',
-            tokens: []
+            error: ''
         }
     }
 
     result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
 
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
 
         return result;
     }
@@ -59,23 +59,21 @@ export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOption
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         }
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     }
 }
 
@@ -100,12 +98,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
             // @ts-ignore
             result = {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@media',
-                error: 'unexpected token',
-                tokens: []
+                error: 'unexpected token'
             } as ValidationSyntaxResult;
             continue;
         }
@@ -123,16 +120,15 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
                 } else {
 
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expecting media feature or media condition',
-                        tokens: []
+                        error: 'expecting media feature or media condition'
                     }
                 }
 
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
 
                     break;
                 }
@@ -153,12 +149,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                     // @ts-ignore
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expected media query list',
-                        tokens: []
+                        error: 'expected media query list'
                     }
 
                     break;
@@ -167,12 +162,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected and/or',
-                    tokens: []
+                    error: 'expected and/or'
                 }
 
                 break;
@@ -187,12 +181,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens: []
+                    error: 'mixing and/or not allowed at the same level'
                 }
 
                 break;
@@ -206,12 +199,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected media-condition',
-                    tokens: []
+                    error: 'expected media-condition'
                 }
 
                 break;
@@ -234,12 +226,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
     if (matched.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected media query list',
-            tokens: []
+            error: 'expected media query list'
         };
     }
 
@@ -270,12 +261,11 @@ export function validateAtRuleMediaQueryList(tokenList: Token[], atRule: AstAtRu
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     }
 }
 
@@ -308,7 +298,7 @@ export function validateMediaCondition(token: Token, atRule: AstAtRule): boolean
         return validateMediaCondition((token as MediaFeatureNotToken).val, atRule);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes((token as FunctionToken).val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && generalEnclosedFunc.includes((token as FunctionToken).val))) {
 
         return false;
     }

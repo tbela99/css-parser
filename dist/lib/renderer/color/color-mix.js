@@ -2,11 +2,12 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
-import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../syntax/syntax.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../../syntax/syntax.js';
 import { getNumber } from './color.js';
 import { srgb2rgb } from './rgb.js';
-import './utils/constants.js';
+import { ColorKind } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hsl } from './hsl.js';
@@ -229,14 +230,16 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             return null;
     }
     const lchSpaces = ['lch', 'oklch'];
+    const colorSpace1 = ColorKind[color1.kin].toLowerCase().replaceAll('_', '-');
+    const colorSpace2 = ColorKind[color2.kin].toLowerCase().replaceAll('_', '-');
     // powerless
-    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+    if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace.val)) {
         if ((components1[2].typ == EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
             values1[2] = values2[2];
         }
     }
     // powerless
-    if (lchSpaces.includes(color1.kin) || lchSpaces.includes(colorSpace.val)) {
+    if (lchSpaces.includes(colorSpace2) || lchSpaces.includes(colorSpace.val)) {
         if ((components2[2].typ == EnumToken.IdenTokenType && components2[2].val == 'none') || values2[2] == 0) {
             values2[2] = values1[2];
         }
@@ -276,7 +279,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                         val: String(v)
                     };
                 }),
-                kin: 'lch'
+                kin: ColorKind.LCH
             };
         case 'srgb':
         case 'srgb-linear':
@@ -287,7 +290,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 typ: EnumToken.ColorTokenType,
                 val: 'color',
                 chi: calculate(),
-                kin: 'color',
+                kin: ColorKind.COLOR,
                 cal: 'col'
             };
         case 'rgb':
@@ -326,7 +329,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace.val,
                 chi: calculate().slice(1),
-                kin: colorSpace.val
+                kin: ColorKind[colorSpace.val.toLowerCase().replaceAll('-', '_')]
             };
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
                 // @ts-ignore

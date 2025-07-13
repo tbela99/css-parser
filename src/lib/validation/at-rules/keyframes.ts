@@ -1,6 +1,6 @@
 import type {AstKeyframAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 
 export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -9,12 +9,11 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting at-rule prelude',
-            tokens: []
+            error: 'expecting at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -26,12 +25,11 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting at-rule prelude',
-            tokens
+            error: 'expecting at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -39,12 +37,11 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@keyframes',
-            error: 'expecting ident or string token',
-            tokens
+            error: 'expecting ident or string token'
         } as ValidationSyntaxResult;
     }
 
@@ -55,22 +52,20 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: tokens[0],
             syntax: '@keyframes',
-            error: 'unexpected token',
-            tokens
+            error: 'unexpected token'
         }
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@keyframes',
-        error: '',
-        tokens
+        error: ''
     }
 }

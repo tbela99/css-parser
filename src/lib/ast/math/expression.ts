@@ -660,7 +660,7 @@ function isScalarToken(token: Token): boolean {
  * generate binary expression tree
  * @param tokens
  */
-function buildExpression(tokens: Token[]): BinaryExpressionToken {
+export function buildExpression(tokens: Token[]): BinaryExpressionToken {
 
     return <BinaryExpressionToken>factor(factor(tokens.filter(t => t.typ != EnumToken.WhitespaceTokenType), ['/', '*']), ['+', '-'])[0];
 }

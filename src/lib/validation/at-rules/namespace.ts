@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 import {validateURL} from "../syntaxes/url.ts";
 
@@ -11,12 +11,11 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'expected at-rule prelude',
-            tokens: []
+            error: 'expected at-rule prelude'
         } as ValidationSyntaxResult;
     }
 
@@ -24,12 +23,11 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'unexpected at-rule body',
-            tokens: []
+            error: 'unexpected at-rule body'
         } as ValidationSyntaxResult;
     }
 
@@ -47,12 +45,11 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@namespace',
-            error: 'expected string or url()',
-            tokens
+            error: 'expected string or url()'
         } as ValidationSyntaxResult;
     }
 
@@ -60,7 +57,7 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
         const result = validateURL(tokens[0]);
 
-        if (result.valid != ValidationLevel.Valid) {
+        if (result.valid != SyntaxValidationResult.Valid) {
 
             return result;
         }
@@ -77,22 +74,20 @@ export function validateAtRuleNamespace(atRule: AstAtRule, options: ValidationOp
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: tokens[0],
             syntax: '@namespace',
-            error: 'unexpected token',
-            tokens
+            error: 'unexpected token'
         } as ValidationSyntaxResult;
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@namespace',
-        error: '',
-        tokens
+        error: ''
     }
 }

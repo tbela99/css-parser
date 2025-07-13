@@ -1,19 +1,20 @@
 import { minmax } from './color.js';
-import { COLORS_NAMES } from './utils/constants.js';
+import { COLORS_NAMES, ColorKind } from './utils/constants.js';
 import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { expandHexValue } from './hex.js';
 import { hslvalues, hsl2srgbvalues, hwb2srgb, cmyk2srgb, oklab2srgb, oklch2srgb, lab2srgb, lch2srgb } from './srgb.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function srgb2rgb(value) {
     return minmax(Math.round(value * 255), 0, 255);
 }
 function hex2rgb(token) {
-    const value = expandHexValue(token.kin == 'lit' ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16));

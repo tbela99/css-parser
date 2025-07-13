@@ -1,10 +1,11 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
-import '../../renderer/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { generalEnclosedFunc } from '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
 
@@ -13,8 +14,8 @@ function validateAtRuleMedia(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: null,
             syntax: null,
             error: '',
@@ -26,37 +27,34 @@ function validateAtRuleMedia(atRule, options, root) {
     consumeWhitespace(slice);
     if (slice.length == 0) {
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: '',
-            tokens: []
+            error: ''
         };
     }
     result = validateAtRuleMediaQueryList(atRule.tokens, atRule);
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         };
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 function validateAtRuleMediaQueryList(tokenList, atRule) {
@@ -74,12 +72,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
         if (tokens.length == 0) {
             // @ts-ignore
             result = {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@media',
-                error: 'unexpected token',
-                tokens: []
+                error: 'unexpected token'
             };
             continue;
         }
@@ -92,15 +89,14 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 }
                 else {
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expecting media feature or media condition',
-                        tokens: []
+                        error: 'expecting media feature or media condition'
                     };
                 }
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     break;
                 }
                 result = null;
@@ -113,12 +109,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
                 if (previousToken?.typ != EnumToken.ParensTokenType) {
                     // @ts-ignore
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0] ?? atRule,
                         syntax: '@media',
-                        error: 'expected media query list',
-                        tokens: []
+                        error: 'expected media query list'
                     };
                     break;
                 }
@@ -126,12 +121,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             else if (![EnumToken.MediaFeatureOrTokenType, EnumToken.MediaFeatureAndTokenType].includes(tokens[0].typ)) {
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected and/or',
-                    tokens: []
+                    error: 'expected and/or'
                 };
                 break;
             }
@@ -141,12 +135,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             if (mediaFeatureType.typ != tokens[0].typ) {
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens: []
+                    error: 'mixing and/or not allowed at the same level'
                 };
                 break;
             }
@@ -155,12 +148,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
             if (tokens.length == 0) {
                 // @ts-ignore
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@media',
-                    error: 'expected media-condition',
-                    tokens: []
+                    error: 'expected media-condition'
                 };
                 break;
             }
@@ -175,12 +167,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
     }
     if (matched.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@media',
-            error: 'expected media query list',
-            tokens: []
+            error: 'expected media query list'
         };
     }
     tokenList.length = 0;
@@ -200,12 +191,11 @@ function validateAtRuleMediaQueryList(tokenList, atRule) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@media',
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 function validateCustomMediaCondition(token, atRule) {
@@ -225,7 +215,7 @@ function validateMediaCondition(token, atRule) {
     if (token.typ == EnumToken.MediaFeatureNotTokenType) {
         return validateMediaCondition(token.val, atRule);
     }
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['media', 'supports', 'selector'].includes(token.val))) {
+    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else', 'import'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && generalEnclosedFunc.includes(token.val))) {
         return false;
     }
     const chi = token.chi.filter((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);

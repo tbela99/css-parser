@@ -7,10 +7,11 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { lch2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function hex2oklab(token) {
     // @ts-ignore

@@ -210,7 +210,7 @@ scale: rem(10 * 2, 1.7);
 
         it('pow() #20', function () {
             
-            return parse(`
+            return transform(`
 
 :root {
   --size-0: 100px;
@@ -234,11 +234,11 @@ scale: rem(10 * 2, 1.7);
   height: var(--size-3);
 }
 
-`, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`:root {
+`, {inlineCssVariables: true, removeComments: false, beautify: true}).then(result => expect(result.code).equals(`:root {
  /* --size-0: 100px */
- /* --size-1: 100px */
- /* --size-2: 141px */
- /* --size-3: 250px */
+ /* --size-1: hypot(var(--size-0)) */
+ /* --size-2: hypot(var(--size-0),var(--size-0)) */
+ /* --size-3: hypot(var(--size-0)*1.5,var(--size-0)*2) */
 }
 .one {
  width: 100px;

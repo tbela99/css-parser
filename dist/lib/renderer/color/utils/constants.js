@@ -2,8 +2,9 @@ import { EnumToken } from '../../../ast/types.js';
 import '../../../ast/minify.js';
 import '../../../ast/walk.js';
 import '../../../parser/parse.js';
-import '../../sourcemap/lib/encode.js';
+import '../../../parser/tokenize.js';
 import '../../../parser/utils/config.js';
+import '../../sourcemap/lib/encode.js';
 
 const colorRange = {
     lab: {
@@ -27,8 +28,51 @@ const colorRange = {
         b: [0, 0.4]
     }
 };
+// xyz-d65 is an alias for xyz
+// display-p3 is an alias for srgb
+var ColorKind;
+(function (ColorKind) {
+    ColorKind[ColorKind["SYS"] = 0] = "SYS";
+    ColorKind[ColorKind["DPSYS"] = 1] = "DPSYS";
+    ColorKind[ColorKind["LIT"] = 2] = "LIT";
+    ColorKind[ColorKind["HEX"] = 3] = "HEX";
+    ColorKind[ColorKind["RGB"] = 4] = "RGB";
+    ColorKind[ColorKind["RGBA"] = 5] = "RGBA";
+    ColorKind[ColorKind["HSL"] = 6] = "HSL";
+    ColorKind[ColorKind["HSLA"] = 7] = "HSLA";
+    ColorKind[ColorKind["HWB"] = 8] = "HWB";
+    ColorKind[ColorKind["DEVICE_CMYK"] = 9] = "DEVICE_CMYK";
+    ColorKind[ColorKind["OKLAB"] = 10] = "OKLAB";
+    ColorKind[ColorKind["OKLCH"] = 11] = "OKLCH";
+    ColorKind[ColorKind["LAB"] = 12] = "LAB";
+    ColorKind[ColorKind["LCH"] = 13] = "LCH";
+    ColorKind[ColorKind["COLOR"] = 14] = "COLOR";
+    ColorKind[ColorKind["SRGB"] = 15] = "SRGB";
+    ColorKind[ColorKind["PROPHOTO_RGB"] = 16] = "PROPHOTO_RGB";
+    ColorKind[ColorKind["A98_RGB"] = 17] = "A98_RGB";
+    ColorKind[ColorKind["REC2020"] = 18] = "REC2020";
+    ColorKind[ColorKind["DISPLAY_P3"] = 19] = "DISPLAY_P3";
+    ColorKind[ColorKind["SRGB_LINEAR"] = 20] = "SRGB_LINEAR";
+    ColorKind[ColorKind["XYZ"] = 21] = "XYZ";
+    ColorKind[ColorKind["XYZ_D50"] = 22] = "XYZ_D50";
+    ColorKind[ColorKind["XYZ_D65"] = 23] = "XYZ_D65";
+    ColorKind[ColorKind["LIGHT_DARK"] = 24] = "LIGHT_DARK";
+    ColorKind[ColorKind["COLOR_MIX"] = 25] = "COLOR_MIX";
+})(ColorKind || (ColorKind = {}));
+const generalEnclosedFunc = ['selector', 'font-tech', 'font-format', 'media', 'supports'];
+const funcLike = [
+    EnumToken.ParensTokenType,
+    EnumToken.FunctionTokenType,
+    EnumToken.UrlFunctionTokenType,
+    EnumToken.StartParensTokenType,
+    EnumToken.ImageFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.TimingFunctionTokenType,
+    EnumToken.PseudoClassFuncTokenType,
+    EnumToken.GridTemplateFuncTokenType
+];
+const colorsFunc = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'device-cmyk', 'color-mix', 'color', 'oklab', 'lab', 'oklch', 'lch', 'light-dark'];
 const colorFuncColorSpace = ['srgb', 'srgb-linear', 'display-p3', 'prophoto-rgb', 'a98-rgb', 'rec2020', 'xyz', 'xyz-d65', 'xyz-d50'];
-({ typ: EnumToken.IdenTokenType});
 const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
 const k = Math.pow(29, 3) / Math.pow(3, 3);
 const e = Math.pow(6, 3) / Math.pow(29, 3);
@@ -194,4 +238,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, deprecatedSystemColors, e, k, systemColors };
+export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, k, systemColors };

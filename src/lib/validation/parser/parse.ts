@@ -23,7 +23,6 @@ import {
     ValidationBlockToken,
     ValidationBracketToken,
     ValidationCharacterToken,
-    ValidationColumnArrayToken,
     ValidationColumnToken,
     ValidationCommaToken,
     ValidationDeclarationDefinitionToken,
@@ -31,6 +30,7 @@ import {
     ValidationDeclarationToken,
     ValidationFunctionDefinitionToken,
     ValidationFunctionToken,
+    ValidationInfinityToken,
     ValidationKeywordToken,
     ValidationParensToken,
     ValidationPipeToken,
@@ -90,7 +90,7 @@ const objectProperties = {
     configurable: true
 }
 
-const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:129.0) Gecko/20100101 Firefox/129.0'}}
+export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/138.0'}}
 // syntaxes: keyword | <'property'> | <function>
 
 // "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
@@ -121,6 +121,17 @@ function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}
         move(currentPosition, chr);
 
         switch (chr) {
+
+            case '∞':
+
+                if (buffer.length > 0) {
+
+                    yield getTokenType(buffer, position, currentPosition);
+                }
+
+                yield getTokenType(chr, position, currentPosition);
+                buffer = '';
+                break;
 
             case '\\':
 
@@ -305,88 +316,6 @@ function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}
     }
 }
 
-function columnCallback(token: ValidationToken, parent: ValidationToken, key: WalkValidationTokenKeyTypeEnum) {
-
-    if (key == WalkValidationTokenKeyTypeEnum.Prelude) {
-
-        return WalkValidationTokenEnum.IgnoreAll;
-    }
-
-    if (token.typ == ValidationTokenEnum.ColumnToken || token.typ == ValidationTokenEnum.Whitespace) {
-
-        return WalkValidationTokenEnum.IgnoreNode
-    }
-
-    return WalkValidationTokenEnum.IgnoreChildren
-}
-
-function toColumnArray(ast: ValidationColumnToken, parent?: ValidationToken): ValidationToken {
-
-    const result = new Map;
-
-    // @ts-ignore
-    for (const {token} of walkValidationToken(ast, null, columnCallback)) {
-
-        result.set(JSON.stringify(token), token);
-    }
-
-    const node = {
-        typ: ValidationTokenEnum.ColumnArrayToken,
-        chi: [...result.values()]
-    } as ValidationColumnArrayToken;
-
-    if (parent != null) {
-
-        replaceNode(parent, ast, node);
-    }
-
-    return node;
-}
-
-function replaceNode(parent: ValidationToken, target: ValidationToken, node: ValidationToken) {
-
-    if ('l' in parent && parent.l == target) {
-
-        parent.l = node;
-    }
-
-    if ('r' in parent && parent.r == target) {
-
-        parent.r = node;
-    }
-
-    if ('chi' in parent) {
-
-        // @ts-ignore
-        for (let i = 0; i < parent.chi.length; i++) {
-
-            // @ts-ignore
-            if (parent.chi[i] == target) {
-
-                // @ts-ignore
-                parent.chi[i] = node;
-                break;
-            }
-        }
-    }
-}
-
-function transform(context: ValidationContext): ValidationToken {
-
-    for (const {token, parent} of walkValidationToken(context)) {
-
-        switch (token.typ) {
-
-            case ValidationTokenEnum.ColumnToken:
-
-                toColumnArray(token as ValidationColumnToken, parent as ValidationToken);
-                break
-        }
-    }
-
-    return context;
-}
-
 export function parseSyntax(syntax: string): ValidationRootToken {
 
     const root: ValidationRootToken = Object.defineProperty({
@@ -395,7 +324,7 @@ export function parseSyntax(syntax: string): ValidationRootToken {
     }, 'pos', {...objectProperties, value: {ind: 0, lin: 1, col: 0}}) as ValidationRootToken;
 
     // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
-    return minify(transform(doParseSyntax(syntax, tokenize(syntax), root))) as ValidationRootToken;
+    return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
 }
 
 function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorValue> | Generator<ValidationToken>): ValidationToken[] {
@@ -408,6 +337,8 @@ function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
 
+        // console.error(JSON.stringify({match, val: item.value,func}, null, 1));
+
         switch (item.value.typ) {
 
             case ValidationTokenEnum.OpenParenthesis:
@@ -419,7 +350,7 @@ function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
                     func = items.at(-1) as ValidationFunctionToken | ValidationPseudoClassFunctionToken;
 
-                    if (func == null) {
+                    if (func == null || func.val == null || func.val === '') {
 
                         func = Object.defineProperty({
 
@@ -598,6 +529,12 @@ function matchCurlBraces(syntax: string, iterator: Iterator<ValidationTokenItera
                     items.push(item.value);
                 }
 
+                if ('chi' in item.value) {
+
+                    // @ts-ignore
+                    item.value.chi = matchCurlBraces(syntax, ((item.value as ValidationContext).chi as ValidationToken[])[Symbol.iterator]());
+                }
+
                 break;
         }
     }
@@ -614,7 +551,7 @@ function matchCurlBraces(syntax: string, iterator: Iterator<ValidationTokenItera
             (items[i - 1] as ValidationToken).occurence = {
 
                 min: +((it as ValidationBlockToken).chi[0] as NumberToken).val,
-                max: +(((it as ValidationBlockToken).chi[2] ?? (it as ValidationBlockToken).chi[0]) as NumberToken).val
+                max: (it as ValidationBlockToken).chi[2]?.typ == ValidationTokenEnum.InfinityToken ? Number.POSITIVE_INFINITY : +(((it as ValidationBlockToken).chi[2] ?? (it as ValidationBlockToken).chi[0]) as NumberToken).val
             }
 
             items.splice(i--, 1);
@@ -795,10 +732,29 @@ function matchAtRule(syntax: string, iterator: Iterator<ValidationTokenIteratorV
     return children;
 }
 
-function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>, validationToken: ValidationTokenEnum.Ampersand | ValidationTokenEnum.Pipe | ValidationTokenEnum.Column): ValidationToken[] {
+function matchToken(syntax: string, iterator: ValidationToken[], validationToken: ValidationTokenEnum.Ampersand | ValidationTokenEnum.Pipe | ValidationTokenEnum.Column): ValidationToken[];
+function matchToken(syntax: string, iterator: ValidationToken[][], validationToken: ValidationTokenEnum.Ampersand | ValidationTokenEnum.Pipe | ValidationTokenEnum.Column): ValidationToken[][];
+
+function matchToken(syntax: string, iterator: ValidationToken[] | ValidationToken[][], validationToken: ValidationTokenEnum.Ampersand | ValidationTokenEnum.Pipe | ValidationTokenEnum.Column): ValidationToken[] | ValidationToken[][] {
+
+    if (iterator.length == 0) {
+
+        return [];
+    }
+
+    if (Array.isArray(iterator[0])) {
+
+        const result: ValidationToken[][] = [];
+
+        for (let i = 0; i < iterator.length; i++) {
+
+            result.push(matchToken(syntax, iterator[i] as ValidationFunctionToken[], validationToken));
+        }
+
+        return result;
+    }
 
     let children: ValidationToken[] = [];
-    let item: ValidationTokenIteratorValue;
     let token: ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken | null = null;
     let i: number;
 
@@ -845,52 +801,56 @@ function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorVa
             } else if ('chi' in children[i]) {
 
                 // @ts-ignore
-                children[i].chi = matchToken(syntax, children[i].chi[Symbol.iterator](), validationToken);
+                children[i].chi = matchToken(syntax, children[i].chi, validationToken);
             } else if ('l' in children[i]) {
 
                 // @ts-ignore
-                children[i].l = matchToken(syntax, children[i].l[Symbol.iterator](), validationToken);
+                children[i].l = matchToken(syntax, children[i].l, validationToken);
                 // @ts-ignore
-                children[i].r = matchToken(syntax, children[i].r[Symbol.iterator](), validationToken);
+                children[i].r = matchToken(syntax, children[i].r, validationToken);
             }
         }
 
         return children;
     }
 
-    while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
+    let item: ValidationToken;
 
-        if (item.value.typ == validationToken) {
+    for (i = 0; i < iterator.length; i++) {
 
-            if (item.value.typ == ValidationTokenEnum.Pipe) {
+        item = iterator[i] as ValidationToken;
+
+        if (item.typ == validationToken) {
+
+            if (item.typ == ValidationTokenEnum.Pipe) {
 
                 token = Object.defineProperty({
 
                     typ: ValidationTokenEnum.PipeToken,
-                    chi: [matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
+                    chi: [matchToken(syntax, children.slice() as ValidationToken[], validationToken)], //.concat(matchToken(syntaxes, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken), matchToken(syntaxes, iterator, validationToken)),
                     // @ts-ignore
                     // l: matchToken(syntaxes, children.slice()[Symbol.iterator](), validationToken),
                     // r: matchToken(syntaxes, iterator, validationToken)
                 }, 'pos', {
                     ...objectProperties,
-                    value: item.value.pos
+                    value: item.pos
                 }) as ValidationPipeToken;
 
                 children.length = 0;
 
-                while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
+                while ((item = iterator[++i] as ValidationToken) != null) {
 
-                    if (item.value.typ == ValidationTokenEnum.Pipe) {
-                        token.chi.push(matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken));
+                    if (item.typ == ValidationTokenEnum.Pipe) {
+                        token.chi.push(matchToken(syntax, children.slice() as ValidationToken[], validationToken));
                         children.length = 0;
                     } else {
 
-                        children.push(item.value);
+                        children.push(item as ValidationToken);
                     }
                 }
 
                 if (children.length > 0) {
-                    token.chi.push(matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken));
+                    token.chi.push(matchToken(syntax, children.slice() as ValidationToken[], validationToken));
                 }
 
                 token.chi.sort((a: ValidationToken[], b: ValidationToken[]) => {
@@ -954,29 +914,31 @@ function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorVa
                 token = Object.defineProperty({
 
                     typ: ValidationTokenEnum.ColumnToken,
-                    l: matchToken(syntax, children.slice()[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>, validationToken),
-                    r: matchToken(syntax, iterator, validationToken)
+                    l: matchToken(syntax, children.slice() as ValidationToken[], validationToken),
+                    r: matchToken(syntax, iterator.slice(i + 1) as ValidationToken[], validationToken)
                 }, 'pos', {
                     ...objectProperties,
-                    value: item.value.pos
+                    value: item.pos
                 }) as ValidationColumnToken | ValidationAmpersandToken;
+                i = iterator.length;
             }
 
             children.length = 0;
             children.push(token);
 
-            while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
 
-                children.push(item.value as ValidationToken);
+            while ((item = iterator[++i] as ValidationToken) != null) {
 
-                if ('chi' in item.value) {
+                children.push(item as ValidationToken);
+
+                if ('chi' in item) {
                     // @ts-ignore
-                    item.value.chi = matchToken(syntax, (item.value.chi as ValidationToken[])[Symbol.iterator](), validationToken);
-                } else if ('l' in item.value) {
+                    item.chi = matchToken(syntax, (item.chi as ValidationToken[]), validationToken);
+                } else if ('l' in item) {
                     // @ts-ignore
-                    item.value.l = matchToken(syntax, (item.value.l as ValidationToken[])[Symbol.iterator](), validationToken);
+                    item.l = matchToken(syntax, (item.l as ValidationToken[]), validationToken);
                     // @ts-ignore
-                    item.value.r = matchToken(syntax, (item.value.r as ValidationToken[])[Symbol.iterator](), validationToken);
+                    item.r = matchToken(syntax, (item.r as ValidationToken[]), validationToken);
                 }
             }
 
@@ -985,17 +947,17 @@ function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorVa
 
         } else {
 
-            children.push(item.value as ValidationToken);
+            // @ts-ignore
+            children.push(item as ValidationToken);
 
-            if ('chi' in item.value) {
+            if ('chi' in item) {
 
                 // @ts-ignore
-                item.value.chi = matchToken(syntax, (item.value.chi as ValidationToken[])[Symbol.iterator](), validationToken);
-            } else if ('l' in item.value) {
+                item.chi = matchToken(syntax, (item.chi as ValidationToken[]), validationToken);
+            } else if ('l' in item) {
+                item.l = matchToken(syntax, (item.l as ValidationToken[]), validationToken);
                 // @ts-ignore
-                item.value.l = matchToken(syntax, (item.value.l as ValidationToken[])[Symbol.iterator](), validationToken);
-                // @ts-ignore
-                item.value.r = matchToken(syntax, (item.value.r as ValidationToken[])[Symbol.iterator](), validationToken);
+                item.r = matchToken(syntax, (item.r as ValidationToken[]), validationToken);
             }
         }
     }
@@ -1003,7 +965,7 @@ function matchToken(syntax: string, iterator: Iterator<ValidationTokenIteratorVa
     return children;
 }
 
-function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>): ValidationToken[] {
+function parseSyntaxTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorValue>): ValidationToken[] {
 
     const items: ValidationToken[] = [];
     let item: ValidationTokenIteratorValue;
@@ -1014,7 +976,7 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
         if (Array.isArray(item.value)) {
 
             // @ts-ignore
-            item.value = parseTokens(syntax, item.value[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>);
+            item.value = parseSyntaxTokens(syntax, item.value[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>);
         }
 
         switch (item.value.typ) {
@@ -1056,7 +1018,7 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
                     (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence = {
 
                         min: 0,
-                        max: 0
+                        max: null
                     };
 
                     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
@@ -1066,7 +1028,7 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
                             if ((items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min == 0) {
 
                                 // @ts-ignore
-                                (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min = +(item.value as NumberToken).val;
+                                (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.min = (items[i] as ValidationBracketToken | ValidationPropertyToken | ValidationDeclarationToken).occurence.max = +(item.value as NumberToken).val;
                             } else {
 
                                 // @ts-ignore
@@ -1085,7 +1047,7 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
             case ValidationTokenEnum.Pipe:
 
-                (item.value as ValidationPipeToken).chi = (item.value as ValidationPipeToken).chi.map((t: ValidationToken[]) => parseTokens(syntax, t[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>))
+                (item.value as ValidationPipeToken).chi = (item.value as ValidationPipeToken).chi.map((t: ValidationToken[]) => parseSyntaxTokens(syntax, t[Symbol.iterator]() as Iterator<ValidationTokenIteratorValue>))
                 items.push(item.value);
                 break;
 
@@ -1100,63 +1062,52 @@ function parseTokens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
         if ('chi' in items[i]) {
             // @ts-ignore
-            items[i].chi = parseTokens(syntax, (items[i].chi as ValidationToken[])[Symbol.iterator]());
+            items[i].chi = parseSyntaxTokens(syntax, (items[i].chi as ValidationToken[])[Symbol.iterator]());
         } else if ('l' in items[i]) {
             // @ts-ignore
-            items[i].l = parseTokens(syntax, (items[i].l as ValidationToken[])[Symbol.iterator]());
+            items[i].l = parseSyntaxTokens(syntax, (items[i].l as ValidationToken[])[Symbol.iterator]());
             // @ts-ignore
-            items[i].r = parseTokens(syntax, (items[i].r as ValidationToken[])[Symbol.iterator]());
+            items[i].r = parseSyntaxTokens(syntax, (items[i].r as ValidationToken[])[Symbol.iterator]());
         }
 
-        if (items[i].isOptional || items[i].isRepeatable) {
+        if (items[i].typ != ValidationTokenEnum.Bracket && (items[i].isOptional || items[i].isRepeatable)) {
 
-            if (i <= 1) {
+            let k: number = i;
 
-                let k: number = i;
+            while (--k > 0) {
 
-                while (++k < items.length) {
+                if (items[k].typ == ValidationTokenEnum.Whitespace) {
 
-                    if (items[k].typ == ValidationTokenEnum.Whitespace) {
-
-                        continue;
-                    }
-
-                    if (items[k].typ == ValidationTokenEnum.Comma) {
-
-                        items.splice(i, k - i + 1, Object.defineProperty({
-
-                            typ: ValidationTokenEnum.Bracket,
-                            chi: items.slice(i, k + 1)
-                        }, 'pos', {...objectProperties, value: items[i].pos}) as ValidationBracketToken);
-                    }
-
-                    break;
+                    continue;
                 }
 
-            } else {
+                if (items[k].typ == ValidationTokenEnum.Comma) {
 
-                let k: number = i;
+                    const wrapper = Object.defineProperty({
 
-                while (--k > 0) {
+                        typ: ValidationTokenEnum.Bracket,
+                        chi: items.slice(k, i + 1)
+                    }, 'pos', {...objectProperties, value: items[k].pos}) as ValidationBracketToken;
 
-                    if (items[k].typ == ValidationTokenEnum.Whitespace) {
+                    if (items[i].isOptional) {
 
-                        continue;
+                        wrapper.isOptional = true;
+                        delete items[i].isOptional;
                     }
 
-                    if (items[k].typ == ValidationTokenEnum.Comma) {
+                    if (items[i].isRepeatable) {
 
-                        items.splice(k, i - k + 1, Object.defineProperty({
-
-                            typ: ValidationTokenEnum.Bracket,
-                            chi: items.slice(k, i + 1)
-                        }, 'pos', {...objectProperties, value: items[k].pos}) as ValidationBracketToken);
-                        i = k - 1;
+                        wrapper.isRepeatable = true;
+                        delete items[i].isRepeatable;
                     }
 
-                    break;
+                    items.splice(k, i - k + 1, wrapper);
+                    i = k - 1;
                 }
+
+                break;
             }
+            // }
         }
     }
 
@@ -1173,13 +1124,13 @@ function doParseSyntax(syntax: string, iterator: Iterator<ValidationTokenIterato
     // @ts-ignore
     context.chi = matchCurlBraces(syntax, context.chi[Symbol.iterator]());
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Column) as ValidationColumnToken[];
+    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Pipe) as ValidationPipeToken[];
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Pipe) as ValidationPipeToken[];
+    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Column) as ValidationColumnToken[];
     // @ts-ignore
-    context.chi = parseTokens(syntax, context.chi[Symbol.iterator]()) as ValidationSemicolonToken[];
+    context.chi = matchToken(syntax, context.chi, ValidationTokenEnum.Ampersand) as ValidationAmpersandToken[];
     // @ts-ignore
-    context.chi = matchToken(syntax, context.chi[Symbol.iterator](), ValidationTokenEnum.Ampersand) as ValidationAmpersandToken[];
+    context.chi = parseSyntaxTokens(syntax, context.chi[Symbol.iterator]()) as ValidationSemicolonToken[];
 
     return context;
 }
@@ -1189,6 +1140,13 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
     const pos: Position = {...position};
 
     Object.assign(position, currentPosition);
+    // '∞'
+    if (token == '\u221e') {
+
+        return <ValidationInfinityToken>Object.defineProperty({
+            typ: ValidationTokenEnum.InfinityToken,
+        }, 'pos', {...objectProperties, value: pos});
+    }
 
     if (token.charAt(0) == '"' || token.charAt(0) == "'") {
 
@@ -1374,7 +1332,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
             return <ValidationPropertyToken>Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
                 val: match[1],
-                range: [+match[3], match[4] == '∞' ? Infinity : +match[4]]
+                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
             }, 'pos', {...objectProperties, value: pos});
         }
 
@@ -1414,6 +1372,11 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
     let glue: string;
 
     switch (token.typ) {
+
+        case ValidationTokenEnum.InfinityToken:
+
+            // '∞'
+            return '\u221e';
 
         case ValidationTokenEnum.Root:
 
@@ -1523,13 +1486,13 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
 
             return (token as ValidationDeclarationDefinitionToken).nam + ': ' + renderSyntax((token as ValidationDeclarationDefinitionToken).val);
 
-        case ValidationTokenEnum.ColumnArrayToken:
-
-            return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
+        // case ValidationTokenEnum.ColumnArrayToken:
+        //
+        //     return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
 
         default:
 
-            throw new Error('Unhandled token: ' + JSON.stringify({token}));
+            throw new Error('Unhandled token: ' + JSON.stringify({token}, null, 1));
     }
 }
 
@@ -1564,12 +1527,12 @@ function renderAttributes(token: ValidationToken): string {
 
     if (token.occurence != null) {
 
-        if (token.occurence.max == 0 || token.occurence.max == token.occurence.min || Number.isNaN(token.occurence.max)) {
+        if (token.occurence.max == null || token.occurence.max == token.occurence.min || Number.isNaN(token.occurence.max)) {
 
             result += '{' + token.occurence.min + '}';
         } else {
 
-            result += '{' + token.occurence.min + ',' + token.occurence.max + '}';
+            result += '{' + token.occurence.min + ',' + (Number.isFinite(token.occurence.max) ? token.occurence.max : '\u221e') + '}';
         }
     }
 
@@ -1595,25 +1558,7 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
         for (let i = 0; i < ast.length; i++) {
 
-            // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast[i].typ)) {
-
-            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
-
             minify(ast[i]);
-            // }
-
-            // for (const j of (ast[i] as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
-            //
-            //     minify(j);
-            // }
-
-            // } else
-
-            //     if ('chi' in ast[i]) {
-            //
-            //     minify((ast[i] as ValidationFunctionToken | ValidationBracketToken).chi as ValidationToken[]);
-            //
-            // } else
 
             if (ast[i].typ == ValidationTokenEnum.Whitespace && ast[i + 1]?.typ == ValidationTokenEnum.Whitespace) {
 
@@ -1639,19 +1584,11 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
         return ast;
 
     }
-    // else {
-
-    // if ([ValidationTokenEnum.ColumnToken, ValidationTokenEnum.PipeToken, ValidationTokenEnum.AmpersandToken].includes(ast.typ)) {
-
-    // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).l) {
 
     if ('l' in ast) {
 
         minify((ast as ValidationColumnToken | ValidationAmpersandToken).l);
     }
-    // }
-
-    // for (const j of (ast as ValidationPipeToken | ValidationColumnToken | ValidationAmpersandToken).r) {
 
     if ('r' in ast) {
 
@@ -1670,226 +1607,3 @@ function minify(ast: ValidationToken | ValidationToken[]): ValidationToken | Val
 
     return ast;
 }
-
-export function* walkValidationToken(token: ValidationToken | ValidationToken[], parent?: ValidationToken | null, callback?: (token: ValidationToken, parent?: ValidationToken | null, key?: WalkValidationTokenKeyTypeEnum | null) => WalkValidationTokenEnum | null, key?: WalkValidationTokenKeyTypeEnum): Generator<{
-    token: ValidationToken,
-    parent?: ValidationToken | null
-}> {
-
-    if (Array.isArray(token)) {
-
-        for (const child of token) {
-
-            yield* walkValidationToken(child, parent, callback, WalkValidationTokenKeyTypeEnum.Array);
-        }
-
-        return;
-    }
-
-    let action: WalkValidationTokenEnum | null = null;
-
-    if (callback != null) {
-
-        // @ts-ignore
-        action = callback(token, parent, key);
-    }
-
-    if (action != WalkValidationTokenEnum.IgnoreNode && action != WalkValidationTokenEnum.IgnoreAll) {
-
-        yield {token, parent};
-    }
-
-    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'prelude' in token) {
-
-        for (const child of (token as ValidationAtRuleDefinitionToken).prelude as ValidationToken[]) {
-
-            yield* walkValidationToken(child, token, callback, WalkValidationTokenKeyTypeEnum.Prelude);
-        }
-    }
-
-    if (action != WalkValidationTokenEnum.IgnoreChildren && 'chi' in token) {
-
-        // @ts-ignore
-        for (const child of (token as ValidationFunctionToken | ValidationBracketToken | ValidationPipeToken).chi) {
-
-            yield* walkValidationToken(child as ValidationToken, token, callback, WalkValidationTokenKeyTypeEnum.Children);
-        }
-    }
-
-    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'l' in token) {
-
-        // @ts-ignore
-        for (const child of (token as ValidationColumnToken | ValidationAmpersandToken).l) {
-
-            yield* walkValidationToken(child as ValidationToken, token, callback, WalkValidationTokenKeyTypeEnum.Left);
-        }
-    }
-
-    if (action != WalkValidationTokenEnum.IgnoreChildren && action != WalkValidationTokenEnum.IgnoreAll && 'r' in token) {
-
-        // @ts-ignore
-        for (const child of (token as ValidationColumnToken | ValidationAmpersandToken).r) {
-
-            yield* walkValidationToken(child as ValidationToken, token, callback, WalkValidationTokenKeyTypeEnum.Right);
-        }
-    }
-}
-
-export function cleanup(ast: { [key: string]: any }) {
-
-    return ast;
-}
-
-export interface ParsedSyntax {
-    syntax: string;
-    ast?: ValidationToken[];
-    descriptors?: Record<string, ParsedSyntax>;
-}
-
-type ParsedSyntaxes = Record<string, ParsedSyntax>
-
-export async function parseDeclarationsSyntax(): Promise<ParsedSyntaxes> {
-
-    const syntaxes = await fetch('https://raw.githubusercontent.com/mdn/data/main/css/properties.json', fetchInit).then(r => r.json()) as Record<string, {
-        syntax: string
-    }>;
-
-    const json = {} as ParsedSyntaxes;
-
-    for (const [key, values] of Object.entries(syntaxes)) {
-
-        if (key == '--*') {
-
-            continue;
-        }
-
-        console.error(' >> parseDeclarationsSyntax >> ' + key);
-
-        json[key] = {
-            syntax: values.syntax,
-            // ast: parseSyntax(values.syntaxes).chi
-        };
-    }
-
-    return cleanup(json) as ParsedSyntaxes;
-}
-
-export async function parseFunctionsSyntax(): Promise<ParsedSyntaxes> {
-
-    const syntaxes = await fetch('https://raw.githubusercontent.com/mdn/data/main/css/functions.json', fetchInit).then(r => r.json()) as Record<string, {
-        syntax: string;
-        // mdn_url: string;
-    }>;
-
-    const json = {} as ParsedSyntaxes;
-
-    for (const [key, values] of Object.entries(syntaxes)) {
-
-        if (key == '--*') {
-
-            continue;
-        }
-
-        console.error(' >> parseFunctionsSyntax >> ' + key);
-
-        json[key.slice(0, -2)] = {
-            syntax: values.syntax,
-            // ast: parseSyntax(values.syntaxes).chi,
-            // mdn_url: values.mdn_url
-        };
-    }
-
-    return cleanup(json) as ParsedSyntaxes;
-}
-
-export async function parseSelectorsSyntax(): Promise<ParsedSyntaxes> {
-
-    const syntaxes = await fetch('https://raw.githubusercontent.com/mdn/data/main/css/selectors.json', fetchInit).then(r => r.json()) as Record<string, {
-        syntax: string;
-        // mdn_url: string;
-    }>;
-
-    const json = {} as ParsedSyntaxes;
-
-    for (const [key, values] of Object.entries(syntaxes)) {
-
-        if (key.match(/[A-Z]/)) {
-
-            continue;
-        }
-
-        console.error(' >> parseSelectorsSyntax >> ' + key);
-
-        json[key] = {
-            syntax: values.syntax.startsWith('/*') ? key : values.syntax,
-            // ast: parseSyntax(values.syntaxes.startsWith('/*') ? key : values.syntaxes).chi,
-            // mdn_url: values.mdn_url
-        };
-    }
-
-    for (const k of [':host', ':autofill']) {
-
-
-        if (!(k in json)) {
-
-            json[k] = {
-                syntax: k,
-                // ast: parseSyntax(k).chi
-            };
-        }
-    }
-
-    return cleanup(json) as ParsedSyntaxes;
-}
-
-export async function parseAtRulesSyntax(): Promise<ParsedSyntaxes> {
-
-    const syntaxes = await fetch('https://raw.githubusercontent.com/mdn/data/main/css/at-rules.json', fetchInit).then(r => r.json()) as Record<string, {
-        syntax: string;
-        // mdn_url: string;
-    }>;
-
-    const json = {} as ParsedSyntaxes;
-
-    for (const [key, values] of Object.entries(syntaxes)) {
-
-        console.error(' >> parseAtRulesSyntax >> ' + key);
-
-        json[key] = {
-            syntax: values.syntax,
-            // ast: parseSyntax(values.syntaxes).chi,
-            // mdn_url: values.mdn_url
-        };
-
-        if ('descriptors' in values) {
-
-            json[key].descriptors = Object.entries(values.descriptors as Record<string, {
-                [key: string]: string
-            }>).reduce((acc, [k, v]) => Object.assign(acc, {[k]: {syntax: v.syntax} as ParsedSyntax}), {} as Record<string, ParsedSyntax>);
-        }
-    }
-
-    return cleanup(json) as ParsedSyntaxes;
-}
-
-export async function parseAllSyntaxes(): Promise<ParsedSyntaxes> {
-
-    const syntaxes = await fetch('https://raw.githubusercontent.com/mdn/data/main/css/syntaxes.json', fetchInit).then(r => r.json()) as Record<string, {
-        syntax: string;
-    }>;
-
-    const json = {} as ParsedSyntaxes;
-
-    for (const [key, values] of Object.entries(syntaxes)) {
-
-        console.error(' >> parseAllSyntaxes >> ' + key);
-
-        json[key] = {
-            syntax: values.syntax,
-            // ast: parseSyntax(values.syntaxes).chi
-        };
-    }
-
-    return cleanup(json) as ParsedSyntaxes;
-}
-

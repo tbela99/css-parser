@@ -1,10 +1,35 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { renderToken } from '../../renderer/render.js';
+import '../../renderer/color/utils/constants.js';
+import { splitRule } from '../minify.js';
+import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 
+function inlineExpression(token) {
+    const result = [];
+    if (token.typ == EnumToken.BinaryExpressionTokenType) {
+        result.push({
+            typ: EnumToken.ParensTokenType,
+            chi: [...inlineExpression(token.l), { typ: token.op }, ...inlineExpression(token.r)]
+        });
+    }
+    else {
+        result.push(token);
+    }
+    return result;
+}
 function replace(node, variableScope) {
     for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
+        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+            // @ts-ignore
+            parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
+        }
+    }
+    for (const { value, parent: parentValue } of walkValues(node.val)) {
+        if (value.typ == EnumToken.FunctionTokenType && value.val == 'var') {
             if (value.chi.length == 1 && value.chi[0].typ == EnumToken.DashedIdenTokenType) {
                 const info = variableScope.get(value.chi[0].val);
                 if (info?.replaceable) {
@@ -26,8 +51,14 @@ function replace(node, variableScope) {
     }
 }
 class InlineCssVariablesFeature {
-    static get ordering() {
+    get ordering() {
         return 0;
+    }
+    get preProcess() {
+        return true;
+    }
+    get postProcess() {
+        return false;
     }
     static register(options) {
         if (options.inlineCssVariables) {
@@ -36,18 +67,19 @@ class InlineCssVariablesFeature {
         }
     }
     run(ast, options = {}, parent, context) {
+        if (!('chi' in ast)) {
+            return;
+        }
         if (!('variableScope' in context)) {
             context.variableScope = new Map;
         }
-        const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes(ast.sel);
+        // [':root', 'html']
+        const isRoot = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && (ast.raw ?? splitRule(ast.sel)).some(segment => segment.some(s => s == ':root' || s == 'html'));
         const variableScope = context.variableScope;
         // @ts-ignore
         for (const node of ast.chi) {
-            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
-                continue;
-            }
             if (node.typ != EnumToken.DeclarationNodeType) {
-                break;
+                continue;
             }
             // css variable
             if (node.nam.startsWith('--')) {
@@ -58,13 +90,14 @@ class InlineCssVariablesFeature {
                         parent: new Set(),
                         declarationCount: 1,
                         replaceable: isRoot,
-                        node: node
+                        node: node,
+                        values: structuredClone(node.val)
                     };
                     info.parent.add(ast);
                     variableScope.set(node.nam, info);
                     let recursive = false;
-                    for (const { value, parent: parentValue } of walkValues(node.val)) {
-                        if (value?.typ == EnumToken.FunctionTokenType && value.val == 'var') {
+                    for (const { value } of walkValues(node.val)) {
+                        if (value?.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(value.val) || value.val == 'var')) {
                             recursive = true;
                             break;
                         }
@@ -103,23 +136,13 @@ class InlineCssVariablesFeature {
                 for (const parent of info.parent) {
                     i = parent.chi?.length ?? 0;
                     while (i--) {
-                        if (parent.chi[i].typ == EnumToken.DeclarationNodeType && parent.chi[i].nam == info.node.nam) {
+                        if (parent.chi[i] == info.node) {
                             // @ts-ignore
-                            parent.chi.splice(i++, 1, {
+                            parent.chi.splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr), '')} */`
                             });
-                        }
-                    }
-                    if (parent.chi?.length == 0 && 'parent' in parent) {
-                        // @ts-ignore
-                        for (i = 0; i < parent.parent.chi?.length; i++) {
-                            // @ts-ignore
-                            if (parent.parent.chi[i] == parent) {
-                                // @ts-ignore
-                                parent.parent.chi.splice(i, 1);
-                                break;
-                            }
+                            break;
                         }
                     }
                 }

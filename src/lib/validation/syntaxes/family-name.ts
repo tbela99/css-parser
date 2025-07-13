@@ -1,6 +1,6 @@
 import type {AstAtRule, Token} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 
 export function validateFamilyName(tokens: Token[], atRule: AstAtRule): ValidationSyntaxResult {
@@ -15,7 +15,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: null,
@@ -28,7 +28,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: tokens[0],
             syntax: null,
@@ -50,7 +50,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
+                    valid: SyntaxValidationResult.Drop,
                     matches: [],
                     node,
                     syntax: null,
@@ -66,7 +66,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node,
                 syntax: null,
@@ -83,7 +83,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
+                valid: SyntaxValidationResult.Drop,
                 matches: [],
                 node: tokens[0],
                 syntax: null,
@@ -95,7 +95,7 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
+        valid: SyntaxValidationResult.Valid,
         matches: [],
         node: null,
         syntax: null,

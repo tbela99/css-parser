@@ -23,7 +23,7 @@ $ deno add @tbela99/css-parser
 ## Features
 
 - no dependency
-- partial css validation based upon mdn-data: at-rules and selectors validation
+- CSS validation based upon mdn-data
 - fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.
 - fast and efficient minification without unsafe transforms,
   see [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
@@ -38,6 +38,7 @@ $ deno add @tbela99/css-parser
 - inline css variables
 - remove duplicate properties
 - flatten @import rules
+- experimental CSS prefix removal
 
 ## Playground
 
@@ -95,7 +96,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.0.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.1.0/web';
 
 
     const css = `
@@ -165,11 +166,19 @@ Include ParseOptions and RenderOptions
   in the :root {} or html {} rule.
 - removeEmpty: boolean, optional. remove empty rule lists from the ast.
 
+> CSS Prefix Removal Options
+
+- removePrefix: boolean, optional. remove CSS prefixes.
+
 > Validation Options
 
-- validation: boolean, optional. enable strict css validation using (mdn data)[https://github.com/mdn/data]. only the
-  selector is validated at this time.
-- lenient: boolean, optional. ignore unknown at-rules, pseudo-classes and declarations.
+- validation: ValidationLevel | boolean, optional. enable validation. permitted values are:
+    - ValidationLevel.None: no validation
+    - ValidationLevel.Default: validate selectors and at-rules (default)
+    - ValidationLevel.All. validate all nodes
+    - true: same as ValidationLevel.All.
+    - false: same as ValidationLevel.None
+- lenient: boolean, optional. preserve invalid tokens.
 
 > Sourcemap Options
 
@@ -205,7 +214,7 @@ Include ParseOptions and RenderOptions
 
 > Sourcemap Options
 
-- sourcemap: boolean, optional. generate sourcemap
+- sourcemap: boolean | 'inline', optional. generate sourcemap. 
 
 > Misc Options
 
@@ -706,7 +715,7 @@ for (const {node, parent, root} of walk(ast)) {
 
 ## Minification
 
-- [x] minify keyframs
+- [x] minify keyframes
 - [x] minify transform
 - [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
   acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
@@ -1030,7 +1039,3 @@ console.debug(await transform(css, options));
 // .foo{width:3px}
 
 ```
-
----
-
-Thanks to [Jetbrains](https://jetbrains.com) for sponsoring this project with a free license

@@ -3,9 +3,10 @@ import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import { validateSelector } from './selector.js';
 import { combinatorsTokens } from './complex-selector.js';
 

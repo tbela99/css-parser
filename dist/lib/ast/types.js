@@ -1,9 +1,21 @@
+var SyntaxValidationResult;
+(function (SyntaxValidationResult) {
+    SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
+    SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
+    SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
+})(SyntaxValidationResult || (SyntaxValidationResult = {}));
+/**
+ * validation level enum
+ */
 var ValidationLevel;
 (function (ValidationLevel) {
-    ValidationLevel[ValidationLevel["Valid"] = 0] = "Valid";
-    ValidationLevel[ValidationLevel["Drop"] = 1] = "Drop";
-    ValidationLevel[ValidationLevel["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
+    ValidationLevel[ValidationLevel["None"] = 0] = "None";
+    ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+    ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
 })(ValidationLevel || (ValidationLevel = {}));
+/**
+ * token types enum
+ */
 var EnumToken;
 (function (EnumToken) {
     EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";
@@ -103,6 +115,7 @@ var EnumToken;
     EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
     EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
     EnumToken[EnumToken["KeyframeAtRuleNodeType"] = 93] = "KeyframeAtRuleNodeType";
+    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
     /* aliases */
     EnumToken[EnumToken["Time"] = 25] = "Time";
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
@@ -132,16 +145,5 @@ var EnumToken;
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
-const funcLike = [
-    EnumToken.ParensTokenType,
-    EnumToken.FunctionTokenType,
-    EnumToken.UrlFunctionTokenType,
-    EnumToken.StartParensTokenType,
-    EnumToken.ImageFunctionTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.TimingFunctionTokenType,
-    EnumToken.PseudoClassFuncTokenType,
-    EnumToken.GridTemplateFuncTokenType
-];
 
-export { EnumToken, ValidationLevel, funcLike };
+export { EnumToken, SyntaxValidationResult, ValidationLevel };

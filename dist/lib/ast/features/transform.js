@@ -3,15 +3,22 @@ import { consumeWhitespace } from '../../validation/utils/whitespace.js';
 import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { filterValues, renderToken } from '../../renderer/render.js';
 import '../../renderer/color/utils/constants.js';
-import '../../parser/utils/config.js';
 import { compute } from '../transform/compute.js';
 import { eqMatrix } from '../transform/minify.js';
 
 class TransformCssFeature {
-    static get ordering() {
+    get ordering() {
         return 4;
+    }
+    get preProcess() {
+        return false;
+    }
+    get postProcess() {
+        return true;
     }
     static register(options) {
         // @ts-ignore
@@ -37,7 +44,7 @@ class TransformCssFeature {
             consumeWhitespace(children);
             let { matrix, cumulative, minified } = compute(children) ?? {};
             if (matrix == null || cumulative == null || minified == null) {
-                return;
+                continue;
             }
             let r = [filterValues(node.val.slice())];
             if (eqMatrix(matrix, cumulative)) {

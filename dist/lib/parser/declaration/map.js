@@ -5,6 +5,7 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import { parseString } from '../parse.js';
+import '../tokenize.js';
 import { renderToken } from '../../renderer/render.js';
 import '../../renderer/color/utils/constants.js';
 import { PropertySet } from './set.js';

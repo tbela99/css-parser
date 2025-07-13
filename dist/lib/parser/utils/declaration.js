@@ -2,12 +2,13 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../parse.js';
-import { isWhiteSpace } from '../../syntax/syntax.js';
+import '../tokenize.js';
 import './config.js';
+import { isWhiteSpace } from '../../syntax/syntax.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-function parseDeclarationNode(node, errors, src, position) {
+function parseDeclarationNode(node, errors, location) {
     while (node.val[0]?.typ == EnumToken.WhitespaceTokenType) {
         node.val.shift();
     }
@@ -15,7 +16,7 @@ function parseDeclarationNode(node, errors, src, position) {
         errors.push({
             action: 'drop',
             message: 'doParse: invalid declaration',
-            location: { src, ...position }
+            location
         });
         return null;
     }

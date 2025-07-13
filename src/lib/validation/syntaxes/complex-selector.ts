@@ -1,7 +1,7 @@
 import type {AstAtRule, AstRule, Token} from "../../../@types/index.d.ts";
 import type {ValidationSelectorOptions, ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {validateCompoundSelector} from "./compound-selector.ts";
 
 export const combinatorsTokens: EnumToken[] = [EnumToken.ChildCombinatorTokenType, EnumToken.ColumnCombinatorTokenType,
@@ -18,13 +18,12 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
     if (tokens.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expected selector',
-            tokens
+            error: 'expected selector'
         }
     }
 
@@ -40,7 +39,7 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
         result = validateCompoundSelector(t, root, options) as ValidationSyntaxResult;
 
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
 
             return result;
         }
@@ -48,11 +47,10 @@ export function validateComplexSelector(tokens: Token[], root?: AstAtRule | AstR
 
     // @ts-ignore
     return result ?? {
-        valid: ValidationLevel.Drop,
-        matches: [],
+        valid: SyntaxValidationResult.Drop,
+        context: [],
         node: root,
         syntax: null,
-        error: 'expecting compound-selector',
-        tokens
+        error: 'expecting compound-selector'
     }
 }

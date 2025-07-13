@@ -5,10 +5,10 @@ import type {
     AstRule,
     AstRuleList,
     AstRuleStyleSheet,
+    BinaryExpressionToken,
     CommentToken,
     DashedIdentToken,
     FunctionToken,
-    MinifyFeatureOptions,
     ParserOptions,
     Token,
     VariableScopeInfo
@@ -16,12 +16,42 @@ import type {
 import {EnumToken} from "../types.ts";
 import {walkValues} from "../walk.ts";
 import {renderToken} from "../../renderer/index.ts";
+import {mathFuncs} from "../../syntax/index.ts";
+import {splitRule} from "../minify.ts";
+
+function inlineExpression(token: Token): Token[] {
+
+    const result: Token[] = [];
+
+    if (token.typ == EnumToken.BinaryExpressionTokenType) {
+
+        result.push({
+            typ: EnumToken.ParensTokenType,
+            chi: [...inlineExpression((token as BinaryExpressionToken).l), {typ: (token as BinaryExpressionToken).op}, ...inlineExpression((token as BinaryExpressionToken).r)]
+        });
+
+    } else {
+
+        result.push(token);
+    }
+
+    return result;
+}
 
 function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, variableScope: Map<string, VariableScopeInfo>) {
 
     for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
 
-        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && 'chi' in parentValue) {
+
+            // @ts-ignore
+            parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
+        }
+    }
+
+    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+
+        if (value.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
 
             if ((value as FunctionToken).chi.length == 1 && (value as FunctionToken).chi[0].typ == EnumToken.DashedIdenTokenType) {
 
@@ -41,6 +71,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
                                 break;
                             }
                         }
+
                     } else {
 
                         (<AstDeclaration>node).val = info.node.val.slice();
@@ -53,11 +84,19 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
 export class InlineCssVariablesFeature {
 
-    static get ordering() {
+     get ordering() {
         return 0;
     }
 
-    static register(options: MinifyFeatureOptions): void {
+    get preProcess(): boolean {
+        return true;
+    }
+
+    get postProcess(): boolean {
+        return false;
+    }
+
+    static register(options: ParserOptions): void {
 
         if (options.inlineCssVariables) {
 
@@ -70,26 +109,26 @@ export class InlineCssVariablesFeature {
         [key: string]: any
     }): void {
 
+        if (!('chi' in ast)) {
+
+            return;
+        }
+
         if (!('variableScope' in context)) {
 
             context.variableScope = <Map<string, VariableScopeInfo>>new Map;
         }
 
-        const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && [':root', 'html'].includes((<AstRule>ast).sel);
-
+        // [':root', 'html']
+        const isRoot: boolean = parent.typ == EnumToken.StyleSheetNodeType && ast.typ == EnumToken.RuleNodeType && ((<AstRule>ast).raw ?? splitRule((ast as AstRule).sel)).some(segment => segment.some(s => s == ':root' || s == 'html'));
         const variableScope = context.variableScope;
 
         // @ts-ignore
         for (const node of ast.chi) {
 
-            if (node.typ == EnumToken.CDOCOMMNodeType || node.typ == EnumToken.CommentNodeType) {
-
-                continue;
-            }
-
             if (node.typ != EnumToken.DeclarationNodeType) {
 
-                break;
+                continue;
             }
 
             // css variable
@@ -103,19 +142,19 @@ export class InlineCssVariablesFeature {
                         parent: <Set<AstRule | AstAtRule>>new Set(),
                         declarationCount: 1,
                         replaceable: isRoot,
-                        node: (<AstDeclaration>node)
+                        node: (<AstDeclaration>node),
+                        values: structuredClone((<AstDeclaration>node).val)
                     };
 
                     info.parent.add(ast);
 
                     variableScope.set((<AstDeclaration>node).nam, info);
 
-
                     let recursive: boolean = false;
 
-                    for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
+                    for (const {value} of walkValues((<AstDeclaration>node).val)) {
 
-                        if (value?.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+                        if (value?.typ == EnumToken.FunctionTokenType && (mathFuncs.includes((<FunctionToken>value).val) || (<FunctionToken>value).val == 'var')) {
 
                             recursive = true;
                             break;
@@ -126,7 +165,6 @@ export class InlineCssVariablesFeature {
 
                         replace(node, variableScope);
                     }
-
 
                 } else {
 
@@ -148,6 +186,7 @@ export class InlineCssVariablesFeature {
                     info.node = (<AstDeclaration>node);
                 }
             } else {
+
                 replace(node, variableScope);
             }
         }
@@ -175,28 +214,14 @@ export class InlineCssVariablesFeature {
 
                     while (i--) {
 
-                        if ((<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).typ == EnumToken.DeclarationNodeType && (<AstDeclaration>(<AstDeclaration[]>parent.chi)[i]).nam == info.node.nam) {
+                        if ((<AstDeclaration[]>parent.chi)[i] == info.node) {
 
                             // @ts-ignore
-                            (<AstDeclaration[]>parent.chi).splice(i++, 1, {
+                            (<AstDeclaration[]>parent.chi).splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.node.val.reduce((acc: string, curr: Token): string => acc + renderToken(curr), '')} */`
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderToken(curr), '')} */`
                             } as CommentToken);
-                        }
-                    }
-
-                    if (parent.chi?.length == 0 && 'parent' in parent) {
-
-                        // @ts-ignore
-                        for (i = 0; i < (<AstRule>parent.parent).chi?.length; i++) {
-
-                            // @ts-ignore
-                            if ((<AstRule>parent.parent).chi[i] == parent) {
-
-                                // @ts-ignore
-                                (<AstRule>parent.parent).chi.splice(i, 1);
-                                break;
-                            }
+                            break;
                         }
                     }
                 }

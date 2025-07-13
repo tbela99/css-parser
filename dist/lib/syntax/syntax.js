@@ -1,10 +1,12 @@
-import { colorsFunc } from '../renderer/render.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
-import '../ast/walk.js';
+import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import '../parser/parse.js';
+import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { COLORS_NAMES } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, colorsFunc, funcLike, ColorKind } from '../renderer/color/utils/constants.js';
+import { buildExpression } from '../ast/math/expression.js';
+import '../renderer/sourcemap/lib/encode.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -32,12 +34,33 @@ const mediaTypes = ['all', 'print', 'screen',
     /* deprecated */
     'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
 // https://www.w3.org/TR/css-values-4/#math-function
-const mathFuncs = ['calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+const mathFuncs = ['minmax', 'repeat', 'fit-content', 'calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
+const wildCardFuncs = ['var', 'env'];
 const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];
-const webkitPseudoAliasMap = {
-    '-webkit-autofill': 'autofill',
-    '-webkit-any': 'is',
-    '-moz-any': 'is',
+// https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
+// https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
+const pseudoAliasMap = {
+    '-ms-grid-columns': 'grid-template-columns',
+    '-ms-grid-rows': 'grid-template-rows',
+    '-ms-grid-row': 'grid-row-start',
+    '-ms-grid-column': 'grid-column-start',
+    '-ms-grid-row-align': 'align-self',
+    '-ms-grid-row-span': 'grid-row-end',
+    '-ms-grid-column-span': 'grid-column-end',
+    '-ms-grid-column-align': 'justify-self',
+    ':-ms-input-placeholder': '::placeholder',
+    '::-ms-input-placeholder': '::placeholder',
+    ':-moz-any()': ':is',
+    '-moz-user-modify': 'user-modify',
+    '-moz-background-clip': 'background-clip',
+    '-moz-background-origin': 'background-origin',
+    '-ms-input-placeholder': 'placeholder',
+    ':-webkit-autofill': ':autofill',
+    ':-webkit-any()': ':is',
+    '::-webkit-input-placeholder': '::placeholder',
+    '::-webkit-file-upload-button': '::file-selector-button',
+    '::-moz-placeholder': '::placeholder',
+    ':-webkit-any-link': ':any-link',
     '-webkit-border-after': 'border-block-end',
     '-webkit-border-after-color': 'border-block-end-color',
     '-webkit-border-after-style': 'border-block-end-style',
@@ -74,7 +97,75 @@ const webkitPseudoAliasMap = {
     '-webkit-padding-end': 'padding-inline-end',
     '-webkit-padding-start': 'padding-inline-start',
     '-webkit-min-device-pixel-ratio': 'min-resolution',
-    '-webkit-max-device-pixel-ratio': 'max-resolution'
+    '-webkit-max-device-pixel-ratio': 'max-resolution',
+    '-webkit-font-smoothing': 'font-smooth',
+    '-webkit-line-clamp': 'line-clamp',
+    ':-webkit-autofill-strong-password': ':autofill',
+    ':-webkit-full-page-media': ':fullscreen',
+    ':-webkit-full-screen': ':fullscreen',
+    ':-webkit-full-screen-ancestor': ':fullscreen',
+    ':-webkit-full-screen-document': ':fullscreen',
+    ':-webkit-full-screen-controls-hidden': ':fullscreen',
+    '-moz-background-inline-policy': 'box-decoration-break',
+    '-moz-background-size': 'background-size',
+    '-moz-border-end': 'border-inline-end',
+    '-moz-border-end-color': 'border-inline-end-color',
+    '-moz-border-end-style': 'border-inline-end-style',
+    '-moz-border-end-width': 'border-inline-end-width',
+    '-moz-border-image': 'border-inline-end-width',
+    '-moz-border-start': 'border-inline-start',
+    '-moz-border-start-color': 'border-inline-start-color',
+    '-moz-border-start-style': 'border-inline-start-style',
+    '-moz-border-start-width': 'border-inline-start-width',
+    '-moz-column-count': 'column-count',
+    '-moz-column-fill': 'column-fill',
+    '-moz-column-gap': 'column-gap',
+    '-moz-column-width': 'column-width',
+    '-moz-column-rule': 'column-rule',
+    '-moz-column-rule-width': 'column-rule-width',
+    '-moz-column-rule-style': 'column-rule-style',
+    '-moz-column-rule-color': 'column-rule-color',
+    '-moz-margin-end': 'margin-inline-end',
+    '-moz-margin-start': 'margin-inline-start',
+    '-moz-opacity': 'opacity',
+    '-moz-outline': 'outline',
+    '-moz-outline-color': 'outline-color',
+    '-moz-outline-offset': 'outline-offset',
+    '-moz-outline-style': 'outline-style',
+    '-moz-outline-width': 'outline-width',
+    '-moz-padding-end': 'padding-inline-end',
+    '-moz-padding-start': 'padding-inline-start',
+    '-moz-tab-size': 'tab-size',
+    '-moz-text-align-last': 'text-align-last',
+    '-moz-text-decoration-color': 'text-decoration-color',
+    '-moz-text-decoration-line': 'text-decoration-line',
+    '-moz-text-decoration-style': 'text-decoration-style',
+    '-moz-transition': 'transition',
+    '-moz-transition-delay': 'transition-delay',
+    '-moz-transition-duration': 'transition-duration',
+    '-moz-transition-property': 'transition-property',
+    '-moz-transition-timing-function': 'transition-timing-function',
+    '-moz-user-select': 'user-select',
+    '-moz-initial': 'initial',
+    '-moz-linear-gradient()': 'linear-gradient',
+    '-moz-radial-gradient()': 'radial-gradient',
+    '-moz-element()': 'element',
+    '-moz-crisp-edges': 'crisp-edges',
+    '-moz-calc()': 'calc',
+    '-moz-min-content': 'min-content',
+    '-moz-fit-content': 'fit-content',
+    '-moz-max-content': 'max-content',
+    '-moz-available': 'stretch',
+    ':-moz-any-link': ':any-link',
+    ':-moz-full-screen': ':fullscreen',
+    ':-moz-full-screen-ancestor': ':fullscreen',
+    ':-moz-placeholder': ':placeholder-shown',
+    ':-moz-read-only': ':read-only',
+    ':-moz-read-write': ':read-write',
+    ':-moz-submit-invalid': ':invalid',
+    ':-moz-ui-invalid': ':user-invalid',
+    ':-moz-ui-valid': ':user-valid',
+    '::-moz-selection': '::selection',
 };
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
@@ -408,71 +499,169 @@ function isHueInterpolationMethod(token) {
     }
     return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token.val);
 }
+function isIdentColor(token) {
+    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
+}
 function isColor(token) {
-    if (token.typ == EnumToken.ColorTokenType) {
-        return true;
-    }
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
         return token.val.toLowerCase() in COLORS_NAMES;
     }
     let isLegacySyntax = false;
-    if (token.typ == EnumToken.FunctionTokenType && token.chi.length > 0 && colorsFunc.includes(token.val)) {
-        // @ts-ignore
-        if (token.val == 'light-dark') {
-            // @ts-ignore
-            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
-            if (children.length != 2) {
-                return false;
-            }
-            if (isColor(children[0]) && isColor(children[1])) {
-                return true;
-            }
+    if (token.typ == EnumToken.FunctionTokenType) {
+        if (!colorsFunc.includes(token.val.toLowerCase())) {
+            return false;
         }
-        // @ts-ignore
-        if (token.val == 'color') {
+        if (token.chi.length > 0) {
             // @ts-ignore
-            const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
-            const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';
-            if (children.length < 4 || children.length > 8) {
-                return false;
-            }
-            if (!isRelative && !isColorspace(children[0])) {
-                return false;
-            }
-            for (let i = 1; i < children.length - 2; i++) {
-                if (children[i].typ == EnumToken.IdenTokenType) {
-                    if (children[i].val != 'none' &&
-                        !(isRelative && ['alpha', 'r', 'g', 'b', 'x', 'y', 'z'].includes(children[i].val) || isColorspace(children[i]))) {
-                        return false;
-                    }
-                }
-                if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes(children[i].val)) {
-                    return false;
-                }
-            }
-            if (children.length == 4 || (isRelative && children.length == 6)) {
-                return true;
-            }
-            if (children.length == 8 || children.length == 6) {
-                const sep = children.at(-2);
-                const alpha = children.at(-1);
+            if (token.val == 'light-dark') {
                 // @ts-ignore
-                if ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+                if (children.length != 2) {
                     return false;
                 }
-                if (alpha.typ == EnumToken.IdenTokenType && alpha.val != 'none') {
-                    return false;
+                if (isColor(children[0]) && isColor(children[1])) {
+                    return true;
                 }
-                else {
-                    // @ts-ignore
-                    if (alpha.typ == EnumToken.PercentageTokenType) {
-                        if (+alpha.val < 0 || +alpha.val > 100) {
+            }
+            // adding numbers and percentages is disallowed
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/lch#defining_relative_color_output_channel_components
+            // @ts-ignore
+            for (const { value } of walkValues(token.chi, null, (node) => funcLike.includes(node.typ) ? WalkerOptionEnum.IgnoreChildren : null)) {
+                if (funcLike.includes(value.typ)) {
+                    for (const { value: val } of walkValues([buildExpression(value.chi)])) {
+                        if (val.typ == EnumToken.BinaryExpressionTokenType &&
+                            (val.l.typ == EnumToken.PercentageTokenType || val.r.typ == EnumToken.PercentageTokenType) &&
+                            ((val.r.typ == EnumToken.PercentageTokenType && val.op == EnumToken.Div) ||
+                                ((val.op == EnumToken.Add || val.op == EnumToken.Sub) &&
+                                    val.l.typ != val.r.typ))) {
                             return false;
                         }
                     }
-                    else if (alpha.typ == EnumToken.NumberTokenType) {
-                        if (+alpha.val < 0 || +alpha.val > 1) {
+                }
+            }
+            // @ts-ignore
+            if (token.val == 'color') {
+                // @ts-ignore
+                const children = token.chi.filter((t) => [EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.LiteralTokenType, EnumToken.ColorTokenType, EnumToken.FunctionTokenType, EnumToken.PercentageTokenType].includes(t.typ));
+                const isRelative = children[0].typ == EnumToken.IdenTokenType && children[0].val == 'from';
+                if (children.length < 4 || children.length > 8) {
+                    return false;
+                }
+                if (!isRelative && !isColorspace(children[0])) {
+                    return false;
+                }
+                for (let i = 1; i < children.length - 2; i++) {
+                    if (children[i].typ == EnumToken.IdenTokenType) {
+                        if (children[i].val != 'none' &&
+                            !(isRelative && ['alpha', 'r', 'g', 'b', 'x', 'y', 'z'].includes(children[i].val) || isColorspace(children[i]))) {
+                            return false;
+                        }
+                    }
+                    if (children[i].typ == EnumToken.FunctionTokenType && !mathFuncs.includes(children[i].val)) {
+                        return false;
+                    }
+                }
+                if (children.length == 4 || (isRelative && children.length == 6)) {
+                    return true;
+                }
+                if (children.length == 8 || children.length == 6) {
+                    const sep = children.at(-2);
+                    const alpha = children.at(-1);
+                    // @ts-ignore
+                    if ((children.length > 6 || !isRelative) && sep.typ != EnumToken.LiteralTokenType || sep.val != '/') {
+                        return false;
+                    }
+                    if (alpha.typ == EnumToken.IdenTokenType && alpha.val != 'none') {
+                        return false;
+                    }
+                    else {
+                        // @ts-ignore
+                        if (alpha.typ == EnumToken.PercentageTokenType) {
+                            if (+alpha.val < 0 || +alpha.val > 100) {
+                                return false;
+                            }
+                        }
+                        else if (alpha.typ == EnumToken.NumberTokenType) {
+                            if (+alpha.val < 0 || +alpha.val > 1) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            else { // @ts-ignore
+                if (token.val == 'color-mix') {
+                    // @ts-ignore
+                    const children = token.chi.reduce((acc, t) => {
+                        if (t.typ == EnumToken.CommaTokenType) {
+                            acc.push([]);
+                        }
+                        else {
+                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                                acc[acc.length - 1].push(t);
+                            }
+                        }
+                        return acc;
+                    }, [[]]);
+                    if (children.length == 3) {
+                        if (children[0].length > 3 ||
+                            children[0][0].typ != EnumToken.IdenTokenType ||
+                            children[0][0].val != 'in' ||
+                            !isColorspace(children[0][1]) ||
+                            (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
+                            children[1].length > 2 ||
+                            children[1][0].typ != EnumToken.ColorTokenType ||
+                            children[2].length > 2 ||
+                            children[2][0].typ != EnumToken.ColorTokenType) {
+                            return false;
+                        }
+                        if (children[1].length == 2) {
+                            if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
+                                return false;
+                            }
+                        }
+                        if (children[2].length == 2) {
+                            if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+                else {
+                    const keywords = ['from', 'none'];
+                    // @ts-ignore
+                    if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
+                        // @ts-ignore
+                        keywords.push('alpha', ...token.val.slice(-3).split(''));
+                    }
+                    // @ts-ignore
+                    for (const v of token.chi) {
+                        if (v.typ == EnumToken.CommaTokenType) {
+                            isLegacySyntax = true;
+                        }
+                        if (v.typ == EnumToken.IdenTokenType) {
+                            if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
+                                return false;
+                            }
+                            if (keywords.includes(v.val)) {
+                                if (isLegacySyntax) {
+                                    return false;
+                                }
+                                // @ts-ignore
+                                if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                                    return false;
+                                }
+                            }
+                            continue;
+                        }
+                        if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
+                            continue;
+                        }
+                        if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
                             return false;
                         }
                     }
@@ -480,85 +669,34 @@ function isColor(token) {
             }
             return true;
         }
-        else { // @ts-ignore
-            if (token.val == 'color-mix') {
-                // @ts-ignore
-                const children = token.chi.reduce((acc, t) => {
-                    if (t.typ == EnumToken.CommaTokenType) {
-                        acc.push([]);
-                    }
-                    else {
-                        if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
-                            acc[acc.length - 1].push(t);
-                        }
-                    }
-                    return acc;
-                }, [[]]);
-                if (children.length == 3) {
-                    if (children[0].length > 3 ||
-                        children[0][0].typ != EnumToken.IdenTokenType ||
-                        children[0][0].val != 'in' ||
-                        !isColorspace(children[0][1]) ||
-                        (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
-                        children[1].length > 2 ||
-                        children[1][0].typ != EnumToken.ColorTokenType ||
-                        children[2].length > 2 ||
-                        children[2][0].typ != EnumToken.ColorTokenType) {
-                        return false;
-                    }
-                    if (children[1].length == 2) {
-                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
-                            return false;
-                        }
-                    }
-                    if (children[2].length == 2) {
-                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-            else {
-                const keywords = ['from', 'none'];
-                // @ts-ignore
-                if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
-                    // @ts-ignore
-                    keywords.push('alpha', ...token.val.slice(-3).split(''));
-                }
-                // @ts-ignore
-                for (const v of token.chi) {
-                    if (v.typ == EnumToken.CommaTokenType) {
-                        isLegacySyntax = true;
-                    }
-                    if (v.typ == EnumToken.IdenTokenType) {
-                        if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
-                            return false;
-                        }
-                        if (keywords.includes(v.val)) {
-                            if (isLegacySyntax) {
-                                return false;
-                            }
-                            // @ts-ignore
-                            if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
-                                return false;
-                            }
-                        }
-                        continue;
-                    }
-                    if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
-                        continue;
-                    }
-                    if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
     }
     return false;
+}
+function parseColor(token) {
+    // @ts-ignore
+    token.typ = EnumToken.ColorTokenType;
+    // @ts-ignore
+    token.kin = ColorKind[token.val.replaceAll('-', '_').toUpperCase()];
+    // @ts-ignore
+    if (token.chi[0].typ == EnumToken.IdenTokenType) {
+        // @ts-ignore
+        if (token.chi[0].val == 'from') {
+            // @ts-ignore
+            token.cal = 'rel';
+        }
+        // @ts-ignore
+        else if (token.val == 'color-mix' && token.chi[0].val == 'in') {
+            // @ts-ignore
+            token.cal = 'mix';
+        }
+        else { // @ts-ignore
+            if (token.val == 'color') {
+                // @ts-ignore
+                token.cal = 'col';
+            }
+        }
+    }
+    return token;
 }
 function isLetter(codepoint) {
     // lowercase
@@ -789,31 +927,6 @@ function isHexColor(name) {
     }
     return true;
 }
-/*
-export function isHexDigit(name: string): boolean {
-
-    if (name.length || name.length > 6) {
-
-        return false;
-    }
-
-    for (let chr of name) {
-
-        let codepoint = <number>chr.charCodeAt(0);
-
-        if (!isDigit(codepoint) &&
-            // A F
-            !(codepoint >= 0x41 && codepoint <= 0x46) &&
-            // a f
-            !(codepoint >= 0x61 && codepoint <= 0x66)) {
-
-            return false;
-        }
-    }
-
-    return true;
-}
-*/
 function isFunction(name) {
     return name.endsWith('(') && isIdent(name.slice(0, -1));
 }
@@ -830,4 +943,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseDimension, pseudoElements, transformFunctions, webkitExtensions, webkitPseudoAliasMap };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };

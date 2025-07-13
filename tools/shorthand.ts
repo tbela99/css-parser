@@ -1,11 +1,11 @@
-import {
+import type {
     PropertyMapType,
     PropertySetType,
     ShorthandDef,
     ShorthandMapType,
     ShorthandPropertyType,
     ShorthandType
-} from "../src/@types";
+} from "../src/@types/index.d.ts";
 import {writeFile} from "node:fs/promises";
 
 function createProperties(data: ShorthandPropertyType) {
@@ -48,52 +48,6 @@ function createMap(data: ShorthandDef, fields: Array<ShorthandType>) {
 
 export const map: ShorthandMapType = (<ShorthandMapType[][]>[
 
-    // [
-    //     {
-    //         shorthand: 'grid',
-    //         pattern: `grid-auto-columns grid-auto-flow grid-auto-rows grid-template-areas grid-template-columns grid-template-rows`,
-    //         keywords: ['0', 'row', 'none', 'auto', 'normal'],
-    //         default: []
-    //     },
-    //     [
-    //         {
-    //             shorthand: 'grid-template-rows',
-    //             properties: {
-    //
-    //                 keywords: ['none', 'auto', 'masonry', 'subgrid', 'min-content', 'max-content'],
-    //                 default: ['none'],
-    //                 types: ['Length', 'Flex', 'Perc', 'IdenList', 'GridTemplateFunc']
-    //             }
-    //         },
-    //         {
-    //             shorthand: 'grid-template-columns',
-    //             properties: {
-    //
-    //                 keywords: ['none', 'auto', 'masonry', 'subgrid', 'min-content', 'max-content'],
-    //                 default: ['none'],
-    //                 types: ['Length', 'Flex', 'Perc', 'IdenList', 'GridTemplateFunc']
-    //             }
-    //         },
-    //         {
-    //             shorthand: 'grid-template-areas',
-    //             properties: {
-    //
-    //                 keywords: ['none'],
-    //                 default: [],
-    //                 types: ['String']
-    //             }
-    //         },
-    //         {
-    //             shorthand: 'grid-auto-rows',
-    //             properties: {
-    //
-    //                 keywords: ['auto', 'min-content', 'max-content'],
-    //                 default: [],
-    //                 types: ['Length', 'Flex', 'GridTemplateFunc']
-    //             }
-    //         }
-    //     ]
-    // ],
     [
         {
             shorthand: 'flex-flow',

@@ -1,3 +1,14 @@
+/**
+ * validation level enum
+ */
+declare enum ValidationLevel {
+    None = 0,
+    Default = 1,// selectors + at-rules
+    All = 2
+}
+/**
+ * token types enum
+ */
 declare enum EnumToken {
     CommentTokenType = 0,
     CDOCOMMTokenType = 1,
@@ -93,6 +104,7 @@ declare enum EnumToken {
     PseudoPageTokenType = 91,
     PseudoElementTokenType = 92,
     KeyframeAtRuleNodeType = 93,
+    InvalidDeclarationNodeType = 94,
     Time = 25,
     Iden = 7,
     EOF = 48,
@@ -131,7 +143,7 @@ declare enum EnumToken {
  * @param nestingContent
  * @param context
  */
-declare function minify(ast: AstNode, options?: ParserOptions | MinifyFeatureOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
+declare function minify(ast: AstNode, options?: ParserOptions, recursive?: boolean, errors?: ErrorDescription[], nestingContent?: boolean, context?: {
     [key: string]: any;
 }): AstNode;
 
@@ -152,7 +164,7 @@ declare enum WalkerValueEvent {
  */
 declare function walk(node: AstNode, filter?: WalkerFilter): Generator<WalkResult>;
 /**
- * walk ast values
+ * walk ast node value tokens
  * @param values
  * @param root
  * @param filter
@@ -182,8 +194,37 @@ declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
+declare enum ColorKind {
+    SYS = 0,
+    DPSYS = 1,
+    LIT = 2,
+    HEX = 3,
+    RGB = 4,
+    RGBA = 5,
+    HSL = 6,
+    HSLA = 7,
+    HWB = 8,
+    DEVICE_CMYK = 9,
+    OKLAB = 10,
+    OKLCH = 11,
+    LAB = 12,
+    LCH = 13,
+    COLOR = 14,
+    SRGB = 15,
+    PROPHOTO_RGB = 16,
+    A98_RGB = 17,
+    REC2020 = 18,
+    DISPLAY_P3 = 19,
+    SRGB_LINEAR = 20,
+    XYZ = 21,
+    XYZ_D50 = 22,
+    XYZ_D65 = 23,
+    LIGHT_DARK = 24,
+    COLOR_MIX = 25
+}
+
 /**
- * parse string
+ * parse css string
  * @param src
  * @param options
  */
@@ -191,7 +232,7 @@ declare function parseString(src: string, options?: {
     location: boolean;
 }): Token[];
 /**
- * parse token list
+ * parse token array into a tree structure
  * @param tokens
  * @param options
  */
@@ -571,26 +612,6 @@ export declare interface ImportantToken extends BaseToken {
     typ: EnumToken.ImportantTokenType;
 }
 
-export declare type ColorKind =
-    'sys'
-    | 'dpsys'
-    | 'lit'
-    | 'hex'
-    | 'rgb'
-    | 'rgba'
-    | 'hsl'
-    | 'hsla'
-    | 'hwb'
-    | 'device-cmyk'
-    | 'oklab'
-    | 'oklch'
-    | 'lab'
-    | 'lch'
-    | 'color'
-    | 'light-dark';
-
-// export declare type HueInterpolationMethod = 'shorter' | 'longer' | 'increasing' | 'decreasing';
-
 export declare interface ColorToken extends BaseToken {
 
     typ: EnumToken.ColorTokenType;
@@ -845,6 +866,69 @@ export declare type Token =
     | AttrToken
     | EOFToken;
 
+declare enum ValidationTokenEnum {
+    Root = 0,
+    Keyword = 1,
+    PropertyType = 2,
+    DeclarationType = 3,
+    AtRule = 4,
+    ValidationFunctionDefinition = 5,
+    OpenBracket = 6,
+    CloseBracket = 7,
+    OpenParenthesis = 8,
+    CloseParenthesis = 9,
+    Comma = 10,
+    Pipe = 11,
+    Column = 12,
+    Star = 13,
+    OpenCurlyBrace = 14,
+    CloseCurlyBrace = 15,
+    HashMark = 16,
+    QuestionMark = 17,
+    Function = 18,
+    Number = 19,
+    Whitespace = 20,
+    Parenthesis = 21,
+    Bracket = 22,
+    Block = 23,
+    AtLeastOnce = 24,
+    Separator = 25,
+    Exclamation = 26,
+    Ampersand = 27,
+    PipeToken = 28,
+    ColumnToken = 29,
+    AmpersandToken = 30,
+    Parens = 31,
+    PseudoClassToken = 32,
+    PseudoClassFunctionToken = 33,
+    StringToken = 34,
+    AtRuleDefinition = 35,
+    DeclarationNameToken = 36,
+    DeclarationDefinitionToken = 37,
+    SemiColon = 38,
+    Character = 39,
+    InfinityToken = 40
+}
+interface Position$1 {
+    ind: number;
+    lin: number;
+    col: number;
+}
+interface ValidationToken {
+    typ: ValidationTokenEnum;
+    pos: Position$1;
+    isList?: boolean;
+    text?: string;
+    isRepeatable?: boolean;
+    atLeastOnce?: boolean;
+    isOptional?: boolean;
+    isRepeatableGroup?: boolean;
+    occurence?: {
+        min: number;
+        max: number | null;
+    };
+}
+
 export declare interface Position {
 
     ind: number;
@@ -855,7 +939,7 @@ export declare interface Position {
 export declare interface Location {
 
     sta: Position;
-    // end: Position;
+    end: Position;
     src: string;
 }
 
@@ -865,6 +949,7 @@ export declare interface BaseToken {
     loc?: Location;
     tokens?: Token[];
     parent?: AstRuleList;
+    validSyntax?: boolean;
 }
 
 export declare interface AstComment extends BaseToken {
@@ -885,8 +970,8 @@ export declare interface AstRule extends BaseToken {
     typ: EnumToken.RuleNodeType;
     sel: string;
     chi: Array<AstDeclaration | AstComment | AstRuleList>;
-    optimized?: OptimizedSelector;
-    raw?: RawSelectorTokens;
+    optimized?: OptimizedSelector | null;
+    raw?: RawSelectorTokens | null;
 }
 
 export declare interface AstInvalidRule extends BaseToken {
@@ -896,11 +981,10 @@ export declare interface AstInvalidRule extends BaseToken {
     chi: Array<AstNode>;
 }
 
-export declare interface AstInvalidAtRule extends BaseToken {
+export declare interface AstInvalidDeclaration extends BaseToken {
 
-    typ: EnumToken.InvalidAtRuleTokenType;
-    val: string;
-    chi?: Array<AstNode>;
+    typ: EnumToken.InvalidDeclarationNodeType;
+    val: Array<AstNode>;
 }
 
 export declare interface AstKeyFrameRule extends BaseToken {
@@ -927,14 +1011,14 @@ export declare interface AstAtRule extends BaseToken {
     typ: EnumToken.AtRuleNodeType,
     nam: string;
     val: string;
-    chi?: Array<AstDeclaration | AstComment> | Array<AstRule | AstComment>
+    chi?: Array<AstDeclaration | AstInvalidDeclaration | AstComment> | Array<AstRule | AstComment>
 }
 
 export declare interface AstKeyframeRule extends BaseToken {
 
     typ: EnumToken.KeyFrameRuleNodeType;
     sel: string;
-    chi: Array<AstDeclaration | AstComment | AstRuleList>;
+    chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
     optimized?: OptimizedSelector;
     raw?: RawSelectorTokens;
 }
@@ -949,7 +1033,7 @@ export declare interface AstKeyframAtRule extends BaseToken {
 
 export declare interface AstRuleList extends BaseToken {
 
-    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType,
+    typ: EnumToken.StyleSheetNodeType | EnumToken.RuleNodeType | EnumToken.AtRuleNodeType | EnumToken.KeyframeAtRuleNodeType | EnumToken.KeyFrameRuleNodeType | EnumToken.InvalidRuleTokenType | EnumToken.InvalidAtRuleTokenType,
     chi: Array<BaseToken | AstComment>;
 }
 
@@ -968,7 +1052,7 @@ export declare type AstNode =
     | AstKeyframAtRule
     | AstKeyFrameRule
     | AstInvalidRule
-    | AstInvalidAtRule;
+    | AstInvalidDeclaration;
 
 /**
  * Declaration visitor handler
@@ -1012,6 +1096,11 @@ export declare interface PropertyListOptions {
     computeShorthand?: boolean;
 }
 
+declare enum FeatureWalkMode {
+    Pre = 0,
+    Post = 1
+}
+
 export declare type WalkerOption = WalkerOptionEnum | Token | null;
 /**
  * returned value:
@@ -1042,7 +1131,7 @@ export declare interface WalkAttributesResult {
     previousValue: Token | null;
     nextValue: Token | null;
     root?: AstNode;
-    parent: FunctionToken | ParensToken | BinaryExpressionToken | null;
+    parent: AstNode | Token | null;
     list: Token[] | null;
 }
 
@@ -1051,19 +1140,21 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
-    location?: {
-        src: string,
-        lin: number,
-        col: number;
-    };
+    syntax?: string;
+    location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];
 }
 
 interface ValidationOptions {
 
-    validation?: boolean;
+    validation?: boolean | ValidationLevel;
     lenient?: boolean;
+    visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isRepeatable?:boolean | null;
+    isList?:boolean | null;
+    occurence?:boolean | null;
+    atLeastOnce?: boolean | null;
 }
 
 interface MinifyOptions {
@@ -1080,10 +1171,10 @@ interface MinifyOptions {
     pass?: number;
 }
 
-export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
+export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
 
     src?: string;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     removeCharset?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
@@ -1099,11 +1190,12 @@ export declare interface ParserOptions extends MinifyOptions, ValidationOptions,
     visitor?: VisitorNodeMap;
     signal?: AbortSignal;
     setParent?: boolean;
+    cache?: WeakMap<AstNode, string>;
 }
 
-export declare interface MinifyFeatureOptions extends ParserOptions {
+export declare interface MinifyFeatureOptions  {
 
-    features: MinifyFeature[];
+    features?: MinifyFeature[];
 }
 
 export declare interface MinifyFeature {
@@ -1120,10 +1212,12 @@ export declare interface MinifyFeature {
 export declare interface MinifyFeature {
 
     ordering: number;
+    preProcess: boolean;
+    postProcess: boolean;
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) => void;
+    }, mode: FeatureWalkMode) => void;
 }
 
 export declare interface ResolvedPath {
@@ -1138,7 +1232,7 @@ export declare interface RenderOptions {
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
@@ -1193,7 +1287,8 @@ export declare interface TokenizeResult {
     token: string;
     len: number;
     hint?: EnumToken;
-    position: Position;
+    sta: Position;
+    end: Position;
     bytesIn: number;
 }
 
@@ -1207,12 +1302,27 @@ export declare interface SourceMapObject {
     mappings: string;
 }
 
+/**
+ * return the directory name of a path
+ * @param path
+ */
 declare function dirname(path: string): string;
+/**
+ * resolve path
+ * @param url
+ * @param currentDirectory
+ * @param cwd
+ */
 declare function resolve(url: string, currentDirectory: string, cwd?: string): {
     absolute: string;
     relative: string;
 };
 
+/**
+ * load file
+ * @param url
+ * @param currentFile
+ */
 declare function load(url: string, currentFile?: string): Promise<string>;
 
 /**
@@ -1228,4 +1338,4 @@ declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResu
  */
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };
+export { EnumToken, ValidationLevel, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };

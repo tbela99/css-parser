@@ -1,10 +1,11 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
-import '../../renderer/color/utils/constants.js';
-import '../../renderer/sourcemap/lib/encode.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { generalEnclosedFunc } from '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
 import { validateMediaFeature, validateMediaCondition } from './media.js';
@@ -16,8 +17,8 @@ function validateAtRuleWhen(atRule, options, root) {
     if (slice.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: atRule,
             syntax: '@when',
             error: '',
@@ -25,14 +26,14 @@ function validateAtRuleWhen(atRule, options, root) {
         };
     }
     const result = validateAtRuleWhenQueryList(atRule.tokens, atRule);
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@when',
             error: 'expected at-rule body',
@@ -40,12 +41,11 @@ function validateAtRuleWhen(atRule, options, root) {
         };
     }
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: result.tokens
+        error: ''
     };
 }
 // media() = media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )
@@ -61,10 +61,10 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             continue;
         }
         while (split.length > 0) {
-            if (split[0].typ != EnumToken.FunctionTokenType || !['media', 'supports', 'font-tech', 'font-format'].includes(split[0].val)) {
+            if (split[0].typ != EnumToken.FunctionTokenType || !generalEnclosedFunc.includes(split[0].val)) {
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'unexpected token',
@@ -78,26 +78,24 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
                 // result = valida
                 if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     };
                     break;
                 }
             }
-            else if (['supports', 'font-tech', 'font-format'].includes(split[0].val)) {
+            else if (generalEnclosedFunc.includes(split[0].val)) {
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     };
                     break;
                 }
@@ -112,8 +110,8 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             }
             if (![EnumToken.MediaFeatureAndTokenType, EnumToken.MediaFeatureOrTokenType].includes(split[0].typ)) {
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting and/or media-condition',
@@ -128,8 +126,8 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
             consumeWhitespace(split);
             if (split.length == 0) {
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting media-condition',
@@ -147,13 +145,12 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
     }
     if (matched.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             // @ts-ignore
             node: result?.node ?? atRule,
             syntax: '@when',
-            error: 'invalid at-rule body',
-            tokens: []
+            error: 'invalid at-rule body'
         };
     }
     tokenList.length = 0;
@@ -166,12 +163,11 @@ function validateAtRuleWhenQueryList(tokenList, atRule) {
         tokenList.push(...match);
     }
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: tokenList
+        error: ''
     };
 }
 

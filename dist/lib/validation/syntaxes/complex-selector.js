@@ -1,12 +1,13 @@
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
-import { EnumToken, ValidationLevel } from '../../ast/types.js';
+import { EnumToken, SyntaxValidationResult } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import { validateCompoundSelector } from './compound-selector.js';
 
 const combinatorsTokens = [EnumToken.ChildCombinatorTokenType, EnumToken.ColumnCombinatorTokenType,
@@ -19,13 +20,12 @@ function validateComplexSelector(tokens, root, options) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             // @ts-ignore
             node: root,
             syntax: null,
-            error: 'expected selector',
-            tokens
+            error: 'expected selector'
         };
     }
     // const config = getSyntaxConfig();
@@ -35,18 +35,17 @@ function validateComplexSelector(tokens, root, options) {
     // const combinators: EnumToken[] = combinatorsTokens.filter((t: EnumToken) => t != EnumToken.DescendantCombinatorTokenType);
     for (const t of splitTokenList(tokens, combinatorsTokens)) {
         result = validateCompoundSelector(t, root, options);
-        if (result.valid == ValidationLevel.Drop) {
+        if (result.valid == SyntaxValidationResult.Drop) {
             return result;
         }
     }
     // @ts-ignore
     return result ?? {
-        valid: ValidationLevel.Drop,
-        matches: [],
+        valid: SyntaxValidationResult.Drop,
+        context: [],
         node: root,
         syntax: null,
-        error: 'expecting compound-selector',
-        tokens
+        error: 'expecting compound-selector'
     };
 }
 

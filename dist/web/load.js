@@ -6,6 +6,11 @@ function parseResponse(response) {
     }
     return response.text();
 }
+/**
+ * load file
+ * @param url
+ * @param currentFile
+ */
 async function load(url, currentFile) {
     let t;
     if (matchUrl.test(url)) {

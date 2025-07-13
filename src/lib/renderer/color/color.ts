@@ -1,13 +1,4 @@
-import type {
-    AngleToken,
-    ColorKind,
-    ColorSpace,
-    ColorToken,
-    IdentToken,
-    NumberToken,
-    PercentageToken,
-    Token
-} from "../../../@types/index.d.ts";
+import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {EnumToken} from "../../ast/index.ts";
 import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb.ts";
 import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl.ts";
@@ -15,8 +6,8 @@ import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb} from "./hwb.ts
 import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab.ts";
 import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch, srgb2lch} from "./lch.ts";
 import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab.ts";
-import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch,} from "./oklch.ts";
-import {colorFuncColorSpace, getComponents} from "./utils/index.ts";
+import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch.ts";
+import {colorFuncColorSpace, ColorKind, getComponents} from "./utils/index.ts";
 import {
     hex2srgb,
     hsl2srgb,
@@ -36,18 +27,18 @@ import {srgb2xyz} from "./xyz.ts";
 import {p32srgbvalues, srgb2p3values} from "./p3.ts";
 import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50.ts";
 
-export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorToken | null {
+export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
 
     if (token.kin == to) {
 
         return token;
     }
 
-    if (token.kin == 'color') {
+    if (token.kin == ColorKind.COLOR) {
 
         const colorSpace: IdentToken = <IdentToken>(<Token[]>token.chi).find(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
 
-        if (colorSpace.val == to) {
+        if (colorSpace.val == ColorKind[to].toLowerCase().replaceAll('_', '-')) {
 
             return token;
         }
@@ -55,14 +46,14 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
     let values: number[] = [];
 
-    if (to == 'hsl') {
+    if (to == ColorKind.HSL) {
 
         let t: number[] | null;
 
         switch (token.kin) {
 
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 t = rgb2hsl(token);
 
@@ -73,17 +64,17 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
                 values.push(...t);
                 break;
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2hsl(token));
                 break;
-            case 'hwb':
+            case ColorKind.HWB:
 
                 values.push(...hwb2hsl(token));
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
 
                 t = oklab2hsl(token);
 
@@ -95,7 +86,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
 
                 t = oklch2hsl(token);
 
@@ -107,17 +98,18 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
+
 
                 values.push(...lab2hsl(token));
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
 
                 values.push(...lch2hsl(token));
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
 
                 // @ts-ignore
                 values.push(...srgb2hsl(...color2srgbvalues(token)));
@@ -128,42 +120,42 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
             return values2hsltoken(values);
         }
-    } else if (to == 'hwb') {
+    } else if (to == ColorKind.HWB) {
 
         switch (token.kin) {
 
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 values.push(...rgb2hwb(token));
                 break;
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2hsl(token));
                 break;
-            case 'hsl':
-            case 'hsla':
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
 
                 values.push(...hsl2hwb(token));
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
 
                 values.push(...oklab2hwb(token));
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
 
                 values.push(...oklch2hwb(token));
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
 
                 values.push(...lab2hwb(token));
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
 
                 values.push(...lch2hwb(token));
                 break;
@@ -173,16 +165,16 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
             return values2hwbtoken(values);
         }
-    } else if (to == 'rgb') {
+    } else if (to == ColorKind.RGB) {
             let t : number[] | null;
         switch (token.kin) {
 
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2rgb(token));
                 break
-            case 'hsl':
+            case ColorKind.HSL:
 
                 t = hsl2rgb(token);
 
@@ -193,7 +185,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
                 values.push(...t);
                 break
-            case 'hwb':
+            case ColorKind.HWB:
 
                 t = hwb2rgb(token);
 
@@ -205,7 +197,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
 
                 t =oklab2rgb(token);
 
@@ -217,7 +209,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
 
                 t = oklch2rgb(token);
 
@@ -229,7 +221,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
 
                 t = lab2rgb(token);
 
@@ -241,7 +233,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
 
                 t = lch2rgb(token);
 
@@ -253,7 +245,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
 
                 // @ts-ignore
                 values.push(...srgb2rgb(...color2srgbvalues(token)));
@@ -265,43 +257,43 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
             return values2rgbtoken(values);
         }
 
-    } else if (to == 'lab') {
+    } else if (to == ColorKind.LAB) {
 
         switch (token.kin) {
 
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2lab(token));
                 break;
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 values.push(...rgb2lab(token));
                 break;
-            case 'hsl':
-            case 'hsla':
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
 
                 values.push(...hsl2lab(token));
                 break;
 
-            case 'hwb':
+            case ColorKind.HWB:
                 values.push(...hwb2lab(token));
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
                 values.push(...lch2lab(token));
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
                 values.push(...oklab2lab(token));
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
                 values.push(...oklch2lab(token));
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
                 // @ts-ignore
                 values.push(...srgb2lab(...color2srgbvalues(token)));
                 break;
@@ -312,43 +304,43 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
             return values2colortoken(values, to);
         }
 
-    } else if (to == 'lch') {
+    } else if (to == ColorKind.LCH) {
 
         switch (token.kin) {
 
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2lch(token));
                 break;
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 values.push(...rgb2lch(token));
                 break;
-            case 'hsl':
-            case 'hsla':
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
 
                 values.push(...hsl2lch(token));
                 break;
 
-            case 'hwb':
+            case ColorKind.HWB:
                 values.push(...hwb2lch(token));
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
                 values.push(...lab2lch(token));
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
                 values.push(...oklab2lch(token));
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
                 values.push(...oklch2lch(token));
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
                 // @ts-ignore
                 values.push(...srgb2lch(...color2srgbvalues(token)));
                 break;
@@ -359,43 +351,43 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
             return values2colortoken(values, to);
         }
 
-    } else if (to == 'oklab') {
+    } else if (to == ColorKind.OKLAB) {
 
         switch (token.kin) {
 
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2oklab(token));
                 break;
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 values.push(...rgb2oklab(token));
                 break;
-            case 'hsl':
-            case 'hsla':
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
 
                 values.push(...hsl2oklab(token));
                 break;
 
-            case 'hwb':
+            case ColorKind.HWB:
                 values.push(...hwb2oklab(token));
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
                 values.push(...lab2oklab(token));
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
                 values.push(...lch2oklab(token));
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
                 values.push(...oklch2oklab(token));
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
                 // @ts-ignore
                 values.push(...srgb2oklab(...color2srgbvalues(token)));
                 break;
@@ -406,97 +398,97 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
             return values2colortoken(values, to);
         }
 
-    } else if (to == 'oklch') {
+    } else if (to == ColorKind.OKLCH) {
 
         switch (token.kin) {
 
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2oklch(token));
                 break;
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 values.push(...rgb2oklch(token));
                 break;
-            case 'hsl':
-            case 'hsla':
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
 
                 values.push(...hsl2oklch(token));
                 break;
 
-            case 'hwb':
+            case ColorKind.HWB:
                 values.push(...hwb2oklch(token));
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
                 values.push(...lab2oklch(token));
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
                 values.push(...oklab2oklch(token));
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
                 values.push(...lch2oklch(token));
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
 
                 // @ts-ignore
-                let val: number[] = color2srgbvalues(token);
+                values.push(...srgb2oklch(...color2srgbvalues(token)));
 
-                switch (<ColorSpace>to) {
-
-                    case 'srgb':
-
-                        values.push(...val);
-                        break;
-
-                    case 'srgb-linear':
-
-                        // @ts-ignore
-                        values.push(...srgb2lsrgbvalues(...val));
-                        break;
-
-                    case 'display-p3':
-
-                        // @ts-ignore
-                        values.push(...srgb2p3values(...val));
-                        break;
-
-                    case 'prophoto-rgb':
-
-                        // @ts-ignore
-                        values.push(...srgb2prophotorgbvalues(...val));
-                        break;
-
-                    case 'a98-rgb':
-
-                        // @ts-ignore
-                        values.push(...srgb2a98values(...val));
-                        break;
-
-                    case 'rec2020':
-
-                        // @ts-ignore
-                        values.push(...srgb2rec2020values(...val));
-                        break;
-
-                    case 'xyz':
-                    case 'xyz-d65':
-
-                        // @ts-ignore
-                        values.push(...srgb2xyz(...val));
-                        break;
-
-                    case 'xyz-d50':
-
-                        // @ts-ignore
-                        values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
-                        break;
-                }
+                // switch (to) {
+                //
+                //     case ColorKind.SRGB:
+                //
+                //         values.push(...val);
+                //         break;
+                //
+                //     case ColorKind.SRGB_LINEAR:
+                //
+                //         // @ts-ignore
+                //         values.push(...srgb2lsrgbvalues(...val));
+                //         break;
+                //
+                //     case ColorKind.DISPLAY_P3:
+                //
+                //         // @ts-ignore
+                //         values.push(...srgb2p3values(...val));
+                //         break;
+                //
+                //     case ColorKind.PROPHOTO_RGB:
+                //
+                //         // @ts-ignore
+                //         values.push(...srgb2prophotorgbvalues(...val));
+                //         break;
+                //
+                //     case ColorKind.A98_RGB:
+                //
+                //         // @ts-ignore
+                //         values.push(...srgb2a98values(...val));
+                //         break;
+                //
+                //     case ColorKind.REC2020:
+                //
+                //         // @ts-ignore
+                //         values.push(...srgb2rec2020values(...val));
+                //         break;
+                //
+                //     case ColorKind.XYZ:
+                //     case ColorKind.XYZ_D65:
+                //
+                //         // @ts-ignore
+                //         values.push(...srgb2xyz(...val));
+                //         break;
+                //
+                //     case ColorKind.XYZ_D50:
+                //
+                //         // @ts-ignore
+                //         values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
+                //         break;
+                // }
 
                 break;
         }
@@ -507,19 +499,19 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
         }
     }
 
-    else if (colorFuncColorSpace.includes(<ColorSpace>to)) {
+    else if (colorFuncColorSpace.includes((ColorKind[to] as string).toLowerCase().replaceAll('_', '-') )) {
 
         let t : number[] | null;
 
         switch (token.kin) {
 
-            case 'hex':
-            case 'lit':
+            case ColorKind.HEX:
+            case ColorKind.LIT:
 
                 values.push(...hex2srgb(token));
                 break;
-            case 'rgb':
-            case 'rgba':
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
 
                 t = rgb2srgb(token);
 
@@ -530,8 +522,8 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
 
                 values.push(...t);
                 break;
-            case 'hsl':
-            case 'hsla':
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
 
                 t = hsl2srgb(token);
 
@@ -543,7 +535,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'hwb':
+            case ColorKind.HWB:
 
                 t = hwb2srgb(token);
 
@@ -555,7 +547,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'lab':
+            case ColorKind.LAB:
                 t = lab2srgb(token);
 
                 if (t == null) {
@@ -566,7 +558,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'oklab':
+            case ColorKind.OKLAB:
 
                 t = oklab2srgb(token);
 
@@ -578,7 +570,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'lch':
+            case ColorKind.LCH:
 
                 t = lch2srgb(token);
 
@@ -590,7 +582,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'oklch':
+            case ColorKind.OKLCH:
 
                 t = color2srgbvalues(token);
 
@@ -602,7 +594,7 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                 values.push(...t);
                 break;
 
-            case 'color':
+            case ColorKind.COLOR:
 
                 const val: number[] | null = color2srgbvalues(token);
 
@@ -611,47 +603,47 @@ export function convert(token: ColorToken, to: ColorKind | ColorSpace): ColorTok
                     return null;
                 }
 
-                switch (<ColorSpace>to) {
+                switch (to) {
 
-                    case 'srgb':
+                    case ColorKind.SRGB:
 
                         values.push(...val);
                         break;
-                    case 'srgb-linear':
+                    case ColorKind.SRGB_LINEAR:
 
                         // @ts-ignore
                         values.push(...srgb2lsrgbvalues(...val));
                         break;
-                    case 'display-p3':
+                    case ColorKind.DISPLAY_P3:
 
                         // @ts-ignore
                         values.push(...srgb2p3values(...val));
                         break;
-                    case 'prophoto-rgb':
+                    case ColorKind.PROPHOTO_RGB:
 
                         // @ts-ignore
                         values.push(...srgb2prophotorgbvalues(...val));
                         break;
-                    case 'a98-rgb':
+                    case ColorKind.A98_RGB:
 
                         // @ts-ignore
                         values.push(...srgb2a98values(...val));
                         break;
 
-                    case 'rec2020':
+                    case ColorKind.REC2020:
 
                         // @ts-ignore
                         values.push(...srgb2rec2020values(...val));
                         break;
 
-                    case 'xyz':
-                    case 'xyz-d65':
+                    case ColorKind.XYZ:
+                    case ColorKind.XYZ_D65:
 
                         // @ts-ignore
                         values.push(...srgb2xyz(...val));
                         break;
 
-                    case 'xyz-d50':
+                    case ColorKind.XYZ_D50:
 
                         // @ts-ignore
                         values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
@@ -739,7 +731,7 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
 
 export function values2hsltoken(values: number[]): ColorToken {
 
-    const to: ColorKind = 'hsl';
+    const to: ColorKind = ColorKind.HSL;
     const chi: Token[] = <Token[]>[
 
         {typ: EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg'},
@@ -754,7 +746,7 @@ export function values2hsltoken(values: number[]): ColorToken {
 
     return {
         typ: EnumToken.ColorTokenType,
-        val: to,
+        val: (ColorKind[to] as string).toLowerCase().replaceAll('_', '-'),
         chi,
         kin: to
     }
@@ -762,7 +754,7 @@ export function values2hsltoken(values: number[]): ColorToken {
 
 function values2rgbtoken(values: number[]): ColorToken {
 
-    const to: ColorKind = 'rgb';
+    const to: ColorKind = ColorKind.RGB;
     const chi: Token[] = <Token[]>[
 
         {typ: EnumToken.NumberTokenType, val: String(values[0])},
@@ -777,7 +769,7 @@ function values2rgbtoken(values: number[]): ColorToken {
 
     return {
         typ: EnumToken.ColorTokenType,
-        val: to,
+        val: ColorKind[to] as string,
         chi,
         kin: to
     }
@@ -785,7 +777,7 @@ function values2rgbtoken(values: number[]): ColorToken {
 
 function values2hwbtoken(values: number[]): ColorToken {
 
-    const to: ColorKind = 'hwb';
+    const to: ColorKind = ColorKind.HWB;
     const chi: Token[] = <Token[]>[
 
         {typ: EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg'},
@@ -800,13 +792,13 @@ function values2hwbtoken(values: number[]): ColorToken {
 
     return {
         typ: EnumToken.ColorTokenType,
-        val: to,
+        val: ColorKind[to] as string,
         chi,
         kin: to
     }
 }
 
-function values2colortoken(values: number[], to: ColorKind | ColorSpace): ColorToken {
+function values2colortoken(values: number[], to: ColorKind): ColorToken {
 
     const chi: Token[] = <Token[]>[
 
@@ -820,14 +812,16 @@ function values2colortoken(values: number[], to: ColorKind | ColorSpace): ColorT
         chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
     }
 
-    return colorFuncColorSpace.includes(<ColorSpace>to) ? <ColorToken> {
+    const colorSpace: string = ColorKind[to].toLowerCase().replaceAll('_', '-');
+
+    return colorFuncColorSpace.includes(colorSpace) ? <ColorToken> {
         typ: EnumToken.ColorTokenType,
         val: 'color',
-        chi: [<Token>{typ: EnumToken.IdenTokenType, val: to}].concat(chi),
-        kin: 'color'
+        chi: [<Token>{typ: EnumToken.IdenTokenType, val: colorSpace}].concat(chi),
+        kin: ColorKind.COLOR
     } : <ColorToken>{
         typ: EnumToken.ColorTokenType,
-        val: to,
+        val: colorSpace,
         chi,
         kin: to
     }
@@ -839,7 +833,7 @@ function values2colortoken(values: number[], to: ColorKind | ColorSpace): ColorT
  */
 export function clamp(token: ColorToken): ColorToken {
 
-    if (token.kin == 'rgb' || token.kin == 'rgba') {
+    if (token.kin == ColorKind.RGB || token.kin == ColorKind.RGBA) {
 
         (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token: Token, index: number) => {
 

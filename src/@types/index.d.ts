@@ -1,8 +1,10 @@
 import {VisitorNodeMap} from "./visitor.d.ts";
-import {AstAtRule, AstDeclaration, AstRule, AstRuleStyleSheet, Position} from "./ast.d.ts";
+import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken} from "../lib/index.ts";
+import {EnumToken, ValidationLevel, ValidationToken} from "../lib/index.ts";
+import type {Token} from "./token.d.ts";
+import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 
 export * from './ast.d.ts';
 export * from './token.d.ts';
@@ -17,11 +19,8 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
-    location?: {
-        src: string,
-        lin: number,
-        col: number;
-    };
+    syntax?: string;
+    location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];
 }
@@ -39,8 +38,13 @@ export declare interface MinifyFeature {
 
 export interface ValidationOptions {
 
-    validation?: boolean;
+    validation?: boolean | ValidationLevel;
     lenient?: boolean;
+    visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isRepeatable?:boolean | null;
+    isList?:boolean | null;
+    occurence?:boolean | null;
+    atLeastOnce?: boolean | null;
 }
 
 export interface MinifyOptions {
@@ -57,10 +61,10 @@ export interface MinifyOptions {
     pass?: number;
 }
 
-export declare interface ParserOptions extends MinifyOptions, ValidationOptions, PropertyListOptions {
+export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptions, ValidationOptions, PropertyListOptions {
 
     src?: string;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     removeCharset?: boolean;
     resolveUrls?: boolean;
     resolveImport?: boolean;
@@ -76,20 +80,23 @@ export declare interface ParserOptions extends MinifyOptions, ValidationOptions,
     visitor?: VisitorNodeMap;
     signal?: AbortSignal;
     setParent?: boolean;
+    cache?: WeakMap<AstNode, string>;
 }
 
-export declare interface MinifyFeatureOptions extends ParserOptions {
+export declare interface MinifyFeatureOptions  {
 
-    features: MinifyFeature[];
+    features?: MinifyFeature[];
 }
 
 export declare interface MinifyFeature {
 
     ordering: number;
+    preProcess: boolean;
+    postProcess: boolean;
     register: (options: MinifyFeatureOptions | ParserOptions) => void;
     run: (ast: AstRule | AstAtRule, options: ParserOptions, parent: AstRule | AstAtRule | AstRuleStyleSheet, context: {
         [key: string]: any
-    }) => void;
+    }, mode: FeatureWalkMode) => void;
 }
 
 export declare interface ResolvedPath {
@@ -104,7 +111,7 @@ export declare interface RenderOptions {
     removeEmpty?: boolean;
     expandNestingRules?: boolean;
     preserveLicense?: boolean;
-    sourcemap?: boolean;
+    sourcemap?: boolean | 'inline';
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
@@ -159,7 +166,8 @@ export declare interface TokenizeResult {
     token: string;
     len: number;
     hint?: EnumToken;
-    position: Position;
+    sta: Position;
+    end: Position;
     bytesIn: number;
 }
 
@@ -176,6 +184,7 @@ export declare interface VariableScopeInfo {
     declarationCount: number;
     replaceable: boolean;
     node: AstDeclaration;
+    values: Token[];
 }
 
 export declare interface SourceMapObject {

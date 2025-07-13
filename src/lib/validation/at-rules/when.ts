@@ -1,9 +1,10 @@
 import type {AstAtRule, AstNode, FunctionToken, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {validateMediaCondition, validateMediaFeature} from "./media.ts";
 import {validateSupportCondition} from "./supports.ts";
+import {generalEnclosedFunc} from "../../renderer/color/utils";
 
 export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -15,8 +16,8 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: atRule,
             syntax: '@when',
             error: '',
@@ -26,7 +27,7 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
 
     const result: ValidationSyntaxResult = validateAtRuleWhenQueryList(atRule.tokens as Token[], atRule);
 
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
 
         return result;
     }
@@ -35,8 +36,8 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@when',
             error: 'expected at-rule body',
@@ -45,12 +46,11 @@ export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions
     }
 
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: result.tokens
+        error: ''
     }
 }
 
@@ -76,11 +76,11 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
 
         while (split.length > 0) {
 
-            if (split[0].typ != EnumToken.FunctionTokenType || !['media', 'supports', 'font-tech', 'font-format'].includes((split[0] as FunctionToken).val)) {
+            if (split[0].typ != EnumToken.FunctionTokenType || !generalEnclosedFunc.includes((split[0] as FunctionToken).val)) {
 
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'unexpected token',
@@ -100,29 +100,27 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
                 if (chi.length != 1 || !(validateMediaFeature(chi[0]) || validateMediaCondition(split[0], atRule))) {
 
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     }
 
                     break;
                 }
 
-            } else if (['supports', 'font-tech', 'font-format'].includes((split[0] as FunctionToken).val)) {
+            } else if (generalEnclosedFunc.includes((split[0] as FunctionToken).val)) {
 
                 // result = valida
                 if (!validateSupportCondition(atRule, split[0])) {
 
                     result = {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: split[0] ?? atRule,
                         syntax: 'media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )',
-                        error: 'unexpected token',
-                        tokens: []
+                        error: 'unexpected token'
                     }
 
                     break;
@@ -145,8 +143,8 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
             if (![EnumToken.MediaFeatureAndTokenType, EnumToken.MediaFeatureOrTokenType].includes(split[0].typ)) {
 
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting and/or media-condition',
@@ -168,8 +166,8 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
             if (split.length == 0) {
 
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: split[0] ?? atRule,
                     syntax: '@when',
                     error: 'expecting media-condition',
@@ -194,13 +192,12 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
     if (matched.length == 0) {
 
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             // @ts-ignore
             node: result?.node ?? atRule,
             syntax: '@when',
-            error: 'invalid at-rule body',
-            tokens: []
+            error: 'invalid at-rule body'
         }
     }
 
@@ -219,11 +216,10 @@ export function validateAtRuleWhenQueryList(tokenList: Token[], atRule: AstAtRul
     }
 
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@when',
-        error: '',
-        tokens: tokenList
+        error: ''
     }
 }

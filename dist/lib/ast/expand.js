@@ -1,10 +1,11 @@
 import { splitRule, combinators } from './minify.js';
 import { parseString } from '../parser/parse.js';
+import '../parser/tokenize.js';
+import '../parser/utils/config.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { renderToken } from '../renderer/render.js';
 import '../renderer/color/utils/constants.js';
-import '../parser/utils/config.js';
 
 /**
  * expand nested css ast

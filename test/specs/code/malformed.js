@@ -7,7 +7,7 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
             const css = `
 @import 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.css`;
 
-            return readFile(dirname(new URL(import.meta.url).pathname) + '/../../files/result/font-awesome-all.css', {encoding: 'utf-8'}).
+            return readFile((import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + '/../../files/result/font-awesome-all.css', {encoding: 'utf-8'}).
             then(content => transform(css, {minify: false, resolveImport: true}).then(result => expect(result.code).equals(content)));
         });
 
@@ -150,10 +150,9 @@ color:
 ;
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: true}).then(result => expect(render(result.ast, {
                 minify: false,
-                removeComments: false,
-                preserveLicense: true
+                removeEmpty: true
             }).code).equals(``));
         });
 

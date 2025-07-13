@@ -1,10 +1,11 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
 
@@ -14,48 +15,44 @@ function validateAtRuleContainer(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected supports query list',
-            tokens: []
+            error: 'expected supports query list'
         };
     }
     const result = validateAtRuleContainerQueryList(atRule.tokens, atRule);
-    if (result.valid == ValidationLevel.Drop) {
+    if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }
     if (!('chi' in atRule)) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         };
     }
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
         error: '',
-        tokens: []
     };
 }
 function validateAtRuleContainerQueryList(tokens, atRule) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query list',
-            tokens
+            error: 'expected container query list'
         };
     }
     let result = null;
@@ -64,12 +61,11 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
         consumeWhitespace(queries);
         if (queries.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query list',
-                tokens
+                error: 'expected container query list'
             };
         }
         result = null;
@@ -79,12 +75,11 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
         while (queries.length > 0) {
             if (queries.length == 0) {
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query list',
-                    tokens
+                    error: 'expected container query list'
                 };
             }
             if (queries[0].typ == EnumToken.IdenTokenType) {
@@ -100,12 +95,11 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
             }
             if (token?.typ != EnumToken.ParensTokenType && (token?.typ != EnumToken.FunctionTokenType || !['scroll-state', 'style'].includes(token.val))) {
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query-in-parens',
-                    tokens
+                    error: 'expected container query-in-parens'
                 };
             }
             if (token?.typ == EnumToken.ParensTokenType) {
@@ -117,7 +111,7 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
             else {
                 result = validateContainerStyleFeature(token.chi, atRule);
             }
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
             queries.shift();
@@ -128,12 +122,11 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
             token = queries[0];
             if (token?.typ != EnumToken.MediaFeatureAndTokenType && token?.typ != EnumToken.MediaFeatureOrTokenType) {
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expecting and/or container query token',
-                    tokens
+                    error: 'expecting and/or container query token'
                 };
             }
             if (tokenType == null) {
@@ -141,35 +134,32 @@ function validateAtRuleContainerQueryList(tokens, atRule) {
             }
             if (tokenType == null || tokenType != token?.typ) {
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'mixing and/or not allowed at the same level',
-                    tokens
+                    error: 'mixing and/or not allowed at the same level'
                 };
             }
             queries.shift();
             consumeWhitespace(queries);
             if (queries.length == 0) {
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: queries[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query-in-parens',
-                    tokens
+                    error: 'expected container query-in-parens'
                 };
             }
         }
     }
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens
+        error: ''
     };
 }
 function validateContainerStyleFeature(tokens, atRule) {
@@ -182,22 +172,20 @@ function validateContainerStyleFeature(tokens, atRule) {
         if ([EnumToken.DashedIdenTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ) ||
             (tokens[0].typ == EnumToken.MediaQueryConditionTokenType && tokens[0].op.typ == EnumToken.ColonTokenType)) {
             return {
-                valid: ValidationLevel.Valid,
-                matches: [],
+                valid: SyntaxValidationResult.Valid,
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: '',
-                tokens
+                error: ''
             };
         }
     }
     return {
-        valid: ValidationLevel.Drop,
-        matches: [],
+        valid: SyntaxValidationResult.Drop,
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: 'expected container query features',
-        tokens
+        error: 'expected container query features'
     };
 }
 function validateContainerSizeFeature(tokens, atRule) {
@@ -205,12 +193,11 @@ function validateContainerSizeFeature(tokens, atRule) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query features',
-            tokens
+            error: 'expected container query features'
         };
     }
     if (tokens.length == 1) {
@@ -223,21 +210,19 @@ function validateContainerSizeFeature(tokens, atRule) {
         }
         if (![EnumToken.DashedIdenTokenType, EnumToken.MediaQueryConditionTokenType].includes(tokens[0].typ)) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query features',
-                tokens
+                error: 'expected container query features'
             };
         }
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens
+            error: ''
         };
     }
     return validateAtRuleContainerQueryStyleInParams(tokens, atRule);
@@ -247,12 +232,11 @@ function validateAtRuleContainerQueryStyleInParams(tokens, atRule) {
     consumeWhitespace(tokens);
     if (tokens.length == 0) {
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected container query features',
-            tokens
+            error: 'expected container query features'
         };
     }
     let token = tokens[0];
@@ -265,12 +249,11 @@ function validateAtRuleContainerQueryStyleInParams(tokens, atRule) {
         }
         if (tokens[0].typ != EnumToken.ParensTokenType) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: atRule,
                 syntax: '@' + atRule.nam,
-                error: 'expected container query-in-parens',
-                tokens
+                error: 'expected container query-in-parens'
             };
         }
         const slices = tokens[0].chi.slice();
@@ -278,24 +261,23 @@ function validateAtRuleContainerQueryStyleInParams(tokens, atRule) {
         if (slices.length == 1) {
             if ([EnumToken.MediaFeatureNotTokenType, EnumToken.ParensTokenType].includes(slices[0].typ)) {
                 result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
             }
             else if (![EnumToken.DashedIdenTokenType, EnumToken.MediaQueryConditionTokenType].includes(slices[0].typ)) {
                 result = {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected container query features',
-                    tokens
+                    error: 'expected container query features'
                 };
             }
         }
         else {
             result = validateAtRuleContainerQueryStyleInParams(slices, atRule);
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
         }
@@ -306,12 +288,11 @@ function validateAtRuleContainerQueryStyleInParams(tokens, atRule) {
         }
         if (![EnumToken.MediaFeatureAndTokenType, EnumToken.MediaFeatureOrTokenType].includes(tokens[0].typ)) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'expecting and/or container query token',
-                tokens
+                error: 'expecting and/or container query token'
             };
         }
         if (tokenType == null) {
@@ -319,34 +300,31 @@ function validateAtRuleContainerQueryStyleInParams(tokens, atRule) {
         }
         if (tokenType != tokens[0].typ) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'mixing and/or not allowed at the same level',
-                tokens
+                error: 'mixing and/or not allowed at the same level'
             };
         }
         tokens.shift();
         consumeWhitespace(tokens);
         if (tokens.length == 0) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'expected container query-in-parens',
-                tokens
+                error: 'expected container query-in-parens'
             };
         }
     }
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens
+        error: ''
     };
 }
 

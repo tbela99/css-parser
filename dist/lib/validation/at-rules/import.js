@@ -1,16 +1,16 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import { validateAtRuleMediaQueryList } from './media.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { validateLayerName } from '../syntaxes/layer-name.js';
 import '../syntaxes/complex-selector.js';
-import '../parser/types.js';
-import '../parser/parse.js';
+import '../syntax.js';
 import '../config.js';
 import { validateAtRuleSupportsConditions } from './supports.js';
 
@@ -18,35 +18,32 @@ function validateAtRuleImport(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: 'expected @import media query list',
-            tokens: []
+            error: 'expected @import media query list'
         };
     }
     if ('chi' in atRule) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: 'unexpected at-rule body',
-            tokens: []
+            error: 'unexpected at-rule body'
         };
     }
     const tokens = atRule.tokens.filter((t) => ![EnumToken.CommentTokenType].includes(t.typ));
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: 'expected @import media query list',
-            tokens: []
+            error: 'expected @import media query list'
         };
     }
     if (tokens[0].typ == EnumToken.StringTokenType) {
@@ -59,12 +56,11 @@ function validateAtRuleImport(atRule, options, root) {
         if (slice.length != 1 || ![EnumToken.StringTokenType, EnumToken.UrlTokenTokenType].includes(slice[0].typ)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'invalid url()',
-                tokens
+                error: 'invalid url()'
             };
         }
         else {
@@ -73,12 +69,11 @@ function validateAtRuleImport(atRule, options, root) {
             if (!consumeWhitespace(tokens)) {
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expecting whitespace',
-                    tokens
+                    error: 'expecting whitespace'
                 };
             }
         }
@@ -89,12 +84,11 @@ function validateAtRuleImport(atRule, options, root) {
     else {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: tokens[0],
             syntax: '@' + atRule.nam,
-            error: 'expecting url() or string',
-            tokens
+            error: 'expecting url() or string'
         };
     }
     if (tokens.length > 0) {
@@ -107,12 +101,11 @@ function validateAtRuleImport(atRule, options, root) {
                 if (!consumeWhitespace(tokens)) {
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0],
                         syntax: '@' + atRule.nam,
-                        error: 'expecting whitespace',
-                        tokens
+                        error: 'expecting whitespace'
                     };
                 }
             }
@@ -122,7 +115,7 @@ function validateAtRuleImport(atRule, options, root) {
             // @ts-ignore
             if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
                 const result = validateLayerName(tokens[0].chi);
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 tokens.shift();
@@ -132,7 +125,7 @@ function validateAtRuleImport(atRule, options, root) {
             // @ts-ignore
             if ('supports'.localeCompare(tokens[0]?.val, undefined, { sensitivity: 'base' }) == 0) {
                 const result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
                 }
                 tokens.shift();
@@ -141,60 +134,16 @@ function validateAtRuleImport(atRule, options, root) {
             }
         }
     }
-    // if (tokens.length > 0) {
-    //
-    //     // @ts-ignore
-    //     if (tokens[0].typ == EnumToken.AtRuleTokenType) {
-    //
-    //         if ((tokens[0] as AstAtRule).nam != 'supports') {
-    //
-    //             // @ts-ignore
-    //             return {
-    //                 valid: ValidationLevel.Drop,
-    //                 matches: [],
-    //                 node: tokens[0],
-    //                 syntax: '@' + atRule.nam,
-    //                 error: 'expecting @supports or media query list',
-    //                 tokens
-    //             }
-    //         }
-    //
-    //         // @ts-ignore
-    //         const result: ValidationSyntaxResult = validateAtRuleSupports(tokens[0] as AstAtRule, options, atRule);
-    //
-    //         if (result.valid == ValidationLevel.Drop) {
-    //
-    //             return result;
-    //         }
-    //
-    //         tokens.shift();
-    //
-    //         // @ts-ignore
-    //         if (!consumeWhitespace(tokens)) {
-    //
-    //             // @ts-ignore
-    //             return {
-    //                 valid: ValidationLevel.Drop,
-    //                 matches: [],
-    //                 node: tokens[0],
-    //                 syntax: '@' + atRule.nam,
-    //                 error: 'expecting whitespace',
-    //                 tokens
-    //             }
-    //         }
-    //     }
-    // }
     if (tokens.length > 0) {
         return validateAtRuleMediaQueryList(tokens, atRule);
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: null,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     };
 }
 

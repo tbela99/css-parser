@@ -9,9 +9,10 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { xyzd502srgb } from './xyzd50.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125

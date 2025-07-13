@@ -11,6 +11,42 @@ export function getSyntaxConfig(): ValidationConfiguration {
     return config as ValidationConfiguration;
 }
 
+export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | string {
+
+    // @ts-ignore
+    let obj = config[group] as Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
+
+    const keys: string[] = Array.isArray(key) ? key : [key];
+
+    for (let i = 0; i < keys.length; i++) {
+
+        key = keys[i];
+
+        if (!(key in obj)) {
+
+            if ((i == 0 && key.charAt(0) == '@') || key.charAt(0) == '-') {
+
+                const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
+
+                if (matches != null) {
+
+                    key = matches[1] + matches[3];
+                }
+            }
+
+            if (!(key in obj)) {
+
+                return null;
+            }
+        }
+
+        // @ts-ignore
+        obj = obj[key];
+    }
+
+    // @ts-ignore
+    return obj?.syntax ?? null;
+}
 export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] {
 
     // @ts-ignore

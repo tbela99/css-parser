@@ -5,6 +5,7 @@ import { transformFunctions } from '../../syntax/syntax.js';
 import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { getNumber, getAngle } from '../../renderer/color/color.js';
 import '../../renderer/color/utils/constants.js';

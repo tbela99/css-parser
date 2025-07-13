@@ -1,6 +1,6 @@
 import type {AstAtRule, Token, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {validateKeyframeSelector} from "./keyframe-selector.ts";
 
 
@@ -16,7 +16,7 @@ export function validateKeyframeBlockList(tokens: Token[], atRule: AstAtRule, op
 
             result = validateKeyframeSelector(tokens.slice(j, i), options) as ValidationSyntaxResult;
 
-            if (result.valid == ValidationLevel.Drop) {
+            if (result.valid == SyntaxValidationResult.Drop) {
 
                 return result as ValidationSyntaxResult;
             }

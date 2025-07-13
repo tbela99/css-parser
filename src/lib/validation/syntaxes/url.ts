@@ -1,6 +1,6 @@
 import type {FunctionURLToken, Token} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 
 
@@ -10,13 +10,12 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: '',
-            tokens: []
+            error: ''
         }
     }
 
@@ -24,13 +23,12 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'expected url()',
-            tokens: []
+            error: 'expected url()'
         }
     }
 
@@ -42,13 +40,12 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: children[0] ?? token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'expected url-token',
-            tokens: children
+            error: 'expected url-token'
         }
     }
 
@@ -60,24 +57,22 @@ export function validateURL(token: Token): ValidationSyntaxResult {
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: children[0] ?? token,
             // @ts-ignore
             syntax: 'url()',
-            error: 'unexpected token',
-            tokens: children
+            error: 'unexpected token'
         }
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: token,
         // @ts-ignore
         syntax: 'url()',
-        error: '',
-        tokens: []
+        error: ''
     }
 }

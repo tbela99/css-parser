@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.0
+
+- [x] inline sourcemap
+- [x] CSS validation using mdn-data
+- [x] prefix removal now remove prefixes from all nodes. prefixed linear gradients are not supported
+
 # v1.0.0
 
 - [x] current color parse error when used in color functions
@@ -114,7 +120,7 @@ error validation
 
 - [x] render node with parents
 - [x] fix relative color from xyz
-- [x] fix bug when inlineCss is true bug no css variable exists
+- [x] fix bug when inlineCss is true but no css variable exists
 - [x] compute more shorthands
 - [x] (web) fetch imported css files from external domains using cors
 

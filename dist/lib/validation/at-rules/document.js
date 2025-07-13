@@ -1,10 +1,11 @@
-import { ValidationLevel, EnumToken } from '../../ast/types.js';
+import { SyntaxValidationResult, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';
 import { validateURL } from '../syntaxes/url.js';
@@ -13,12 +14,11 @@ function validateAtRuleDocument(atRule, options, root) {
     if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: 'expecting at-rule prelude',
-            tokens: []
+            error: 'expecting at-rule prelude'
         };
     }
     const tokens = atRule.tokens.slice();
@@ -27,39 +27,36 @@ function validateAtRuleDocument(atRule, options, root) {
     if (tokens.length == 0) {
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@document',
-            error: 'expecting at-rule prelude',
-            tokens
+            error: 'expecting at-rule prelude'
         };
     }
     for (const t of splitTokenList(tokens)) {
         if (t.length != 1) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
-                error: 'unexpected token',
-                tokens
+                error: 'unexpected token'
             };
         }
         // @ts-ignore
         if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: t[0] ?? atRule,
                 syntax: '@document',
-                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val,
-                tokens
+                error: 'expecting any of url-prefix(), domain(), media-document(), regexp() but found ' + t[0].val
             };
         }
         if (t[0].typ == EnumToken.UrlFunctionTokenType) {
             result = validateURL(t[0]);
-            if (result?.valid == ValidationLevel.Drop) {
+            if (result?.valid == SyntaxValidationResult.Drop) {
                 return result;
             }
             continue;
@@ -69,12 +66,11 @@ function validateAtRuleDocument(atRule, options, root) {
         if (children.length != 1 || (children[0].typ != EnumToken.StringTokenType && children[0].typ != EnumToken.UrlTokenTokenType)) {
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0],
                 syntax: '@document',
-                error: 'expecting string argument',
-                tokens
+                error: 'expecting string argument'
             };
         }
         tokens.shift();
@@ -82,12 +78,11 @@ function validateAtRuleDocument(atRule, options, root) {
     }
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@document',
-        error: '',
-        tokens
+        error: ''
     };
 }
 

@@ -7,7 +7,7 @@ import type {
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {validateAtRuleMediaQueryList} from "./media.ts";
 import {consumeWhitespace} from "../utils/index.ts";
 import {validateLayerName} from "../syntaxes/index.ts";
@@ -19,12 +19,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: 'expected @import media query list',
-            tokens: []
+            error: 'expected @import media query list'
         } as ValidationSyntaxResult;
     }
 
@@ -32,12 +31,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: 'unexpected at-rule body',
-            tokens: []
+            error: 'unexpected at-rule body'
         } as ValidationSyntaxResult;
     }
 
@@ -47,12 +45,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: 'expected @import media query list',
-            tokens: []
+            error: 'expected @import media query list'
         } as ValidationSyntaxResult;
     }
 
@@ -69,12 +66,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0],
                 syntax: '@' + atRule.nam,
-                error: 'invalid url()',
-                tokens
+                error: 'invalid url()'
             } as ValidationSyntaxResult;
         } else {
 
@@ -84,12 +80,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0],
                     syntax: '@' + atRule.nam,
-                    error: 'expecting whitespace',
-                    tokens
+                    error: 'expecting whitespace'
                 } as ValidationSyntaxResult;
             }
         }
@@ -102,12 +97,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: tokens[0],
             syntax: '@' + atRule.nam,
-            error: 'expecting url() or string',
-            tokens
+            error: 'expecting url() or string'
         }
     }
 
@@ -126,12 +120,11 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0],
                         syntax: '@' + atRule.nam,
-                        error: 'expecting whitespace',
-                        tokens
+                        error: 'expecting whitespace'
                     }
                 }
             }
@@ -145,7 +138,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
                 const result = validateLayerName((tokens[0] as FunctionToken).chi);
 
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
 
                     return result;
                 }
@@ -160,7 +153,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
                 const result = validateAtRuleSupportsConditions(atRule, (tokens[0] as FunctionToken).chi) as ValidationSyntaxResult;
 
-                if (result.valid == ValidationLevel.Drop) {
+                if (result.valid == SyntaxValidationResult.Drop) {
 
                     return result;
                 }
@@ -172,50 +165,6 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         }
     }
 
-    // if (tokens.length > 0) {
-    //
-    //     // @ts-ignore
-    //     if (tokens[0].typ == EnumToken.AtRuleTokenType) {
-    //
-    //         if ((tokens[0] as AstAtRule).nam != 'supports') {
-    //
-    //             // @ts-ignore
-    //             return {
-    //                 valid: ValidationLevel.Drop,
-    //                 matches: [],
-    //                 node: tokens[0],
-    //                 syntax: '@' + atRule.nam,
-    //                 error: 'expecting @supports or media query list',
-    //                 tokens
-    //             }
-    //         }
-    //
-    //         // @ts-ignore
-    //         const result: ValidationSyntaxResult = validateAtRuleSupports(tokens[0] as AstAtRule, options, atRule);
-    //
-    //         if (result.valid == ValidationLevel.Drop) {
-    //
-    //             return result;
-    //         }
-    //
-    //         tokens.shift();
-    //
-    //         // @ts-ignore
-    //         if (!consumeWhitespace(tokens)) {
-    //
-    //             // @ts-ignore
-    //             return {
-    //                 valid: ValidationLevel.Drop,
-    //                 matches: [],
-    //                 node: tokens[0],
-    //                 syntax: '@' + atRule.nam,
-    //                 error: 'expecting whitespace',
-    //                 tokens
-    //             }
-    //         }
-    //     }
-    // }
-
     if (tokens.length > 0) {
 
         return validateAtRuleMediaQueryList(tokens, atRule);
@@ -223,11 +172,10 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: null,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     } as ValidationSyntaxResult;
 }

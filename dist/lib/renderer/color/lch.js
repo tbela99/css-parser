@@ -5,9 +5,10 @@ import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { srgb2lab, xyz2lab, oklch2lab, oklab2lab, getLABComponents, hwb2lab, hsl2lab, rgb2lab, hex2lab } from './lab.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 function hex2lch(token) {
     // @ts-ignore

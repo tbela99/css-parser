@@ -10,11 +10,9 @@ import type {
     ValidationOptions
 } from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {colorFontTech, fontFeaturesTech, fontFormat} from "../../syntax/index.ts";
-import {validateComplexSelector} from "../syntaxes/complex-selector.ts";
-import {parseSelector} from "../../parser/index.ts";
 
 export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 
@@ -23,7 +21,7 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
+            valid: SyntaxValidationResult.Drop,
             matches: [],
             node: atRule,
             syntax: '@' + atRule.nam,
@@ -48,23 +46,21 @@ export function validateAtRuleSupports(atRule: AstAtRule, options: ValidationOpt
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected at-rule body',
-            tokens: []
+            error: 'expected at-rule body'
         }
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     }
 }
 
@@ -78,8 +74,8 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: tokens[0] ?? atRule,
                 syntax: '@' + atRule.nam,
                 error: 'unexpected token',
@@ -94,7 +90,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
             result = validateSupportCondition(atRule, tokens[0]);
 
             // supports-condition
-            if (result.valid == ValidationLevel.Valid) {
+            if (result.valid == SyntaxValidationResult.Valid) {
 
                 previousToken = tokens[0];
                 tokens.shift();
@@ -102,7 +98,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 result = validateSupportFeature(tokens[0]);
 
-                if (/*result == null || */ result.valid == ValidationLevel.Valid) {
+                if (/*result == null || */ result.valid == SyntaxValidationResult.Valid) {
 
                     previousToken = tokens[0];
                     tokens.shift();
@@ -112,7 +108,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                         result = validateAtRuleSupportsConditions(atRule, (tokens[0] as ParensToken).chi);
 
-                        if (/* result == null || */ result.valid == ValidationLevel.Valid) {
+                        if (/* result == null || */ result.valid == SyntaxValidationResult.Valid) {
 
                             previousToken = tokens[0];
                             tokens.shift();
@@ -130,7 +126,7 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
                     //
                     //     return  {
                     //         valid: ValidationLevel.Drop,
-                    //         matches: [],
+                    //         context: [],
                     //         node: tokens[0] ?? atRule,
                     //         syntax: '@' + atRule.nam,
                     //         // @ts-ignore
@@ -152,12 +148,11 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                     // @ts-ignore
                     return {
-                        valid: ValidationLevel.Drop,
-                        matches: [],
+                        valid: SyntaxValidationResult.Drop,
+                        context: [],
                         node: tokens[0] ?? previousToken ?? atRule,
                         syntax: '@' + atRule.nam,
-                        error: 'expected whitespace',
-                        tokens: []
+                        error: 'expected whitespace'
                     }
                 }
             }
@@ -166,12 +161,11 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected and/or',
-                    tokens: []
+                    error: 'expected and/or'
                 }
             }
 
@@ -179,12 +173,11 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected supports-condition',
-                    tokens: []
+                    error: 'expected supports-condition'
                 }
             }
 
@@ -194,24 +187,22 @@ export function validateAtRuleSupportsConditions(atRule: AstAtRule, tokenList: T
 
                 // @ts-ignore
                 return {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: tokens[0] ?? atRule,
                     syntax: '@' + atRule.nam,
-                    error: 'expected whitespace',
-                    tokens: []
+                    error: 'expected whitespace'
                 }
             }
         }
     }
 
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: atRule,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     }
 }
 
@@ -222,17 +213,15 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         return validateSupportCondition(atRule, (token as MediaFeatureNotToken).val);
     }
 
-    if (token.typ != EnumToken.ParensTokenType && !(['when', 'else'].includes(atRule.nam) && token.typ == EnumToken.FunctionTokenType && ['supports', 'font-format', 'font-tech'].includes((token as FunctionToken).val))) {
+    if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
 
-        // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: token,
             syntax: '@' + atRule.nam,
-            error: 'expected supports condition-in-parens',
-            tokens: []
-        };
+            error: ''
+        }
     }
 
     const chi: Token[] = (token as FunctionToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
@@ -245,12 +234,11 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         };
     }
 
@@ -265,40 +253,48 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         return chi[0].l.typ == EnumToken.IdenTokenType && (chi[0] as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType ?
 
             {
-                valid: ValidationLevel.Valid,
-                matches: [],
+                valid: SyntaxValidationResult.Valid,
+                context: [],
                 node: null,
                 syntax: 'supports-condition',
-                error: '',
-                tokens: []
+                error: ''
             } : {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: token,
                 syntax: 'supports-condition',
-                error: 'expected supports condition-in-parens',
-                tokens: []
+                error: 'expected supports condition-in-parens'
             };
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Drop,
-        matches: [],
+        valid: SyntaxValidationResult.Drop,
+        context: [],
         node: token,
         syntax: 'supports-condition',
-        error: 'expected supports condition-in-parens',
-        tokens: []
+        error: 'expected supports condition-in-parens'
     };
 }
 
 function validateSupportFeature(token: Token): ValidationSyntaxResult {
 
+    if (token.typ == EnumToken.MediaFeatureNotTokenType) {
+
+        return validateSupportFeature((token as MediaFeatureNotToken).val);
+    }
+
     if (token.typ == EnumToken.FunctionTokenType) {
 
         if ((token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
 
-            return validateComplexSelector(parseSelector((token as FunctionToken).chi));
+            return {
+                valid: SyntaxValidationResult.Valid,
+                context: [],
+                node: token,
+                syntax: 'selector',
+                error: ''
+            }
         }
 
         if ((token as FunctionToken).val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {
@@ -308,20 +304,18 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
                 {
-                    valid: ValidationLevel.Valid,
-                    matches: [],
+                    valid: SyntaxValidationResult.Valid,
+                    context: [],
                     node: token,
                     syntax: 'font-tech',
-                    error: '',
-                    tokens: []
+                    error: ''
                 } :
                 {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: token,
                     syntax: 'font-tech',
-                    error: 'expected font-tech',
-                    tokens: []
+                    error: 'expected font-tech'
                 };
         }
 
@@ -332,31 +326,28 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
             return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
 
                 {
-                    valid: ValidationLevel.Valid,
-                    matches: [],
+                    valid: SyntaxValidationResult.Valid,
+                    context: [],
                     node: token,
                     syntax: 'font-format',
-                    error: '',
-                    tokens: []
+                    error: ''
                 } :
                 {
-                    valid: ValidationLevel.Drop,
-                    matches: [],
+                    valid: SyntaxValidationResult.Drop,
+                    context: [],
                     node: token,
                     syntax: 'font-format',
-                    error: 'expected font-format',
-                    tokens: []
+                    error: 'expected font-format'
                 };
         }
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Drop,
-        matches: [],
+        valid: SyntaxValidationResult.Drop,
+        context: [],
         node: token,
         syntax: '@supports',
-        error: 'expected feature',
-        tokens: []
+        error: 'expected feature'
     };
 }

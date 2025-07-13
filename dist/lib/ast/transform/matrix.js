@@ -7,6 +7,7 @@ import '../../renderer/color/utils/constants.js';
 import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 
 function parseMatrix(mat) {

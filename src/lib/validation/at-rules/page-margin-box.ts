@@ -1,6 +1,6 @@
 import type {AstAtRule, AstNode, ValidationOptions} from "../../../@types/index.d.ts";
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
-import {EnumToken, ValidationLevel} from "../../ast/index.ts";
+import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 
 
 export function validateAtRulePageMarginBox(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
@@ -9,12 +9,11 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Valid,
-            matches: [],
+            valid: SyntaxValidationResult.Valid,
+            context: [],
             node: null,
             syntax: '@' + atRule.nam,
-            error: '',
-            tokens: []
+            error: ''
         } as ValidationSyntaxResult;
     }
 
@@ -22,12 +21,11 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
         // @ts-ignore
         return {
-            valid: ValidationLevel.Drop,
-            matches: [],
+            valid: SyntaxValidationResult.Drop,
+            context: [],
             node: atRule,
             syntax: '@' + atRule.nam,
-            error: 'expected margin-box body',
-            tokens: []
+            error: 'expected margin-box body'
         } as ValidationSyntaxResult;
     }
 
@@ -37,23 +35,21 @@ export function validateAtRulePageMarginBox(atRule: AstAtRule, options: Validati
 
             // @ts-ignore
             return {
-                valid: ValidationLevel.Drop,
-                matches: [],
+                valid: SyntaxValidationResult.Drop,
+                context: [],
                 node: token,
                 syntax: 'declaration-list',
-                error: 'expected margin-box body',
-                tokens: []
+                error: 'expected margin-box body'
             } as ValidationSyntaxResult;
         }
     }
 
     // @ts-ignore
     return {
-        valid: ValidationLevel.Valid,
-        matches: [],
+        valid: SyntaxValidationResult.Valid,
+        context: [],
         node: null,
         syntax: '@' + atRule.nam,
-        error: '',
-        tokens: []
+        error: ''
     } as ValidationSyntaxResult;
 }

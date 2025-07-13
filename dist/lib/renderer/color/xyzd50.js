@@ -5,11 +5,12 @@ import '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import { xyz2lab } from './lab.js';
 import { lab2lchvalues } from './lch.js';
 import { XYZ_D50_to_D65 } from './xyz.js';
 import '../sourcemap/lib/encode.js';
-import '../../parser/utils/config.js';
 
 /*
 */
