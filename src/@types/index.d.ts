@@ -50,6 +50,8 @@ export interface ValidationOptions {
 export interface MinifyOptions {
 
     minify?: boolean;
+    parseColor?: boolean;
+    convertColor?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
     removeDuplicateDeclarations?: boolean;
@@ -69,7 +71,6 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
-    parseColor?: boolean;
     removePrefix?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
