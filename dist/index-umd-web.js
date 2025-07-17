@@ -15,8 +15,17 @@
      */
     exports.ValidationLevel = void 0;
     (function (ValidationLevel) {
+        /**
+         * disable validation
+         */
         ValidationLevel[ValidationLevel["None"] = 0] = "None";
+        /**
+         * validate selectors and at-rules
+         */
         ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+        /**
+         * validate selectors, at-rules and declarations
+         */
         ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
     })(exports.ValidationLevel || (exports.ValidationLevel = {}));
     /**
@@ -7565,9 +7574,6 @@
     	"-moz-force-broken-image-icon": {
     		syntax: "0 | 1"
     	},
-    	"-moz-image-region": {
-    		syntax: "<shape> | auto"
-    	},
     	"-moz-orient": {
     		syntax: "inline | block | horizontal | vertical"
     	},
@@ -7734,7 +7740,7 @@
     		syntax: "<single-animation-direction>#"
     	},
     	"animation-duration": {
-    		syntax: "<time>#"
+    		syntax: "[ auto | <time [0s,∞]> ]#"
     	},
     	"animation-fill-mode": {
     		syntax: "<single-animation-fill-mode>#"
@@ -8187,7 +8193,7 @@
     		syntax: "nonzero | evenodd"
     	},
     	filter: {
-    		syntax: "none | <filter-value-list>"
+    		syntax: "none | <filter-value-list>| <-ms-filter-function-list>"
     	},
     	flex: {
     		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]"
@@ -8586,7 +8592,7 @@
     		syntax: "<'max-width'>"
     	},
     	"max-height": {
-    		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+    		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
     	},
     	"max-inline-size": {
     		syntax: "<'max-width'>"
@@ -8595,7 +8601,7 @@
     		syntax: "none | <integer>"
     	},
     	"max-width": {
-    		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+    		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
     	},
     	"min-block-size": {
     		syntax: "<'min-width'>"
@@ -8607,7 +8613,7 @@
     		syntax: "<'min-width'>"
     	},
     	"min-width": {
-    		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+    		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
     	},
     	"mix-blend-mode": {
     		syntax: "<blend-mode> | plus-lighter"
@@ -8664,7 +8670,7 @@
     		syntax: "<line-width>"
     	},
     	overflow: {
-    		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}"
+    		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}| <-non-standard-overflow>"
     	},
     	"overflow-anchor": {
     		syntax: "auto | none"
@@ -8685,10 +8691,10 @@
     		syntax: "normal | break-word | anywhere"
     	},
     	"overflow-x": {
-    		syntax: "visible | hidden | clip | scroll | auto"
+    		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
     	},
     	"overflow-y": {
-    		syntax: "visible | hidden | clip | scroll | auto"
+    		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
     	},
     	overlay: {
     		syntax: "none | auto"
@@ -9204,7 +9210,7 @@
     		syntax: "normal | break-word"
     	},
     	"writing-mode": {
-    		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr"
+    		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr| <svg-writing-mode>"
     	},
     	x: {
     		syntax: "<length> | <percentage>"
@@ -12531,7 +12537,7 @@
         if (token.startsWith('<')) {
             // <number [1,1000]>
             // <length [0,∞]>
-            let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+),(([0-9]+)|∞)\])?>/);
+            let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+[a-zA-Z]*),(([0-9]+[a-zA-Z]*)|∞)\])?>/);
             if (match == null) {
                 let match = token.match(/<([a-zA-Z0-9-]+)\(\)>/);
                 if (match != null) {
@@ -12543,10 +12549,12 @@
                 throw new Error('invalid token at position: ' + position.lin + ':' + position.col + ' ' + token);
             }
             if (match[2] != null) {
+                const type = getTokenType(match[3]);
                 return Object.defineProperty({
                     typ: ValidationTokenEnum.PropertyType,
-                    val: match[1],
-                    range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
+                    val: type.val,
+                    unit: exports.EnumToken[type.typ],
+                    range: [+type.val, match[4] == '\u221e' ? Infinity : +match[4]]
                 }, 'pos', { ...objectProperties, value: pos });
             }
             return Object.defineProperty({
@@ -13376,10 +13384,23 @@
                 // @ts-ignore
                 const newIndex = result.indexOf(context.current());
                 if (newIndex != -1) {
-                    // console.error({newIndex, v: result[newIndex]});
-                    // console.error(new Error('update'))
                     this.index = newIndex;
                 }
+            },
+            consume(token, howMany) {
+                let newIndex = result.indexOf(token, this.index + 1);
+                if (newIndex == -1) {
+                    return false;
+                }
+                howMany ??= 0;
+                let splice = 1;
+                if (result[newIndex - 1]?.typ == exports.EnumToken.WhitespaceTokenType) {
+                    splice++;
+                    newIndex--;
+                }
+                result.splice(this.index + 1, 0, ...result.splice(newIndex, splice + howMany));
+                this.index += howMany + splice;
+                return true;
             },
             done() {
                 return this.index + 1 >= result.length;
@@ -13497,6 +13518,8 @@
         let i = 0;
         let result;
         let token = null;
+        // console.error(`doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
+        // console.error(new Error('anyOf'));
         for (; i < syntaxes.length; i++) {
             syntax = syntaxes[i];
             if (context.done()) {
@@ -14099,11 +14122,23 @@
     function allOf(syntax, context, options) {
         let result;
         let i;
-        // sort tokens -> wildCard -> last
-        // 1px var(...) 2px => 1px 2px var(...)
-        const slice = context.slice();
+        let slice = context.slice();
         const vars = [];
         const tokens = [];
+        const repeatable = [];
+        // match optional syntax first
+        // <length>{2,3}&&<color>? => <color>?&&<length>{2,3}
+        for (i = 0; i < syntax.length; i++) {
+            if (syntax[i].length == 1 && syntax[i][0].occurence != null) {
+                repeatable.push(syntax[i]);
+                syntax.splice(i--, 1);
+            }
+        }
+        if (repeatable.length > 0) {
+            syntax.push(...repeatable);
+        }
+        // sort tokens -> wildCard -> last
+        // 1px var(...) 2px => 1px 2px var(...)
         for (i = 0; i < slice.length; i++) {
             if (slice[i].typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(slice[i].val.toLowerCase())) {
                 vars.push(slice[i]);
@@ -14130,7 +14165,43 @@
             tokens.push(...vars);
         }
         const con = createContext(tokens);
+        let cp;
+        let j;
         for (i = 0; i < syntax.length; i++) {
+            if (syntax[i].length == 1 && syntax[i][0].isOptional) {
+                syntax[i][0].isOptional = false;
+                j = 0;
+                cp = con.clone();
+                slice = cp.slice();
+                if (cp.done()) {
+                    syntax.splice(i, 1);
+                    i = -1;
+                    continue;
+                }
+                while (!cp.done()) {
+                    result = doEvaluateSyntax(syntax[i], cp.clone(), options);
+                    if (result.valid == SyntaxValidationResult.Valid) {
+                        let end = slice.indexOf(cp.current());
+                        if (end == -1) {
+                            end = 0;
+                        }
+                        else {
+                            end -= j - 1;
+                        }
+                        con.consume(slice[j], end < 0 ? 0 : end);
+                        break;
+                    }
+                    cp.next();
+                    j++;
+                }
+                syntax[i][0].isOptional = true;
+                // @ts-ignore
+                if (result?.valid == SyntaxValidationResult.Valid) {
+                    syntax.splice(i, 1);
+                    i = -1;
+                }
+                continue;
+            }
             result = doEvaluateSyntax(syntax[i], con.clone(), options);
             if (result.valid == SyntaxValidationResult.Valid) {
                 con.update(result.context);
@@ -16075,11 +16146,13 @@
         const src = options.src;
         const stack = [];
         const stats = {
+            src: options.src ?? '',
             bytesIn: 0,
             importedBytesIn: 0,
             parse: `0ms`,
             minify: `0ms`,
-            total: `0ms`
+            total: `0ms`,
+            imports: []
         };
         let ast = {
             typ: exports.EnumToken.StyleSheetNodeType,
@@ -16125,7 +16198,7 @@
                 ast.loc.end = item.end;
             }
             if (item.token == ';' || item.token == '{') {
-                node = parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+                node = parseNode(tokens, context, options, errors, src, map, rawTokens);
                 rawTokens.length = 0;
                 if (node != null) {
                     if ('chi' in node) {
@@ -16164,7 +16237,7 @@
                 map = new Map;
             }
             else if (item.token == '}') {
-                parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+                parseNode(tokens, context, options, errors, src, map, rawTokens);
                 rawTokens.length = 0;
                 if (context.loc != null) {
                     context.loc.end = item.end;
@@ -16185,7 +16258,7 @@
             }
         }
         if (tokens.length > 0) {
-            node = parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            node = parseNode(tokens, context, options, errors, src, map, rawTokens);
             rawTokens.length = 0;
             if (node != null) {
                 if (node.typ == exports.EnumToken.AtRuleNodeType && node.nam == 'import') {
@@ -16210,7 +16283,6 @@
                 const url = token.typ == exports.EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
                 try {
                     const root = await options.load(url, options.src).then((src) => {
-                        // console.error({url, src: options.src, resolved: options.resolve!(url, options.src as string)})
                         return doParse(src, Object.assign({}, options, {
                             minify: false,
                             setParent: false,
@@ -16218,6 +16290,7 @@
                         }));
                     });
                     stats.importedBytesIn += root.stats.bytesIn;
+                    stats.imports.push(root.stats);
                     node.parent.chi.splice(node.parent.chi.indexOf(node), 1, ...root.ast.chi);
                     if (root.errors.length > 0) {
                         errors.push(...root.errors);
@@ -16309,7 +16382,7 @@
         }
         return null;
     }
-    function parseNode(results, context, stats, options, errors, src, map, rawTokens) {
+    function parseNode(results, context, options, errors, src, map, rawTokens) {
         let tokens = [];
         for (const t of results) {
             const node = getTokenType(t.token, t.hint);
@@ -16537,9 +16610,11 @@
                     removeComments: true
                 }), '');
             }
-            // }
             context.chi.push(node);
-            Object.defineProperties(node, { parent: { ...definedPropertySettings, value: context }, validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid } });
+            Object.defineProperties(node, {
+                parent: { ...definedPropertySettings, value: context },
+                validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid }
+            });
             return node;
         }
         else {
@@ -16577,11 +16652,9 @@
                             let t = renderToken(curr, { minify: false });
                             if (t == ',') {
                                 acc.push([]);
-                                // uniqTokens.push([]);
                             }
                             else {
                                 acc[acc.length - 1].push(t);
-                                // uniqTokens[uniqTokens.length - 1].push(curr);
                             }
                             return acc;
                         }, [[]]).reduce((acc, curr) => {
@@ -16613,7 +16686,6 @@
                 // @ts-ignore
                 context.chi.push(node);
                 Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-                // if (options.validation) {
                 // @ts-ignore
                 const valid = options.validation == exports.ValidationLevel.None ? {
                     valid: SyntaxValidationResult.Valid,
@@ -16630,24 +16702,10 @@
                         location
                     });
                 }
-                // } else {
-                //
-                //     Object.defineProperty(node, 'tokens', {
-                //         ...definedPropertySettings,
-                //         enumerable: false,
-                //         value: tokens.slice()
-                //     });
-                //
-                //     let raw: string[][] = [...uniq.values()];
-                //
-                //     Object.defineProperty(node, 'raw', {
-                //         enumerable: false,
-                //         configurable: true,
-                //         writable: true,
-                //         value: raw
-                //     });
-                // }
-                Object.defineProperty(node, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
+                Object.defineProperty(node, 'validSyntax', {
+                    ...definedPropertySettings,
+                    value: valid.valid == SyntaxValidationResult.Valid
+                });
                 return node;
             }
             else {
@@ -16697,9 +16755,7 @@
                                     parseColor(tokens[i]);
                                 }
                             }
-                            tokens.splice(i, 0, { typ: exports.EnumToken.ColonTokenType });
-                            // i++;
-                            i--;
+                            tokens.splice(i--, 0, { typ: exports.EnumToken.ColonTokenType });
                             continue;
                         }
                         if ('chi' in tokens[i]) {
@@ -16784,10 +16840,12 @@
                 const result = parseDeclarationNode(node, errors, location);
                 Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
                 if (result != null) {
-                    // console.error(doRender(result), result.val, location);
                     if (options.validation == exports.ValidationLevel.All) {
                         const valid = evaluateSyntax(result, options);
-                        Object.defineProperty(result, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
+                        Object.defineProperty(result, 'validSyntax', {
+                            ...definedPropertySettings,
+                            value: valid.valid == SyntaxValidationResult.Valid
+                        });
                         if (valid.valid == SyntaxValidationResult.Drop) {
                             errors.push({
                                 action: 'drop',
@@ -17582,12 +17640,6 @@
                         if (t.chi[0].val.slice(1, 5) != 'data:' && urlTokenMatcher.test(value)) {
                             // @ts-ignore
                             t.chi[0].typ = exports.EnumToken.UrlTokenTokenType;
-                            // console.error({t, v: t.chi[0], value,
-                            //     src: options.src,
-                            //     resolved: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : null,
-                            //     val2: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value});
-                            //
-                            // console.error(new Error('resolved'));
                             // @ts-ignore
                             t.chi[0].val = options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value;
                         }

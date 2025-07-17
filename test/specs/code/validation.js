@@ -496,6 +496,18 @@ html, body, div, span, applet, object, iframe,
 `, {validation: true}).then(result => expect(result.code).equals(`@supports (color:color-mix(in oklab,black,black)){.hsl{color:#00bfff}}`));
         });
 
+        it('supports validation #20', function () {
+            return transform(`a {
+
+  text-shadow: 1px 2px 3px var(--bs-body-color);
+   box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state, var(--bs-table-bg-type, var(--bs-table-accent-bg)));
+
+`, {validation: true, beautify: true}).then(result => expect(result.code).equals(`a {
+ text-shadow: 1px 2px 3px var(--bs-body-color);
+ box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)))
+}`));
+        });
+
         // failing the CI because of timeout
 //         it('validation #20',  function (done) {
 //

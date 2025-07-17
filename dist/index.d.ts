@@ -2,8 +2,17 @@
  * validation level enum
  */
 declare enum ValidationLevel {
+    /**
+     * disable validation
+     */
     None = 0,
+    /**
+     * validate selectors and at-rules
+     */
     Default = 1,// selectors + at-rules
+    /**
+     * validate selectors, at-rules and declarations
+     */
     All = 2
 }
 /**
@@ -1160,6 +1169,8 @@ interface ValidationOptions {
 interface MinifyOptions {
 
     minify?: boolean;
+    parseColor?: boolean;
+    convertColor?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
     removeDuplicateDeclarations?: boolean;
@@ -1179,7 +1190,6 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     resolveUrls?: boolean;
     resolveImport?: boolean;
     cwd?: string;
-    parseColor?: boolean;
     removePrefix?: boolean;
     load?: (url: string, currentUrl: string) => Promise<string>;
     dirname?: (path: string) => string;
@@ -1248,15 +1258,20 @@ export declare interface TransformOptions extends ParserOptions, RenderOptions {
 
 }
 
+export declare interface ParseResultStats {
+    src: string;
+    bytesIn: number;
+    importedBytesIn: number;
+    parse: string;
+    minify: string;
+    total: string;
+    imports: ParseResultStats[]
+}
+
 export declare interface ParseResult {
     ast: AstRuleStyleSheet;
     errors: ErrorDescription[];
-    stats: {
-        bytesIn: number;
-        parse: string;
-        minify: string;
-        total: string;
-    }
+    stats: ParseResultStats
 }
 
 export declare interface RenderResult {
@@ -1271,12 +1286,15 @@ export declare interface RenderResult {
 export declare interface TransformResult extends ParseResult, RenderResult {
 
     stats: {
+        src: string;
         bytesIn: number;
         bytesOut: number;
+        importedBytesIn: number;
         parse: string;
         minify: string;
         render: string;
         total: string;
+        imports: ParseResultStats[];
     }
 }
 

@@ -55,6 +55,8 @@ export interface Context<Type> {
 
     tokens<Type>(): Type[];
 
+    consume<Type>(token: Type, howMany?: number): boolean;
+
     slice<Type>(): Type[];
 
     clone<Type>(): Context<Type>;

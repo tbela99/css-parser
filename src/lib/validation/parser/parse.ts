@@ -45,6 +45,9 @@ import {
     ValidationWhitespaceToken
 } from "./index.ts";
 import {isIdent, isPseudo} from '../../syntax/index.ts';
+import {getTokenType as getTokenType$1} from '../../parser/index.ts';
+import type {DimensionToken} from "../../../@types/token.d.ts";
+import {EnumToken} from "../../ast/index.ts";
 
 export enum WalkValidationTokenEnum {
 
@@ -1310,7 +1313,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
         // <number [1,1000]>
         // <length [0,∞]>
-        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+),(([0-9]+)|∞)\])?>/);
+        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+[a-zA-Z]*),(([0-9]+[a-zA-Z]*)|∞)\])?>/);
 
         if (match == null) {
 
@@ -1329,10 +1332,13 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
         if (match[2] != null) {
 
+            const type = getTokenType$1(match[3]) as DimensionToken;
+
             return <ValidationPropertyToken>Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
-                val: match[1],
-                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
+                val: type.val,
+                unit: EnumToken[type.typ],
+                range: [+type.val, match[4] == '\u221e' ? Infinity : +match[4]]
             }, 'pos', {...objectProperties, value: pos});
         }
 

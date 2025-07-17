@@ -1,5 +1,13 @@
 import { ValidationTokenEnum } from './types.js';
 import { isIdent, isPseudo } from '../../syntax/syntax.js';
+import { getTokenType as getTokenType$1 } from '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
+import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
+import '../../ast/walk.js';
+import '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
 
 var WalkValidationTokenEnum;
 (function (WalkValidationTokenEnum) {
@@ -878,7 +886,7 @@ function getTokenType(token, position, currentPosition) {
     if (token.startsWith('<')) {
         // <number [1,1000]>
         // <length [0,∞]>
-        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+),(([0-9]+)|∞)\])?>/);
+        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+[a-zA-Z]*),(([0-9]+[a-zA-Z]*)|∞)\])?>/);
         if (match == null) {
             let match = token.match(/<([a-zA-Z0-9-]+)\(\)>/);
             if (match != null) {
@@ -890,10 +898,12 @@ function getTokenType(token, position, currentPosition) {
             throw new Error('invalid token at position: ' + position.lin + ':' + position.col + ' ' + token);
         }
         if (match[2] != null) {
+            const type = getTokenType$1(match[3]);
             return Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
-                val: match[1],
-                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
+                val: type.val,
+                unit: EnumToken[type.typ],
+                range: [+type.val, match[4] == '\u221e' ? Infinity : +match[4]]
             }, 'pos', { ...objectProperties, value: pos });
         }
         return Object.defineProperty({

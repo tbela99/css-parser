@@ -83,11 +83,13 @@ async function doParse(iterator, options = {}) {
     const src = options.src;
     const stack = [];
     const stats = {
+        src: options.src ?? '',
         bytesIn: 0,
         importedBytesIn: 0,
         parse: `0ms`,
         minify: `0ms`,
-        total: `0ms`
+        total: `0ms`,
+        imports: []
     };
     let ast = {
         typ: EnumToken.StyleSheetNodeType,
@@ -133,7 +135,7 @@ async function doParse(iterator, options = {}) {
             ast.loc.end = item.end;
         }
         if (item.token == ';' || item.token == '{') {
-            node = parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            node = parseNode(tokens, context, options, errors, src, map, rawTokens);
             rawTokens.length = 0;
             if (node != null) {
                 if ('chi' in node) {
@@ -172,7 +174,7 @@ async function doParse(iterator, options = {}) {
             map = new Map;
         }
         else if (item.token == '}') {
-            parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            parseNode(tokens, context, options, errors, src, map, rawTokens);
             rawTokens.length = 0;
             if (context.loc != null) {
                 context.loc.end = item.end;
@@ -193,7 +195,7 @@ async function doParse(iterator, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        node = parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+        node = parseNode(tokens, context, options, errors, src, map, rawTokens);
         rawTokens.length = 0;
         if (node != null) {
             if (node.typ == EnumToken.AtRuleNodeType && node.nam == 'import') {
@@ -218,7 +220,6 @@ async function doParse(iterator, options = {}) {
             const url = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
                 const root = await options.load(url, options.src).then((src) => {
-                    // console.error({url, src: options.src, resolved: options.resolve!(url, options.src as string)})
                     return doParse(src, Object.assign({}, options, {
                         minify: false,
                         setParent: false,
@@ -226,6 +227,7 @@ async function doParse(iterator, options = {}) {
                     }));
                 });
                 stats.importedBytesIn += root.stats.bytesIn;
+                stats.imports.push(root.stats);
                 node.parent.chi.splice(node.parent.chi.indexOf(node), 1, ...root.ast.chi);
                 if (root.errors.length > 0) {
                     errors.push(...root.errors);
@@ -317,7 +319,7 @@ function getLastNode(context) {
     }
     return null;
 }
-function parseNode(results, context, stats, options, errors, src, map, rawTokens) {
+function parseNode(results, context, options, errors, src, map, rawTokens) {
     let tokens = [];
     for (const t of results) {
         const node = getTokenType(t.token, t.hint);
@@ -545,9 +547,11 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                 removeComments: true
             }), '');
         }
-        // }
         context.chi.push(node);
-        Object.defineProperties(node, { parent: { ...definedPropertySettings, value: context }, validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid } });
+        Object.defineProperties(node, {
+            parent: { ...definedPropertySettings, value: context },
+            validSyntax: { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid }
+        });
         return node;
     }
     else {
@@ -585,11 +589,9 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                         let t = renderToken(curr, { minify: false });
                         if (t == ',') {
                             acc.push([]);
-                            // uniqTokens.push([]);
                         }
                         else {
                             acc[acc.length - 1].push(t);
-                            // uniqTokens[uniqTokens.length - 1].push(curr);
                         }
                         return acc;
                     }, [[]]).reduce((acc, curr) => {
@@ -621,7 +623,6 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             // @ts-ignore
             context.chi.push(node);
             Object.defineProperty(node, 'parent', { ...definedPropertySettings, value: context });
-            // if (options.validation) {
             // @ts-ignore
             const valid = options.validation == ValidationLevel.None ? {
                 valid: SyntaxValidationResult.Valid,
@@ -638,24 +639,10 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                     location
                 });
             }
-            // } else {
-            //
-            //     Object.defineProperty(node, 'tokens', {
-            //         ...definedPropertySettings,
-            //         enumerable: false,
-            //         value: tokens.slice()
-            //     });
-            //
-            //     let raw: string[][] = [...uniq.values()];
-            //
-            //     Object.defineProperty(node, 'raw', {
-            //         enumerable: false,
-            //         configurable: true,
-            //         writable: true,
-            //         value: raw
-            //     });
-            // }
-            Object.defineProperty(node, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
+            Object.defineProperty(node, 'validSyntax', {
+                ...definedPropertySettings,
+                value: valid.valid == SyntaxValidationResult.Valid
+            });
             return node;
         }
         else {
@@ -705,9 +692,7 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
                                 parseColor(tokens[i]);
                             }
                         }
-                        tokens.splice(i, 0, { typ: EnumToken.ColonTokenType });
-                        // i++;
-                        i--;
+                        tokens.splice(i--, 0, { typ: EnumToken.ColonTokenType });
                         continue;
                     }
                     if ('chi' in tokens[i]) {
@@ -792,10 +777,12 @@ function parseNode(results, context, stats, options, errors, src, map, rawTokens
             const result = parseDeclarationNode(node, errors, location);
             Object.defineProperty(result, 'parent', { ...definedPropertySettings, value: context });
             if (result != null) {
-                // console.error(doRender(result), result.val, location);
                 if (options.validation == ValidationLevel.All) {
                     const valid = evaluateSyntax(result, options);
-                    Object.defineProperty(result, 'validSyntax', { ...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid });
+                    Object.defineProperty(result, 'validSyntax', {
+                        ...definedPropertySettings,
+                        value: valid.valid == SyntaxValidationResult.Valid
+                    });
                     if (valid.valid == SyntaxValidationResult.Drop) {
                         errors.push({
                             action: 'drop',
@@ -1590,12 +1577,6 @@ function parseTokens(tokens, options = {}) {
                     if (t.chi[0].val.slice(1, 5) != 'data:' && urlTokenMatcher.test(value)) {
                         // @ts-ignore
                         t.chi[0].typ = EnumToken.UrlTokenTokenType;
-                        // console.error({t, v: t.chi[0], value,
-                        //     src: options.src,
-                        //     resolved: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : null,
-                        //     val2: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value});
-                        //
-                        // console.error(new Error('resolved'));
                         // @ts-ignore
                         t.chi[0].val = options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value;
                     }
@@ -1648,4 +1629,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, getTokenType, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };

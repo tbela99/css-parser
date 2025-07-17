@@ -37,10 +37,23 @@ function createContext(input) {
             // @ts-ignore
             const newIndex = result.indexOf(context.current());
             if (newIndex != -1) {
-                // console.error({newIndex, v: result[newIndex]});
-                // console.error(new Error('update'))
                 this.index = newIndex;
             }
+        },
+        consume(token, howMany) {
+            let newIndex = result.indexOf(token, this.index + 1);
+            if (newIndex == -1) {
+                return false;
+            }
+            howMany ??= 0;
+            let splice = 1;
+            if (result[newIndex - 1]?.typ == EnumToken.WhitespaceTokenType) {
+                splice++;
+                newIndex--;
+            }
+            result.splice(this.index + 1, 0, ...result.splice(newIndex, splice + howMany));
+            this.index += howMany + splice;
+            return true;
         },
         done() {
             return this.index + 1 >= result.length;
@@ -158,6 +171,8 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
+    // console.error(`doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
+    // console.error(new Error('anyOf'));
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -760,11 +775,23 @@ function anyOf(syntaxes, context, options) {
 function allOf(syntax, context, options) {
     let result;
     let i;
-    // sort tokens -> wildCard -> last
-    // 1px var(...) 2px => 1px 2px var(...)
-    const slice = context.slice();
+    let slice = context.slice();
     const vars = [];
     const tokens = [];
+    const repeatable = [];
+    // match optional syntax first
+    // <length>{2,3}&&<color>? => <color>?&&<length>{2,3}
+    for (i = 0; i < syntax.length; i++) {
+        if (syntax[i].length == 1 && syntax[i][0].occurence != null) {
+            repeatable.push(syntax[i]);
+            syntax.splice(i--, 1);
+        }
+    }
+    if (repeatable.length > 0) {
+        syntax.push(...repeatable);
+    }
+    // sort tokens -> wildCard -> last
+    // 1px var(...) 2px => 1px 2px var(...)
     for (i = 0; i < slice.length; i++) {
         if (slice[i].typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(slice[i].val.toLowerCase())) {
             vars.push(slice[i]);
@@ -791,7 +818,43 @@ function allOf(syntax, context, options) {
         tokens.push(...vars);
     }
     const con = createContext(tokens);
+    let cp;
+    let j;
     for (i = 0; i < syntax.length; i++) {
+        if (syntax[i].length == 1 && syntax[i][0].isOptional) {
+            syntax[i][0].isOptional = false;
+            j = 0;
+            cp = con.clone();
+            slice = cp.slice();
+            if (cp.done()) {
+                syntax.splice(i, 1);
+                i = -1;
+                continue;
+            }
+            while (!cp.done()) {
+                result = doEvaluateSyntax(syntax[i], cp.clone(), options);
+                if (result.valid == SyntaxValidationResult.Valid) {
+                    let end = slice.indexOf(cp.current());
+                    if (end == -1) {
+                        end = 0;
+                    }
+                    else {
+                        end -= j - 1;
+                    }
+                    con.consume(slice[j], end < 0 ? 0 : end);
+                    break;
+                }
+                cp.next();
+                j++;
+            }
+            syntax[i][0].isOptional = true;
+            // @ts-ignore
+            if (result?.valid == SyntaxValidationResult.Valid) {
+                syntax.splice(i, 1);
+                i = -1;
+            }
+            continue;
+        }
         result = doEvaluateSyntax(syntax[i], con.clone(), options);
         if (result.valid == SyntaxValidationResult.Valid) {
             con.update(result.context);

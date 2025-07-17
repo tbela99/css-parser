@@ -40,6 +40,7 @@ for (const [key, value] of Object.entries(patches.atrules)) {
 
     if (!(key in json.atRules)) {
 
+        console.error(`>> adding at-rule declarations >> ${key}`);
         json.atRules[key] = {syntax: value.prelude};
     }
 }
@@ -48,11 +49,13 @@ for (const [key, value] of Object.entries(patches.properties)) {
 
     if (!(key in json.declarations)) {
 
+        console.error(`>> adding declarations >> ${key}`);
         json.declarations[key] = {syntax: value.syntax};
     }
 
-    else if (value.comment?.startsWith?.('extended')) {
+    else if (value.comment?.startsWith?.('extend')) {
 
+        console.error(`>> extending declarations >> ${key}`);
         json.declarations[key].syntax += value.syntax;
     }
 }
@@ -61,11 +64,13 @@ for (const [key, value] of Object.entries(patches.types)) {
 
     if (!(key in json.syntaxes)) {
 
+        console.error(`>> adding syntax >> ${key}`);
         json.syntaxes[key] = {syntax: value.syntax};
     }
 
-    else if (value.comment?.startsWith?.('extended')) {
+    else if (value.comment?.startsWith?.('extend')) {
 
+        console.error(`>> extending syntax >> ${key}`);
         json.syntaxes[key].syntax += value.syntax;
     }
 }

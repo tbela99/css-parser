@@ -170,9 +170,6 @@ var declarations = {
 	"-moz-force-broken-image-icon": {
 		syntax: "0 | 1"
 	},
-	"-moz-image-region": {
-		syntax: "<shape> | auto"
-	},
 	"-moz-orient": {
 		syntax: "inline | block | horizontal | vertical"
 	},
@@ -339,7 +336,7 @@ var declarations = {
 		syntax: "<single-animation-direction>#"
 	},
 	"animation-duration": {
-		syntax: "<time>#"
+		syntax: "[ auto | <time [0s,∞]> ]#"
 	},
 	"animation-fill-mode": {
 		syntax: "<single-animation-fill-mode>#"
@@ -792,7 +789,7 @@ var declarations = {
 		syntax: "nonzero | evenodd"
 	},
 	filter: {
-		syntax: "none | <filter-value-list>"
+		syntax: "none | <filter-value-list>| <-ms-filter-function-list>"
 	},
 	flex: {
 		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]"
@@ -1191,7 +1188,7 @@ var declarations = {
 		syntax: "<'max-width'>"
 	},
 	"max-height": {
-		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
 	},
 	"max-inline-size": {
 		syntax: "<'max-width'>"
@@ -1200,7 +1197,7 @@ var declarations = {
 		syntax: "none | <integer>"
 	},
 	"max-width": {
-		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
 	},
 	"min-block-size": {
 		syntax: "<'min-width'>"
@@ -1212,7 +1209,7 @@ var declarations = {
 		syntax: "<'min-width'>"
 	},
 	"min-width": {
-		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
 	},
 	"mix-blend-mode": {
 		syntax: "<blend-mode> | plus-lighter"
@@ -1269,7 +1266,7 @@ var declarations = {
 		syntax: "<line-width>"
 	},
 	overflow: {
-		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}"
+		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}| <-non-standard-overflow>"
 	},
 	"overflow-anchor": {
 		syntax: "auto | none"
@@ -1290,10 +1287,10 @@ var declarations = {
 		syntax: "normal | break-word | anywhere"
 	},
 	"overflow-x": {
-		syntax: "visible | hidden | clip | scroll | auto"
+		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
 	},
 	"overflow-y": {
-		syntax: "visible | hidden | clip | scroll | auto"
+		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
 	},
 	overlay: {
 		syntax: "none | auto"
@@ -1809,7 +1806,7 @@ var declarations = {
 		syntax: "normal | break-word"
 	},
 	"writing-mode": {
-		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr"
+		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr| <svg-writing-mode>"
 	},
 	x: {
 		syntax: "<length> | <percentage>"
