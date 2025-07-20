@@ -49,22 +49,6 @@ import {getTokenType as getTokenType$1} from '../../parser/index.ts';
 import type {DimensionToken} from "../../../@types/token.d.ts";
 import {EnumToken} from "../../ast/index.ts";
 
-export enum WalkValidationTokenEnum {
-
-    IgnoreChildren,
-    IgnoreNode,
-    IgnoreAll,
-}
-
-export enum WalkValidationTokenKeyTypeEnum {
-
-    Array = 'array',
-    Children = 'chi',
-    Left = 'l',
-    Right = 'r',
-    Prelude = 'prelude',
-}
-
 declare type ValidationContext =
     ValidationRootToken
     | ValidationBracketToken
@@ -93,20 +77,7 @@ const objectProperties = {
     configurable: true
 }
 
-export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/138.0'}}
-// syntaxes: keyword | <'property'> | <function>
-
-// "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
-// ""
-// : "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?
-// ""
-// false | true
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// false | true | green | pipe
-// keyword | <'property'> | <function>
-// [<dashed-ident> || <try-tactic>]
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]
+export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0'}}
 
 function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}, currentPosition: Position = {
     ind: -1,

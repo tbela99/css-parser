@@ -768,7 +768,7 @@ var declarations = {
 		syntax: "ltr | rtl"
 	},
 	display: {
-		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy>| <-non-standard-display>"
+		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | <-non-standard-display>"
 	},
 	"dominant-baseline": {
 		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top"
@@ -789,7 +789,7 @@ var declarations = {
 		syntax: "nonzero | evenodd"
 	},
 	filter: {
-		syntax: "none | <filter-value-list>| <-ms-filter-function-list>"
+		syntax: "none | <filter-value-list> | <-ms-filter-function-list>"
 	},
 	flex: {
 		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]"
@@ -984,7 +984,7 @@ var declarations = {
 		syntax: "from-image | <angle> | [ <angle>? flip ]"
 	},
 	"image-rendering": {
-		syntax: "auto | crisp-edges | pixelated | smooth| optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
+		syntax: "auto | crisp-edges | pixelated | smooth | optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
 	},
 	"image-resolution": {
 		syntax: "[ from-image || <resolution> ] && snap?"
@@ -1188,7 +1188,7 @@ var declarations = {
 		syntax: "<'max-width'>"
 	},
 	"max-height": {
-		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
+		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"max-inline-size": {
 		syntax: "<'max-width'>"
@@ -1197,7 +1197,7 @@ var declarations = {
 		syntax: "none | <integer>"
 	},
 	"max-width": {
-		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
+		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"min-block-size": {
 		syntax: "<'min-width'>"
@@ -1209,7 +1209,7 @@ var declarations = {
 		syntax: "<'min-width'>"
 	},
 	"min-width": {
-		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
+		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"mix-blend-mode": {
 		syntax: "<blend-mode> | plus-lighter"
@@ -1266,7 +1266,7 @@ var declarations = {
 		syntax: "<line-width>"
 	},
 	overflow: {
-		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}| <-non-standard-overflow>"
+		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2} | <-non-standard-overflow>"
 	},
 	"overflow-anchor": {
 		syntax: "auto | none"
@@ -1287,10 +1287,10 @@ var declarations = {
 		syntax: "normal | break-word | anywhere"
 	},
 	"overflow-x": {
-		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
+		syntax: "visible | hidden | clip | scroll | auto | <-non-standard-overflow>"
 	},
 	"overflow-y": {
-		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
+		syntax: "visible | hidden | clip | scroll | auto | <-non-standard-overflow>"
 	},
 	overlay: {
 		syntax: "none | auto"
@@ -1377,7 +1377,7 @@ var declarations = {
 		syntax: "auto | none | visiblePainted | visibleFill | visibleStroke | visible | painted | fill | stroke | all | inherit"
 	},
 	position: {
-		syntax: "static | relative | absolute | sticky | fixed| -webkit-sticky"
+		syntax: "static | relative | absolute | sticky | fixed | -webkit-sticky"
 	},
 	"position-anchor": {
 		syntax: "auto | <anchor-name>"
@@ -1806,7 +1806,7 @@ var declarations = {
 		syntax: "normal | break-word"
 	},
 	"writing-mode": {
-		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr| <svg-writing-mode>"
+		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr | <svg-writing-mode>"
 	},
 	x: {
 		syntax: "<length> | <percentage>"

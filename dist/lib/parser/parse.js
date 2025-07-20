@@ -784,6 +784,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         value: valid.valid == SyntaxValidationResult.Valid
                     });
                     if (valid.valid == SyntaxValidationResult.Drop) {
+                        // console.error({result, valid});
+                        // console.error(JSON.stringify({result, options, valid}, null, 1));
                         errors.push({
                             action: 'drop',
                             message: valid.error,

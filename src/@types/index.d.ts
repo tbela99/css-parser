@@ -51,7 +51,6 @@ export interface MinifyOptions {
 
     minify?: boolean;
     parseColor?: boolean;
-    convertColor?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
     removeDuplicateDeclarations?: boolean;

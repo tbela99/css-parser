@@ -9,20 +9,6 @@ import '../../ast/walk.js';
 import '../../renderer/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-var WalkValidationTokenEnum;
-(function (WalkValidationTokenEnum) {
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreChildren"] = 0] = "IgnoreChildren";
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreNode"] = 1] = "IgnoreNode";
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreAll"] = 2] = "IgnoreAll";
-})(WalkValidationTokenEnum || (WalkValidationTokenEnum = {}));
-var WalkValidationTokenKeyTypeEnum;
-(function (WalkValidationTokenKeyTypeEnum) {
-    WalkValidationTokenKeyTypeEnum["Array"] = "array";
-    WalkValidationTokenKeyTypeEnum["Children"] = "chi";
-    WalkValidationTokenKeyTypeEnum["Left"] = "l";
-    WalkValidationTokenKeyTypeEnum["Right"] = "r";
-    WalkValidationTokenKeyTypeEnum["Prelude"] = "prelude";
-})(WalkValidationTokenKeyTypeEnum || (WalkValidationTokenKeyTypeEnum = {}));
 const skipped = [
     ValidationTokenEnum.Star,
     ValidationTokenEnum.HashMark,
@@ -36,18 +22,6 @@ const objectProperties = {
     writable: true,
     configurable: true
 };
-// syntaxes: keyword | <'property'> | <function>
-// "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
-// ""
-// : "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?
-// ""
-// false | true
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// false | true | green | pipe
-// keyword | <'property'> | <function>
-// [<dashed-ident> || <try-tactic>]
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]
 function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPosition = {
     ind: -1,
     lin: 1,
@@ -1070,4 +1044,4 @@ function minify(ast) {
     return ast;
 }
 
-export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, renderSyntax };
+export { parseSyntax, renderSyntax };

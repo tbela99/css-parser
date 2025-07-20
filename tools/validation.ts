@@ -56,7 +56,7 @@ for (const [key, value] of Object.entries(patches.properties)) {
     else if (value.comment?.startsWith?.('extend')) {
 
         console.error(`>> extending declarations >> ${key}`);
-        json.declarations[key].syntax += value.syntax;
+        json.declarations[key].syntax += ' ' + value.syntax;
     }
 }
 
@@ -71,7 +71,7 @@ for (const [key, value] of Object.entries(patches.types)) {
     else if (value.comment?.startsWith?.('extend')) {
 
         console.error(`>> extending syntax >> ${key}`);
-        json.syntaxes[key].syntax += value.syntax;
+        json.syntaxes[key].syntax += ' ' + value.syntax;
     }
 }
 

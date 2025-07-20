@@ -1184,7 +1184,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                 if (options.validation == ValidationLevel.All) {
 
-                    const valid: ValidationSyntaxResult = evaluateSyntax(result, options, context as AstNode);
+                    const valid: ValidationSyntaxResult = evaluateSyntax(result, options);
 
                     Object.defineProperty(result, 'validSyntax', {
                         ...definedPropertySettings,
@@ -1192,6 +1192,9 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     });
 
                     if (valid.valid == SyntaxValidationResult.Drop) {
+
+                        // console.error({result, valid});
+                        // console.error(JSON.stringify({result, options, valid}, null, 1));
 
                         errors.push(<ErrorDescription>{
                             action: 'drop',

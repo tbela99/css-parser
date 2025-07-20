@@ -75,7 +75,7 @@ export function createContext(input: Token[]): Context<Token> {
             // @ts-ignore
             const newIndex: number = result.indexOf(context.current<Token>() as Token);
 
-            if (newIndex != -1) {
+            if (newIndex > this.index) {
 
                 this.index = newIndex;
             }
@@ -83,7 +83,7 @@ export function createContext(input: Token[]): Context<Token> {
         consume<Type>(token: Type, howMany?: number): boolean {
 
             let newIndex: number = result.indexOf(token as Token, this.index + 1);
-            if (newIndex == -1) {
+            if (newIndex == -1 || newIndex < this.index) {
                 return false;
             }
 
@@ -135,15 +135,24 @@ export function createContext(input: Token[]): Context<Token> {
         },
         clone(): Context<Token> {
 
-            const context = createContext(input.slice());
-
+            const context = createContext(result.slice());
             context.index = this.index;
+
             return context;
+        },
+        // @ts-ignore
+        toJSON(): object {
+
+            return {
+                index: this.index,
+                slice: this.slice(),
+                tokens: this.tokens()
+            }
         }
     }
 }
 
-export function evaluateSyntax(node: AstNode, options: ValidationOptions, parent?: AstNode): ValidationSyntaxResult {
+export function evaluateSyntax(node: AstNode, options: ValidationOptions): ValidationSyntaxResult {
 
     let ast: ValidationToken[] | null;
     let result;
@@ -271,8 +280,8 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let result: ValidationSyntaxResult;
     let token: Token | null = null;
 
-    // console.error(`doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
-    // console.error(new Error('anyOf'));
+    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
+    // console.error(new Error('doEvaluateSyntax'));
 
     for (; i < syntaxes.length; i++) {
 
@@ -289,6 +298,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         }
 
         token = context.peek<Token>() as Token;
+        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}`, context.peek());
 
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
 
@@ -331,6 +341,8 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
                 clearVisited(token, syntax, 'doEvaluateSyntax', options);
             }
         }
+
+        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}\nvalid:${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n`, context.peek());
 
         if (result.valid == SyntaxValidationResult.Drop) {
 
@@ -436,11 +448,15 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
             }
         }
 
+        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
+
         result = doEvaluateSyntax([syntax], createContext(tokens), {
             ...options,
             isList: false,
             occurence: false
         } as ValidationOptions);
+
+        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}\n>> result: ${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n${JSON.stringify(result, null, 1)}`);
 
         if (result.valid == SyntaxValidationResult.Valid) {
 
@@ -527,6 +543,8 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
     let success: boolean = false;
     let result: ValidationSyntaxResult;
     let token: Token | null = context.peek() as Token;
+
+    // console.error(`>> match: ${renderSyntax(syntax)}`);
 
     switch (syntax.typ) {
 
@@ -1077,6 +1095,8 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
 
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
 
+        // console.error(JSON.stringify({result, syntax: syntaxes[i], context, slice: context.slice()}, null, 1));
+
         if (result.valid == SyntaxValidationResult.Valid) {
 
             success = true;
@@ -1095,6 +1115,8 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
         // pick the best match
         matched.sort((a, b) => (a.context as Context<Token>).done() ? -1 : (b.context as Context<Token>).done() ? 1 : (b.context as Context<Token>).index - (a.context as Context<Token>).index);
     }
+
+    // console.error(JSON.stringify({matched, context, slice: context.slice(), syntaxes}, null, 1));
 
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
@@ -1173,22 +1195,10 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
         if (slice[i].typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((slice[i] as FunctionToken).val.toLowerCase())) {
 
             vars.push(slice[i]);
-            slice.splice(i, 1);
 
-            if (slice[i]?.typ == EnumToken.WhitespaceTokenType) {
+            if (slice[i + 1]?.typ == EnumToken.WhitespaceTokenType) {
 
-                vars.push(slice[i]);
-                slice.splice(i, 1);
-
-                if (i > 0) {
-
-                    i--;
-                }
-            }
-
-            if (i > 0) {
-
-                i--;
+                vars.push(slice[++i]);
             }
 
             continue;
@@ -1212,10 +1222,17 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
     let cp: Context<Token>;
     let j: number;
 
+    // console.error(`>> allOf:syntax: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
+    // console.error(`>> allOf:tokens: ${con.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
+    // console.error(`>> allOf:tokens:slice: ${context.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
+
     for (i = 0; i < syntax.length; i++) {
+
+        // console.error(`>> allOf:${i}:${syntax[i].reduce((acc, curr) => acc + renderSyntax(curr), '')}:current()`, con.current());
 
         if (syntax[i].length == 1 && syntax[i][0].isOptional) {
 
+            // syntax[i][0 = structuredClone(syntax[i][0]);
             syntax[i][0].isOptional = false;
 
             j = 0;
@@ -1224,8 +1241,10 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
 
             if (cp.done()) {
 
+                syntax[i][0].isOptional = true;
                 syntax.splice(i, 1);
                 i = -1;
+                // console.error(`>> allOf:done:peek: `, con.peek());
                 continue;
             }
 
@@ -1235,14 +1254,12 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
 
                 if (result.valid == SyntaxValidationResult.Valid) {
 
-                    let end  = slice.indexOf(cp.current() as Token);
+                    let end = slice.indexOf(cp.current() as Token);
 
                     if (end == -1) {
 
                         end = 0
-                    }
-
-                    else {
+                    } else {
 
                         end -= j - 1;
                     }
@@ -1258,9 +1275,14 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
             syntax[i][0].isOptional = true;
 
             // @ts-ignore
+            // console.error(`>> allOf:result valid: `, result?.valid == SyntaxValidationResult.Valid, con.current<Token>());
+
+            // @ts-ignore
             if (result?.valid == SyntaxValidationResult.Valid) {
 
                 syntax.splice(i, 1);
+                // console.error(`>> allOf:syntaxes: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
+                // console.error(`>> allOf:context:`, JSON.stringify(con, null, 1));
                 i = -1;
             }
 

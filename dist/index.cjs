@@ -8171,7 +8171,7 @@ var declarations = {
 		syntax: "ltr | rtl"
 	},
 	display: {
-		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy>| <-non-standard-display>"
+		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | <-non-standard-display>"
 	},
 	"dominant-baseline": {
 		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top"
@@ -8192,7 +8192,7 @@ var declarations = {
 		syntax: "nonzero | evenodd"
 	},
 	filter: {
-		syntax: "none | <filter-value-list>| <-ms-filter-function-list>"
+		syntax: "none | <filter-value-list> | <-ms-filter-function-list>"
 	},
 	flex: {
 		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]"
@@ -8387,7 +8387,7 @@ var declarations = {
 		syntax: "from-image | <angle> | [ <angle>? flip ]"
 	},
 	"image-rendering": {
-		syntax: "auto | crisp-edges | pixelated | smooth| optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
+		syntax: "auto | crisp-edges | pixelated | smooth | optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
 	},
 	"image-resolution": {
 		syntax: "[ from-image || <resolution> ] && snap?"
@@ -8591,7 +8591,7 @@ var declarations = {
 		syntax: "<'max-width'>"
 	},
 	"max-height": {
-		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
+		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"max-inline-size": {
 		syntax: "<'max-width'>"
@@ -8600,7 +8600,7 @@ var declarations = {
 		syntax: "none | <integer>"
 	},
 	"max-width": {
-		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
+		syntax: "none | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"min-block-size": {
 		syntax: "<'min-width'>"
@@ -8612,7 +8612,7 @@ var declarations = {
 		syntax: "<'min-width'>"
 	},
 	"min-width": {
-		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>| stretch | <-non-standard-size>"
+		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"mix-blend-mode": {
 		syntax: "<blend-mode> | plus-lighter"
@@ -8669,7 +8669,7 @@ var declarations = {
 		syntax: "<line-width>"
 	},
 	overflow: {
-		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2}| <-non-standard-overflow>"
+		syntax: "[ visible | hidden | clip | scroll | auto ]{1,2} | <-non-standard-overflow>"
 	},
 	"overflow-anchor": {
 		syntax: "auto | none"
@@ -8690,10 +8690,10 @@ var declarations = {
 		syntax: "normal | break-word | anywhere"
 	},
 	"overflow-x": {
-		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
+		syntax: "visible | hidden | clip | scroll | auto | <-non-standard-overflow>"
 	},
 	"overflow-y": {
-		syntax: "visible | hidden | clip | scroll | auto| <-non-standard-overflow>"
+		syntax: "visible | hidden | clip | scroll | auto | <-non-standard-overflow>"
 	},
 	overlay: {
 		syntax: "none | auto"
@@ -8780,7 +8780,7 @@ var declarations = {
 		syntax: "auto | none | visiblePainted | visibleFill | visibleStroke | visible | painted | fill | stroke | all | inherit"
 	},
 	position: {
-		syntax: "static | relative | absolute | sticky | fixed| -webkit-sticky"
+		syntax: "static | relative | absolute | sticky | fixed | -webkit-sticky"
 	},
 	"position-anchor": {
 		syntax: "auto | <anchor-name>"
@@ -9209,7 +9209,7 @@ var declarations = {
 		syntax: "normal | break-word"
 	},
 	"writing-mode": {
-		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr| <svg-writing-mode>"
+		syntax: "horizontal-tb | vertical-rl | vertical-lr | sideways-rl | sideways-lr | <svg-writing-mode>"
 	},
 	x: {
 		syntax: "<length> | <percentage>"
@@ -11659,20 +11659,6 @@ var ValidationSyntaxGroupEnum;
     ValidationSyntaxGroupEnum["AtRules"] = "atRules";
 })(ValidationSyntaxGroupEnum || (ValidationSyntaxGroupEnum = {}));
 
-var WalkValidationTokenEnum;
-(function (WalkValidationTokenEnum) {
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreChildren"] = 0] = "IgnoreChildren";
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreNode"] = 1] = "IgnoreNode";
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreAll"] = 2] = "IgnoreAll";
-})(WalkValidationTokenEnum || (WalkValidationTokenEnum = {}));
-var WalkValidationTokenKeyTypeEnum;
-(function (WalkValidationTokenKeyTypeEnum) {
-    WalkValidationTokenKeyTypeEnum["Array"] = "array";
-    WalkValidationTokenKeyTypeEnum["Children"] = "chi";
-    WalkValidationTokenKeyTypeEnum["Left"] = "l";
-    WalkValidationTokenKeyTypeEnum["Right"] = "r";
-    WalkValidationTokenKeyTypeEnum["Prelude"] = "prelude";
-})(WalkValidationTokenKeyTypeEnum || (WalkValidationTokenKeyTypeEnum = {}));
 const skipped = [
     ValidationTokenEnum.Star,
     ValidationTokenEnum.HashMark,
@@ -11686,18 +11672,6 @@ const objectProperties = {
     writable: true,
     configurable: true
 };
-// syntaxes: keyword | <'property'> | <function>
-// "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
-// ""
-// : "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?
-// ""
-// false | true
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// false | true | green | pipe
-// keyword | <'property'> | <function>
-// [<dashed-ident> || <try-tactic>]
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]
 function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPosition = {
     ind: -1,
     lin: 1,
@@ -13492,13 +13466,13 @@ function createContext(input) {
         update(context) {
             // @ts-ignore
             const newIndex = result.indexOf(context.current());
-            if (newIndex != -1) {
+            if (newIndex > this.index) {
                 this.index = newIndex;
             }
         },
         consume(token, howMany) {
             let newIndex = result.indexOf(token, this.index + 1);
-            if (newIndex == -1) {
+            if (newIndex == -1 || newIndex < this.index) {
                 return false;
             }
             howMany ??= 0;
@@ -13535,13 +13509,21 @@ function createContext(input) {
             return result.slice(this.index + 1);
         },
         clone() {
-            const context = createContext(input.slice());
+            const context = createContext(result.slice());
             context.index = this.index;
             return context;
+        },
+        // @ts-ignore
+        toJSON() {
+            return {
+                index: this.index,
+                slice: this.slice(),
+                tokens: this.tokens()
+            };
         }
     };
 }
-function evaluateSyntax(node, options, parent) {
+function evaluateSyntax(node, options) {
     let ast;
     let result;
     switch (node.typ) {
@@ -13627,8 +13609,8 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
-    // console.error(`doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
-    // console.error(new Error('anyOf'));
+    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
+    // console.error(new Error('doEvaluateSyntax'));
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -13638,6 +13620,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
             break;
         }
         token = context.peek();
+        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}`, context.peek());
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
             if (context.peek()?.typ == exports.EnumToken.WhitespaceTokenType) {
                 context.next();
@@ -13671,6 +13654,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
                 clearVisited(token, syntax, 'doEvaluateSyntax', options);
             }
         }
+        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}\nvalid:${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n`, context.peek());
         if (result.valid == SyntaxValidationResult.Drop) {
             if (syntax.isOptional) {
                 continue;
@@ -13744,11 +13728,13 @@ function matchList(syntax, context, options) {
                 context
             };
         }
+        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
         result = doEvaluateSyntax([syntax], createContext(tokens), {
             ...options,
             isList: false,
             occurence: false
         });
+        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}\n>> result: ${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n${JSON.stringify(result, null, 1)}`);
         if (result.valid == SyntaxValidationResult.Valid) {
             context = con.clone();
             count++;
@@ -13807,6 +13793,7 @@ function match(syntax, context, options) {
     let success = false;
     let result;
     let token = context.peek();
+    // console.error(`>> match: ${renderSyntax(syntax)}`);
     switch (syntax.typ) {
         case ValidationTokenEnum.PipeToken:
             return someOf(syntax.chi, context, options);
@@ -14184,6 +14171,7 @@ function someOf(syntaxes, context, options) {
             context.next();
         }
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
+        // console.error(JSON.stringify({result, syntax: syntaxes[i], context, slice: context.slice()}, null, 1));
         if (result.valid == SyntaxValidationResult.Valid) {
             success = true;
             if (result.context.done()) {
@@ -14196,6 +14184,7 @@ function someOf(syntaxes, context, options) {
         // pick the best match
         matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
     }
+    // console.error(JSON.stringify({matched, context, slice: context.slice(), syntaxes}, null, 1));
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
         node: context.current(),
@@ -14251,16 +14240,8 @@ function allOf(syntax, context, options) {
     for (i = 0; i < slice.length; i++) {
         if (slice[i].typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(slice[i].val.toLowerCase())) {
             vars.push(slice[i]);
-            slice.splice(i, 1);
-            if (slice[i]?.typ == exports.EnumToken.WhitespaceTokenType) {
-                vars.push(slice[i]);
-                slice.splice(i, 1);
-                if (i > 0) {
-                    i--;
-                }
-            }
-            if (i > 0) {
-                i--;
+            if (slice[i + 1]?.typ == exports.EnumToken.WhitespaceTokenType) {
+                vars.push(slice[++i]);
             }
             continue;
         }
@@ -14276,15 +14257,22 @@ function allOf(syntax, context, options) {
     const con = createContext(tokens);
     let cp;
     let j;
+    // console.error(`>> allOf:syntax: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
+    // console.error(`>> allOf:tokens: ${con.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
+    // console.error(`>> allOf:tokens:slice: ${context.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
     for (i = 0; i < syntax.length; i++) {
+        // console.error(`>> allOf:${i}:${syntax[i].reduce((acc, curr) => acc + renderSyntax(curr), '')}:current()`, con.current());
         if (syntax[i].length == 1 && syntax[i][0].isOptional) {
+            // syntax[i][0 = structuredClone(syntax[i][0]);
             syntax[i][0].isOptional = false;
             j = 0;
             cp = con.clone();
             slice = cp.slice();
             if (cp.done()) {
+                syntax[i][0].isOptional = true;
                 syntax.splice(i, 1);
                 i = -1;
+                // console.error(`>> allOf:done:peek: `, con.peek());
                 continue;
             }
             while (!cp.done()) {
@@ -14305,8 +14293,12 @@ function allOf(syntax, context, options) {
             }
             syntax[i][0].isOptional = true;
             // @ts-ignore
+            // console.error(`>> allOf:result valid: `, result?.valid == SyntaxValidationResult.Valid, con.current<Token>());
+            // @ts-ignore
             if (result?.valid == SyntaxValidationResult.Valid) {
                 syntax.splice(i, 1);
+                // console.error(`>> allOf:syntaxes: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
+                // console.error(`>> allOf:context:`, JSON.stringify(con, null, 1));
                 i = -1;
             }
             continue;
@@ -16956,6 +16948,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         value: valid.valid == SyntaxValidationResult.Valid
                     });
                     if (valid.valid == SyntaxValidationResult.Drop) {
+                        // console.error({result, valid});
+                        // console.error(JSON.stringify({result, options, valid}, null, 1));
                         errors.push({
                             action: 'drop',
                             message: valid.error,
