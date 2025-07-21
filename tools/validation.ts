@@ -75,6 +75,11 @@ for (const [key, value] of Object.entries(patches.types)) {
     }
 }
 
+if (!('auto' in json.declarations['-moz-user-select'])) {
+
+    json.declarations['-moz-user-select'].syntax += ' | auto | element | elements | text | toggle';
+}
+
 if (!(':-webkit-any()' in json.selectors)) {
 
     json.selectors[':-webkit-any()'] = {syntax: ':-webkit-any( <forgiving-selector-list> )'};
@@ -83,6 +88,14 @@ if (!(':-webkit-any()' in json.selectors)) {
 if (!(':-webkit-any-link' in json.selectors)) {
 
     json.selectors[':-webkit-any-link'] = {syntax: ':-webkit-any-link'};
+}
+
+if (!('-non-standard-text-align' in json.syntaxes)) {
+
+    json.syntaxes['-non-standard-text-align'] = {syntax: '| -moz-center | -webkit-center | -webkit-match-parent'};
+
+    // @ts-ignore
+    json.declarations['text-align' as keyof typeof json.declarations].syntax += ' ' + json.syntaxes['-non-standard-text-align'].syntax;
 }
 
 await writeFile(import.meta.dirname + '/../src/lib/validation/config.json', JSON.stringify(json, null, 1));
