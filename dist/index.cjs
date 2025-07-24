@@ -7467,7 +7467,7 @@ var declarations = {
 		syntax: "auto | after"
 	},
 	"-ms-overflow-style": {
-		syntax: "auto | none | scrollbar | -ms-autohiding-scrollbar"
+		syntax: "auto | none | scrollbar | -ms-autohiding-scrollbar auto | none | scrollbar | -ms-autohiding-scrollbar"
 	},
 	"-ms-scroll-chaining": {
 		syntax: "chained | none"
@@ -7617,7 +7617,7 @@ var declarations = {
 		syntax: "default | menu | tooltip | sheet | none"
 	},
 	"-webkit-appearance": {
-		syntax: "none | button | button-bevel | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
+		syntax: "none | button | button-bevel | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
 	},
 	"-webkit-border-before": {
 		syntax: "<'border-width'> || <'border-style'> || <color>"
@@ -7701,7 +7701,7 @@ var declarations = {
 		syntax: "read-only | read-write | read-write-plaintext-only"
 	},
 	"-webkit-user-select": {
-		syntax: "auto | text | none | all"
+		syntax: "auto | text | none | all auto | none | text | all"
 	},
 	"accent-color": {
 		syntax: "auto | <color>"
@@ -7719,7 +7719,7 @@ var declarations = {
 		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#"
 	},
 	"alignment-baseline": {
-		syntax: "baseline | alphabetic | ideographic | middle | central | mathematical | text-before-edge | text-after-edge"
+		syntax: "baseline | alphabetic | ideographic | middle | central | mathematical | text-before-edge | text-after-edge auto | baseline | before-edge | text-before-edge | middle | central | after-edge | text-after-edge | ideographic | alphabetic | hanging | mathematical"
 	},
 	all: {
 		syntax: "initial | inherit | unset | revert | revert-layer"
@@ -7821,7 +7821,7 @@ var declarations = {
 		syntax: "<bg-size>#"
 	},
 	"baseline-shift": {
-		syntax: "<length-percentage> | sub | super | baseline"
+		syntax: "<length-percentage> | sub | super | baseline baseline | sub | super | <svg-length>"
 	},
 	"block-size": {
 		syntax: "<'width'>"
@@ -8160,7 +8160,7 @@ var declarations = {
 		syntax: "[ <counter-name> <integer>? ]+ | none"
 	},
 	cursor: {
-		syntax: "[ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing ] ]"
+		syntax: "[ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing ] ] [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
 	},
 	cx: {
 		syntax: "<length> | <percentage>"
@@ -8178,7 +8178,7 @@ var declarations = {
 		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | <-non-standard-display>"
 	},
 	"dominant-baseline": {
-		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top"
+		syntax: "auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top auto | use-script | no-change | reset-size | ideographic | alphabetic | hanging | mathematical | central | middle | text-after-edge | text-before-edge"
 	},
 	"empty-cells": {
 		syntax: "show | hide"
@@ -8190,7 +8190,7 @@ var declarations = {
 		syntax: "<paint>"
 	},
 	"fill-opacity": {
-		syntax: "<'opacity'>"
+		syntax: "<'opacity'> <number-zero-one>"
 	},
 	"fill-rule": {
 		syntax: "nonzero | evenodd"
@@ -8229,7 +8229,7 @@ var declarations = {
 		syntax: "<'opacity'>"
 	},
 	font: {
-		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name>"
+		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> | <-non-standard-font>"
 	},
 	"font-family": {
 		syntax: "[ <family-name> | <generic-family> ]#"
@@ -8376,7 +8376,7 @@ var declarations = {
 		syntax: "none | [ first || [ force-end | allow-end ] || last ]"
 	},
 	height: {
-		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"hyphenate-character": {
 		syntax: "auto | <string>"
@@ -8451,7 +8451,7 @@ var declarations = {
 		syntax: "<length> | <percentage> | auto"
 	},
 	"letter-spacing": {
-		syntax: "normal | <length>"
+		syntax: "normal | <length> normal | <length-percentage>"
 	},
 	"lighting-color": {
 		syntax: "<color>"
@@ -8610,7 +8610,7 @@ var declarations = {
 		syntax: "<'min-width'>"
 	},
 	"min-height": {
-		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"min-inline-size": {
 		syntax: "<'min-width'>"
@@ -8991,25 +8991,25 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"stroke-dasharray": {
-		syntax: "none | <dasharray>"
+		syntax: "none | <dasharray> none | [ <svg-length>+ ]#"
 	},
 	"stroke-dashoffset": {
-		syntax: "<length-percentage> | <number>"
+		syntax: "<length-percentage> | <number> <svg-length>"
 	},
 	"stroke-linecap": {
 		syntax: "butt | round | square"
 	},
 	"stroke-linejoin": {
-		syntax: "miter | miter-clip | round | bevel | arcs"
+		syntax: "miter | miter-clip | round | bevel | arcs miter | round | bevel"
 	},
 	"stroke-miterlimit": {
-		syntax: "<number>"
+		syntax: "<number> <number-one-or-greater>"
 	},
 	"stroke-opacity": {
 		syntax: "<'opacity'>"
 	},
 	"stroke-width": {
-		syntax: "<length-percentage> | <number>"
+		syntax: "<length-percentage> | <number> <svg-length>"
 	},
 	"tab-size": {
 		syntax: "<integer> | <length>"
@@ -9156,7 +9156,7 @@ var declarations = {
 		syntax: "none | <length-percentage> [ <length-percentage> <length>? ]?"
 	},
 	"unicode-bidi": {
-		syntax: "normal | embed | isolate | bidi-override | isolate-override | plaintext"
+		syntax: "normal | embed | isolate | bidi-override | isolate-override | plaintext | -moz-isolate | -moz-isolate-override | -moz-plaintext | -webkit-isolate | -webkit-isolate-override | -webkit-plaintext"
 	},
 	"user-select": {
 		syntax: "auto | text | none | all"
@@ -9198,7 +9198,7 @@ var declarations = {
 		syntax: "<integer>"
 	},
 	width: {
-		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()>"
+		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"will-change": {
 		syntax: "auto | <animateable-feature>#"
@@ -9249,7 +9249,7 @@ var declarations = {
 		syntax: "auto | grayscale"
 	},
 	"-moz-user-select": {
-		syntax: "none | text | all | -moz-none | auto | element | elements | text | toggle"
+		syntax: "none | text | all | -moz-none | auto"
 	},
 	"-ms-flex-align": {
 		syntax: "start | end | center | baseline | stretch"
@@ -9856,10 +9856,10 @@ var syntaxes = {
 		syntax: "<url>"
 	},
 	color: {
-		syntax: "<color-base> | currentColor | <system-color> | <light-dark()> | <deprecated-system-color>"
+		syntax: "<color-base> | currentColor | <system-color> | <device-cmyk()>  | <light-dark()> | <-non-standard-color>"
 	},
 	"color()": {
-		syntax: "color( [ from <color> ]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
+		syntax: "color( <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
 	},
 	"color-base": {
 		syntax: "<hex-color> | <color-function> | <named-color> | <color-mix()> | transparent"
@@ -9871,7 +9871,7 @@ var syntaxes = {
 		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
 	},
 	"color-mix()": {
-		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2})"
+		syntax: "color-mix( <color-interpolation-method> , [ <color> && <percentage [0,100]>? ]#{2} )"
 	},
 	"color-stop": {
 		syntax: "<color-stop-length> | <color-stop-angle>"
@@ -9886,10 +9886,10 @@ var syntaxes = {
 		syntax: "<linear-color-stop> , [ <linear-color-hint>? , <linear-color-stop> ]#?"
 	},
 	"colorspace-params": {
-		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
+		syntax: "[ <predefined-rgb-params> | <xyz-params>]"
 	},
 	combinator: {
-		syntax: "'>' | '+' | '~' | [ '||' ]"
+		syntax: "'>' | '+' | '~' | [ '|' '|' ]"
 	},
 	"common-lig-values": {
 		syntax: "[ common-ligatures | no-common-ligatures ]"
@@ -9898,7 +9898,7 @@ var syntaxes = {
 		syntax: "searchfield | textarea | push-button | slider-horizontal | checkbox | radio | square-button | menulist | listbox | meter | progress-bar | button"
 	},
 	"complex-selector": {
-		syntax: "<compound-selector> [ <combinator>? <compound-selector> ]*"
+		syntax: "<complex-selector-unit> [ <combinator>? <complex-selector-unit> ]*"
 	},
 	"complex-selector-list": {
 		syntax: "<complex-selector>#"
@@ -9910,7 +9910,7 @@ var syntaxes = {
 		syntax: "add | subtract | intersect | exclude"
 	},
 	"compound-selector": {
-		syntax: "[ <type-selector>? <subclass-selector>* [ <pseudo-element-selector> <pseudo-class-selector>* ]* ]!"
+		syntax: "[ <type-selector>? <subclass-selector>* ]!"
 	},
 	"compound-selector-list": {
 		syntax: "<compound-selector>#"
@@ -9922,7 +9922,7 @@ var syntaxes = {
 		syntax: "[ [ [ from [ <angle> | <zero> ] ]? [ at <position> ]? ] || <color-interpolation-method> ]? , <angular-color-stop-list>"
 	},
 	"container-condition": {
-		syntax: "[ <container-name>? <container-query>? ]!"
+		syntax: "not <query-in-parens> | <query-in-parens> [ [ and <query-in-parens> ]* | [ or <query-in-parens> ]* ]"
 	},
 	"container-name": {
 		syntax: "<custom-ident>"
@@ -9934,7 +9934,7 @@ var syntaxes = {
 		syntax: "space-between | space-around | space-evenly | stretch"
 	},
 	"content-list": {
-		syntax: "[ <string> | contents | <image> | <counter> | <quote> | <target> | <leader()> ]+"
+		syntax: "[ <string> | contents | <image> | <counter> | <quote> | <target> | <leader()> | <attr()> ]+"
 	},
 	"content-position": {
 		syntax: "center | start | end | flex-start | flex-end"
@@ -9949,7 +9949,7 @@ var syntaxes = {
 		syntax: "contrast( [ <number> | <percentage> ]? )"
 	},
 	"coord-box": {
-		syntax: "<paint-box> | view-box"
+		syntax: "content-box | padding-box | border-box | fill-box | stroke-box | view-box"
 	},
 	"cos()": {
 		syntax: "cos( <calc-sum> )"
@@ -9979,7 +9979,7 @@ var syntaxes = {
 		syntax: "cubic-bezier( [ <number [0,1]>, <number> ]#{2} )"
 	},
 	"cubic-bezier-easing-function": {
-		syntax: "ease | ease-in | ease-out | ease-in-out | <cubic-bezier()>"
+		syntax: "ease | ease-in | ease-out | ease-in-out | cubic-bezier( <number [0,1]> , <number> , <number [0,1]> , <number> )"
 	},
 	"custom-color-space": {
 		syntax: "<dashed-ident>"
@@ -10030,7 +10030,7 @@ var syntaxes = {
 		syntax: "[ full-width | proportional-width ]"
 	},
 	"element()": {
-		syntax: "element( <id-selector> )"
+		syntax: "element( <custom-ident> , [ first | start | last | first-except ]? ) | element( <id-selector> )"
 	},
 	"ellipse()": {
 		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
@@ -10111,10 +10111,10 @@ var syntaxes = {
 		syntax: "serif | sans-serif | system-ui | cursive | fantasy | math | monospace"
 	},
 	"general-enclosed": {
-		syntax: "[ <function-token> <any-value> ) ] | ( <ident> <any-value> )"
+		syntax: "[ <function-token> <any-value>? ) ] | [ ( <any-value>? ) ]"
 	},
 	"generic-family": {
-		syntax: "<generic-complete> | <generic-incomplete> | emoji | fangsong"
+		syntax: "<generic-script-specific>| <generic-complete> | <generic-incomplete> | <-non-standard-generic-family>"
 	},
 	"generic-incomplete": {
 		syntax: "ui-serif | ui-sans-serif | ui-monospace | ui-rounded"
@@ -10123,7 +10123,7 @@ var syntaxes = {
 		syntax: "<shape-box> | fill-box | stroke-box | view-box"
 	},
 	gradient: {
-		syntax: "<linear-gradient()> | <repeating-linear-gradient()> | <radial-gradient()> | <repeating-radial-gradient()> | <conic-gradient()> | <repeating-conic-gradient()>"
+		syntax: "| <-legacy-gradient>"
 	},
 	"grayscale()": {
 		syntax: "grayscale( [ <number> | <percentage> ]? )"
@@ -10411,7 +10411,7 @@ var syntaxes = {
 		syntax: "A5 | A4 | A3 | B5 | B4 | JIS-B5 | JIS-B4 | letter | legal | ledger"
 	},
 	paint: {
-		syntax: "none | <color> | <url> [none | <color>]? | context-fill | context-stroke"
+		syntax: "none | <color> | <url> [ none | <color> ]? | context-fill | context-stroke"
 	},
 	"paint()": {
 		syntax: "paint( <ident>, <declaration-value>? )"
@@ -10441,7 +10441,7 @@ var syntaxes = {
 		syntax: "[ [ left | center | right ] || [ top | center | bottom ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ]? | [ [ left | right ] <length-percentage> ] && [ [ top | bottom ] <length-percentage> ] ]"
 	},
 	"position-area": {
-		syntax: "[ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2}"
+		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
 	},
 	"pow()": {
 		syntax: "pow( <calc-sum>, <calc-sum> )"
@@ -10456,13 +10456,13 @@ var syntaxes = {
 		syntax: "':' <ident-token> | ':' <function-token> <any-value> ')'"
 	},
 	"pseudo-element-selector": {
-		syntax: "':' <pseudo-class-selector>"
+		syntax: "':' <pseudo-class-selector> | <legacy-pseudo-element-selector>"
 	},
 	"pseudo-page": {
 		syntax: ": [ left | right | first | blank ]"
 	},
 	"query-in-parens": {
-		syntax: "( <container-query> ) | ( <size-feature> ) | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
+		syntax: "( <container-condition> ) | ( <size-feature> ) | style( <style-query> ) | <general-enclosed>"
 	},
 	quote: {
 		syntax: "open-quote | close-quote | no-open-quote | no-close-quote"
@@ -10570,10 +10570,10 @@ var syntaxes = {
 		syntax: "scaleZ( [ <number> | <percentage> ] )"
 	},
 	"scope-end": {
-		syntax: "<selector-list>"
+		syntax: "<forgiving-selector-list>"
 	},
 	"scope-start": {
-		syntax: "<selector-list>"
+		syntax: "<forgiving-selector-list>"
 	},
 	"scroll()": {
 		syntax: "scroll( [ <scroller> || <axis> ]? )"
@@ -10606,7 +10606,7 @@ var syntaxes = {
 		syntax: "[ <length>{2,3} && <color>? ]"
 	},
 	shape: {
-		syntax: "rect(<top>, <right>, <bottom>, <left>)"
+		syntax: "rect( <top>, <right>, <bottom>, <left> ) | rect( <top> <right> <bottom> <left> )"
 	},
 	"shape-box": {
 		syntax: "<visual-box> | margin-box"
@@ -10657,7 +10657,7 @@ var syntaxes = {
 		syntax: "closest-side | farthest-side | closest-corner | farthest-corner | <length> | <length-percentage>{2}"
 	},
 	"size-feature": {
-		syntax: "<media-query-list>"
+		syntax: "<mf-plain> | <mf-boolean> | <mf-range>"
 	},
 	"skew()": {
 		syntax: "skew( [ <angle> | <zero> ] , [ <angle> | <zero> ]? )"
@@ -10684,10 +10684,10 @@ var syntaxes = {
 		syntax: "<declaration>"
 	},
 	"style-in-parens": {
-		syntax: "( <style-query> ) | ( <style-feature> ) | <general-enclosed>"
+		syntax: "( <style-condition> ) | ( <style-feature> ) | <general-enclosed>"
 	},
 	"style-query": {
-		syntax: "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ] | <style-feature> "
+		syntax: "<style-condition> | <style-feature>"
 	},
 	"subclass-selector": {
 		syntax: "<id-selector> | <class-selector> | <attribute-selector> | <pseudo-class-selector>"
@@ -10816,7 +10816,7 @@ var syntaxes = {
 		syntax: "xyz | xyz-d50 | xyz-d65"
 	},
 	"xyz-params": {
-		syntax: "<xyz> [ <number> | <percentage> | none ]{3}"
+		syntax: "<xyz-space> [ <number> | <percentage> | none ]{3}"
 	},
 	"-legacy-gradient": {
 		syntax: "<-webkit-gradient()> | <-legacy-linear-gradient> | <-legacy-repeating-linear-gradient> | <-legacy-radial-gradient> | <-legacy-repeating-radial-gradient>"
@@ -11011,7 +11011,7 @@ var syntaxes = {
 		syntax: "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ]"
 	},
 	"-non-standard-display": {
-		syntax: "-ms-inline-flexbox | -ms-grid | -ms-inline-grid | -webkit-flex | -webkit-inline-flex | -webkit-box | -webkit-inline-box | -moz-inline-stack | -moz-box | -moz-inline-box"
+		syntax: "-ms-inline-flexbox | -ms-grid | -ms-inline-grid | -webkit-flex | -webkit-inline-flex | -webkit-box | -webkit-inline-box | -moz-inline-stack | -moz-box | -moz-inline-box | -ms-flexbox"
 	},
 	"inset-area": {
 		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
@@ -13617,6 +13617,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
+    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${JSON.stringify({syntaxes}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -13646,6 +13647,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
         }
         else {
             if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
+                // console.error(`cyclic dependency: ${renderSyntax(syntax)}`);
                 return {
                     valid: SyntaxValidationResult.Drop,
                     node: token,
@@ -13793,6 +13795,7 @@ function matchOccurence(syntax, context, options) {
     };
 }
 function match(syntax, context, options) {
+    // console.error(`>> match(): ${renderSyntax(syntax)}\n>> ${JSON.stringify({syntax}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
     let success = false;
     let result;
     let token = context.peek();
@@ -13874,20 +13877,17 @@ function match(syntax, context, options) {
                     context
                 };
             }
-            {
-                result = doEvaluateSyntax((getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0]).chi, createContext(token.chi), {
-                    ...options,
-                    isRepeatable: null,
-                    isList: null,
-                    occurence: null,
-                    atLeastOnce: null
-                });
-                if (result.valid == SyntaxValidationResult.Valid) {
-                    context.next();
-                    result.context = context;
-                    return result;
-                }
+            // {
+            // console.error(JSON.stringify({funcDef: (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi}, null, 1))
+            //
+            // const child = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken;
+            result = match(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0], context, options);
+            if (result.valid == SyntaxValidationResult.Valid) {
+                context.next();
+                result.context = context;
+                return result;
             }
+            // }
             break;
         case ValidationTokenEnum.DeclarationType:
             return doEvaluateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, syntax.val), context, {
@@ -13984,6 +13984,7 @@ function match(syntax, context, options) {
 }
 function matchPropertyType(syntax, context, options) {
     if (![
+        'bg-position',
         'length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector'
     ].includes(syntax.val)) {
@@ -14013,6 +14014,96 @@ function matchPropertyType(syntax, context, options) {
         return { ...result, context };
     }
     switch (syntax.val) {
+        case 'bg-position': {
+            let val;
+            let keyworkMatchCount = 0;
+            let lengthMatchCount = 0;
+            let functionMatchCount = 0;
+            let isBGX = false;
+            let isBGY = false;
+            while (token != null && keyworkMatchCount + lengthMatchCount + functionMatchCount < 3) {
+                // match one value: keyword or length
+                success = (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+                if (success) {
+                    functionMatchCount++;
+                    context.next();
+                    token = context.peek();
+                    continue;
+                }
+                if (token.typ == exports.EnumToken.WhitespaceTokenType) {
+                    context.next();
+                    token = context.peek();
+                    continue;
+                }
+                if (token.typ == exports.EnumToken.IdenTokenType) {
+                    val = token.val.toLowerCase();
+                    success = ['left', 'center', 'right', 'top', 'center', 'bottom'].includes(val);
+                    if (!success) {
+                        break;
+                    }
+                    keyworkMatchCount++;
+                    if (keyworkMatchCount > 2) {
+                        return {
+                            valid: SyntaxValidationResult.Drop,
+                            node: token,
+                            syntax,
+                            error: `expected <length>`,
+                            context
+                        };
+                    }
+                    if (val == 'left' || val == 'right') {
+                        if (isBGX) {
+                            return {
+                                valid: SyntaxValidationResult.Drop,
+                                node: token,
+                                syntax,
+                                error: `top | bottom | <length-percentage>`,
+                                context
+                            };
+                        }
+                        isBGX = true;
+                    }
+                    if (val == 'top' || val == 'bottom') {
+                        if (isBGY) {
+                            return {
+                                valid: SyntaxValidationResult.Drop,
+                                node: token,
+                                syntax,
+                                error: `expected left | right | <length-percentage>`,
+                                context
+                            };
+                        }
+                        isBGY = true;
+                    }
+                    context.next();
+                    token = context.peek();
+                    continue;
+                }
+                success = token.typ == exports.EnumToken.LengthTokenType || token.typ == exports.EnumToken.PercentageTokenType || (token.typ == exports.EnumToken.NumberTokenType && token.val == '0');
+                if (!success) {
+                    break;
+                }
+                lengthMatchCount++;
+                context.next();
+                token = context.peek();
+            }
+            if (keyworkMatchCount + lengthMatchCount + functionMatchCount == 0) {
+                return {
+                    valid: SyntaxValidationResult.Drop,
+                    node: token,
+                    syntax,
+                    error: `expected <bg-position>`,
+                    context
+                };
+            }
+            return {
+                valid: SyntaxValidationResult.Valid,
+                node: token,
+                syntax,
+                error: '',
+                context
+            };
+        }
         case 'calc-sum':
             success = (token.typ == exports.EnumToken.FunctionTokenType && mathFuncs.includes(token.val)) ||
                 // @ts-ignore

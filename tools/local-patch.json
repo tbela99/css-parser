@@ -1,0 +1,26 @@
+{
+  "atrules": {},
+  "properties": {
+    "-ms-overflow-style": {
+      "syntax": "auto | none | scrollbar | -ms-autohiding-scrollbar"
+    },
+    "-moz-user-select": {
+      "comment": "extend with auto",
+      "syntax": "| auto"
+    },
+    "text-align": {
+      "comment": "extend with -non-standard-text-align",
+      "syntax": "| <-non-standard-text-align>"
+    }
+  },
+  "types": {
+    "-non-standard-display": {
+      "comment": "extend display syntax with -ms-flexbox",
+      "syntax": "| -ms-flexbox"
+    },
+    "-non-standard-text-align": {
+      "comment": "extend text-align",
+      "syntax": "| -moz-center | -webkit-center | -webkit-match-parent"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser for node and the browser",
-  "version": "v1.1.1-alpha3",
+  "version": "v1.1.1-alpha4",
   "exports": {
     ".": "./dist/node/index.js",
     "./node": "./dist/node/index.js",
@@ -19,7 +19,6 @@
     "test": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
     "test:web": "web-test-runner \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.",
     "test:node": "mocha --reporter-options='maxDiffSize=1801920' \"test/**/node.spec.js\"",
-    "test:local": "mocha --reporter-options='maxDiffSize=1801920' \"test/**/local.spec.js\"",
     "test:cov": "c8 -x 'test/specs/**/*.js' -x dist/lib/validation/syntax.js -x 'dist/lib/validation/parser/*.js' --reporter=html --reporter=text --reporter=json-summary mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/**/node.spec.js\"",
     "test:web-cov": "web-test-runner -x 'test/specs/**/*.js' -x dist/lib/validation/syntax.js,dist/lib/validation/parser \"test/**/web.spec.js\" --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage",
     "profile": "node --enable-source-maps --inspect-brk test/inspect.js",

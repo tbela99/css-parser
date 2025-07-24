@@ -284,6 +284,8 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let result: ValidationSyntaxResult;
     let token: Token | null = null;
 
+    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${JSON.stringify({syntaxes}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
+
     for (; i < syntaxes.length; i++) {
 
         syntax = syntaxes[i];
@@ -324,6 +326,8 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         } else {
 
             if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
+
+                // console.error(`cyclic dependency: ${renderSyntax(syntax)}`);
 
                 return {
                     valid: SyntaxValidationResult.Drop,
@@ -534,6 +538,7 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
 }
 
 function match(syntax: ValidationToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
+    // console.error(`>> match(): ${renderSyntax(syntax)}\n>> ${JSON.stringify({syntax}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
 
     let success: boolean = false;
     let result: ValidationSyntaxResult;
@@ -651,15 +656,13 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 }
             }
 
-        {
+            // {
 
-            result = doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi as ValidationToken[], createContext((token as FunctionToken).chi), {
-                ...options,
-                isRepeatable: null,
-                isList: null,
-                occurence: null,
-                atLeastOnce: null
-            } as ValidationOptions);
+            // console.error(JSON.stringify({funcDef: (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi}, null, 1))
+            //
+            // const child = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken;
+
+            result = match(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken, context, options);
 
             if (result.valid == SyntaxValidationResult.Valid) {
 
@@ -668,7 +671,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 result.context = context;
                 return result;
             }
-        }
+            // }
 
             break;
 
@@ -809,6 +812,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
 
     if (![
+        'bg-position',
         'length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector'
     ].includes(syntax.val)) {
@@ -847,6 +851,126 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
     }
 
     switch (syntax.val) {
+
+        case 'bg-position': {
+
+            let val: string;
+            let keyworkMatchCount: number = 0;
+            let lengthMatchCount: number = 0;
+            let functionMatchCount: number = 0;
+            let isBGX: boolean = false;
+            let isBGY: boolean = false;
+
+            while (token != null && keyworkMatchCount + lengthMatchCount + functionMatchCount < 3) {
+
+                // match one value: keyword or length
+                success = (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+
+                if (success) {
+                    functionMatchCount++;
+                    context.next();
+                    token = context.peek() as Token;
+                    continue;
+                }
+
+                if (token.typ == EnumToken.WhitespaceTokenType) {
+
+                    context.next();
+                    token = context.peek() as Token;
+                    continue;
+                }
+
+                if (token.typ == EnumToken.IdenTokenType) {
+
+                    val = (token as IdentToken).val.toLowerCase();
+                    success = ['left', 'center', 'right', 'top', 'center', 'bottom'].includes(val);
+
+                    if (!success) {
+
+                        break;
+                    }
+
+                    keyworkMatchCount++;
+
+                    if (keyworkMatchCount > 2) {
+
+                        return {
+                            valid: SyntaxValidationResult.Drop,
+                            node: token,
+                            syntax,
+                            error: `expected <length>`,
+                            context
+                        }
+                    }
+
+                    if (val == 'left' || val == 'right') {
+
+                        if (isBGX) {
+
+                            return {
+                                valid: SyntaxValidationResult.Drop,
+                                node: token,
+                                syntax,
+                                error: `top | bottom | <length-percentage>`,
+                                context
+                            }
+                        }
+
+                        isBGX = true;
+                    }
+
+                    if (val == 'top' || val == 'bottom') {
+
+                        if (isBGY) {
+
+                            return {
+                                valid: SyntaxValidationResult.Drop,
+                                node: token,
+                                syntax,
+                                error: `expected left | right | <length-percentage>`,
+                                context
+                            }
+                        }
+
+                        isBGY = true;
+                    }
+
+                    context.next();
+                    token = context.peek() as Token;
+                    continue;
+                }
+
+                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val  == '0');
+
+                if (!success) {
+
+                    break;
+                }
+
+                lengthMatchCount++;
+                context.next();
+                token = context.peek() as Token;
+            }
+
+            if (keyworkMatchCount + lengthMatchCount + functionMatchCount == 0) {
+
+                return {
+                    valid: SyntaxValidationResult.Drop,
+                    node: token,
+                    syntax,
+                    error: `expected <bg-position>`,
+                    context
+                }
+            }
+
+            return {
+                valid: SyntaxValidationResult.Valid,
+                node: token,
+                syntax,
+                error: '',
+                context
+            }
+        }
 
         case 'calc-sum':
 
@@ -1077,7 +1201,7 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
     let result: ValidationSyntaxResult;
     let i: number;
     let success: boolean = false;
-    let isOptional:boolean;
+    let isOptional: boolean;
     const matched: ValidationSyntaxResult[] = [];
 
     for (i = 0; i < syntaxes.length; i++) {
@@ -1122,7 +1246,7 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
     let result: ValidationSyntaxResult;
     let i: number;
     let success: boolean = false;
-    let isOptional:boolean;
+    let isOptional: boolean;
 
     for (i = 0; i < syntaxes.length; i++) {
 

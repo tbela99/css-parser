@@ -181,6 +181,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
+    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${JSON.stringify({syntaxes}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -210,6 +211,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
         }
         else {
             if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
+                // console.error(`cyclic dependency: ${renderSyntax(syntax)}`);
                 return {
                     valid: SyntaxValidationResult.Drop,
                     node: token,
@@ -357,6 +359,7 @@ function matchOccurence(syntax, context, options) {
     };
 }
 function match(syntax, context, options) {
+    // console.error(`>> match(): ${renderSyntax(syntax)}\n>> ${JSON.stringify({syntax}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
     let success = false;
     let result;
     let token = context.peek();
@@ -438,20 +441,17 @@ function match(syntax, context, options) {
                     context
                 };
             }
-            {
-                result = doEvaluateSyntax((getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0]).chi, createContext(token.chi), {
-                    ...options,
-                    isRepeatable: null,
-                    isList: null,
-                    occurence: null,
-                    atLeastOnce: null
-                });
-                if (result.valid == SyntaxValidationResult.Valid) {
-                    context.next();
-                    result.context = context;
-                    return result;
-                }
+            // {
+            // console.error(JSON.stringify({funcDef: (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi}, null, 1))
+            //
+            // const child = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken;
+            result = match(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0], context, options);
+            if (result.valid == SyntaxValidationResult.Valid) {
+                context.next();
+                result.context = context;
+                return result;
             }
+            // }
             break;
         case ValidationTokenEnum.DeclarationType:
             return doEvaluateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, syntax.val), context, {
@@ -548,6 +548,7 @@ function match(syntax, context, options) {
 }
 function matchPropertyType(syntax, context, options) {
     if (![
+        'bg-position',
         'length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector'
     ].includes(syntax.val)) {
@@ -577,6 +578,96 @@ function matchPropertyType(syntax, context, options) {
         return { ...result, context };
     }
     switch (syntax.val) {
+        case 'bg-position': {
+            let val;
+            let keyworkMatchCount = 0;
+            let lengthMatchCount = 0;
+            let functionMatchCount = 0;
+            let isBGX = false;
+            let isBGY = false;
+            while (token != null && keyworkMatchCount + lengthMatchCount + functionMatchCount < 3) {
+                // match one value: keyword or length
+                success = (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+                if (success) {
+                    functionMatchCount++;
+                    context.next();
+                    token = context.peek();
+                    continue;
+                }
+                if (token.typ == EnumToken.WhitespaceTokenType) {
+                    context.next();
+                    token = context.peek();
+                    continue;
+                }
+                if (token.typ == EnumToken.IdenTokenType) {
+                    val = token.val.toLowerCase();
+                    success = ['left', 'center', 'right', 'top', 'center', 'bottom'].includes(val);
+                    if (!success) {
+                        break;
+                    }
+                    keyworkMatchCount++;
+                    if (keyworkMatchCount > 2) {
+                        return {
+                            valid: SyntaxValidationResult.Drop,
+                            node: token,
+                            syntax,
+                            error: `expected <length>`,
+                            context
+                        };
+                    }
+                    if (val == 'left' || val == 'right') {
+                        if (isBGX) {
+                            return {
+                                valid: SyntaxValidationResult.Drop,
+                                node: token,
+                                syntax,
+                                error: `top | bottom | <length-percentage>`,
+                                context
+                            };
+                        }
+                        isBGX = true;
+                    }
+                    if (val == 'top' || val == 'bottom') {
+                        if (isBGY) {
+                            return {
+                                valid: SyntaxValidationResult.Drop,
+                                node: token,
+                                syntax,
+                                error: `expected left | right | <length-percentage>`,
+                                context
+                            };
+                        }
+                        isBGY = true;
+                    }
+                    context.next();
+                    token = context.peek();
+                    continue;
+                }
+                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+                if (!success) {
+                    break;
+                }
+                lengthMatchCount++;
+                context.next();
+                token = context.peek();
+            }
+            if (keyworkMatchCount + lengthMatchCount + functionMatchCount == 0) {
+                return {
+                    valid: SyntaxValidationResult.Drop,
+                    node: token,
+                    syntax,
+                    error: `expected <bg-position>`,
+                    context
+                };
+            }
+            return {
+                valid: SyntaxValidationResult.Valid,
+                node: token,
+                syntax,
+                error: '',
+                context
+            };
+        }
         case 'calc-sum':
             success = (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val)) ||
                 // @ts-ignore
