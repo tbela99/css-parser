@@ -1611,7 +1611,7 @@ var declarations = {
 		syntax: "auto | fixed"
 	},
 	"text-align": {
-		syntax: "start | end | left | right | center | justify | match-parent"
+		syntax: "start | end | left | right | center | justify | match-parent | <-non-standard-text-align>"
 	},
 	"text-align-last": {
 		syntax: "auto | start | end | left | right | center | justify"
@@ -1842,7 +1842,7 @@ var declarations = {
 		syntax: "auto | grayscale"
 	},
 	"-moz-user-select": {
-		syntax: "none | text | all | -moz-none"
+		syntax: "none | text | all | -moz-none | auto | element | elements | text | toggle"
 	},
 	"-ms-flex-align": {
 		syntax: "start | end | center | baseline | stretch"
@@ -3608,6 +3608,9 @@ var syntaxes = {
 	},
 	"inset-area": {
 		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
+	},
+	"-non-standard-text-align": {
+		syntax: "| -moz-center | -webkit-center | -webkit-match-parent"
 	}
 };
 var selectors = {

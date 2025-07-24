@@ -168,6 +168,8 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
 
             ast = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, (node as AstDeclaration).nam);
 
+            // console.error({ast: ast.reduce((acc, curr) => acc + renderSyntax(curr), '')});
+
             if (ast != null) {
 
                 let token: Token | null = null;
@@ -198,6 +200,8 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
                 }
 
                 result = doEvaluateSyntax(ast, createContext(values), {...options, visited: new WeakMap()});
+
+                // console.error(JSON.stringify({ast, values, result}, null, 1));
 
                 if (result.valid == SyntaxValidationResult.Valid && !(result.context as Context<Token>).done()) {
 
@@ -280,9 +284,6 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let result: ValidationSyntaxResult;
     let token: Token | null = null;
 
-    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
-    // console.error(new Error('doEvaluateSyntax'));
-
     for (; i < syntaxes.length; i++) {
 
         syntax = syntaxes[i];
@@ -298,7 +299,6 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         }
 
         token = context.peek<Token>() as Token;
-        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}`, context.peek());
 
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
 
@@ -342,8 +342,6 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
             }
         }
 
-        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}\nvalid:${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n`, context.peek());
-
         if (result.valid == SyntaxValidationResult.Drop) {
 
             if (syntax.isOptional) {
@@ -357,7 +355,8 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         context.update(result.context as Context<Token>);
     }
 
-    return {
+    // @ts-ignore
+    return result ?? {
 
         valid: SyntaxValidationResult.Valid,
         node: null,
@@ -448,15 +447,11 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
             }
         }
 
-        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
-
         result = doEvaluateSyntax([syntax], createContext(tokens), {
             ...options,
             isList: false,
             occurence: false
         } as ValidationOptions);
-
-        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}\n>> result: ${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n${JSON.stringify(result, null, 1)}`);
 
         if (result.valid == SyntaxValidationResult.Valid) {
 
@@ -544,8 +539,6 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
     let result: ValidationSyntaxResult;
     let token: Token | null = context.peek() as Token;
 
-    // console.error(`>> match: ${renderSyntax(syntax)}`);
-
     switch (syntax.typ) {
 
         case ValidationTokenEnum.PipeToken:
@@ -571,7 +564,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             return {
                 valid: SyntaxValidationResult.Drop,
-                node: context.next(),
+                node: context.current(),
                 syntax,
                 error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
                 context
@@ -618,7 +611,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
         case ValidationTokenEnum.Keyword:
 
-            success = (token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType) &&
+            success = (token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType || isIdentColor(token)) &&
                 ((token as IdentToken).val == (syntax as ValidationKeywordToken).val ||
                     (syntax as ValidationKeywordToken).val.localeCompare((token as IdentToken).val, undefined, {sensitivity: 'base'}) == 0 ||
                     // config.declarations.all
@@ -958,9 +951,9 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
             success = token.typ == EnumToken.NumberTokenType;
 
-            if ('range' in syntax) {
+            if (success && 'range' in syntax) {
 
-                success = success && +(token as NumberToken).val >= +((syntax as ValidationPropertyToken).range![0] as number) && +(token as NumberToken).val <= +((syntax as ValidationPropertyToken).range![1] as number);
+                success = +(token as NumberToken).val >= +((syntax as ValidationPropertyToken).range![0] as number) && ((syntax as ValidationPropertyToken).range![1] == null || +(token as NumberToken).val <= +((syntax as ValidationPropertyToken).range![1] as number));
             }
 
             break;
@@ -1084,6 +1077,7 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
     let result: ValidationSyntaxResult;
     let i: number;
     let success: boolean = false;
+    let isOptional:boolean;
     const matched: ValidationSyntaxResult[] = [];
 
     for (i = 0; i < syntaxes.length; i++) {
@@ -1094,8 +1088,6 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
         }
 
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
-
-        // console.error(JSON.stringify({result, syntax: syntaxes[i], context, slice: context.slice()}, null, 1));
 
         if (result.valid == SyntaxValidationResult.Valid) {
 
@@ -1116,8 +1108,6 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
         matched.sort((a, b) => (a.context as Context<Token>).done() ? -1 : (b.context as Context<Token>).done() ? 1 : (b.context as Context<Token>).index - (a.context as Context<Token>).index);
     }
 
-    // console.error(JSON.stringify({matched, context, slice: context.slice(), syntaxes}, null, 1));
-
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
         node: context.current(),
@@ -1132,6 +1122,7 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
     let result: ValidationSyntaxResult;
     let i: number;
     let success: boolean = false;
+    let isOptional:boolean;
 
     for (i = 0; i < syntaxes.length; i++) {
 
@@ -1222,17 +1213,10 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
     let cp: Context<Token>;
     let j: number;
 
-    // console.error(`>> allOf:syntax: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
-    // console.error(`>> allOf:tokens: ${con.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
-    // console.error(`>> allOf:tokens:slice: ${context.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
-
     for (i = 0; i < syntax.length; i++) {
-
-        // console.error(`>> allOf:${i}:${syntax[i].reduce((acc, curr) => acc + renderSyntax(curr), '')}:current()`, con.current());
 
         if (syntax[i].length == 1 && syntax[i][0].isOptional) {
 
-            // syntax[i][0 = structuredClone(syntax[i][0]);
             syntax[i][0].isOptional = false;
 
             j = 0;
@@ -1244,7 +1228,7 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
                 syntax[i][0].isOptional = true;
                 syntax.splice(i, 1);
                 i = -1;
-                // console.error(`>> allOf:done:peek: `, con.peek());
+
                 continue;
             }
 
@@ -1275,14 +1259,9 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
             syntax[i][0].isOptional = true;
 
             // @ts-ignore
-            // console.error(`>> allOf:result valid: `, result?.valid == SyntaxValidationResult.Valid, con.current<Token>());
-
-            // @ts-ignore
             if (result?.valid == SyntaxValidationResult.Valid) {
 
                 syntax.splice(i, 1);
-                // console.error(`>> allOf:syntaxes: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
-                // console.error(`>> allOf:context:`, JSON.stringify(con, null, 1));
                 i = -1;
             }
 

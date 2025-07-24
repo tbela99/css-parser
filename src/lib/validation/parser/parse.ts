@@ -311,8 +311,6 @@ function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
 
     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
 
-        // console.error(JSON.stringify({match, val: item.value,func}, null, 1));
-
         switch (item.value.typ) {
 
             case ValidationTokenEnum.OpenParenthesis:
@@ -1307,9 +1305,9 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
             return <ValidationPropertyToken>Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
-                val: type.val,
+                val: match[1],
                 unit: EnumToken[type.typ],
-                range: [+type.val, match[4] == '\u221e' ? Infinity : +match[4]]
+                range: [+type.val, match[4] == '\u221e' ? null : +match[4]]
             }, 'pos', {...objectProperties, value: pos});
         }
 
@@ -1427,9 +1425,10 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
 
             return '[' + (token as ValidationBracketToken).chi.reduce((acc: string, curr: ValidationToken) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
 
+
         case ValidationTokenEnum.PropertyType:
 
-            return '<' + (token as ValidationPropertyToken).val + '>' + renderAttributes(token);
+            return '<' + (token as ValidationPropertyToken).val + (Array.isArray((token as ValidationPropertyToken).range) ? `[${(token as ValidationPropertyToken)?.range?.[0]}, ${(token as ValidationPropertyToken)?.range?.[1] ?? '\u221e'}]` : '') + '>' + renderAttributes(token);
 
         case ValidationTokenEnum.DeclarationType:
 

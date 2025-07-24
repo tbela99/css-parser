@@ -508,13 +508,13 @@ html, body, div, span, applet, object, iframe,
 }`));
         });
 
-        it('validation #21', function (done) {
+        it('file validation #21', function (done) {
 
             transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/full.css';
 `, {validation: true, resolveImport: true}).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
         });
 
-        it('validation #22', function (done) {
+        it('file validation #22', function (done) {
 
             transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/bootstrap.css';
 `, {

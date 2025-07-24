@@ -4294,6 +4294,8 @@ const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 const pseudoAliasMap = {
+    '-moz-center': 'center',
+    '-webkit-center': 'center',
     '-ms-grid-columns': 'grid-template-columns',
     '-ms-grid-rows': 'grid-template-rows',
     '-ms-grid-row': 'grid-row-start',
@@ -4306,6 +4308,7 @@ const pseudoAliasMap = {
     '::-ms-input-placeholder': '::placeholder',
     ':-moz-any()': ':is',
     '-moz-user-modify': 'user-modify',
+    '-webkit-match-parent': 'match-parent',
     '-moz-background-clip': 'background-clip',
     '-moz-background-origin': 'background-origin',
     '-ms-input-placeholder': 'placeholder',
@@ -4462,6 +4465,7 @@ const webkitExtensions = new Set([
     '-webkit-min-logical-height',
     '-webkit-min-logical-width',
     '-webkit-nbsp-mode',
+    '-webkit-match-parent',
     '-webkit-perspective-origin-x',
     '-webkit-perspective-origin-y',
     '-webkit-rtl-ordering',
@@ -9014,7 +9018,7 @@ var declarations = {
 		syntax: "auto | fixed"
 	},
 	"text-align": {
-		syntax: "start | end | left | right | center | justify | match-parent"
+		syntax: "start | end | left | right | center | justify | match-parent | <-non-standard-text-align>"
 	},
 	"text-align-last": {
 		syntax: "auto | start | end | left | right | center | justify"
@@ -9245,7 +9249,7 @@ var declarations = {
 		syntax: "auto | grayscale"
 	},
 	"-moz-user-select": {
-		syntax: "none | text | all | -moz-none"
+		syntax: "none | text | all | -moz-none | auto | element | elements | text | toggle"
 	},
 	"-ms-flex-align": {
 		syntax: "start | end | center | baseline | stretch"
@@ -11011,6 +11015,9 @@ var syntaxes = {
 	},
 	"inset-area": {
 		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
+	},
+	"-non-standard-text-align": {
+		syntax: "| -moz-center | -webkit-center | -webkit-match-parent"
 	}
 };
 var selectors = {
@@ -11834,7 +11841,6 @@ function matchParens(syntax, iterator) {
     let items = [];
     let match = 0;
     while ((item = iterator.next()) && !item.done) {
-        // console.error(JSON.stringify({match, val: item.value,func}, null, 1));
         switch (item.value.typ) {
             case ValidationTokenEnum.OpenParenthesis:
                 if (match > 0) {
@@ -12525,9 +12531,9 @@ function getTokenType$1(token, position, currentPosition) {
             const type = getTokenType(match[3]);
             return Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
-                val: type.val,
+                val: match[1],
                 unit: exports.EnumToken[type.typ],
-                range: [+type.val, match[4] == '\u221e' ? Infinity : +match[4]]
+                range: [+type.val, match[4] == '\u221e' ? null : +match[4]]
             }, 'pos', { ...objectProperties, value: pos });
         }
         return Object.defineProperty({
@@ -12598,7 +12604,7 @@ function renderSyntax(token, parent) {
         case ValidationTokenEnum.Bracket:
             return '[' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
         case ValidationTokenEnum.PropertyType:
-            return '<' + token.val + '>' + renderAttributes(token);
+            return '<' + token.val + (Array.isArray(token.range) ? `[${token?.range?.[0]}, ${token?.range?.[1] ?? '\u221e'}]` : '') + '>' + renderAttributes(token);
         case ValidationTokenEnum.DeclarationType:
             return "<'" + token.val + "'>" + renderAttributes(token);
         case ValidationTokenEnum.Number:
@@ -13532,6 +13538,7 @@ function evaluateSyntax(node, options) {
                 break;
             }
             ast = getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, node.nam);
+            // console.error({ast: ast.reduce((acc, curr) => acc + renderSyntax(curr), '')});
             if (ast != null) {
                 let token = null;
                 const values = node.val.slice();
@@ -13551,6 +13558,7 @@ function evaluateSyntax(node, options) {
                     }
                 }
                 result = doEvaluateSyntax(ast, createContext(values), { ...options, visited: new WeakMap() });
+                // console.error(JSON.stringify({ast, values, result}, null, 1));
                 if (result.valid == SyntaxValidationResult.Valid && !result.context.done()) {
                     let token = null;
                     while ((token = result.context.next()) != null) {
@@ -13609,8 +13617,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
-    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}`, context.peek());
-    // console.error(new Error('doEvaluateSyntax'));
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -13620,7 +13626,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
             break;
         }
         token = context.peek();
-        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}`, context.peek());
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
             if (context.peek()?.typ == exports.EnumToken.WhitespaceTokenType) {
                 context.next();
@@ -13654,7 +13659,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
                 clearVisited(token, syntax, 'doEvaluateSyntax', options);
             }
         }
-        // console.error(`>> doEvaluateSyntax: ${ renderSyntax(syntax)}\nvalid:${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n`, context.peek());
         if (result.valid == SyntaxValidationResult.Drop) {
             if (syntax.isOptional) {
                 continue;
@@ -13663,7 +13667,8 @@ function doEvaluateSyntax(syntaxes, context, options) {
         }
         context.update(result.context);
     }
-    return {
+    // @ts-ignore
+    return result ?? {
         valid: SyntaxValidationResult.Valid,
         node: null,
         syntax: syntaxes[i - 1],
@@ -13728,13 +13733,11 @@ function matchList(syntax, context, options) {
                 context
             };
         }
-        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
         result = doEvaluateSyntax([syntax], createContext(tokens), {
             ...options,
             isList: false,
             occurence: false
         });
-        // console.error(`>> matchList: ${tokens.reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}\n>> result: ${result.valid == SyntaxValidationResult.Valid ? 'valid' : 'invalid'}\n${JSON.stringify(result, null, 1)}`);
         if (result.valid == SyntaxValidationResult.Valid) {
             context = con.clone();
             count++;
@@ -13793,7 +13796,6 @@ function match(syntax, context, options) {
     let success = false;
     let result;
     let token = context.peek();
-    // console.error(`>> match: ${renderSyntax(syntax)}`);
     switch (syntax.typ) {
         case ValidationTokenEnum.PipeToken:
             return someOf(syntax.chi, context, options);
@@ -13808,7 +13810,7 @@ function match(syntax, context, options) {
             }
             return {
                 valid: SyntaxValidationResult.Drop,
-                node: context.next(),
+                node: context.current(),
                 syntax,
                 error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek())}'`,
                 context
@@ -13843,7 +13845,7 @@ function match(syntax, context, options) {
     }
     switch (syntax.typ) {
         case ValidationTokenEnum.Keyword:
-            success = (token.typ == exports.EnumToken.IdenTokenType || token.typ == exports.EnumToken.DashedIdenTokenType) &&
+            success = (token.typ == exports.EnumToken.IdenTokenType || token.typ == exports.EnumToken.DashedIdenTokenType || isIdentColor(token)) &&
                 (token.val == syntax.val ||
                     syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 ||
                     // config.declarations.all
@@ -14079,8 +14081,8 @@ function matchPropertyType(syntax, context, options) {
         case 'number':
         case 'number-token':
             success = token.typ == exports.EnumToken.NumberTokenType;
-            if ('range' in syntax) {
-                success = success && +token.val >= +syntax.range[0] && +token.val <= +syntax.range[1];
+            if (success && 'range' in syntax) {
+                success = +token.val >= +syntax.range[0] && (syntax.range[1] == null || +token.val <= +syntax.range[1]);
             }
             break;
         case 'angle':
@@ -14171,7 +14173,6 @@ function someOf(syntaxes, context, options) {
             context.next();
         }
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
-        // console.error(JSON.stringify({result, syntax: syntaxes[i], context, slice: context.slice()}, null, 1));
         if (result.valid == SyntaxValidationResult.Valid) {
             success = true;
             if (result.context.done()) {
@@ -14184,7 +14185,6 @@ function someOf(syntaxes, context, options) {
         // pick the best match
         matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
     }
-    // console.error(JSON.stringify({matched, context, slice: context.slice(), syntaxes}, null, 1));
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
         node: context.current(),
@@ -14257,13 +14257,8 @@ function allOf(syntax, context, options) {
     const con = createContext(tokens);
     let cp;
     let j;
-    // console.error(`>> allOf:syntax: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
-    // console.error(`>> allOf:tokens: ${con.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
-    // console.error(`>> allOf:tokens:slice: ${context.slice<Token>().reduce((acc, curr, index) => acc + (index > 0 ? ' ' : '') + renderToken(curr), '')}`);
     for (i = 0; i < syntax.length; i++) {
-        // console.error(`>> allOf:${i}:${syntax[i].reduce((acc, curr) => acc + renderSyntax(curr), '')}:current()`, con.current());
         if (syntax[i].length == 1 && syntax[i][0].isOptional) {
-            // syntax[i][0 = structuredClone(syntax[i][0]);
             syntax[i][0].isOptional = false;
             j = 0;
             cp = con.clone();
@@ -14272,7 +14267,6 @@ function allOf(syntax, context, options) {
                 syntax[i][0].isOptional = true;
                 syntax.splice(i, 1);
                 i = -1;
-                // console.error(`>> allOf:done:peek: `, con.peek());
                 continue;
             }
             while (!cp.done()) {
@@ -14293,12 +14287,8 @@ function allOf(syntax, context, options) {
             }
             syntax[i][0].isOptional = true;
             // @ts-ignore
-            // console.error(`>> allOf:result valid: `, result?.valid == SyntaxValidationResult.Valid, con.current<Token>());
-            // @ts-ignore
             if (result?.valid == SyntaxValidationResult.Valid) {
                 syntax.splice(i, 1);
-                // console.error(`>> allOf:syntaxes: ${syntax.reduce((acc, curr, index) => acc + (index > 0 ? ' && ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`);
-                // console.error(`>> allOf:context:`, JSON.stringify(con, null, 1));
                 i = -1;
             }
             continue;

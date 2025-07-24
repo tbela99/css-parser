@@ -1612,7 +1612,7 @@
    "syntax": "auto | fixed"
   },
   "text-align": {
-   "syntax": "start | end | left | right | center | justify | match-parent | -moz-center | -webkit-center | -webkit-match-parent"
+   "syntax": "start | end | left | right | center | justify | match-parent | <-non-standard-text-align>"
   },
   "text-align-last": {
    "syntax": "auto | start | end | left | right | center | justify"
