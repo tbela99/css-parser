@@ -15,8 +15,17 @@
      */
     exports.ValidationLevel = void 0;
     (function (ValidationLevel) {
+        /**
+         * disable validation
+         */
         ValidationLevel[ValidationLevel["None"] = 0] = "None";
+        /**
+         * validate selectors and at-rules
+         */
         ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+        /**
+         * validate selectors, at-rules and declarations
+         */
         ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
     })(exports.ValidationLevel || (exports.ValidationLevel = {}));
     /**
@@ -20923,8 +20932,7 @@
                         }
                         let rule = selector.map(s => {
                             if (s[0] == '&') {
-                                // @ts-ignore
-                                s[0] = node.optimized.optimized[0];
+                                s.splice(0, 1, ...node.optimized.optimized);
                             }
                             return s.join('');
                         }).join(',');
