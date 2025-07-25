@@ -487,7 +487,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                         return acc;
 
                     }, []);
-
+``
                     if (!wrap) {
 
                         wrap = selector.some((s: string[]) => s[0] != '&');
@@ -497,8 +497,7 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
 
                         if (s[0] == '&') {
 
-                            // @ts-ignore
-                            s[0] = node.optimized.optimized[0];
+                            s.splice(0, 1, ...(node as AstRule)!.optimized!.optimized);
                         }
 
                         return s.join('');
