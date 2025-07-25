@@ -586,6 +586,29 @@ article {
                 expandNestingRules: false
             }).then(result => expect(result.code).equals(`article{color:red;&{color:blue}&{color:green}}`));
         });
+
+        it('no nested rules #25', function () {
+
+            const css = `
+
+table.colortable td.c {
+ text-transform:uppercase;
+}
+table.colortable td:first-child, table.colortable td:first-child+td {
+ border:1px solid black;
+}
+`;
+
+            return transform(css, {
+                beautify: true,
+                nestingRules: false
+            }).then(result => expect(result.code).equals(`table.colortable td.c {
+ text-transform: uppercase
+}
+table.colortable td:first-child,table.colortable td:first-child+td {
+ border: 1px solid #000
+}`));
+        });
     });
 
 }

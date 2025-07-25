@@ -347,8 +347,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     }
                     let rule = selector.map(s => {
                         if (s[0] == '&') {
-                            // @ts-ignore
-                            s[0] = node.optimized.optimized[0];
+                            s.splice(0, 1, ...node.optimized.optimized);
                         }
                         return s.join('');
                     }).join(',');

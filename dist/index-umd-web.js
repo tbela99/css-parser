@@ -266,7 +266,7 @@
     const k = Math.pow(29, 3) / Math.pow(3, 3);
     const e = Math.pow(6, 3) / Math.pow(29, 3);
     // color module v4
-    const systemColors = new Set(['ActiveText', 'ButtonBorder', 'ButtonFace', 'ButtonText', 'Canvas', 'CanvasText', 'Field', 'FieldText', 'GrayText', 'Highlight', 'HighlightText', 'LinkText', 'Mark', 'MarkText', 'VisitedText'].map(m => m.toLowerCase()));
+    const systemColors = new Set(['ActiveText', 'ButtonBorder', 'ButtonFace', 'ButtonText', 'Canvas', 'CanvasText', 'Field', 'FieldText', 'GrayText', 'Highlight', 'HighlightText', 'LinkText', 'Mark', 'MarkText', 'VisitedText', '-webkit-focus-ring-color'].map(m => m.toLowerCase()));
     // deprecated
     const deprecatedSystemColors = new Set(['ActiveBorder', 'ActiveCaption', 'AppWorkspace', 'Background', 'ButtonFace', 'ButtonHighlight', 'ButtonShadow', 'ButtonText', 'CaptionText', 'GrayText', 'Highlight', 'HighlightText', 'InactiveBorder', 'InactiveCaption', 'InactiveCaptionText', 'InfoBackground', 'InfoText', 'Menu', 'MenuText', 'Scrollbar', 'ThreeDDarkShadow', 'ThreeDFace', 'ThreeDHighlight', 'ThreeDLightShadow', 'ThreeDShadow', 'Window', 'WindowFrame', 'WindowText'].map(t => t.toLowerCase()));
     // name to color
@@ -13429,7 +13429,6 @@
                     break;
                 }
                 ast = getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, node.nam);
-                // console.error({ast: ast.reduce((acc, curr) => acc + renderSyntax(curr), '')});
                 if (ast != null) {
                     let token = null;
                     const values = node.val.slice();
@@ -13449,7 +13448,6 @@
                         }
                     }
                     result = doEvaluateSyntax(ast, createContext(values), { ...options, visited: new WeakMap() });
-                    // console.error(JSON.stringify({ast, values, result}, null, 1));
                     if (result.valid == SyntaxValidationResult.Valid && !result.context.done()) {
                         let token = null;
                         while ((token = result.context.next()) != null) {
@@ -13508,7 +13506,6 @@
         let i = 0;
         let result;
         let token = null;
-        // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${JSON.stringify({syntaxes}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
         for (; i < syntaxes.length; i++) {
             syntax = syntaxes[i];
             if (context.done()) {
@@ -13538,7 +13535,6 @@
             }
             else {
                 if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
-                    // console.error(`cyclic dependency: ${renderSyntax(syntax)}`);
                     return {
                         valid: SyntaxValidationResult.Drop,
                         node: token,
@@ -13686,7 +13682,6 @@
         };
     }
     function match(syntax, context, options) {
-        // console.error(`>> match(): ${renderSyntax(syntax)}\n>> ${JSON.stringify({syntax}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
         let success = false;
         let result;
         let token = context.peek();
@@ -13768,17 +13763,12 @@
                         context
                     };
                 }
-                // {
-                // console.error(JSON.stringify({funcDef: (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi}, null, 1))
-                //
-                // const child = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken;
                 result = match(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0], context, options);
                 if (result.valid == SyntaxValidationResult.Valid) {
                     context.next();
                     result.context = context;
                     return result;
                 }
-                // }
                 break;
             case ValidationTokenEnum.DeclarationType:
                 return doEvaluateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, syntax.val), context, {
@@ -13938,7 +13928,7 @@
                                 valid: SyntaxValidationResult.Drop,
                                 node: token,
                                 syntax,
-                                error: `expected <length>`,
+                                error: `expected <length-percentage>`,
                                 context
                             };
                         }
@@ -14121,7 +14111,6 @@
             ['length-percentage', 'length', 'number', 'number-token', 'angle', 'percentage', 'dimension'].includes(syntax.val)) {
             if (!success) {
                 success = mathFuncs.includes(token.val.toLowerCase()) &&
-                    // (token as FunctionToken).val + '()' in config[ValidationSyntaxGroupEnum.Syntaxes] &&
                     doEvaluateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, token.val + '()')?.[0]?.chi ?? [], createContext(token.chi), {
                         ...options,
                         isRepeatable: null,
@@ -21050,8 +21039,7 @@
                         }
                         let rule = selector.map(s => {
                             if (s[0] == '&') {
-                                // @ts-ignore
-                                s[0] = node.optimized.optimized[0];
+                                s.splice(0, 1, ...node.optimized.optimized);
                             }
                             return s.join('');
                         }).join(',');
