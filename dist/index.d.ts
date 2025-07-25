@@ -1170,7 +1170,6 @@ interface MinifyOptions {
 
     minify?: boolean;
     parseColor?: boolean;
-    convertColor?: boolean;
     nestingRules?: boolean;
     expandNestingRules?: boolean;
     removeDuplicateDeclarations?: boolean;
@@ -1258,15 +1257,20 @@ export declare interface TransformOptions extends ParserOptions, RenderOptions {
 
 }
 
+export declare interface ParseResultStats {
+    src: string;
+    bytesIn: number;
+    importedBytesIn: number;
+    parse: string;
+    minify: string;
+    total: string;
+    imports: ParseResultStats[]
+}
+
 export declare interface ParseResult {
     ast: AstRuleStyleSheet;
     errors: ErrorDescription[];
-    stats: {
-        bytesIn: number;
-        parse: string;
-        minify: string;
-        total: string;
-    }
+    stats: ParseResultStats
 }
 
 export declare interface RenderResult {
@@ -1281,12 +1285,15 @@ export declare interface RenderResult {
 export declare interface TransformResult extends ParseResult, RenderResult {
 
     stats: {
+        src: string;
         bytesIn: number;
         bytesOut: number;
+        importedBytesIn: number;
         parse: string;
         minify: string;
         render: string;
         total: string;
+        imports: ParseResultStats[];
     }
 }
 

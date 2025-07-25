@@ -45,22 +45,9 @@ import {
     ValidationWhitespaceToken
 } from "./index.ts";
 import {isIdent, isPseudo} from '../../syntax/index.ts';
-
-export enum WalkValidationTokenEnum {
-
-    IgnoreChildren,
-    IgnoreNode,
-    IgnoreAll,
-}
-
-export enum WalkValidationTokenKeyTypeEnum {
-
-    Array = 'array',
-    Children = 'chi',
-    Left = 'l',
-    Right = 'r',
-    Prelude = 'prelude',
-}
+import {getTokenType as getTokenType$1} from '../../parser/index.ts';
+import type {DimensionToken} from "../../../@types/token.d.ts";
+import {EnumToken} from "../../ast/index.ts";
 
 declare type ValidationContext =
     ValidationRootToken
@@ -90,20 +77,7 @@ const objectProperties = {
     configurable: true
 }
 
-export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/138.0'}}
-// syntaxes: keyword | <'property'> | <function>
-
-// "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
-// ""
-// : "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?
-// ""
-// false | true
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// false | true | green | pipe
-// keyword | <'property'> | <function>
-// [<dashed-ident> || <try-tactic>]
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]
+export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0'}}
 
 function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}, currentPosition: Position = {
     ind: -1,
@@ -336,8 +310,6 @@ function matchParens(syntax: string, iterator: Iterator<ValidationTokenIteratorV
     let match: number = 0;
 
     while ((item = iterator.next() as ValidationTokenIteratorValue) && !item.done) {
-
-        // console.error(JSON.stringify({match, val: item.value,func}, null, 1));
 
         switch (item.value.typ) {
 
@@ -1310,7 +1282,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
         // <number [1,1000]>
         // <length [0,∞]>
-        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+),(([0-9]+)|∞)\])?>/);
+        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+[a-zA-Z]*),(([0-9]+[a-zA-Z]*)|∞)\])?>/);
 
         if (match == null) {
 
@@ -1329,10 +1301,13 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
 
         if (match[2] != null) {
 
+            const type = getTokenType$1(match[3]) as DimensionToken;
+
             return <ValidationPropertyToken>Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
                 val: match[1],
-                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
+                unit: EnumToken[type.typ],
+                range: [+type.val, match[4] == '\u221e' ? null : +match[4]]
             }, 'pos', {...objectProperties, value: pos});
         }
 
@@ -1450,9 +1425,10 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
 
             return '[' + (token as ValidationBracketToken).chi.reduce((acc: string, curr: ValidationToken) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
 
+
         case ValidationTokenEnum.PropertyType:
 
-            return '<' + (token as ValidationPropertyToken).val + '>' + renderAttributes(token);
+            return '<' + (token as ValidationPropertyToken).val + (Array.isArray((token as ValidationPropertyToken).range) ? `[${(token as ValidationPropertyToken)?.range?.[0]}, ${(token as ValidationPropertyToken)?.range?.[1] ?? '\u221e'}]` : '') + '>' + renderAttributes(token);
 
         case ValidationTokenEnum.DeclarationType:
 

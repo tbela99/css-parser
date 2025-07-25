@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.1
+
+- [x] fix bug when css nesting is disabled #89
+- [x] validation rules update #87
+
 ## v1.1.0
 
 - [x] inline sourcemap
