@@ -40,6 +40,8 @@ const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];
 // https://developer.mozilla.org/en-US/docs/Web/CSS/WebKit_Extensions
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 const pseudoAliasMap = {
+    '-moz-center': 'center',
+    '-webkit-center': 'center',
     '-ms-grid-columns': 'grid-template-columns',
     '-ms-grid-rows': 'grid-template-rows',
     '-ms-grid-row': 'grid-row-start',
@@ -52,6 +54,7 @@ const pseudoAliasMap = {
     '::-ms-input-placeholder': '::placeholder',
     ':-moz-any()': ':is',
     '-moz-user-modify': 'user-modify',
+    '-webkit-match-parent': 'match-parent',
     '-moz-background-clip': 'background-clip',
     '-moz-background-origin': 'background-origin',
     '-ms-input-placeholder': 'placeholder',
@@ -208,6 +211,7 @@ const webkitExtensions = new Set([
     '-webkit-min-logical-height',
     '-webkit-min-logical-width',
     '-webkit-nbsp-mode',
+    '-webkit-match-parent',
     '-webkit-perspective-origin-x',
     '-webkit-perspective-origin-y',
     '-webkit-rtl-ordering',

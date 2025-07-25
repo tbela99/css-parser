@@ -56,6 +56,8 @@ export const pseudoElements: string[] = [':before', ':after', ':first-line', ':f
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Mozilla_Extensions
 export const pseudoAliasMap: Record<string, string> =
     {
+        '-moz-center': 'center',
+        '-webkit-center': 'center',
         '-ms-grid-columns': 'grid-template-columns',
         '-ms-grid-rows': 'grid-template-rows',
         '-ms-grid-row': 'grid-row-start',
@@ -68,6 +70,7 @@ export const pseudoAliasMap: Record<string, string> =
         '::-ms-input-placeholder': '::placeholder',
         ':-moz-any()': ':is',
         '-moz-user-modify': 'user-modify',
+        '-webkit-match-parent': 'match-parent',
         '-moz-background-clip': 'background-clip',
         '-moz-background-origin': 'background-origin',
         '-ms-input-placeholder': 'placeholder',
@@ -225,6 +228,7 @@ export const webkitExtensions = new Set([
     '-webkit-min-logical-height',
     '-webkit-min-logical-width',
     '-webkit-nbsp-mode',
+    '-webkit-match-parent',
     '-webkit-perspective-origin-x',
     '-webkit-perspective-origin-y',
     '-webkit-rtl-ordering',

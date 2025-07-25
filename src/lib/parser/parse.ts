@@ -88,6 +88,7 @@ import type {
     ParensStartToken,
     ParensToken,
     ParseResult,
+    ParseResultStats,
     ParserOptions,
     ParseTokenOptions,
     PercentageToken,
@@ -191,12 +192,14 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
     const errors: ErrorDescription[] = [];
     const src: string = <string>options.src;
     const stack: Array<AstNode | AstComment> = [];
-    const stats = {
+    const stats: ParseResultStats = {
+        src: options.src ?? '',
         bytesIn: 0,
         importedBytesIn: 0,
         parse: `0ms`,
         minify: `0ms`,
-        total: `0ms`
+        total: `0ms`,
+        imports: []
     };
 
     let ast: AstRuleStyleSheet = {
@@ -258,7 +261,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (item.token == ';' || item.token == '{') {
 
-            node = parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            node = parseNode(tokens, context, options, errors, src, map, rawTokens);
             rawTokens.length = 0;
 
             if (node != null) {
@@ -315,7 +318,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
             map = new Map;
         } else if (item.token == '}') {
 
-            parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+            parseNode(tokens, context, options, errors, src, map, rawTokens);
             rawTokens.length = 0;
 
             if (context.loc != null) {
@@ -349,7 +352,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
     if (tokens.length > 0) {
 
-        node = parseNode(tokens, context, stats, options, errors, src, map, rawTokens);
+        node = parseNode(tokens, context, options, errors, src, map, rawTokens);
         rawTokens.length = 0;
 
         if (node != null) {
@@ -387,8 +390,6 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                 const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
 
-                    // console.error({url, src: options.src, resolved: options.resolve!(url, options.src as string)})
-
                     return doParse(src, Object.assign({}, options, {
                         minify: false,
                         setParent: false,
@@ -397,9 +398,12 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                 });
 
                 stats.importedBytesIn += root.stats.bytesIn;
+                stats.imports.push(root.stats);
+
                 node.parent!.chi.splice(node.parent!.chi.indexOf(node), 1, ...root.ast.chi);
 
                 if (root.errors.length > 0) {
+
                     errors.push(...root.errors);
                 }
 
@@ -534,10 +538,7 @@ function getLastNode(context: AstRuleList | AstInvalidRule | AstInvalidAtRule): 
     return null;
 }
 
-function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, stats: {
-    bytesIn: number;
-    importedBytesIn: number;
-}, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Location>, rawTokens: TokenizeResult[]): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframAtRule | AstInvalidRule | AstDeclaration | AstComment | null {
+function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidRule | AstInvalidAtRule, options: ParserOptions, errors: ErrorDescription[], src: string, map: Map<Token, Location>, rawTokens: TokenizeResult[]): AstRule | AstAtRule | AstKeyFrameRule | AstKeyframAtRule | AstInvalidRule | AstDeclaration | AstComment | null {
 
     let tokens: Token[] = [] as Token[];
 
@@ -804,62 +805,64 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
         // if (options.validation) {
 
-            let isValid: boolean = true;
+        let isValid: boolean = true;
 
-            if (node.nam == 'else') {
+        if (node.nam == 'else') {
 
-                const prev = getLastNode(context);
+            const prev = getLastNode(context);
 
-                if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes((<AstAtRule>prev).nam)) {
+            if (prev != null && prev.typ == EnumToken.AtRuleNodeType && ['when', 'else'].includes((<AstAtRule>prev).nam)) {
 
-                    if ((<AstAtRule>prev).nam == 'else') {
+                if ((<AstAtRule>prev).nam == 'else') {
 
-                        isValid = Array.isArray((<AstAtRule>prev).tokens) && ((<AstAtRule>prev).tokens as Token[]).length > 0;
-                    }
-                } else {
-
-                    isValid = false;
+                    isValid = Array.isArray((<AstAtRule>prev).tokens) && ((<AstAtRule>prev).tokens as Token[]).length > 0;
                 }
-            }
-
-            // @ts-ignore
-            const valid: ValidationResult = options.validation == ValidationLevel.None ? {
-                valid: SyntaxValidationResult.Valid,
-                error: '',
-                matches: [] ,
-                node,
-                syntax: '@' + node.nam
-            } as ValidationResult : isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(<AstKeyframAtRule>node, options, context as AstNode) : validateAtRule(node, options, context as AstNode)) : {
-                valid: SyntaxValidationResult.Drop,
-                node,
-                matches: [] as Token[],
-                syntax: '@' + node.nam,
-                error: '@' + node.nam + ' not allowed here',
-                tokens
-            } as ValidationResult;
-
-            if (valid.valid == SyntaxValidationResult.Drop) {
-
-                errors.push({
-                    action: 'drop',
-                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
-                    // @ts-ignore
-                    location: {src, ...(map.get(valid.node) ?? location)}
-                });
-
-                // @ts-ignore
-                node.typ = EnumToken.InvalidAtRuleTokenType;
             } else {
 
-                node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {
-                    minify: false,
-                    removeComments: true
-                }), '');
+                isValid = false;
             }
-        // }
+        }
+
+        // @ts-ignore
+        const valid: ValidationResult = options.validation == ValidationLevel.None ? {
+            valid: SyntaxValidationResult.Valid,
+            error: '',
+            matches: [],
+            node,
+            syntax: '@' + node.nam
+        } as ValidationResult : isValid ? (node.typ == EnumToken.KeyframeAtRuleNodeType ? validateAtRuleKeyframes(<AstKeyframAtRule>node, options, context as AstNode) : validateAtRule(node, options, context as AstNode)) : {
+            valid: SyntaxValidationResult.Drop,
+            node,
+            matches: [] as Token[],
+            syntax: '@' + node.nam,
+            error: '@' + node.nam + ' not allowed here',
+            tokens
+        } as ValidationResult;
+
+        if (valid.valid == SyntaxValidationResult.Drop) {
+
+            errors.push({
+                action: 'drop',
+                message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                // @ts-ignore
+                location: {src, ...(map.get(valid.node) ?? location)}
+            });
+
+            // @ts-ignore
+            node.typ = EnumToken.InvalidAtRuleTokenType;
+        } else {
+
+            node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {
+                minify: false,
+                removeComments: true
+            }), '');
+        }
 
         context.chi!.push(node);
-        Object.defineProperties(node, {parent:{...definedPropertySettings, value: context}, validSyntax: {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid}});
+        Object.defineProperties(node, {
+            parent: {...definedPropertySettings, value: context},
+            validSyntax: {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid}
+        });
 
         return node;
     } else {
@@ -915,11 +918,9 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                     if (t == ',') {
 
                         acc.push([]);
-                        // uniqTokens.push([]);
                     } else {
 
                         acc[acc.length - 1].push(t);
-                        // uniqTokens[uniqTokens.length - 1].push(curr);
                     }
                     return acc;
                 }, [[]]).reduce((acc: Map<string, string[]>, curr: string[]) => {
@@ -964,48 +965,32 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             context.chi.push(node);
             Object.defineProperty(node, 'parent', {...definedPropertySettings, value: context});
 
-            // if (options.validation) {
+            // @ts-ignore
+            const valid: ValidationResult = options.validation == ValidationLevel.None ? {
+                valid: SyntaxValidationResult.Valid,
+                node,
+                matches: [], syntax: null,
+                error: null
+            } as ValidationResult : ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context as AstNode);
+
+            if (valid.valid != SyntaxValidationResult.Valid) {
 
                 // @ts-ignore
-                const valid: ValidationResult = options.validation == ValidationLevel.None ? {
-                    valid: SyntaxValidationResult.Valid,
-                    node,
-                    matches: [], syntax: null,
-                    error: null
-                } as ValidationResult : ruleType == EnumToken.KeyFrameRuleNodeType ? validateKeyframeSelector(tokens, options) : validateSelector(tokens, options, context as AstNode);
+                node.typ = EnumToken.InvalidRuleTokenType;
+                node.sel = tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), '');
 
-                if (valid.valid != SyntaxValidationResult.Valid) {
-
+                errors.push({
+                    action: 'drop',
+                    message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
                     // @ts-ignore
-                    node.typ = EnumToken.InvalidRuleTokenType;
-                    node.sel = tokens.reduce((acc: string, curr: Token) => acc + renderToken(curr, {minify: false}), '');
+                    location
+                });
+            }
 
-                    errors.push({
-                        action: 'drop',
-                        message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
-                        // @ts-ignore
-                        location
-                    });
-                }
-            // } else {
-            //
-            //     Object.defineProperty(node, 'tokens', {
-            //         ...definedPropertySettings,
-            //         enumerable: false,
-            //         value: tokens.slice()
-            //     });
-            //
-            //     let raw: string[][] = [...uniq.values()];
-            //
-            //     Object.defineProperty(node, 'raw', {
-            //         enumerable: false,
-            //         configurable: true,
-            //         writable: true,
-            //         value: raw
-            //     });
-            // }
-
-            Object.defineProperty(node, 'validSyntax', {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid});
+            Object.defineProperty(node, 'validSyntax', {
+                ...definedPropertySettings,
+                value: valid.valid == SyntaxValidationResult.Valid
+            });
             return node;
         } else {
 
@@ -1074,9 +1059,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             }
                         }
 
-                        tokens.splice(i, 0, {typ: EnumToken.ColonTokenType});
-                        // i++;
-                        i--;
+                        tokens.splice(i--, 0, {typ: EnumToken.ColonTokenType});
                         continue;
                     }
 
@@ -1199,15 +1182,19 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
             if (result != null) {
 
-                // console.error(doRender(result), result.val, location);
-
                 if (options.validation == ValidationLevel.All) {
 
-                    const valid: ValidationSyntaxResult = evaluateSyntax(result, options, context as AstNode);
+                    const valid: ValidationSyntaxResult = evaluateSyntax(result, options);
 
-                    Object.defineProperty(result, 'validSyntax', {...definedPropertySettings, value: valid.valid == SyntaxValidationResult.Valid});
+                    Object.defineProperty(result, 'validSyntax', {
+                        ...definedPropertySettings,
+                        value: valid.valid == SyntaxValidationResult.Valid
+                    });
 
                     if (valid.valid == SyntaxValidationResult.Drop) {
+
+                        // console.error({result, valid});
+                        // console.error(JSON.stringify({result, options, valid}, null, 1));
 
                         errors.push(<ErrorDescription>{
                             action: 'drop',
@@ -1718,7 +1705,7 @@ export function parseString(src: string, options: { location: boolean } = {locat
     }, [] as Token[]));
 }
 
-function getTokenType(val: string, hint?: EnumToken): Token {
+export function getTokenType(val: string, hint?: EnumToken): Token {
 
     if (hint != null) {
 
@@ -2265,14 +2252,6 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     if ((t as FunctionURLToken).chi[0].val.slice(1, 5) != 'data:' && urlTokenMatcher.test(value)) {
                         // @ts-ignore
                         (t as FunctionURLToken).chi[0].typ = EnumToken.UrlTokenTokenType;
-
-
-                        // console.error({t, v: t.chi[0], value,
-                        //     src: options.src,
-                        //     resolved: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : null,
-                        //     val2: options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value});
-                        //
-                        // console.error(new Error('resolved'));
 
                         // @ts-ignore
                         (t as FunctionURLToken).chi[0].val = options.src !== '' && options.resolveUrls ? options.resolve(value, options.src).absolute : value;

@@ -10,8 +10,17 @@ export enum SyntaxValidationResult {
  */
 export enum ValidationLevel {
 
+    /**
+     * disable validation
+     */
     None,
+    /**
+     * validate selectors and at-rules
+     */
     Default, // selectors + at-rules
+    /**
+     * validate selectors, at-rules and declarations
+     */
     All // selectors + at-rules + declarations
 }
 

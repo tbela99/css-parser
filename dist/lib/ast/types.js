@@ -9,8 +9,17 @@ var SyntaxValidationResult;
  */
 var ValidationLevel;
 (function (ValidationLevel) {
+    /**
+     * disable validation
+     */
     ValidationLevel[ValidationLevel["None"] = 0] = "None";
+    /**
+     * validate selectors and at-rules
+     */
     ValidationLevel[ValidationLevel["Default"] = 1] = "Default";
+    /**
+     * validate selectors, at-rules and declarations
+     */
     ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
 })(ValidationLevel || (ValidationLevel = {}));
 /**

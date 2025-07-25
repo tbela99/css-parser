@@ -1,3 +1,5 @@
+import {EnumToken} from "../../ast/index.ts";
+
 export enum ValidationTokenEnum {
 
     Root,
@@ -253,6 +255,7 @@ export interface ValidationDeclarationToken extends ValidationToken {
 export interface ValidationPropertyToken extends ValidationToken {
 
     typ: ValidationTokenEnum.PropertyType;
+    unit?: keyof EnumToken;
     range?: [number, number];
     val: string;
 }

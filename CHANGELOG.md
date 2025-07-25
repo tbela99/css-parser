@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.1
+
+- [x] fix validation issues
+
 ## v1.1.0
 
 - [x] inline sourcemap

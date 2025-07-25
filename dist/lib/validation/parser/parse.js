@@ -1,20 +1,14 @@
 import { ValidationTokenEnum } from './types.js';
 import { isIdent, isPseudo } from '../../syntax/syntax.js';
+import { getTokenType as getTokenType$1 } from '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
+import { EnumToken } from '../../ast/types.js';
+import '../../ast/minify.js';
+import '../../ast/walk.js';
+import '../../renderer/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
 
-var WalkValidationTokenEnum;
-(function (WalkValidationTokenEnum) {
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreChildren"] = 0] = "IgnoreChildren";
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreNode"] = 1] = "IgnoreNode";
-    WalkValidationTokenEnum[WalkValidationTokenEnum["IgnoreAll"] = 2] = "IgnoreAll";
-})(WalkValidationTokenEnum || (WalkValidationTokenEnum = {}));
-var WalkValidationTokenKeyTypeEnum;
-(function (WalkValidationTokenKeyTypeEnum) {
-    WalkValidationTokenKeyTypeEnum["Array"] = "array";
-    WalkValidationTokenKeyTypeEnum["Children"] = "chi";
-    WalkValidationTokenKeyTypeEnum["Left"] = "l";
-    WalkValidationTokenKeyTypeEnum["Right"] = "r";
-    WalkValidationTokenKeyTypeEnum["Prelude"] = "prelude";
-})(WalkValidationTokenKeyTypeEnum || (WalkValidationTokenKeyTypeEnum = {}));
 const skipped = [
     ValidationTokenEnum.Star,
     ValidationTokenEnum.HashMark,
@@ -28,18 +22,6 @@ const objectProperties = {
     writable: true,
     configurable: true
 };
-// syntaxes: keyword | <'property'> | <function>
-// "none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]#"
-// ""
-// : "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?
-// ""
-// false | true
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// false | true | green | pipe
-// keyword | <'property'> | <function>
-// [<dashed-ident> || <try-tactic>]
-// [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <box> | border | padding | content | text ] || [ <box> | border | padding | content ] ]#
-// none | [ [<dashed-ident> || <try-tactic>] | inset-area( <'inset-area'> ) ]
 function* tokenize(syntax, position = { ind: 0, lin: 1, col: 0 }, currentPosition = {
     ind: -1,
     lin: 1,
@@ -202,7 +184,6 @@ function matchParens(syntax, iterator) {
     let items = [];
     let match = 0;
     while ((item = iterator.next()) && !item.done) {
-        // console.error(JSON.stringify({match, val: item.value,func}, null, 1));
         switch (item.value.typ) {
             case ValidationTokenEnum.OpenParenthesis:
                 if (match > 0) {
@@ -878,7 +859,7 @@ function getTokenType(token, position, currentPosition) {
     if (token.startsWith('<')) {
         // <number [1,1000]>
         // <length [0,∞]>
-        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+),(([0-9]+)|∞)\])?>/);
+        let match = token.match(/<([a-z0-9-]+)(\s+\[([0-9]+[a-zA-Z]*),(([0-9]+[a-zA-Z]*)|∞)\])?>/);
         if (match == null) {
             let match = token.match(/<([a-zA-Z0-9-]+)\(\)>/);
             if (match != null) {
@@ -890,10 +871,12 @@ function getTokenType(token, position, currentPosition) {
             throw new Error('invalid token at position: ' + position.lin + ':' + position.col + ' ' + token);
         }
         if (match[2] != null) {
+            const type = getTokenType$1(match[3]);
             return Object.defineProperty({
                 typ: ValidationTokenEnum.PropertyType,
                 val: match[1],
-                range: [+match[3], match[4] == '\u221e' ? Infinity : +match[4]]
+                unit: EnumToken[type.typ],
+                range: [+type.val, match[4] == '\u221e' ? null : +match[4]]
             }, 'pos', { ...objectProperties, value: pos });
         }
         return Object.defineProperty({
@@ -964,7 +947,7 @@ function renderSyntax(token, parent) {
         case ValidationTokenEnum.Bracket:
             return '[' + token.chi.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']' + renderAttributes(token);
         case ValidationTokenEnum.PropertyType:
-            return '<' + token.val + '>' + renderAttributes(token);
+            return '<' + token.val + (Array.isArray(token.range) ? `[${token?.range?.[0]}, ${token?.range?.[1] ?? '\u221e'}]` : '') + '>' + renderAttributes(token);
         case ValidationTokenEnum.DeclarationType:
             return "<'" + token.val + "'>" + renderAttributes(token);
         case ValidationTokenEnum.Number:
@@ -1060,4 +1043,4 @@ function minify(ast) {
     return ast;
 }
 
-export { WalkValidationTokenEnum, WalkValidationTokenKeyTypeEnum, parseSyntax, renderSyntax };
+export { parseSyntax, renderSyntax };
