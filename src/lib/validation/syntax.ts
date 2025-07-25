@@ -168,8 +168,6 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
 
             ast = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, (node as AstDeclaration).nam);
 
-            // console.error({ast: ast.reduce((acc, curr) => acc + renderSyntax(curr), '')});
-
             if (ast != null) {
 
                 let token: Token | null = null;
@@ -200,8 +198,6 @@ export function evaluateSyntax(node: AstNode, options: ValidationOptions): Valid
                 }
 
                 result = doEvaluateSyntax(ast, createContext(values), {...options, visited: new WeakMap()});
-
-                // console.error(JSON.stringify({ast, values, result}, null, 1));
 
                 if (result.valid == SyntaxValidationResult.Valid && !(result.context as Context<Token>).done()) {
 
@@ -284,8 +280,6 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
     let result: ValidationSyntaxResult;
     let token: Token | null = null;
 
-    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${JSON.stringify({syntaxes}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
-
     for (; i < syntaxes.length; i++) {
 
         syntax = syntaxes[i];
@@ -326,8 +320,6 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         } else {
 
             if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
-
-                // console.error(`cyclic dependency: ${renderSyntax(syntax)}`);
 
                 return {
                     valid: SyntaxValidationResult.Drop,
@@ -538,7 +530,6 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
 }
 
 function match(syntax: ValidationToken, context: Context<Token>, options: ValidationOptions): ValidationSyntaxResult {
-    // console.error(`>> match(): ${renderSyntax(syntax)}\n>> ${JSON.stringify({syntax}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
 
     let success: boolean = false;
     let result: ValidationSyntaxResult;
@@ -656,12 +647,6 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 }
             }
 
-            // {
-
-            // console.error(JSON.stringify({funcDef: (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi}, null, 1))
-            //
-            // const child = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken;
-
             result = match(getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken, context, options);
 
             if (result.valid == SyntaxValidationResult.Valid) {
@@ -671,7 +656,6 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
                 result.context = context;
                 return result;
             }
-            // }
 
             break;
 
@@ -898,7 +882,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                             valid: SyntaxValidationResult.Drop,
                             node: token,
                             syntax,
-                            error: `expected <length>`,
+                            error: `expected <length-percentage>`,
                             context
                         }
                     }
@@ -1165,7 +1149,6 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
         if (!success) {
 
             success = mathFuncs.includes((token as FunctionToken).val.toLowerCase()) &&
-                // (token as FunctionToken).val + '()' in config[ValidationSyntaxGroupEnum.Syntaxes] &&
                 doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (token as FunctionToken).val + '()')?.[0] as ValidationFunctionToken)?.chi ?? [], createContext((token as FunctionToken).chi), {
                     ...options,
                     isRepeatable: null,

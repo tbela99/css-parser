@@ -409,8 +409,6 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
             } catch (error) {
 
-                // console.error(error);
-
                 // @ts-ignore
                 errors.push({action: 'ignore', message: 'doParse: ' + error.message as string, error});
             }
@@ -803,8 +801,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             node.loc.end = {...map.get(delim)!.end};
         }
 
-        // if (options.validation) {
-
         let isValid: boolean = true;
 
         if (node.nam == 'else') {
@@ -1193,9 +1189,6 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                     if (valid.valid == SyntaxValidationResult.Drop) {
 
-                        // console.error({result, valid});
-                        // console.error(JSON.stringify({result, options, valid}, null, 1));
-
                         errors.push(<ErrorDescription>{
                             action: 'drop',
                             message: valid.error,
@@ -1439,10 +1432,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
 
             if (valueIndex == -1) {
 
-                // @ts-ignore
-                // value.chi[nameIndex].typ = EnumToken.MediaFeatureTokenType;
                 continue;
-                // return tokens;
             }
 
             for (i = nameIndex + 1; i < (value as FunctionToken | ParensToken).chi.length; i++) {
@@ -1578,7 +1568,6 @@ export function parseSelector(tokens: Token[]): Token[] {
                         // @ts-ignore
                         (<ClassSelectorToken>value).typ = EnumToken.ClassSelectorTokenType;
                     }
-
                 }
 
                 // @ts-ignore
@@ -1609,7 +1598,6 @@ export function parseSelector(tokens: Token[]): Token[] {
                             break;
                     }
 
-                    // @ts-ignore
                     // @ts-ignore
                     delete value.val;
                 }
@@ -1973,7 +1961,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
 
             // @ts-ignore
             if (attr.chi.length > 1) {
-                /*(<AttrToken>t).chi =*/
+
                 // @ts-ignore
                 parseTokens(attr.chi, (t as AttrToken).typ, options);
             }
@@ -2269,7 +2257,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
             // @ts-ignore
             if (t.chi.length > 0) {
                 if (t.typ == EnumToken.PseudoClassFuncTokenType && (t as PseudoClassFunctionToken).val == ':is' && options.minify) {
-                    //
+
                     const count: number = (t as PseudoClassFunctionToken).chi.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType).length;
                     if (count == 1 ||
                         (i == 0 &&

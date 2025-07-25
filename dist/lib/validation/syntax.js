@@ -102,7 +102,6 @@ function evaluateSyntax(node, options) {
                 break;
             }
             ast = getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, node.nam);
-            // console.error({ast: ast.reduce((acc, curr) => acc + renderSyntax(curr), '')});
             if (ast != null) {
                 let token = null;
                 const values = node.val.slice();
@@ -122,7 +121,6 @@ function evaluateSyntax(node, options) {
                     }
                 }
                 result = doEvaluateSyntax(ast, createContext(values), { ...options, visited: new WeakMap() });
-                // console.error(JSON.stringify({ast, values, result}, null, 1));
                 if (result.valid == SyntaxValidationResult.Valid && !result.context.done()) {
                     let token = null;
                     while ((token = result.context.next()) != null) {
@@ -181,7 +179,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let i = 0;
     let result;
     let token = null;
-    // console.error(`>> doEvaluateSyntax: ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${JSON.stringify({syntaxes}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -211,7 +208,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
         }
         else {
             if (isVisited(token, syntax, 'doEvaluateSyntax', options)) {
-                // console.error(`cyclic dependency: ${renderSyntax(syntax)}`);
                 return {
                     valid: SyntaxValidationResult.Drop,
                     node: token,
@@ -359,7 +355,6 @@ function matchOccurence(syntax, context, options) {
     };
 }
 function match(syntax, context, options) {
-    // console.error(`>> match(): ${renderSyntax(syntax)}\n>> ${JSON.stringify({syntax}, null, 1)}>> context: ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
     let success = false;
     let result;
     let token = context.peek();
@@ -441,17 +436,12 @@ function match(syntax, context, options) {
                     context
                 };
             }
-            // {
-            // console.error(JSON.stringify({funcDef: (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken).chi}, null, 1))
-            //
-            // const child = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionDefinitionToken).val + '()')?.[0] as ValidationFunctionToken;
             result = match(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0], context, options);
             if (result.valid == SyntaxValidationResult.Valid) {
                 context.next();
                 result.context = context;
                 return result;
             }
-            // }
             break;
         case ValidationTokenEnum.DeclarationType:
             return doEvaluateSyntax(getParsedSyntax("declarations" /* ValidationSyntaxGroupEnum.Declarations */, syntax.val), context, {
@@ -611,7 +601,7 @@ function matchPropertyType(syntax, context, options) {
                             valid: SyntaxValidationResult.Drop,
                             node: token,
                             syntax,
-                            error: `expected <length>`,
+                            error: `expected <length-percentage>`,
                             context
                         };
                     }
@@ -794,7 +784,6 @@ function matchPropertyType(syntax, context, options) {
         ['length-percentage', 'length', 'number', 'number-token', 'angle', 'percentage', 'dimension'].includes(syntax.val)) {
         if (!success) {
             success = mathFuncs.includes(token.val.toLowerCase()) &&
-                // (token as FunctionToken).val + '()' in config[ValidationSyntaxGroupEnum.Syntaxes] &&
                 doEvaluateSyntax(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, token.val + '()')?.[0]?.chi ?? [], createContext(token.chi), {
                     ...options,
                     isRepeatable: null,
