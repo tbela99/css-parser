@@ -10748,11 +10748,7 @@
     		syntax: "cover | contain | entry | exit | entry-crossing | exit-crossing"
     	},
     	"track-breadth": {
-<<<<<<< HEAD
     		syntax: "<length-percentage> | <flex> | min-content | max-content | auto | <-non-standard-size>"
-=======
-    		syntax: "<length-percentage> | <flex> | min-content | max-content | auto | <-non-standard-size>>"
->>>>>>> 061074209f760d5b1b976e09c82ddefc43772d1e
     	},
     	"track-list": {
     		syntax: "[ <line-names>? [ <track-size> | <track-repeat> ] ]+ <line-names>?"
