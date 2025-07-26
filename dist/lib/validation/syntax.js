@@ -17,7 +17,7 @@ const config = getSyntaxConfig();
 const allValues = getSyntaxConfig()["declarations" /* ValidationSyntaxGroupEnum.Declarations */].all.syntax.trim().split(/[\s|]+/g);
 function createContext(input) {
     const values = input.slice();
-    const result = values.slice();
+    const result = values.filter(token => token.typ != EnumToken.CommentTokenType).slice();
     if (result.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
         result.pop();
     }
@@ -252,9 +252,9 @@ function matchAtLeastOnce(syntax, context, options) {
     }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
-        error: success ? '' : `could not match atLeastOnce: ${renderSyntax(syntax)}`,
+        error: success ? '' : `could not match syntax: ${renderSyntax(syntax)}`,
         context
     };
 }
@@ -291,7 +291,7 @@ function matchList(syntax, context, options) {
                 valid: SyntaxValidationResult.Drop,
                 node: context.peek(),
                 syntax,
-                error: `could not match list: ${renderSyntax(syntax)}`,
+                error: `could not match syntax: ${renderSyntax(syntax)}`,
                 context
             };
         }
@@ -323,7 +323,7 @@ function matchList(syntax, context, options) {
     }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: '',
         context
@@ -348,7 +348,7 @@ function matchOccurence(syntax, context, options) {
     }
     return {
         valid: sucesss ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: sucesss ? '' : `expected ${renderSyntax(syntax)} ${syntax.occurence.min} to ${syntax.occurence.max} occurences, got ${counter}`,
         context
@@ -372,7 +372,7 @@ function match(syntax, context, options) {
             }
             return {
                 valid: SyntaxValidationResult.Drop,
-                node: context.current(),
+                node: context.peek(),
                 syntax,
                 error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek())}'`,
                 context
@@ -831,9 +831,9 @@ function someOf(syntaxes, context, options) {
     }
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: null,
-        error: success ? '' : `could not match someOf: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
+        error: success ? '' : `could not match syntax: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
         context
     };
 }
@@ -855,9 +855,9 @@ function anyOf(syntaxes, context, options) {
     }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: null,
-        error: success ? '' : `could not match anyOf: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
+        error: success ? '' : `could not match syntax: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
         context
     };
 }
@@ -947,9 +947,9 @@ function allOf(syntax, context, options) {
     const success = syntax.length == 0;
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: syntax?.[0]?.[0] ?? null,
-        error: `could not match allOf: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
+        error: `could not match syntax: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
         context: success ? con : context
     };
 }

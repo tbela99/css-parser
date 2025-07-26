@@ -44,7 +44,7 @@ const allValues: string[] = getSyntaxConfig()[ValidationSyntaxGroupEnum.Declarat
 export function createContext(input: Token[]): Context<Token> {
 
     const values: Token[] = input.slice();
-    const result: Token[] = values.slice();
+    const result: Token[] = values.filter(token => token.typ != EnumToken.CommentTokenType).slice();
 
     if (result.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
 
@@ -383,9 +383,9 @@ function matchAtLeastOnce(syntax: ValidationToken, context: Context<Token>, opti
 
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
-        error: success ? '' : `could not match atLeastOnce: ${renderSyntax(syntax)}`,
+        error: success ? '' : `could not match syntax: ${renderSyntax(syntax)}`,
         context
     }
 }
@@ -438,7 +438,7 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
                 valid: SyntaxValidationResult.Drop,
                 node: context.peek(),
                 syntax,
-                error: `could not match list: ${renderSyntax(syntax)}`,
+                error: `could not match syntax: ${renderSyntax(syntax)}`,
                 context
             }
         }
@@ -483,7 +483,7 @@ function matchList(syntax: ValidationToken, context: Context<Token>, options: Va
 
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: '',
         context
@@ -522,7 +522,7 @@ function matchOccurence(syntax: ValidationToken, context: Context<Token>, option
 
     return {
         valid: sucesss ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: sucesss ? '' : `expected ${renderSyntax(syntax)} ${syntax.occurence!.min} to ${syntax.occurence!.max} occurences, got ${counter}`,
         context
@@ -560,7 +560,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             return {
                 valid: SyntaxValidationResult.Drop,
-                node: context.current(),
+                node: context.peek(),
                 syntax,
                 error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek() as Token)}'`,
                 context
@@ -924,7 +924,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                     continue;
                 }
 
-                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val  == '0');
+                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
 
                 if (!success) {
 
@@ -1184,7 +1184,6 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
     let result: ValidationSyntaxResult;
     let i: number;
     let success: boolean = false;
-    let isOptional: boolean;
     const matched: ValidationSyntaxResult[] = [];
 
     for (i = 0; i < syntaxes.length; i++) {
@@ -1217,9 +1216,9 @@ function someOf(syntaxes: ValidationToken[][], context: Context<Token>, options:
 
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: null,
-        error: success ? '' : `could not match someOf: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
+        error: success ? '' : `could not match syntax: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
         context
     }
 }
@@ -1252,9 +1251,9 @@ function anyOf(syntaxes: ValidationToken[][], context: Context<Token>, options: 
 
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: null,
-        error: success ? '' : `could not match anyOf: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
+        error: success ? '' : `could not match syntax: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
         context
     }
 }
@@ -1389,9 +1388,9 @@ function allOf(syntax: ValidationToken[][], context: Context<Token>, options: Va
 
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: syntax?.[0]?.[0] ?? null,
-        error: `could not match allOf: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
+        error: `could not match syntax: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
         context: success ? con : context
     }
 }
