@@ -5,7 +5,7 @@ import '../parser/utils/config.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { renderToken } from '../renderer/render.js';
-import '../renderer/color/utils/constants.js';
+import '../syntax/color/utils/constants.js';
 
 /**
  * expand nested css ast

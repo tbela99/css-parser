@@ -6,7 +6,7 @@ import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, ColorKind, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../renderer/color/utils/constants.js';
+import { funcLike, ColorKind, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
@@ -1216,14 +1216,14 @@ function getTokenType(val, hint) {
                 chi: []
             };
         }
-        if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
+        if (timingFunc.includes(val.toLowerCase())) {
             return {
                 typ: EnumToken.TimingFunctionTokenType,
                 val,
                 chi: []
             };
         }
-        if (['view', 'scroll'].includes(val)) {
+        if (timelineFunc.includes(val)) {
             return {
                 typ: EnumToken.TimelineFunctionTokenType,
                 val,

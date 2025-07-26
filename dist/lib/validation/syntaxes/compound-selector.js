@@ -5,7 +5,7 @@ import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { mozExtensions, webkitExtensions } from '../../syntax/syntax.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { getSyntaxConfig } from '../config.js';

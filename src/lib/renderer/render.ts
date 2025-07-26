@@ -61,10 +61,10 @@ import {
     RelativeColorTypes,
     rgb2hex,
     srgb2hexvalues
-} from "./color/index.ts";
+} from "../syntax/color/index.ts";
 import {EnumToken, expand} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
-import {colorFuncColorSpace, ColorKind, colorsFunc, funcLike, getComponents} from "./color/utils/index.ts";
+import {colorFuncColorSpace, ColorKind, colorsFunc, funcLike, getComponents} from "../syntax/color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax/index.ts";
 
 export function reduceNumber(val: string | number): string {

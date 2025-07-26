@@ -671,4 +671,266 @@ supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
 }`));
         });
     });
+
+
+    describe('other', function () {
+        it('font-palette-values #33', function () {
+            return transform(`
+@font-palette-values --identifier {
+  font-family: Bixa;
 }
+.my-class {
+  font-palette: --identifier;
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`@font-palette-values --identifier {
+ font-family: Bixa
+}
+.my-class {
+ font-palette: --identifier
+}`));
+        });
+
+        it('font-palette-values #34', function () {
+            return transform(`
+@font-palette-values identifier {
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`));
+        });
+
+        it('font-palette-values #35', function () {
+            return transform(`
+@font-palette-values identifier unexpected {
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`));
+        });
+
+        it('font-palette-values #36', function () {
+            return transform(`
+@font-palette-values identifier;
+.my-class {
+  font-palette: --identifier;
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`));
+        });
+
+        it('font-palette-values #37', function () {
+            return transform(`
+@font-palette-values {
+
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`, {beautify: true}).then((result) => expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`));
+        });
+
+        it('font-palette-values #38', function () {
+            return transform(`
+@font-feature-values Font Name {
+  font-display: swap;
+  @styleset {
+    nice-style: 12;
+  }
+  @swash {
+    fancy: 2;
+  }
+}
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@font-feature-values Font Name {
+ font-display: swap;
+ @styleset {
+  nice-style: 12
+ }
+ @swash {
+  fancy: 2
+ }
+}`));
+        });
+
+        it('font-palette-values #39', function () {
+            return transform(`
+/* Targets all the pages */
+@page {
+  size: 8.5in 9in;
+  margin-top: 4in;
+}
+
+/* Targets all even-numbered pages */
+@page :left {
+  margin-top: 4in;
+}
+
+/* Targets all odd-numbered pages */
+@page :right {
+  size: 11in;
+  margin-top: 4in;
+}
+
+/* Targets all selectors with \`page: wide;\` set */
+@page wide {
+  size: a4 landscape;
+}
+
+@page {
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+
+`, {beautify: true}).then((result) => expect(result.code).equals(`@page {
+ size: 8.5in 9in;
+ margin-top: 4in
+}
+@page :left {
+ margin-top: 4in
+}
+@page :right {
+ size: 11in;
+ margin-top: 4in
+}
+@page wide {
+ size: a4 landscape
+}
+@page {
+ @top-right {
+  content: "Page " counter(pageNumber)
+ }
+}`));
+        });
+
+        it('font-palette-values #40', function () {
+            return transform(`
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('font-palette-values #41', function () {
+            return transform(`
+  /* margin box at top right showing page number */
+  @top-right no;
+}
+
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('font-palette-values #40', function () {
+            return transform(`
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('keyframes #42', function () {
+            return transform(`
+
+    @keyframes {
+
+            from {
+                margin-left: 0px;
+            }
+
+            50% {
+                margin-left: 110px;
+            opacity: 1;
+        }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            to {
+                margin-left: 200px;
+            }
+
+        }
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('keyframes #43', function () {
+            return transform(`
+
+    @keyframes /* 1 */ {
+
+            from {
+                margin-left: 0px;
+            }
+
+            50% {
+                margin-left: 110px;
+            opacity: 1;
+        }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            to {
+                margin-left: 200px;
+            }
+
+        }
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+        it('keyframes #44', function () {
+            return transform(`
+
+    @keyframes /* 1 */ test test1 {
+
+            from {
+                margin-left: 0px;
+            }
+
+            50% {
+                margin-left: 110px;
+            opacity: 1;
+        }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            to {
+                margin-left: 200px;
+            }
+
+        }
+
+`, {beautify: true}).then((result) => expect(result.code).equals(``));
+        });
+
+    });
+    }

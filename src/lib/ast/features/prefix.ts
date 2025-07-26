@@ -27,7 +27,7 @@ import {definedPropertySettings, splitRule} from "../minify.ts";
 import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
 import {renderToken} from "../../renderer/index.ts";
 import {parseAtRulePrelude, parseString} from "../../parser/index.ts";
-import {funcLike} from "../../renderer/color/utils/index.ts";
+import {funcLike} from "../../syntax/color/utils/index.ts";
 import {evaluateSyntax} from "../../validation/syntax.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();

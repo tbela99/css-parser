@@ -4,7 +4,7 @@ import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { generalEnclosedFunc } from '../../renderer/color/utils/constants.js';
+import { generalEnclosedFunc } from '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';

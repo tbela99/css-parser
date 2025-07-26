@@ -2,7 +2,7 @@ import { EnumToken } from '../types.js';
 import { walkValues, WalkerValueEvent, WalkerOptionEnum } from '../walk.js';
 import { evaluate } from '../math/expression.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';

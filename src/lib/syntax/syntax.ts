@@ -2,7 +2,7 @@
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
 import {colorsFunc} from "../renderer/index.ts";
-import {COLORS_NAMES} from "../renderer/color/index.ts";
+import {COLORS_NAMES} from "./color/index.ts";
 import type {
     AngleToken,
     BinaryExpressionToken,
@@ -16,7 +16,7 @@ import type {
     Token
 } from "../../@types/index.d.ts";
 import {EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
-import {ColorKind, funcLike} from "../renderer/color/utils";
+import {ColorKind, funcLike} from "./color/utils";
 import {buildExpression} from "../ast/math/index.ts";
 
 // '\\'

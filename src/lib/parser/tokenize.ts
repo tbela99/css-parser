@@ -123,12 +123,12 @@ function* consumeString(quoteStr: '"' | "'", buffer: string, parseInfo: ParseInf
                 break;
             }
 
-            if (i == 1) {
-
-                buffer += value + sequence[i];
-                next(parseInfo, 2);
-                continue;
-            }
+            // if (i == 1) {
+            //
+            //     buffer += value + sequence[i];
+            //     next(parseInfo, 2);
+            //     continue;
+            // }
 
             if (escapeSequence.trimEnd().length > 0) {
 
@@ -220,20 +220,20 @@ function next(parseInfo: ParseInfo, count: number = 1): string {
     let char: string = '';
     let chr: string = '';
 
-    if (count < 0) {
-
-        return '';
-    }
+    // if (count < 0) {
+    //
+    //     return '';
+    // }
 
     while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
 
         char += chr;
         const codepoint: number = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
 
-        if (isNaN(codepoint)) {
-
-            return char;
-        }
+        // if (isNaN(codepoint)) {
+        //
+        //     return char;
+        // }
 
         if (isNewLine(codepoint)) {
 

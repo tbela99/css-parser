@@ -5,7 +5,7 @@ import {length2Px} from "./convert.ts";
 import {transformFunctions} from "../../syntax/index.ts";
 import {stripCommaToken} from "../../validation/utils/index.ts";
 import {translate, translate3d, translateX, translateY, translateZ} from "./translate.ts";
-import {getAngle, getNumber} from "../../renderer/color/index.ts";
+import {getAngle, getNumber} from "../../syntax/color/index.ts";
 import {rotate, rotate3D} from "./rotate.ts";
 import {scale, scale3d, scaleX, scaleY, scaleZ} from "./scale.ts";
 import {minify} from "./minify.ts";

@@ -107,7 +107,7 @@ export function validateAtRule(atRule: AstAtRule, options: ValidationOptions, ro
 
     if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
 
-        if (!('tokens' in atRule)) {
+        if (!Array.isArray(atRule.tokens) || atRule!.tokens!.length == 0) {
 
             return {
                 valid: SyntaxValidationResult.Drop,

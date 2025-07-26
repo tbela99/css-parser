@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import { splitRule } from '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';

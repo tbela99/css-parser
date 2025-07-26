@@ -20,7 +20,7 @@ import {
 } from "../syntax/index.ts";
 import {parseDeclarationNode} from './utils/index.ts';
 import {colorsFunc, renderToken} from "../renderer/index.ts";
-import {COLORS_NAMES} from "../renderer/color/index.ts";
+import {COLORS_NAMES} from "../syntax/color/index.ts";
 import {
     combinators,
     definedPropertySettings,
@@ -108,7 +108,14 @@ import type {
     UrlToken,
     WhitespaceToken
 } from "../../@types/index.d.ts";
-import {ColorKind, deprecatedSystemColors, funcLike, systemColors} from "../renderer/color/utils/index.ts";
+import {
+    ColorKind,
+    deprecatedSystemColors,
+    funcLike,
+    systemColors,
+    timelineFunc,
+    timingFunc
+} from "../syntax/color/utils/index.ts";
 import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
@@ -1776,7 +1783,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             };
         }
 
-        if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'].includes(val)) {
+        if (timingFunc.includes(val.toLowerCase())) {
             return <TimingFunctionToken>{
                 typ: EnumToken.TimingFunctionTokenType,
                 val,
@@ -1784,7 +1791,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             };
         }
 
-        if (['view', 'scroll'].includes(val)) {
+        if (timelineFunc.includes(val)) {
             return <TimelineFunctionToken>{
                 typ: EnumToken.TimelineFunctionTokenType,
                 val,

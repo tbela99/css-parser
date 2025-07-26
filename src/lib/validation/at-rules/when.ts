@@ -4,7 +4,7 @@ import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
 import {validateMediaCondition, validateMediaFeature} from "./media.ts";
 import {validateSupportCondition} from "./supports.ts";
-import {generalEnclosedFunc} from "../../renderer/color/utils";
+import {generalEnclosedFunc} from "../../syntax/color/utils";
 
 export function validateAtRuleWhen(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 

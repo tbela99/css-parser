@@ -1,13 +1,13 @@
-import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES, funcLike } from './color/utils/constants.js';
-import { getComponents } from './color/utils/components.js';
-import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
+import { getAngle, color2srgbvalues, clamp } from '../syntax/color/color.js';
+import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES, funcLike } from '../syntax/color/utils/constants.js';
+import { getComponents } from '../syntax/color/utils/components.js';
+import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from '../syntax/color/hex.js';
 import { EnumToken } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
-import { colorMix } from './color/color-mix.js';
-import { parseRelativeColor } from './color/relativecolor.js';
+import { colorMix } from '../syntax/color/color-mix.js';
+import { parseRelativeColor } from '../syntax/color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
 

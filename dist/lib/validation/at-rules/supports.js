@@ -5,7 +5,7 @@ import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { colorFontTech, fontFeaturesTech, fontFormat } from '../../syntax/syntax.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 import { splitTokenList } from '../utils/list.js';

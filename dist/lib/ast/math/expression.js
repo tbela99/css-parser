@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { rem, compute } from './math.js';
 import { reduceNumber } from '../../renderer/render.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';

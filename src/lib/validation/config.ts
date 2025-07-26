@@ -34,10 +34,10 @@ export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string
                 }
             }
 
-            if (!(key in obj)) {
-
-                return null;
-            }
+            // if (!(key in obj)) {
+            //
+            //     return null;
+            // }
         }
 
         // @ts-ignore

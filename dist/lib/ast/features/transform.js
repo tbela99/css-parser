@@ -6,7 +6,7 @@ import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { filterValues, renderToken } from '../../renderer/render.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import { compute } from '../transform/compute.js';
 import { eqMatrix } from '../transform/minify.js';
 

@@ -6,7 +6,7 @@ import '../../parser/utils/config.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 const skipped = [

@@ -55,7 +55,7 @@ export interface Context<Type> {
 
     next<Type>(): Type | null;
 
-    tokens<Type>(): Type[];
+    // tokens<Type>(): Type[];
 
     consume<Type>(token: Type, howMany?: number): boolean;
 

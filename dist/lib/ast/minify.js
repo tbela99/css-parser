@@ -7,7 +7,7 @@ import { replaceCompound } from './expand.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { eq } from '../parser/utils/eq.js';
 import { doRender, renderToken } from '../renderer/render.js';
-import '../renderer/color/utils/constants.js';
+import '../syntax/color/utils/constants.js';
 import * as index from './features/index.js';
 import { FeatureWalkMode } from './features/type.js';
 

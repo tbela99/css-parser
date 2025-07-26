@@ -1,6 +1,6 @@
 import type {AstDeclaration, BaseToken} from "./ast.d.ts";
 import {EnumToken} from "../lib/index.ts";
-import {ColorKind} from "../lib/renderer/color/utils/index.ts";
+import {ColorKind} from "../lib/syntax/color/utils/index.ts";
 
 export declare interface LiteralToken extends BaseToken {
 

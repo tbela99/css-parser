@@ -3,7 +3,7 @@ import {EnumToken} from "../types.ts";
 import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts";
 import {reduceNumber} from "../../renderer/render.ts";
 import {eq} from "../../parser/utils/eq.ts";
-import {getNumber} from "../../renderer/color/index.ts";
+import {getNumber} from "../../syntax/color/index.ts";
 import {NumberToken} from "../../validation/index.ts";
 
 export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {

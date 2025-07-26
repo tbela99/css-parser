@@ -1,3 +1,3 @@
 
 export * from './render.ts';
-export {colorsFunc} from "./color/utils";
+export {colorsFunc} from "../syntax/color/utils";

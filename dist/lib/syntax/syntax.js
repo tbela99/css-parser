@@ -4,7 +4,7 @@ import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { COLORS_NAMES, colorsFunc, funcLike, ColorKind } from '../renderer/color/utils/constants.js';
+import { COLORS_NAMES, colorsFunc, funcLike, ColorKind } from './color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import '../renderer/sourcemap/lib/encode.js';
 

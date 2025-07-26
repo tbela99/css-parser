@@ -5,7 +5,7 @@ import '../parse.js';
 import '../tokenize.js';
 import './config.js';
 import { mathFuncs } from '../../syntax/syntax.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function matchType(val, properties) {
