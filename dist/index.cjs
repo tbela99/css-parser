@@ -10747,7 +10747,7 @@ var syntaxes = {
 		syntax: "cover | contain | entry | exit | entry-crossing | exit-crossing"
 	},
 	"track-breadth": {
-		syntax: "<length-percentage> | <flex> | min-content | max-content | auto"
+		syntax: "<length-percentage> | <flex> | min-content | max-content | auto | <-non-standard-size>"
 	},
 	"track-list": {
 		syntax: "[ <line-names>? [ <track-size> | <track-repeat> ] ]+ <line-names>?"
@@ -13453,7 +13453,7 @@ const config$2 = getSyntaxConfig();
 const allValues = getSyntaxConfig()["declarations" /* ValidationSyntaxGroupEnum.Declarations */].all.syntax.trim().split(/[\s|]+/g);
 function createContext(input) {
     const values = input.slice();
-    const result = values.slice();
+    const result = values.filter(token => token.typ != exports.EnumToken.CommentTokenType).slice();
     if (result.at(-1)?.typ == exports.EnumToken.WhitespaceTokenType) {
         result.pop();
     }
@@ -13688,9 +13688,9 @@ function matchAtLeastOnce(syntax, context, options) {
     }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
-        error: success ? '' : `could not match atLeastOnce: ${renderSyntax(syntax)}`,
+        error: success ? '' : `could not match syntax: ${renderSyntax(syntax)}`,
         context
     };
 }
@@ -13727,7 +13727,7 @@ function matchList(syntax, context, options) {
                 valid: SyntaxValidationResult.Drop,
                 node: context.peek(),
                 syntax,
-                error: `could not match list: ${renderSyntax(syntax)}`,
+                error: `could not match syntax: ${renderSyntax(syntax)}`,
                 context
             };
         }
@@ -13759,7 +13759,7 @@ function matchList(syntax, context, options) {
     }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: '',
         context
@@ -13784,7 +13784,7 @@ function matchOccurence(syntax, context, options) {
     }
     return {
         valid: sucesss ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax,
         error: sucesss ? '' : `expected ${renderSyntax(syntax)} ${syntax.occurence.min} to ${syntax.occurence.max} occurences, got ${counter}`,
         context
@@ -13808,7 +13808,7 @@ function match(syntax, context, options) {
             }
             return {
                 valid: SyntaxValidationResult.Drop,
-                node: context.current(),
+                node: context.peek(),
                 syntax,
                 error: `expected '${ValidationTokenEnum[syntax.typ].toLowerCase()}', got '${context.done() ? null : renderToken(context.peek())}'`,
                 context
@@ -14267,9 +14267,9 @@ function someOf(syntaxes, context, options) {
     }
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: null,
-        error: success ? '' : `could not match someOf: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
+        error: success ? '' : `could not match syntax: ${syntaxes.reduce((acc, curr) => acc + (acc.length > 0 ? ' | ' : '') + curr.reduce((acc, curr) => acc + renderSyntax(curr), ''), '')}`,
         context
     };
 }
@@ -14291,9 +14291,9 @@ function anyOf(syntaxes, context, options) {
     }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: null,
-        error: success ? '' : `could not match anyOf: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
+        error: success ? '' : `could not match syntax: ${syntaxes.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
         context
     };
 }
@@ -14383,9 +14383,9 @@ function allOf(syntax, context, options) {
     const success = syntax.length == 0;
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
-        node: context.current(),
+        node: context.peek(),
         syntax: syntax?.[0]?.[0] ?? null,
-        error: `could not match allOf: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
+        error: `could not match syntax: ${syntax.reduce((acc, curr) => acc + '[' + curr.reduce((acc, curr) => acc + renderSyntax(curr), '') + ']', '')}`,
         context: success ? con : context
     };
 }
@@ -16468,7 +16468,6 @@ async function doParse(iterator, options = {}) {
                 }
             }
             catch (error) {
-                // console.error(error);
                 // @ts-ignore
                 errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
             }
@@ -16741,7 +16740,6 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             node.loc = loc;
             node.loc.end = { ...map.get(delim).end };
         }
-        // if (options.validation) {
         let isValid = true;
         if (node.nam == 'else') {
             const prev = getLastNode(context);
@@ -17018,12 +17016,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         value: valid.valid == SyntaxValidationResult.Valid
                     });
                     if (valid.valid == SyntaxValidationResult.Drop) {
-                        // console.error({result, valid});
-                        // console.error(JSON.stringify({result, options, valid}, null, 1));
                         errors.push({
                             action: 'drop',
                             message: valid.error,
                             syntax: valid.syntax,
+                            node: valid.node,
                             location: map.get(valid.node) ?? valid.node?.loc ?? result.loc ?? location
                         });
                         if (!options.lenient) {
@@ -17184,10 +17181,7 @@ function parseAtRulePrelude(tokens, atRule) {
                 break;
             }
             if (valueIndex == -1) {
-                // @ts-ignore
-                // value.chi[nameIndex].typ = EnumToken.MediaFeatureTokenType;
                 continue;
-                // return tokens;
             }
             for (i = nameIndex + 1; i < value.chi.length; i++) {
                 if ([
@@ -17317,7 +17311,6 @@ function parseSelector(tokens) {
                             value.typ = exports.EnumToken.SubsequentSiblingCombinatorTokenType;
                             break;
                     }
-                    // @ts-ignore
                     // @ts-ignore
                     delete value.val;
                 }
@@ -17607,7 +17600,6 @@ function parseTokens(tokens, options = {}) {
             }
             // @ts-ignore
             if (attr.chi.length > 1) {
-                /*(<AttrToken>t).chi =*/
                 // @ts-ignore
                 parseTokens(attr.chi, t.typ);
             }
@@ -17827,7 +17819,6 @@ function parseTokens(tokens, options = {}) {
             // @ts-ignore
             if (t.chi.length > 0) {
                 if (t.typ == exports.EnumToken.PseudoClassFuncTokenType && t.val == ':is' && options.minify) {
-                    //
                     const count = t.chi.filter((t) => t.typ != exports.EnumToken.CommentTokenType).length;
                     if (count == 1 ||
                         (i == 0 &&
@@ -21146,12 +21137,32 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (!wrap) {
                         wrap = selector.some((s) => s[0] != '&');
                     }
-                    let rule = selector.map(s => {
-                        if (s[0] == '&') {
-                            s.splice(0, 1, ...node.optimized.optimized);
+                    let rule = null;
+                    const optimized = node.optimized.optimized.slice();
+                    if (optimized.length > 1) {
+                        const check = optimized.at(-2);
+                        if (!combinators.includes(check)) {
+                            let last = optimized.pop();
+                            wrap = false;
+                            rule = optimized.join('') + `:is(${selector.map(s => {
+                                if (s[0] == '&') {
+                                    s.splice(0, 1, last);
+                                }
+                                else {
+                                    s.unshift(last);
+                                }
+                                return s.join('');
+                            }).join(',')})`;
                         }
-                        return s.join('');
-                    }).join(',');
+                    }
+                    if (rule == null) {
+                        rule = selector.map(s => {
+                            if (s[0] == '&') {
+                                s.splice(0, 1, ...node.optimized.optimized);
+                            }
+                            return s.join('');
+                        }).join(',');
+                    }
                     // @ts-ignore
                     let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
                     if (rule.includes('&')) {

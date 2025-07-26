@@ -14,10 +14,15 @@
     }
   },
   "types": {
+    "track-breadth": {
+      "comment": "extend track-breadth syntax with -non-standard-size",
+      "syntax": "| <-non-standard-size>"
+    },
     "-non-standard-display": {
       "comment": "extend display syntax with -ms-flexbox",
       "syntax": "| -ms-flexbox"
     },
+
     "-non-standard-text-align": {
       "comment": "extend text-align",
       "syntax": "| -moz-center | -webkit-center | -webkit-match-parent"

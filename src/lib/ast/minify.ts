@@ -493,18 +493,51 @@ function doMinify(ast: AstNode, options: ParserOptions = {}, recursive: boolean 
                         wrap = selector.some((s: string[]) => s[0] != '&');
                     }
 
-                    let rule: string = selector.map(s => {
+                    let rule: string | null = null;
+                    const optimized = (node as AstRule)!.optimized!.optimized.slice() as string[];
 
-                        if (s[0] == '&') {
+                    if (optimized.length > 1) {
 
-                            s.splice(0, 1, ...(node as AstRule)!.optimized!.optimized);
+                        const check = optimized.at(-2) as string;
+
+                        if (!combinators.includes(check)) {
+
+                            let last = optimized.pop() as string;
+                            wrap = false;
+                            rule = optimized.join('') + `:is(${selector.map(s => {
+
+                                if (s[0] == '&') {
+
+                                    s.splice(0, 1, last);
+                                }
+
+                                else {
+''
+                                    s.unshift(last);
+                                }
+
+                                return s.join('');
+                                
+                            }).join(',')})`;
                         }
+                    }
 
-                        return s.join('');
-                    }).join(',');
+                    if (rule == null) {
+
+                       rule = selector.map(s => {
+
+                            if (s[0] == '&') {
+
+                                s.splice(0, 1, ...(node as AstRule)!.optimized!.optimized);
+                            }
+
+                            return s.join('');
+                        }).join(',');
+                    }
 
                     // @ts-ignore
                     let sel: string = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
+
 
                     if (rule.includes('&')) {
 

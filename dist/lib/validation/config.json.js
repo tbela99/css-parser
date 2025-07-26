@@ -3340,7 +3340,7 @@ var syntaxes = {
 		syntax: "cover | contain | entry | exit | entry-crossing | exit-crossing"
 	},
 	"track-breadth": {
-		syntax: "<length-percentage> | <flex> | min-content | max-content | auto"
+		syntax: "<length-percentage> | <flex> | min-content | max-content | auto | <-non-standard-size>"
 	},
 	"track-list": {
 		syntax: "[ <line-names>? [ <track-size> | <track-repeat> ] ]+ <line-names>?"

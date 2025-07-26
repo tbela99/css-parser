@@ -1193,6 +1193,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             action: 'drop',
                             message: valid.error,
                             syntax: valid.syntax,
+                            node: valid.node,
                             location: map.get(valid.node as Token) ?? valid.node?.loc ?? result.loc ?? location
                         });
 

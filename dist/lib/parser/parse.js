@@ -234,7 +234,6 @@ async function doParse(iterator, options = {}) {
                 }
             }
             catch (error) {
-                // console.error(error);
                 // @ts-ignore
                 errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
             }
@@ -507,7 +506,6 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             node.loc = loc;
             node.loc.end = { ...map.get(delim).end };
         }
-        // if (options.validation) {
         let isValid = true;
         if (node.nam == 'else') {
             const prev = getLastNode(context);
@@ -784,12 +782,11 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         value: valid.valid == SyntaxValidationResult.Valid
                     });
                     if (valid.valid == SyntaxValidationResult.Drop) {
-                        // console.error({result, valid});
-                        // console.error(JSON.stringify({result, options, valid}, null, 1));
                         errors.push({
                             action: 'drop',
                             message: valid.error,
                             syntax: valid.syntax,
+                            node: valid.node,
                             location: map.get(valid.node) ?? valid.node?.loc ?? result.loc ?? location
                         });
                         if (!options.lenient) {
@@ -950,10 +947,7 @@ function parseAtRulePrelude(tokens, atRule) {
                 break;
             }
             if (valueIndex == -1) {
-                // @ts-ignore
-                // value.chi[nameIndex].typ = EnumToken.MediaFeatureTokenType;
                 continue;
-                // return tokens;
             }
             for (i = nameIndex + 1; i < value.chi.length; i++) {
                 if ([
@@ -1083,7 +1077,6 @@ function parseSelector(tokens) {
                             value.typ = EnumToken.SubsequentSiblingCombinatorTokenType;
                             break;
                     }
-                    // @ts-ignore
                     // @ts-ignore
                     delete value.val;
                 }
@@ -1373,7 +1366,6 @@ function parseTokens(tokens, options = {}) {
             }
             // @ts-ignore
             if (attr.chi.length > 1) {
-                /*(<AttrToken>t).chi =*/
                 // @ts-ignore
                 parseTokens(attr.chi, t.typ);
             }
@@ -1593,7 +1585,6 @@ function parseTokens(tokens, options = {}) {
             // @ts-ignore
             if (t.chi.length > 0) {
                 if (t.typ == EnumToken.PseudoClassFuncTokenType && t.val == ':is' && options.minify) {
-                    //
                     const count = t.chi.filter((t) => t.typ != EnumToken.CommentTokenType).length;
                     if (count == 1 ||
                         (i == 0 &&

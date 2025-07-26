@@ -49,6 +49,8 @@ export interface Context<Type> {
 
     update<Type>(context: Context<Type>): void;
 
+    consume<Type>(token: Type, howMany?: number): boolean;
+
     peek<Type>(): Type | null;
 
     next<Type>(): Type | null;

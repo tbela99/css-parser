@@ -345,12 +345,32 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (!wrap) {
                         wrap = selector.some((s) => s[0] != '&');
                     }
-                    let rule = selector.map(s => {
-                        if (s[0] == '&') {
-                            s.splice(0, 1, ...node.optimized.optimized);
+                    let rule = null;
+                    const optimized = node.optimized.optimized.slice();
+                    if (optimized.length > 1) {
+                        const check = optimized.at(-2);
+                        if (!combinators.includes(check)) {
+                            let last = optimized.pop();
+                            wrap = false;
+                            rule = optimized.join('') + `:is(${selector.map(s => {
+                                if (s[0] == '&') {
+                                    s.splice(0, 1, last);
+                                }
+                                else {
+                                    s.unshift(last);
+                                }
+                                return s.join('');
+                            }).join(',')})`;
                         }
-                        return s.join('');
-                    }).join(',');
+                    }
+                    if (rule == null) {
+                        rule = selector.map(s => {
+                            if (s[0] == '&') {
+                                s.splice(0, 1, ...node.optimized.optimized);
+                            }
+                            return s.join('');
+                        }).join(',');
+                    }
                     // @ts-ignore
                     let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
                     if (rule.includes('&')) {
