@@ -6,11 +6,11 @@ import type {
     ParensToken,
     PercentageToken,
     Token
-} from "../../../@types";
+} from "../../../@types/index.d.ts";
 import {convert, getNumber} from "./color.ts";
-import {EnumToken, walkValues} from "../../ast";
-import {evaluate, evaluateFunc} from "../../ast/math";
-import {ColorKind, colorRange} from "./utils";
+import {EnumToken, walkValues} from "../../ast/index.ts";
+import {evaluate, evaluateFunc} from "../../ast/math/index.ts";
+import {ColorKind, colorRange} from "./utils/index.ts";
 import {mathFuncs} from "../index.ts";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';

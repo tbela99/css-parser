@@ -1,10 +1,17 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import {ColorKind, COLORS_NAMES, getComponents} from "./utils";
-import type {ColorToken, DimensionToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import {ColorKind, COLORS_NAMES, getComponents} from "./utils/index.ts";
+import type {
+    ColorToken,
+    DimensionToken,
+    IdentToken,
+    NumberToken,
+    PercentageToken,
+    Token
+} from "../../../@types/index.d.ts";
 import {color2srgbvalues, getAngle, getNumber} from "./color.ts";
-import {EnumToken} from "../../ast";
+import {EnumToken} from "../../ast/index.ts";
 import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab.ts";
 import {expandHexValue} from "./hex.ts";
 import {getOKLABComponents, OKLab_to_sRGB} from "./oklab.ts";

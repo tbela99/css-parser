@@ -1,11 +1,11 @@
-import {D50, e, getComponents, k} from "./utils";
+import {D50, e, getComponents, k} from "./utils/index.ts";
 import {srgb2xyz} from "./xyz.ts";
-import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {hex2srgb, hsl2srgb, hwb2srgb, oklch2srgb, rgb2srgb} from "./srgb.ts";
 import {getLCHComponents} from "./lch.ts";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab.ts";
 import {getNumber} from "./color.ts";
-import {EnumToken} from "../../ast";
+import {EnumToken} from "../../ast/index.ts";
 import {xyzd502srgb} from "./xyzd50.ts";
 
 // L: 0% = 0.0, 100% = 100.0

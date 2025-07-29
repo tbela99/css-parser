@@ -1,5 +1,5 @@
-import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {EnumToken} from "../../ast";
+import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import {EnumToken} from "../../ast/index.ts";
 import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb.ts";
 import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl.ts";
 import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb} from "./hwb.ts";
@@ -7,7 +7,7 @@ import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2
 import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch, srgb2lch} from "./lch.ts";
 import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab.ts";
 import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch.ts";
-import {colorFuncColorSpace, ColorKind, getComponents} from "./utils";
+import {colorFuncColorSpace, ColorKind, getComponents} from "./utils/index.ts";
 import {
     hex2srgb,
     hsl2srgb,

@@ -1,7 +1,9 @@
-import {fetchInit, ValidationToken} from "../src/lib";
+import {ValidationToken} from "../src/lib";
 import process from "node:process";
 import {writeFile} from "node:fs/promises";
 import localPatch from "./local-patch.json" with {type: "json"};
+
+const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0'}}
 
 function debug(error: any) {
 
@@ -78,9 +80,7 @@ function applyPatches(...patches: PatchSyntax[]) {
 
                 console.error(`>> extending declarations >> ${key}`);
                 json.declarations[key].syntax += ' ' + value.syntax;
-            }
-
-            else {
+            } else {
 
                 console.error(`>> replacing declarations >> ${key}`);
                 json.declarations[key].syntax += ' ' + value.syntax;
@@ -97,9 +97,7 @@ function applyPatches(...patches: PatchSyntax[]) {
 
                 console.error(`>> extending syntax >> ${key}`);
                 json.syntaxes[key].syntax += ' ' + value.syntax;
-            }
-
-            else {
+            } else {
 
                 console.error(`>> replacing syntax >> ${key}`);
                 json.syntaxes[key] = {syntax: value.syntax};

@@ -1,5 +1,5 @@
-import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types";
-import {EnumToken} from "../../ast";
+import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import {EnumToken} from "../../ast/index.ts";
 import {getNumber} from "./color.ts";
 import {srgb2lsrgbvalues, srgbvalues} from "./srgb.ts";
 import {srgb2lch, xyz2lchvalues} from "./lch.ts";

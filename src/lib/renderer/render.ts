@@ -65,37 +65,7 @@ import {
 import {EnumToken, expand} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
 import {colorFuncColorSpace, ColorKind, colorsFunc, funcLike, getComponents} from "../syntax/color/utils/index.ts";
-import {isColor, isNewLine, mathFuncs, pseudoElements} from "../syntax/index.ts";
-
-export function reduceNumber(val: string | number): string {
-
-    val = String(+val);
-
-    if (val === '0') {
-
-        return '0';
-    }
-
-    const chr: string = val.charAt(0);
-
-    if (chr == '-') {
-
-        const slice: string = val.slice(0, 2);
-
-        if (slice == '-0') {
-
-            return val.length == 2 ? '0' : '-' + val.slice(2);
-        }
-
-    }
-
-    if (chr == '0') {
-
-        return val.slice(1);
-    }
-
-    return val;
-}
+import {isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements} from "../syntax/index.ts";
 
 function update(position: Position, str: string) {
 
@@ -519,7 +489,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (+(token as FractionToken).r.val != 0) {
 
-                const value: string = reduceNumber(+(token as FractionToken).l.val / +(token as FractionToken).r.val);
+                const value: string = minifyNumber(+(token as FractionToken).l.val / +(token as FractionToken).r.val);
 
                 if (value.length <= fraction.length) {
 
@@ -880,7 +850,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
 
-            let val: string = (<FractionToken>(token as LengthToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as LengthToken).val, options, cache) : reduceNumber(<string | number>(token as LengthToken).val);
+            let val: string = (<FractionToken>(token as LengthToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as LengthToken).val, options, cache) : minifyNumber(<string | number>(token as LengthToken).val);
             let unit: string = (token as LengthToken).unit;
 
             if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
@@ -901,7 +871,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         case 'turn':
 
-                            v = reduceNumber(angle);
+                            v = minifyNumber(angle);
 
                             if (v.length + 4 < value.length) {
 
@@ -914,7 +884,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         case 'deg':
 
-                            v = reduceNumber(angle * 360);
+                            v = minifyNumber(angle * 360);
 
                             if (v.length + 3 < value.length) {
 
@@ -927,7 +897,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         case 'rad':
 
-                            v = reduceNumber(angle * (2 * Math.PI));
+                            v = minifyNumber(angle * (2 * Math.PI));
 
                             if (v.length + 3 < value.length) {
 
@@ -940,7 +910,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                         case 'grad':
 
-                            v = reduceNumber(angle * 400);
+                            v = minifyNumber(angle * 400);
 
                             if (v.length + 4 < value.length) {
 
@@ -980,7 +950,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 if (unit == 'ms') {
 
                     // @ts-ignore
-                    const v: string = reduceNumber(val / 1000);
+                    const v: string = minifyNumber(val / 1000);
 
                     if (v.length + 1 <= val.length) {
 
@@ -1004,13 +974,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.PercentageTokenType:
 
             const uni: string = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
-
-            const perc: string = (<FractionToken>(token as PercentageToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as PercentageToken).val, options, cache) : reduceNumber(<string>(token as PercentageToken).val);
+            const perc: string = (<FractionToken>(token as PercentageToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as PercentageToken).val, options, cache) : minifyNumber(<string>(token as PercentageToken).val);
+            
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
 
         case EnumToken.NumberTokenType:
 
-            return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as NumberToken).val, options, cache) : reduceNumber(<string>(token as NumberToken).val);
+            return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as NumberToken).val, options, cache) : minifyNumber(<string>(token as NumberToken).val);
 
         case EnumToken.CommentTokenType:
 

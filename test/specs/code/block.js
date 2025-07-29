@@ -722,4 +722,20 @@ content: '\\21 now\\21';
  color: red
 }`));
     });
+
+    it('attribute #35', function () {
+        const file = `
+
+            [data-theme="light blue"] .markdown-body, [data-theme="light grey"] .markdown-body{
+                margin-left: 200px;
+            }
+            
+            [data-theme="light blue"] .markdown-body p, [data-theme="light grey"] .markdown-body p {
+                margin-left: 200px;
+            }
+`;
+        return transform(file, {beautify: true}).then(result => expect(result.code).equals(`[data-theme="light blue"] .markdown-body,[data-theme="light grey"] .markdown-body,[data-theme="light blue"] .markdown-body p,[data-theme="light grey"] .markdown-body p {
+ margin-left: 200px
+}`));
+    });
 }

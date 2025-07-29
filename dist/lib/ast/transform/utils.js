@@ -12,10 +12,16 @@ function normalize(point) {
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
 }
 function dot(point1, point2) {
-    if (point1.length === 4 && point2.length === 4) {
-        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    // if (point1.length === 4 && point2.length === 4) {
+    //
+    //     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    // }
+    let result = 0;
+    for (let i = 0; i < point1.length; i++) {
+        result += point1[i] * point2[i];
     }
-    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+    return result;
+    // return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 function multiply(matrixA, matrixB) {
     let result = Array(4).fill(0).map(() => Array(4).fill(0));
@@ -28,6 +34,69 @@ function multiply(matrixA, matrixB) {
     }
     return result;
 }
+function inverse(matrix) {
+    // Create augmented matrix [matrix | identity]
+    let augmented = matrix.map((row, i) => [
+        ...row,
+        ...(i === 0 ? [1, 0, 0, 0] :
+            i === 1 ? [0, 1, 0, 0] :
+                i === 2 ? [0, 0, 1, 0] :
+                    [0, 0, 0, 1])
+    ]);
+    // Gaussian elimination with partial pivoting
+    for (let col = 0; col < 4; col++) {
+        // Find pivot row with maximum absolute value
+        let maxRow = col;
+        let maxVal = Math.abs(augmented[col][col]);
+        for (let row = col + 1; row < 4; row++) {
+            let val = Math.abs(augmented[row][col]);
+            if (val > maxVal) {
+                maxVal = val;
+                maxRow = row;
+            }
+        }
+        // Check for singularity
+        if (maxVal < 1e-5) {
+            return null;
+        }
+        // Swap rows if necessary
+        if (maxRow !== col) {
+            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
+        }
+        // Scale pivot row to make pivot element 1
+        let pivot = augmented[col][col];
+        for (let j = 0; j < 8; j++) {
+            augmented[col][j] /= pivot;
+        }
+        // Eliminate column in other rows
+        for (let row = 0; row < 4; row++) {
+            if (row !== col) {
+                let factor = augmented[row][col];
+                for (let j = 0; j < 8; j++) {
+                    augmented[row][j] -= factor * augmented[col][j];
+                }
+            }
+        }
+    }
+    // Extract the inverse from the right side of the augmented matrix
+    return augmented.map(row => row.slice(4));
+}
+// function transpose(matrix: Matrix): Matrix {
+//     // Crée une nouvelle matrice vide 4x4
+//     // @ts-ignore
+//     let transposed: Matrix = [[], [], [], []] as Matrix;
+//
+//     // Parcourt chaque ligne et colonne pour transposer
+//     for (let i = 0; i < 4; i++) {
+//
+//         for (let j = 0; j < 4; j++) {
+//
+//             transposed[j][i] = matrix[i][j];
+//         }
+//     }
+//
+//     return transposed;
+// }
 function round(number) {
     return Math.abs(number) < epsilon ? 0 : +number.toPrecision(6);
 }
@@ -50,11 +119,12 @@ function decompose(original) {
         perspectiveMatrix[7] = 0;
         perspectiveMatrix[11] = 0;
         perspectiveMatrix[15] = 1;
-        const inverse = invertMatrix4(perspectiveMatrix);
-        if (!inverse) {
+        // @ts-ignore
+        const inverted = inverse(original.reduce((acc, row, i) => acc.concat([row.slice()]), []))?.flat?.();
+        if (!inverted) {
             return null;
         }
-        const transposedInverse = transposeMatrix4(inverse);
+        const transposedInverse = transposeMatrix4(inverted);
         perspective[0] = dot(rightHandSide, transposedInverse.slice(0, 4));
         perspective[1] = dot(rightHandSide, transposedInverse.slice(4, 8));
         perspective[2] = dot(rightHandSide, transposedInverse.slice(8, 12));
@@ -158,16 +228,6 @@ function transposeMatrix4(m) {
         m[2], m[6], m[10], m[14],
         m[3], m[7], m[11], m[15],
     ];
-}
-function invertMatrix4(m) {
-    new Array(16);
-    const det = m[0] * m[5] * m[10] * m[15] + m[0] * m[9] * m[14] * m[7] + m[0] * m[13] * m[6] * m[11]
-        - m[0] * m[13] * m[10] * m[7] - m[0] * m[9] * m[6] * m[15] - m[0] * m[5] * m[14] * m[11];
-    if (det === 0)
-        return null;
-    // For brevity, not implementing full inverse here — you'd normally use gl-matrix or similar.
-    // Just use a trusted library or expand this if needed.
-    return null; // placeholder
 }
 function toZero(v) {
     for (let i = 0; i < v.length; i++) {

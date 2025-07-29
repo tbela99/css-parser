@@ -274,7 +274,7 @@ line-height: calc(pi);
 }`));
         });
 
-        it('pow() #22', function () {
+        it('log() #22', function () {
 
             return parse(`
 
@@ -287,7 +287,7 @@ width: calc(100px * log(8, 2));
 }`));
         });
 
-        it('pow() #23', function () {
+        it('log() #23', function () {
 
             return parse(`
 
@@ -300,7 +300,7 @@ width: calc(100px * log(625, 5));
 }`));
         });
 
-        it('pow() #24', function () {
+        it('log() #24', function () {
 
             return parse(`
 
@@ -313,7 +313,7 @@ width: calc(100px * log(625, 5));
 }`));
         });
 
-        it('pow() #25', function () {
+        it('exp() #25', function () {
 
             return parse(`
 
@@ -326,7 +326,7 @@ width: calc(100px * exp(-1));}
 }`));
         });
 
-        it('pow() #26', function () {
+        it('abs() #26', function () {
 
             return parse(`
 
@@ -339,7 +339,7 @@ width: calc(2px *abs(-1);}
 }`));
         });
 
-        it('pow() #27', function () {
+        it('sign() #27', function () {
 
             return parse(`
 
@@ -349,6 +349,90 @@ width: calc(-2px *sign(-1);}
 }
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
  width: 2px
+}`));
+        });
+
+        it('calc() #28', function () {
+
+            return transform(`
+
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc(calc(var(--preferred-width) + 2px) / 3 + 5/2px);
+`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+ width: calc(59px/6)
+}`));
+        });
+
+        it('calc() #29', function () {
+
+            return transform(`
+
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc(calc(var(--preferred-width) + 2px) / 3 + 5/2px - 5/6px);
+`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+ width: 9px
+}`));
+        });
+
+        it('calc() #30', function () {
+
+            return transform(`
+
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc(calc(var(--preferred-width) + 2px) / (10/3px));
+`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+ width: 6.6px
+}`));
+        });
+
+        it('max() #31', function () {
+
+            return transform(`
+
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
+`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+ width: 200px
+}`));
+        });
+
+        it('max() #32', function () {
+
+            return transform(`
+
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
+`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+ width: 200px
+}`));
+        });
+
+        it('max() #33', function () {
+
+            return transform(`
+
+:root {
+--preferred-width: 670px;
+}
+.foo-bar {
+    width: max(calc(calc(var(--preferred-width) + 2px) / (10/3px)), 200px);
+`, {inlineCssVariables: true, beautify: true}).then(result => expect(result.code).equals(`.foo-bar {
+ width: 201.6px
 }`));
         });
     });

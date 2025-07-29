@@ -1,6 +1,5 @@
 import { toZero, is2DMatrix, identity } from './utils.js';
 import { EnumToken } from '../types.js';
-import { reduceNumber } from '../../renderer/render.js';
 import { eq } from '../../parser/utils/eq.js';
 import { getNumber } from '../../syntax/color/color.js';
 import '../../syntax/color/utils/constants.js';
@@ -9,6 +8,8 @@ import '../walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import '../../renderer/sourcemap/lib/encode.js';
+import { minifyNumber } from '../../syntax/utils.js';
 
 function parseMatrix(mat) {
     if (mat.typ == EnumToken.IdenTokenType) {
@@ -87,7 +88,7 @@ function serialize(matrix) {
                 }
                 acc.push({
                     typ: EnumToken.NumberTokenType,
-                    val: reduceNumber(t)
+                    val: minifyNumber(t)
                 });
                 return acc;
             }, [])
@@ -102,7 +103,7 @@ function serialize(matrix) {
             }
             acc.push({
                 typ: EnumToken.NumberTokenType,
-                val: reduceNumber(curr)
+                val: minifyNumber(curr)
             });
             return acc;
         }, [])

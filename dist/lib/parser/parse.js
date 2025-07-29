@@ -1,12 +1,12 @@
-import { isColor, parseColor, isIdent, mediaTypes, isDimension, parseDimension, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isHexColor, isHash, isIdentStart, isIdentColor, mathFuncs } from '../syntax/syntax.js';
-import './utils/config.js';
+import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
 import { EnumToken, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
+import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, ColorKind, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
+import { funcLike, COLORS_NAMES, ColorKind, timingFunc, timelineFunc, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';

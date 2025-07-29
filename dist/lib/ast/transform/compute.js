@@ -1,7 +1,7 @@
 import { multiply, identity } from './utils.js';
 import { EnumToken } from '../types.js';
-import { length2Px } from './convert.js';
 import { transformFunctions } from '../../syntax/syntax.js';
+import { length2Px } from '../../syntax/utils.js';
 import '../minify.js';
 import '../walk.js';
 import '../../parser/parse.js';
@@ -22,9 +22,10 @@ import { perspective } from './perspective.js';
 function compute(transformLists) {
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
-    if (transformLists.length == 0) {
-        return null;
-    }
+    // if (transformLists.length == 0) {
+    //
+    //     return null;
+    // }
     let matrix = identity();
     let mat;
     const cumulative = [];
@@ -60,9 +61,10 @@ function computeMatrix(transformList, matrixVar) {
     let val;
     let i = 0;
     for (; i < transformList.length; i++) {
-        if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
-            continue;
-        }
+        // if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
+        //
+        //     continue;
+        // }
         if (transformList[i].typ != EnumToken.FunctionTokenType || !transformFunctions.includes(transformList[i].val)) {
             return null;
         }
@@ -75,25 +77,27 @@ function computeMatrix(transformList, matrixVar) {
                 {
                     values.length = 0;
                     const children = stripCommaToken(transformList[i].chi.slice());
-                    if (children == null || children.length == 0) {
-                        return null;
-                    }
+                    // if (children == null || children.length == 0) {
+                    //
+                    //     return null;
+                    // }
                     const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
-                    if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && children[0].val == 'none') {
-                        values.fill(0, 0, valCount);
-                    }
-                    else {
-                        for (let j = 0; j < children.length; j++) {
-                            if (children[j].typ == EnumToken.WhitespaceTokenType) {
-                                continue;
-                            }
-                            val = length2Px(children[j]);
-                            if (typeof val != 'number' || Number.isNaN(val)) {
-                                return null;
-                            }
-                            values.push(val);
+                    // if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'none') {
+                    //
+                    //     values.fill(0, 0, valCount);
+                    //
+                    // } else {
+                    for (let j = 0; j < children.length; j++) {
+                        if (children[j].typ == EnumToken.WhitespaceTokenType) {
+                            continue;
                         }
+                        val = length2Px(children[j]);
+                        if (val == null) {
+                            return null;
+                        }
+                        values.push(val);
                     }
+                    // }
                     if (values.length == 0 || values.length > valCount) {
                         return null;
                     }
@@ -128,9 +132,10 @@ function computeMatrix(transformList, matrixVar) {
                     let values = [];
                     let valuesCount = transformList[i].val == 'rotate3d' ? 4 : 1;
                     for (const child of stripCommaToken(transformList[i].chi.slice())) {
-                        if (child.typ == EnumToken.WhitespaceTokenType) {
-                            continue;
-                        }
+                        // if (child.typ == EnumToken.WhitespaceTokenType) {
+                        //
+                        //     continue;
+                        // }
                         values.push(child);
                         if (transformList[i].val == 'rotateX') {
                             x = 1;
@@ -173,17 +178,19 @@ function computeMatrix(transformList, matrixVar) {
                     const children = stripCommaToken(transformList[i].chi.slice());
                     for (let k = 0; k < children.length; k++) {
                         child = children[k];
-                        if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
-                            continue;
-                        }
+                        // if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                        //
+                        //     continue;
+                        // }
                         if (child.typ != EnumToken.NumberTokenType) {
                             return null;
                         }
                         values.push(getNumber(child));
                     }
-                    if (values.length == 0) {
-                        return null;
-                    }
+                    // if (values.length == 0) {
+                    //
+                    //     return null;
+                    // }
                     if (transformList[i].val == 'scale3d') {
                         if (values.length != 3) {
                             return null;
@@ -221,13 +228,16 @@ function computeMatrix(transformList, matrixVar) {
                     let value;
                     for (let k = 0; k < transformList[i].chi.length; k++) {
                         child = transformList[i].chi[k];
-                        if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                        if (child.typ == EnumToken.CommentTokenType ||
+                            child.typ == EnumToken.CommaTokenType ||
+                            child.typ == EnumToken.WhitespaceTokenType) {
                             continue;
                         }
                         value = getAngle(child);
-                        if (value == null) {
-                            return null;
-                        }
+                        // if (value == null) {
+                        //
+                        //     return null;
+                        // }
                         values.push(value * 2 * Math.PI);
                     }
                     if (values.length == 0 || (values.length > (transformList[i].val == 'skew' ? 2 : 1))) {

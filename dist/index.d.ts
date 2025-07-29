@@ -1160,6 +1160,7 @@ interface ValidationOptions {
     validation?: boolean | ValidationLevel;
     lenient?: boolean;
     visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isOptional?:boolean | null;
     isRepeatable?:boolean | null;
     isList?:boolean | null;
     occurence?:boolean | null;

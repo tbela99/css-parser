@@ -20,6 +20,9 @@ function createContext(input) {
     const result = values.filter(token => token.typ != EnumToken.CommentTokenType).slice();
     return {
         index: -1,
+        get length() {
+            return this.index < 0 ? result.length : this.index > result.length ? 0 : result.length - this.index;
+        },
         peek() {
             let index = this.index + 1;
             if (index >= result.length) {
@@ -178,7 +181,20 @@ function doEvaluateSyntax(syntaxes, context, options) {
     let syntax;
     let i = 0;
     let result;
+    let tmpResult;
     let token = null;
+    if (context.done()) {
+        const success = syntaxes.some(s => s.isOptional || s.isRepeatable || s.isRepeatableGroup);
+        return {
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
+            node: null,
+            syntax: null,
+            error: '',
+            context
+        };
+    }
+    // console.error(`>> ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
+    // console.error(new Error('doEvaluateSyntax'));
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -188,6 +204,10 @@ function doEvaluateSyntax(syntaxes, context, options) {
             break;
         }
         token = context.peek();
+        // if var() is the last token, then match the remaining syntax and return
+        if (context.length == 1 && token.typ == EnumToken.FunctionTokenType && 'var'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0) {
+            return doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, 'var')?.[0]?.chi ?? [], createContext(token.chi), options);
+        }
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
             if (context.peek()?.typ == EnumToken.WhitespaceTokenType) {
                 context.next();
@@ -198,7 +218,13 @@ function doEvaluateSyntax(syntaxes, context, options) {
             result = matchList(syntax, context, options);
         }
         else if (options.isRepeatable !== false && syntax.isRepeatable) {
-            result = matchRepeatable(syntax, context, options);
+            tmpResult = matchRepeatable(syntax, context, options);
+            if (tmpResult.valid == SyntaxValidationResult.Valid) {
+                result = tmpResult;
+            }
+            else {
+                continue;
+            }
         }
         else if (options.occurence !== false && syntax.occurence != null) {
             result = matchOccurence(syntax, context, options);
@@ -277,7 +303,7 @@ function matchRepeatable(syntax, context, options) {
     };
 }
 function matchList(syntax, context, options) {
-    let success = false;
+    let success;
     let result;
     let count = 0;
     let con = context.clone();
@@ -316,15 +342,12 @@ function matchList(syntax, context, options) {
         }
     }
     success = count > 0;
-    // if (count && syntax.occurence != null) {
-    //
-    //     success = count >= syntax.occurence.min;
-    //
-    //     if (success && syntax.occurence.max != null) {
-    //
-    //         success = count <= syntax.occurence.max;
-    //     }
-    // }
+    if (success && syntax.occurence != null) {
+        success = count >= syntax.occurence.min;
+        if (success && syntax.occurence.max != null) {
+            success = count <= syntax.occurence.max;
+        }
+    }
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
         node: context.peek(),
@@ -444,6 +467,7 @@ function match(syntax, context, options) {
                 };
             }
             result = match(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0], context, options);
+            // console.error(`>>[]
             if (result.valid == SyntaxValidationResult.Valid) {
                 context.next();
                 result.context = context;
@@ -515,6 +539,20 @@ function match(syntax, context, options) {
             if (!wildCardFuncs.includes(syntax.val) && syntax.val != token.val) {
                 break;
             }
+            if (syntax.typ == ValidationTokenEnum.Function) {
+                success = funcLike.includes(token.typ) && syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && doEvaluateSyntax(syntax.chi, createContext(token.chi), options).valid == SyntaxValidationResult.Valid;
+                // console.error(`>> match: ${JSON.stringify({
+                //     syntax,
+                //     token,
+                //     // result,
+                //     tr2: syntax,
+                //     success
+                // }, null, 1)}`);
+                if (success) {
+                    context.next();
+                }
+                break;
+            }
             if (token.typ != EnumToken.ParensTokenType && funcLike.includes(token.typ)) {
                 success = doEvaluateSyntax(syntax.chi, createContext(token.chi), {
                     ...options,
@@ -528,22 +566,6 @@ function match(syntax, context, options) {
                 }
                 break;
             }
-        // if (syntax.typ == ValidationTokenEnum.Function) {
-        //
-        //     success = funcLike.includes(token.typ) && doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, (syntax as ValidationFunctionToken).val + '()')?.[0] as ValidationFunctionToken)?.chi as ValidationToken[], createContext((token as FunctionToken).chi), {
-        //         ...options,
-        //         isRepeatable: null,
-        //         isList: null,
-        //         occurence: null,
-        //         atLeastOnce: null
-        //     } as ValidationOptions).valid == SyntaxValidationResult.Valid;
-        //
-        //     if (success) {
-        //
-        //         context.next();
-        //     }
-        //     break;
-        // }
         // throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)} : ${renderToken(context.peek() as Token)} : ${JSON.stringify(syntax, null, 1)} | ${JSON.stringify(context.peek(), null, 1)}`);
     }
     if (!success && token.typ == EnumToken.IdenTokenType && allValues.includes(token.val.toLowerCase())) {
@@ -561,7 +583,9 @@ function match(syntax, context, options) {
 function matchPropertyType(syntax, context, options) {
     if (![
         'bg-position',
-        'length-percentage', 'flex', 'calc-sum', 'color', 'color-base', 'system-color', 'deprecated-system-color',
+        'integer',
+        'length-percentage', 'flex', 'calc-sum', 'color',
+        'color-base', 'system-color', 'deprecated-system-color',
         'pseudo-class-selector', 'pseudo-element-selector'
     ].includes(syntax.val)) {
         if (syntax.val in config["syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */]) {
@@ -727,7 +751,7 @@ function matchPropertyType(syntax, context, options) {
             success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorKind.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'integer':
-            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+(token.val))) || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+(token.val))) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val)));
             if ('range' in syntax) {
                 success = success && +token.val >= +syntax.range[0] && +token.val <= +syntax.range[1];
             }
@@ -840,6 +864,7 @@ function someOf(syntaxes, context, options) {
         //     context.next();
         // }
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
+        // console.error(`>> someOf: ${JSON.stringify({result}, null, 1)}`);
         if (result.valid == SyntaxValidationResult.Valid) {
             success = true;
             if (result.context.done()) {
@@ -852,6 +877,8 @@ function someOf(syntaxes, context, options) {
         // pick the best match
         matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
     }
+    // console.error(JSON.stringify({matched}, null, 1));
+    // console.error(new Error('someOf'));
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
         node: context.peek(),
@@ -927,18 +954,17 @@ function allOf(syntax, context, options) {
     let j;
     for (i = 0; i < syntax.length; i++) {
         if (syntax[i].length == 1 && syntax[i][0].isOptional) {
-            syntax[i][0].isOptional = false;
             j = 0;
             cp = con.clone();
             slice = cp.slice();
             if (cp.done()) {
-                syntax[i][0].isOptional = true;
                 syntax.splice(i, 1);
                 i = -1;
                 continue;
             }
             while (!cp.done()) {
-                result = doEvaluateSyntax(syntax[i], cp.clone(), options);
+                result = doEvaluateSyntax(syntax[i], cp.clone(), { ...options, isOptional: false });
+                // console.error(`>> allOf: syntaxes[${i}]: ${syntax[i].length} ${syntax[i].reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${cp.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}\n>> ${JSON.stringify({result}, null, 1)}`);
                 if (result.valid == SyntaxValidationResult.Valid) {
                     let end = slice.indexOf(cp.current());
                     if (end == -1) {
@@ -953,9 +979,8 @@ function allOf(syntax, context, options) {
                 cp.next();
                 j++;
             }
-            syntax[i][0].isOptional = true;
             // @ts-ignore
-            if (result?.valid == SyntaxValidationResult.Valid) {
+            if (result?.valid == SyntaxValidationResult.Valid || (syntax[i].length == 1 && syntax[i][0].isOptional)) {
                 syntax.splice(i, 1);
                 i = -1;
             }
@@ -968,6 +993,7 @@ function allOf(syntax, context, options) {
             i = -1;
         }
     }
+    // console.error()
     const success = syntax.length == 0;
     return {
         valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,

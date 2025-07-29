@@ -1,11 +1,11 @@
 import { ValidationTokenEnum } from './types.js';
 import { isIdent, isPseudo } from '../../syntax/syntax.js';
-import { getTokenType as getTokenType$1 } from '../../parser/parse.js';
-import '../../parser/tokenize.js';
-import '../../parser/utils/config.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
+import { getTokenType as getTokenType$1 } from '../../parser/parse.js';
+import '../../parser/tokenize.js';
+import '../../parser/utils/config.js';
 import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
@@ -351,9 +351,10 @@ function matchAtRule(syntax, iterator) {
                 token.typ = ValidationTokenEnum.AtRule;
                 break;
             }
-            if (item.value.typ != ValidationTokenEnum.Whitespace) {
-                console.error('unexpected token', item.value);
-            }
+            // if (item.value.typ != ValidationTokenEnum.Whitespace) {
+            //
+            //     console.error('unexpected token', item.value);
+            // }
             item = iterator.next();
             if (item.done) {
                 break;
@@ -664,6 +665,10 @@ function parseSyntaxTokens(syntax, iterator) {
                             break;
                         }
                     }
+                }
+                if ('occurence' in item.value) {
+                    // @ts-ignore
+                    items[i].occurence = { ...item.value.occurence };
                 }
                 break;
             case ValidationTokenEnum.Pipe:

@@ -1,8 +1,8 @@
-import type {ColorToken, IdentToken, NumberToken, PercentageToken} from "../../../@types";
-import {EnumToken} from "../../ast";
+import type {ColorToken, IdentToken, NumberToken, PercentageToken} from "../../../@types/index.d.ts";
+import {EnumToken} from "../../ast/index.ts";
 import {getNumber, minmax} from "./color.ts";
 import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb.ts";
-import {getComponents, NAMES_COLORS} from "./utils";
+import {getComponents, NAMES_COLORS} from "./utils/index.ts";
 
 function toHexString(acc: string, value: number): string {
 

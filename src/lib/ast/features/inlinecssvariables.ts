@@ -165,26 +165,26 @@ export class InlineCssVariablesFeature {
 
                         replace(node, variableScope);
                     }
-
-                } else {
-
-                    const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
-
-                    info.globalScope = isRoot;
-
-                    if (!isRoot) {
-
-                        ++info.declarationCount;
-                    }
-
-                    if (info.replaceable) {
-
-                        info.replaceable = isRoot && info.declarationCount == 1;
-                    }
-
-                    info.parent.add(ast);
-                    info.node = (<AstDeclaration>node);
                 }
+                // else {
+                //
+                //     const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
+                //
+                //     info.globalScope = isRoot;
+                //
+                //     if (!isRoot) {
+                //
+                //         ++info.declarationCount;
+                //     }
+                //
+                //     if (info.replaceable) {
+                //
+                //         info.replaceable = isRoot && info.declarationCount == 1;
+                //     }
+                //
+                //     info.parent.add(ast);
+                //     info.node = (<AstDeclaration>node);
+                // }
             } else {
 
                 replace(node, variableScope);
@@ -196,10 +196,10 @@ export class InlineCssVariablesFeature {
 
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 
-        if (variableScope == null) {
-
-            return;
-        }
+        // if (variableScope == null) {
+        //
+        //     return;
+        // }
 
         for (const info of variableScope.values()) {
 

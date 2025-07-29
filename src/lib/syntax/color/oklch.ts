@@ -1,7 +1,7 @@
-import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
-import {getComponents} from "./utils";
+import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import {getComponents} from "./utils/index.ts";
 import {getAngle, getNumber} from "./color.ts";
-import {EnumToken} from "../../ast";
+import {EnumToken} from "../../ast/index.ts";
 import {lab2lchvalues} from "./lch.ts";
 import {
     getOKLABComponents,

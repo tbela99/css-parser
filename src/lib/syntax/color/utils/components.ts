@@ -1,5 +1,5 @@
-import type {ColorToken, NumberToken, Token} from "../../../../@types";
-import {EnumToken} from "../../../ast";
+import type {ColorToken, NumberToken, Token} from "../../../../@types/index.d.ts";
+import {EnumToken} from "../../../ast/index.ts";
 import {ColorKind, COLORS_NAMES} from "./constants.ts";
 import {expandHexValue} from "../hex.ts";
 

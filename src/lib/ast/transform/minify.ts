@@ -58,20 +58,22 @@ export function minify(matrix: Matrix): Token[] | null {
             }
         }
 
-        if (coordinates.size == 3) {
+        // if (coordinates.size == 3) {
+        //
+        //     result.push({
+        //         typ: EnumToken.FunctionTokenType,
+        //         val: 'translate3d',
+        //         chi: [
+        //             {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
+        //             {typ: EnumToken.CommaTokenType},
+        //             {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'},
+        //             {typ: EnumToken.CommaTokenType},
+        //             {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]) + '', unit: 'px'}
+        //         ]
+        //     })
+        // } else
 
-            result.push({
-                typ: EnumToken.FunctionTokenType,
-                val: 'translate3d',
-                chi: [
-                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
-                    {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'},
-                    {typ: EnumToken.CommaTokenType},
-                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]) + '', unit: 'px'}
-                ]
-            })
-        } else if (coordinates.size == 1) {
+        if (coordinates.size == 1) {
 
             if (coordinates.has('x')) {
 
@@ -116,15 +118,9 @@ export function minify(matrix: Matrix): Token[] | null {
                 typ: EnumToken.FunctionTokenType,
                 val: 'translate',
                 chi: [
-                    decomposed.translate[0] == 0 ? {
-                        typ: EnumToken.NumberTokenType,
-                        'val': '0'
-                    } : {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
+                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
                     {typ: EnumToken.CommaTokenType},
-                    decomposed.translate[1] == 0 ? {
-                        typ: EnumToken.NumberTokenType,
-                        'val': '0'
-                    } : {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'}
+                    {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'}
                 ]
             });
         }
@@ -206,10 +202,10 @@ export function minify(matrix: Matrix): Token[] | null {
 
     if (transforms.has('skew')) {
 
-        if (round(decomposed.skew[0]) == 0) {
-
-            skew.delete('x');
-        }
+        // if (round(decomposed.skew[0]) == 0) {
+        //
+        //     skew.delete('x');
+        // }
 
         if (round(decomposed.skew[1]) == 0) {
 
@@ -301,16 +297,16 @@ export function minify(matrix: Matrix): Token[] | null {
         }
     }
 
-    if (transforms.has('perspective')) {
-
-        result.push({
-            typ: EnumToken.FunctionTokenType,
-            val: 'perspective',
-            chi: [
-                {typ: EnumToken.Length, val: '' + round(1 / decomposed.perspective[2]), unit: 'px'},
-            ]
-        });
-    }
+    // if (transforms.has('perspective')) {
+    //
+    //     result.push({
+    //         typ: EnumToken.FunctionTokenType,
+    //         val: 'perspective',
+    //         chi: [
+    //             {typ: EnumToken.Length, val: '' + round(1 / decomposed.perspective[2]), unit: 'px'},
+    //         ]
+    //     });
+    // }
 
     // identity
     return result.length == 0 || (result.length == 1 && eqMatrix(identity(), result)) ? [

@@ -77,8 +77,6 @@ const objectProperties = {
     configurable: true
 }
 
-export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0'}}
-
 function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}, currentPosition: Position = {
     ind: -1,
     lin: 1,
@@ -566,10 +564,10 @@ function matchAtRule(syntax: string, iterator: Iterator<ValidationTokenIteratorV
                 break;
             }
 
-            if (item.value.typ != ValidationTokenEnum.Whitespace) {
-
-                console.error('unexpected token', item.value);
-            }
+            // if (item.value.typ != ValidationTokenEnum.Whitespace) {
+            //
+            //     console.error('unexpected token', item.value);
+            // }
 
             item = iterator.next() as ValidationTokenIteratorValue;
 
@@ -1014,6 +1012,12 @@ function parseSyntaxTokens(syntax: string, iterator: Iterator<ValidationTokenIte
                         }
                     }
                 }
+
+                if ('occurence' in item.value) {
+
+                    // @ts-ignore
+                    items[i].occurence = {...item.value.occurence};
+                };
 
                 break;
 

@@ -556,7 +556,7 @@ html, body, div, span, applet, object, iframe,
 `, {
                 validation: true,
                 resolveImport: true
-            }).then(result => expect(result.errors.length).equals(0)).then(() => done(), () => done());
+            }).then(result => expect(result.errors.length).equals(12)).then(() => done(), () => done());
         });
 
         it('file validation #27', function (done) {

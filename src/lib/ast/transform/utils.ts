@@ -12,12 +12,6 @@ interface DecomposedMatrix3D {
     perspective: [number, number, number, number];
 }
 
-function determinant(matrix: Matrix): number {
-    return matrix[0][0] * matrix[1][1] * matrix[2][2] * matrix[3][3] - matrix[0][0] * matrix[1][2] * matrix[2][3] * matrix[3][1] -
-        matrix[0][1] * matrix[1][0] * matrix[2][3] * matrix[3][2] + matrix[0][1] * matrix[1][2] * matrix[2][0] * matrix[3][3] -
-        matrix[0][2] * matrix[1][0] * matrix[2][1] * matrix[3][3] + matrix[0][2] * matrix[1][1] * matrix[2][0] * matrix[3][2] -
-        matrix[0][3] * matrix[1][0] * matrix[2][1] * matrix[3][2] + matrix[0][3] * matrix[1][1] * matrix[2][2] * matrix[3][0];
-}
 
 export function identity(): Matrix {
 
@@ -42,22 +36,23 @@ function dot(point1: [number, number, number, number], point2: [number, number, 
 
 function dot(point1: Point | [number, number, number, number], point2: Point | [number, number, number, number]): number {
 
-    if (point1.length === 4 && point2.length === 4) {
+    // if (point1.length === 4 && point2.length === 4) {
+    //
+    //     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    // }
 
-        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
+    let result = 0;
+
+    for (let i = 0; i < point1.length; i++) {
+
+        result += point1[i] * point2[i];
     }
 
-    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+    return result;
+
+    // return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 
-function combine(point1: Point, point2: Point, ascl: number, bscl: number): Point {
-
-    return [point1[0] * ascl + point2[0] * bscl, point1[1] * ascl + point2[1] * bscl, point1[2] * ascl + point2[2] * bscl];
-}
-
-function cross(a: Point, b: Point): Point {
-    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-}
 
 export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
 
@@ -144,22 +139,22 @@ function inverse(matrix: Matrix): Matrix | null {
     return augmented.map(row => row.slice(4)) as Matrix;
 }
 
-function transpose(matrix: Matrix): Matrix {
-    // Crée une nouvelle matrice vide 4x4
-    // @ts-ignore
-    let transposed: Matrix = [[], [], [], []] as Matrix;
-
-    // Parcourt chaque ligne et colonne pour transposer
-    for (let i = 0; i < 4; i++) {
-
-        for (let j = 0; j < 4; j++) {
-
-            transposed[j][i] = matrix[i][j];
-        }
-    }
-
-    return transposed;
-}
+// function transpose(matrix: Matrix): Matrix {
+//     // Crée une nouvelle matrice vide 4x4
+//     // @ts-ignore
+//     let transposed: Matrix = [[], [], [], []] as Matrix;
+//
+//     // Parcourt chaque ligne et colonne pour transposer
+//     for (let i = 0; i < 4; i++) {
+//
+//         for (let j = 0; j < 4; j++) {
+//
+//             transposed[j][i] = matrix[i][j];
+//         }
+//     }
+//
+//     return transposed;
+// }
 
 export function round(number: number): number {
 
@@ -193,14 +188,15 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         perspectiveMatrix[11] = 0;
         perspectiveMatrix[15] = 1;
 
-        const inverse = invertMatrix4(perspectiveMatrix);
+        // @ts-ignore
+        const inverted = inverse(original.reduce((acc, row, i) => acc.concat([row.slice()]), []))?.flat?.();
 
-        if (!inverse) {
+        if (!inverted) {
 
             return null;
         }
 
-        const transposedInverse = transposeMatrix4(inverse);
+        const transposedInverse = transposeMatrix4(inverted);
         perspective[0] = dot(rightHandSide as [number, number, number, number], transposedInverse.slice(0, 4) as [number, number, number, number]);
         perspective[1] = dot(rightHandSide as [number, number, number, number], transposedInverse.slice(4, 8) as [number, number, number, number]);
         perspective[2] = dot(rightHandSide as [number, number, number, number], transposedInverse.slice(8, 12) as [number, number, number, number]);
@@ -215,6 +211,7 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
 
     // Translation
     const translate: [number, number, number] = [matrix[12], matrix[13], matrix[14]];
+
     matrix[12] = matrix[13] = matrix[14] = 0;
 
     // Build the 3x3 matrix
@@ -256,7 +253,6 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
     // Convert to quaternion
     const trace = r00 + r11 + r22;
     let qw: number, qx: number, qy: number, qz: number;
-    const cosTheta = (trace - 1.0) / 2.0;
 
     if (trace > 0) {
         const s = 0.5 / Math.sqrt(trace + 1.0);
@@ -325,20 +321,6 @@ function transposeMatrix4(m: number[]): number[] {
         m[2], m[6], m[10], m[14],
         m[3], m[7], m[11], m[15],
     ];
-}
-
-function invertMatrix4(m: number[]): number[] | null {
-    const inv = new Array(16);
-    const det =
-        m[0] * m[5] * m[10] * m[15] + m[0] * m[9] * m[14] * m[7] + m[0] * m[13] * m[6] * m[11]
-        - m[0] * m[13] * m[10] * m[7] - m[0] * m[9] * m[6] * m[15] - m[0] * m[5] * m[14] * m[11];
-
-    if (det === 0) return null;
-
-    const invDet = 1 / det;
-    // For brevity, not implementing full inverse here — you'd normally use gl-matrix or similar.
-    // Just use a trusted library or expand this if needed.
-    return null; // placeholder
 }
 
 

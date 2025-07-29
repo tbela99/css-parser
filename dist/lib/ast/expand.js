@@ -13,18 +13,22 @@ import '../syntax/color/utils/constants.js';
  */
 function expand(ast) {
     //
-    if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
-        return ast;
-    }
-    if (EnumToken.RuleNodeType == ast.typ) {
-        return {
-            typ: EnumToken.StyleSheetNodeType,
-            chi: expandRule(ast)
-        };
-    }
-    if (!('chi' in ast)) {
-        return ast;
-    }
+    // if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
+    //
+    //     return ast;
+    // }
+    // if (EnumToken.RuleNodeType == ast.typ) {
+    //
+    //     return <AstRuleStyleSheet>{
+    //         typ: EnumToken.StyleSheetNodeType,
+    //         chi: expandRule(<AstRule>ast)
+    //     }
+    // }
+    //
+    // if (!('chi' in ast)) {
+    //
+    //     return ast;
+    // }
     const result = { ...ast, chi: [] };
     // @ts-ignore
     for (let i = 0; i < ast.chi.length; i++) {
@@ -48,10 +52,11 @@ function expand(ast) {
             // @ts-ignore
             result.chi.push({ ...(hasRule ? expand(node) : node) });
         }
-        else {
-            // @ts-ignore
-            result.chi.push(node);
-        }
+        // else {
+        //
+        //     // @ts-ignore
+        //     result.chi.push(node);
+        // }
     }
     return result;
 }
@@ -65,24 +70,26 @@ function expandRule(node) {
                 const rule = ast.chi[i];
                 if (!rule.sel.includes('&')) {
                     const selRule = splitRule(rule.sel);
-                    if (selRule.length > 1) {
-                        const r = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
-                        rule.sel = splitRule(ast.sel).reduce((a, b) => a.concat([b.join('') + r]), []).join(',');
+                    // if (selRule.length > 1) {
+                    //
+                    //     const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
+                    //     rule.sel = splitRule(ast.sel).reduce((a: string[], b: string[]): string[] => a.concat([b.join('') + r]), <string[]>[]).join(',');
+                    //
+                    // }
+                    // else {
+                    // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
+                    const arSelf = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
+                    if (arSelf.length == 0) {
+                        ast.chi.splice(i--, 1);
+                        continue;
                     }
-                    else {
-                        // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
-                        const arSelf = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
-                        if (arSelf.length == 0) {
-                            ast.chi.splice(i--, 1);
-                            continue;
-                        }
-                        //
-                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
-                        rule.sel = selRule.reduce((acc, curr) => {
-                            acc.push(curr.join(''));
-                            return acc;
-                        }, []).join(',');
-                    }
+                    //
+                    selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
+                    rule.sel = selRule.reduce((acc, curr) => {
+                        acc.push(curr.join(''));
+                        return acc;
+                    }, []).join(',');
+                    // }
                 }
                 else {
                     let childSelectorCompound = [];
@@ -108,9 +115,10 @@ function expandRule(node) {
                                         if (s == '&' || parentSelector) {
                                             withCompound.push(s);
                                         }
-                                        else {
-                                            withoutCompound.push(s.slice(1));
-                                        }
+                                        // else {
+                                        //
+                                        //     withoutCompound.push(s.slice(1));
+                                        // }
                                     }
                                 }
                                 else {
@@ -121,9 +129,10 @@ function expandRule(node) {
                                 withCompound.push(s);
                             }
                         }
-                        else {
-                            withoutCompound.push(s);
-                        }
+                        // else {
+                        //
+                        //     withoutCompound.push(s);
+                        // }
                     }
                     const selectors = [];
                     const selector = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
@@ -155,11 +164,13 @@ function expandRule(node) {
                         if (withCompound.length == 1) {
                             selectors.push(replaceCompound(withCompound[0], selector));
                         }
-                        else {
-                            for (const w of withCompound) {
-                                selectors.push(replaceCompound(w, selector));
-                            }
-                        }
+                        // else {
+                        //
+                        //     for (const w of withCompound) {
+                        //
+                        //         selectors.push(replaceCompound(w, selector));
+                        //     }
+                        // }
                     }
                     rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
                 }
@@ -200,10 +211,11 @@ function expandRule(node) {
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
                         }
-                        else {
-                            // @ts-ignore
-                            astAtRule.chi.push(r);
-                        }
+                        // else {
+                        //
+                        //     // @ts-ignore
+                        //     astAtRule.chi.push(r);
+                        // }
                     }
                 }
                 // @ts-ignore
@@ -230,21 +242,23 @@ function replaceCompound(input, replace) {
                     if (replacement == null) {
                         replacement = parseString(replace);
                     }
-                    if (tokens[1].typ == EnumToken.IdenTokenType) {
-                        t.value.val = replacement.length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? tokens[1].val + replace : replaceCompoundLiteral(tokens[1].val + '&', replace);
-                        tokens.splice(1, 1);
-                    }
-                    else {
-                        t.value.val = replaceCompoundLiteral(t.value.val, replace);
-                    }
+                    // if (tokens[1].typ == EnumToken.IdenTokenType) {
+                    //
+                    //
+                    //     (t.value as LiteralToken).val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? (tokens[1] as IdentToken).val + replace : replaceCompoundLiteral((tokens[1] as IdentToken).val + '&', replace);
+                    //     tokens.splice(1, 1);
+                    // } else {
+                    t.value.val = replaceCompoundLiteral(t.value.val, replace);
+                    // }
                     continue;
                 }
                 const rule = splitRule(replace);
                 t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             }
-            else if (t.value.val.length > 1 && t.value.val.charAt(0) == '&') {
-                t.value.val = replaceCompoundLiteral(t.value.val, replace);
-            }
+            // else if ((t.value as LiteralToken).val.length > 1 && (t.value as LiteralToken).val.charAt(0) == '&') {
+            //
+            //     (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
+            // }
         }
     }
     return tokens.reduce((acc, curr) => acc + renderToken(curr), '');
@@ -257,9 +271,10 @@ function replaceCompoundLiteral(selector, replace) {
             tokens.push('&');
             tokens.push('');
         }
-        else {
-            tokens[tokens.length - 1] += selector.charAt(i);
-        }
+        // else {
+        //
+        //     tokens[tokens.length - 1] += selector.charAt(i);
+        // }
     }
     return tokens.sort((a, b) => {
         if (a == '&') {
@@ -267,9 +282,10 @@ function replaceCompoundLiteral(selector, replace) {
         }
         return b == '&' ? -1 : 0;
     }).reduce((acc, curr) => {
-        if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
-            return acc + ':is(' + replace + ')';
-        }
+        // if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+        //
+        //     return acc + ':is(' + replace + ')';
+        // }
         return acc + (curr == '&' ? replace : curr);
     }, '');
 }

@@ -9,9 +9,9 @@ import {
     rgb2srgb,
     srgb2lsrgbvalues
 } from "./srgb.ts";
-import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getNumber} from "./color.ts";
-import {EnumToken} from "../../ast";
+import {EnumToken} from "../../ast/index.ts";
 import {getOKLCHComponents} from "./oklch.ts";
 import {lch2labvalues} from "./lab.ts";
 

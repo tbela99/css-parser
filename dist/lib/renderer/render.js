@@ -10,24 +10,8 @@ import { colorMix } from '../syntax/color/color-mix.js';
 import { parseRelativeColor } from '../syntax/color/relativecolor.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
+import { minifyNumber } from '../syntax/utils.js';
 
-function reduceNumber(val) {
-    val = String(+val);
-    if (val === '0') {
-        return '0';
-    }
-    const chr = val.charAt(0);
-    if (chr == '-') {
-        const slice = val.slice(0, 2);
-        if (slice == '-0') {
-            return val.length == 2 ? '0' : '-' + val.slice(2);
-        }
-    }
-    if (chr == '0') {
-        return val.slice(1);
-    }
-    return val;
-}
 function update(position, str) {
     let i = 0;
     for (; i < str.length; i++) {
@@ -315,7 +299,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FractionTokenType:
             const fraction = renderToken(token.l) + '/' + renderToken(token.r);
             if (+token.r.val != 0) {
-                const value = reduceNumber(+token.l.val / +token.r.val);
+                const value = minifyNumber(+token.l.val / +token.r.val);
                 if (value.length <= fraction.length) {
                     return value;
                 }
@@ -554,7 +538,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : minifyNumber(token.val);
             let unit = token.unit;
             if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
                 const angle = getAngle(token);
@@ -566,7 +550,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     }
                     switch (u) {
                         case 'turn':
-                            v = reduceNumber(angle);
+                            v = minifyNumber(angle);
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -574,7 +558,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case 'deg':
-                            v = reduceNumber(angle * 360);
+                            v = minifyNumber(angle * 360);
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -582,7 +566,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case 'rad':
-                            v = reduceNumber(angle * (2 * Math.PI));
+                            v = minifyNumber(angle * (2 * Math.PI));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -590,7 +574,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case 'grad':
-                            v = reduceNumber(angle * 400);
+                            v = minifyNumber(angle * 400);
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -616,7 +600,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             if (token.typ == EnumToken.TimeTokenType) {
                 if (unit == 'ms') {
                     // @ts-ignore
-                    const v = reduceNumber(val / 1000);
+                    const v = minifyNumber(val / 1000);
                     if (v.length + 1 <= val.length) {
                         return v + 's';
                     }
@@ -631,10 +615,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
             const uni = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
-            const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : minifyNumber(token.val);
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
         case EnumToken.NumberTokenType:
-            return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : minifyNumber(token.val);
         case EnumToken.CommentTokenType:
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
@@ -718,4 +702,4 @@ function filterValues(values) {
     return values;
 }
 
-export { doRender, filterValues, reduceNumber, renderToken };
+export { doRender, filterValues, renderToken };

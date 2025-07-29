@@ -1,9 +1,9 @@
 import {hwb2hsv} from "./hsv.ts";
-import type {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types";
+import type {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {getNumber} from "./color.ts";
 import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb.ts";
-import {getComponents} from "./utils";
-import {EnumToken} from "../../ast";
+import {getComponents} from "./utils/index.ts";
+import {EnumToken} from "../../ast/index.ts";
 import {hslvalues} from './srgb.ts';
 
 export function hex2hsl(token: ColorToken): number[] {
