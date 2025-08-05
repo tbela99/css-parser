@@ -1,5 +1,6 @@
 import type {AngleToken, FunctionToken, IdentToken, LengthToken, NumberToken, Token} from "../../../@types/token.d.ts";
-import {identity, Matrix, multiply} from "./utils.ts";
+import type {Matrix} from "./utils.ts";
+import {identity, multiply} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {length2Px, transformFunctions} from "../../syntax/index.ts";
 import {stripCommaToken} from "../../validation/utils/index.ts";

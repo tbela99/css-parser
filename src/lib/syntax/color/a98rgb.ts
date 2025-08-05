@@ -1,5 +1,5 @@
 import {xyz2srgb} from "./srgb.ts";
-import {multiplyMatrices} from "./utils";
+import {multiplyMatrices} from "./utils/index.ts";
 import {srgb2xyz} from "./xyz.ts";
 
 export function a98rgb2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] {
@@ -11,7 +11,7 @@ export function a98rgb2srgbvalues(r: number, g: number, b: number, a: number | n
 export function srgb2a98values(r: number, g: number, b: number, a: number | null = null): number[] {
 
     // @ts-ignore
-    return la98rgb2a98rgb(xyz2la98rgb(...srgb2xyz(r, g, b, a)));
+    return la98rgb2a98rgb(...xyz2la98rgb(...srgb2xyz(r, g, b, a)));
 }
 
 // a98-rgb functions
@@ -31,6 +31,7 @@ function a98rgb2la98(r: number, g: number, b: number, a: number | null = null): 
 function la98rgb2a98rgb(r: number, g: number, b: number, a: number | null = null): number[] {
     // convert an array of linear-light a98-rgb  in the range 0.0-1.0
     // to gamma corrected form
+
     // negative values are also now accepted
     return [r, b, g].map(function (val) {
         let sign = val < 0? -1 : 1;

@@ -8,7 +8,7 @@ import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { expandHexValue } from './hex.js';
-import { lch2labvalues, Lab_to_sRGB, getLABComponents } from './lab.js';
+import { lchvalues2labvalues, Lab_to_sRGB, getLABComponents } from './lab.js';
 import { OKLab_to_sRGB, getOKLABComponents } from './oklab.js';
 import { getLCHComponents } from './lch.js';
 import { getOKLCHComponents } from './oklch.js';
@@ -22,7 +22,7 @@ function srgbvalues(token) {
     switch (token.kin) {
         case ColorKind.LIT:
         case ColorKind.HEX:
-            return hex2srgb(token);
+            return hex2srgbvalues(token);
         case ColorKind.RGB:
         case ColorKind.RGBA:
             return rgb2srgb(token);
@@ -30,15 +30,15 @@ function srgbvalues(token) {
         case ColorKind.HSLA:
             return hsl2srgb(token);
         case ColorKind.HWB:
-            return hwb2srgb(token);
+            return hwb2srgbvalues(token);
         case ColorKind.LAB:
-            return lab2srgb(token);
+            return lab2srgbvalues(token);
         case ColorKind.LCH:
-            return lch2srgb(token);
+            return lch2srgbvalues(token);
         case ColorKind.OKLAB:
-            return oklab2srgb(token);
+            return oklab2srgbvalues(token);
         case ColorKind.OKLCH:
-            return oklch2srgb(token);
+            return oklch2srgbvalues(token);
         case ColorKind.COLOR:
             return color2srgbvalues(token);
     }
@@ -47,24 +47,31 @@ function srgbvalues(token) {
 function rgb2srgb(token) {
     return getComponents(token)?.map?.((t, index) => index == 3 ? ((t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(t) / 255) ?? null;
 }
-function hex2srgb(token) {
+function rgb2srgbvalues(token) {
+    return getComponents(token)?.map?.((t, index) => index == 3 ? getNumber(t) : getNumber(t) / 255) ?? null;
+}
+function hex2srgbvalues(token) {
     const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
     }
+    if (rgb.length == 4) {
+        rgb[3] = +rgb[3].toFixed(2);
+    }
     return rgb;
 }
-function xyz2srgb(x, y, z) {
+// xyz d65 input
+function xyz2srgb(x, y, z, alpha = null) {
     // @ts-ignore
-    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z));
+    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z, alpha));
 }
-function hwb2srgb(token) {
+function hwb2srgbvalues(token) {
     const { h: hue, s: white, l: black, a: alpha } = hslvalues(token) ?? {};
     if (hue == null || white == null || black == null) {
         return [];
     }
-    const rgb = hsl2srgbvalues(hue, 1, .5);
+    const rgb = hslvalues2srgbvalues(hue, 1, .5);
     for (let i = 0; i < 3; i++) {
         rgb[i] *= (1 - white - black);
         rgb[i] = rgb[i] + white;
@@ -79,9 +86,9 @@ function hsl2srgb(token) {
     if (h == null || s == null || l == null) {
         return null;
     }
-    return hsl2srgbvalues(h, s, l, a);
+    return hslvalues2srgbvalues(h, s, l, a);
 }
-function cmyk2srgb(token) {
+function cmyk2srgbvalues(token) {
     const components = getComponents(token);
     if (components == null) {
         return null;
@@ -107,16 +114,21 @@ function cmyk2srgb(token) {
         1 - Math.min(1, m * (1 - k) + k),
         1 - Math.min(1, y * (1 - k) + k)
     ];
-    // @ts-ignore
-    if (token.chi.length >= 9) {
-        // @ts-ignore
-        t = token.chi[8];
-        // @ts-ignore
-        rgb.push(getNumber(t));
+    if (components.length == 5) {
+        rgb.push(getNumber(components[4]));
     }
+    // @ts-ignore
+    // if (token.chi.length >= 9) {
+    //
+    //     // @ts-ignore
+    //     t = <NumberToken | PercentageToken>token.chi[8];
+    //
+    //     // @ts-ignore
+    //     rgb.push(getNumber(t));
+    // }
     return rgb;
 }
-function oklab2srgb(token) {
+function oklab2srgbvalues(token) {
     const [l, a, b, alpha] = getOKLABComponents(token) ?? [];
     if (l == null || a == null || b == null) {
         return null;
@@ -127,13 +139,13 @@ function oklab2srgb(token) {
     }
     return rgb;
 }
-function oklch2srgb(token) {
+function oklch2srgbvalues(token) {
     const [l, c, h, alpha] = getOKLCHComponents(token) ?? [];
     if (l == null || c == null || h == null) {
         return null;
     }
     // @ts-ignore
-    const rgb = OKLab_to_sRGB(...lch2labvalues(l, c, h));
+    const rgb = OKLab_to_sRGB(...lchvalues2labvalues(l, c, h));
     if (alpha != 1) {
         rgb.push(alpha);
     }
@@ -164,7 +176,7 @@ function hslvalues(token) {
     }
     return a == null ? { h, s, l } : { h, s, l, a };
 }
-function hsl2srgbvalues(h, s, l, a = null) {
+function hslvalues2srgbvalues(h, s, l, a = null) {
     let v = l <= .5 ? l * (1.0 + s) : l + s - l * s;
     let r = l;
     let g = l;
@@ -217,7 +229,7 @@ function hsl2srgbvalues(h, s, l, a = null) {
     }
     return values;
 }
-function lab2srgb(token) {
+function lab2srgbvalues(token) {
     const [l, a, b, alpha] = getLABComponents(token) ?? [];
     if (l == null || a == null || b == null) {
         return null;
@@ -228,9 +240,9 @@ function lab2srgb(token) {
     }
     return rgb;
 }
-function lch2srgb(token) {
+function lch2srgbvalues(token) {
     // @ts-ignore
-    const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
+    const [l, a, b, alpha] = lchvalues2labvalues(...getLCHComponents(token));
     if (l == null || a == null || b == null) {
         return null;
     }
@@ -261,7 +273,7 @@ function srgb2lsrgbvalues(r, g, b, a = null) {
     }
     return rgb;
 }
-function lsrgb2srgbvalues(r, g, b, alpha) {
+function lsrgb2srgbvalues(r, g, b, alpha = null) {
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form
     // https://en.wikipedia.org/wiki/SRGB
@@ -281,4 +293,4 @@ function lsrgb2srgbvalues(r, g, b, alpha) {
     return rgb;
 }
 
-export { cmyk2srgb, hex2srgb, hsl2srgb, hsl2srgbvalues, hslvalues, hwb2srgb, lab2srgb, lch2srgb, lsrgb2srgbvalues, oklab2srgb, oklch2srgb, rgb2srgb, srgb2lsrgbvalues, srgbvalues, xyz2srgb };
+export { cmyk2srgbvalues, hex2srgbvalues, hsl2srgb, hslvalues, hslvalues2srgbvalues, hwb2srgbvalues, lab2srgbvalues, lch2srgbvalues, lsrgb2srgbvalues, oklab2srgbvalues, oklch2srgbvalues, rgb2srgb, rgb2srgbvalues, srgb2lsrgbvalues, srgbvalues, xyz2srgb };

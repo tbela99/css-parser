@@ -43,28 +43,10 @@ import type {
     Token,
     UrlToken
 } from "../../@types/index.d.ts";
-import {
-    clamp,
-    cmyk2hex,
-    color2srgbvalues,
-    colorMix,
-    COLORS_NAMES,
-    getAngle,
-    hsl2hex,
-    hwb2hex,
-    lab2hex,
-    lch2hex,
-    oklab2hex,
-    oklch2hex,
-    parseRelativeColor,
-    reduceHexValue,
-    RelativeColorTypes,
-    rgb2hex,
-    srgb2hexvalues
-} from "../syntax/color/index.ts";
-import {EnumToken, expand} from "../ast/index.ts";
+import {convertColor, getAngle} from "../syntax/color/index.ts";
+import {ColorType, EnumToken, expand} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
-import {colorFuncColorSpace, ColorKind, colorsFunc, funcLike, getComponents} from "../syntax/color/utils/index.ts";
+import {ColorKind, colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements} from "../syntax/index.ts";
 
 function update(position: Position, str: string) {
@@ -515,206 +497,214 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.ColorTokenType:
 
-            if ((token as ColorToken).kin == ColorKind.LIGHT_DARK || ('chi' in token && !options.convertColor)) {
+            if ((token as ColorToken).kin == ColorKind.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
 
                 return (token as ColorToken).val + '(' + ((token as ColorToken).chi as Token[]).reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ')';
             }
 
-            if (options.convertColor) {
+            if (options.convertColor !== false) {
 
-                if ((token as ColorToken).cal == 'mix' && (token as ColorToken).val == 'color-mix') {
+                // console.error([typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[(ColorType[options.convertColor] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorKind] ?? ColorKind.HEX])
+                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorKind] ?? ColorKind.HEX);
 
-                    const children: Token[][] = (<Token[]>(token as ColorToken).chi).reduce((acc: Token[][], t: Token) => {
+                //
+                if (value != null) {
 
-                        if (t.typ == EnumToken.ColorTokenType) {
-
-                            acc.push([t]);
-                        } else {
-
-                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
-
-                                acc[acc.length - 1].push(t);
-                            }
-                        }
-
-                        return acc;
-                    }, <Token[][]>[[]]);
-
-                    const value: ColorToken | null = colorMix(<IdentToken>children[0][1], <IdentToken>children[0][2], <ColorToken>children[1][0], <PercentageToken>children[1][1], <ColorToken>children[2][0], <PercentageToken>children[2][1]);
-
-                    if (value != null) {
-
-                        token = value;
-                    } else if (!(token as ColorToken).chi!.some(t => t.typ == EnumToken.CommaTokenType)) {
-
-                        (token as ColorToken).chi = children.reduce((acc, curr, index) => {
-
-                            if (acc.length > 0) {
-
-                                acc.push({typ: EnumToken.CommaTokenType});
-                            }
-
-                            acc.push(...curr);
-                            return acc;
-                        }, [] as Token[]);
-                    }
+                    token = value;
                 }
 
-                if ((token as ColorToken).cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes((token as ColorToken).val)) {
-
-                    const chi: Token[] | null = getComponents(token as ColorToken);
-                    const offset: number = (token as ColorToken).val == 'color' ? 2 : 1;
-
-                    if (chi != null) {
-
-                        // @ts-ignore
-                        const color: ColorToken = chi[1];
-                        const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor((token as ColorToken).val == 'color' ? (<IdentToken>chi[offset]).val : <string>(token as ColorToken).val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
-
-                        if (components != null) {
-
-                            (token as ColorToken).chi = [...((token as ColorToken).val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
-
-                            delete (token as ColorToken).cal;
-                        }
-                    }
-                }
-
-                if ((token as ColorToken).val == 'color') {
-
-                    if ((<IdentToken>(<Token[]>(token as ColorToken).chi)[0]).typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(((<Token[]>(token as ColorToken).chi)[0] as IdentToken).val.toLowerCase())) {
-
-                        const values = color2srgbvalues(token as ColorToken) as number[];
-
-                        if (Array.isArray(values) && values.every(t => !Number.isNaN(t))) {
-
-                            // @ts-ignore
-                            return reduceHexValue(srgb2hexvalues(...values));
-                        }
-                    }
-                }
-
-                if ((token as ColorToken).cal != null) {
-
-                    let slice: boolean = false;
-
-                    if ((token as ColorToken).cal == 'rel') {
-
-                        const last: Token = <Token>(<Token[]>(token as ColorToken).chi).at(-1);
-
-                        if ((last.typ == EnumToken.NumberTokenType && (last as NumberToken).val == '1') || (last.typ == EnumToken.IdenTokenType && (last as IdentToken).val == 'none')) {
-
-                            const prev: Token = <Token>(<Token[]>(token as ColorToken).chi).at(-2);
-
-                            if (prev.typ == EnumToken.LiteralTokenType && (prev as LiteralToken).val == '/') {
-
-                                slice = true;
-                            }
-                        }
-                    }
-
-                    return clamp(token as ColorToken).val + '(' + (slice ? (<Token[]>(token as ColorToken).chi).slice(0, -2) : <Token[]>(token as ColorToken).chi).reduce((acc: string, curr: Token): string => {
-
-                        const val: string = renderToken(curr, options, cache);
-
-                        if (curr.typ == EnumToken.LiteralTokenType && (curr as LiteralToken).val == '/') {
-
-                            return acc.trimEnd() + '/';
-                        }
-
-                        if (curr.typ == EnumToken.CommaTokenType) {
-
-                            return acc.trimEnd() + ',';
-                        }
-
-                        if (curr.typ == EnumToken.WhitespaceTokenType) {
-
-                            const v: string = acc.at(-1) as string;
-
-                            if (v == ' ' || v == ',' || v == '/') {
-
-                                return acc.trimEnd();
-                            }
-
-                            return acc.trimEnd() + ' ';
-                        }
-
-                        if (acc.length > 0) {
-
-                            return acc + (['/', ',', ' '].includes(<string>acc.at(-1)) ? '' : ' ') + val;
-                        }
-
-                        return val;
-                    }, '') + ')';
-                }
-
-                if ((token as ColorToken).kin == ColorKind.LIT && (token as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
-
-                    return 'currentcolor';
-                }
-
-                clamp(token as ColorToken);
-
-                if (Array.isArray((token as ColorToken).chi) && (token as ColorToken).chi!.some((t: Token): boolean => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray((t as ColorToken).chi)))) {
-
-                    const replaceSemiColon: boolean = /^((rgba?)|(hsla?)|(hwb)|((ok)?lab)|((ok)?lch))$/i.test((token as ColorToken).val);
-
-                    return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token, index: number, array: Token[]): string => {
-
-                        if (curr.typ == EnumToken.Literal && (curr as LiteralToken).val == '/') {
-
-                            return acc.trimEnd() + '/';
-                        }
-
-                        if (curr.typ == EnumToken.CommaTokenType) {
-
-                            return acc.trimEnd() + (replaceSemiColon ? ' ' : ',');
-                        }
-
-                        if (curr.typ == EnumToken.WhitespaceTokenType) {
-
-                            return /[,\/\s]/.test(acc.at(-1) as string) ? acc.trimEnd() : acc.trimEnd() + ' ';
-                        }
-
-                        return acc + renderToken(curr, options, cache)
-                    }, '') + ')';
-                }
-
-                let value: string | null = (token as ColorToken).kin == ColorKind.HEX ? (token as ColorToken).val.toLowerCase() : ((token as ColorToken).kin == ColorKind.LIT ? COLORS_NAMES[(token as ColorToken).val.toLowerCase()] : '');
-
-                if ((token as ColorToken).val == 'rgb' || (token as ColorToken).val == 'rgba') {
-
-                    value = rgb2hex(token as ColorToken);
-                } else if ((token as ColorToken).val == 'hsl' || (token as ColorToken).val == 'hsla') {
-
-                    value = hsl2hex(token as ColorToken);
-
-                } else if ((token as ColorToken).val == 'hwb') {
-
-                    value = hwb2hex(token as ColorToken);
-                } else if ((token as ColorToken).val == 'device-cmyk') {
-
-                    value = cmyk2hex(token as ColorToken);
-                } else if ((token as ColorToken).val == 'oklab') {
-
-                    value = oklab2hex(token as ColorToken);
-                } else if ((token as ColorToken).val == 'oklch') {
-
-                    value = oklch2hex(token as ColorToken);
-                } else if ((token as ColorToken).val == 'lab') {
-
-                    value = lab2hex(token as ColorToken);
-                } else if ((token as ColorToken).val == 'lch') {
-
-                    value = lch2hex(token as ColorToken);
-                }
-
-                if (value !== '' && value != null) {
-
-                    return reduceHexValue(value);
-                }
+                //     if ((token as ColorToken).kin == ColorKind.COLOR_MIX) {
+                //
+                //         const children: Token[][] = (<Token[]>(token as ColorToken).chi).reduce((acc: Token[][], t: Token) => {
+                //
+                //             if (t.typ == EnumToken.ColorTokenType) {
+                //
+                //                 acc.push([t]);
+                //             } else {
+                //
+                //                 if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
+                //
+                //                     acc[acc.length - 1].push(t);
+                //                 }
+                //             }
+                //
+                //             return acc;
+                //         }, <Token[][]>[[]]);
+                //
+                //         const value: ColorToken | null = colorMix(<IdentToken>children[0][1], <IdentToken>children[0][2], <ColorToken>children[1][0], <PercentageToken>children[1][1], <ColorToken>children[2][0], <PercentageToken>children[2][1]);
+                //
+                //         if (value != null) {
+                //
+                //             token = value;
+                //         } else if (!(token as ColorToken).chi!.some(t => t.typ == EnumToken.CommaTokenType)) {
+                //
+                //             (token as ColorToken).chi = children.reduce((acc, curr, index) => {
+                //
+                //                 if (acc.length > 0) {
+                //
+                //                     acc.push({typ: EnumToken.CommaTokenType});
+                //                 }
+                //
+                //                 acc.push(...curr);
+                //                 return acc;
+                //             }, [] as Token[]);
+                //         }
+                //     }
+                //
+                //     if ((token as ColorToken).cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes((token as ColorToken).val)) {
+                //
+                //         const chi: Token[] | null = getComponents(token as ColorToken);
+                //         const offset: number = (token as ColorToken).val == 'color' ? 2 : 1;
+                //
+                //         if (chi != null) {
+                //
+                //             // @ts-ignore
+                //             const color: ColorToken = chi[1];
+                //             const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor((token as ColorToken).val == 'color' ? (<IdentToken>chi[offset]).val : <string>(token as ColorToken).val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+                //
+                //             if (components != null) {
+                //
+                //                 (token as ColorToken).chi = [...((token as ColorToken).val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
+                //
+                //                 delete (token as ColorToken).cal;
+                //             }
+                //         }
+                //     }
+                //
+                //     if ((token as ColorToken).val == 'color') {
+                //
+                //         if ((<IdentToken>(<Token[]>(token as ColorToken).chi)[0]).typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(((<Token[]>(token as ColorToken).chi)[0] as IdentToken).val.toLowerCase())) {
+                //
+                //             const values = color2srgbvalues(token as ColorToken) as number[];
+                //
+                //             if (Array.isArray(values) && values.every(t => !Number.isNaN(t))) {
+                //
+                //                 // @ts-ignore
+                //                 return reduceHexValue(srgb2hexvalues(...values));
+                //             }
+                //         }
+                //     }
+                //
+                //     if ((token as ColorToken).cal != null) {
+                //
+                //         let slice: boolean = false;
+                //
+                //         if ((token as ColorToken).cal == 'rel') {
+                //
+                //             const last: Token = <Token>(<Token[]>(token as ColorToken).chi).at(-1);
+                //
+                //             if ((last.typ == EnumToken.NumberTokenType && (last as NumberToken).val == '1') || (last.typ == EnumToken.IdenTokenType && (last as IdentToken).val == 'none')) {
+                //
+                //                 const prev: Token = <Token>(<Token[]>(token as ColorToken).chi).at(-2);
+                //
+                //                 if (prev.typ == EnumToken.LiteralTokenType && (prev as LiteralToken).val == '/') {
+                //
+                //                     slice = true;
+                //                 }
+                //             }
+                //         }
+                //
+                //         return clamp(token as ColorToken).val + '(' + (slice ? (<Token[]>(token as ColorToken).chi).slice(0, -2) : <Token[]>(token as ColorToken).chi).reduce((acc: string, curr: Token): string => {
+                //
+                //             const val: string = renderToken(curr, options, cache);
+                //
+                //             if (curr.typ == EnumToken.LiteralTokenType && (curr as LiteralToken).val == '/') {
+                //
+                //                 return acc.trimEnd() + '/';
+                //             }
+                //
+                //             if (curr.typ == EnumToken.CommaTokenType) {
+                //
+                //                 return acc.trimEnd() + ',';
+                //             }
+                //
+                //             if (curr.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //                 const v: string = acc.at(-1) as string;
+                //
+                //                 if (v == ' ' || v == ',' || v == '/') {
+                //
+                //                     return acc.trimEnd();
+                //                 }
+                //
+                //                 return acc.trimEnd() + ' ';
+                //             }
+                //
+                //             if (acc.length > 0) {
+                //
+                //                 return acc + (['/', ',', ' '].includes(<string>acc.at(-1)) ? '' : ' ') + val;
+                //             }
+                //
+                //             return val;
+                //         }, '') + ')';
+                //     }
+                //
+                //     if ((token as ColorToken).kin == ColorKind.LIT && (token as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
+                //
+                //         return 'currentcolor';
+                //     }
+                //
+                //     clamp(token as ColorToken);
+                //
+                //     if (Array.isArray((token as ColorToken).chi) && (token as ColorToken).chi!.some((t: Token): boolean => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray((t as ColorToken).chi)))) {
+                //
+                //         const replaceSemiColon: boolean = /^((rgba?)|(hsla?)|(hwb)|((ok)?lab)|((ok)?lch))$/i.test((token as ColorToken).val);
+                //
+                //         return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token, index: number, array: Token[]): string => {
+                //
+                //             if (curr.typ == EnumToken.Literal && (curr as LiteralToken).val == '/') {
+                //
+                //                 return acc.trimEnd() + '/';
+                //             }
+                //
+                //             if (curr.typ == EnumToken.CommaTokenType) {
+                //
+                //                 return acc.trimEnd() + (replaceSemiColon ? ' ' : ',');
+                //             }
+                //
+                //             if (curr.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //                 return /[,\/\s]/.test(acc.at(-1) as string) ? acc.trimEnd() : acc.trimEnd() + ' ';
+                //             }
+                //
+                //             return acc + renderToken(curr, options, cache)
+                //         }, '') + ')';
+                //     }
+                //
+                //     let value: string | null = (token as ColorToken).kin == ColorKind.HEX ? (token as ColorToken).val.toLowerCase() : ((token as ColorToken).kin == ColorKind.LIT ? COLORS_NAMES[(token as ColorToken).val.toLowerCase()] : '');
+                //
+                //     if ((token as ColorToken).val == 'rgb' || (token as ColorToken).val == 'rgba') {
+                //
+                //         value = rgb2hex(token as ColorToken);
+                //     } else if ((token as ColorToken).val == 'hsl' || (token as ColorToken).val == 'hsla') {
+                //
+                //         value = hsl2hex(token as ColorToken);
+                //
+                //     } else if ((token as ColorToken).val == 'hwb') {
+                //
+                //         value = hwb2hex(token as ColorToken);
+                //     } else if ((token as ColorToken).val == 'device-cmyk') {
+                //
+                //         value = cmyk2hex(token as ColorToken);
+                //     } else if ((token as ColorToken).val == 'oklab') {
+                //
+                //         value = oklab2hex(token as ColorToken);
+                //     } else if ((token as ColorToken).val == 'oklch') {
+                //
+                //         value = oklch2hex(token as ColorToken);
+                //     } else if ((token as ColorToken).val == 'lab') {
+                //
+                //         value = lab2hex(token as ColorToken);
+                //     } else if ((token as ColorToken).val == 'lch') {
+                //
+                //         value = lch2hex(token as ColorToken);
+                //     }
+                //
+                //     if (value !== '' && value != null) {
+                //
+                //         return reduceHexValue(value);
+                //     }
             }
-
 
             if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes((token as ColorToken).kin)) {
 
@@ -723,7 +713,38 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (Array.isArray((token as ColorToken).chi)) {
 
-                return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
+                const isLegacy: boolean = ['rgb', 'rgba', 'hsl', 'hsla'].includes((token as ColorToken).val.toLowerCase());
+                const useAlpha: boolean = (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'oklab', 'oklch', 'lab', 'lch'].includes((token as ColorToken).val.toLowerCase()) && (token as ColorToken).chi!.length == 4) ||
+                    ('color'.localeCompare((token as ColorToken).val, undefined, {sensitivity: 'base'}) == 0 && (token as ColorToken).chi!.length == 5);
+                return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token, index: number, array: Token[]) => {
+
+                    if (/[,/]\s*$/.test(acc)) {
+
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+
+                            return acc.trimEnd();
+                        }
+
+                        return acc.trimStart() + renderToken(curr, options, cache);
+                    }
+
+                    if (isLegacy && curr.typ == EnumToken.CommaTokenType) {
+
+                        return acc.trimEnd() + ' ';
+                    }
+
+                    if (curr.typ == EnumToken.WhitespaceTokenType) {
+
+                        return acc.trimEnd() + ' ';
+                    }
+
+                    if (curr.typ == EnumToken.CommaTokenType || (curr.typ == EnumToken.LiteralTokenType && (curr as LiteralToken).val == '/')) {
+
+                        return acc.trimEnd() + (curr.typ == EnumToken.CommaTokenType ? ',' : '/');
+                    }
+
+                    return acc.trimEnd() + (useAlpha && index == array.length - 1 ? '/' : ' ') + renderToken(curr, options, cache)
+                }, '').trimStart() + ')';
             }
 
         case EnumToken.ParensTokenType:
@@ -975,7 +996,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             const uni: string = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
             const perc: string = (<FractionToken>(token as PercentageToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as PercentageToken).val, options, cache) : minifyNumber(<string>(token as PercentageToken).val);
-            
+
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
 
         case EnumToken.NumberTokenType:

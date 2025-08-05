@@ -1,8 +1,9 @@
-import type {ColorToken, IdentToken, NumberToken, PercentageToken} from "../../../@types/index.d.ts";
+import type {ColorToken, NumberToken, PercentageToken} from "../../../@types/index.d.ts";
 import {EnumToken} from "../../ast/index.ts";
-import {getNumber, minmax} from "./color.ts";
-import {cmyk2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb.ts";
-import {getComponents, NAMES_COLORS} from "./utils/index.ts";
+import {color2srgbvalues, getNumber} from "./color.ts";
+import {cmyk2rgbvalues, hsl2rgbvalues, hwb2rgbvalues, srgb2rgb} from "./rgb.ts";
+import {ColorKind, COLORS_NAMES, getComponents, NAMES_COLORS} from "./utils/index.ts";
+import {lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues} from "./srgb.ts";
 
 function toHexString(acc: string, value: number): string {
 
@@ -11,7 +12,13 @@ function toHexString(acc: string, value: number): string {
 
 export function reduceHexValue(value: string): string {
 
+    if (value[0] != '#') {
+
+        value = COLORS_NAMES[value.toLowerCase()] ?? value;
+    }
+
     const named_color: string = NAMES_COLORS[expandHexValue(value)];
+
 
     if (value.length == 7) {
 
@@ -28,7 +35,7 @@ export function reduceHexValue(value: string): string {
             value[5] == value[6] &&
             value[7] == value[8]) {
 
-            value = `#${value[1]}${value[3]}${value[5]}${value[7]}`;
+            value = `#${value[1]}${value[3]}${value[5]}${value[7] == 'f' ? '' : value[7]}`;
         }
     }
 
@@ -50,14 +57,128 @@ export function expandHexValue(value: string): string {
     return value;
 }
 
+export function rgb2HexToken(token: ColorToken): ColorToken | null {
 
-export function rgb2hex(token: ColorToken) {
+    let value: string | null = rgb2hexvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value);
+}
+
+export function hsl2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: string | null = hsl2hexvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value);
+}
+
+export function cmyk2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: string | null = cmyk2hexvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value);
+}
+
+export function hwb2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: string | null = hwb2hexvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value);
+}
+
+export function color2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: number[] | null = color2srgbvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+}
+
+export function oklab2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: number[] | null = oklab2srgbvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+}
+
+export function oklch2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: number[] | null = oklch2srgbvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+}
+
+export function lab2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: number[] | null = lab2srgbvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+}
+
+export function lch2HexToken(token: ColorToken): ColorToken | null {
+
+    let value: number[] | null = lch2srgbvalues(token);
+
+    if (value == null) {
+        return null;
+    }
+
+    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, '0'), '#'));
+}
+
+ function hexToken(value: string): ColorToken {
+
+    value = reduceHexValue(value);
+
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: value,
+        kin: value[0] == '#' ? ColorKind.HEX : ColorKind.LIT
+    } as ColorToken;
+}
+
+export function rgb2hexvalues(token: ColorToken): string | null {
 
     let value: string = '#';
     let t: NumberToken | PercentageToken;
 
     // @ts-ignore
     const components: number[] = getComponents(token);
+
+    if (components == null || components.length < 3) {
+
+        return null;
+    }
 
     // @ts-ignore
     for (let i = 0; i < 3; i++) {
@@ -76,7 +197,7 @@ export function rgb2hex(token: ColorToken) {
         t = components[3];
 
         // @ts-ignore
-        const v: number = ((<IdentToken>t).typ == EnumToken.IdenTokenType && (<IdentToken>t).val == 'none') ? 1 : getNumber(t);
+        const v: number = getNumber(t);
 
         // @ts-ignore
         if (v < 1) {
@@ -89,55 +210,54 @@ export function rgb2hex(token: ColorToken) {
     return value;
 }
 
-export function hsl2hex(token: ColorToken) {
+export function hsl2hexvalues(token: ColorToken): string | null {
 
-    const t = hsl2rgb(token);
-    return t == null ? null : `${t.reduce(toHexString, '#')}`;
-}
+    const t: number[] | null = hsl2rgbvalues(token);
 
-export function hwb2hex(token: ColorToken): string | null{
-
-    const t = hwb2rgb(token);
-    return t == null ? null : `${t.reduce(toHexString, '#')}`;
-}
-
-export function cmyk2hex(token: ColorToken): string | null {
-
-    const t = cmyk2rgb(token);
-    return t == null ? null : `#${t.reduce(toHexString, '')}`;
-}
-
-export function oklab2hex(token: ColorToken): string | null {
-
-    const t = oklab2rgb(token);
-    return t == null ? null : `${t.reduce(toHexString, '#')}`;
-}
-
-export function oklch2hex(token: ColorToken): string | null {
-
-    const value = oklch2rgb(token);
-
-    if (value == null) {
+    if (t == null) {
 
         return null;
     }
 
-    return `${value.reduce(toHexString, '#')}`;
+    if (t.length == 4) {
+
+        t[3] = srgb2rgb(t[3]);
+    }
+
+    return `${t.reduce(toHexString, '#')}`;
 }
 
-export function lab2hex(token: ColorToken): string | null{
+export function hwb2hexvalues(token: ColorToken): string | null {
 
-    const t = lab2rgb(token);
-    return t == null ? null : `${t.reduce(toHexString, '#')}`;
+    const t: number[] | null = hwb2rgbvalues(token);
+
+    if (t == null) {
+
+        return null;
+    }
+
+
+    if (t.length == 4) {
+
+        t[3] = srgb2rgb(t[3]);
+    }
+
+    return `${t.reduce(toHexString, '#')}`;
 }
 
-export function lch2hex(token: ColorToken): string | null {
+export function cmyk2hexvalues(token: ColorToken): string | null {
 
-    const t = lch2rgb(token);
-    return t == null ? null : `${t.reduce(toHexString, '#')}`;
-}
+    const t: number[] | null = cmyk2rgbvalues(token);
 
-export function srgb2hexvalues(r: number, g: number, b: number, alpha?: number | null): string {
+    if (t == null) {
 
-    return [r, g, b].concat(alpha == null || alpha == 1 ? [] : [alpha]).reduce((acc: string, value: number): string => acc + minmax(Math.round(255 * value), 0, 255).toString(16).padStart(2, '0'), '#');
+        return null;
+    }
+
+    if (t.length == 4) {
+
+        t[3] = srgb2rgb(t[3]);
+    }
+
+    return `#${t.reduce(toHexString, '')}`;
 }

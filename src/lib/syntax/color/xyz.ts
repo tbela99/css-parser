@@ -1,6 +1,7 @@
-import {multiplyMatrices} from "./utils";
+import {multiplyMatrices} from "./utils/index.ts";
 import {srgb2lsrgbvalues} from "./srgb.ts";
 import {Lab_to_XYZ} from "./lab.ts";
+import {XYZ_D65_to_D50} from "./xyzd50.ts";
 
 export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
 
@@ -9,13 +10,7 @@ export function lab2xyz(l: number, a: number, b: number, alpha?: number): number
     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
 }
 
-export function lch2xyz(l: number, c: number, h: number, alpha?: number): number[] {
-
-    return lab2xyz(l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180), alpha);
-}
-
-
-export function XYZ_to_lin_sRGB(x: number, y: number, z: number): number[] {
+export function XYZ_to_lin_sRGB(x: number, y: number, z: number, alpha: number | null = null): number[] {
     // convert XYZ to linear-light sRGB
 
     const M: number[][] = [
@@ -26,7 +21,7 @@ export function XYZ_to_lin_sRGB(x: number, y: number, z: number): number[] {
 
     const XYZ: number[] = [x, y, z]; // convert to XYZ
 
-    return multiplyMatrices(M, XYZ).map((v: number) => v);
+    return multiplyMatrices(M, XYZ).map((v: number) => v).concat(alpha == null || alpha == 1 ? [] : [alpha]);
 }
 
 export function XYZ_D50_to_D65(x: number, y: number, z: number): number[] {
@@ -40,24 +35,42 @@ export function XYZ_D50_to_D65(x: number, y: number, z: number): number[] {
 
     return multiplyMatrices(M, XYZ); //.map((v: number) => v);
 }
+
+// xyz d65
 export function srgb2xyz(r: number, g: number, b: number, alpha?: number): number[] {
 
     [r, g, b] = srgb2lsrgbvalues(r, g, b);
 
-    const rgb: number[] = [
+    // xyx d65
+    let rgb: number[] = [
 
-        0.436065742824811 * r +
-        0.3851514688337912 * g +
-        0.14307845442264197 * b,
+        0.4123907992659595 * r +
+        0.35758433938387796 * g +
+        0.1804807884018343 * b,
 
-        0.22249319175623702 * r +
-        0.7168870538238823 * g +
-        0.06061979053616537 * b,
+        0.21263900587151036 * r +
+        0.7151686787677559 * g +
+        0.07219231536073371 * b,
 
-        0.013923904500943465 * r +
-        0.09708128566574634 * g +
-        0.7140993584005155 * b
+        0.01933081871559185 * r +
+        0.11919477979462599 * g +
+        0.9505321522496606 * b
     ];
+
+    if (alpha != null && alpha != 1) {
+
+        rgb.push(alpha);
+    }
+
+    return rgb;
+}
+
+// xyz d50
+export function srgb2xyz_d50(r: number, g: number, b: number, alpha?: number): number[] {
+
+    // xyx d65
+    // @ts-ignore
+    let rgb: number[] = XYZ_D65_to_D50(...srgb2xyz(r, g, b));
 
     if (alpha != null && alpha != 1) {
 

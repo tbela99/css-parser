@@ -5,6 +5,92 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
+ * color types enum
+ */
+var ColorType;
+(function (ColorType) {
+    /**
+     * convert color to hex
+     */
+    ColorType[ColorType["HEX"] = 0] = "HEX";
+    /**
+     * convert color to rgb
+     */
+    ColorType[ColorType["RGBA"] = 1] = "RGBA";
+    /**
+     * convert color to hwb
+     */
+    ColorType[ColorType["HWB"] = 2] = "HWB";
+    /**
+     * convert color to hsl
+     */
+    ColorType[ColorType["HSLA"] = 3] = "HSLA";
+    /**
+     * convert color to cmyk
+     */
+    ColorType[ColorType["DEVICE_CMYK"] = 4] = "DEVICE_CMYK";
+    /**
+     * convert color to lch
+     */
+    ColorType[ColorType["LCH"] = 5] = "LCH";
+    /**
+     * convert color to oklch
+     */
+    ColorType[ColorType["OKLCH"] = 6] = "OKLCH";
+    /**
+     * convert color to lab
+     */
+    ColorType[ColorType["LAB"] = 7] = "LAB";
+    /**
+     * convert color to oklab
+     */
+    ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
+    /**
+     * convert color to xyz
+     */
+    ColorType[ColorType["XYZ_D65"] = 9] = "XYZ_D65";
+    /**
+     * convert color to xyz-d50
+     */
+    ColorType[ColorType["XYZ_D50"] = 10] = "XYZ_D50";
+    /**
+     * convert color to srgb
+     */
+    ColorType[ColorType["SRGB"] = 11] = "SRGB";
+    /**
+     * convert color to srgb-linear
+     */
+    ColorType[ColorType["SRGB_LINEAR"] = 12] = "SRGB_LINEAR";
+    /**
+     * convert color to display-p3
+     */
+    ColorType[ColorType["DISPLAY_P3"] = 13] = "DISPLAY_P3";
+    /**
+     * convert color to a98-rgb
+     */
+    ColorType[ColorType["A98_RGB"] = 14] = "A98_RGB";
+    /**
+     * convert color to prophoto-rgb
+     */
+    ColorType[ColorType["PROPHOTO_RGB"] = 15] = "PROPHOTO_RGB";
+    /**
+     * convert color to rec2020
+     */
+    ColorType[ColorType["REC2020"] = 16] = "REC2020";
+    /**
+     * alias for hsl
+     */
+    ColorType[ColorType["HSL"] = 3] = "HSL";
+    /**
+     * alias for rgba
+     */
+    ColorType[ColorType["RGB"] = 1] = "RGB";
+    /**
+     * alias for xyz-d65
+     */
+    ColorType[ColorType["XYZ"] = 9] = "XYZ";
+})(ColorType || (ColorType = {}));
+/**
  * validation level enum
  */
 var ValidationLevel;
@@ -155,4 +241,4 @@ var EnumToken;
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
 
-export { EnumToken, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumToken, SyntaxValidationResult, ValidationLevel };

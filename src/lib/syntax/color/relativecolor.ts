@@ -7,7 +7,7 @@ import type {
     PercentageToken,
     Token
 } from "../../../@types/index.d.ts";
-import {convert, getNumber} from "./color.ts";
+import {convertColor, getNumber} from "./color.ts";
 import {EnumToken, walkValues} from "../../ast/index.ts";
 import {evaluate, evaluateFunc} from "../../ast/math/index.ts";
 import {ColorKind, colorRange} from "./utils/index.ts";
@@ -44,12 +44,12 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
 
     // colorFuncColorSpace x,y,z or r,g,b
     const names: string = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
-    const converted: ColorToken = <ColorToken>convert(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_') as keyof typeof ColorKind]);
+    const converted: ColorToken = <ColorToken>convertColor(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_') as keyof typeof ColorKind]);
 
-    // if (converted == null) {
-    //
-    //     return null;
-    // }
+    if (converted == null) {
+
+        return null;
+    }
 
     const children: Token[] = (<Token[]>converted.chi).filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(t.typ));
     [r, g, b, alpha] = converted.kin == ColorKind.COLOR ? children.slice(1) : children;
@@ -168,7 +168,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
             //     };
             // } else {
 
-                expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
+            expr[<RelativeColorTypes>key] = <Token>values[<RelativeColorTypes>exp.val];
             // }
 
         } else if (exp.typ == EnumToken.FunctionTokenType && mathFuncs.includes((exp as FunctionToken).val)) {
@@ -187,7 +187,7 @@ function computeComponentValue(expr: Record<RelativeColorTypes, Token>, converte
                 } else
                     */
 
-                    if (value.typ == EnumToken.IdenTokenType) {
+                if (value.typ == EnumToken.IdenTokenType) {
 
                     // @ts-ignore
                     // if (!(value.val in values || typeof Math[(value as IdentToken).val.toUpperCase()] == 'number')) {

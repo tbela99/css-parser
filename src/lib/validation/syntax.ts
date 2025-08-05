@@ -1,5 +1,4 @@
-import {
-    renderSyntax,
+import type {
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
@@ -9,10 +8,9 @@ import {
     ValidationKeywordToken,
     ValidationPipeToken,
     ValidationPropertyToken,
-    ValidationSyntaxGroupEnum,
     ValidationToken,
-    ValidationTokenEnum
 } from "./parser/index.ts";
+import {renderSyntax, ValidationSyntaxGroupEnum, ValidationTokenEnum} from "./parser/index.ts";
 import type {
     AstDeclaration,
     AstNode,
@@ -284,7 +282,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         const success: boolean = syntaxes.some(s => s.isOptional || s.isRepeatable || s.isRepeatableGroup);
 
         return {
-            valid: success ? SyntaxValidationResult.Valid :  SyntaxValidationResult.Drop,
+            valid: success ? SyntaxValidationResult.Valid : SyntaxValidationResult.Drop,
             node: null,
             syntax: null,
             error: '',
@@ -314,7 +312,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         // if var() is the last token, then match the remaining syntax and return
         if (context.length == 1 && token.typ == EnumToken.FunctionTokenType && 'var'.localeCompare((token as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0) {
 
-           return doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, 'var')?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), options);
+            return doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, 'var')?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), options);
         }
 
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
@@ -336,8 +334,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
             if (tmpResult.valid == SyntaxValidationResult.Valid) {
 
                 result = tmpResult;
-            }
-            else {
+            } else {
 
                 continue;
             }

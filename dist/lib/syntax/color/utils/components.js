@@ -12,8 +12,8 @@ function getComponents(token) {
     if (token.kin == ColorKind.HEX || token.kin == ColorKind.LIT) {
         const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
-        return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t) => {
-            return { typ: EnumToken.Number, val: parseInt(t, 16).toString() };
+        return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t, index) => {
+            return { typ: EnumToken.Number, val: (index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255).toString() };
         });
     }
     const result = [];

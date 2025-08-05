@@ -1,5 +1,7 @@
 import {EnumToken} from "../../../ast/index.ts";
 
+export const colorPrecision = 6;
+export const anglePrecision = .001;
 export const colorRange = {
 
     lab: {
@@ -36,9 +38,7 @@ export enum ColorKind {
     DPSYS,
     LIT,
     HEX,
-    RGB,
     RGBA,
-    HSL,
     HSLA,
     HWB,
     DEVICE_CMYK,
@@ -53,11 +53,13 @@ export enum ColorKind {
     REC2020,
     DISPLAY_P3,
     SRGB_LINEAR,
-    XYZ,
     XYZ_D50,
     XYZ_D65,
     LIGHT_DARK,
-    COLOR_MIX
+    COLOR_MIX,
+    RGB = RGBA,
+    HSL = HSLA,
+    XYZ = XYZ_D65,
 }
 
 export const timelineFunc: string[] = ['view', 'scroll'];

@@ -98,7 +98,7 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
         }
     }
 
-    let result: string;
+    let result: string = '';
 
     if (url.charAt(0) == '/') {
 
@@ -106,25 +106,26 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
     } else if (currentDirectory.charAt(0) == '/') {
 
         result = dirname(currentDirectory) + '/' + url;
-    } else if (currentDirectory === '' || dirname(currentDirectory) === '') {
-
-        result = url;
-    } else {
-
-        result = dirname(currentDirectory) + '/' + url;
     }
+    // else if (currentDirectory === '' || dirname(currentDirectory) === '') {
+    //
+    //     result = url;
+    // } else {
+    //
+    //     result = dirname(currentDirectory) + '/' + url;
+    // }
 
     let {parts, i} = splitPath(result);
 
-    if (parts.length == 0) {
-
-        const path = result.charAt(0) == '/' ? '/' : '';
-
-        return {
-            absolute: path,
-            relative: path
-        }
-    }
+    // if (parts.length == 0) {
+    //
+    //     const path = result.charAt(0) == '/' ? '/' : '';
+    //
+    //     return {
+    //         absolute: path,
+    //         relative: path
+    //     }
+    // }
 
     const absolute = parts.join('/');
     const {parts: dirs} = splitPath(cwd ?? currentDirectory);

@@ -1,4 +1,4 @@
-import {
+import type {
     AmpersandToken,
     AtLeastOneToken,
     CloseBracketToken,
@@ -41,9 +41,9 @@ import {
     ValidationSemiColonToken,
     ValidationStringToken,
     ValidationToken,
-    ValidationTokenEnum,
     ValidationWhitespaceToken
 } from "./index.ts";
+import {ValidationTokenEnum} from "./index.ts";
 import {isIdent, isPseudo} from '../../syntax/index.ts';
 import {getTokenType as getTokenType$1} from '../../parser/index.ts';
 import type {DimensionToken} from "../../../@types/token.d.ts";
@@ -1017,7 +1017,8 @@ function parseSyntaxTokens(syntax: string, iterator: Iterator<ValidationTokenIte
 
                     // @ts-ignore
                     items[i].occurence = {...item.value.occurence};
-                };
+                }
+                ;
 
                 break;
 

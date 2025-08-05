@@ -1,24 +1,98 @@
 import { hwb2hsv } from './hsv.js';
-import { getNumber } from './color.js';
-import { lch2rgb, lab2rgb, oklch2rgb, oklab2rgb, hex2rgb } from './rgb.js';
-import './utils/constants.js';
+import { color2srgbvalues, toPrecisionAngle, getNumber } from './color.js';
+import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
+import { ColorKind } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
+import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from './srgb.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { hslvalues } from './srgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-function hex2hsl(token) {
+function hex2HslToken(token) {
     // @ts-ignore
-    return rgb2hslvalues(...hex2rgb(token));
+    return hslToken(srgb2hslvalues(...hex2srgbvalues(token)));
 }
-function rgb2hsl(token) {
+function rgb2HslToken(token) {
+    const values = rgb2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function hwb2HslToken(token) {
+    const values = hwb2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function cmyk2HslToken(token) {
+    const values = cmyk2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function oklab2HslToken(token) {
+    const values = oklab2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function oklch2HslToken(token) {
+    const values = oklch2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function lab2HslToken(token) {
+    const values = lab2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function lch2HslToken(token) {
+    const values = lch2hslvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hslToken(values);
+}
+function color2HslToken(token) {
+    const values = color2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return hslToken(srgb2hslvalues(...values));
+}
+function hslToken(values) {
+    values[0] = toPrecisionAngle(values[0] * 360);
+    const chi = [
+        { typ: EnumToken.NumberTokenType, val: String(values[0]), uni: 'deg' },
+        { typ: EnumToken.PercentageTokenType, val: String(values[1] * 100) },
+        { typ: EnumToken.PercentageTokenType, val: String(values[2] * 100) },
+    ];
+    if (values.length == 4 && values[3] != 1) {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+    }
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: 'hsl',
+        chi,
+        kin: ColorKind.HSL
+    };
+}
+function rgb2hslvalues(token) {
     const chi = getComponents(token);
-    if (chi == null) {
+    if (chi == null || chi.length < 3) {
         return null;
     }
     // @ts-ignore
@@ -34,19 +108,16 @@ function rgb2hsl(token) {
     // @ts-ignore
     let b = getNumber(t);
     // @ts-ignore
-    t = chi[3];
-    // @ts-ignore
     let a = null;
-    if (t != null && !(t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
-        // @ts-ignore
-        a = getNumber(t) / 255;
+    if (chi.length == 4) {
+        a = getNumber(chi[3]);
     }
     const values = [r, g, b];
     if (a != null && a != 1) {
         values.push(a);
     }
     // @ts-ignore
-    return rgb2hslvalues(...values);
+    return rgbvalues2hslvalues(...values);
 }
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
 function hsv2hsl(h, s, v, a) {
@@ -66,32 +137,37 @@ function hsv2hsl(h, s, v, a) {
     }
     return result;
 }
-function hwb2hsl(token) {
+function cmyk2hslvalues(token) {
+    const values = cmyk2rgbvalues(token);
+    // @ts-ignore
+    return values == null ? null : rgbvalues2hslvalues(...values);
+}
+function hwb2hslvalues(token) {
     // @ts-ignore
     return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
 }
-function lab2hsl(token) {
+function lab2hslvalues(token) {
     // @ts-ignore
-    return rgb2hslvalues(...lab2rgb(token));
+    return rgbvalues2hslvalues(...lab2rgbvalues(token));
 }
-function lch2hsl(token) {
+function lch2hslvalues(token) {
     // @ts-ignore
-    return rgb2hslvalues(...lch2rgb(token));
+    return rgbvalues2hslvalues(...lch2rgbvalues(token));
 }
-function oklab2hsl(token) {
-    const t = oklab2rgb(token);
+function oklab2hslvalues(token) {
+    const t = oklab2srgbvalues(token);
     // @ts-ignore
-    return t == null ? null : rgb2hslvalues(...t);
+    return t == null ? null : srgb2hslvalues(...t);
 }
-function oklch2hsl(token) {
-    const t = oklch2rgb(token);
+function oklch2hslvalues(token) {
+    const t = oklch2srgbvalues(token);
     // @ts-ignore
-    return t == null ? null : rgb2hslvalues(...t);
+    return t == null ? null : srgb2hslvalues(...t);
 }
-function rgb2hslvalues(r, g, b, a = null) {
-    return srgb2hsl(r / 255, g / 255, b / 255, a);
+function rgbvalues2hslvalues(r, g, b, a = null) {
+    return srgb2hslvalues(r / 255, g / 255, b / 255, a);
 }
-function srgb2hsl(r, g, b, a = null) {
+function srgb2hslvalues(r, g, b, a = null) {
     let max = Math.max(r, g, b);
     let min = Math.min(r, g, b);
     let h = 0;
@@ -122,4 +198,4 @@ function srgb2hsl(r, g, b, a = null) {
     return hsl;
 }
 
-export { hex2hsl, hsv2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, rgb2hslvalues, srgb2hsl };
+export { cmyk2HslToken, cmyk2hslvalues, color2HslToken, hex2HslToken, hsv2hsl, hwb2HslToken, hwb2hslvalues, lab2HslToken, lab2hslvalues, lch2HslToken, lch2hslvalues, oklab2HslToken, oklab2hslvalues, oklch2HslToken, oklch2hslvalues, rgb2HslToken, rgb2hslvalues, rgbvalues2hslvalues, srgb2hslvalues };

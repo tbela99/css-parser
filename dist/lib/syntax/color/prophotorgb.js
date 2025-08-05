@@ -1,5 +1,5 @@
-import { srgb2xyz } from './xyz.js';
 import { XYZ_D65_to_D50, xyzd502srgb } from './xyzd50.js';
+import { srgb2xyz } from './xyz.js';
 
 function prophotorgb2srgbvalues(r, g, b, a = null) {
     // @ts-ignore

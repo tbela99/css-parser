@@ -1,4 +1,89 @@
 /**
+ * color types enum
+ */
+declare enum ColorType {
+    /**
+     * convert color to hex
+     */
+    HEX = 0,
+    /**
+     * convert color to rgb
+     */
+    RGBA = 1,
+    /**
+     * convert color to hwb
+     */
+    HWB = 2,
+    /**
+     * convert color to hsl
+     */
+    HSLA = 3,
+    /**
+     * convert color to cmyk
+     */
+    DEVICE_CMYK = 4,
+    /**
+     * convert color to lch
+     */
+    LCH = 5,
+    /**
+     * convert color to oklch
+     */
+    OKLCH = 6,
+    /**
+     * convert color to lab
+     */
+    LAB = 7,
+    /**
+     * convert color to oklab
+     */
+    OKLAB = 8,
+    /**
+     * convert color to xyz
+     */
+    XYZ_D65 = 9,
+    /**
+     * convert color to xyz-d50
+     */
+    XYZ_D50 = 10,
+    /**
+     * convert color to srgb
+     */
+    SRGB = 11,
+    /**
+     * convert color to srgb-linear
+     */
+    SRGB_LINEAR = 12,
+    /**
+     * convert color to display-p3
+     */
+    DISPLAY_P3 = 13,
+    /**
+     * convert color to a98-rgb
+     */
+    A98_RGB = 14,
+    /**
+     * convert color to prophoto-rgb
+     */
+    PROPHOTO_RGB = 15,
+    /**
+     * convert color to rec2020
+     */
+    REC2020 = 16,
+    /**
+     * alias for hsl
+     */
+    HSL = 3,
+    /**
+     * alias for rgba
+     */
+    RGB = 1,
+    /**
+     * alias for xyz-d65
+     */
+    XYZ = 9
+}
+/**
  * validation level enum
  */
 declare enum ValidationLevel {
@@ -208,28 +293,28 @@ declare enum ColorKind {
     DPSYS = 1,
     LIT = 2,
     HEX = 3,
+    RGBA = 4,
+    HSLA = 5,
+    HWB = 6,
+    DEVICE_CMYK = 7,
+    OKLAB = 8,
+    OKLCH = 9,
+    LAB = 10,
+    LCH = 11,
+    COLOR = 12,
+    SRGB = 13,
+    PROPHOTO_RGB = 14,
+    A98_RGB = 15,
+    REC2020 = 16,
+    DISPLAY_P3 = 17,
+    SRGB_LINEAR = 18,
+    XYZ_D50 = 19,
+    XYZ_D65 = 20,
+    LIGHT_DARK = 21,
+    COLOR_MIX = 22,
     RGB = 4,
-    RGBA = 5,
-    HSL = 6,
-    HSLA = 7,
-    HWB = 8,
-    DEVICE_CMYK = 9,
-    OKLAB = 10,
-    OKLCH = 11,
-    LAB = 12,
-    LCH = 13,
-    COLOR = 14,
-    SRGB = 15,
-    PROPHOTO_RGB = 16,
-    A98_RGB = 17,
-    REC2020 = 18,
-    DISPLAY_P3 = 19,
-    SRGB_LINEAR = 20,
-    XYZ = 21,
-    XYZ_D50 = 22,
-    XYZ_D65 = 23,
-    LIGHT_DARK = 24,
-    COLOR_MIX = 25
+    HSL = 5,
+    XYZ = 20
 }
 
 /**
@@ -1246,7 +1331,7 @@ export declare interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
-    convertColor?: boolean;
+    convertColor?: boolean | ColorType;
     withParents?: boolean;
     output?: string;
     cwd?: string;
@@ -1356,4 +1441,4 @@ declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResu
  */
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken, ValidationLevel, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };
+export { ColorType, EnumToken, ValidationLevel, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };

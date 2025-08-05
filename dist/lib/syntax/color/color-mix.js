@@ -9,17 +9,16 @@ import { getNumber } from './color.js';
 import { srgb2rgb } from './rgb.js';
 import { ColorKind } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2hwb } from './hwb.js';
-import { srgb2hsl } from './hsl.js';
 import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';
+import { srgb2hwb } from './hwb.js';
+import { srgb2hslvalues } from './hsl.js';
 import { srgb2lch, xyz2lchvalues } from './lch.js';
-import { srgb2lab } from './lab.js';
+import { srgb2labvalues } from './lab.js';
 import { srgb2p3values } from './p3.js';
 import { srgb2oklch } from './oklch.js';
 import { srgb2oklab } from './oklab.js';
-import { srgb2a98values } from './a98rgb.js';
 import { srgb2prophotorgbvalues } from './prophotorgb.js';
-import { srgb2xyz } from './xyz.js';
+import { srgb2xyz_d50 } from './xyz.js';
 import { XYZ_D65_to_D50, xyzd502lch } from './xyzd50.js';
 import { srgb2rec2020values } from './rec2020.js';
 import '../../renderer/sourcemap/lib/encode.js';
@@ -174,9 +173,9 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
         case 'xyz-d65':
         case 'xyz-d50':
             // @ts-ignore
-            values1 = srgb2xyz(...values1);
+            values1 = srgb2xyz_d50(...values1);
             // @ts-ignore
-            values2 = srgb2xyz(...values2);
+            values2 = srgb2xyz_d50(...values2);
             if (colorSpace.val == 'xyz-d50') {
                 // @ts-ignore
                 values1 = XYZ_D65_to_D50(...values1);
@@ -192,9 +191,9 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             break;
         case 'hsl':
             // @ts-ignore
-            values1 = srgb2hsl(...values1);
+            values1 = srgb2hslvalues(...values1);
             // @ts-ignore
-            values2 = srgb2hsl(...values2);
+            values2 = srgb2hslvalues(...values2);
             break;
         case 'hwb':
             // @ts-ignore
@@ -204,9 +203,9 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             break;
         case 'lab':
             // @ts-ignore
-            values1 = srgb2lab(...values1);
+            values1 = srgb2labvalues(...values1);
             // @ts-ignore
-            values2 = srgb2lab(...values2);
+            values2 = srgb2labvalues(...values2);
             break;
         case 'lch':
             // @ts-ignore
@@ -329,7 +328,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace.val,
                 chi: calculate().slice(1),
-                kin: ColorKind[colorSpace.val.toLowerCase().replaceAll('-', '_')]
+                kin: ColorKind[colorSpace.val.toUpperCase().replaceAll('-', '_')]
             };
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
                 // @ts-ignore

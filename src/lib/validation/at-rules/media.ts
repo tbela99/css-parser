@@ -13,7 +13,7 @@ import type {
 import type {ValidationSyntaxResult} from "../../../@types/validation.d.ts";
 import {EnumToken, SyntaxValidationResult} from "../../ast/index.ts";
 import {consumeWhitespace, splitTokenList} from "../utils/index.ts";
-import {generalEnclosedFunc} from "../../syntax/color/utils";
+import {generalEnclosedFunc} from "../../syntax/color/utils/index.ts";
 
 export function validateAtRuleMedia(atRule: AstAtRule, options: ValidationOptions, root?: AstNode): ValidationSyntaxResult {
 

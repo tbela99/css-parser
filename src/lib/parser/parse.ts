@@ -778,7 +778,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
         const raw: string[] = t.reduce((acc: string[], curr: Token) => {
 
-            acc.push(renderToken(curr, {removeComments: true}));
+            acc.push(renderToken(curr, {removeComments: true, convertColor: false}));
             return acc
         }, []);
 
@@ -857,6 +857,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
             node.val = (node.tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr, {
                 minify: false,
+                convertColor: false,
                 removeComments: true
             }), '');
         }
@@ -1510,54 +1511,56 @@ export function parseSelector(tokens: Token[]): Token[] {
                 value.typ = EnumToken.ChildCombinatorTokenType;
             }
 
-            // @ts-ignore
-            else if (value.typ == EnumToken.WhitespaceTokenType) {
-
-                if (nextValue != null && nextValue.typ == EnumToken.LiteralTokenType) {
-
-                    if (['>', '+', '~'].includes((<LiteralToken>nextValue).val)) {
-
-                        switch ((<LiteralToken>value).val) {
-
-                            case '>':
-                                // @ts-ignore
-                                nextValue.typ = EnumToken.ChildCombinatorTokenType;
-                                break;
-
-                            case '+':
-                                // @ts-ignore
-                                nextValue.typ = EnumToken.NextSiblingCombinatorTokenType;
-                                break;
-
-                            case '~':
-                                // @ts-ignore
-                                nextValue.typ = EnumToken.SubsequentSiblingCombinatorTokenType;
-                                break;
-                        }
-
-                        // @ts-ignore
-                        delete (<LiteralToken>nextValue).val;
-
-                        continue;
-                    }
-                }
-
-                if (previousValue != null && [
-                    EnumToken.ChildCombinatorTokenType,
-                    EnumToken.DescendantCombinatorTokenType,
-                    EnumToken.NextSiblingCombinatorTokenType,
-                    EnumToken.SubsequentSiblingCombinatorTokenType,
-                    EnumToken.ColumnCombinatorTokenType,
-                    EnumToken.NameSpaceAttributeTokenType,
-                    EnumToken.CommaTokenType
-                ].includes(previousValue.typ)) {
-
-                    continue;
-                }
-
                 // @ts-ignore
-                value.typ = EnumToken.DescendantCombinatorTokenType;
-            } else if (value.typ == EnumToken.LiteralTokenType) {
+                // else if (value.typ == EnumToken.WhitespaceTokenType) {
+                //
+                //     if (nextValue != null && nextValue.typ == EnumToken.LiteralTokenType) {
+                //
+                //         if (['>', '+', '~'].includes((<LiteralToken>nextValue).val)) {
+                //
+                //             switch ((<LiteralToken>value).val) {
+                //
+                //                 case '>':
+                //                     // @ts-ignore
+                //                     nextValue.typ = EnumToken.ChildCombinatorTokenType;
+                //                     break;
+                //
+                //                 case '+':
+                //                     // @ts-ignore
+                //                     nextValue.typ = EnumToken.NextSiblingCombinatorTokenType;
+                //                     break;
+                //
+                //                 case '~':
+                //                     // @ts-ignore
+                //                     nextValue.typ = EnumToken.SubsequentSiblingCombinatorTokenType;
+                //                     break;
+                //             }
+                //
+                //             // @ts-ignore
+                //             delete (<LiteralToken>nextValue).val;
+                //
+                //             continue;
+                //         }
+                //     }
+                //
+                //     if (previousValue != null && [
+                //         EnumToken.ChildCombinatorTokenType,
+                //         EnumToken.DescendantCombinatorTokenType,
+                //         EnumToken.NextSiblingCombinatorTokenType,
+                //         EnumToken.SubsequentSiblingCombinatorTokenType,
+                //         EnumToken.ColumnCombinatorTokenType,
+                //         EnumToken.NameSpaceAttributeTokenType,
+                //         EnumToken.CommaTokenType
+                //     ].includes(previousValue.typ)) {
+                //
+                //         continue;
+                //     }
+                //
+                //     // @ts-ignore
+                //     value.typ = EnumToken.DescendantCombinatorTokenType;
+            // }
+
+            else if (value.typ == EnumToken.LiteralTokenType) {
 
                 if ((<LiteralToken>value).val.charAt(0) == '&') {
 
@@ -1579,12 +1582,13 @@ export function parseSelector(tokens: Token[]): Token[] {
                 }
 
                 // @ts-ignore
-                if ((<DelimToken>value).typ == EnumToken.DelimTokenType) {
-
-                    // @ts-ignore
-                    (<NextSiblingCombinatorToken>value).typ = EnumToken.NextSiblingCombinatorTokenType;
-
-                } else if (['*', '>', '+', '~'].includes((<LiteralToken>value).val)) {
+                // if ((<DelimToken>value).typ == EnumToken.DelimTokenType) {
+                //
+                //     // @ts-ignore
+                //     (<NextSiblingCombinatorToken>value).typ = EnumToken.NextSiblingCombinatorTokenType;
+                //
+                // } else
+                if (['*', '>', '+', '~'].includes((<LiteralToken>value).val)) {
 
                     switch ((<LiteralToken>value).val) {
 
@@ -2278,34 +2282,34 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                 }
             }
 
-            continue;
+            // continue;
         }
 
-        if (options.parseColor) {
-
-            if (t.typ == EnumToken.IdenTokenType) {
-                // named color
-                const value: string = (t as IdentToken).val.toLowerCase();
-
-                if (value in COLORS_NAMES) {
-                    Object.assign(t, {
-                        typ: EnumToken.ColorTokenType,
-                        val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
-                        kin: ColorKind.HEX
-                    });
-                }
-
-                continue;
-            }
-
-            if (t.typ == EnumToken.HashTokenType && isHexColor((t as HashToken).val)) {
-                // hex color
-                // @ts-ignore
-                t.typ = EnumToken.ColorTokenType;
-                // @ts-ignore
-                (t as ColorToken).kin = ColorKind.HEX;
-            }
-        }
+        // if (options.parseColor) {
+        //
+        //     if (t.typ == EnumToken.IdenTokenType) {
+        //         // named color
+        //         const value: string = (t as IdentToken).val.toLowerCase();
+        //
+        //         if (value in COLORS_NAMES) {
+        //             Object.assign(t, {
+        //                 typ: EnumToken.ColorTokenType,
+        //                 val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
+        //                 kin: ColorKind.HEX
+        //             });
+        //         }
+        //
+        //         continue;
+        //     }
+        //
+        //     if (t.typ == EnumToken.HashTokenType && isHexColor((t as HashToken).val)) {
+        //         // hex color
+        //         // @ts-ignore
+        //         t.typ = EnumToken.ColorTokenType;
+        //         // @ts-ignore
+        //         (t as ColorToken).kin = ColorKind.HEX;
+        //     }
+        // }
     }
 
     return tokens;

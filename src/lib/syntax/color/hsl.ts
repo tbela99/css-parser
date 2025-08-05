@@ -1,22 +1,135 @@
 import {hwb2hsv} from "./hsv.ts";
 import type {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {getNumber} from "./color.ts";
-import {hex2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb} from "./rgb.ts";
-import {getComponents} from "./utils/index.ts";
+import {color2srgbvalues, getNumber, toPrecisionAngle} from "./color.ts";
+import {cmyk2rgbvalues, lab2rgbvalues, lch2rgbvalues} from "./rgb.ts";
+import {ColorKind, getComponents} from "./utils/index.ts";
+import {hex2srgbvalues, hslvalues, oklab2srgbvalues, oklch2srgbvalues} from './srgb.ts';
 import {EnumToken} from "../../ast/index.ts";
-import {hslvalues} from './srgb.ts';
 
-export function hex2hsl(token: ColorToken): number[] {
+export function hex2HslToken(token: ColorToken): ColorToken | null {
 
     // @ts-ignore
-    return rgb2hslvalues(...hex2rgb(token));
+    return hslToken(srgb2hslvalues(...hex2srgbvalues(token)));
 }
 
-export function rgb2hsl(token: ColorToken): number[] | null {
+export function rgb2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = rgb2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function hwb2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = hwb2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function cmyk2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = cmyk2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function oklab2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = oklab2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function oklch2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = oklch2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function lab2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = lab2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function lch2HslToken(token: ColorToken): ColorToken | null {
+
+    const values = lch2hslvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return hslToken(values);
+}
+
+export function color2HslToken(token: ColorToken): ColorToken | null {
+
+    const values: number[] | null = color2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    // @ts-ignore
+    return hslToken(srgb2hslvalues(...values));
+}
+
+function hslToken(values: number[]): ColorToken {
+
+    values[0] = toPrecisionAngle(values[0] * 360);
+
+    const chi: Token[] = <Token[]>[
+
+        {typ: EnumToken.NumberTokenType, val: String(values[0]), uni: 'deg'},
+        {typ: EnumToken.PercentageTokenType, val: String(values[1] * 100)},
+        {typ: EnumToken.PercentageTokenType, val: String(values[2] * 100)},
+    ];
+
+    if (values.length == 4 && values[3] != 1) {
+
+        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed()});
+    }
+
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: 'hsl',
+        chi,
+        kin: ColorKind.HSL
+    }
+}
+
+export function rgb2hslvalues(token: ColorToken): number[] | null {
 
     const chi: Token[] | null = getComponents(token);
 
-    if (chi == null) {
+    if (chi == null || chi.length < 3) {
 
         return null;
     }
@@ -38,14 +151,11 @@ export function rgb2hsl(token: ColorToken): number[] | null {
     let b: number = getNumber(t);
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken | IdentToken>chi[3];
-    // @ts-ignore
     let a: number = null;
 
-    if (t != null && !(t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
+    if (chi.length == 4) {
 
-        // @ts-ignore
-        a = getNumber(t) / 255;
+        a = getNumber(chi[3] as NumberToken | PercentageToken | IdentToken);
     }
 
     const values: number[] = [r, g, b];
@@ -57,7 +167,7 @@ export function rgb2hsl(token: ColorToken): number[] | null {
 
 
     // @ts-ignore
-    return rgb2hslvalues(...values);
+    return rgbvalues2hslvalues(...values);
 }
 
 // https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
@@ -84,46 +194,53 @@ export function hsv2hsl(h: number, s: number, v: number, a?: number): number[] {
     return result;
 }
 
+export function cmyk2hslvalues(token: ColorToken): number[] {
 
-export function hwb2hsl(token: ColorToken): [number, number, number, number] {
+    const values = cmyk2rgbvalues(token);
+
+    // @ts-ignore
+    return values == null ? null : rgbvalues2hslvalues(...values);
+}
+
+export function hwb2hslvalues(token: ColorToken): [number, number, number, number] {
 
     // @ts-ignore
     return hsv2hsl(...hwb2hsv(...Object.values(hslvalues(token))));
 }
 
-export function lab2hsl(token: ColorToken): number[] {
+export function lab2hslvalues(token: ColorToken): number[] {
 
     // @ts-ignore
-    return rgb2hslvalues(...lab2rgb(token));
+    return rgbvalues2hslvalues(...lab2rgbvalues(token));
 }
 
-export function lch2hsl(token: ColorToken): number[] {
+export function lch2hslvalues(token: ColorToken): number[] {
 
     // @ts-ignore
-    return rgb2hslvalues(...lch2rgb(token));
+    return rgbvalues2hslvalues(...lch2rgbvalues(token));
 }
 
-export function oklab2hsl(token: ColorToken): number[] | null {
+export function oklab2hslvalues(token: ColorToken): number[] | null {
 
-    const t: number[] | null = oklab2rgb(token);
+    const t: number[] | null = oklab2srgbvalues(token);
     // @ts-ignore
-    return t == null ? null : rgb2hslvalues(...t);
+    return t == null ? null : srgb2hslvalues(...t);
 }
 
-export function oklch2hsl(token: ColorToken): number[] | null{
+export function oklch2hslvalues(token: ColorToken): number[] | null{
 
-    const t: number[] | null = oklch2rgb(token);
+    const t: number[] | null = oklch2srgbvalues(token);
     // @ts-ignore
-    return t == null ? null : rgb2hslvalues(...t);
+    return t == null ? null : srgb2hslvalues(...t);
 }
 
-export function rgb2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {
+export function rgbvalues2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {
 
-    return srgb2hsl(r / 255, g / 255, b / 255, a);
+    return srgb2hslvalues(r / 255, g / 255, b / 255, a);
 }
 
 
-export function srgb2hsl(r: number, g: number, b: number, a: number | null = null): number[] {
+export function srgb2hslvalues(r: number, g: number, b: number, a: number | null = null): number[] {
 
     let max: number = Math.max(r, g, b);
     let min: number = Math.min(r, g, b);

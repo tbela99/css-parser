@@ -148,7 +148,7 @@ class InlineCssVariablesFeature {
                             // @ts-ignore
                             parent.chi.splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr, { convertColor: false }), '')} */`
                             });
                             break;
                         }

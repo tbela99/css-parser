@@ -1,35 +1,195 @@
 import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {EnumToken} from "../../ast/index.ts";
-import {hex2rgb, hsl2rgb, hwb2rgb, lab2rgb, lch2rgb, oklab2rgb, oklch2rgb, srgb2rgb} from "./rgb.ts";
-import {hex2hsl, hwb2hsl, lab2hsl, lch2hsl, oklab2hsl, oklch2hsl, rgb2hsl, srgb2hsl} from "./hsl.ts";
-import {hsl2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb} from "./hwb.ts";
-import {hex2lab, hsl2lab, hwb2lab, lch2lab, oklab2lab, oklch2lab, rgb2lab, srgb2lab} from "./lab.ts";
-import {hex2lch, hsl2lch, hwb2lch, lab2lch, oklab2lch, oklch2lch, rgb2lch, srgb2lch} from "./lch.ts";
-import {hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab} from "./oklab.ts";
-import {hex2oklch, hsl2oklch, hwb2oklch, lab2oklch, lch2oklch, oklab2oklch, rgb2oklch, srgb2oklch,} from "./oklch.ts";
-import {colorFuncColorSpace, ColorKind, getComponents} from "./utils/index.ts";
 import {
-    hex2srgb,
+    cmyk2RgbToken,
+    cmyk2rgbvalues,
+    color2RgbToken,
+    hex2RgbToken,
+    hsl2RgbToken,
+    hwb2RgbToken,
+    lab2RgbToken,
+    lch2RgbToken,
+    oklab2RgbToken,
+    oklch2RgbToken
+} from "./rgb.ts";
+import {
+    cmyk2HslToken,
+    color2HslToken,
+    hex2HslToken,
+    hwb2HslToken,
+    lab2HslToken,
+    lch2HslToken,
+    oklab2HslToken,
+    oklch2HslToken,
+    rgb2HslToken
+} from "./hsl.ts";
+import {
+    cmyk2hwbToken,
+    color2hwbToken,
+    hsl2hwbToken,
+    lab2hwbToken,
+    lch2hwbToken,
+    oklab2hwbToken,
+    oklch2hwbToken,
+    rgb2hwbToken
+} from "./hwb.ts";
+import {
+    cmyk2labToken,
+    color2labToken,
+    hex2labToken,
+    hsl2labToken,
+    hwb2labToken,
+    lch2labToken,
+    oklab2labToken,
+    oklch2labToken,
+    rgb2labToken
+} from "./lab.ts";
+import {
+    cmyk2lchToken,
+    color2lchToken,
+    hex2lchToken,
+    hsl2lchToken,
+    hwb2lchToken,
+    lab2lchToken,
+    oklab2lchToken,
+    oklch2lchToken,
+    rgb2lchToken
+} from "./lch.ts";
+import {
+    cmyk2oklabToken,
+    color2oklabToken,
+    hex2oklabToken,
+    hsl2oklabToken,
+    hwb2oklabToken,
+    lab2oklabToken,
+    lch2oklabToken,
+    oklch2oklabToken,
+    rgb2oklabToken
+} from "./oklab.ts";
+import {
+    color2oklchToken,
+    hex2oklchToken,
+    hsl2oklchToken,
+    hwb2oklchToken,
+    lab2oklchToken,
+    lch2oklchToken,
+    oklab2oklchToken,
+    rgb2oklchToken,
+} from "./oklch.ts";
+import {anglePrecision, colorFuncColorSpace, ColorKind, colorPrecision, getComponents} from "./utils/index.ts";
+import {
+    hex2srgbvalues,
     hsl2srgb,
-    hwb2srgb,
-    lab2srgb,
-    lch2srgb,
+    hwb2srgbvalues,
+    lab2srgbvalues,
+    lch2srgbvalues,
     lsrgb2srgbvalues,
-    oklab2srgb,
+    oklab2srgbvalues,
+    oklch2srgbvalues,
     rgb2srgb,
     srgb2lsrgbvalues,
     xyz2srgb
 } from "./srgb.ts";
 import {prophotorgb2srgbvalues, srgb2prophotorgbvalues} from "./prophotorgb.ts";
-import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
 import {rec20202srgb, srgb2rec2020values} from "./rec2020.ts";
-import {srgb2xyz} from "./xyz.ts";
+import {srgb2xyz, srgb2xyz_d50} from "./xyz.ts";
 import {p32srgbvalues, srgb2p3values} from "./p3.ts";
-import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50.ts";
+import {xyzd502srgb} from "./xyzd50.ts";
+import {colorMix} from "./color-mix.ts";
+import {
+    cmyk2HexToken,
+    color2HexToken,
+    hsl2HexToken,
+    hwb2HexToken,
+    lab2HexToken,
+    lch2HexToken,
+    oklab2HexToken,
+    oklch2HexToken,
+    reduceHexValue,
+    rgb2HexToken
+} from "./hex.ts";
+import type {RelativeColorTypes} from "./relativecolor.ts";
+import {parseRelativeColor} from "./relativecolor.ts";
+import {isIdentColor} from "../syntax.ts";
+import {
+    color2cmykToken,
+    hsl2cmykToken,
+    hwb2cmykToken,
+    lab2cmykToken,
+    lch2cmykToken,
+    oklab2cmyk,
+    oklch2cmykToken,
+    rgb2cmykToken
+} from "./cmyk.ts";
+import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
 
-export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
+export function convertColor(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    if (token.kin == ColorKind.SYS ||
+        token.kin == ColorKind.DPSYS ||
+        (isIdentColor(token) &&
+            ('currentcolor'.localeCompare(token.val, undefined, {sensitivity: 'base'}) == 0))
+    ) {
+
+        return token
+    }
+
+    if (token.kin == ColorKind.COLOR_MIX && to != ColorKind.COLOR_MIX) {
+
+        const children: Token[][] = (<Token[]>(token as ColorToken).chi).reduce((acc: Token[][], t: Token) => {
+
+            if (t.typ == EnumToken.ColorTokenType) {
+
+                acc.push([t]);
+            } else {
+
+                if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
+
+                    acc[acc.length - 1].push(t);
+                }
+            }
+
+            return acc;
+        }, <Token[][]>[[]]);
+
+        token = colorMix(<IdentToken>children[0][1], <IdentToken>children[0][2], <ColorToken>children[1][0], <PercentageToken>children[1][1], <ColorToken>children[2][0], <PercentageToken>children[2][1]) as ColorToken;
+
+        if (token == null) {
+
+            return null;
+        }
+    }
+
+    if ((token as ColorToken).cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes((token as ColorToken).val.toLowerCase())) {
+
+        const chi: Token[] | null = getComponents(token as ColorToken);
+        const offset: number = (token as ColorToken).val == 'color' ? 2 : 1;
+
+        if (chi != null) {
+
+            // @ts-ignore
+            const color: ColorToken = chi[1];
+            const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor((token as ColorToken).val.toLowerCase() == 'color' ? (<IdentToken>chi[offset]).val : <string>(token as ColorToken).val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+
+            if (components != null) {
+
+                token = {
+                    ...token,
+                    chi: [...((token as ColorToken).val == 'color' ? [chi[offset]] : []), ...Object.values(components)]
+                };
+
+                delete (token as ColorToken).cal;
+            }
+        }
+    }
 
     if (token.kin == to) {
+
+        if (token.kin == ColorKind.HEX || token.kin == ColorKind.LIT) {
+
+            token.val = reduceHexValue(token.val);
+            token.kin = token.val[0] == '#' ? ColorKind.HEX : ColorKind.LIT;
+        }
 
         return token;
     }
@@ -44,82 +204,50 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
         }
     }
 
-    let values: number[] = [];
-
     if (to == ColorKind.HSL) {
 
-        let t: number[] | null;
 
         switch (token.kin) {
 
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                t = rgb2hsl(token);
+                return rgb2HslToken(token);
 
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2hsl(token));
-                break;
+                return hex2HslToken(token);
+
             case ColorKind.HWB:
 
-                values.push(...hwb2hsl(token));
-                break;
+                return hwb2HslToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return cmyk2HslToken(token);
 
             case ColorKind.OKLAB:
 
-                t = oklab2hsl(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return oklab2HslToken(token);
 
             case ColorKind.OKLCH:
 
-                t = oklch2hsl(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return oklch2HslToken(token);
 
             case ColorKind.LAB:
 
-
-                values.push(...lab2hsl(token));
-                break;
+                return lab2HslToken(token);
 
             case ColorKind.LCH:
 
-                values.push(...lch2hsl(token));
-                break;
+                return lch2HslToken(token);
 
             case ColorKind.COLOR:
 
-                // @ts-ignore
-                values.push(...srgb2hsl(...color2srgbvalues(token)));
-                break;
+                return color2HslToken(token);
         }
 
-        if (values.length > 0) {
-
-            return values2hsltoken(values);
-        }
     } else if (to == ColorKind.HWB) {
 
         switch (token.kin) {
@@ -127,134 +255,180 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                values.push(...rgb2hwb(token));
-                break;
+                return rgb2hwbToken(token);
+
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2hsl(token));
-                break;
+                // @ts-ignore
+                return rgb2hwbToken(token);
+
             case ColorKind.HSL:
             case ColorKind.HSLA:
 
-                values.push(...hsl2hwb(token));
-                break;
+                return hsl2hwbToken(token);
 
             case ColorKind.OKLAB:
 
-                values.push(...oklab2hwb(token));
-                break;
+                return oklab2hwbToken(token);
 
             case ColorKind.OKLCH:
 
-                values.push(...oklch2hwb(token));
-                break;
+                return oklch2hwbToken(token);
 
             case ColorKind.LAB:
 
-                values.push(...lab2hwb(token));
-                break;
+                return lab2hwbToken(token);
 
             case ColorKind.LCH:
 
-                values.push(...lch2hwb(token));
-                break;
+                return lch2hwbToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return cmyk2hwbToken(token);
+
+            case ColorKind.COLOR:
+
+                return color2hwbToken(token);
         }
 
-        if (values.length > 0) {
+    } else if (to == ColorKind.DEVICE_CMYK) {
 
-            return values2hwbtoken(values);
+        switch (token.kin) {
+
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
+
+                return rgb2cmykToken(token);
+
+            case ColorKind.HEX:
+            case ColorKind.LIT:
+
+                return rgb2cmykToken(token);
+
+            case ColorKind.HSL:
+            case ColorKind.HSLA:
+
+                return hsl2cmykToken(token);
+
+            case ColorKind.HWB:
+
+                return hwb2cmykToken(token);
+
+            case ColorKind.OKLAB:
+
+                return oklab2cmyk(token);
+
+            case ColorKind.OKLCH:
+
+                return oklch2cmykToken(token);
+
+            case ColorKind.LAB:
+
+                return lab2cmykToken(token);
+            //
+            case ColorKind.LCH:
+
+                return lch2cmykToken(token);
+
+            case ColorKind.COLOR:
+
+                return color2cmykToken(token);
+
         }
+    } else if (to == ColorKind.HEX || to == ColorKind.LIT) {
+        switch (token.kin) {
+
+            case ColorKind.HEX:
+            case ColorKind.LIT: {
+
+                const val = reduceHexValue(token.val);
+
+                return {
+                    typ: EnumToken.ColorTokenType,
+                    val,
+                    kin: val[0] == '#' ? ColorKind.HEX : ColorKind.LIT
+                }
+            }
+
+            case ColorKind.HSL:
+
+                return hsl2HexToken(token);
+
+            case ColorKind.HWB:
+
+                return hwb2HexToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return cmyk2HexToken(token);
+
+            case ColorKind.OKLAB:
+
+                return oklab2HexToken(token);
+
+            case ColorKind.OKLCH:
+
+                return oklch2HexToken(token);
+
+            case ColorKind.LAB:
+
+                return lab2HexToken(token);
+
+            case ColorKind.LCH:
+
+                return lch2HexToken(token);
+
+            case ColorKind.COLOR:
+
+                return color2HexToken(token);
+
+            case ColorKind.RGB:
+            case ColorKind.RGBA:
+
+                return rgb2HexToken(token);
+        }
+
     } else if (to == ColorKind.RGB) {
-            let t : number[] | null;
         switch (token.kin) {
 
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2rgb(token));
-                break
+                return hex2RgbToken(token);
+
             case ColorKind.HSL:
 
-                t = hsl2rgb(token);
+                return hsl2RgbToken(token);
 
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break
             case ColorKind.HWB:
 
-                t = hwb2rgb(token);
+                return hwb2RgbToken(token);
 
-                if (t == null) {
+            case ColorKind.DEVICE_CMYK:
 
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return cmyk2RgbToken(token);
 
             case ColorKind.OKLAB:
 
-                t =oklab2rgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return oklab2RgbToken(token);
 
             case ColorKind.OKLCH:
 
-                t = oklch2rgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return oklch2RgbToken(token);
 
             case ColorKind.LAB:
 
-                t = lab2rgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return lab2RgbToken(token);
 
             case ColorKind.LCH:
 
-                t = lch2rgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return lch2RgbToken(token);
 
             case ColorKind.COLOR:
 
-                // @ts-ignore
-                values.push(...srgb2rgb(...color2srgbvalues(token)));
-                break;
-        }
-
-        if (values.length > 0) {
-
-            return values2rgbtoken(values);
+                return color2RgbToken(token);
         }
 
     } else if (to == ColorKind.LAB) {
@@ -264,44 +438,41 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2lab(token));
-                break;
+                return hex2labToken(token);
+
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                values.push(...rgb2lab(token));
-                break;
+                return rgb2labToken(token);
+
             case ColorKind.HSL:
             case ColorKind.HSLA:
 
-                values.push(...hsl2lab(token));
-                break;
+                return hsl2labToken(token);
 
             case ColorKind.HWB:
-                values.push(...hwb2lab(token));
-                break;
+
+                return hwb2labToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return cmyk2labToken(token);
 
             case ColorKind.LCH:
-                values.push(...lch2lab(token));
-                break;
+
+                return lch2labToken(token);
 
             case ColorKind.OKLAB:
-                values.push(...oklab2lab(token));
-                break;
+
+                return oklab2labToken(token);
 
             case ColorKind.OKLCH:
-                values.push(...oklch2lab(token));
-                break;
+
+                return oklch2labToken(token);
 
             case ColorKind.COLOR:
-                // @ts-ignore
-                values.push(...srgb2lab(...color2srgbvalues(token)));
-                break;
-        }
 
-        if (values.length > 0) {
-
-            return values2colortoken(values, to);
+                return color2labToken(token);
         }
 
     } else if (to == ColorKind.LCH) {
@@ -310,45 +481,41 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
 
             case ColorKind.HEX:
             case ColorKind.LIT:
+                return hex2lchToken(token);
 
-                values.push(...hex2lch(token));
-                break;
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                values.push(...rgb2lch(token));
-                break;
+                return rgb2lchToken(token);
+
             case ColorKind.HSL:
             case ColorKind.HSLA:
 
-                values.push(...hsl2lch(token));
-                break;
+                return hsl2lchToken(token);
 
             case ColorKind.HWB:
-                values.push(...hwb2lch(token));
-                break;
+
+                return hwb2lchToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return cmyk2lchToken(token);
 
             case ColorKind.LAB:
-                values.push(...lab2lch(token));
-                break;
+
+                return lab2lchToken(token);
 
             case ColorKind.OKLAB:
-                values.push(...oklab2lch(token));
-                break;
+
+                return oklab2lchToken(token);
 
             case ColorKind.OKLCH:
-                values.push(...oklch2lch(token));
-                break;
+
+                return oklch2lchToken(token);
 
             case ColorKind.COLOR:
-                // @ts-ignore
-                values.push(...srgb2lch(...color2srgbvalues(token)));
-                break;
-        }
 
-        if (values.length > 0) {
-
-            return values2colortoken(values, to);
+                return color2lchToken(token);
         }
 
     } else if (to == ColorKind.OKLAB) {
@@ -358,44 +525,41 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2oklab(token));
-                break;
+                return hex2oklabToken(token);
+
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                values.push(...rgb2oklab(token));
-                break;
+                return rgb2oklabToken(token);
+
             case ColorKind.HSL:
             case ColorKind.HSLA:
 
-                values.push(...hsl2oklab(token));
-                break;
+                return hsl2oklabToken(token);
 
             case ColorKind.HWB:
-                values.push(...hwb2oklab(token));
-                break;
+
+                return hwb2oklabToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return cmyk2oklabToken(token);
 
             case ColorKind.LAB:
-                values.push(...lab2oklab(token));
-                break;
+
+                return lab2oklabToken(token);
 
             case ColorKind.LCH:
-                values.push(...lch2oklab(token));
-                break;
+
+                return lch2oklabToken(token);
 
             case ColorKind.OKLCH:
-                values.push(...oklch2oklab(token));
-                break;
+
+                return oklch2oklabToken(token);
 
             case ColorKind.COLOR:
-                // @ts-ignore
-                values.push(...srgb2oklab(...color2srgbvalues(token)));
-                break;
-        }
 
-        if (values.length > 0) {
-
-            return values2colortoken(values, to);
+                return color2oklabToken(token);
         }
 
     } else if (to == ColorKind.OKLCH) {
@@ -405,261 +569,268 @@ export function convert(token: ColorToken, to: ColorKind): ColorToken | null {
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2oklch(token));
-                break;
+                return hex2oklchToken(token);
+
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                values.push(...rgb2oklch(token));
-                break;
+                return rgb2oklchToken(token);
+
             case ColorKind.HSL:
             case ColorKind.HSLA:
 
-                values.push(...hsl2oklch(token));
-                break;
+                return hsl2oklchToken(token);
 
             case ColorKind.HWB:
-                values.push(...hwb2oklch(token));
-                break;
+
+                return hwb2oklchToken(token);
+
+            case ColorKind.DEVICE_CMYK:
+
+                return oklab2oklchToken(token);
 
             case ColorKind.LAB:
-                values.push(...lab2oklch(token));
-                break;
+
+                return lab2oklchToken(token);
 
             case ColorKind.OKLAB:
-                values.push(...oklab2oklch(token));
-                break;
+
+                return oklab2oklchToken(token);
 
             case ColorKind.LCH:
-                values.push(...lch2oklch(token));
-                break;
+
+                return lch2oklchToken(token);
 
             case ColorKind.COLOR:
 
-                // @ts-ignore
-                values.push(...srgb2oklch(...color2srgbvalues(token)));
-
-                // switch (to) {
-                //
-                //     case ColorKind.SRGB:
-                //
-                //         values.push(...val);
-                //         break;
-                //
-                //     case ColorKind.SRGB_LINEAR:
-                //
-                //         // @ts-ignore
-                //         values.push(...srgb2lsrgbvalues(...val));
-                //         break;
-                //
-                //     case ColorKind.DISPLAY_P3:
-                //
-                //         // @ts-ignore
-                //         values.push(...srgb2p3values(...val));
-                //         break;
-                //
-                //     case ColorKind.PROPHOTO_RGB:
-                //
-                //         // @ts-ignore
-                //         values.push(...srgb2prophotorgbvalues(...val));
-                //         break;
-                //
-                //     case ColorKind.A98_RGB:
-                //
-                //         // @ts-ignore
-                //         values.push(...srgb2a98values(...val));
-                //         break;
-                //
-                //     case ColorKind.REC2020:
-                //
-                //         // @ts-ignore
-                //         values.push(...srgb2rec2020values(...val));
-                //         break;
-                //
-                //     case ColorKind.XYZ:
-                //     case ColorKind.XYZ_D65:
-                //
-                //         // @ts-ignore
-                //         values.push(...srgb2xyz(...val));
-                //         break;
-                //
-                //     case ColorKind.XYZ_D50:
-                //
-                //         // @ts-ignore
-                //         values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
-                //         break;
-                // }
-
-                break;
+                return color2oklchToken(token);
         }
 
-        if (values.length > 0) {
+    } else if (colorFuncColorSpace.includes((ColorKind[to].toLowerCase().replaceAll('_', '-') as string).toLowerCase().replaceAll('_', '-'))) {
 
-            return values2colortoken(values, to);
-        }
-    }
-
-    else if (colorFuncColorSpace.includes((ColorKind[to] as string).toLowerCase().replaceAll('_', '-') )) {
-
-        let t : number[] | null;
+        console.error(ColorKind[token.kin]);
 
         switch (token.kin) {
 
             case ColorKind.HEX:
             case ColorKind.LIT:
 
-                values.push(...hex2srgb(token));
-                break;
+                return hex2colorToken(token, to);
+
             case ColorKind.RGB:
             case ColorKind.RGBA:
 
-                t = rgb2srgb(token);
+                return rgb2colorToken(token, to);
 
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
             case ColorKind.HSL:
             case ColorKind.HSLA:
 
-                t = hsl2srgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return hsl2colorToken(token, to);
 
             case ColorKind.HWB:
 
-                t = hwb2srgb(token);
+                return hwb2colorToken(token, to);
 
-                if (t == null) {
+            case ColorKind.DEVICE_CMYK:
 
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return cmyk2colorToken(token, to);
 
             case ColorKind.LAB:
-                t = lab2srgb(token);
 
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
-
+                return lab2colorToken(token, to);
             case ColorKind.OKLAB:
 
-                t = oklab2srgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return oklab2colorToken(token, to);
 
             case ColorKind.LCH:
 
-                t = lch2srgb(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return lch2colorToken(token, to);
 
             case ColorKind.OKLCH:
 
-                t = color2srgbvalues(token);
-
-                if (t == null) {
-
-                    return null;
-                }
-
-                values.push(...t);
-                break;
+                return oklch2colorToken(token, to);
 
             case ColorKind.COLOR:
+            case ColorKind.XYZ:
+            case ColorKind.SRGB:
+            case ColorKind.REC2020:
+            case ColorKind.XYZ_D50:
+            case ColorKind.A98_RGB:
+            case ColorKind.DISPLAY_P3:
+            case ColorKind.SRGB_LINEAR:
+            case ColorKind.PROPHOTO_RGB:
 
-                const val: number[] | null = color2srgbvalues(token);
-
-                if (val == null) {
-
-                    return null;
-                }
-
-                switch (to) {
-
-                    case ColorKind.SRGB:
-
-                        values.push(...val);
-                        break;
-                    case ColorKind.SRGB_LINEAR:
-
-                        // @ts-ignore
-                        values.push(...srgb2lsrgbvalues(...val));
-                        break;
-                    case ColorKind.DISPLAY_P3:
-
-                        // @ts-ignore
-                        values.push(...srgb2p3values(...val));
-                        break;
-                    case ColorKind.PROPHOTO_RGB:
-
-                        // @ts-ignore
-                        values.push(...srgb2prophotorgbvalues(...val));
-                        break;
-                    case ColorKind.A98_RGB:
-
-                        // @ts-ignore
-                        values.push(...srgb2a98values(...val));
-                        break;
-
-                    case ColorKind.REC2020:
-
-                        // @ts-ignore
-                        values.push(...srgb2rec2020values(...val));
-                        break;
-
-                    case ColorKind.XYZ:
-                    case ColorKind.XYZ_D65:
-
-                        // @ts-ignore
-                        values.push(...srgb2xyz(...val));
-                        break;
-
-                    case ColorKind.XYZ_D50:
-
-                        // @ts-ignore
-                        values.push(...(XYZ_D65_to_D50(...srgb2xyz(...val))));
-                        break
-                }
-
-                break;
-        }
-
-        if (values.length > 0) {
-
-            return values2colortoken(values, to);
+                return color2colorToken(token, to);
         }
     }
 
     return null;
+}
+
+export function hex2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] = hex2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function rgb2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = rgb2srgb(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function hsl2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = hsl2srgb(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function hwb2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = hwb2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function cmyk2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = cmyk2rgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function lab2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = lab2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function oklab2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = oklab2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function lch2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = lch2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function oklch2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = oklch2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    return values2colortoken(values, to);
+}
+
+export function color2colorToken(token: ColorToken, to: ColorKind): ColorToken | null {
+
+    const values: number[] | null = color2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
+
+    console.error({srgb: values});
+
+    return values2colortoken(values, to);
+}
+
+function srgb2srgbcolorspace(val: number[], to: ColorKind): number[] {
+
+    const values: number[] = [];
+
+    switch (to) {
+
+        case ColorKind.SRGB:
+
+            values.push(...val);
+            break;
+        case ColorKind.SRGB_LINEAR:
+
+            // @ts-ignore
+            values.push(...srgb2lsrgbvalues(...val));
+            break;
+        case ColorKind.DISPLAY_P3:
+
+            // @ts-ignore
+            values.push(...srgb2p3values(...val));
+            break;
+        case ColorKind.PROPHOTO_RGB:
+
+            // @ts-ignore
+            values.push(...srgb2prophotorgbvalues(...val));
+            break;
+        case ColorKind.A98_RGB:
+
+            // @ts-ignore
+            values.push(...srgb2a98values(...val));
+            break;
+
+        case ColorKind.REC2020:
+
+            // @ts-ignore
+            values.push(...srgb2rec2020values(...val));
+            break;
+
+        case ColorKind.XYZ:
+        case ColorKind.XYZ_D65:
+
+            // @ts-ignore
+            values.push(...srgb2xyz(...val));
+            break;
+
+        case ColorKind.XYZ_D50:
+
+            // @ts-ignore
+            values.push(...srgb2xyz_d50(...val));
+            break
+    }
+
+    return values;
 }
 
 export function minmax(value: number, min: number, max: number): number {
@@ -689,7 +860,7 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
     const colorSpace: IdentToken = <IdentToken>components.shift();
     let values: number[] = components.map((val: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>val));
 
-    switch (colorSpace.val) {
+    switch (colorSpace.val.toLowerCase()) {
 
         case  'display-p3':
             // @ts-ignore
@@ -729,77 +900,15 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
     return values;
 }
 
-export function values2hsltoken(values: number[]): ColorToken {
-
-    const to: ColorKind = ColorKind.HSL;
-    const chi: Token[] = <Token[]>[
-
-        {typ: EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg'},
-        {typ: EnumToken.PercentageTokenType, val: String(values[1] * 100)},
-        {typ: EnumToken.PercentageTokenType, val: String(values[2] * 100)},
-    ];
-
-    if (values.length == 4) {
-
-        chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
-    }
-
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: (ColorKind[to] as string).toLowerCase().replaceAll('_', '-'),
-        chi,
-        kin: to
-    }
-}
-
-function values2rgbtoken(values: number[]): ColorToken {
-
-    const to: ColorKind = ColorKind.RGB;
-    const chi: Token[] = <Token[]>[
-
-        {typ: EnumToken.NumberTokenType, val: String(values[0])},
-        {typ: EnumToken.NumberTokenType, val: String(values[1])},
-        {typ: EnumToken.NumberTokenType, val: String(values[2])},
-    ];
-
-    if (values.length == 4) {
-
-        chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
-    }
-
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: ColorKind[to] as string,
-        chi,
-        kin: to
-    }
-}
-
-function values2hwbtoken(values: number[]): ColorToken {
-
-    const to: ColorKind = ColorKind.HWB;
-    const chi: Token[] = <Token[]>[
-
-        {typ: EnumToken.AngleTokenType, val: String(values[0] * 360), unit: 'deg'},
-        {typ: EnumToken.PercentageTokenType, val: String(values[1] * 100)},
-        {typ: EnumToken.PercentageTokenType, val: String(values[2] * 100)},
-    ];
-
-    if (values.length == 4) {
-
-        chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
-    }
-
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: ColorKind[to] as string,
-        chi,
-        kin: to
-    }
-}
 
 function values2colortoken(values: number[], to: ColorKind): ColorToken {
 
+    // console.error({srgb2: values});
+
+    values = srgb2srgbcolorspace(values, to);
+
+    // console.error({srgb3: values, to: ColorKind[to]});
+
     const chi: Token[] = <Token[]>[
 
         {typ: EnumToken.NumberTokenType, val: String(values[0])},
@@ -809,12 +918,12 @@ function values2colortoken(values: number[], to: ColorKind): ColorToken {
 
     if (values.length == 4) {
 
-        chi.push({typ: EnumToken.PercentageTokenType, val: String(values[3] * 100)});
+        chi.push({typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed()});
     }
 
     const colorSpace: string = ColorKind[to].toLowerCase().replaceAll('_', '-');
 
-    return colorFuncColorSpace.includes(colorSpace) ? <ColorToken> {
+    return colorFuncColorSpace.includes(colorSpace) ? <ColorToken>{
         typ: EnumToken.ColorTokenType,
         val: 'color',
         chi: [<Token>{typ: EnumToken.IdenTokenType, val: colorSpace}].concat(chi),
@@ -833,7 +942,7 @@ function values2colortoken(values: number[], to: ColorKind): ColorToken {
  */
 export function clamp(token: ColorToken): ColorToken {
 
-    if (token.kin == ColorKind.RGB || token.kin == ColorKind.RGBA) {
+    if (token.kin == ColorKind.RGB) {
 
         (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token: Token, index: number) => {
 
@@ -918,4 +1027,28 @@ export function getAngle(token: NumberToken | AngleToken | IdentToken): number {
 
     // @ts-ignore
     return token.val / 360;
+}
+
+export function toPrecisionAngle(angle: number): number {
+
+
+    angle = +angle.toPrecision(colorPrecision);
+
+    if (Math.abs(angle) >= 360) {
+
+        angle %= 360;
+    }
+
+
+    if (Math.abs(angle) < anglePrecision) {
+
+        angle = 0;
+    }
+
+    if (angle < 0) {
+
+        angle += 360;
+    }
+
+    return angle;
 }

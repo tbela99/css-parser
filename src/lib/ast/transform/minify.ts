@@ -1,4 +1,5 @@
-import {decompose, epsilon, identity, Matrix, multiply, round, toZero} from "./utils.ts";
+import type {Matrix} from "./utils.ts";
+import {decompose, epsilon, identity, multiply, round, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {FunctionToken, Token} from "../../../@types/index.d.ts";
 import {computeMatrix} from "./compute.ts";

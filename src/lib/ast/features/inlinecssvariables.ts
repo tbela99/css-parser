@@ -84,7 +84,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
 export class InlineCssVariablesFeature {
 
-     get ordering() {
+    get ordering() {
         return 0;
     }
 
@@ -219,7 +219,7 @@ export class InlineCssVariablesFeature {
                             // @ts-ignore
                             (<AstDeclaration[]>parent.chi).splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderToken(curr), '')} */`
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderToken(curr, {convertColor: false}), '')} */`
                             } as CommentToken);
                             break;
                         }

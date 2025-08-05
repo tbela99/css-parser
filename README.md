@@ -210,7 +210,7 @@ Include ParseOptions and RenderOptions
 - expandNestingRules: boolean, optional. expand nesting rules.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
 - removeComments: boolean, remove comments in generated css.
-- convertColor: boolean, convert colors to hex.
+- convertColor: boolean | ColorType, convert colors to the specified color. default to ColorType.HEX.
 
 > Sourcemap Options
 

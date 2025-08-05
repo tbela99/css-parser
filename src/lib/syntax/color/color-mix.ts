@@ -4,16 +4,15 @@ import {getNumber} from "./color.ts";
 import {srgb2lsrgbvalues, srgbvalues} from "./srgb.ts";
 import {srgb2lch, xyz2lchvalues} from "./lch.ts";
 import {srgb2rgb} from "./rgb.ts";
-import {srgb2hsl} from "./hsl.ts";
+import {srgb2hslvalues} from "./hsl.ts";
 import {srgb2hwb} from "./hwb.ts";
-import {srgb2lab} from "./lab.ts";
+import {srgb2labvalues} from "./lab.ts";
 import {srgb2p3values} from "./p3.ts";
-import {ColorKind, getComponents} from "./utils";
+import {ColorKind, getComponents} from "./utils/index.ts";
 import {srgb2oklch} from "./oklch.ts";
 import {srgb2oklab} from "./oklab.ts";
-import {srgb2a98values} from "./a98rgb.ts";
 import {srgb2prophotorgbvalues} from "./prophotorgb.ts";
-import {srgb2xyz} from "./xyz.ts";
+import {srgb2xyz_d50} from "./xyz.ts";
 import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50.ts";
 import {srgb2rec2020values} from "./rec2020.ts";
 import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../index.ts";
@@ -233,9 +232,9 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'xyz-d50':
 
             // @ts-ignore
-            values1 = srgb2xyz(...values1);
+            values1 = srgb2xyz_d50(...values1);
             // @ts-ignore
-            values2 = srgb2xyz(...values2);
+            values2 = srgb2xyz_d50(...values2);
 
             if (colorSpace.val == 'xyz-d50') {
                 // @ts-ignore
@@ -257,9 +256,9 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'hsl':
 
             // @ts-ignore
-            values1 = srgb2hsl(...values1);
+            values1 = srgb2hslvalues(...values1);
             // @ts-ignore
-            values2 = srgb2hsl(...values2);
+            values2 = srgb2hslvalues(...values2);
             break;
 
         case 'hwb':
@@ -273,9 +272,9 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         case 'lab':
 
             // @ts-ignore
-            values1 = srgb2lab(...values1);
+            values1 = srgb2labvalues(...values1);
             // @ts-ignore
-            values2 = srgb2lab(...values2);
+            values2 = srgb2labvalues(...values2);
             break;
 
         case 'lch':
@@ -439,7 +438,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace.val,
                 chi: calculate().slice(1),
-                kin: ColorKind[colorSpace.val.toLowerCase().replaceAll('-', '_') as keyof typeof ColorKind]
+                kin: ColorKind[colorSpace.val.toUpperCase().replaceAll('-', '_') as keyof typeof ColorKind]
             };
 
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {

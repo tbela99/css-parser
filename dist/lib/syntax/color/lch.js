@@ -1,48 +1,152 @@
-import './utils/constants.js';
+import { ColorKind } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { getNumber, getAngle } from './color.js';
+import { color2srgbvalues, toPrecisionAngle, getNumber, getAngle } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { srgb2lab, xyz2lab, oklch2lab, oklab2lab, getLABComponents, hwb2lab, hsl2lab, rgb2lab, hex2lab } from './lab.js';
+import { cmyk2srgbvalues } from './srgb.js';
+import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-function hex2lch(token) {
-    // @ts-ignore
-    return lab2lchvalues(...hex2lab(token));
+function hex2lchToken(token) {
+    const values = hex2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
 }
-function rgb2lch(token) {
-    // @ts-ignore
-    return lab2lchvalues(...rgb2lab(token));
+function rgb2lchToken(token) {
+    const values = rgb2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
 }
-function hsl2lch(token) {
-    // @ts-ignore
-    return lab2lchvalues(...hsl2lab(token));
+function hsl2lchToken(token) {
+    const values = hsl2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
 }
-function hwb2lch(token) {
-    // @ts-ignore
-    return lab2lchvalues(...hwb2lab(token));
+function hwb2lchToken(token) {
+    const values = hwb2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
 }
-function lab2lch(token) {
+function cmyk2lchToken(token) {
+    const values = cmyk2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
+}
+function lab2lchToken(token) {
+    const values = lab2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
+}
+function oklab2lchToken(token) {
+    const values = oklab2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
+}
+function oklch2lchToken(token) {
+    const values = oklch2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
+}
+function color2lchToken(token) {
+    const values = color2lchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return lchToken(values);
+}
+function lchToken(values) {
+    values[2] = toPrecisionAngle(values[2]);
+    const chi = [
+        { typ: EnumToken.NumberTokenType, val: String(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: String(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: String(values[2]) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+    }
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: 'lch',
+        chi,
+        kin: ColorKind.LCH
+    };
+}
+function hex2lchvalues(token) {
+    const values = hex2labvalues(token);
     // @ts-ignore
-    return lab2lchvalues(...getLABComponents(token));
+    return values == null ? null : labvalues2lchvalues(...values);
+}
+function rgb2lchvalues(token) {
+    const values = rgb2labvalues(token);
+    // @ts-ignore
+    return values == null ? null : labvalues2lchvalues(...values);
+}
+function hsl2lchvalues(token) {
+    const values = hsl2labvalues(token);
+    // @ts-ignore
+    return values == null ? null : labvalues2lchvalues(...values);
+}
+function hwb2lchvalues(token) {
+    const values = hwb2labvalues(token);
+    // @ts-ignore
+    return values == null ? null : labvalues2lchvalues(...values);
+}
+function lab2lchvalues(token) {
+    const values = getLABComponents(token);
+    // @ts-ignore
+    return values == null ? null : labvalues2lchvalues(...values);
 }
 function srgb2lch(r, g, blue, alpha) {
     // @ts-ignore
-    return lab2lchvalues(...srgb2lab(r, g, blue, alpha));
+    return labvalues2lchvalues(...srgb2labvalues(r, g, blue, alpha));
 }
-function oklab2lch(token) {
+function oklab2lchvalues(token) {
+    const values = oklab2labvalues(token);
     // @ts-ignore
-    return lab2lchvalues(...oklab2lab(token));
+    return values == null ? null : labvalues2lchvalues(...values);
 }
-function oklch2lch(token) {
+function cmyk2lchvalues(token) {
+    const values = cmyk2srgbvalues(token);
     // @ts-ignore
-    return lab2lchvalues(...oklch2lab(token));
+    return values == null ? null : srgb2lch(...values);
 }
-function lab2lchvalues(l, a, b, alpha = null) {
+function oklch2lchvalues(token) {
+    const values = oklch2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return labvalues2lchvalues(...values);
+}
+function color2lchvalues(token) {
+    const values = color2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return srgb2lch(...values);
+}
+function labvalues2lchvalues(l, a, b, alpha = null) {
     let c = Math.sqrt(a * a + b * b);
     let h = Math.atan2(b, a) * 180 / Math.PI;
     if (h < 0) {
@@ -55,7 +159,7 @@ function lab2lchvalues(l, a, b, alpha = null) {
 }
 function xyz2lchvalues(x, y, z, alpha) {
     // @ts-ignore(
-    const lch = lab2lchvalues(...xyz2lab(x, y, z));
+    const lch = labvalues2lchvalues(...xyz2lab(x, y, z));
     return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
 }
 function getLCHComponents(token) {
@@ -87,4 +191,4 @@ function getLCHComponents(token) {
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 
-export { getLCHComponents, hex2lch, hsl2lch, hwb2lch, lab2lch, lab2lchvalues, oklab2lch, oklch2lch, rgb2lch, srgb2lch, xyz2lchvalues };
+export { cmyk2lchToken, cmyk2lchvalues, color2lchToken, color2lchvalues, getLCHComponents, hex2lchToken, hex2lchvalues, hsl2lchToken, hsl2lchvalues, hwb2lchToken, hwb2lchvalues, lab2lchToken, lab2lchvalues, labvalues2lchvalues, oklab2lchToken, oklab2lchvalues, oklch2lchToken, oklch2lchvalues, rgb2lchToken, rgb2lchvalues, srgb2lch, xyz2lchvalues };

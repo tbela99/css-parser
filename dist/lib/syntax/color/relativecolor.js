@@ -1,4 +1,4 @@
-import { convert, getNumber } from './color.js';
+import { convertColor, getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
@@ -19,11 +19,10 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let values = {};
     // colorFuncColorSpace x,y,z or r,g,b
     const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
-    const converted = convert(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_')]);
-    // if (converted == null) {
-    //
-    //     return null;
-    // }
+    const converted = convertColor(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_')]);
+    if (converted == null) {
+        return null;
+    }
     const children = converted.chi.filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(t.typ));
     [r, g, b, alpha] = converted.kin == ColorKind.COLOR ? children.slice(1) : children;
     values = {

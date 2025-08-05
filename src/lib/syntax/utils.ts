@@ -1,6 +1,6 @@
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
-import type {LengthToken, NumberToken} from "../../@types";
-import {EnumToken} from "../ast";
+import type {LengthToken, NumberToken} from "../../@types/index.d.ts";
+import {EnumToken} from "../ast/index.ts";
 
 export function length2Px(value: LengthToken | NumberToken): number | null {
 

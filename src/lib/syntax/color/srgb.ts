@@ -12,7 +12,7 @@ import type {
 } from "../../../@types/index.d.ts";
 import {color2srgbvalues, getAngle, getNumber} from "./color.ts";
 import {EnumToken} from "../../ast/index.ts";
-import {getLABComponents, Lab_to_sRGB, lch2labvalues} from "./lab.ts";
+import {getLABComponents, Lab_to_sRGB, lchvalues2labvalues} from "./lab.ts";
 import {expandHexValue} from "./hex.ts";
 import {getOKLABComponents, OKLab_to_sRGB} from "./oklab.ts";
 import {getLCHComponents} from "./lch.ts";
@@ -25,7 +25,7 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
         case ColorKind.LIT:
         case ColorKind.HEX:
-            return hex2srgb(token);
+            return hex2srgbvalues(token);
 
         case ColorKind.RGB:
         case ColorKind.RGBA:
@@ -37,19 +37,19 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
         case ColorKind.HWB:
 
-            return hwb2srgb(token);
+            return hwb2srgbvalues(token);
 
         case ColorKind.LAB:
-            return lab2srgb(token);
+            return lab2srgbvalues(token);
 
         case ColorKind.LCH:
-            return lch2srgb(token);
+            return lch2srgbvalues(token);
 
         case ColorKind.OKLAB:
-            return oklab2srgb(token);
+            return oklab2srgbvalues(token);
 
         case ColorKind.OKLCH:
-            return oklch2srgb(token);
+            return oklch2srgbvalues(token);
 
         case ColorKind.COLOR:
             return color2srgbvalues(token);
@@ -63,7 +63,24 @@ export function rgb2srgb(token: ColorToken): number[] | null {
     return getComponents(token)?.map?.((t: Token, index: number): number => index == 3 ? ((t.typ == EnumToken.IdenTokenType && (t as IdentToken).val == 'none') ? 1 : getNumber(<IdentToken | NumberToken | PercentageToken>t)) : (t.typ == EnumToken.PercentageTokenType ? 255 : 1) * getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255) ?? null;
 }
 
-export function hex2srgb(token: ColorToken): number[] {
+export function rgb2srgbvalues(token: ColorToken): number[] | null {
+
+    return getComponents(token)?.map?.((t: Token, index: number): number => index == 3 ? getNumber(<IdentToken | NumberToken | PercentageToken>t) : getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255) ?? null;
+}
+
+export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] | null {
+
+    const result = [r / 255, g / 255, b / 255];
+
+    if (a != null && a != 1) {
+
+        result.push(a);
+    }
+
+    return result;
+}
+
+export function hex2srgbvalues(token: ColorToken): number[] {
 
     const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb: number[] = [];
@@ -73,16 +90,22 @@ export function hex2srgb(token: ColorToken): number[] {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
     }
 
+    if (rgb.length == 4) {
+
+        rgb[3] = +rgb[3].toFixed(2);
+    }
+
     return rgb;
 }
 
-export function xyz2srgb(x: number, y: number, z: number): number[] {
+// xyz d65 input
+export function xyz2srgb(x: number, y: number, z: number, alpha: number | null = null): number[] {
 
     // @ts-ignore
-    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z));
+    return lsrgb2srgbvalues(...XYZ_to_lin_sRGB(x, y, z, alpha));
 }
 
-export function hwb2srgb(token: ColorToken): number[] | null {
+export function hwb2srgbvalues(token: ColorToken): number[] | null {
 
     const {h: hue, s: white, l: black, a: alpha} = hslvalues(token) ?? {};
 
@@ -91,7 +114,7 @@ export function hwb2srgb(token: ColorToken): number[] | null {
         return [];
     }
 
-    const rgb: number[] = hsl2srgbvalues(hue, 1, .5);
+    const rgb: number[] = hslvalues2srgbvalues(hue, 1, .5);
 
     for (let i = 0; i < 3; i++) {
 
@@ -116,11 +139,11 @@ export function hsl2srgb(token: ColorToken): number[] | null{
         return null;
     }
 
-    return hsl2srgbvalues(h, s, l, a);
+    return hslvalues2srgbvalues(h, s, l, a);
 }
 
 
-export function cmyk2srgb(token: ColorToken): number[] | null {
+export function cmyk2srgbvalues(token: ColorToken): number[] | null {
 
     const components: Token[] | null= getComponents(token);
 
@@ -159,20 +182,25 @@ export function cmyk2srgb(token: ColorToken): number[] | null {
         1 - Math.min(1, y * (1 - k) + k)
     ];
 
-    // @ts-ignore
-    if (token.chi.length >= 9) {
+    if (components.length == 5) {
 
-        // @ts-ignore
-        t = <NumberToken | PercentageToken>token.chi[8];
-
-        // @ts-ignore
-        rgb.push(getNumber(t));
+        rgb.push(getNumber(components[4] as NumberToken | PercentageToken));
     }
+
+    // @ts-ignore
+    // if (token.chi.length >= 9) {
+    //
+    //     // @ts-ignore
+    //     t = <NumberToken | PercentageToken>token.chi[8];
+    //
+    //     // @ts-ignore
+    //     rgb.push(getNumber(t));
+    // }
 
     return rgb;
 }
 
-export function oklab2srgb(token: ColorToken): number[] | null{
+export function oklab2srgbvalues(token: ColorToken): number[] | null{
 
     const [l, a, b, alpha] = getOKLABComponents(token) ?? [];
 
@@ -191,7 +219,7 @@ export function oklab2srgb(token: ColorToken): number[] | null{
     return rgb;
 }
 
-export function oklch2srgb(token: ColorToken): number[] | null {
+export function oklch2srgbvalues(token: ColorToken): number[] | null {
 
     const [l, c, h, alpha] = getOKLCHComponents(token) ?? [];
 
@@ -201,7 +229,7 @@ export function oklch2srgb(token: ColorToken): number[] | null {
     }
 
     // @ts-ignore
-    const rgb: number[] = OKLab_to_sRGB(...lch2labvalues(l, c, h));
+    const rgb: number[] = OKLab_to_sRGB(...lchvalues2labvalues(l, c, h));
 
     if (alpha != 1) {
 
@@ -248,7 +276,7 @@ export function hslvalues(token: ColorToken): { h: number, s: number, l: number,
     return a == null ? {h, s, l} : {h, s, l, a};
 }
 
-export function hsl2srgbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
+export function hslvalues2srgbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
 
     let v: number = l <= .5 ? l * (1.0 + s) : l + s - l * s;
 
@@ -311,7 +339,7 @@ export function hsl2srgbvalues(h: number, s: number, l: number, a: number | null
     return values;
 }
 
-export function lab2srgb(token: ColorToken): number[] | null{
+export function lab2srgbvalues(token: ColorToken): number[] | null{
 
     const [l, a, b, alpha] = getLABComponents(token) ?? [];
 
@@ -330,10 +358,10 @@ export function lab2srgb(token: ColorToken): number[] | null{
     return rgb;
 }
 
-export function lch2srgb(token: ColorToken): number[] | null {
+export function lch2srgbvalues(token: ColorToken): number[] | null {
 
     // @ts-ignore
-    const [l, a, b, alpha] = lch2labvalues(...getLCHComponents(token));
+    const [l, a, b, alpha] = lchvalues2labvalues(...getLCHComponents(token));
 
     if (l == null || a == null || b == null) {
 
@@ -376,7 +404,7 @@ export function srgb2lsrgbvalues(r: number, g: number, b: number, a: number | nu
     return rgb;
 }
 
-export function lsrgb2srgbvalues(r: number, g: number, b: number, alpha?: number): number[] {
+export function lsrgb2srgbvalues(r: number, g: number, b: number, alpha: number | null = null): number[] {
 
     // convert an array of linear-light sRGB values in the range 0.0-1.0
     // to gamma corrected form

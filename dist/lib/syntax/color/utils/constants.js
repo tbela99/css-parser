@@ -6,6 +6,8 @@ import '../../../parser/tokenize.js';
 import '../../../parser/utils/config.js';
 import '../../../renderer/sourcemap/lib/encode.js';
 
+const colorPrecision = 6;
+const anglePrecision = .001;
 const colorRange = {
     lab: {
         l: [0, 100],
@@ -36,28 +38,28 @@ var ColorKind;
     ColorKind[ColorKind["DPSYS"] = 1] = "DPSYS";
     ColorKind[ColorKind["LIT"] = 2] = "LIT";
     ColorKind[ColorKind["HEX"] = 3] = "HEX";
+    ColorKind[ColorKind["RGBA"] = 4] = "RGBA";
+    ColorKind[ColorKind["HSLA"] = 5] = "HSLA";
+    ColorKind[ColorKind["HWB"] = 6] = "HWB";
+    ColorKind[ColorKind["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
+    ColorKind[ColorKind["OKLAB"] = 8] = "OKLAB";
+    ColorKind[ColorKind["OKLCH"] = 9] = "OKLCH";
+    ColorKind[ColorKind["LAB"] = 10] = "LAB";
+    ColorKind[ColorKind["LCH"] = 11] = "LCH";
+    ColorKind[ColorKind["COLOR"] = 12] = "COLOR";
+    ColorKind[ColorKind["SRGB"] = 13] = "SRGB";
+    ColorKind[ColorKind["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
+    ColorKind[ColorKind["A98_RGB"] = 15] = "A98_RGB";
+    ColorKind[ColorKind["REC2020"] = 16] = "REC2020";
+    ColorKind[ColorKind["DISPLAY_P3"] = 17] = "DISPLAY_P3";
+    ColorKind[ColorKind["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
+    ColorKind[ColorKind["XYZ_D50"] = 19] = "XYZ_D50";
+    ColorKind[ColorKind["XYZ_D65"] = 20] = "XYZ_D65";
+    ColorKind[ColorKind["LIGHT_DARK"] = 21] = "LIGHT_DARK";
+    ColorKind[ColorKind["COLOR_MIX"] = 22] = "COLOR_MIX";
     ColorKind[ColorKind["RGB"] = 4] = "RGB";
-    ColorKind[ColorKind["RGBA"] = 5] = "RGBA";
-    ColorKind[ColorKind["HSL"] = 6] = "HSL";
-    ColorKind[ColorKind["HSLA"] = 7] = "HSLA";
-    ColorKind[ColorKind["HWB"] = 8] = "HWB";
-    ColorKind[ColorKind["DEVICE_CMYK"] = 9] = "DEVICE_CMYK";
-    ColorKind[ColorKind["OKLAB"] = 10] = "OKLAB";
-    ColorKind[ColorKind["OKLCH"] = 11] = "OKLCH";
-    ColorKind[ColorKind["LAB"] = 12] = "LAB";
-    ColorKind[ColorKind["LCH"] = 13] = "LCH";
-    ColorKind[ColorKind["COLOR"] = 14] = "COLOR";
-    ColorKind[ColorKind["SRGB"] = 15] = "SRGB";
-    ColorKind[ColorKind["PROPHOTO_RGB"] = 16] = "PROPHOTO_RGB";
-    ColorKind[ColorKind["A98_RGB"] = 17] = "A98_RGB";
-    ColorKind[ColorKind["REC2020"] = 18] = "REC2020";
-    ColorKind[ColorKind["DISPLAY_P3"] = 19] = "DISPLAY_P3";
-    ColorKind[ColorKind["SRGB_LINEAR"] = 20] = "SRGB_LINEAR";
-    ColorKind[ColorKind["XYZ"] = 21] = "XYZ";
-    ColorKind[ColorKind["XYZ_D50"] = 22] = "XYZ_D50";
-    ColorKind[ColorKind["XYZ_D65"] = 23] = "XYZ_D65";
-    ColorKind[ColorKind["LIGHT_DARK"] = 24] = "LIGHT_DARK";
-    ColorKind[ColorKind["COLOR_MIX"] = 25] = "COLOR_MIX";
+    ColorKind[ColorKind["HSL"] = 5] = "HSL";
+    ColorKind[ColorKind["XYZ"] = 20] = "XYZ";
 })(ColorKind || (ColorKind = {}));
 const timelineFunc = ['view', 'scroll'];
 const generalEnclosedFunc = ['selector', 'font-tech', 'font-format', 'media', 'supports'];
@@ -240,4 +242,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, colorFuncColorSpace, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, k, systemColors, timelineFunc, timingFunc };
+export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, k, systemColors, timelineFunc, timingFunc };

@@ -22,28 +22,28 @@ function rec20202lrec2020(r, g, b, a) {
     // convert an array of rec2020 RGB values in the range 0.0 - 1.0
     // to linear light (un-companded) form.
     // ITU-R BT.2020-2 p.4
-    const α = 1.09929682680944;
-    const β = 0.018053968510807;
+    const alpha = 1.09929682680944;
+    const beta = 0.018053968510807;
     return [r, g, b].map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
-        if (abs < β * 4.5) {
+        if (abs < beta * 4.5) {
             return val / 4.5;
         }
-        return sign * (Math.pow((abs + α - 1) / α, 1 / 0.45));
+        return sign * (Math.pow((abs + alpha - 1) / alpha, 1 / 0.45));
     }).concat([] );
 }
 function lrec20202rec2020(r, g, b, a) {
     // convert an array of linear-light rec2020 RGB  in the range 0.0-1.0
     // to gamma corrected form
     // ITU-R BT.2020-2 p.4
-    const α = 1.09929682680944;
-    const β = 0.018053968510807;
+    const alpha = 1.09929682680944;
+    const beta = 0.018053968510807;
     return [r, g, b].map(function (val) {
         let sign = val < 0 ? -1 : 1;
         let abs = Math.abs(val);
-        if (abs > β) {
-            return sign * (α * Math.pow(abs, 0.45) - (α - 1));
+        if (abs > beta) {
+            return sign * (alpha * Math.pow(abs, 0.45) - (alpha - 1));
         }
         return 4.5 * val;
     }).concat(a == null || a == 1 ? [] : [a]);
@@ -52,7 +52,7 @@ function lrec20202xyz(r, g, b, a) {
     // convert an array of linear-light rec2020 values to CIE XYZ
     // using  D65 (no chromatic adaptation)
     // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-    var M = [
+    let M = [
         [63426534 / 99577255, 20160776 / 139408157, 47086771 / 278816314],
         [26158966 / 99577255, 472592308 / 697040785, 8267143 / 139408157],
         [0, 19567812 / 697040785, 295819943 / 278816314],
@@ -62,7 +62,7 @@ function lrec20202xyz(r, g, b, a) {
 }
 function xyz2lrec2020(x, y, z, a) {
     // convert XYZ to linear-light rec2020
-    var M = [
+    let M = [
         [30757411 / 17917100, -6372589 / 17917100, -4539589 / 17917100],
         [-19765991 / 29648200, 47925759 / 29648200, 467509 / 29648200],
         [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],

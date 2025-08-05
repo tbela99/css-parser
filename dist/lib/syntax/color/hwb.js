@@ -1,28 +1,105 @@
 import { hsl2hsv } from './hsv.js';
-import './utils/constants.js';
+import { ColorKind } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { getAngle, getNumber } from './color.js';
+import { color2srgbvalues, toPrecisionAngle, getAngle, getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { lch2srgb, lab2srgb, oklch2srgb, oklab2srgb } from './srgb.js';
+import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-function rgb2hwb(token) {
+function rgb2hwbToken(token) {
+    const values = rgb2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function hsl2hwbToken(token) {
+    const values = hsl2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function cmyk2hwbToken(token) {
+    const values = cmyk2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function oklab2hwbToken(token) {
+    const values = oklab2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function oklch2hwbToken(token) {
+    const values = oklch2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function lab2hwbToken(token) {
+    const values = lab2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function lch2hwbToken(token) {
+    const values = lch2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function color2hwbToken(token) {
+    const values = color2hwbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return hwbToken(values);
+}
+function hwbToken(values) {
+    values[0] = toPrecisionAngle(values[0] * 360);
+    const chi = [
+        { typ: EnumToken.NumberTokenType, val: String(values[0]) },
+        { typ: EnumToken.PercentageTokenType, val: String(values[1] * 100) },
+        { typ: EnumToken.PercentageTokenType, val: String(values[2] * 100) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: String((values[3] * 100).toFixed()) });
+    }
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: 'hwb',
+        chi,
+        kin: ColorKind.HWB
+    };
+}
+function rgb2hwbvalues(token) {
     // @ts-ignore
     return srgb2hwb(...getComponents(token).map((t, index) => {
-        if (index == 3 && t.typ == EnumToken.IdenTokenType && t.val == 'none') {
-            return 1;
+        if (index == 3) {
+            return getNumber(t);
         }
         return getNumber(t) / 255;
     }));
 }
-function hsl2hwb(token) {
+function cmyk2hwbvalues(token) {
     // @ts-ignore
-    return hsl2hwbvalues(...getComponents(token).map((t, index) => {
+    return srgb2hwb(...cmyk2srgbvalues(token));
+}
+function hsl2hwbvalues(token) {
+    // @ts-ignore
+    return hslvalues2hwbvalues(...getComponents(token).map((t, index) => {
         if (index == 3 && (t.typ == EnumToken.IdenTokenType && t.val == 'none')) {
             return 1;
         }
@@ -32,21 +109,22 @@ function hsl2hwb(token) {
         return getNumber(t);
     }));
 }
-function lab2hwb(token) {
+function lab2hwbvalues(token) {
     // @ts-ignore
-    return srgb2hwb(...lab2srgb(token));
+    return srgb2hwb(...lab2srgbvalues(token));
 }
-function lch2hwb(token) {
+function lch2hwbvalues(token) {
     // @ts-ignore
-    return srgb2hwb(...lch2srgb(token));
+    return srgb2hwb(...lch2srgbvalues(token));
 }
-function oklab2hwb(token) {
+function oklab2hwbvalues(token) {
     // @ts-ignore
-    return srgb2hwb(...oklab2srgb(token));
+    return srgb2hwb(...oklab2srgbvalues(token));
 }
-function oklch2hwb(token) {
+function oklch2hwbvalues(token) {
+    const values = oklch2srgbvalues(token);
     // @ts-ignore
-    return srgb2hwb(...oklch2srgb(token));
+    return values == null ? null : srgb2hwb(...values);
 }
 function rgb2hue(r, g, b, fallback = 0) {
     let value = rgb2value(r, g, b);
@@ -74,6 +152,10 @@ function rgb2value(r, g, b) {
 function rgb2whiteness(r, g, b) {
     return Math.min(r, g, b);
 }
+function color2hwbvalues(token) {
+    // @ts-ignore
+    return srgb2hwb(...color2srgbvalues(token));
+}
 function srgb2hwb(r, g, b, a = null, fallback = 0) {
     r *= 100;
     g *= 100;
@@ -95,9 +177,9 @@ function hsv2hwb(h, s, v, a = null) {
     }
     return result;
 }
-function hsl2hwbvalues(h, s, l, a = null) {
+function hslvalues2hwbvalues(h, s, l, a = null) {
     // @ts-ignore
     return hsv2hwb(...hsl2hsv(h, s, l, a));
 }
 
-export { hsl2hwb, hsl2hwbvalues, hsv2hwb, lab2hwb, lch2hwb, oklab2hwb, oklch2hwb, rgb2hwb, srgb2hwb };
+export { cmyk2hwbToken, cmyk2hwbvalues, color2hwbToken, color2hwbvalues, hsl2hwbToken, hsl2hwbvalues, hslvalues2hwbvalues, hsv2hwb, hwbToken, lab2hwbToken, lab2hwbvalues, lch2hwbToken, lch2hwbvalues, oklab2hwbToken, oklab2hwbvalues, oklch2hwbToken, oklch2hwbvalues, rgb2hwbToken, rgb2hwbvalues, srgb2hwb };

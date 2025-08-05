@@ -1,5 +1,5 @@
-import {srgb2xyz} from "./xyz.ts";
 import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50.ts";
+import {srgb2xyz} from "./xyz.ts";
 
 export function prophotorgb2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] {
 

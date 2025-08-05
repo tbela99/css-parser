@@ -16,7 +16,7 @@ function a98rgb2srgbvalues(r, g, b, a = null) {
 }
 function srgb2a98values(r, g, b, a = null) {
     // @ts-ignore
-    return la98rgb2a98rgb(xyz2la98rgb(...srgb2xyz(r, g, b, a)));
+    return la98rgb2a98rgb(...xyz2la98rgb(...srgb2xyz(r, g, b, a)));
 }
 // a98-rgb functions
 function a98rgb2la98(r, g, b, a = null) {

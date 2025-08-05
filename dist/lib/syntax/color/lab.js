@@ -1,52 +1,154 @@
-import { e, k, D50 } from './utils/constants.js';
+import { ColorKind, e, k, D50 } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2xyz } from './xyz.js';
-import { oklch2srgb, hwb2srgb, hsl2srgb, rgb2srgb, hex2srgb } from './srgb.js';
+import { srgb2xyz_d50, XYZ_D50_to_D65, XYZ_to_lin_sRGB } from './xyz.js';
+import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues } from './srgb.js';
 import { getLCHComponents } from './lch.js';
-import { OKLab_to_XYZ, getOKLABComponents } from './oklab.js';
-import { getNumber } from './color.js';
+import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
+import { color2srgbvalues, getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { xyzd502srgb } from './xyzd50.js';
+import { XYZ_D65_to_D50, xyzd502srgb } from './xyzd50.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
+function hex2labToken(token) {
+    return labToken(hex2labvalues(token));
+}
+function rgb2labToken(token) {
+    const values = rgb2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function hsl2labToken(token) {
+    const values = hsl2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function hwb2labToken(token) {
+    const values = hwb2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function cmyk2labToken(token) {
+    const values = cmyk2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function lch2labToken(token) {
+    const values = lch2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function oklab2labToken(token) {
+    const values = oklab2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function oklch2labToken(token) {
+    const values = oklch2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function color2labToken(token) {
+    const values = color2labvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return labToken(values);
+}
+function labToken(values) {
+    const chi = [
+        { typ: EnumToken.NumberTokenType, val: String(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: String(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: String(values[2]) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+    }
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: 'lab',
+        chi,
+        kin: ColorKind.LAB
+    };
+}
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
-function hex2lab(token) {
-    //  @ts-ignore
-    return srgb2lab(...hex2srgb(token));
-}
-function rgb2lab(token) {
+function hex2labvalues(token) {
     // @ts-ignore
-    return srgb2lab(...rgb2srgb(token));
+    return srgb2labvalues(...hex2srgbvalues(token));
 }
-function hsl2lab(token) {
+function rgb2labvalues(token) {
+    const values = rgb2srgb(token);
     // @ts-ignore
-    return srgb2lab(...hsl2srgb(token));
+    return values == null ? null : srgb2labvalues(...values);
 }
-function hwb2lab(token) {
+function cmyk2labvalues(token) {
+    const values = cmyk2srgbvalues(token);
     // @ts-ignore
-    return srgb2lab(...hwb2srgb(token));
+    return values == null ? null : srgb2labvalues(...values);
 }
-function lch2lab(token) {
+function hsl2labvalues(token) {
+    const values = hsl2srgb(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return lch2labvalues(...getLCHComponents(token));
+    return srgb2labvalues(...values);
 }
-function oklab2lab(token) {
+function hwb2labvalues(token) {
     // @ts-ignore
-    return xyz2lab(...OKLab_to_XYZ(...getOKLABComponents(token)));
+    return srgb2labvalues(...hwb2srgbvalues(token));
 }
-function oklch2lab(token) {
+function lch2labvalues(token) {
+    const values = getLCHComponents(token);
     // @ts-ignore
-    return srgb2lab(...oklch2srgb(token));
+    return values == null ? null : lchvalues2labvalues(...values);
 }
-function srgb2lab(r, g, b, a) {
+function oklab2labvalues(token) {
+    const values = getOKLABComponents(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return xyz2lab(...XYZ_D65_to_D50(...OKLab_to_XYZ(...values)));
+}
+function oklch2labvalues(token) {
+    const values = oklch2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return srgb2labvalues(...values);
+}
+function color2labvalues(token) {
+    const val = color2srgbvalues(token);
+    if (val == null) {
+        return null;
+    }
+    // @ts-ignore
+    return srgb2labvalues(...val);
+}
+function srgb2labvalues(r, g, b, a) {
     // @ts-ignore */
-    const result = xyz2lab(...srgb2xyz(r, g, b));
+    const result = xyz2lab(...srgb2xyz_d50(r, g, b));
     // Fixes achromatic RGB colors having a _slight_ chroma due to floating-point errors
     // and approximated computations in sRGB <-> CIELab.
     // See: https://github.com/d3/d3-color/pull/46
@@ -78,7 +180,7 @@ function xyz2lab(x, y, z, a = null) {
     }
     return result;
 }
-function lch2labvalues(l, c, h, a = null) {
+function lchvalues2labvalues(l, c, h, a = null) {
     // l, c * Math.cos(360 * h * Math.PI / 180), c * Math.sin(360 * h * Math.PI / 180
     const result = [l, c * Math.cos(h * Math.PI / 180), c * Math.sin(h * Math.PI / 180)];
     if (a != null) {
@@ -121,6 +223,12 @@ function getLABComponents(token) {
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // D50 LAB
 function Lab_to_sRGB(l, a, b) {
+    const xyz_d50 = Lab_to_XYZ(l, a, b);
+    // @ts-ignore
+    const xyz_d65 = XYZ_D50_to_D65(...xyz_d50);
+    // @ts-ignore
+    const lin_srgb = XYZ_to_lin_sRGB(...xyz_d65);
+    lin_srgb.map((value, i) => value > 0.0031308 ? 1.055 * Math.pow(value, 1 / 2.4) - 0.055 : 12.92 * value);
     // @ts-ignore
     return xyzd502srgb(...Lab_to_XYZ(l, a, b));
 }
@@ -145,4 +253,4 @@ function Lab_to_XYZ(l, a, b) {
     return xyz.map((value, i) => value * D50[i]);
 }
 
-export { Lab_to_XYZ, Lab_to_sRGB, getLABComponents, hex2lab, hsl2lab, hwb2lab, lch2lab, lch2labvalues, oklab2lab, oklch2lab, rgb2lab, srgb2lab, xyz2lab };
+export { Lab_to_XYZ, Lab_to_sRGB, cmyk2labToken, cmyk2labvalues, color2labToken, color2labvalues, getLABComponents, hex2labToken, hex2labvalues, hsl2labToken, hsl2labvalues, hwb2labToken, hwb2labvalues, lch2labToken, lch2labvalues, lchvalues2labvalues, oklab2labToken, oklab2labvalues, oklch2labToken, oklch2labvalues, rgb2labToken, rgb2labvalues, srgb2labvalues, xyz2lab };

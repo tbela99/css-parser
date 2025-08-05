@@ -1,7 +1,7 @@
 import type {FractionToken} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
 
-import {minifyNumber} from "../../syntax";
+import {minifyNumber} from "../../syntax/index.ts";
 
 export function gcd (x: number, y: number): number {
 

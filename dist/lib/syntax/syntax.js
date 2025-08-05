@@ -498,15 +498,24 @@ function isPolarColorspace(token) {
     return ['hsl', 'hwb', 'lch', 'oklch'].includes(token.val);
 }
 function isHueInterpolationMethod(token) {
-    if (token.typ != EnumToken.IdenTokenType) {
+    if (!Array.isArray(token)) {
+        return token.typ == EnumToken.IdenTokenType && 'hue'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0;
+    }
+    if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
         return false;
     }
-    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token.val);
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val) && 'hue'.localeCompare(token[1].val, undefined, { sensitivity: 'base' }) == 0;
 }
 function isIdentColor(token) {
     return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
 }
+function isPercentageToken(token) {
+    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+}
 function isColor(token) {
+    if (token.typ == EnumToken.ColorTokenType) {
+        return true;
+    }
     if (token.typ == EnumToken.IdenTokenType) {
         // named color
         return token.val.toLowerCase() in COLORS_NAMES;
@@ -595,79 +604,80 @@ function isColor(token) {
                 }
                 return true;
             }
-            else { // @ts-ignore
-                if (token.val == 'color-mix') {
-                    // @ts-ignore
-                    const children = token.chi.reduce((acc, t) => {
-                        if (t.typ == EnumToken.CommaTokenType) {
-                            acc.push([]);
+            // @ts-ignore
+            else if (token.val == 'color-mix') {
+                // @ts-ignore
+                const children = token.chi.reduce((acc, t) => {
+                    if (t.typ == EnumToken.CommaTokenType) {
+                        acc.push([]);
+                    }
+                    else {
+                        if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
+                            acc[acc.length - 1].push(t);
                         }
-                        else {
-                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
-                                acc[acc.length - 1].push(t);
-                            }
-                        }
-                        return acc;
-                    }, [[]]);
-                    if (children.length == 3) {
-                        if (children[0].length > 3 ||
-                            children[0][0].typ != EnumToken.IdenTokenType ||
-                            children[0][0].val != 'in' ||
-                            !isColorspace(children[0][1]) ||
-                            (children[0].length == 3 && !isHueInterpolationMethod(children[0][2])) ||
-                            children[1].length > 2 ||
-                            children[1][0].typ != EnumToken.ColorTokenType ||
-                            children[2].length > 2 ||
-                            children[2][0].typ != EnumToken.ColorTokenType) {
+                    }
+                    return acc;
+                }, [[]]);
+                if (children.length == 3) {
+                    if (children[0].length > 4 ||
+                        children[0][0].typ != EnumToken.IdenTokenType ||
+                        'in'.localeCompare(children[0][0].val, undefined, { sensitivity: 'base' }) != 0 ||
+                        !isColorspace(children[0][1]) ||
+                        (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
+                        children[1].length > 2 ||
+                        !isColor(children[1][0]) ||
+                        (children[1].length == 2 && !isPercentageToken(children[1][1])) ||
+                        children[2].length > 2 ||
+                        (children[2].length == 2 && !isPercentageToken(children[2][1])) ||
+                        !isColor(children[2][0])) {
+                        return false;
+                    }
+                    if (children[1].length == 2) {
+                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
                             return false;
                         }
-                        if (children[1].length == 2) {
-                            if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
-                                return false;
-                            }
-                        }
-                        if (children[2].length == 2) {
-                            if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
-                                return false;
-                            }
-                        }
-                        return true;
                     }
-                    return false;
+                    if (children[2].length == 2) {
+                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
+                            return false;
+                        }
+                    }
+                    return true;
                 }
-                else {
-                    const keywords = ['from', 'none'];
+                return false;
+            }
+            else {
+                const keywords = ['from', 'none'];
+                // @ts-ignore
+                if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
                     // @ts-ignore
-                    if (['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch'].includes(token.val)) {
-                        // @ts-ignore
-                        keywords.push('alpha', ...token.val.slice(-3).split(''));
+                    keywords.push('alpha', ...token.val.slice(-3).split(''));
+                }
+                // @ts-ignore
+                for (const v of token.chi) {
+                    if (v.typ == EnumToken.CommaTokenType) {
+                        isLegacySyntax = true;
                     }
-                    // @ts-ignore
-                    for (const v of token.chi) {
-                        if (v.typ == EnumToken.CommaTokenType) {
-                            isLegacySyntax = true;
-                        }
-                        if (v.typ == EnumToken.IdenTokenType) {
-                            if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
-                                return false;
-                            }
-                            if (keywords.includes(v.val)) {
-                                if (isLegacySyntax) {
-                                    return false;
-                                }
-                                // @ts-ignore
-                                if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
-                                    return false;
-                                }
-                            }
-                            continue;
-                        }
-                        if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
-                            continue;
-                        }
-                        if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+                    if (v.typ == EnumToken.IdenTokenType) {
+                        if (!(keywords.includes(v.val) || v.val.toLowerCase() in COLORS_NAMES)) {
                             return false;
                         }
+                        if (keywords.includes(v.val)) {
+                            if (isLegacySyntax) {
+                                return false;
+                            }
+                            // @ts-ignore
+                            if (v.val == 'from' && ['rgba', 'hsla'].includes(token.val)) {
+                                return false;
+                            }
+                        }
+                        continue;
+                    }
+                    if (v.typ == EnumToken.FunctionTokenType && (mathFuncs.includes(v.val) || v.val == 'var' || colorsFunc.includes(v.val))) {
+                        continue;
+                    }
+                    if (![EnumToken.ColorTokenType, EnumToken.IdenTokenType, EnumToken.NumberTokenType, EnumToken.AngleTokenType, EnumToken.PercentageTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType].includes(v.typ)) {
+                        return false;
                     }
                 }
             }
@@ -947,4 +957,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };

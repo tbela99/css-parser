@@ -1,4 +1,4 @@
-import { xyz2srgb, lsrgb2srgbvalues, srgb2lsrgbvalues } from './srgb.js';
+import { lsrgb2srgbvalues, xyz2srgb, srgb2lsrgbvalues } from './srgb.js';
 import { multiplyMatrices } from './utils/matrix.js';
 import './utils/constants.js';
 import '../../ast/types.js';
@@ -16,7 +16,7 @@ function p32srgbvalues(r, g, b, alpha) {
 }
 function srgb2p3values(r, g, b, alpha) {
     // @ts-ignore
-    return srgb2xyz(...xyz2lp3(...lp32p3(r, g, b, alpha)));
+    return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
 function p32lp3(r, g, b, alpha) {
     // convert an array of display-p3 RGB values in the range 0.0 - 1.0

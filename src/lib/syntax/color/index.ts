@@ -15,4 +15,4 @@ export * from './xyzd50.ts';
 export * from './prophotorgb.ts';
 export * from './a98rgb.ts';
 export * from './rec2020.ts';
-export {NAMES_COLORS, COLORS_NAMES} from "./utils";
+export {NAMES_COLORS, COLORS_NAMES} from "./utils/index.ts";

@@ -1,45 +1,155 @@
 import { multiplyMatrices } from './utils/matrix.js';
-import './utils/constants.js';
+import { ColorKind } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2lsrgbvalues, lch2srgb, lab2srgb, hwb2srgb, hsl2srgb, rgb2srgb, hex2srgb, lsrgb2srgbvalues } from './srgb.js';
-import { getNumber } from './color.js';
+import { srgb2lsrgbvalues, lch2srgbvalues, lab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, lsrgb2srgbvalues } from './srgb.js';
+import { color2srgbvalues, getNumber } from './color.js';
 import { EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { lch2labvalues } from './lab.js';
+import { lchvalues2labvalues } from './lab.js';
 import { getOKLCHComponents } from './oklch.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
-function hex2oklab(token) {
-    // @ts-ignore
-    return srgb2oklab(...hex2srgb(token));
+function hex2oklabToken(token) {
+    const values = hex2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
 }
-function rgb2oklab(token) {
-    // @ts-ignore
-    return srgb2oklab(...rgb2srgb(token));
+function rgb2oklabToken(token) {
+    const values = rgb2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
 }
-function hsl2oklab(token) {
-    // @ts-ignore
-    return srgb2oklab(...hsl2srgb(token));
+function hsl2oklabToken(token) {
+    const values = hsl2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
 }
-function hwb2oklab(token) {
-    // @ts-ignore
-    return srgb2oklab(...hwb2srgb(token));
+function hwb2oklabToken(token) {
+    const values = hwb2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
 }
-function lab2oklab(token) {
-    // @ts-ignore
-    return srgb2oklab(...lab2srgb(token));
+function cmyk2oklabToken(token) {
+    const values = cmyk2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
 }
-function lch2oklab(token) {
-    // @ts-ignore
-    return srgb2oklab(...lch2srgb(token));
+function lab2oklabToken(token) {
+    const values = lab2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
 }
-function oklch2oklab(token) {
+function lch2oklabToken(token) {
+    const values = lch2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
+}
+function oklch2oklabToken(token) {
+    const values = oklch2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
+}
+function color2oklabToken(token) {
+    const values = color2oklabvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklabToken(values);
+}
+function oklabToken(values) {
+    const chi = [
+        { typ: EnumToken.NumberTokenType, val: String(values[0]) },
+        { typ: EnumToken.NumberTokenType, val: String(values[1]) },
+        { typ: EnumToken.NumberTokenType, val: String(values[2]) },
+    ];
+    if (values.length == 4) {
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+            typ: EnumToken.PercentageTokenType,
+            val: (values[3] * 100).toFixed()
+        });
+    }
+    return {
+        typ: EnumToken.ColorTokenType,
+        val: 'oklab',
+        chi,
+        kin: ColorKind.OKLAB
+    };
+}
+function hex2oklabvalues(token) {
+    const values = hex2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return lch2labvalues(...getOKLCHComponents(token));
+    return srgb2oklab(...values);
+}
+function rgb2oklabvalues(token) {
+    const values = rgb2srgb(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return srgb2oklab(...values);
+}
+function hsl2oklabvalues(token) {
+    const values = hsl2srgb(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return srgb2oklab(...values);
+}
+function hwb2oklabvalues(token) {
+    // @ts-ignore
+    return srgb2oklab(...hwb2srgbvalues(token));
+}
+function cmyk2oklabvalues(token) {
+    const values = cmyk2srgbvalues(token);
+    // @ts-ignore
+    return values == null ? null : srgb2oklab(...values);
+}
+function lab2oklabvalues(token) {
+    const values = lab2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
+    // @ts-ignore
+    return srgb2oklab(...values);
+}
+function lch2oklabvalues(token) {
+    const values = lch2srgbvalues(token);
+    // @ts-ignore
+    return values == null ? null : srgb2oklab(...values);
+}
+function oklch2oklabvalues(token) {
+    const values = getOKLCHComponents(token);
+    // @ts-ignore
+    return values == null ? null : lchvalues2labvalues(...values);
+}
+function color2oklabvalues(token) {
+    const values = color2srgbvalues(token);
+    // @ts-ignore
+    return values == null ? null : srgb2oklab(...values);
 }
 function srgb2oklab(r, g, blue, alpha) {
     [r, g, blue] = srgb2lsrgbvalues(r, g, blue);
@@ -49,17 +159,12 @@ function srgb2oklab(r, g, blue, alpha) {
     const l = 0.2104542553 * L + 0.793617785 * M - 0.0040720468 * S;
     const a = r == g && g == blue ? 0 : 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
     const b = r == g && g == blue ? 0 : 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
-    return alpha == null ? [l, a, b] : [l, a, b, alpha];
+    return alpha == null || alpha == 1 ? [l, a, b] : [l, a, b, alpha];
 }
 function getOKLABComponents(token) {
     const components = getComponents(token);
-    if (components == null) {
+    if (components == null || components.length < 3) {
         return null;
-    }
-    for (let i = 0; i < components.length; i++) {
-        if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
-            return null;
-        }
     }
     // @ts-ignore
     let t = components[0];
@@ -74,9 +179,10 @@ function getOKLABComponents(token) {
     // @ts-ignore
     const b = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? .4 : 1);
     // @ts-ignore
-    t = components[3];
-    // @ts-ignore
-    const alpha = t == null || (t.typ == EnumToken.IdenTokenType && t.val == 'none') ? 1 : getNumber(t);
+    let alpha = null;
+    if (components.length > 3) {
+        alpha = getNumber(components[3]);
+    }
     const rgb = [l, a, b];
     if (alpha != 1 && alpha != null) {
         rgb.push(alpha);
@@ -128,4 +234,4 @@ function OKLab_to_sRGB(l, a, b) {
         1.7076147009309444 * S);
 }
 
-export { OKLab_to_XYZ, OKLab_to_sRGB, getOKLABComponents, hex2oklab, hsl2oklab, hwb2oklab, lab2oklab, lch2oklab, oklch2oklab, rgb2oklab, srgb2oklab };
+export { OKLab_to_XYZ, OKLab_to_sRGB, cmyk2oklabToken, cmyk2oklabvalues, color2oklabToken, getOKLABComponents, hex2oklabToken, hex2oklabvalues, hsl2oklabToken, hsl2oklabvalues, hwb2oklabToken, hwb2oklabvalues, lab2oklabToken, lab2oklabvalues, lch2oklabToken, lch2oklabvalues, oklch2oklabToken, oklch2oklabvalues, rgb2oklabToken, rgb2oklabvalues, srgb2oklab };

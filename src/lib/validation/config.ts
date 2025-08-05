@@ -1,6 +1,7 @@
 import config from './config.json' with {type: 'json'};
 import type {ValidationConfiguration, ValidationSyntaxNode} from "../../@types/validation.d.ts";
-import {parseSyntax, ValidationSyntaxGroupEnum, ValidationToken} from "./parser/index.ts";
+import type {ValidationToken} from "./parser/index.ts";
+import {parseSyntax, ValidationSyntaxGroupEnum} from "./parser/index.ts";
 
 const parsedSyntaxes = new Map<string, ValidationToken[]>();
 
@@ -47,6 +48,7 @@ export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string
     // @ts-ignore
     return obj?.syntax ?? null;
 }
+
 export function getParsedSyntax(group: ValidationSyntaxGroupEnum, key: string | string[]): null | ValidationToken[] {
 
     // @ts-ignore

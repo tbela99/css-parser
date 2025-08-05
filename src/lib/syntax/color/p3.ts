@@ -1,5 +1,5 @@
 import {lsrgb2srgbvalues, srgb2lsrgbvalues, xyz2srgb} from "./srgb.ts";
-import {multiplyMatrices} from "./utils";
+import {multiplyMatrices} from "./utils/index.ts";
 import {srgb2xyz} from "./xyz.ts";
 
 export function p32srgbvalues(r: number, g: number, b: number, alpha?: number) {
@@ -11,7 +11,7 @@ export function p32srgbvalues(r: number, g: number, b: number, alpha?: number) {
 export function srgb2p3values(r: number, g: number, b: number, alpha?: number) {
 
     // @ts-ignore
-    return srgb2xyz(...xyz2lp3(...lp32p3(r, g, b, alpha)));
+    return lp32p3(...xyz2lp3(...srgb2xyz(r, g, b, alpha)));
 }
 
 export function p32lp3(r: number, g: number, b: number, alpha?: number) {

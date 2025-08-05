@@ -1,4 +1,4 @@
-import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isHexColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHash, mediaTypes } from '../syntax/syntax.js';
+import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
 import { EnumToken, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
@@ -6,7 +6,7 @@ import { expand } from '../ast/expand.js';
 import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, COLORS_NAMES, ColorKind, timingFunc, timelineFunc, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
+import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, ColorKind, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
@@ -484,7 +484,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
         }
         const t = parseAtRulePrelude(parseTokens(tokens, { minify: options.minify }), atRule);
         const raw = t.reduce((acc, curr) => {
-            acc.push(renderToken(curr, { removeComments: true }));
+            acc.push(renderToken(curr, { removeComments: true, convertColor: false }));
             return acc;
         }, []);
         const nam = renderToken(atRule, { removeComments: true });
@@ -542,6 +542,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
         else {
             node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr, {
                 minify: false,
+                convertColor: false,
                 removeComments: true
             }), '');
         }
@@ -1000,42 +1001,53 @@ function parseSelector(tokens) {
                 value.typ = EnumToken.ChildCombinatorTokenType;
             }
             // @ts-ignore
-            else if (value.typ == EnumToken.WhitespaceTokenType) {
-                if (nextValue != null && nextValue.typ == EnumToken.LiteralTokenType) {
-                    if (['>', '+', '~'].includes(nextValue.val)) {
-                        switch (value.val) {
-                            case '>':
-                                // @ts-ignore
-                                nextValue.typ = EnumToken.ChildCombinatorTokenType;
-                                break;
-                            case '+':
-                                // @ts-ignore
-                                nextValue.typ = EnumToken.NextSiblingCombinatorTokenType;
-                                break;
-                            case '~':
-                                // @ts-ignore
-                                nextValue.typ = EnumToken.SubsequentSiblingCombinatorTokenType;
-                                break;
-                        }
-                        // @ts-ignore
-                        delete nextValue.val;
-                        continue;
-                    }
-                }
-                if (previousValue != null && [
-                    EnumToken.ChildCombinatorTokenType,
-                    EnumToken.DescendantCombinatorTokenType,
-                    EnumToken.NextSiblingCombinatorTokenType,
-                    EnumToken.SubsequentSiblingCombinatorTokenType,
-                    EnumToken.ColumnCombinatorTokenType,
-                    EnumToken.NameSpaceAttributeTokenType,
-                    EnumToken.CommaTokenType
-                ].includes(previousValue.typ)) {
-                    continue;
-                }
-                // @ts-ignore
-                value.typ = EnumToken.DescendantCombinatorTokenType;
-            }
+            // else if (value.typ == EnumToken.WhitespaceTokenType) {
+            //
+            //     if (nextValue != null && nextValue.typ == EnumToken.LiteralTokenType) {
+            //
+            //         if (['>', '+', '~'].includes((<LiteralToken>nextValue).val)) {
+            //
+            //             switch ((<LiteralToken>value).val) {
+            //
+            //                 case '>':
+            //                     // @ts-ignore
+            //                     nextValue.typ = EnumToken.ChildCombinatorTokenType;
+            //                     break;
+            //
+            //                 case '+':
+            //                     // @ts-ignore
+            //                     nextValue.typ = EnumToken.NextSiblingCombinatorTokenType;
+            //                     break;
+            //
+            //                 case '~':
+            //                     // @ts-ignore
+            //                     nextValue.typ = EnumToken.SubsequentSiblingCombinatorTokenType;
+            //                     break;
+            //             }
+            //
+            //             // @ts-ignore
+            //             delete (<LiteralToken>nextValue).val;
+            //
+            //             continue;
+            //         }
+            //     }
+            //
+            //     if (previousValue != null && [
+            //         EnumToken.ChildCombinatorTokenType,
+            //         EnumToken.DescendantCombinatorTokenType,
+            //         EnumToken.NextSiblingCombinatorTokenType,
+            //         EnumToken.SubsequentSiblingCombinatorTokenType,
+            //         EnumToken.ColumnCombinatorTokenType,
+            //         EnumToken.NameSpaceAttributeTokenType,
+            //         EnumToken.CommaTokenType
+            //     ].includes(previousValue.typ)) {
+            //
+            //         continue;
+            //     }
+            //
+            //     // @ts-ignore
+            //     value.typ = EnumToken.DescendantCombinatorTokenType;
+            // }
             else if (value.typ == EnumToken.LiteralTokenType) {
                 if (value.val.charAt(0) == '&') {
                     // @ts-ignore
@@ -1054,11 +1066,13 @@ function parseSelector(tokens) {
                     }
                 }
                 // @ts-ignore
-                if (value.typ == EnumToken.DelimTokenType) {
-                    // @ts-ignore
-                    value.typ = EnumToken.NextSiblingCombinatorTokenType;
-                }
-                else if (['*', '>', '+', '~'].includes(value.val)) {
+                // if ((<DelimToken>value).typ == EnumToken.DelimTokenType) {
+                //
+                //     // @ts-ignore
+                //     (<NextSiblingCombinatorToken>value).typ = EnumToken.NextSiblingCombinatorTokenType;
+                //
+                // } else
+                if (['*', '>', '+', '~'].includes(value.val)) {
                     switch (value.val) {
                         case '*':
                             // @ts-ignore
@@ -1595,29 +1609,33 @@ function parseTokens(tokens, options = {}) {
                     }
                 }
             }
-            continue;
+            // continue;
         }
-        if (options.parseColor) {
-            if (t.typ == EnumToken.IdenTokenType) {
-                // named color
-                const value = t.val.toLowerCase();
-                if (value in COLORS_NAMES) {
-                    Object.assign(t, {
-                        typ: EnumToken.ColorTokenType,
-                        val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
-                        kin: ColorKind.HEX
-                    });
-                }
-                continue;
-            }
-            if (t.typ == EnumToken.HashTokenType && isHexColor(t.val)) {
-                // hex color
-                // @ts-ignore
-                t.typ = EnumToken.ColorTokenType;
-                // @ts-ignore
-                t.kin = ColorKind.HEX;
-            }
-        }
+        // if (options.parseColor) {
+        //
+        //     if (t.typ == EnumToken.IdenTokenType) {
+        //         // named color
+        //         const value: string = (t as IdentToken).val.toLowerCase();
+        //
+        //         if (value in COLORS_NAMES) {
+        //             Object.assign(t, {
+        //                 typ: EnumToken.ColorTokenType,
+        //                 val: COLORS_NAMES[value].length < value.length ? COLORS_NAMES[value] : value,
+        //                 kin: ColorKind.HEX
+        //             });
+        //         }
+        //
+        //         continue;
+        //     }
+        //
+        //     if (t.typ == EnumToken.HashTokenType && isHexColor((t as HashToken).val)) {
+        //         // hex color
+        //         // @ts-ignore
+        //         t.typ = EnumToken.ColorTokenType;
+        //         // @ts-ignore
+        //         (t as ColorToken).kin = ColorKind.HEX;
+        //     }
+        // }
     }
     return tokens;
 }

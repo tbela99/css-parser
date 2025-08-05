@@ -9,18 +9,16 @@ import type {
     ParserOptions,
     Token
 } from "../../../@types/index.d.ts";
-import {
-    getSyntaxConfig,
+import type {
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
     ValidationKeywordToken,
     ValidationPipeToken,
     ValidationPropertyToken,
-    ValidationSyntaxGroupEnum,
-    ValidationToken,
-    ValidationTokenEnum
-} from '../../validation/index.ts'
+    ValidationToken
+} from '../../validation/index.ts';
+import {getSyntaxConfig, ValidationSyntaxGroupEnum, ValidationTokenEnum} from '../../validation/index.ts';
 import {walkValues} from "../walk.ts";
 import {pseudoAliasMap} from "../../syntax/index.ts";
 import {splitRule} from "../minify.ts";
@@ -147,14 +145,14 @@ export class ComputePrefixFeature {
 
                     if (!(nam in config.declarations)) {
 
-                        if ( (<AstDeclaration>node).nam in pseudoAliasMap) {
+                        if ((<AstDeclaration>node).nam in pseudoAliasMap) {
 
-                            nam = pseudoAliasMap[ (<AstDeclaration>node).nam];
+                            nam = pseudoAliasMap[(<AstDeclaration>node).nam];
 
                         }
                     }
 
-                    if (nam in config.declarations ) {
+                    if (nam in config.declarations) {
 
                         (<AstDeclaration>node).nam = nam;
                     }
