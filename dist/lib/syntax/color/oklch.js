@@ -1,14 +1,15 @@
-import { ColorKind } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, getNumber, getAngle } from './color.js';
-import { EnumToken } from '../../ast/types.js';
+import { srgb2oklab, lch2oklabvalues, getOKLABComponents, lab2oklabvalues, hwb2oklabvalues, hsl2oklabvalues, rgb2oklabvalues, hex2oklabvalues } from './oklab.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { cmyk2srgbvalues } from './srgb.js';
 import { labvalues2lchvalues } from './lch.js';
-import { srgb2oklab, lch2oklabvalues, getOKLABComponents, lab2oklabvalues, hwb2oklabvalues, hsl2oklabvalues, rgb2oklabvalues, hex2oklabvalues } from './oklab.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function hex2oklchToken(token) {
@@ -31,6 +32,13 @@ function hsl2oklchToken(token) {
 }
 function hwb2oklchToken(token) {
     const values = hwb2oklchvalues(token);
+    if (values == null) {
+        return null;
+    }
+    return oklchToken(values);
+}
+function cmyk2oklchToken(token) {
+    const values = cmyk2oklchvalues(token);
     if (values == null) {
         return null;
     }
@@ -82,7 +90,7 @@ function oklchToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'oklch',
         chi,
-        kin: ColorKind.OKLCH
+        kin: ColorType.OKLCH
     };
 }
 function hex2oklchvalues(token) {
@@ -104,6 +112,11 @@ function hsl2oklchvalues(token) {
 function hwb2oklchvalues(token) {
     // @ts-ignore
     return labvalues2lchvalues(...hwb2oklabvalues(token));
+}
+function cmyk2oklchvalues(token) {
+    const values = cmyk2srgbvalues(token);
+    // @ts-ignore
+    return values == null ? null : srgb2oklch(...values);
 }
 function lab2oklchvalues(token) {
     // @ts-ignore
@@ -150,4 +163,4 @@ function getOKLCHComponents(token) {
     return [l, c, h, alpha];
 }
 
-export { color2oklchToken, getOKLCHComponents, hex2oklchToken, hex2oklchvalues, hsl2oklchToken, hsl2oklchvalues, hwb2oklchToken, hwb2oklchvalues, lab2oklchToken, lab2oklchvalues, lch2oklchToken, lch2oklchvalues, oklab2oklchToken, oklab2oklchvalues, rgb2oklchToken, rgb2oklchvalues, srgb2oklch };
+export { cmyk2oklchToken, cmyk2oklchvalues, color2oklchToken, getOKLCHComponents, hex2oklchToken, hex2oklchvalues, hsl2oklchToken, hsl2oklchvalues, hwb2oklchToken, hwb2oklchvalues, lab2oklchToken, lab2oklchvalues, lch2oklchToken, lch2oklchvalues, oklab2oklchToken, oklab2oklchvalues, rgb2oklchToken, rgb2oklchvalues, srgb2oklch };

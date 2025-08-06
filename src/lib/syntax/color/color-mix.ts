@@ -1,5 +1,5 @@
 import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {getNumber} from "./color.ts";
 import {srgb2lsrgbvalues, srgbvalues} from "./srgb.ts";
 import {srgb2lch, xyz2lchvalues} from "./lch.ts";
@@ -8,7 +8,7 @@ import {srgb2hslvalues} from "./hsl.ts";
 import {srgb2hwb} from "./hwb.ts";
 import {srgb2labvalues} from "./lab.ts";
 import {srgb2p3values} from "./p3.ts";
-import {ColorKind, getComponents} from "./utils/index.ts";
+import {getComponents} from "./utils/index.ts";
 import {srgb2oklch} from "./oklch.ts";
 import {srgb2oklab} from "./oklab.ts";
 import {srgb2prophotorgbvalues} from "./prophotorgb.ts";
@@ -307,8 +307,8 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
     }
 
     const lchSpaces: string[] = ['lch', 'oklch'];
-    const colorSpace1 = ColorKind[color1.kin].toLowerCase().replaceAll('_', '-');
-    const colorSpace2 = ColorKind[color2.kin].toLowerCase().replaceAll('_', '-');
+    const colorSpace1 = ColorType[color1.kin].toLowerCase().replaceAll('_', '-');
+    const colorSpace2 = ColorType[color2.kin].toLowerCase().replaceAll('_', '-');
 
 
     // powerless
@@ -375,7 +375,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                         val: String(v)
                     }
                 }),
-                kin: ColorKind.LCH
+                kin: ColorType.LCH
             };
 
         case 'srgb':
@@ -388,7 +388,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 typ: EnumToken.ColorTokenType,
                 val: 'color',
                 chi: calculate(),
-                kin: ColorKind.COLOR,
+                kin: ColorType.COLOR,
                 cal: 'col'
             } as ColorToken;
 
@@ -438,7 +438,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace.val,
                 chi: calculate().slice(1),
-                kin: ColorKind[colorSpace.val.toUpperCase().replaceAll('-', '_') as keyof typeof ColorKind]
+                kin: ColorType[colorSpace.val.toUpperCase().replaceAll('-', '_') as keyof typeof ColorType]
             };
 
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {

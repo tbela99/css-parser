@@ -1,10 +1,10 @@
-import { EnumToken } from '../ast/types.js';
+import { EnumToken, ColorType } from '../ast/types.js';
 import '../ast/minify.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import { COLORS_NAMES, colorsFunc, funcLike, ColorKind } from './color/utils/constants.js';
+import { COLORS_NAMES, colorsFunc, funcLike } from './color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import '../renderer/sourcemap/lib/encode.js';
 
@@ -507,7 +507,7 @@ function isHueInterpolationMethod(token) {
     return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val) && 'hue'.localeCompare(token[1].val, undefined, { sensitivity: 'base' }) == 0;
 }
 function isIdentColor(token) {
-    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
+    return token.typ == EnumToken.ColorTokenType && [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(token.kin) && isIdent(token.val);
 }
 function isPercentageToken(token) {
     return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
@@ -690,7 +690,7 @@ function parseColor(token) {
     // @ts-ignore
     token.typ = EnumToken.ColorTokenType;
     // @ts-ignore
-    token.kin = ColorKind[token.val.replaceAll('-', '_').toUpperCase()];
+    token.kin = ColorType[token.val.replaceAll('-', '_').toUpperCase()];
     // @ts-ignore
     if (token.chi[0].typ == EnumToken.IdenTokenType) {
         // @ts-ignore

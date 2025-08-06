@@ -1,14 +1,14 @@
 import { hsl2hsv } from './hsv.js';
-import { ColorKind } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, getAngle, getNumber } from './color.js';
-import { EnumToken } from '../../ast/types.js';
+import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function rgb2hwbToken(token) {
@@ -81,7 +81,7 @@ function hwbToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'hwb',
         chi,
-        kin: ColorKind.HWB
+        kin: ColorType.HWB
     };
 }
 function rgb2hwbvalues(token) {

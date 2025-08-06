@@ -1,7 +1,7 @@
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {ColorKind, getComponents} from "./utils/index.ts";
+import {getComponents} from "./utils/index.ts";
 import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle} from "./color.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {labvalues2lchvalues} from "./lch.ts";
 import {
     getOKLABComponents,
@@ -134,7 +134,7 @@ function oklchToken(values: number[]): ColorToken | null {
         typ: EnumToken.ColorTokenType,
         val: 'oklch',
         chi,
-        kin: ColorKind.OKLCH
+        kin: ColorType.OKLCH
     }
 }
 

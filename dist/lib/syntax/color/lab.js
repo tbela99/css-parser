@@ -1,16 +1,16 @@
-import { ColorKind, e, k, D50 } from './utils/constants.js';
+import { e, k, D50 } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2xyz_d50, XYZ_D50_to_D65, XYZ_to_lin_sRGB } from './xyz.js';
-import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues } from './srgb.js';
-import { getLCHComponents } from './lch.js';
-import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
 import { color2srgbvalues, getNumber } from './color.js';
-import { EnumToken } from '../../ast/types.js';
+import { getOKLABComponents, OKLab_to_XYZ } from './oklab.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
+import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues } from './srgb.js';
+import { getLCHComponents } from './lch.js';
+import { srgb2xyz_d50, XYZ_D50_to_D65, XYZ_to_lin_sRGB } from './xyz.js';
 import { XYZ_D65_to_D50, xyzd502srgb } from './xyzd50.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
@@ -86,7 +86,7 @@ function labToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'lab',
         chi,
-        kin: ColorKind.LAB
+        kin: ColorType.LAB
     };
 }
 // L: 0% = 0.0, 100% = 100.0

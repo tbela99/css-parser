@@ -1,6 +1,6 @@
 import type {ColorToken, Token} from "../../../@types/index.d.ts";
 import {color2srgbvalues, minmax} from "./color.ts";
-import {ColorKind, COLORS_NAMES} from "./utils/index.ts";
+import {COLORS_NAMES} from "./utils/index.ts";
 import {expandHexValue} from "./hex.ts";
 import {
     cmyk2srgbvalues,
@@ -12,7 +12,7 @@ import {
     oklab2srgbvalues,
     oklch2srgbvalues
 } from "./srgb.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 
 export function srgb2rgb(value: number): number {
 
@@ -130,12 +130,12 @@ function rgb2RgbToken(values: number[]): ColorToken | null {
         typ: EnumToken.ColorTokenType,
         val: 'rgb',
         chi,
-        kin: ColorKind.RGB
+        kin: ColorType.RGB
     }
 }
 export function hex2rgbvalues(token: ColorToken): number[] {
 
-    const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value: string = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb: number[] = [];
 
     for (let i = 1; i < value.length; i += 2) {

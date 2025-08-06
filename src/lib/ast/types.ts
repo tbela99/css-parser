@@ -5,92 +5,6 @@ export enum SyntaxValidationResult {
 }
 
 /**
- * color types enum
- */
-export enum ColorType {
-    /**
-     * convert color to hex
-     */
-    HEX,
-    /**
-     * convert color to rgb
-     */
-    RGBA,
-    /**
-     * convert color to hwb
-     */
-    HWB,
-    /**
-     * convert color to hsl
-     */
-    HSLA,
-    /**
-     * convert color to cmyk
-     */
-    DEVICE_CMYK,
-    /**
-     * convert color to lch
-     */
-    LCH,
-    /**
-     * convert color to oklch
-     */
-    OKLCH,
-    /**
-     * convert color to lab
-     */
-    LAB,
-    /**
-     * convert color to oklab
-     */
-    OKLAB,
-    /**
-     * convert color to xyz
-     */
-    XYZ_D65,
-    /**
-     * convert color to xyz-d50
-     */
-    XYZ_D50,
-    /**
-     * convert color to srgb
-     */
-    SRGB,
-    /**
-     * convert color to srgb-linear
-     */
-    SRGB_LINEAR,
-    /**
-     * convert color to display-p3
-     */
-    DISPLAY_P3,
-    /**
-     * convert color to a98-rgb
-     */
-    A98_RGB,
-    /**
-     * convert color to prophoto-rgb
-     */
-    PROPHOTO_RGB,
-    /**
-     * convert color to rec2020
-     */
-    REC2020,
-    /**
-     * alias for hsl
-     */
-    HSL = HSLA,
-    /**
-     * alias for rgba
-     */
-    RGB = RGBA,
-    /**
-     * alias for xyz-d65
-     */
-    XYZ = XYZ_D65
-}
-
-/**
  * validation level enum
  */
 export enum ValidationLevel {
@@ -242,3 +156,34 @@ export enum EnumToken {
     TimelineFunction = TimelineFunctionTokenType,
 }
 
+// xyz-d65 is an alias for xyz
+export enum ColorType {
+
+    SYS,
+    DPSYS,
+    LIT,
+    HEX,
+    RGBA,
+    HSLA,
+    HWB,
+    CMYK,
+    OKLAB,
+    OKLCH,
+    LAB,
+    LCH,
+    COLOR,
+    SRGB,
+    PROPHOTO_RGB,
+    A98_RGB,
+    REC2020,
+    DISPLAY_P3,
+    SRGB_LINEAR,
+    XYZ_D50,
+    XYZ_D65,
+    LIGHT_DARK,
+    COLOR_MIX,
+    RGB = RGBA,
+    HSL = HSLA,
+    XYZ = XYZ_D65,
+    DEVICE_CMYK= CMYK
+}

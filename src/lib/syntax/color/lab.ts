@@ -1,11 +1,11 @@
-import {ColorKind, D50, e, getComponents, k} from "./utils/index.ts";
+import {D50, e, getComponents, k} from "./utils/index.ts";
 import {srgb2xyz_d50, XYZ_D50_to_D65, XYZ_to_lin_sRGB} from "./xyz.ts";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {cmyk2srgbvalues, hex2srgbvalues, hsl2srgb, hwb2srgbvalues, oklch2srgbvalues, rgb2srgb} from "./srgb.ts";
 import {getLCHComponents} from "./lch.ts";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab.ts";
 import {color2srgbvalues, getNumber} from "./color.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50.ts";
 
 export function hex2labToken(token: ColorToken): ColorToken | null {
@@ -119,7 +119,7 @@ function labToken(values: number[]): ColorToken | null {
         typ: EnumToken.ColorTokenType,
         val: 'lab',
         chi,
-        kin: ColorKind.LAB
+        kin: ColorType.LAB
     }
 }
 

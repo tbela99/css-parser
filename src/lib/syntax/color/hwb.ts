@@ -1,8 +1,8 @@
 import {hsl2hsv} from "./hsv.ts";
 import type {AngleToken, ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {ColorKind, getComponents} from "./utils/index.ts";
+import {getComponents} from "./utils/index.ts";
 import {color2srgbvalues, getAngle, getNumber, toPrecisionAngle} from "./color.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {cmyk2srgbvalues, lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues} from "./srgb.ts";
 
 export function rgb2hwbToken(token: ColorToken): ColorToken | null {
@@ -113,7 +113,7 @@ export function hwbToken(values: number[]): ColorToken {
         typ: EnumToken.ColorTokenType,
         val: 'hwb',
         chi,
-        kin: ColorKind.HWB
+        kin: ColorType.HWB
     }
 }
 

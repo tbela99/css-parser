@@ -1,7 +1,7 @@
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-import {ColorKind, COLORS_NAMES, getComponents} from "./utils/index.ts";
+import {COLORS_NAMES, getComponents} from "./utils/index.ts";
 import type {
     ColorToken,
     DimensionToken,
@@ -11,7 +11,7 @@ import type {
     Token
 } from "../../../@types/index.d.ts";
 import {color2srgbvalues, getAngle, getNumber} from "./color.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {getLABComponents, Lab_to_sRGB, lchvalues2labvalues} from "./lab.ts";
 import {expandHexValue} from "./hex.ts";
 import {getOKLABComponents, OKLab_to_sRGB} from "./oklab.ts";
@@ -23,35 +23,35 @@ export function srgbvalues(token: ColorToken): number[] | null {
 
     switch (token.kin) {
 
-        case ColorKind.LIT:
-        case ColorKind.HEX:
+        case ColorType.LIT:
+        case ColorType.HEX:
             return hex2srgbvalues(token);
 
-        case ColorKind.RGB:
-        case ColorKind.RGBA:
+        case ColorType.RGB:
+        case ColorType.RGBA:
             return rgb2srgb(token);
 
-        case ColorKind.HSL:
-        case ColorKind.HSLA:
+        case ColorType.HSL:
+        case ColorType.HSLA:
             return hsl2srgb(token);
 
-        case ColorKind.HWB:
+        case ColorType.HWB:
 
             return hwb2srgbvalues(token);
 
-        case ColorKind.LAB:
+        case ColorType.LAB:
             return lab2srgbvalues(token);
 
-        case ColorKind.LCH:
+        case ColorType.LCH:
             return lch2srgbvalues(token);
 
-        case ColorKind.OKLAB:
+        case ColorType.OKLAB:
             return oklab2srgbvalues(token);
 
-        case ColorKind.OKLCH:
+        case ColorType.OKLCH:
             return oklch2srgbvalues(token);
 
-        case ColorKind.COLOR:
+        case ColorType.COLOR:
             return color2srgbvalues(token);
     }
 
@@ -82,7 +82,7 @@ export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number 
 
 export function hex2srgbvalues(token: ColorToken): number[] {
 
-    const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value: string = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb: number[] = [];
 
     for (let i = 1; i < value.length; i += 2) {

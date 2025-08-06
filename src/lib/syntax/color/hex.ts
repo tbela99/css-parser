@@ -1,8 +1,8 @@
 import type {ColorToken, NumberToken, PercentageToken} from "../../../@types/index.d.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {color2srgbvalues, getNumber} from "./color.ts";
 import {cmyk2rgbvalues, hsl2rgbvalues, hwb2rgbvalues, srgb2rgb} from "./rgb.ts";
-import {ColorKind, COLORS_NAMES, getComponents, NAMES_COLORS} from "./utils/index.ts";
+import {COLORS_NAMES, getComponents, NAMES_COLORS} from "./utils/index.ts";
 import {lab2srgbvalues, lch2srgbvalues, oklab2srgbvalues, oklch2srgbvalues} from "./srgb.ts";
 
 function toHexString(acc: string, value: number): string {
@@ -163,7 +163,7 @@ export function lch2HexToken(token: ColorToken): ColorToken | null {
     return {
         typ: EnumToken.ColorTokenType,
         val: value,
-        kin: value[0] == '#' ? ColorKind.HEX : ColorKind.LIT
+        kin: value[0] == '#' ? ColorType.HEX : ColorType.LIT
     } as ColorToken;
 }
 

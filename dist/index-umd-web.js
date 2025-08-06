@@ -11,92 +11,6 @@
         SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
     })(SyntaxValidationResult || (SyntaxValidationResult = {}));
     /**
-     * color types enum
-     */
-    exports.ColorType = void 0;
-    (function (ColorType) {
-        /**
-         * convert color to hex
-         */
-        ColorType[ColorType["HEX"] = 0] = "HEX";
-        /**
-         * convert color to rgb
-         */
-        ColorType[ColorType["RGBA"] = 1] = "RGBA";
-        /**
-         * convert color to hwb
-         */
-        ColorType[ColorType["HWB"] = 2] = "HWB";
-        /**
-         * convert color to hsl
-         */
-        ColorType[ColorType["HSLA"] = 3] = "HSLA";
-        /**
-         * convert color to cmyk
-         */
-        ColorType[ColorType["DEVICE_CMYK"] = 4] = "DEVICE_CMYK";
-        /**
-         * convert color to lch
-         */
-        ColorType[ColorType["LCH"] = 5] = "LCH";
-        /**
-         * convert color to oklch
-         */
-        ColorType[ColorType["OKLCH"] = 6] = "OKLCH";
-        /**
-         * convert color to lab
-         */
-        ColorType[ColorType["LAB"] = 7] = "LAB";
-        /**
-         * convert color to oklab
-         */
-        ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
-        /**
-         * convert color to xyz
-         */
-        ColorType[ColorType["XYZ_D65"] = 9] = "XYZ_D65";
-        /**
-         * convert color to xyz-d50
-         */
-        ColorType[ColorType["XYZ_D50"] = 10] = "XYZ_D50";
-        /**
-         * convert color to srgb
-         */
-        ColorType[ColorType["SRGB"] = 11] = "SRGB";
-        /**
-         * convert color to srgb-linear
-         */
-        ColorType[ColorType["SRGB_LINEAR"] = 12] = "SRGB_LINEAR";
-        /**
-         * convert color to display-p3
-         */
-        ColorType[ColorType["DISPLAY_P3"] = 13] = "DISPLAY_P3";
-        /**
-         * convert color to a98-rgb
-         */
-        ColorType[ColorType["A98_RGB"] = 14] = "A98_RGB";
-        /**
-         * convert color to prophoto-rgb
-         */
-        ColorType[ColorType["PROPHOTO_RGB"] = 15] = "PROPHOTO_RGB";
-        /**
-         * convert color to rec2020
-         */
-        ColorType[ColorType["REC2020"] = 16] = "REC2020";
-        /**
-         * alias for hsl
-         */
-        ColorType[ColorType["HSL"] = 3] = "HSL";
-        /**
-         * alias for rgba
-         */
-        ColorType[ColorType["RGB"] = 1] = "RGB";
-        /**
-         * alias for xyz-d65
-         */
-        ColorType[ColorType["XYZ"] = 9] = "XYZ";
-    })(exports.ColorType || (exports.ColorType = {}));
-    /**
      * validation level enum
      */
     exports.ValidationLevel = void 0;
@@ -246,6 +160,37 @@
         EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
         EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
     })(exports.EnumToken || (exports.EnumToken = {}));
+    // xyz-d65 is an alias for xyz
+    exports.ColorType = void 0;
+    (function (ColorType) {
+        ColorType[ColorType["SYS"] = 0] = "SYS";
+        ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
+        ColorType[ColorType["LIT"] = 2] = "LIT";
+        ColorType[ColorType["HEX"] = 3] = "HEX";
+        ColorType[ColorType["RGBA"] = 4] = "RGBA";
+        ColorType[ColorType["HSLA"] = 5] = "HSLA";
+        ColorType[ColorType["HWB"] = 6] = "HWB";
+        ColorType[ColorType["CMYK"] = 7] = "CMYK";
+        ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
+        ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
+        ColorType[ColorType["LAB"] = 10] = "LAB";
+        ColorType[ColorType["LCH"] = 11] = "LCH";
+        ColorType[ColorType["COLOR"] = 12] = "COLOR";
+        ColorType[ColorType["SRGB"] = 13] = "SRGB";
+        ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
+        ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
+        ColorType[ColorType["REC2020"] = 16] = "REC2020";
+        ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
+        ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
+        ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
+        ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
+        ColorType[ColorType["LIGHT_DARK"] = 21] = "LIGHT_DARK";
+        ColorType[ColorType["COLOR_MIX"] = 22] = "COLOR_MIX";
+        ColorType[ColorType["RGB"] = 4] = "RGB";
+        ColorType[ColorType["HSL"] = 5] = "HSL";
+        ColorType[ColorType["XYZ"] = 20] = "XYZ";
+        ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
+    })(exports.ColorType || (exports.ColorType = {}));
 
     // from https://www.w3.org/TR/css-color-4/multiply-matrices.js
     /**
@@ -305,37 +250,6 @@
             b: [0, 0.4]
         }
     };
-    // xyz-d65 is an alias for xyz
-    // display-p3 is an alias for srgb
-    var ColorKind;
-    (function (ColorKind) {
-        ColorKind[ColorKind["SYS"] = 0] = "SYS";
-        ColorKind[ColorKind["DPSYS"] = 1] = "DPSYS";
-        ColorKind[ColorKind["LIT"] = 2] = "LIT";
-        ColorKind[ColorKind["HEX"] = 3] = "HEX";
-        ColorKind[ColorKind["RGBA"] = 4] = "RGBA";
-        ColorKind[ColorKind["HSLA"] = 5] = "HSLA";
-        ColorKind[ColorKind["HWB"] = 6] = "HWB";
-        ColorKind[ColorKind["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
-        ColorKind[ColorKind["OKLAB"] = 8] = "OKLAB";
-        ColorKind[ColorKind["OKLCH"] = 9] = "OKLCH";
-        ColorKind[ColorKind["LAB"] = 10] = "LAB";
-        ColorKind[ColorKind["LCH"] = 11] = "LCH";
-        ColorKind[ColorKind["COLOR"] = 12] = "COLOR";
-        ColorKind[ColorKind["SRGB"] = 13] = "SRGB";
-        ColorKind[ColorKind["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
-        ColorKind[ColorKind["A98_RGB"] = 15] = "A98_RGB";
-        ColorKind[ColorKind["REC2020"] = 16] = "REC2020";
-        ColorKind[ColorKind["DISPLAY_P3"] = 17] = "DISPLAY_P3";
-        ColorKind[ColorKind["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
-        ColorKind[ColorKind["XYZ_D50"] = 19] = "XYZ_D50";
-        ColorKind[ColorKind["XYZ_D65"] = 20] = "XYZ_D65";
-        ColorKind[ColorKind["LIGHT_DARK"] = 21] = "LIGHT_DARK";
-        ColorKind[ColorKind["COLOR_MIX"] = 22] = "COLOR_MIX";
-        ColorKind[ColorKind["RGB"] = 4] = "RGB";
-        ColorKind[ColorKind["HSL"] = 5] = "HSL";
-        ColorKind[ColorKind["XYZ"] = 20] = "XYZ";
-    })(ColorKind || (ColorKind = {}));
     const timelineFunc = ['view', 'scroll'];
     const generalEnclosedFunc = ['selector', 'font-tech', 'font-format', 'media', 'supports'];
     const timingFunc = ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'];
@@ -594,7 +508,7 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'lch',
             chi,
-            kin: ColorKind.LCH
+            kin: exports.ColorType.LCH
         };
     }
     function hex2lchvalues(token) {
@@ -812,6 +726,13 @@
         }
         return oklchToken(values);
     }
+    function cmyk2oklchToken(token) {
+        const values = cmyk2oklchvalues(token);
+        if (values == null) {
+            return null;
+        }
+        return oklchToken(values);
+    }
     function lab2oklchToken(token) {
         const values = lab2oklchvalues(token);
         if (values == null) {
@@ -858,7 +779,7 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'oklch',
             chi,
-            kin: ColorKind.OKLCH
+            kin: exports.ColorType.OKLCH
         };
     }
     function hex2oklchvalues(token) {
@@ -880,6 +801,11 @@
     function hwb2oklchvalues(token) {
         // @ts-ignore
         return labvalues2lchvalues(...hwb2oklabvalues(token));
+    }
+    function cmyk2oklchvalues(token) {
+        const values = cmyk2srgbvalues(token);
+        // @ts-ignore
+        return values == null ? null : srgb2oklch(...values);
     }
     function lab2oklchvalues(token) {
         // @ts-ignore
@@ -1005,7 +931,7 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'oklab',
             chi,
-            kin: ColorKind.OKLAB
+            kin: exports.ColorType.OKLAB
         };
     }
     function hex2oklabvalues(token) {
@@ -1219,7 +1145,7 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'lab',
             chi,
-            kin: ColorKind.LAB
+            kin: exports.ColorType.LAB
         };
     }
     // L: 0% = 0.0, 100% = 100.0
@@ -1391,26 +1317,26 @@
     // 0 <= r, g, b <= 1
     function srgbvalues(token) {
         switch (token.kin) {
-            case ColorKind.LIT:
-            case ColorKind.HEX:
+            case exports.ColorType.LIT:
+            case exports.ColorType.HEX:
                 return hex2srgbvalues(token);
-            case ColorKind.RGB:
-            case ColorKind.RGBA:
+            case exports.ColorType.RGB:
+            case exports.ColorType.RGBA:
                 return rgb2srgb(token);
-            case ColorKind.HSL:
-            case ColorKind.HSLA:
+            case exports.ColorType.HSL:
+            case exports.ColorType.HSLA:
                 return hsl2srgb(token);
-            case ColorKind.HWB:
+            case exports.ColorType.HWB:
                 return hwb2srgbvalues(token);
-            case ColorKind.LAB:
+            case exports.ColorType.LAB:
                 return lab2srgbvalues(token);
-            case ColorKind.LCH:
+            case exports.ColorType.LCH:
                 return lch2srgbvalues(token);
-            case ColorKind.OKLAB:
+            case exports.ColorType.OKLAB:
                 return oklab2srgbvalues(token);
-            case ColorKind.OKLCH:
+            case exports.ColorType.OKLCH:
                 return oklch2srgbvalues(token);
-            case ColorKind.COLOR:
+            case exports.ColorType.COLOR:
                 return color2srgbvalues(token);
         }
         return null;
@@ -1422,7 +1348,7 @@
         return getComponents(token)?.map?.((t, index) => index == 3 ? getNumber(t) : getNumber(t) / 255) ?? null;
     }
     function hex2srgbvalues(token) {
-        const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+        const value = expandHexValue(token.kin == exports.ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         const rgb = [];
         for (let i = 1; i < value.length; i += 2) {
             rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
@@ -1766,7 +1692,7 @@
         return {
             typ: exports.EnumToken.ColorTokenType,
             val: value,
-            kin: value[0] == '#' ? ColorKind.HEX : ColorKind.LIT
+            kin: value[0] == '#' ? exports.ColorType.HEX : exports.ColorType.LIT
         };
     }
     function rgb2hexvalues(token) {
@@ -1830,8 +1756,8 @@
     }
 
     function getComponents(token) {
-        if (token.kin == ColorKind.HEX || token.kin == ColorKind.LIT) {
-            const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+        if (token.kin == exports.ColorType.HEX || token.kin == exports.ColorType.LIT) {
+            const value = expandHexValue(token.kin == exports.ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
             // @ts-ignore
             return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t, index) => {
                 return { typ: exports.EnumToken.Number, val: (index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255).toString() };
@@ -1850,6 +1776,24 @@
             result.push(child);
         }
         return result;
+    }
+
+    function okLabDistance(okLab1, okLab2) {
+        return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
+    }
+    function isOkLabClose(color1, color2, threshold = 2.3) {
+        color1 = convertColor(color1, exports.ColorType.OKLAB);
+        color2 = convertColor(color2, exports.ColorType.OKLAB);
+        // console.error(JSON.stringify({color1, color2}, null, 1));
+        if (color1 == null || color2 == null) {
+            return false;
+        }
+        const okLab1 = getOKLABComponents(color1);
+        const okLab2 = getOKLABComponents(color2);
+        if (okLab1 == null || okLab2 == null) {
+            return false;
+        }
+        return okLabDistance(okLab1, okLab2) < threshold;
     }
 
     function srgb2rgb(value) {
@@ -1927,11 +1871,11 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'rgb',
             chi,
-            kin: ColorKind.RGB
+            kin: exports.ColorType.RGB
         };
     }
     function hex2rgbvalues(token) {
-        const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+        const value = expandHexValue(token.kin == exports.ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         const rgb = [];
         for (let i = 1; i < value.length; i += 2) {
             rgb.push(parseInt(value.slice(i, i + 2), 16));
@@ -2073,7 +2017,7 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'hsl',
             chi,
-            kin: ColorKind.HSL
+            kin: exports.ColorType.HSL
         };
     }
     function rgb2hslvalues(token) {
@@ -2254,7 +2198,7 @@
             typ: exports.EnumToken.ColorTokenType,
             val: 'hwb',
             chi,
-            kin: ColorKind.HWB
+            kin: exports.ColorType.HWB
         };
     }
     function rgb2hwbvalues(token) {
@@ -2720,8 +2664,8 @@
                 return null;
         }
         const lchSpaces = ['lch', 'oklch'];
-        const colorSpace1 = ColorKind[color1.kin].toLowerCase().replaceAll('_', '-');
-        const colorSpace2 = ColorKind[color2.kin].toLowerCase().replaceAll('_', '-');
+        const colorSpace1 = exports.ColorType[color1.kin].toLowerCase().replaceAll('_', '-');
+        const colorSpace2 = exports.ColorType[color2.kin].toLowerCase().replaceAll('_', '-');
         // powerless
         if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace.val)) {
             if ((components1[2].typ == exports.EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
@@ -2769,7 +2713,7 @@
                             val: String(v)
                         };
                     }),
-                    kin: ColorKind.LCH
+                    kin: exports.ColorType.LCH
                 };
             case 'srgb':
             case 'srgb-linear':
@@ -2780,7 +2724,7 @@
                     typ: exports.EnumToken.ColorTokenType,
                     val: 'color',
                     chi: calculate(),
-                    kin: ColorKind.COLOR,
+                    kin: exports.ColorType.COLOR,
                     cal: 'col'
                 };
             case 'rgb':
@@ -2819,7 +2763,7 @@
                     typ: exports.EnumToken.ColorTokenType,
                     val: colorSpace.val,
                     chi: calculate().slice(1),
-                    kin: ColorKind[colorSpace.val.toUpperCase().replaceAll('-', '_')]
+                    kin: exports.ColorType[colorSpace.val.toUpperCase().replaceAll('-', '_')]
                 };
                 if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
                     // @ts-ignore
@@ -3498,12 +3442,12 @@
         let values = {};
         // colorFuncColorSpace x,y,z or r,g,b
         const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
-        const converted = convertColor(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_')]);
+        const converted = convertColor(original, exports.ColorType[relativeKeys.toUpperCase().replaceAll('-', '_')]);
         if (converted == null) {
             return null;
         }
         const children = converted.chi.filter(t => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
-        [r, g, b, alpha] = converted.kin == ColorKind.COLOR ? children.slice(1) : children;
+        [r, g, b, alpha] = converted.kin == exports.ColorType.COLOR ? children.slice(1) : children;
         values = {
             [names[0]]: getValue(r, converted, names[0]),
             [names[1]]: getValue(g, converted, names[1]), // string,
@@ -3542,7 +3486,7 @@
         // }
         if (t.typ == exports.EnumToken.PercentageTokenType) {
             let value = getNumber(t);
-            let colorSpace = ColorKind[converted.kin].toLowerCase().replaceAll('-', '_');
+            let colorSpace = exports.ColorType[converted.kin].toLowerCase().replaceAll('-', '_');
             if (colorSpace in colorRange) {
                 // @ts-ignore
                 value *= colorRange[colorSpace][component].at(-1);
@@ -3744,7 +3688,7 @@
                     typ: exports.EnumToken.LiteralTokenType,
                     val: '/'
                 }, { typ: exports.EnumToken.PercentageTokenType, val: (curr * 100).toFixed() }], []),
-            kin: ColorKind.DEVICE_CMYK
+            kin: exports.ColorType.DEVICE_CMYK
         };
     }
 
@@ -3803,13 +3747,13 @@
     }
 
     function convertColor(token, to) {
-        if (token.kin == ColorKind.SYS ||
-            token.kin == ColorKind.DPSYS ||
+        if (token.kin == exports.ColorType.SYS ||
+            token.kin == exports.ColorType.DPSYS ||
             (isIdentColor(token) &&
                 ('currentcolor'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0))) {
             return token;
         }
-        if (token.kin == ColorKind.COLOR_MIX && to != ColorKind.COLOR_MIX) {
+        if (token.kin == exports.ColorType.COLOR_MIX && to != exports.ColorType.COLOR_MIX) {
             const children = token.chi.reduce((acc, t) => {
                 if (t.typ == exports.EnumToken.ColorTokenType) {
                     acc.push([t]);
@@ -3843,282 +3787,282 @@
             }
         }
         if (token.kin == to) {
-            if (token.kin == ColorKind.HEX || token.kin == ColorKind.LIT) {
+            if (token.kin == exports.ColorType.HEX || token.kin == exports.ColorType.LIT) {
                 token.val = reduceHexValue(token.val);
-                token.kin = token.val[0] == '#' ? ColorKind.HEX : ColorKind.LIT;
+                token.kin = token.val[0] == '#' ? exports.ColorType.HEX : exports.ColorType.LIT;
             }
             return token;
         }
-        if (token.kin == ColorKind.COLOR) {
+        if (token.kin == exports.ColorType.COLOR) {
             const colorSpace = token.chi.find(t => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
-            if (colorSpace.val == ColorKind[to].toLowerCase().replaceAll('_', '-')) {
+            if (colorSpace.val == exports.ColorType[to].toLowerCase().replaceAll('_', '-')) {
                 return token;
             }
         }
-        if (to == ColorKind.HSL) {
+        if (to == exports.ColorType.HSL) {
             switch (token.kin) {
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2HslToken(token);
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2HslToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2HslToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2HslToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2HslToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2HslToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2HslToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2HslToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2HslToken(token);
             }
         }
-        else if (to == ColorKind.HWB) {
+        else if (to == exports.ColorType.HWB) {
             switch (token.kin) {
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2hwbToken(token);
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     // @ts-ignore
                     return rgb2hwbToken(token);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2hwbToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2hwbToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2hwbToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2hwbToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2hwbToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2hwbToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2hwbToken(token);
             }
         }
-        else if (to == ColorKind.DEVICE_CMYK) {
+        else if (to == exports.ColorType.DEVICE_CMYK) {
             switch (token.kin) {
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2cmykToken(token);
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return rgb2cmykToken(token);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2cmykToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2cmykToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2cmyk(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2cmykToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2cmykToken(token);
                 //
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2cmykToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2cmykToken(token);
             }
         }
-        else if (to == ColorKind.HEX || to == ColorKind.LIT) {
+        else if (to == exports.ColorType.HEX || to == exports.ColorType.LIT) {
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT: {
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT: {
                     const val = reduceHexValue(token.val);
                     return {
                         typ: exports.EnumToken.ColorTokenType,
                         val,
-                        kin: val[0] == '#' ? ColorKind.HEX : ColorKind.LIT
+                        kin: val[0] == '#' ? exports.ColorType.HEX : exports.ColorType.LIT
                     };
                 }
-                case ColorKind.HSL:
+                case exports.ColorType.HSL:
                     return hsl2HexToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2HexToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2HexToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2HexToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2HexToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2HexToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2HexToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2HexToken(token);
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2HexToken(token);
             }
         }
-        else if (to == ColorKind.RGB) {
+        else if (to == exports.ColorType.RGB) {
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2RgbToken(token);
-                case ColorKind.HSL:
+                case exports.ColorType.HSL:
                     return hsl2RgbToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2RgbToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2RgbToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2RgbToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2RgbToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2RgbToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2RgbToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2RgbToken(token);
             }
         }
-        else if (to == ColorKind.LAB) {
+        else if (to == exports.ColorType.LAB) {
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2labToken(token);
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2labToken(token);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2labToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2labToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2labToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2labToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2labToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2labToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2labToken(token);
             }
         }
-        else if (to == ColorKind.LCH) {
+        else if (to == exports.ColorType.LCH) {
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2lchToken(token);
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2lchToken(token);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2lchToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2lchToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2lchToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2lchToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2lchToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2lchToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2lchToken(token);
             }
         }
-        else if (to == ColorKind.OKLAB) {
+        else if (to == exports.ColorType.OKLAB) {
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2oklabToken(token);
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2oklabToken(token);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2oklabToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2oklabToken(token);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2oklabToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2oklabToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2oklabToken(token);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2oklabToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2oklabToken(token);
             }
         }
-        else if (to == ColorKind.OKLCH) {
+        else if (to == exports.ColorType.OKLCH) {
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2oklchToken(token);
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2oklchToken(token);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2oklchToken(token);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2oklchToken(token);
-                case ColorKind.DEVICE_CMYK:
-                    return oklab2oklchToken(token);
-                case ColorKind.LAB:
+                case exports.ColorType.DEVICE_CMYK:
+                    return cmyk2oklchToken(token);
+                case exports.ColorType.LAB:
                     return lab2oklchToken(token);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2oklchToken(token);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2oklchToken(token);
-                case ColorKind.COLOR:
+                case exports.ColorType.COLOR:
                     return color2oklchToken(token);
             }
         }
-        else if (colorFuncColorSpace.includes(ColorKind[to].toLowerCase().replaceAll('_', '-').toLowerCase().replaceAll('_', '-'))) {
-            console.error(ColorKind[token.kin]);
+        else if (colorFuncColorSpace.includes(exports.ColorType[to].toLowerCase().replaceAll('_', '-').toLowerCase().replaceAll('_', '-'))) {
+            console.error(exports.ColorType[token.kin]);
             switch (token.kin) {
-                case ColorKind.HEX:
-                case ColorKind.LIT:
+                case exports.ColorType.HEX:
+                case exports.ColorType.LIT:
                     return hex2colorToken(token, to);
-                case ColorKind.RGB:
-                case ColorKind.RGBA:
+                case exports.ColorType.RGB:
+                case exports.ColorType.RGBA:
                     return rgb2colorToken(token, to);
-                case ColorKind.HSL:
-                case ColorKind.HSLA:
+                case exports.ColorType.HSL:
+                case exports.ColorType.HSLA:
                     return hsl2colorToken(token, to);
-                case ColorKind.HWB:
+                case exports.ColorType.HWB:
                     return hwb2colorToken(token, to);
-                case ColorKind.DEVICE_CMYK:
+                case exports.ColorType.DEVICE_CMYK:
                     return cmyk2colorToken(token, to);
-                case ColorKind.LAB:
+                case exports.ColorType.LAB:
                     return lab2colorToken(token, to);
-                case ColorKind.OKLAB:
+                case exports.ColorType.OKLAB:
                     return oklab2colorToken(token, to);
-                case ColorKind.LCH:
+                case exports.ColorType.LCH:
                     return lch2colorToken(token, to);
-                case ColorKind.OKLCH:
+                case exports.ColorType.OKLCH:
                     return oklch2colorToken(token, to);
-                case ColorKind.COLOR:
-                case ColorKind.XYZ:
-                case ColorKind.SRGB:
-                case ColorKind.REC2020:
-                case ColorKind.XYZ_D50:
-                case ColorKind.A98_RGB:
-                case ColorKind.DISPLAY_P3:
-                case ColorKind.SRGB_LINEAR:
-                case ColorKind.PROPHOTO_RGB:
+                case exports.ColorType.COLOR:
+                case exports.ColorType.XYZ:
+                case exports.ColorType.SRGB:
+                case exports.ColorType.REC2020:
+                case exports.ColorType.XYZ_D50:
+                case exports.ColorType.A98_RGB:
+                case exports.ColorType.DISPLAY_P3:
+                case exports.ColorType.SRGB_LINEAR:
+                case exports.ColorType.PROPHOTO_RGB:
                     return color2colorToken(token, to);
             }
         }
@@ -4198,35 +4142,35 @@
     function srgb2srgbcolorspace(val, to) {
         const values = [];
         switch (to) {
-            case ColorKind.SRGB:
+            case exports.ColorType.SRGB:
                 values.push(...val);
                 break;
-            case ColorKind.SRGB_LINEAR:
+            case exports.ColorType.SRGB_LINEAR:
                 // @ts-ignore
                 values.push(...srgb2lsrgbvalues(...val));
                 break;
-            case ColorKind.DISPLAY_P3:
+            case exports.ColorType.DISPLAY_P3:
                 // @ts-ignore
                 values.push(...srgb2p3values(...val));
                 break;
-            case ColorKind.PROPHOTO_RGB:
+            case exports.ColorType.PROPHOTO_RGB:
                 // @ts-ignore
                 values.push(...srgb2prophotorgbvalues(...val));
                 break;
-            case ColorKind.A98_RGB:
+            case exports.ColorType.A98_RGB:
                 // @ts-ignore
                 values.push(...srgb2a98values$1(...val));
                 break;
-            case ColorKind.REC2020:
+            case exports.ColorType.REC2020:
                 // @ts-ignore
                 values.push(...srgb2rec2020values(...val));
                 break;
-            case ColorKind.XYZ:
-            case ColorKind.XYZ_D65:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.XYZ_D65:
                 // @ts-ignore
                 values.push(...srgb2xyz(...val));
                 break;
-            case ColorKind.XYZ_D50:
+            case exports.ColorType.XYZ_D50:
                 // @ts-ignore
                 values.push(...srgb2xyz_d50(...val));
                 break;
@@ -4295,12 +4239,12 @@
         if (values.length == 4) {
             chi.push({ typ: exports.EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
         }
-        const colorSpace = ColorKind[to].toLowerCase().replaceAll('_', '-');
+        const colorSpace = exports.ColorType[to].toLowerCase().replaceAll('_', '-');
         return colorFuncColorSpace.includes(colorSpace) ? {
             typ: exports.EnumToken.ColorTokenType,
             val: 'color',
             chi: [{ typ: exports.EnumToken.IdenTokenType, val: colorSpace }].concat(chi),
-            kin: ColorKind.COLOR
+            kin: exports.ColorType.COLOR
         } : {
             typ: exports.EnumToken.ColorTokenType,
             val: colorSpace,
@@ -4752,12 +4696,12 @@
             case exports.EnumToken.Div:
                 return '/';
             case exports.EnumToken.ColorTokenType:
-                if (token.kin == ColorKind.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
+                if (token.kin == exports.ColorType.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
                     return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + ')';
                 }
                 if (options.convertColor !== false) {
                     // console.error([typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[(ColorType[options.convertColor] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorKind] ?? ColorKind.HEX])
-                    const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[exports.ColorType[options.convertColor ?? 'HEX']?.toUpperCase?.().replaceAll?.('-', '_')] ?? ColorKind.HEX);
+                    const value = convertColor(token, typeof options.convertColor == 'boolean' ? exports.ColorType.HEX : exports.ColorType[exports.ColorType[options.convertColor ?? 'HEX']?.toUpperCase?.().replaceAll?.('-', '_')] ?? exports.ColorType.HEX);
                     //
                     if (value != null) {
                         token = value;
@@ -4954,7 +4898,7 @@
                     //         return reduceHexValue(value);
                     //     }
                 }
-                if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes(token.kin)) {
+                if ([exports.ColorType.HEX, exports.ColorType.LIT, exports.ColorType.SYS, exports.ColorType.DPSYS].includes(token.kin)) {
                     return token.val;
                 }
                 if (Array.isArray(token.chi)) {
@@ -5728,7 +5672,7 @@
         return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val) && 'hue'.localeCompare(token[1].val, undefined, { sensitivity: 'base' }) == 0;
     }
     function isIdentColor(token) {
-        return token.typ == exports.EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes(token.kin) && isIdent(token.val);
+        return token.typ == exports.EnumToken.ColorTokenType && [exports.ColorType.SYS, exports.ColorType.DPSYS, exports.ColorType.LIT].includes(token.kin) && isIdent(token.val);
     }
     function isPercentageToken(token) {
         return token.typ == exports.EnumToken.PercentageTokenType || (token.typ == exports.EnumToken.NumberTokenType && token.val == '0');
@@ -5911,7 +5855,7 @@
         // @ts-ignore
         token.typ = exports.EnumToken.ColorTokenType;
         // @ts-ignore
-        token.kin = ColorKind[token.val.replaceAll('-', '_').toUpperCase()];
+        token.kin = exports.ColorType[token.val.replaceAll('-', '_').toUpperCase()];
         // @ts-ignore
         if (token.chi[0].typ == exports.EnumToken.IdenTokenType) {
             // @ts-ignore
@@ -15080,10 +15024,10 @@
                 success = token.typ == exports.EnumToken.DashedIdenTokenType;
                 break;
             case 'system-color':
-                success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == ColorKind.SYS) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+                success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.SYS) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
                 break;
             case 'deprecated-system-color':
-                success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == ColorKind.DPSYS) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+                success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.DPSYS) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
                 break;
             case 'color':
             case 'color-base':
@@ -15099,7 +15043,7 @@
                 }
                 break;
             case 'hex-color':
-                success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == ColorKind.HEX) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+                success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.HEX) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
                 break;
             case 'integer':
                 success = (token.typ == exports.EnumToken.NumberTokenType && Number.isInteger(+(token.val))) || (token.typ == exports.EnumToken.FunctionTokenType && mathFuncs.includes(token.val.toLowerCase()) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val)));
@@ -17876,7 +17820,7 @@
                     if (name == null && [exports.EnumToken.IdenTokenType, exports.EnumToken.DashedIdenTokenType].includes(tokens[i].typ)) {
                         name = tokens.slice(0, i + 1);
                     }
-                    else if (name == null && tokens[i].typ == exports.EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS].includes(tokens[i].kin)) {
+                    else if (name == null && tokens[i].typ == exports.EnumToken.ColorTokenType && [exports.ColorType.SYS, exports.ColorType.DPSYS].includes(tokens[i].kin)) {
                         name = tokens.slice(0, i + 1);
                         tokens[i].typ = exports.EnumToken.IdenTokenType;
                     }
@@ -18162,7 +18106,7 @@
                         const node = value.chi.splice(nameIndex, 1)[0];
                         // 'background'
                         // @ts-ignore
-                        if (node.typ == exports.EnumToken.ColorTokenType && node.kin == ColorKind.DPSYS) {
+                        if (node.typ == exports.EnumToken.ColorTokenType && node.kin == exports.ColorType.DPSYS) {
                             // @ts-ignore
                             delete node.kin;
                             node.typ = exports.EnumToken.IdenTokenType;
@@ -18298,8 +18242,8 @@
                     }
                 }
                 else if (value.typ == exports.EnumToken.ColorTokenType) {
-                    if (value.kin == ColorKind.LIT || value.kin == ColorKind.HEX || value.kin == ColorKind.SYS || value.kin == ColorKind.DPSYS) {
-                        if (value.kin == ColorKind.HEX) {
+                    if (value.kin == exports.ColorType.LIT || value.kin == exports.ColorType.HEX || value.kin == exports.ColorType.SYS || value.kin == exports.ColorType.DPSYS) {
+                        if (value.kin == exports.ColorType.HEX) {
                             if (!isIdent(value.val.slice(1))) {
                                 continue;
                             }
@@ -18478,7 +18422,7 @@
             return {
                 typ: exports.EnumToken.ColorTokenType,
                 val: v,
-                kin: ColorKind.LIT
+                kin: exports.ColorType.LIT
             };
         }
         if (isIdent(val)) {
@@ -18486,14 +18430,14 @@
                 return {
                     typ: exports.EnumToken.ColorTokenType,
                     val,
-                    kin: ColorKind.SYS
+                    kin: exports.ColorType.SYS
                 };
             }
             if (deprecatedSystemColors.has(v)) {
                 return {
                     typ: exports.EnumToken.ColorTokenType,
                     val,
-                    kin: ColorKind.DPSYS
+                    kin: exports.ColorType.DPSYS
                 };
             }
             return {
@@ -18505,7 +18449,7 @@
             return {
                 typ: exports.EnumToken.ColorTokenType,
                 val,
-                kin: ColorKind.HEX
+                kin: exports.ColorType.HEX
             };
         }
         if (val.charAt(0) == '#' && isHash(val)) {
@@ -23234,8 +23178,10 @@
 
     exports.dirname = dirname;
     exports.expand = expand;
+    exports.isOkLabClose = isOkLabClose;
     exports.load = load;
     exports.minify = minify;
+    exports.okLabDistance = okLabDistance;
     exports.parse = parse;
     exports.parseString = parseString;
     exports.parseTokens = parseTokens;

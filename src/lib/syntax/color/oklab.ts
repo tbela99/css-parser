@@ -1,4 +1,4 @@
-import {ColorKind, getComponents, multiplyMatrices} from "./utils/index.ts";
+import {getComponents, multiplyMatrices} from "./utils/index.ts";
 import {
     cmyk2srgbvalues,
     hex2srgbvalues,
@@ -12,7 +12,7 @@ import {
 } from "./srgb.ts";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {color2srgbvalues, getNumber} from "./color.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {getOKLCHComponents} from "./oklch.ts";
 import {lchvalues2labvalues} from "./lab.ts";
 
@@ -136,7 +136,7 @@ function oklabToken(values: number[]): ColorToken | null {
         typ: EnumToken.ColorTokenType,
         val: 'oklab',
         chi,
-        kin: ColorKind.OKLAB
+        kin: ColorType.OKLAB
     }
 }
 

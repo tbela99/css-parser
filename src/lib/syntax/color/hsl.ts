@@ -2,9 +2,9 @@ import {hwb2hsv} from "./hsv.ts";
 import type {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {color2srgbvalues, getNumber, toPrecisionAngle} from "./color.ts";
 import {cmyk2rgbvalues, lab2rgbvalues, lch2rgbvalues} from "./rgb.ts";
-import {ColorKind, getComponents} from "./utils/index.ts";
+import {getComponents} from "./utils/index.ts";
 import {hex2srgbvalues, hslvalues, oklab2srgbvalues, oklch2srgbvalues} from './srgb.ts';
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 
 export function hex2HslToken(token: ColorToken): ColorToken | null {
 
@@ -121,7 +121,7 @@ function hslToken(values: number[]): ColorToken {
         typ: EnumToken.ColorTokenType,
         val: 'hsl',
         chi,
-        kin: ColorKind.HSL
+        kin: ColorType.HSL
     }
 }
 

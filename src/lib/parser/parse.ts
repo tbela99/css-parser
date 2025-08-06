@@ -22,6 +22,7 @@ import {parseDeclarationNode} from './utils/index.ts';
 import {colorsFunc, renderToken} from "../renderer/index.ts";
 import {COLORS_NAMES} from "../syntax/color/index.ts";
 import {
+    ColorType,
     combinators,
     definedPropertySettings,
     EnumToken,
@@ -108,14 +109,7 @@ import type {
     UrlToken,
     WhitespaceToken
 } from "../../@types/index.d.ts";
-import {
-    ColorKind,
-    deprecatedSystemColors,
-    funcLike,
-    systemColors,
-    timelineFunc,
-    timingFunc
-} from "../syntax/color/utils/index.ts";
+import {deprecatedSystemColors, funcLike, systemColors, timelineFunc, timingFunc} from "../syntax/color/utils/index.ts";
 import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
@@ -1038,7 +1032,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
                     name = tokens.slice(0, i + 1);
 
-                } else if (name == null && tokens[i].typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS].includes((<ColorToken>tokens[i]).kin)) {
+                } else if (name == null && tokens[i].typ == EnumToken.ColorTokenType && [ColorType.SYS, ColorType.DPSYS].includes((<ColorToken>tokens[i]).kin)) {
 
                     name = tokens.slice(0, i + 1);
                     tokens[i].typ = EnumToken.IdenTokenType;
@@ -1457,7 +1451,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
 
                     // 'background'
                     // @ts-ignore
-                    if (node.typ == EnumToken.ColorTokenType && (node as ColorToken).kin == ColorKind.DPSYS) {
+                    if (node.typ == EnumToken.ColorTokenType && (node as ColorToken).kin == ColorType.DPSYS) {
 
                         // @ts-ignore
                         delete node.kin;
@@ -1616,9 +1610,9 @@ export function parseSelector(tokens: Token[]): Token[] {
 
             } else if (value.typ == EnumToken.ColorTokenType) {
 
-                if ((value as ColorToken).kin == ColorKind.LIT || (value as ColorToken).kin == ColorKind.HEX || (value as ColorToken).kin == ColorKind.SYS || (value as ColorToken).kin == ColorKind.DPSYS) {
+                if ((value as ColorToken).kin == ColorType.LIT || (value as ColorToken).kin == ColorType.HEX || (value as ColorToken).kin == ColorType.SYS || (value as ColorToken).kin == ColorType.DPSYS) {
 
-                    if ((value as ColorToken).kin == ColorKind.HEX) {
+                    if ((value as ColorToken).kin == ColorType.HEX) {
 
                         if (!isIdent((value as ColorToken).val.slice(1))) {
 
@@ -1841,7 +1835,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         return <ColorToken>{
             typ: EnumToken.ColorTokenType,
             val: v,
-            kin: ColorKind.LIT
+            kin: ColorType.LIT
         };
     }
 
@@ -1851,7 +1845,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             return <ColorToken>{
                 typ: EnumToken.ColorTokenType,
                 val,
-                kin: ColorKind.SYS
+                kin: ColorType.SYS
             };
         }
 
@@ -1859,7 +1853,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             return <ColorToken>{
                 typ: EnumToken.ColorTokenType,
                 val,
-                kin: ColorKind.DPSYS
+                kin: ColorType.DPSYS
             };
         }
 
@@ -1875,7 +1869,7 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
         return <ColorToken>{
             typ: EnumToken.ColorTokenType,
             val,
-            kin: ColorKind.HEX
+            kin: ColorType.HEX
         };
     }
 

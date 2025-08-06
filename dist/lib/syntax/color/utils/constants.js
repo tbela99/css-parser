@@ -30,37 +30,6 @@ const colorRange = {
         b: [0, 0.4]
     }
 };
-// xyz-d65 is an alias for xyz
-// display-p3 is an alias for srgb
-var ColorKind;
-(function (ColorKind) {
-    ColorKind[ColorKind["SYS"] = 0] = "SYS";
-    ColorKind[ColorKind["DPSYS"] = 1] = "DPSYS";
-    ColorKind[ColorKind["LIT"] = 2] = "LIT";
-    ColorKind[ColorKind["HEX"] = 3] = "HEX";
-    ColorKind[ColorKind["RGBA"] = 4] = "RGBA";
-    ColorKind[ColorKind["HSLA"] = 5] = "HSLA";
-    ColorKind[ColorKind["HWB"] = 6] = "HWB";
-    ColorKind[ColorKind["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
-    ColorKind[ColorKind["OKLAB"] = 8] = "OKLAB";
-    ColorKind[ColorKind["OKLCH"] = 9] = "OKLCH";
-    ColorKind[ColorKind["LAB"] = 10] = "LAB";
-    ColorKind[ColorKind["LCH"] = 11] = "LCH";
-    ColorKind[ColorKind["COLOR"] = 12] = "COLOR";
-    ColorKind[ColorKind["SRGB"] = 13] = "SRGB";
-    ColorKind[ColorKind["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
-    ColorKind[ColorKind["A98_RGB"] = 15] = "A98_RGB";
-    ColorKind[ColorKind["REC2020"] = 16] = "REC2020";
-    ColorKind[ColorKind["DISPLAY_P3"] = 17] = "DISPLAY_P3";
-    ColorKind[ColorKind["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
-    ColorKind[ColorKind["XYZ_D50"] = 19] = "XYZ_D50";
-    ColorKind[ColorKind["XYZ_D65"] = 20] = "XYZ_D65";
-    ColorKind[ColorKind["LIGHT_DARK"] = 21] = "LIGHT_DARK";
-    ColorKind[ColorKind["COLOR_MIX"] = 22] = "COLOR_MIX";
-    ColorKind[ColorKind["RGB"] = 4] = "RGB";
-    ColorKind[ColorKind["HSL"] = 5] = "HSL";
-    ColorKind[ColorKind["XYZ"] = 20] = "XYZ";
-})(ColorKind || (ColorKind = {}));
 const timelineFunc = ['view', 'scroll'];
 const generalEnclosedFunc = ['selector', 'font-tech', 'font-format', 'media', 'supports'];
 const timingFunc = ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'];
@@ -242,4 +211,4 @@ const NAMES_COLORS = Object.seal(Object.entries(COLORS_NAMES).reduce((acc, [key,
     return acc;
 }, Object.create(null)));
 
-export { COLORS_NAMES, ColorKind, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, k, systemColors, timelineFunc, timingFunc };
+export { COLORS_NAMES, D50, NAMES_COLORS, anglePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, deprecatedSystemColors, e, funcLike, generalEnclosedFunc, k, systemColors, timelineFunc, timingFunc };

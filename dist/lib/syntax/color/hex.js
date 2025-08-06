@@ -1,4 +1,4 @@
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -6,7 +6,7 @@ import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { color2srgbvalues, getNumber } from './color.js';
 import { srgb2rgb, cmyk2rgbvalues, hwb2rgbvalues, hsl2rgbvalues } from './rgb.js';
-import { COLORS_NAMES, NAMES_COLORS, ColorKind } from './utils/constants.js';
+import { COLORS_NAMES, NAMES_COLORS } from './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
@@ -113,7 +113,7 @@ function hexToken(value) {
     return {
         typ: EnumToken.ColorTokenType,
         val: value,
-        kin: value[0] == '#' ? ColorKind.HEX : ColorKind.LIT
+        kin: value[0] == '#' ? ColorType.HEX : ColorType.LIT
     };
 }
 function rgb2hexvalues(token) {

@@ -1,6 +1,6 @@
 import { color2srgbvalues, minmax } from './color.js';
-import { ColorKind, COLORS_NAMES } from './utils/constants.js';
-import { EnumToken } from '../../ast/types.js';
+import { COLORS_NAMES } from './utils/constants.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -85,11 +85,11 @@ function rgb2RgbToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'rgb',
         chi,
-        kin: ColorKind.RGB
+        kin: ColorType.RGB
     };
 }
 function hex2rgbvalues(token) {
-    const value = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+    const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16));

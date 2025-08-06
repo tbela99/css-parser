@@ -1,4 +1,4 @@
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -7,8 +7,9 @@ import '../../parser/utils/config.js';
 import { isRectangularOrthogonalColorspace, isPolarColorspace } from '../syntax.js';
 import { getNumber } from './color.js';
 import { srgb2rgb } from './rgb.js';
-import { ColorKind } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
+import { srgb2oklab } from './oklab.js';
 import { srgbvalues, srgb2lsrgbvalues } from './srgb.js';
 import { srgb2hwb } from './hwb.js';
 import { srgb2hslvalues } from './hsl.js';
@@ -16,7 +17,6 @@ import { srgb2lch, xyz2lchvalues } from './lch.js';
 import { srgb2labvalues } from './lab.js';
 import { srgb2p3values } from './p3.js';
 import { srgb2oklch } from './oklch.js';
-import { srgb2oklab } from './oklab.js';
 import { srgb2prophotorgbvalues } from './prophotorgb.js';
 import { srgb2xyz_d50 } from './xyz.js';
 import { XYZ_D65_to_D50, xyzd502lch } from './xyzd50.js';
@@ -229,8 +229,8 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             return null;
     }
     const lchSpaces = ['lch', 'oklch'];
-    const colorSpace1 = ColorKind[color1.kin].toLowerCase().replaceAll('_', '-');
-    const colorSpace2 = ColorKind[color2.kin].toLowerCase().replaceAll('_', '-');
+    const colorSpace1 = ColorType[color1.kin].toLowerCase().replaceAll('_', '-');
+    const colorSpace2 = ColorType[color2.kin].toLowerCase().replaceAll('_', '-');
     // powerless
     if (lchSpaces.includes(colorSpace1) || lchSpaces.includes(colorSpace.val)) {
         if ((components1[2].typ == EnumToken.IdenTokenType && components1[2].val == 'none') || values1[2] == 0) {
@@ -278,7 +278,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                         val: String(v)
                     };
                 }),
-                kin: ColorKind.LCH
+                kin: ColorType.LCH
             };
         case 'srgb':
         case 'srgb-linear':
@@ -289,7 +289,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 typ: EnumToken.ColorTokenType,
                 val: 'color',
                 chi: calculate(),
-                kin: ColorKind.COLOR,
+                kin: ColorType.COLOR,
                 cal: 'col'
             };
         case 'rgb':
@@ -328,7 +328,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 typ: EnumToken.ColorTokenType,
                 val: colorSpace.val,
                 chi: calculate().slice(1),
-                kin: ColorKind[colorSpace.val.toUpperCase().replaceAll('-', '_')]
+                kin: ColorType[colorSpace.val.toUpperCase().replaceAll('-', '_')]
             };
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
                 // @ts-ignore

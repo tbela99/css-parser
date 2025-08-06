@@ -13,7 +13,7 @@ import {dirname, resolve} from "../lib/fs/index.ts";
 import {load} from "./load.ts";
 
 export {
-    minify, expand, parseString, parseTokens, renderToken, walk, walkValues, EnumToken, ValidationLevel, ColorType
+    minify, expand, parseString, parseTokens, renderToken, walk, walkValues, isOkLabClose, okLabDistance, EnumToken, ValidationLevel, ColorType
 } from '../lib/index.ts';
 export {dirname, resolve, load};
 

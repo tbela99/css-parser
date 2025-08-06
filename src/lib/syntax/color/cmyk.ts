@@ -1,6 +1,5 @@
 import type {ColorToken, Token} from "../../../@types/token.d.ts";
-import {ColorKind} from "./utils/index.ts";
-import {EnumToken} from "../../ast/index.ts";
+import {ColorType, EnumToken} from "../../ast/index.ts";
 import {color2srgbvalues} from "./color.ts";
 import {
     hwb2srgbvalues,
@@ -135,6 +134,6 @@ function cmyktoken(values: number[]): ColorToken {
             typ: EnumToken.LiteralTokenType,
             val: '/'
         } as Token, {typ: EnumToken.PercentageTokenType, val: (curr * 100).toFixed()} as Token], [] as Token[]) as Token[],
-        kin: ColorKind.DEVICE_CMYK
+        kin: ColorType.DEVICE_CMYK
     }
 }

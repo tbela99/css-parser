@@ -1,10 +1,10 @@
 import { hwb2hsv } from './hsv.js';
 import { color2srgbvalues, toPrecisionAngle, getNumber } from './color.js';
 import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
-import { ColorKind } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from './srgb.js';
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -87,7 +87,7 @@ function hslToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'hsl',
         chi,
-        kin: ColorKind.HSL
+        kin: ColorType.HSL
     };
 }
 function rgb2hslvalues(token) {

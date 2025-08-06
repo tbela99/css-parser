@@ -1,5 +1,5 @@
 import { getAngle, convertColor } from '../syntax/color/color.js';
-import { colorsFunc, ColorKind, funcLike } from '../syntax/color/utils/constants.js';
+import { colorsFunc, funcLike } from '../syntax/color/utils/constants.js';
 import { EnumToken, ColorType } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
@@ -311,12 +311,12 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.Div:
             return '/';
         case EnumToken.ColorTokenType:
-            if (token.kin == ColorKind.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
+            if (token.kin == ColorType.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
                 return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + ')';
             }
             if (options.convertColor !== false) {
                 // console.error([typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[(ColorType[options.convertColor] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorKind] ?? ColorKind.HEX])
-                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[ColorType[options.convertColor ?? 'HEX']?.toUpperCase?.().replaceAll?.('-', '_')] ?? ColorKind.HEX);
+                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[ColorType[options.convertColor ?? 'HEX']?.toUpperCase?.().replaceAll?.('-', '_')] ?? ColorType.HEX);
                 //
                 if (value != null) {
                     token = value;
@@ -513,7 +513,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                 //         return reduceHexValue(value);
                 //     }
             }
-            if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes(token.kin)) {
+            if ([ColorType.HEX, ColorType.LIT, ColorType.SYS, ColorType.DPSYS].includes(token.kin)) {
                 return token.val;
             }
             if (Array.isArray(token.chi)) {

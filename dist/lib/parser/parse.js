@@ -1,12 +1,12 @@
 import { isIdentStart, isIdent, isIdentColor, mathFuncs, isColor, parseColor, isPseudo, pseudoElements, isAtKeyword, isFunction, isNumber, isPercentage, isFlex, isDimension, parseDimension, isHexColor, isHash, mediaTypes } from '../syntax/syntax.js';
-import { EnumToken, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
+import { EnumToken, ColorType, ValidationLevel, SyntaxValidationResult } from '../ast/types.js';
 import { minify, definedPropertySettings, combinators } from '../ast/minify.js';
 import { walkValues, walk, WalkerOptionEnum } from '../ast/walk.js';
 import { expand } from '../ast/expand.js';
 import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, ColorKind, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
+import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
 import { tokenize } from './tokenize.js';
 import '../validation/config.js';
@@ -674,7 +674,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 if (name == null && [EnumToken.IdenTokenType, EnumToken.DashedIdenTokenType].includes(tokens[i].typ)) {
                     name = tokens.slice(0, i + 1);
                 }
-                else if (name == null && tokens[i].typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS].includes(tokens[i].kin)) {
+                else if (name == null && tokens[i].typ == EnumToken.ColorTokenType && [ColorType.SYS, ColorType.DPSYS].includes(tokens[i].kin)) {
                     name = tokens.slice(0, i + 1);
                     tokens[i].typ = EnumToken.IdenTokenType;
                 }
@@ -960,7 +960,7 @@ function parseAtRulePrelude(tokens, atRule) {
                     const node = value.chi.splice(nameIndex, 1)[0];
                     // 'background'
                     // @ts-ignore
-                    if (node.typ == EnumToken.ColorTokenType && node.kin == ColorKind.DPSYS) {
+                    if (node.typ == EnumToken.ColorTokenType && node.kin == ColorType.DPSYS) {
                         // @ts-ignore
                         delete node.kin;
                         node.typ = EnumToken.IdenTokenType;
@@ -1096,8 +1096,8 @@ function parseSelector(tokens) {
                 }
             }
             else if (value.typ == EnumToken.ColorTokenType) {
-                if (value.kin == ColorKind.LIT || value.kin == ColorKind.HEX || value.kin == ColorKind.SYS || value.kin == ColorKind.DPSYS) {
-                    if (value.kin == ColorKind.HEX) {
+                if (value.kin == ColorType.LIT || value.kin == ColorType.HEX || value.kin == ColorType.SYS || value.kin == ColorType.DPSYS) {
+                    if (value.kin == ColorType.HEX) {
                         if (!isIdent(value.val.slice(1))) {
                             continue;
                         }
@@ -1276,7 +1276,7 @@ function getTokenType(val, hint) {
         return {
             typ: EnumToken.ColorTokenType,
             val: v,
-            kin: ColorKind.LIT
+            kin: ColorType.LIT
         };
     }
     if (isIdent(val)) {
@@ -1284,14 +1284,14 @@ function getTokenType(val, hint) {
             return {
                 typ: EnumToken.ColorTokenType,
                 val,
-                kin: ColorKind.SYS
+                kin: ColorType.SYS
             };
         }
         if (deprecatedSystemColors.has(v)) {
             return {
                 typ: EnumToken.ColorTokenType,
                 val,
-                kin: ColorKind.DPSYS
+                kin: ColorType.DPSYS
             };
         }
         return {
@@ -1303,7 +1303,7 @@ function getTokenType(val, hint) {
         return {
             typ: EnumToken.ColorTokenType,
             val,
-            kin: ColorKind.HEX
+            kin: ColorType.HEX
         };
     }
     if (val.charAt(0) == '#' && isHash(val)) {

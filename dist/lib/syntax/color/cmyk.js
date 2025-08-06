@@ -1,5 +1,4 @@
-import { ColorKind } from './utils/constants.js';
-import { EnumToken } from '../../ast/types.js';
+import { ColorType, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -7,6 +6,7 @@ import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { color2srgbvalues } from './color.js';
 import { hsl2srgbvalues } from './rgb.js';
+import './utils/constants.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb2srgbvalues, rgb2srgbvalues } from './srgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
@@ -97,7 +97,7 @@ function cmyktoken(values) {
                 typ: EnumToken.LiteralTokenType,
                 val: '/'
             }, { typ: EnumToken.PercentageTokenType, val: (curr * 100).toFixed() }], []),
-        kin: ColorKind.DEVICE_CMYK
+        kin: ColorType.DEVICE_CMYK
     };
 }
 

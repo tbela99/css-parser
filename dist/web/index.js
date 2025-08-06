@@ -5,6 +5,7 @@ export { expand } from '../lib/ast/expand.js';
 import { doRender } from '../lib/renderer/render.js';
 export { renderToken } from '../lib/renderer/render.js';
 import '../lib/syntax/color/utils/constants.js';
+export { isOkLabClose, okLabDistance } from '../lib/syntax/color/utils/distance.js';
 import { doParse } from '../lib/parser/parse.js';
 export { parseString, parseTokens } from '../lib/parser/parse.js';
 import '../lib/parser/tokenize.js';

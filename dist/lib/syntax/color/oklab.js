@@ -1,9 +1,9 @@
 import { multiplyMatrices } from './utils/matrix.js';
-import { ColorKind } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
-import { srgb2lsrgbvalues, lch2srgbvalues, lab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, lsrgb2srgbvalues } from './srgb.js';
 import { color2srgbvalues, getNumber } from './color.js';
-import { EnumToken } from '../../ast/types.js';
+import { srgb2lsrgbvalues, lch2srgbvalues, lab2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, lsrgb2srgbvalues } from './srgb.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
@@ -92,7 +92,7 @@ function oklabToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'oklab',
         chi,
-        kin: ColorKind.OKLAB
+        kin: ColorType.OKLAB
     };
 }
 function hex2oklabvalues(token) {

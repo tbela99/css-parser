@@ -5,92 +5,6 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
- * color types enum
- */
-var ColorType;
-(function (ColorType) {
-    /**
-     * convert color to hex
-     */
-    ColorType[ColorType["HEX"] = 0] = "HEX";
-    /**
-     * convert color to rgb
-     */
-    ColorType[ColorType["RGBA"] = 1] = "RGBA";
-    /**
-     * convert color to hwb
-     */
-    ColorType[ColorType["HWB"] = 2] = "HWB";
-    /**
-     * convert color to hsl
-     */
-    ColorType[ColorType["HSLA"] = 3] = "HSLA";
-    /**
-     * convert color to cmyk
-     */
-    ColorType[ColorType["DEVICE_CMYK"] = 4] = "DEVICE_CMYK";
-    /**
-     * convert color to lch
-     */
-    ColorType[ColorType["LCH"] = 5] = "LCH";
-    /**
-     * convert color to oklch
-     */
-    ColorType[ColorType["OKLCH"] = 6] = "OKLCH";
-    /**
-     * convert color to lab
-     */
-    ColorType[ColorType["LAB"] = 7] = "LAB";
-    /**
-     * convert color to oklab
-     */
-    ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
-    /**
-     * convert color to xyz
-     */
-    ColorType[ColorType["XYZ_D65"] = 9] = "XYZ_D65";
-    /**
-     * convert color to xyz-d50
-     */
-    ColorType[ColorType["XYZ_D50"] = 10] = "XYZ_D50";
-    /**
-     * convert color to srgb
-     */
-    ColorType[ColorType["SRGB"] = 11] = "SRGB";
-    /**
-     * convert color to srgb-linear
-     */
-    ColorType[ColorType["SRGB_LINEAR"] = 12] = "SRGB_LINEAR";
-    /**
-     * convert color to display-p3
-     */
-    ColorType[ColorType["DISPLAY_P3"] = 13] = "DISPLAY_P3";
-    /**
-     * convert color to a98-rgb
-     */
-    ColorType[ColorType["A98_RGB"] = 14] = "A98_RGB";
-    /**
-     * convert color to prophoto-rgb
-     */
-    ColorType[ColorType["PROPHOTO_RGB"] = 15] = "PROPHOTO_RGB";
-    /**
-     * convert color to rec2020
-     */
-    ColorType[ColorType["REC2020"] = 16] = "REC2020";
-    /**
-     * alias for hsl
-     */
-    ColorType[ColorType["HSL"] = 3] = "HSL";
-    /**
-     * alias for rgba
-     */
-    ColorType[ColorType["RGB"] = 1] = "RGB";
-    /**
-     * alias for xyz-d65
-     */
-    ColorType[ColorType["XYZ"] = 9] = "XYZ";
-})(ColorType || (ColorType = {}));
-/**
  * validation level enum
  */
 var ValidationLevel;
@@ -240,5 +154,36 @@ var EnumToken;
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
+// xyz-d65 is an alias for xyz
+var ColorType;
+(function (ColorType) {
+    ColorType[ColorType["SYS"] = 0] = "SYS";
+    ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
+    ColorType[ColorType["LIT"] = 2] = "LIT";
+    ColorType[ColorType["HEX"] = 3] = "HEX";
+    ColorType[ColorType["RGBA"] = 4] = "RGBA";
+    ColorType[ColorType["HSLA"] = 5] = "HSLA";
+    ColorType[ColorType["HWB"] = 6] = "HWB";
+    ColorType[ColorType["CMYK"] = 7] = "CMYK";
+    ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
+    ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
+    ColorType[ColorType["LAB"] = 10] = "LAB";
+    ColorType[ColorType["LCH"] = 11] = "LCH";
+    ColorType[ColorType["COLOR"] = 12] = "COLOR";
+    ColorType[ColorType["SRGB"] = 13] = "SRGB";
+    ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
+    ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
+    ColorType[ColorType["REC2020"] = 16] = "REC2020";
+    ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
+    ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
+    ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
+    ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
+    ColorType[ColorType["LIGHT_DARK"] = 21] = "LIGHT_DARK";
+    ColorType[ColorType["COLOR_MIX"] = 22] = "COLOR_MIX";
+    ColorType[ColorType["RGB"] = 4] = "RGB";
+    ColorType[ColorType["HSL"] = 5] = "HSL";
+    ColorType[ColorType["XYZ"] = 20] = "XYZ";
+    ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
+})(ColorType || (ColorType = {}));
 
 export { ColorType, EnumToken, SyntaxValidationResult, ValidationLevel };

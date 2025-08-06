@@ -30,38 +30,6 @@ export const colorRange = {
     }
 }
 
-// xyz-d65 is an alias for xyz
-// display-p3 is an alias for srgb
-export enum ColorKind {
-
-    SYS,
-    DPSYS,
-    LIT,
-    HEX,
-    RGBA,
-    HSLA,
-    HWB,
-    DEVICE_CMYK,
-    OKLAB,
-    OKLCH,
-    LAB,
-    LCH,
-    COLOR,
-    SRGB,
-    PROPHOTO_RGB,
-    A98_RGB,
-    REC2020,
-    DISPLAY_P3,
-    SRGB_LINEAR,
-    XYZ_D50,
-    XYZ_D65,
-    LIGHT_DARK,
-    COLOR_MIX,
-    RGB = RGBA,
-    HSL = HSLA,
-    XYZ = XYZ_D65,
-}
-
 export const timelineFunc: string[] = ['view', 'scroll'];
 export const generalEnclosedFunc: string[] = ['selector', 'font-tech', 'font-format', 'media', 'supports'];
 export const timingFunc: string[] = ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'step-start', 'step-end', 'steps', 'cubic-bezier'];

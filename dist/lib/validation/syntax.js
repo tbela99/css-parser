@@ -1,6 +1,6 @@
 import { ValidationTokenEnum } from './parser/types.js';
 import { renderSyntax } from './parser/parse.js';
-import { EnumToken, SyntaxValidationResult } from '../ast/types.js';
+import { EnumToken, SyntaxValidationResult, ColorType } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import '../parser/parse.js';
@@ -8,7 +8,7 @@ import '../parser/tokenize.js';
 import '../parser/utils/config.js';
 import { wildCardFuncs, isIdentColor, mathFuncs } from '../syntax/syntax.js';
 import { renderToken } from '../renderer/render.js';
-import { funcLike, ColorKind, colorsFunc } from '../syntax/color/utils/constants.js';
+import { funcLike, colorsFunc } from '../syntax/color/utils/constants.js';
 import { getSyntaxConfig, getParsedSyntax, getSyntax } from './config.js';
 import './syntaxes/complex-selector.js';
 
@@ -729,10 +729,10 @@ function matchPropertyType(syntax, context, options) {
             success = token.typ == EnumToken.DashedIdenTokenType;
             break;
         case 'system-color':
-            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorKind.SYS) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.SYS) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'deprecated-system-color':
-            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorKind.DPSYS) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.DPSYS) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'color':
         case 'color-base':
@@ -748,7 +748,7 @@ function matchPropertyType(syntax, context, options) {
             }
             break;
         case 'hex-color':
-            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorKind.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'integer':
             success = (token.typ == EnumToken.NumberTokenType && Number.isInteger(+(token.val))) || (token.typ == EnumToken.FunctionTokenType && mathFuncs.includes(token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val)));

@@ -15,8 +15,8 @@ import type {
     PercentageToken,
     Token
 } from "../../@types/index.d.ts";
-import {EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
-import {ColorKind, funcLike} from "./color/utils/index.ts";
+import {ColorType, EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
+import {funcLike} from "./color/utils/index.ts";
 import {buildExpression} from "../ast/math/index.ts";
 
 // '\\'
@@ -556,7 +556,7 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
 
 export function isIdentColor(token: Token): boolean {
 
-    return token.typ == EnumToken.ColorTokenType && [ColorKind.SYS, ColorKind.DPSYS, ColorKind.LIT].includes((token as ColorToken).kin) && isIdent((token as ColorToken).val);
+    return token.typ == EnumToken.ColorTokenType && [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes((token as ColorToken).kin) && isIdent((token as ColorToken).val);
 }
 
 export function isPercentageToken(token: Token): boolean {
@@ -831,7 +831,7 @@ export function parseColor(token: Token) {
     token.typ = EnumToken.ColorTokenType;
 
     // @ts-ignore
-    (token as ColorToken).kin = ColorKind[token.val.replaceAll('-', '_').toUpperCase()];
+    (token as ColorToken).kin = ColorType[token.val.replaceAll('-', '_').toUpperCase()];
 
     // @ts-ignore
     if (((token as ColorToken).chi as Token[])[0].typ == EnumToken.IdenTokenType) {

@@ -8,9 +8,9 @@ import type {
     Token
 } from "../../../@types/index.d.ts";
 import {convertColor, getNumber} from "./color.ts";
-import {EnumToken, walkValues} from "../../ast/index.ts";
+import {ColorType, EnumToken, walkValues} from "../../ast/index.ts";
 import {evaluate, evaluateFunc} from "../../ast/math/index.ts";
-import {ColorKind, colorRange} from "./utils/index.ts";
+import {colorRange} from "./utils/index.ts";
 import {mathFuncs} from "../index.ts";
 
 type RGBKeyType = 'r' | 'g' | 'b' | 'alpha';
@@ -44,7 +44,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
 
     // colorFuncColorSpace x,y,z or r,g,b
     const names: string = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
-    const converted: ColorToken = <ColorToken>convertColor(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_') as keyof typeof ColorKind]);
+    const converted: ColorToken = <ColorToken>convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll('-', '_') as keyof typeof ColorType]);
 
     if (converted == null) {
 
@@ -52,7 +52,7 @@ export function parseRelativeColor(relativeKeys: string, original: ColorToken, r
     }
 
     const children: Token[] = (<Token[]>converted.chi).filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(t.typ));
-    [r, g, b, alpha] = converted.kin == ColorKind.COLOR ? children.slice(1) : children;
+    [r, g, b, alpha] = converted.kin == ColorType.COLOR ? children.slice(1) : children;
 
     values = <Record<RelativeColorTypes, number | Token | null>>{
         [names[0]]: getValue(r, converted, names[0]),
@@ -98,7 +98,7 @@ function getValue(t: Token, converted: ColorToken, component: string): Token {
     if (t.typ == EnumToken.PercentageTokenType) {
 
         let value: number = getNumber(<PercentageToken>t);
-        let colorSpace: string = ColorKind[converted.kin].toLowerCase().replaceAll('-', '_');
+        let colorSpace: string = ColorType[converted.kin].toLowerCase().replaceAll('-', '_');
 
         if (colorSpace in colorRange) {
 

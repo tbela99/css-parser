@@ -26,10 +26,10 @@ import type {
     ValidationOptions
 } from "../../@types/index.d.ts";
 import type {Context, ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation.d.ts";
-import {EnumToken, SyntaxValidationResult} from "../ast/index.ts";
+import {ColorType, EnumToken, SyntaxValidationResult} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
 import {renderToken} from "../../web/index.ts";
-import {ColorKind, colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
+import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
 import {isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
@@ -1028,12 +1028,12 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'system-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.SYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.SYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'deprecated-system-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.DPSYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.DPSYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'color':
@@ -1056,7 +1056,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'hex-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorKind.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.HEX) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'integer':

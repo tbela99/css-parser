@@ -1,13 +1,13 @@
 import type {ColorToken, NumberToken, Token} from "../../../../@types/index.d.ts";
-import {EnumToken} from "../../../ast/index.ts";
-import {ColorKind, COLORS_NAMES} from "./constants.ts";
+import {ColorType, EnumToken} from "../../../ast/index.ts";
+import {COLORS_NAMES} from "./constants.ts";
 import {expandHexValue} from "../hex.ts";
 
 export function getComponents(token: ColorToken): Token[] | null {
 
-    if (token.kin == ColorKind.HEX || token.kin == ColorKind.LIT) {
+    if (token.kin == ColorType.HEX || token.kin == ColorType.LIT) {
 
-        const value: string = expandHexValue(token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+        const value: string = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t: string, index: number) => {
 

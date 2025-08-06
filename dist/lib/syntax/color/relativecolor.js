@@ -1,12 +1,12 @@
 import { convertColor, getNumber } from './color.js';
-import { EnumToken } from '../../ast/types.js';
+import { ColorType, EnumToken } from '../../ast/types.js';
 import '../../ast/minify.js';
 import { walkValues } from '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { mathFuncs } from '../syntax.js';
-import { ColorKind, colorRange } from './utils/constants.js';
+import { colorRange } from './utils/constants.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
@@ -19,12 +19,12 @@ function parseRelativeColor(relativeKeys, original, rExp, gExp, bExp, aExp) {
     let values = {};
     // colorFuncColorSpace x,y,z or r,g,b
     const names = relativeKeys.startsWith('xyz') ? 'xyz' : relativeKeys.slice(-3);
-    const converted = convertColor(original, ColorKind[relativeKeys.toUpperCase().replaceAll('-', '_')]);
+    const converted = convertColor(original, ColorType[relativeKeys.toUpperCase().replaceAll('-', '_')]);
     if (converted == null) {
         return null;
     }
     const children = converted.chi.filter(t => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(t.typ));
-    [r, g, b, alpha] = converted.kin == ColorKind.COLOR ? children.slice(1) : children;
+    [r, g, b, alpha] = converted.kin == ColorType.COLOR ? children.slice(1) : children;
     values = {
         [names[0]]: getValue(r, converted, names[0]),
         [names[1]]: getValue(g, converted, names[1]), // string,
@@ -63,7 +63,7 @@ function getValue(t, converted, component) {
     // }
     if (t.typ == EnumToken.PercentageTokenType) {
         let value = getNumber(t);
-        let colorSpace = ColorKind[converted.kin].toLowerCase().replaceAll('-', '_');
+        let colorSpace = ColorType[converted.kin].toLowerCase().replaceAll('-', '_');
         if (colorSpace in colorRange) {
             // @ts-ignore
             value *= colorRange[colorSpace][component].at(-1);

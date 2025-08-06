@@ -1,13 +1,13 @@
-import { ColorKind } from './utils/constants.js';
+import './utils/constants.js';
 import { getComponents } from './utils/components.js';
 import { color2srgbvalues, toPrecisionAngle, getNumber, getAngle } from './color.js';
-import { EnumToken } from '../../ast/types.js';
+import { cmyk2srgbvalues } from './srgb.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import '../../ast/minify.js';
 import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { cmyk2srgbvalues } from './srgb.js';
 import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
@@ -88,7 +88,7 @@ function lchToken(values) {
         typ: EnumToken.ColorTokenType,
         val: 'lch',
         chi,
-        kin: ColorKind.LCH
+        kin: ColorType.LCH
     };
 }
 function hex2lchvalues(token) {

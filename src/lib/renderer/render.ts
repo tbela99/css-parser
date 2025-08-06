@@ -46,7 +46,7 @@ import type {
 import {convertColor, getAngle} from "../syntax/color/index.ts";
 import {ColorType, EnumToken, expand} from "../ast/index.ts";
 import {SourceMap} from "./sourcemap/index.ts";
-import {ColorKind, colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
+import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
 import {isColor, isNewLine, mathFuncs, minifyNumber, pseudoElements} from "../syntax/index.ts";
 
 function update(position: Position, str: string) {
@@ -497,7 +497,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.ColorTokenType:
 
-            if ((token as ColorToken).kin == ColorKind.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
+            if ((token as ColorToken).kin == ColorType.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
 
                 return (token as ColorToken).val + '(' + ((token as ColorToken).chi as Token[]).reduce((acc: string, curr: Token) => acc + renderToken(curr, options, cache), '') + ')';
             }
@@ -505,7 +505,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
             if (options.convertColor !== false) {
 
                 // console.error([typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[(ColorType[options.convertColor] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorKind] ?? ColorKind.HEX])
-                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorKind.HEX : ColorKind[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorKind] ?? ColorKind.HEX);
+                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
 
                 //
                 if (value != null) {
@@ -706,7 +706,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
                 //     }
             }
 
-            if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes((token as ColorToken).kin)) {
+            if ([ColorType.HEX, ColorType.LIT, ColorType.SYS, ColorType.DPSYS].includes((token as ColorToken).kin)) {
 
                 return (token as ColorToken).val;
             }
