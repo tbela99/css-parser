@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('Lenient validation', function () {
         it('lenient at-rules and pseudo classes #1', function () {

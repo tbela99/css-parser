@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render) {
 
     describe('flatten nested css rules', function () {
         it('flatten #1', function () {

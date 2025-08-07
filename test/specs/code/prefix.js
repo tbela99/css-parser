@@ -1,5 +1,5 @@
 
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('prefix removal', function () {
 

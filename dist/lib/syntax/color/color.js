@@ -101,6 +101,14 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2HslToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2HslToken(token);
         }
     }
@@ -111,7 +119,6 @@ function convertColor(token, to) {
                 return rgb2hwbToken(token);
             case ColorType.HEX:
             case ColorType.LIT:
-                // @ts-ignore
                 return rgb2hwbToken(token);
             case ColorType.HSL:
             case ColorType.HSLA:
@@ -127,6 +134,14 @@ function convertColor(token, to) {
             case ColorType.DEVICE_CMYK:
                 return cmyk2hwbToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2hwbToken(token);
         }
     }
@@ -153,6 +168,14 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2cmykToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2cmykToken(token);
         }
     }
@@ -182,6 +205,14 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2HexToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2HexToken(token);
             case ColorType.RGB:
             case ColorType.RGBA:
@@ -208,6 +239,14 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2RgbToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2RgbToken(token);
         }
     }
@@ -233,6 +272,14 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2labToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2labToken(token);
         }
     }
@@ -258,6 +305,14 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2lchToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2lchToken(token);
         }
     }
@@ -283,6 +338,14 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2oklabToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2oklabToken(token);
         }
     }
@@ -308,11 +371,18 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2oklchToken(token);
             case ColorType.COLOR:
+            case ColorType.XYZ:
+            case ColorType.SRGB:
+            case ColorType.REC2020:
+            case ColorType.XYZ_D50:
+            case ColorType.A98_RGB:
+            case ColorType.DISPLAY_P3:
+            case ColorType.SRGB_LINEAR:
+            case ColorType.PROPHOTO_RGB:
                 return color2oklchToken(token);
         }
     }
     else if (colorFuncColorSpace.includes(ColorType[to].toLowerCase().replaceAll('_', '-').toLowerCase().replaceAll('_', '-'))) {
-        console.error(ColorType[token.kin]);
         switch (token.kin) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -417,7 +487,6 @@ function color2colorToken(token, to) {
     if (values == null) {
         return null;
     }
-    console.error({ srgb: values });
     return values2colortoken(values, to);
 }
 function srgb2srgbcolorspace(val, to) {
@@ -518,7 +587,10 @@ function values2colortoken(values, to) {
         { typ: EnumToken.NumberTokenType, val: String(values[2]) },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
+            typ: EnumToken.PercentageTokenType,
+            val: (values[3] * 100).toFixed()
+        });
     }
     const colorSpace = ColorType[to].toLowerCase().replaceAll('_', '-');
     return colorFuncColorSpace.includes(colorSpace) ? {

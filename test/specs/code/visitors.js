@@ -1,6 +1,6 @@
 import {EnumToken} from "../../../dist/lib/ast/types.js";
 
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('node visitor', function () {
 

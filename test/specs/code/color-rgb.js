@@ -1,7 +1,7 @@
 import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
 import {isOkLabClose} from "../../../dist/lib/syntax/color/utils/distance.js";
 
-export function run(describe, expect, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render) {
 
     describe('convert to rgb', function () {
 

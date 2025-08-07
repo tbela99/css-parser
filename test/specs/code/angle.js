@@ -1,5 +1,5 @@
 
-export function run(describe, expect, transform) {
+export function run(describe, expect, it, transform) {
 
     describe('Parse angle', function () {
 

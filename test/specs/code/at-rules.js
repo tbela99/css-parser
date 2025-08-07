@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render, dirname) {
+export function run(describe, expect, it, transform, parse, render, dirname) {
 
     describe('media queries level 5', function () {
         it('empty query #1', function () {

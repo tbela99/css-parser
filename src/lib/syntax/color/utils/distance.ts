@@ -9,7 +9,7 @@ export function okLabDistance(okLab1: [number, number, number], okLab2: [number,
     return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
 }
 
-export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = 2.3): boolean {
+export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = .01): boolean {
 
     color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;
     color2 = convertColor(color2, ColorType.OKLAB ) as ColorToken;

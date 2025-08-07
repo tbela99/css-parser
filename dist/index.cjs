@@ -1138,7 +1138,10 @@ function labToken(values) {
         { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
     ];
     if (values.length == 4) {
-        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, { typ: exports.EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
+            typ: exports.EnumToken.PercentageTokenType,
+            val: (values[3] * 100).toFixed()
+        });
     }
     return {
         typ: exports.EnumToken.ColorTokenType,
@@ -1172,8 +1175,12 @@ function hsl2labvalues(token) {
     return srgb2labvalues(...values);
 }
 function hwb2labvalues(token) {
+    const values = hwb2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2labvalues(...hwb2srgbvalues(token));
+    return srgb2labvalues(...values);
 }
 function lch2labvalues(token) {
     const values = getLCHComponents(token);
@@ -1253,7 +1260,7 @@ function getLABComponents(token) {
     }
     for (let i = 0; i < components.length; i++) {
         if (![exports.EnumToken.NumberTokenType, exports.EnumToken.PercentageTokenType, exports.EnumToken.AngleTokenType, exports.EnumToken.IdenTokenType].includes(components[i].typ)) {
-            return [];
+            return null;
         }
     }
     // @ts-ignore
@@ -1285,10 +1292,7 @@ function Lab_to_sRGB(l, a, b) {
     // @ts-ignore
     const xyz_d65 = XYZ_D50_to_D65(...xyz_d50);
     // @ts-ignore
-    const lin_srgb = XYZ_to_lin_sRGB(...xyz_d65);
-    lin_srgb.map((value, i) => value > 0.0031308 ? 1.055 * Math.pow(value, 1 / 2.4) - 0.055 : 12.92 * value);
-    // @ts-ignore
-    return xyzd502srgb(...Lab_to_XYZ(l, a, b));
+    return xyz2srgb(...xyz_d65);
 }
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 function Lab_to_XYZ(l, a, b) {
@@ -1780,7 +1784,7 @@ function getComponents(token) {
 function okLabDistance(okLab1, okLab2) {
     return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
 }
-function isOkLabClose(color1, color2, threshold = 2.3) {
+function isOkLabClose(color1, color2, threshold = .01) {
     color1 = convertColor(color1, exports.ColorType.OKLAB);
     color2 = convertColor(color2, exports.ColorType.OKLAB);
     // console.error(JSON.stringify({color1, color2}, null, 1));
@@ -3819,6 +3823,14 @@ function convertColor(token, to) {
             case exports.ColorType.LCH:
                 return lch2HslToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2HslToken(token);
         }
     }
@@ -3829,7 +3841,6 @@ function convertColor(token, to) {
                 return rgb2hwbToken(token);
             case exports.ColorType.HEX:
             case exports.ColorType.LIT:
-                // @ts-ignore
                 return rgb2hwbToken(token);
             case exports.ColorType.HSL:
             case exports.ColorType.HSLA:
@@ -3845,6 +3856,14 @@ function convertColor(token, to) {
             case exports.ColorType.DEVICE_CMYK:
                 return cmyk2hwbToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2hwbToken(token);
         }
     }
@@ -3871,6 +3890,14 @@ function convertColor(token, to) {
             case exports.ColorType.LCH:
                 return lch2cmykToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2cmykToken(token);
         }
     }
@@ -3900,6 +3927,14 @@ function convertColor(token, to) {
             case exports.ColorType.LCH:
                 return lch2HexToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2HexToken(token);
             case exports.ColorType.RGB:
             case exports.ColorType.RGBA:
@@ -3926,6 +3961,14 @@ function convertColor(token, to) {
             case exports.ColorType.LCH:
                 return lch2RgbToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2RgbToken(token);
         }
     }
@@ -3951,6 +3994,14 @@ function convertColor(token, to) {
             case exports.ColorType.OKLCH:
                 return oklch2labToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2labToken(token);
         }
     }
@@ -3976,6 +4027,14 @@ function convertColor(token, to) {
             case exports.ColorType.OKLCH:
                 return oklch2lchToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2lchToken(token);
         }
     }
@@ -4001,6 +4060,14 @@ function convertColor(token, to) {
             case exports.ColorType.OKLCH:
                 return oklch2oklabToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2oklabToken(token);
         }
     }
@@ -4026,11 +4093,18 @@ function convertColor(token, to) {
             case exports.ColorType.LCH:
                 return lch2oklchToken(token);
             case exports.ColorType.COLOR:
+            case exports.ColorType.XYZ:
+            case exports.ColorType.SRGB:
+            case exports.ColorType.REC2020:
+            case exports.ColorType.XYZ_D50:
+            case exports.ColorType.A98_RGB:
+            case exports.ColorType.DISPLAY_P3:
+            case exports.ColorType.SRGB_LINEAR:
+            case exports.ColorType.PROPHOTO_RGB:
                 return color2oklchToken(token);
         }
     }
     else if (colorFuncColorSpace.includes(exports.ColorType[to].toLowerCase().replaceAll('_', '-').toLowerCase().replaceAll('_', '-'))) {
-        console.error(exports.ColorType[token.kin]);
         switch (token.kin) {
             case exports.ColorType.HEX:
             case exports.ColorType.LIT:
@@ -4135,7 +4209,6 @@ function color2colorToken(token, to) {
     if (values == null) {
         return null;
     }
-    console.error({ srgb: values });
     return values2colortoken(values, to);
 }
 function srgb2srgbcolorspace(val, to) {
@@ -4236,7 +4309,10 @@ function values2colortoken(values, to) {
         { typ: exports.EnumToken.NumberTokenType, val: String(values[2]) },
     ];
     if (values.length == 4) {
-        chi.push({ typ: exports.EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: "/" }, {
+            typ: exports.EnumToken.PercentageTokenType,
+            val: (values[3] * 100).toFixed()
+        });
     }
     const colorSpace = exports.ColorType[to].toLowerCase().replaceAll('_', '-');
     return colorFuncColorSpace.includes(colorSpace) ? {

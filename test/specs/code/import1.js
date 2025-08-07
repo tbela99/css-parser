@@ -1,5 +1,5 @@
 
-export function run(describe, expect, transform, parse, render, dirname) {
+export function run(describe, expect, it, transform, parse, render, dirname) {
 
     const atRule = `
 @import '${(import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + '/../../files/css/color.css?v=1'}';

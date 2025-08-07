@@ -1,12 +1,20 @@
 import {D50, e, getComponents, k} from "./utils/index.ts";
-import {srgb2xyz_d50, XYZ_D50_to_D65, XYZ_to_lin_sRGB} from "./xyz.ts";
+import {srgb2xyz_d50, XYZ_D50_to_D65} from "./xyz.ts";
 import type {ColorToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
-import {cmyk2srgbvalues, hex2srgbvalues, hsl2srgb, hwb2srgbvalues, oklch2srgbvalues, rgb2srgb} from "./srgb.ts";
+import {
+    cmyk2srgbvalues,
+    hex2srgbvalues,
+    hsl2srgb,
+    hwb2srgbvalues,
+    oklch2srgbvalues,
+    rgb2srgb,
+    xyz2srgb
+} from "./srgb.ts";
 import {getLCHComponents} from "./lch.ts";
 import {getOKLABComponents, OKLab_to_XYZ} from "./oklab.ts";
 import {color2srgbvalues, getNumber} from "./color.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
-import {XYZ_D65_to_D50, xyzd502srgb} from "./xyzd50.ts";
+import {XYZ_D65_to_D50} from "./xyzd50.ts";
 
 export function hex2labToken(token: ColorToken): ColorToken | null {
 
@@ -112,7 +120,10 @@ function labToken(values: number[]): ColorToken | null {
 
     if (values.length == 4) {
 
-        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed()});
+        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {
+            typ: EnumToken.PercentageTokenType,
+            val: (values[3] * 100).toFixed()
+        });
     }
 
     return {
@@ -159,16 +170,22 @@ export function hsl2labvalues(token: ColorToken): number[] | null {
     return srgb2labvalues(...values);
 }
 
-export function hwb2labvalues(token: ColorToken): number[] {
+export function hwb2labvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = hwb2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return srgb2labvalues(...hwb2srgbvalues(token));
+    return srgb2labvalues(...values);
 }
 
 export function lch2labvalues(token: ColorToken): number[] | null {
 
 
-    const values = getLCHComponents(token);
+    const values: number[] | null = getLCHComponents(token);
 
     // @ts-ignore
     return values == null ? null : lchvalues2labvalues(...values);
@@ -282,7 +299,7 @@ export function getLABComponents(token: ColorToken): number[] | null {
 
         if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
 
-            return [];
+            return null;
         }
     }
 
@@ -324,17 +341,12 @@ export function getLABComponents(token: ColorToken): number[] | null {
 // D50 LAB
 export function Lab_to_sRGB(l: number, a: number, b: number): number[] {
 
-    const xyz_d50 = Lab_to_XYZ(l, a, b);
+    const xyz_d50: number[] = Lab_to_XYZ(l, a, b);
     // @ts-ignore
-    const xyz_d65 = XYZ_D50_to_D65(...xyz_d50);
+    const xyz_d65: number[] = XYZ_D50_to_D65(...xyz_d50);
 
     // @ts-ignore
-    const lin_srgb = XYZ_to_lin_sRGB(...xyz_d65);
-
-    const srgb = lin_srgb.map((value: number, i: number) => value > 0.0031308 ? 1.055 * Math.pow(value, 1 / 2.4) - 0.055 : 12.92 * value);
-
-    // @ts-ignore
-    return xyzd502srgb(...Lab_to_XYZ(l, a, b));
+    return xyz2srgb(...xyz_d65);
 }
 
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code

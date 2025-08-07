@@ -16,5 +16,5 @@ for (const [name,test] of Object.entries(tests)) {
         continue;
     }
 
-    test.run(describe, expect, transform, parse, render, dirname, readFile, resolve);
+    test.run(describe, expect, it, transform, parse, render, dirname, readFile, resolve);
 }

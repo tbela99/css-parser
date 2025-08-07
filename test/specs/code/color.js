@@ -1,5 +1,5 @@
 
-export function run(describe, expect, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render) {
 
     describe('Parse color', function () {
 

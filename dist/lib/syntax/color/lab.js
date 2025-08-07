@@ -8,10 +8,10 @@ import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues } from './srgb.js';
+import { oklch2srgbvalues, cmyk2srgbvalues, hwb2srgbvalues, hsl2srgb, rgb2srgb, hex2srgbvalues, xyz2srgb } from './srgb.js';
 import { getLCHComponents } from './lch.js';
-import { srgb2xyz_d50, XYZ_D50_to_D65, XYZ_to_lin_sRGB } from './xyz.js';
-import { XYZ_D65_to_D50, xyzd502srgb } from './xyzd50.js';
+import { srgb2xyz_d50, XYZ_D50_to_D65 } from './xyz.js';
+import { XYZ_D65_to_D50 } from './xyzd50.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function hex2labToken(token) {
@@ -80,7 +80,10 @@ function labToken(values) {
         { typ: EnumToken.NumberTokenType, val: String(values[2]) },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed() });
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+            typ: EnumToken.PercentageTokenType,
+            val: (values[3] * 100).toFixed()
+        });
     }
     return {
         typ: EnumToken.ColorTokenType,
@@ -114,8 +117,12 @@ function hsl2labvalues(token) {
     return srgb2labvalues(...values);
 }
 function hwb2labvalues(token) {
+    const values = hwb2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2labvalues(...hwb2srgbvalues(token));
+    return srgb2labvalues(...values);
 }
 function lch2labvalues(token) {
     const values = getLCHComponents(token);
@@ -195,7 +202,7 @@ function getLABComponents(token) {
     }
     for (let i = 0; i < components.length; i++) {
         if (![EnumToken.NumberTokenType, EnumToken.PercentageTokenType, EnumToken.AngleTokenType, EnumToken.IdenTokenType].includes(components[i].typ)) {
-            return [];
+            return null;
         }
     }
     // @ts-ignore
@@ -227,10 +234,7 @@ function Lab_to_sRGB(l, a, b) {
     // @ts-ignore
     const xyz_d65 = XYZ_D50_to_D65(...xyz_d50);
     // @ts-ignore
-    const lin_srgb = XYZ_to_lin_sRGB(...xyz_d65);
-    lin_srgb.map((value, i) => value > 0.0031308 ? 1.055 * Math.pow(value, 1 / 2.4) - 0.055 : 12.92 * value);
-    // @ts-ignore
-    return xyzd502srgb(...Lab_to_XYZ(l, a, b));
+    return xyz2srgb(...xyz_d65);
 }
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 function Lab_to_XYZ(l, a, b) {
