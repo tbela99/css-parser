@@ -1,4 +1,4 @@
-import {
+import type {
     AmpersandToken,
     AtLeastOneToken,
     CloseBracketToken,
@@ -41,9 +41,9 @@ import {
     ValidationSemiColonToken,
     ValidationStringToken,
     ValidationToken,
-    ValidationTokenEnum,
     ValidationWhitespaceToken
 } from "./index.ts";
+import {ValidationTokenEnum} from "./index.ts";
 import {isIdent, isPseudo} from '../../syntax/index.ts';
 import {getTokenType as getTokenType$1} from '../../parser/index.ts';
 import type {DimensionToken} from "../../../@types/token.d.ts";
@@ -76,8 +76,6 @@ const objectProperties = {
     writable: true,
     configurable: true
 }
-
-export const fetchInit = {headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/140.0'}}
 
 function* tokenize(syntax: string, position: Position = {ind: 0, lin: 1, col: 0}, currentPosition: Position = {
     ind: -1,
@@ -297,7 +295,6 @@ export function parseSyntax(syntax: string): ValidationRootToken {
         chi: [] as ValidationToken[]
     }, 'pos', {...objectProperties, value: {ind: 0, lin: 1, col: 0}}) as ValidationRootToken;
 
-    // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
     return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
 }
 
@@ -564,11 +561,6 @@ function matchAtRule(syntax: string, iterator: Iterator<ValidationTokenIteratorV
                 // @ts-ignore
                 token.typ = ValidationTokenEnum.AtRule;
                 break;
-            }
-
-            if (item.value.typ != ValidationTokenEnum.Whitespace) {
-
-                console.error('unexpected token', item.value);
             }
 
             item = iterator.next() as ValidationTokenIteratorValue;
@@ -1014,6 +1006,13 @@ function parseSyntaxTokens(syntax: string, iterator: Iterator<ValidationTokenIte
                         }
                     }
                 }
+
+                if ('occurence' in item.value) {
+
+                    // @ts-ignore
+                    items[i].occurence = {...item.value.occurence};
+                }
+                ;
 
                 break;
 
@@ -1461,10 +1460,6 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
         case ValidationTokenEnum.DeclarationDefinitionToken:
 
             return (token as ValidationDeclarationDefinitionToken).nam + ': ' + renderSyntax((token as ValidationDeclarationDefinitionToken).val);
-
-        // case ValidationTokenEnum.ColumnArrayToken:
-        //
-        //     return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
 
         default:
 

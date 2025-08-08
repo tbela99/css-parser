@@ -1,10 +1,11 @@
-import {identity, is2DMatrix, Matrix, toZero} from "./utils.ts";
+import type {Matrix} from "./utils.ts";
+import {identity, is2DMatrix, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts";
-import {reduceNumber} from "../../renderer/render.ts";
 import {eq} from "../../parser/utils/eq.ts";
-import {getNumber} from "../../renderer/color/index.ts";
-import {NumberToken} from "../../validation/index.ts";
+import {getNumber} from "../../syntax/color/index.ts";
+import type {NumberToken} from "../../validation/index.ts";
+import {minifyNumber} from "../../syntax/index.ts";
 
 export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
 
@@ -106,7 +107,7 @@ export function serialize(matrix: Matrix): Token {
 
                 acc.push({
                     typ: EnumToken.NumberTokenType,
-                    val: reduceNumber(t)
+                    val: minifyNumber(t)
                 })
 
                 return acc
@@ -126,7 +127,7 @@ export function serialize(matrix: Matrix): Token {
 
             acc.push({
                 typ: EnumToken.NumberTokenType,
-                val: reduceNumber(curr)
+                val: minifyNumber(curr)
             })
 
             return acc;

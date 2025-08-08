@@ -45,15 +45,23 @@ export interface Context<Type> {
 
     index: number;
 
+    /**
+     * The length of the context tokens to be consumed
+     */
+
+    readonly length: number;
+
     current<Type>(): Type | null;
 
     update<Type>(context: Context<Type>): void;
 
+    consume<Type>(token: Type, howMany?: number): boolean;
+
     peek<Type>(): Type | null;
 
-    next<Type>(): Type | null;
+    // tokens<Type>(): Type[];
 
-    tokens<Type>(): Type[];
+    next<Type>(): Type | null;
 
     consume<Type>(token: Type, howMany?: number): boolean;
 

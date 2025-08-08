@@ -5,7 +5,7 @@ import '../walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 class ComputeShorthandFeature {

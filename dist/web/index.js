@@ -1,10 +1,12 @@
-export { EnumToken, ValidationLevel } from '../lib/ast/types.js';
+export { ColorType, EnumToken, ValidationLevel } from '../lib/ast/types.js';
 export { minify } from '../lib/ast/minify.js';
 export { walk, walkValues } from '../lib/ast/walk.js';
 export { expand } from '../lib/ast/expand.js';
 import { doRender } from '../lib/renderer/render.js';
 export { renderToken } from '../lib/renderer/render.js';
-import '../lib/renderer/color/utils/constants.js';
+import '../lib/syntax/color/utils/constants.js';
+export { convertColor } from '../lib/syntax/color/color.js';
+export { isOkLabClose, okLabDistance } from '../lib/syntax/color/utils/distance.js';
 import { doParse } from '../lib/parser/parse.js';
 export { parseString, parseTokens } from '../lib/parser/parse.js';
 import '../lib/parser/tokenize.js';

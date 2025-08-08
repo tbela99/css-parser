@@ -4,7 +4,7 @@ import '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import '../renderer/color/utils/constants.js';
+import '../syntax/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import { getSyntaxConfig, getParsedSyntax } from './config.js';
 import { validateAtRuleMedia } from './at-rules/media.js';
@@ -77,7 +77,7 @@ function validateAtRule(atRule, options, root) {
         return validateAtRuleCustomMedia(atRule);
     }
     if (['position-try', 'property', 'font-palette-values'].includes(atRule.nam)) {
-        if (!('tokens' in atRule)) {
+        if (!Array.isArray(atRule.tokens) || atRule.tokens.length == 0) {
             return {
                 valid: SyntaxValidationResult.Drop,
                 node: atRule,

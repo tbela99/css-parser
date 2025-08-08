@@ -2,7 +2,7 @@ import {VisitorNodeMap} from "./visitor.d.ts";
 import {AstAtRule, AstDeclaration, AstNode, AstRule, AstRuleStyleSheet, Location, Position} from "./ast.d.ts";
 import {SourceMap} from "../lib/renderer/sourcemap/index.ts";
 import {PropertyListOptions} from "./parse.d.ts";
-import {EnumToken, ValidationLevel, ValidationToken} from "../lib/index.ts";
+import {ColorType, EnumToken, ValidationLevel, ValidationToken} from "../lib/index.ts";
 import type {Token} from "./token.d.ts";
 import {FeatureWalkMode} from "../lib/ast/features/type.ts";
 
@@ -41,6 +41,7 @@ export interface ValidationOptions {
     validation?: boolean | ValidationLevel;
     lenient?: boolean;
     visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isOptional?:boolean | null;
     isRepeatable?:boolean | null;
     isList?:boolean | null;
     occurence?:boolean | null;
@@ -115,7 +116,7 @@ export declare interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
-    convertColor?: boolean;
+    convertColor?: boolean | ColorType;
     withParents?: boolean;
     output?: string;
     cwd?: string;

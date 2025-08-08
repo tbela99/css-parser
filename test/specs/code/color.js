@@ -1,5 +1,5 @@
 
-export function run(describe, expect, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render) {
 
     describe('Parse color', function () {
 
@@ -61,7 +61,7 @@ color: hwb(3.1416rad 0% 0% / 100%)
 a {
 color: rgb(255 255 0 / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #ff0
+ color: #ff00
 }`));
         });
 
@@ -70,7 +70,7 @@ color: rgb(255 255 0 / none);
 a {
 color: rgb(255 255 none / none);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`a {
- color: #ff0
+ color: #ff00
 }`));
         });
 
@@ -809,7 +809,7 @@ color: oklch(from hsl(346.1 100% 50%) l c h)  ;
 .selector {
 color: oklch(from hwb(346 0 0) l c h)  ;
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: #ff003b
+ color: #ff003c
 }`));
     });
 
@@ -969,7 +969,7 @@ color: color-mix(in oklch , oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
     it('color-mix hue interpolation shorter #95', function () {
         return parse(`
 .selector {
-color: color-mix(in oklch shorter, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
+color: color-mix(in oklch shorter hue, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: #f27900
 }`));
@@ -978,7 +978,7 @@ color: color-mix(in oklch shorter, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
     it('color-mix hue interpolation longer #96', function () {
         return parse(`
 .selector {
-color: color-mix(in oklch longer, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
+color: color-mix(in oklch longer hue, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: #00a9ff
 }`));
@@ -987,7 +987,7 @@ color: color-mix(in oklch longer, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
     it('color-mix hue interpolation increasing #97', function () {
         return parse(`
 .selector {
-color: color-mix(in oklch increasing, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
+color: color-mix(in oklch increasing hue, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: #848538
 }`));
@@ -996,7 +996,7 @@ color: color-mix(in oklch increasing, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
     it('color-mix hue interpolation decreasing #98', function () {
         return parse(`
 .selector {
-color: color-mix(in oklch decreasing, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
+color: color-mix(in oklch decreasing hue, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
  color: #7f75b8
 }`));
@@ -1056,7 +1056,7 @@ color: color(rec2020 0.42210 0.47580 0.35605);
 .selector {
 color: color-mix(in rec2020, white, black);
 `).then(result => expect(render(result.ast, {minify: false}).code).equals(`.selector {
- color: #958a7a
+ color: #8b8b8b
 }`));
     });
 
@@ -1201,7 +1201,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
   background: color(from color(xyz-d50 0.9642 1.0000 0.8249) xyz-d65 x 0 z)
 }
 `, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`.overlay {
- background: #ff00f6
+ background: #f0f
 }`));
     });
 
@@ -1351,6 +1351,17 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
 .from {
  transform: none;
  background-color: #00802080
+}`));
+    });
+
+    it('color mix #133', function () {
+        return transform(`
+ a {
+ color: color-mix(in lch longer hue,#b3d5e6,coral)
+}
+
+`, {beautify: true}).then(result => expect(result.code).equals(`a {
+ color: #88ca87
 }`));
     });
 }

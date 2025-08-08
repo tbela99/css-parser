@@ -8,11 +8,6 @@ export function stripCommaToken(tokenList: Token[]): Token[] | null {
 
     for (let i = 0; i < tokenList.length; i++) {
 
-        if (tokenList[i].typ == EnumToken.CommaTokenType && last != null && last.typ == EnumToken.CommaTokenType) {
-
-            return null;
-        }
-
         if (tokenList[i].typ != EnumToken.WhitespaceTokenType) {
 
             last = tokenList[i];
@@ -32,11 +27,6 @@ export function stripCommaToken(tokenList: Token[]): Token[] | null {
 export function splitTokenList(tokenList: Token[], split: EnumToken[] = [EnumToken.CommaTokenType]): Token[][] {
 
     return tokenList.reduce((acc: Token[][], curr: Token): Token[][] => {
-
-        if (curr.typ == EnumToken.CommentTokenType) {
-
-            return acc;
-        }
 
         if (split.includes(curr.typ)) {
 

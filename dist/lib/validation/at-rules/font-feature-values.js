@@ -4,7 +4,7 @@ import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { validateFamilyName } from '../syntaxes/family-name.js';
 import '../syntaxes/complex-selector.js';
@@ -23,7 +23,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
             tokens: []
         };
     }
-    const result = validateFamilyName(atRule.tokens, atRule);
+    const result = validateFamilyName(atRule.tokens);
     if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }

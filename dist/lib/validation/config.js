@@ -21,9 +21,10 @@ function getSyntax(group, key) {
                     key = matches[1] + matches[3];
                 }
             }
-            if (!(key in obj)) {
-                return null;
-            }
+            // if (!(key in obj)) {
+            //
+            //     return null;
+            // }
         }
         // @ts-ignore
         obj = obj[key];

@@ -118,7 +118,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                 !webkitExtensions.has((tokens[0] as PseudoClassToken | PseudoElementToken).val) &&
                 !((tokens[0] as PseudoClassToken | PseudoElementToken).val in config.selectors) &&
                 !(!isPseudoElement &&
-                    (':' +(tokens[0] as PseudoClassToken | PseudoElementToken).val) in config.selectors)
+                    (':' + (tokens[0] as PseudoClassToken | PseudoElementToken).val) in config.selectors)
             ) {
 
                 if (!options?.lenient || /^(:?)-webkit-/.test((tokens[0] as PseudoClassToken | PseudoElementToken).val)) {
@@ -146,19 +146,7 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
 
             consumeWhitespace(children);
 
-            if (children.length == 0) {
-
-                // @ts-ignore
-                return {
-                    valid: SyntaxValidationResult.Drop,
-                    context: [],
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'invalid attribute selector'
-                }
-            }
-
-            if (![
+            if (children.length == 0 || ![
                 EnumToken.IdenTokenType,
                 EnumToken.NameSpaceAttributeTokenType,
                 EnumToken.MatchExpressionTokenType
@@ -195,23 +183,11 @@ export function validateCompoundSelector(tokens: Token[], root?: AstAtRule | Ast
                         EnumToken.EqualMatchTokenType, EnumToken.DashMatchTokenType,
                         EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
                         EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType].includes((children[0] as MatchExpressionToken).op.typ) ||
-                    !([
+                    ![
                         EnumToken.StringTokenType,
                         EnumToken.IdenTokenType
-                    ].includes((children[0] as MatchExpressionToken).r.typ)
-                    )) {
-
-                    // @ts-ignore
-                    return {
-                        valid: SyntaxValidationResult.Drop,
-                        context: [],
-                        node: tokens[0],
-                        syntax: null,
-                        error: 'invalid attribute selector'
-                    }
-                }
-
-                if ((children[0] as MatchExpressionToken).attr != null && !['i', 's'].includes((children[0] as MatchExpressionToken).attr as string)) {
+                    ].includes((children[0] as MatchExpressionToken).r.typ) ||
+                    ((children[0] as MatchExpressionToken).attr != null && !['i', 's'].includes((children[0] as MatchExpressionToken).attr as string))) {
 
                     // @ts-ignore
                     return {

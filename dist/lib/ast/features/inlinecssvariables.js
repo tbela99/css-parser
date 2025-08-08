@@ -1,7 +1,7 @@
 import { EnumToken } from '../types.js';
 import { walkValues } from '../walk.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import { splitRule } from '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
@@ -106,18 +106,25 @@ class InlineCssVariablesFeature {
                         replace(node, variableScope);
                     }
                 }
-                else {
-                    const info = variableScope.get(node.nam);
-                    info.globalScope = isRoot;
-                    if (!isRoot) {
-                        ++info.declarationCount;
-                    }
-                    if (info.replaceable) {
-                        info.replaceable = isRoot && info.declarationCount == 1;
-                    }
-                    info.parent.add(ast);
-                    info.node = node;
-                }
+                // else {
+                //
+                //     const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
+                //
+                //     info.globalScope = isRoot;
+                //
+                //     if (!isRoot) {
+                //
+                //         ++info.declarationCount;
+                //     }
+                //
+                //     if (info.replaceable) {
+                //
+                //         info.replaceable = isRoot && info.declarationCount == 1;
+                //     }
+                //
+                //     info.parent.add(ast);
+                //     info.node = (<AstDeclaration>node);
+                // }
             }
             else {
                 replace(node, variableScope);
@@ -126,9 +133,10 @@ class InlineCssVariablesFeature {
     }
     cleanup(ast, options = {}, context) {
         const variableScope = context.variableScope;
-        if (variableScope == null) {
-            return;
-        }
+        // if (variableScope == null) {
+        //
+        //     return;
+        // }
         for (const info of variableScope.values()) {
             if (info.replaceable) {
                 let i;
@@ -140,7 +148,7 @@ class InlineCssVariablesFeature {
                             // @ts-ignore
                             parent.chi.splice(i, 1, {
                                 typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr), '')} */`
+                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderToken(curr, { convertColor: false }), '')} */`
                             });
                             break;
                         }

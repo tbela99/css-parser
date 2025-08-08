@@ -5,7 +5,7 @@ import '../../ast/minify.js';
 import '../../ast/walk.js';
 import { parseString } from '../parse.js';
 import '../tokenize.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { PropertyMap } from './map.js';
 

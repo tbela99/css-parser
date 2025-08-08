@@ -1,4 +1,5 @@
-import {identity, Matrix, multiply} from "./utils.ts";
+import type {Matrix} from "./utils.ts";
+import {identity, multiply} from "./utils.ts";
 import type {IdentToken} from "../../../@types/index.d.ts";
 
 export function perspective(x: number | IdentToken, from: Matrix): Matrix {

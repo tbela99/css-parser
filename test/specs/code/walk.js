@@ -1,7 +1,7 @@
 import {EnumToken} from "../../../dist/lib/ast/types.js";
 import {walk} from "../../../dist/lib//ast/walk.js";
 
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('node walker', function () {
 

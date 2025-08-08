@@ -12,7 +12,9 @@ import {doParse, doRender} from "../lib/index.ts";
 import {dirname, resolve} from "../lib/fs/index.ts";
 import {load} from "./load.ts";
 
-export {minify, expand, parseString, parseTokens, renderToken, walk, walkValues, EnumToken, ValidationLevel} from '../lib/index.ts';
+export {
+    minify, expand, parseString, parseTokens, renderToken, walk, walkValues, convertColor, isOkLabClose, okLabDistance, EnumToken, ValidationLevel, ColorType
+} from '../lib/index.ts';
 export {dirname, resolve, load};
 
 /**
@@ -44,7 +46,7 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
 
         const rendered: RenderResult = render(parseResult.ast, options);
 
-        return <TransformResult> {
+        return {
             ...parseResult,
             ...rendered,
             errors: parseResult.errors.concat(rendered.errors),
@@ -54,6 +56,6 @@ export async function transform(css: string, options: TransformOptions = {}): Pr
                 render: rendered.stats.total,
                 total: `${(performance.now() - startTime).toFixed(2)}ms`
             }
-        }
+        } as TransformResult
     });
 }

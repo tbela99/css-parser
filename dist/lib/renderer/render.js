@@ -1,33 +1,13 @@
-import { getAngle, color2srgbvalues, clamp } from './color/color.js';
-import { colorsFunc, ColorKind, colorFuncColorSpace, COLORS_NAMES, funcLike } from './color/utils/constants.js';
-import { getComponents } from './color/utils/components.js';
-import { reduceHexValue, srgb2hexvalues, rgb2hex, hsl2hex, hwb2hex, cmyk2hex, oklab2hex, oklch2hex, lab2hex, lch2hex } from './color/hex.js';
-import { EnumToken } from '../ast/types.js';
+import { getAngle, convertColor } from '../syntax/color/color.js';
+import { colorsFunc, funcLike } from '../syntax/color/utils/constants.js';
+import { EnumToken, ColorType } from '../ast/types.js';
 import '../ast/minify.js';
 import '../ast/walk.js';
 import { expand } from '../ast/expand.js';
-import { colorMix } from './color/color-mix.js';
-import { parseRelativeColor } from './color/relativecolor.js';
-import { SourceMap } from './sourcemap/sourcemap.js';
 import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.js';
+import { minifyNumber } from '../syntax/utils.js';
+import { SourceMap } from './sourcemap/sourcemap.js';
 
-function reduceNumber(val) {
-    val = String(+val);
-    if (val === '0') {
-        return '0';
-    }
-    const chr = val.charAt(0);
-    if (chr == '-') {
-        const slice = val.slice(0, 2);
-        if (slice == '-0') {
-            return val.length == 2 ? '0' : '-' + val.slice(2);
-        }
-    }
-    if (chr == '0') {
-        return val.slice(1);
-    }
-    return val;
-}
 function update(position, str) {
     let i = 0;
     for (; i < str.length; i++) {
@@ -236,10 +216,8 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
         case EnumToken.InvalidDeclarationNodeType:
         case EnumToken.InvalidRuleTokenType:
         case EnumToken.InvalidAtRuleTokenType:
-            return '';
         default:
-            // return renderToken(data as Token, options, cache, reducer, errors);
-            throw new Error(`render: unexpected token ${JSON.stringify(data, null, 1)}`);
+            return '';
     }
 }
 /**
@@ -315,7 +293,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FractionTokenType:
             const fraction = renderToken(token.l) + '/' + renderToken(token.r);
             if (+token.r.val != 0) {
-                const value = reduceNumber(+token.l.val / +token.r.val);
+                const value = minifyNumber(+token.l.val / +token.r.val);
                 if (value.length <= fraction.length) {
                     return value;
                 }
@@ -331,143 +309,41 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.Div:
             return '/';
         case EnumToken.ColorTokenType:
-            if (token.kin == ColorKind.LIGHT_DARK || ('chi' in token && !options.convertColor)) {
+            if (token.kin == ColorType.LIGHT_DARK || ('chi' in token && options.convertColor === false)) {
                 return token.val + '(' + token.chi.reduce((acc, curr) => acc + renderToken(curr, options, cache), '') + ')';
             }
-            if (options.convertColor) {
-                if (token.cal == 'mix' && token.val == 'color-mix') {
-                    const children = token.chi.reduce((acc, t) => {
-                        if (t.typ == EnumToken.ColorTokenType) {
-                            acc.push([t]);
-                        }
-                        else {
-                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType, EnumToken.CommaTokenType].includes(t.typ)) {
-                                acc[acc.length - 1].push(t);
-                            }
-                        }
-                        return acc;
-                    }, [[]]);
-                    const value = colorMix(children[0][1], children[0][2], children[1][0], children[1][1], children[2][0], children[2][1]);
-                    if (value != null) {
-                        token = value;
-                    }
-                    else if (!token.chi.some(t => t.typ == EnumToken.CommaTokenType)) {
-                        token.chi = children.reduce((acc, curr, index) => {
-                            if (acc.length > 0) {
-                                acc.push({ typ: EnumToken.CommaTokenType });
-                            }
-                            acc.push(...curr);
-                            return acc;
-                        }, []);
-                    }
-                }
-                if (token.cal == 'rel' && ['rgb', 'hsl', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color'].includes(token.val)) {
-                    const chi = getComponents(token);
-                    const offset = token.val == 'color' ? 2 : 1;
-                    if (chi != null) {
-                        // @ts-ignore
-                        const color = chi[1];
-                        const components = parseRelativeColor(token.val == 'color' ? chi[offset].val : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
-                        if (components != null) {
-                            token.chi = [...(token.val == 'color' ? [chi[offset]] : []), ...Object.values(components)];
-                            delete token.cal;
-                        }
-                    }
-                }
-                if (token.val == 'color') {
-                    if (token.chi[0].typ == EnumToken.IdenTokenType && colorFuncColorSpace.includes(token.chi[0].val.toLowerCase())) {
-                        const values = color2srgbvalues(token);
-                        if (Array.isArray(values) && values.every(t => !Number.isNaN(t))) {
-                            // @ts-ignore
-                            return reduceHexValue(srgb2hexvalues(...values));
-                        }
-                    }
-                }
-                if (token.cal != null) {
-                    let slice = false;
-                    if (token.cal == 'rel') {
-                        const last = token.chi.at(-1);
-                        if ((last.typ == EnumToken.NumberTokenType && last.val == '1') || (last.typ == EnumToken.IdenTokenType && last.val == 'none')) {
-                            const prev = token.chi.at(-2);
-                            if (prev.typ == EnumToken.LiteralTokenType && prev.val == '/') {
-                                slice = true;
-                            }
-                        }
-                    }
-                    return clamp(token).val + '(' + (slice ? token.chi.slice(0, -2) : token.chi).reduce((acc, curr) => {
-                        const val = renderToken(curr, options, cache);
-                        if (curr.typ == EnumToken.LiteralTokenType && curr.val == '/') {
-                            return acc.trimEnd() + '/';
-                        }
-                        if (curr.typ == EnumToken.CommaTokenType) {
-                            return acc.trimEnd() + ',';
-                        }
-                        if (curr.typ == EnumToken.WhitespaceTokenType) {
-                            const v = acc.at(-1);
-                            if (v == ' ' || v == ',' || v == '/') {
-                                return acc.trimEnd();
-                            }
-                            return acc.trimEnd() + ' ';
-                        }
-                        if (acc.length > 0) {
-                            return acc + (['/', ',', ' '].includes(acc.at(-1)) ? '' : ' ') + val;
-                        }
-                        return val;
-                    }, '') + ')';
-                }
-                if (token.kin == ColorKind.LIT && token.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
-                    return 'currentcolor';
-                }
-                clamp(token);
-                if (Array.isArray(token.chi) && token.chi.some((t) => t.typ == EnumToken.FunctionTokenType || (t.typ == EnumToken.ColorTokenType && Array.isArray(t.chi)))) {
-                    const replaceSemiColon = /^((rgba?)|(hsla?)|(hwb)|((ok)?lab)|((ok)?lch))$/i.test(token.val);
-                    return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr, index, array) => {
-                        if (curr.typ == EnumToken.Literal && curr.val == '/') {
-                            return acc.trimEnd() + '/';
-                        }
-                        if (curr.typ == EnumToken.CommaTokenType) {
-                            return acc.trimEnd() + (replaceSemiColon ? ' ' : ',');
-                        }
-                        if (curr.typ == EnumToken.WhitespaceTokenType) {
-                            return /[,\/\s]/.test(acc.at(-1)) ? acc.trimEnd() : acc.trimEnd() + ' ';
-                        }
-                        return acc + renderToken(curr, options, cache);
-                    }, '') + ')';
-                }
-                let value = token.kin == ColorKind.HEX ? token.val.toLowerCase() : (token.kin == ColorKind.LIT ? COLORS_NAMES[token.val.toLowerCase()] : '');
-                if (token.val == 'rgb' || token.val == 'rgba') {
-                    value = rgb2hex(token);
-                }
-                else if (token.val == 'hsl' || token.val == 'hsla') {
-                    value = hsl2hex(token);
-                }
-                else if (token.val == 'hwb') {
-                    value = hwb2hex(token);
-                }
-                else if (token.val == 'device-cmyk') {
-                    value = cmyk2hex(token);
-                }
-                else if (token.val == 'oklab') {
-                    value = oklab2hex(token);
-                }
-                else if (token.val == 'oklch') {
-                    value = oklch2hex(token);
-                }
-                else if (token.val == 'lab') {
-                    value = lab2hex(token);
-                }
-                else if (token.val == 'lch') {
-                    value = lch2hex(token);
-                }
-                if (value !== '' && value != null) {
-                    return reduceHexValue(value);
+            if (options.convertColor !== false) {
+                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[ColorType[options.convertColor ?? 'HEX']?.toUpperCase?.().replaceAll?.('-', '_')] ?? ColorType.HEX);
+                //
+                if (value != null) {
+                    token = value;
                 }
             }
-            if ([ColorKind.HEX, ColorKind.LIT, ColorKind.SYS, ColorKind.DPSYS].includes(token.kin)) {
+            if ([ColorType.HEX, ColorType.LIT, ColorType.SYS, ColorType.DPSYS].includes(token.kin)) {
                 return token.val;
             }
             if (Array.isArray(token.chi)) {
-                return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr) => acc + (acc.length > 0 && !(acc.endsWith('/') || curr.typ == EnumToken.LiteralTokenType) ? ' ' : '') + renderToken(curr, options, cache), '') + ')';
+                const isLegacy = ['rgb', 'rgba', 'hsl', 'hsla'].includes(token.val.toLowerCase());
+                const useAlpha = (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'oklab', 'oklch', 'lab', 'lch'].includes(token.val.toLowerCase()) && token.chi.length == 4) ||
+                    ('color'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && token.chi.length == 5);
+                return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr, index, array) => {
+                    if (/[,/]\s*$/.test(acc)) {
+                        if (curr.typ == EnumToken.WhitespaceTokenType) {
+                            return acc.trimEnd();
+                        }
+                        return acc.trimStart() + renderToken(curr, options, cache);
+                    }
+                    if (isLegacy && curr.typ == EnumToken.CommaTokenType) {
+                        return acc.trimEnd() + ' ';
+                    }
+                    if (curr.typ == EnumToken.WhitespaceTokenType) {
+                        return acc.trimEnd() + ' ';
+                    }
+                    if (curr.typ == EnumToken.CommaTokenType || (curr.typ == EnumToken.LiteralTokenType && curr.val == '/')) {
+                        return acc.trimEnd() + (curr.typ == EnumToken.CommaTokenType ? ',' : '/');
+                    }
+                    return acc.trimEnd() + (useAlpha && index == array.length - 1 ? '/' : ' ') + renderToken(curr, options, cache);
+                }, '').trimStart() + ')';
             }
         case EnumToken.ParensTokenType:
         case EnumToken.FunctionTokenType:
@@ -554,7 +430,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            let val = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : minifyNumber(token.val);
             let unit = token.unit;
             if (token.typ == EnumToken.AngleTokenType && !val.includes('/')) {
                 const angle = getAngle(token);
@@ -566,7 +442,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                     }
                     switch (u) {
                         case 'turn':
-                            v = reduceNumber(angle);
+                            v = minifyNumber(angle);
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -574,7 +450,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case 'deg':
-                            v = reduceNumber(angle * 360);
+                            v = minifyNumber(angle * 360);
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -582,7 +458,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case 'rad':
-                            v = reduceNumber(angle * (2 * Math.PI));
+                            v = minifyNumber(angle * (2 * Math.PI));
                             if (v.length + 3 < value.length) {
                                 val = v;
                                 unit = u;
@@ -590,7 +466,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
                             }
                             break;
                         case 'grad':
-                            v = reduceNumber(angle * 400);
+                            v = minifyNumber(angle * 400);
                             if (v.length + 4 < value.length) {
                                 val = v;
                                 unit = u;
@@ -616,7 +492,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             if (token.typ == EnumToken.TimeTokenType) {
                 if (unit == 'ms') {
                     // @ts-ignore
-                    const v = reduceNumber(val / 1000);
+                    const v = minifyNumber(val / 1000);
                     if (v.length + 1 <= val.length) {
                         return v + 's';
                     }
@@ -631,10 +507,10 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
             const uni = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
-            const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            const perc = token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : minifyNumber(token.val);
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
         case EnumToken.NumberTokenType:
-            return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : reduceNumber(token.val);
+            return token.val.typ == EnumToken.FractionTokenType ? renderToken(token.val, options, cache) : minifyNumber(token.val);
         case EnumToken.CommentTokenType:
             if (options.removeComments && (!options.preserveLicense || !token.val.startsWith('/*!'))) {
                 return '';
@@ -718,4 +594,4 @@ function filterValues(values) {
     return values;
 }
 
-export { doRender, filterValues, reduceNumber, renderToken };
+export { doRender, filterValues, renderToken };

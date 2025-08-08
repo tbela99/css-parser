@@ -6,7 +6,7 @@ import '../parse.js';
 import '../tokenize.js';
 import '../utils/config.js';
 import { isLength } from '../../syntax/syntax.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function dedup(values) {

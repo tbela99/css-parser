@@ -98,11 +98,12 @@ export class ComputeCalcExpressionFeature {
 
                                 // @ts-ignore
                                 node[key] = slice;
-                            } else {
-
-                                // @ts-ignore
-                                node[key] = values;
                             }
+                            // else {
+                            //
+                            //     // @ts-ignore
+                            //     node[key] = values;
+                            // }
 
                             return WalkerOptionEnum.Ignore;
                         }
@@ -129,16 +130,16 @@ export class ComputeCalcExpressionFeature {
 
                             if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
 
-                                if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-
-                                    if ((parent as BinaryExpressionToken).l == value) {
-
-                                        (parent as BinaryExpressionToken).l = values[0];
-                                    } else {
-
-                                        (parent as BinaryExpressionToken).r = values[0];
-                                    }
-                                } else {
+                                // if (parent.typ == EnumToken.BinaryExpressionTokenType) {
+                                //
+                                //     if ((parent as BinaryExpressionToken).l == value) {
+                                //
+                                //         (parent as BinaryExpressionToken).l = values[0];
+                                //     } else {
+                                //
+                                //         (parent as BinaryExpressionToken).r = values[0];
+                                //     }
+                                // } else {
 
                                     for (let i = 0; i < children.length; i++) {
 
@@ -153,7 +154,7 @@ export class ComputeCalcExpressionFeature {
                                             break;
                                         }
                                     }
-                                }
+                                // }
 
                             } else {
 
@@ -161,17 +162,17 @@ export class ComputeCalcExpressionFeature {
 
                                     if (children[i] == value) {
 
-                                        if (parent.typ == EnumToken.FunctionTokenType && (parent as FunctionToken).val == 'calc') {
-
-                                            children.splice(i, 1, ...values);
-                                        } else {
+                                        // if (parent.typ == EnumToken.FunctionTokenType && (parent as FunctionToken).val == 'calc') {
+                                        //
+                                        //     children.splice(i, 1, ...values);
+                                        // } else {
 
                                             children.splice(i, 1, {
                                                 typ: EnumToken.FunctionTokenType,
                                                 val: 'calc',
                                                 chi: values
                                             });
-                                        }
+                                        // }
 
                                         break;
                                     }

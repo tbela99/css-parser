@@ -5,7 +5,7 @@ import '../parse.js';
 import '../tokenize.js';
 import './config.js';
 import { isWhiteSpace } from '../../syntax/syntax.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function parseDeclarationNode(node, errors, location) {

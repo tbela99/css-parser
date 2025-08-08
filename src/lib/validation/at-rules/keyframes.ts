@@ -17,23 +17,11 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
         } as ValidationSyntaxResult;
     }
 
-    const tokens: Token[] = atRule.tokens.slice() as Token[];
+    const tokens: Token[] = atRule.tokens.filter((t: Token): boolean => t.typ != EnumToken.CommentTokenType).slice() as Token[];
 
     consumeWhitespace(tokens);
 
-    if (tokens.length == 0) {
-
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            context: [],
-            node: atRule,
-            syntax: '@keyframes',
-            error: 'expecting at-rule prelude'
-        } as ValidationSyntaxResult;
-    }
-
-    if (![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
+    if (tokens.length == 0 || ![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
 
         // @ts-ignore
         return {

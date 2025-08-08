@@ -154,5 +154,36 @@ var EnumToken;
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
+// xyz-d65 is an alias for xyz
+var ColorType;
+(function (ColorType) {
+    ColorType[ColorType["SYS"] = 0] = "SYS";
+    ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
+    ColorType[ColorType["LIT"] = 2] = "LIT";
+    ColorType[ColorType["HEX"] = 3] = "HEX";
+    ColorType[ColorType["RGBA"] = 4] = "RGBA";
+    ColorType[ColorType["HSLA"] = 5] = "HSLA";
+    ColorType[ColorType["HWB"] = 6] = "HWB";
+    ColorType[ColorType["CMYK"] = 7] = "CMYK";
+    ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
+    ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
+    ColorType[ColorType["LAB"] = 10] = "LAB";
+    ColorType[ColorType["LCH"] = 11] = "LCH";
+    ColorType[ColorType["COLOR"] = 12] = "COLOR";
+    ColorType[ColorType["SRGB"] = 13] = "SRGB";
+    ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
+    ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
+    ColorType[ColorType["REC2020"] = 16] = "REC2020";
+    ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
+    ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
+    ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
+    ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
+    ColorType[ColorType["LIGHT_DARK"] = 21] = "LIGHT_DARK";
+    ColorType[ColorType["COLOR_MIX"] = 22] = "COLOR_MIX";
+    ColorType[ColorType["RGB"] = 4] = "RGB";
+    ColorType[ColorType["HSL"] = 5] = "HSL";
+    ColorType[ColorType["XYZ"] = 20] = "XYZ";
+    ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
+})(ColorType || (ColorType = {}));
 
-export { EnumToken, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumToken, SyntaxValidationResult, ValidationLevel };

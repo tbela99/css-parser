@@ -2,15 +2,7 @@ import {combinators, splitRule} from "./minify.ts";
 import {parseString} from "../parser/index.ts";
 import {walkValues} from "./walk.ts";
 import {renderToken} from "../renderer/index.ts";
-import type {
-    AstAtRule,
-    AstNode,
-    AstRule,
-    AstRuleStyleSheet,
-    IdentToken,
-    LiteralToken,
-    Token
-} from "../../@types/index.d.ts";
+import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, LiteralToken, Token} from "../../@types/index.d.ts";
 import {EnumToken} from "./types.ts";
 
 /**
@@ -19,23 +11,23 @@ import {EnumToken} from "./types.ts";
  */
 export function expand(ast: AstNode): AstNode {
     //
-    if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
+    // if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
+    //
+    //     return ast;
+    // }
 
-        return ast;
-    }
-
-    if (EnumToken.RuleNodeType == ast.typ) {
-
-        return <AstRuleStyleSheet>{
-            typ: EnumToken.StyleSheetNodeType,
-            chi: expandRule(<AstRule>ast)
-        }
-    }
-
-    if (!('chi' in ast)) {
-
-        return ast;
-    }
+    // if (EnumToken.RuleNodeType == ast.typ) {
+    //
+    //     return <AstRuleStyleSheet>{
+    //         typ: EnumToken.StyleSheetNodeType,
+    //         chi: expandRule(<AstRule>ast)
+    //     }
+    // }
+    //
+    // if (!('chi' in ast)) {
+    //
+    //     return ast;
+    // }
 
     const result = <AstRuleStyleSheet | AstAtRule>{...ast, chi: []};
 
@@ -67,11 +59,12 @@ export function expand(ast: AstNode): AstNode {
 
             // @ts-ignore
             result.chi.push(<AstAtRule>{...(hasRule ? expand(node) : node)});
-        } else {
-
-            // @ts-ignore
-            result.chi.push(node);
         }
+        // else {
+        //
+        //     // @ts-ignore
+        //     result.chi.push(node);
+        // }
     }
 
     return result;
@@ -96,33 +89,34 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     const selRule: string[][] = splitRule(rule.sel);
 
-                    if (selRule.length > 1) {
+                    // if (selRule.length > 1) {
+                    //
+                    //     const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
+                    //     rule.sel = splitRule(ast.sel).reduce((a: string[], b: string[]): string[] => a.concat([b.join('') + r]), <string[]>[]).join(',');
+                    //
+                    // }
+                    // else {
 
-                        const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
-                        rule.sel = splitRule(ast.sel).reduce((a: string[], b: string[]): string[] => a.concat([b.join('') + r]), <string[]>[]).join(',');
+                    // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
 
-                    } else {
+                    const arSelf: string = splitRule(ast.sel).filter((r: string[]): boolean => r.every((t: string): boolean => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc: string[], curr: string[]): string[] => acc.concat([curr.join('')]), <string[]>[]).join(',');
 
-                        // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
+                    if (arSelf.length == 0) {
 
-                        const arSelf: string = splitRule(ast.sel).filter((r: string[]): boolean => r.every((t: string): boolean => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc: string[], curr: string[]): string[] => acc.concat([curr.join('')]), <string[]>[]).join(',');
-
-                        if (arSelf.length == 0) {
-
-                            ast.chi.splice(i--, 1);
-                            continue;
-                        }
-
-                        //
-                        selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
-
-                        rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
-
-                            acc.push(curr.join(''));
-
-                            return acc;
-                        }, <string[]>[]).join(',');
+                        ast.chi.splice(i--, 1);
+                        continue;
                     }
+
+                    //
+                    selRule.forEach(arr => combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, ' '));
+
+                    rule.sel = selRule.reduce((acc: string[], curr: string[]) => {
+
+                        acc.push(curr.join(''));
+
+                        return acc;
+                    }, <string[]>[]).join(',');
+                    // }
 
                 } else {
 
@@ -159,10 +153,11 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                                         if (s == '&' || parentSelector) {
 
                                             withCompound.push(s);
-                                        } else {
-
-                                            withoutCompound.push(s.slice(1));
                                         }
+                                        // else {
+                                        //
+                                        //     withoutCompound.push(s.slice(1));
+                                        // }
                                     }
                                 } else {
 
@@ -174,10 +169,11 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                                 withCompound.push(s);
                             }
 
-                        } else {
-
-                            withoutCompound.push(s);
                         }
+                        // else {
+                        //
+                        //     withoutCompound.push(s);
+                        // }
                     }
 
                     const selectors: string[] = [];
@@ -224,13 +220,14 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                             selectors.push(replaceCompound(withCompound[0], selector));
 
-                        } else {
-
-                            for (const w of withCompound) {
-
-                                selectors.push(replaceCompound(w, selector));
-                            }
                         }
+                        // else {
+                        //
+                        //     for (const w of withCompound) {
+                        //
+                        //         selectors.push(replaceCompound(w, selector));
+                        //     }
+                        // }
                     }
 
                     rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
@@ -286,11 +283,12 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
-                        } else {
-
-                            // @ts-ignore
-                            astAtRule.chi.push(r);
                         }
+                        // else {
+                        //
+                        //     // @ts-ignore
+                        //     astAtRule.chi.push(r);
+                        // }
                     }
                 }
 
@@ -328,15 +326,15 @@ export function replaceCompound(input: string, replace: string): string {
                         replacement = parseString(replace);
                     }
 
-                    if (tokens[1].typ == EnumToken.IdenTokenType) {
+                    // if (tokens[1].typ == EnumToken.IdenTokenType) {
+                    //
+                    //
+                    //     (t.value as LiteralToken).val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? (tokens[1] as IdentToken).val + replace : replaceCompoundLiteral((tokens[1] as IdentToken).val + '&', replace);
+                    //     tokens.splice(1, 1);
+                    // } else {
 
-
-                        (t.value as LiteralToken).val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? (tokens[1] as IdentToken).val + replace : replaceCompoundLiteral((tokens[1] as IdentToken).val + '&', replace);
-                        tokens.splice(1, 1);
-                    } else {
-
-                        (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
-                    }
+                    (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
+                    // }
 
                     continue;
                 }
@@ -344,10 +342,11 @@ export function replaceCompound(input: string, replace: string): string {
                 const rule: string[][] = splitRule(replace);
 
                 (t.value as LiteralToken).val = rule.length > 1 ? ':is(' + replace + ')' : replace;
-            } else if ((t.value as LiteralToken).val.length > 1 && (t.value as LiteralToken).val.charAt(0) == '&') {
-
-                (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
             }
+            // else if ((t.value as LiteralToken).val.length > 1 && (t.value as LiteralToken).val.charAt(0) == '&') {
+            //
+            //     (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
+            // }
         }
     }
 
@@ -366,10 +365,11 @@ function replaceCompoundLiteral(selector: string, replace: string) {
 
             tokens.push('&');
             tokens.push('');
-        } else {
-
-            tokens[tokens.length - 1] += selector.charAt(i);
         }
+        // else {
+        //
+        //     tokens[tokens.length - 1] += selector.charAt(i);
+        // }
     }
 
     return tokens.sort((a, b) => {
@@ -382,10 +382,10 @@ function replaceCompoundLiteral(selector: string, replace: string) {
         return b == '&' ? -1 : 0;
     }).reduce((acc: string, curr: string) => {
 
-        if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
-
-            return acc + ':is(' + replace + ')';
-        }
+        // if (acc.length > 0 && curr == '&' && (replace.charAt(0) != '.' || replace.includes(' '))) {
+        //
+        //     return acc + ':is(' + replace + ')';
+        // }
 
         return acc + (curr == '&' ? replace : curr)
     }, '');

@@ -11,18 +11,6 @@ export function validateComplexSelectorList(tokens: Token[], root?: AstAtRule | 
 
     consumeWhitespace(tokens);
 
-    if (tokens.length == 0) {
-
-        return {
-            valid: SyntaxValidationResult.Drop,
-            context: [],
-            // @ts-ignore
-            node: root,
-            syntax: null,
-            error: 'expecting complex selector list'
-        }
-    }
-
     let result: ValidationSyntaxResult | null = null;
 
     for (const t of splitTokenList(tokens)) {
@@ -36,12 +24,5 @@ export function validateComplexSelectorList(tokens: Token[], root?: AstAtRule | 
     }
 
     // @ts-ignore
-    return result ?? {
-        valid: SyntaxValidationResult.Drop,
-        context: [],
-        // @ts-ignore
-        node: root,
-        syntax: null,
-        error: 'expecting complex selector list'
-    };
+    return result;
 }

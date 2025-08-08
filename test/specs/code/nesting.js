@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('CSS Nesting', function () {
         it('nesting #1', function () {
@@ -605,7 +605,7 @@ table.colortable td:first-child, table.colortable td:first-child+td {
             }).then(result => expect(result.code).equals(`table.colortable td.c {
  text-transform: uppercase
 }
-table.colortable td:first-child,table.colortable td:first-child+td {
+table.colortable td:is(:first-child,:first-child+td) {
  border: 1px solid #000
 }`));
         });

@@ -1,6 +1,5 @@
 import type {AstDeclaration, BaseToken} from "./ast.d.ts";
-import {EnumToken} from "../lib/index.ts";
-import {ColorKind} from "../lib/renderer/color/utils/index.ts";
+import {ColorType, EnumToken} from "../lib/index.ts";
 
 export declare interface LiteralToken extends BaseToken {
 
@@ -380,7 +379,7 @@ export declare interface ColorToken extends BaseToken {
 
     typ: EnumToken.ColorTokenType;
     val: string;
-    kin: ColorKind;
+    kin: ColorType;
     chi?: Token[];
     /* calculated */
     cal?: 'rel' | 'mix';

@@ -4,23 +4,24 @@ import '../ast/walk.js';
 import '../parser/parse.js';
 import '../parser/tokenize.js';
 import '../parser/utils/config.js';
-import '../renderer/color/utils/constants.js';
+import '../syntax/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 import { validateRelativeSelectorList } from './syntaxes/relative-selector-list.js';
 import './syntaxes/complex-selector.js';
-import { validateKeyframeBlockList } from './syntaxes/keyframe-block-list.js';
 import './syntax.js';
 import './config.js';
 import { validateSelectorList } from './syntaxes/selector-list.js';
 
 function validateSelector(selector, options, root) {
-    if (root == null) {
-        return validateSelectorList(selector, root, options);
-    }
+    // if (root == null) {
+    //
+    //     return validateSelectorList(selector, root, options);
+    // }
     // @ts-ignore
-    if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
-        return validateKeyframeBlockList(selector);
-    }
+    // if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
+    //
+    //     return validateKeyframeBlockList(selector, root as AstAtRule, options);
+    // }
     let isNested = root.typ == EnumToken.RuleNodeType ? 1 : 0;
     let currentRoot = root.parent;
     while (currentRoot != null && isNested == 0) {

@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render) {
+export function run(describe, expect, it, transform, parse, render) {
 
     describe('doParse block', function () {
 
@@ -720,6 +720,22 @@ content: '\\21 now\\21';
 `;
         return parse(file, {inlineCssVariables: true}).then(result => expect(render(result.ast, {minify: false}).code).equals(`::selection {
  color: red
+}`));
+    });
+
+    it('attribute #35', function () {
+        const file = `
+
+            [data-theme="light blue"] .markdown-body, [data-theme="light grey"] .markdown-body{
+                margin-left: 200px;
+            }
+            
+            [data-theme="light blue"] .markdown-body p, [data-theme="light grey"] .markdown-body p {
+                margin-left: 200px;
+            }
+`;
+        return transform(file, {beautify: true}).then(result => expect(result.code).equals(`[data-theme="light blue"] .markdown-body,[data-theme="light grey"] .markdown-body,[data-theme="light blue"] .markdown-body p,[data-theme="light grey"] .markdown-body p {
+ margin-left: 200px
 }`));
     });
 }

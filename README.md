@@ -31,9 +31,10 @@ $ deno add @tbela99/css-parser
   relative color
 - generate nested css rules
 - convert nested css rules to legacy syntax
+- convert colors to any supported color format
 - generate sourcemap
 - compute css shorthands. see supported properties list below
-- css transform functions minification
+- minify css transform functions
 - evaluate math functions: calc(), clamp(), min(), max(), etc.
 - inline css variables
 - remove duplicate properties
@@ -96,7 +97,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.1.1/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.1.2/web';
 
 
     const css = `
@@ -210,7 +211,26 @@ Include ParseOptions and RenderOptions
 - expandNestingRules: boolean, optional. expand nesting rules.
 - preserveLicense: boolean, force preserving comments starting with '/\*!' when minify is enabled.
 - removeComments: boolean, remove comments in generated css.
-- convertColor: boolean, convert colors to hex.
+- convertColor: boolean | ColorType, convert colors to the specified color. default to ColorType.HEX. supported values are:
+  - true: same as ColorType.HEX
+  - false: no color conversion
+  - ColorType.HEX
+  - ColorType.RGB/ColorType.RGBA
+  - ColorType.HSL
+  - ColorType.HWB
+  - ColorType.CMYK/ColorType.DEVICE_CMYK
+  - ColorType.SRGB
+  - ColorType.SRGB_LINEAR
+  - ColorType.DISPLAY_P3
+  - ColorType.PROPHOTO_RGB
+  - ColorType.A98_RGB
+  - ColorType.REC2020
+  - ColorType.XYZ/ColorType.XYZ_D65
+  - ColorType.XYZ_D50
+  - ColorType.LAB
+  - ColorType.LCH
+  - ColorType.OKLAB
+  - ColorType.OKLCH
 
 > Sourcemap Options
 
@@ -277,6 +297,32 @@ console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
 console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
 // -> @media screen and (min-width:40em){.a{width:3px}}
 
+```
+
+### Convert colors
+
+```javascript
+import {transform} from '@tbela99/css-parser';
+
+
+const css = `
+.hsl { color: #b3222280; }
+`;
+const result: TransformResult = await transform(css, {
+    beautify: true,
+    convertColor: ColorType.SRGB
+});
+
+console.log(result.css);
+
+```
+
+result
+
+```css
+.hsl {
+    color: color(srgb .7019607843137254 .13333333333333333 .13333333333333333/50%)
+}
 ```
 
 ### Merge similar rules
@@ -716,15 +762,15 @@ for (const {node, parent, root} of walk(ast)) {
 ## Minification
 
 - [x] minify keyframes
-- [x] minify transform
+- [x] minify transform functions
 - [x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
   acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()
+- [x] minify colors
+- [x] minify numbers and Dimensions tokens
 - [x] multi-pass minification
 - [x] inline css variables
 - [x] merge identical rules
 - [x] merge adjacent rules
-- [x] minify colors
-- [x] minify numbers and Dimensions tokens
 - [x] compute shorthand: see the list below
 - [x] remove redundant declarations
 - [x] conditionally unwrap :is()
@@ -733,6 +779,7 @@ for (const {node, parent, root} of walk(ast)) {
 - [x] avoid reparsing (declarations, selectors, at-rule)
 - [x] node and browser versions
 - [x] decode and replace utf-8 escape sequence
+- [x] experimental CSS prefix removal
 
 ## Computed shorthands properties
 

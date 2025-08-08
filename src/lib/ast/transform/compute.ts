@@ -1,11 +1,11 @@
 import type {AngleToken, FunctionToken, IdentToken, LengthToken, NumberToken, Token} from "../../../@types/token.d.ts";
-import {identity, Matrix, multiply} from "./utils.ts";
+import type {Matrix} from "./utils.ts";
+import {identity, multiply} from "./utils.ts";
 import {EnumToken} from "../types.ts";
-import {length2Px} from "./convert.ts";
-import {transformFunctions} from "../../syntax/index.ts";
+import {length2Px, transformFunctions} from "../../syntax/index.ts";
 import {stripCommaToken} from "../../validation/utils/index.ts";
 import {translate, translate3d, translateX, translateY, translateZ} from "./translate.ts";
-import {getAngle, getNumber} from "../../renderer/color/index.ts";
+import {getAngle, getNumber} from "../../syntax/color/index.ts";
 import {rotate, rotate3D} from "./rotate.ts";
 import {scale, scale3d, scaleX, scaleY, scaleZ} from "./scale.ts";
 import {minify} from "./minify.ts";
@@ -22,10 +22,10 @@ export function compute(transformLists: Token[]): {
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
 
-    if (transformLists.length == 0) {
-
-        return null;
-    }
+    // if (transformLists.length == 0) {
+    //
+    //     return null;
+    // }
 
     let matrix: Matrix | null = identity();
     let mat: Matrix;
@@ -79,10 +79,10 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
     for (; i < transformList.length; i++) {
 
-        if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
-
-            continue;
-        }
+        // if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
+        //
+        //     continue;
+        // }
 
         if (transformList[i].typ != EnumToken.FunctionTokenType || !transformFunctions.includes((transformList[i] as FunctionToken).val)) {
 
@@ -100,36 +100,36 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                 values.length = 0;
                 const children = stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[];
 
-                if (children == null || children.length == 0) {
-
-                    return null;
-                }
+                // if (children == null || children.length == 0) {
+                //
+                //     return null;
+                // }
 
                 const valCount: number = (transformList[i] as FunctionToken).val == 'translate3d' || (transformList[i] as FunctionToken).val == 'translate' ? 3 : 1;
 
-                if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'none') {
+                // if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'none') {
+                //
+                //     values.fill(0, 0, valCount);
+                //
+                // } else {
 
-                    values.fill(0, 0, valCount);
+                for (let j = 0; j < children.length; j++) {
 
-                } else {
+                    if (children[j].typ == EnumToken.WhitespaceTokenType) {
 
-                    for (let j = 0; j < children.length; j++) {
-
-                        if (children[j].typ == EnumToken.WhitespaceTokenType) {
-
-                            continue;
-                        }
-
-                        val = length2Px(children[j] as LengthToken);
-
-                        if (typeof val != 'number' || Number.isNaN(val)) {
-
-                            return null;
-                        }
-
-                        values.push(val as number);
+                        continue;
                     }
+
+                    val = length2Px(children[j] as LengthToken);
+
+                    if (val == null) {
+
+                        return null;
+                    }
+
+                    values.push(val as number);
                 }
+                // }
 
                 if (values.length == 0 || values.length > valCount) {
 
@@ -173,10 +173,10 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                 for (const child of stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[]) {
 
-                    if (child.typ == EnumToken.WhitespaceTokenType) {
-
-                        continue;
-                    }
+                    // if (child.typ == EnumToken.WhitespaceTokenType) {
+                    //
+                    //     continue;
+                    // }
 
                     values.push(child);
 
@@ -238,10 +238,10 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                     child = children[k];
 
-                    if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
-
-                        continue;
-                    }
+                    // if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                    //
+                    //     continue;
+                    // }
 
                     if (child.typ != EnumToken.NumberTokenType) {
 
@@ -251,10 +251,10 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                     values.push(getNumber(child as NumberToken));
                 }
 
-                if (values.length == 0) {
-
-                    return null;
-                }
+                // if (values.length == 0) {
+                //
+                //     return null;
+                // }
 
                 if ((transformList[i] as FunctionToken).val == 'scale3d') {
 
@@ -308,17 +308,19 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                     child = (transformList[i] as FunctionToken).chi[k];
 
-                    if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
+                    if (child.typ == EnumToken.CommentTokenType ||
+                        child.typ == EnumToken.CommaTokenType ||
+                        child.typ == EnumToken.WhitespaceTokenType) {
 
                         continue;
                     }
 
                     value = getAngle(child as AngleToken | NumberToken);
 
-                    if (value == null) {
-
-                        return null;
-                    }
+                    // if (value == null) {
+                    //
+                    //     return null;
+                    // }
 
                     values.push(value * 2 * Math.PI);
                 }

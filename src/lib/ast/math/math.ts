@@ -1,6 +1,7 @@
 import type {FractionToken} from "../../../@types/index.d.ts";
 import {EnumToken} from "../types.ts";
-import {reduceNumber} from "../../renderer/index.ts";
+
+import {minifyNumber} from "../../syntax/index.ts";
 
 export function gcd (x: number, y: number): number {
 
@@ -15,21 +16,19 @@ export function gcd (x: number, y: number): number {
 
     let t: number;
 
-    if (x == 0) {
-
-        return y;
-    }
-
-    if (y == 0) {
-
-        return x;
-    }
+    // if (x == 0) {
+    //
+    //     return y;
+    // }
+    //
+    // if (y == 0) {
+    //
+    //     return x;
+    // }
 
     if (y > x) {
 
-        t = x;
-        x = y;
-        y = t;
+        [x, y] = [y, x];
     }
 
     while (y) {
@@ -70,24 +69,24 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
                 }
 
                 const result: number = a / b;
-                const r2: string = reduceNumber(r[0]) + '/' + reduceNumber(r[1]);
+                const r2: string = minifyNumber(r[0]) + '/' + minifyNumber(r[1]);
 
-                return reduceNumber(result).length <= r2.length ? result : {
+                return minifyNumber(result).length < r2.length ? result : {
                     typ: EnumToken.FractionTokenType,
-                    l: {typ: EnumToken.NumberTokenType, val: reduceNumber(r[0])},
-                    r: {typ: EnumToken.NumberTokenType, val: reduceNumber(r[1])}
+                    l: {typ: EnumToken.NumberTokenType, val: minifyNumber(r[0])},
+                    r: {typ: EnumToken.NumberTokenType, val: minifyNumber(r[1])}
                 };
         }
     }
 
     let l1: FractionToken = typeof a == 'number' ? {
         typ: EnumToken.FractionTokenType,
-        l: {typ: EnumToken.NumberTokenType, val: reduceNumber(a)},
+        l: {typ: EnumToken.NumberTokenType, val: minifyNumber(a)},
         r: {typ: EnumToken.NumberTokenType, val: '1'}
     } : a;
     let r1: FractionToken = typeof b == 'number' ? {
         typ: EnumToken.FractionTokenType,
-        l: {typ: EnumToken.NumberTokenType, val: reduceNumber(b)},
+        l: {typ: EnumToken.NumberTokenType, val: minifyNumber(b)},
         r: {typ: EnumToken.NumberTokenType, val: '1'}
     } : b;
 
@@ -139,10 +138,10 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
     }
 
     const result: number = a2[0] / a2[1];
-    return reduceNumber(result).length <= reduceNumber(a2[0]).length + 1 + reduceNumber(a2[1]).length ? result : {
+    return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length ? result : {
         typ: EnumToken.FractionTokenType,
-        l: {typ: EnumToken.NumberTokenType, val: reduceNumber(a2[0])},
-        r: {typ: EnumToken.NumberTokenType, val: reduceNumber(a2[1])}
+        l: {typ: EnumToken.NumberTokenType, val: minifyNumber(a2[0])},
+        r: {typ: EnumToken.NumberTokenType, val: minifyNumber(a2[1])}
     };
 }
 

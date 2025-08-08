@@ -1,4 +1,3 @@
-
 export enum SyntaxValidationResult {
     Valid,
     Drop,
@@ -157,3 +156,34 @@ export enum EnumToken {
     TimelineFunction = TimelineFunctionTokenType,
 }
 
+// xyz-d65 is an alias for xyz
+export enum ColorType {
+
+    SYS,
+    DPSYS,
+    LIT,
+    HEX,
+    RGBA,
+    HSLA,
+    HWB,
+    CMYK,
+    OKLAB,
+    OKLCH,
+    LAB,
+    LCH,
+    COLOR,
+    SRGB,
+    PROPHOTO_RGB,
+    A98_RGB,
+    REC2020,
+    DISPLAY_P3,
+    SRGB_LINEAR,
+    XYZ_D50,
+    XYZ_D65,
+    LIGHT_DARK,
+    COLOR_MIX,
+    RGB = RGBA,
+    HSL = HSLA,
+    XYZ = XYZ_D65,
+    DEVICE_CMYK= CMYK
+}

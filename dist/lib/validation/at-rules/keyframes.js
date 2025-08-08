@@ -4,7 +4,7 @@ import '../../ast/walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import '../../renderer/color/utils/constants.js';
+import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
 import { consumeWhitespace } from '../utils/whitespace.js';
 
@@ -19,19 +19,20 @@ function validateAtRuleKeyframes(atRule, options, root) {
             error: 'expecting at-rule prelude'
         };
     }
-    const tokens = atRule.tokens.slice();
+    const tokens = atRule.tokens.filter((t) => t.typ != EnumToken.CommentTokenType).slice();
     consumeWhitespace(tokens);
-    if (tokens.length == 0) {
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            context: [],
-            node: atRule,
-            syntax: '@keyframes',
-            error: 'expecting at-rule prelude'
-        };
-    }
-    if (![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
+    // if (tokens.length == 0) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: SyntaxValidationResult.Drop,
+    //         context: [],
+    //         node: atRule,
+    //         syntax: '@keyframes',
+    //         error: 'expecting at-rule prelude'
+    //     } as ValidationSyntaxResult;
+    // }
+    if (tokens.length == 0 || ![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
         // @ts-ignore
         return {
             valid: SyntaxValidationResult.Drop,

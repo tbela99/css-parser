@@ -142,6 +142,35 @@ declare enum EnumToken {
     TimingFunction = 17,
     TimelineFunction = 16
 }
+declare enum ColorType {
+    SYS = 0,
+    DPSYS = 1,
+    LIT = 2,
+    HEX = 3,
+    RGBA = 4,
+    HSLA = 5,
+    HWB = 6,
+    CMYK = 7,
+    OKLAB = 8,
+    OKLCH = 9,
+    LAB = 10,
+    LCH = 11,
+    COLOR = 12,
+    SRGB = 13,
+    PROPHOTO_RGB = 14,
+    A98_RGB = 15,
+    REC2020 = 16,
+    DISPLAY_P3 = 17,
+    SRGB_LINEAR = 18,
+    XYZ_D50 = 19,
+    XYZ_D65 = 20,
+    LIGHT_DARK = 21,
+    COLOR_MIX = 22,
+    RGB = 4,
+    HSL = 5,
+    XYZ = 20,
+    DEVICE_CMYK = 7
+}
 
 /**
  * minify ast
@@ -203,34 +232,8 @@ declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
-declare enum ColorKind {
-    SYS = 0,
-    DPSYS = 1,
-    LIT = 2,
-    HEX = 3,
-    RGB = 4,
-    RGBA = 5,
-    HSL = 6,
-    HSLA = 7,
-    HWB = 8,
-    DEVICE_CMYK = 9,
-    OKLAB = 10,
-    OKLCH = 11,
-    LAB = 12,
-    LCH = 13,
-    COLOR = 14,
-    SRGB = 15,
-    PROPHOTO_RGB = 16,
-    A98_RGB = 17,
-    REC2020 = 18,
-    DISPLAY_P3 = 19,
-    SRGB_LINEAR = 20,
-    XYZ = 21,
-    XYZ_D50 = 22,
-    XYZ_D65 = 23,
-    LIGHT_DARK = 24,
-    COLOR_MIX = 25
-}
+declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
+declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
 
 /**
  * parse css string
@@ -625,7 +628,7 @@ export declare interface ColorToken extends BaseToken {
 
     typ: EnumToken.ColorTokenType;
     val: string;
-    kin: ColorKind;
+    kin: ColorType;
     chi?: Token[];
     /* calculated */
     cal?: 'rel' | 'mix';
@@ -938,6 +941,13 @@ interface ValidationToken {
     };
 }
 
+/**
+ * Converts a color token to another color space
+ * @param token
+ * @param to
+ */
+declare function convertColor(token: ColorToken, to: ColorType): ColorToken | null;
+
 export declare interface Position {
 
     ind: number;
@@ -1160,6 +1170,7 @@ interface ValidationOptions {
     validation?: boolean | ValidationLevel;
     lenient?: boolean;
     visited?: WeakMap<Token, Map<string, Set<ValidationToken>>>;
+    isOptional?:boolean | null;
     isRepeatable?:boolean | null;
     isList?:boolean | null;
     occurence?:boolean | null;
@@ -1245,7 +1256,7 @@ export declare interface RenderOptions {
     indent?: string;
     newLine?: string;
     removeComments?: boolean;
-    convertColor?: boolean;
+    convertColor?: boolean | ColorType;
     withParents?: boolean;
     output?: string;
     cwd?: string;
@@ -1355,4 +1366,4 @@ declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResu
  */
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { EnumToken, ValidationLevel, dirname, expand, load, minify, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };
+export { ColorType, EnumToken, ValidationLevel, convertColor, dirname, expand, isOkLabClose, load, minify, okLabDistance, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };

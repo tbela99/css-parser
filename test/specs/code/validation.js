@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('selector validation', function () {
 
@@ -548,6 +548,24 @@ html, body, div, span, applet, object, iframe,
                 validation: true,
                 resolveImport: true
             }).then(result => expect(result.errors.length).equals(20)).then(() => done(), () => done());
+        });
+
+        it('file validation #26', function (done) {
+
+            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/tailwind-2.0.4.css';
+`, {
+                validation: true,
+                resolveImport: true
+            }).then(result => expect(result.errors.length).equals(12)).then(() => done(), () => done());
+        });
+
+        it('file validation #27', function (done) {
+
+            transform(`@import '${import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)}/../../files/css/github-markdown.css';
+`, {
+                validation: true,
+                resolveImport: true
+            }).then(result => expect(result.errors.length).equals(1)).then(() => done(), () => done());
         });
     });
 

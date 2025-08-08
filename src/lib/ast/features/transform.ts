@@ -1,4 +1,5 @@
 import type {
+    AngleToken,
     AstAtRule,
     AstDeclaration,
     AstNode,
@@ -15,7 +16,7 @@ import {eqMatrix} from "../transform/minify.ts";
 
 export class TransformCssFeature {
 
-     get ordering(): number {
+    get ordering(): number {
         return 4;
     }
 
@@ -59,7 +60,32 @@ export class TransformCssFeature {
                 continue;
             }
 
-            const children: Token[] = (node as AstDeclaration).val.slice();
+            const children: Token[] = (node as AstDeclaration).val.reduce((acc: Token[], curr: Token): Token[] => {
+
+
+                if (curr.typ == EnumToken.FunctionTokenType && 'skew' == curr.val.toLowerCase()) {
+
+                    if (
+                        (curr as FunctionToken).chi.length == 3                         ) {
+
+                        if (((curr as FunctionToken).chi[2] as AngleToken).val =='0') {
+
+                            (curr as FunctionToken).chi.length = 1;
+                            (curr as FunctionToken).val = 'skew';
+                        }
+
+                        else if (((curr as FunctionToken).chi[0] as AngleToken).val =='0') {
+
+                            (curr as FunctionToken).chi = [(curr as FunctionToken).chi[2]];
+                            (curr as FunctionToken).val = 'skewY';
+                        }
+                    }
+                }
+
+                acc.push(curr);
+
+                return acc;
+            }, [] as Token[]);
 
             consumeWhitespace(children);
 

@@ -1,5 +1,5 @@
 
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('prefix removal', function () {
 
@@ -311,6 +311,40 @@ a {
  transition: transform 1s;
  transition: transform 1s;
  transition: transform 1s
+}`));
+        })
+
+        it('do not mix #6', function () {
+            return transform(`
+
+::moz-selection  {
+    opacity: .25;
+    filter: blur(25px);
+  }
+}
+::-webkit-selection{
+    opacity: .25;
+    filter: blur(25px);
+  }
+}
+ ::selection {
+    opacity: .25;
+    filter: blur(25px);
+  }
+}
+`, {
+                beautify: true
+            }).then(result => expect(result.code).equals(`::moz-selection {
+ opacity: .25;
+ filter: blur(25px)
+}
+::-webkit-selection {
+ opacity: .25;
+ filter: blur(25px)
+}
+::selection {
+ opacity: .25;
+ filter: blur(25px)
 }`));
         });
 

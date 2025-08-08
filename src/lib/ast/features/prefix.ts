@@ -9,25 +9,22 @@ import type {
     ParserOptions,
     Token
 } from "../../../@types/index.d.ts";
-import {
-    getSyntaxConfig,
+import type {
     ValidationAmpersandToken,
     ValidationBracketToken,
     ValidationColumnToken,
     ValidationKeywordToken,
     ValidationPipeToken,
     ValidationPropertyToken,
-    ValidationSyntaxGroupEnum,
-    ValidationToken,
-    ValidationTokenEnum
-} from '../../validation/index.ts'
+    ValidationToken
+} from '../../validation/index.ts';
+import {getSyntaxConfig, ValidationSyntaxGroupEnum, ValidationTokenEnum} from '../../validation/index.ts';
 import {walkValues} from "../walk.ts";
 import {pseudoAliasMap} from "../../syntax/index.ts";
-import {definedPropertySettings, splitRule} from "../minify.ts";
+import {splitRule} from "../minify.ts";
 import type {ValidationConfiguration} from "../../../@types/validation.d.ts";
 import {renderToken} from "../../renderer/index.ts";
-import {parseAtRulePrelude, parseString} from "../../parser/index.ts";
-import {funcLike} from "../../renderer/color/utils/index.ts";
+import {funcLike} from "../../syntax/color/utils/index.ts";
 import {evaluateSyntax} from "../../validation/syntax.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
@@ -121,15 +118,15 @@ export class ComputePrefixFeature {
 
             (node as AstRule).sel = replacePseudo(splitRule((node as AstRule).sel)).reduce((acc, curr, index) => acc + (index > 0 ? ',' : '') + curr.join(''), '');
 
-            if ((node as AstRule).raw != null) {
-
-                (node as AstRule).raw = replacePseudo((node as AstRule).raw as string[][]);
-            }
-
-            if ((node as AstRule).optimized != null) {
-
-                (node as AstRule).optimized!.selector = replacePseudo((node as AstRule).optimized!.selector as string[][]);
-            }
+            // if ((node as AstRule).raw != null) {
+            //
+            //     (node as AstRule).raw = replacePseudo((node as AstRule).raw as string[][]);
+            // }
+            //
+            // if ((node as AstRule).optimized != null) {
+            //
+            //     (node as AstRule).optimized!.selector = replacePseudo((node as AstRule).optimized!.selector as string[][]);
+            // }
 
             if ((node as AstRule).tokens != null) {
 
@@ -148,14 +145,14 @@ export class ComputePrefixFeature {
 
                     if (!(nam in config.declarations)) {
 
-                        if ( (<AstDeclaration>node).nam in pseudoAliasMap) {
+                        if ((<AstDeclaration>node).nam in pseudoAliasMap) {
 
-                            nam = pseudoAliasMap[ (<AstDeclaration>node).nam];
+                            nam = pseudoAliasMap[(<AstDeclaration>node).nam];
 
                         }
                     }
 
-                    if (nam in config.declarations ) {
+                    if (nam in config.declarations) {
 
                         (<AstDeclaration>node).nam = nam;
                     }
@@ -189,12 +186,10 @@ export class ComputePrefixFeature {
 
                         const match = (value as IdentToken | FunctionToken).val.match(/^-([^-]+)-(.+)$/);
 
-                        if (match == null) {
+                        if (match != null) {
 
-                            continue;
+                            (value as IdentToken | FunctionToken).val = match[2];
                         }
-
-                        (value as IdentToken | FunctionToken).val = match[2];
                     }
                 }
 
@@ -218,14 +213,14 @@ export class ComputePrefixFeature {
 
             if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).val !== '') {
 
-                if ((node as AstAtRule).tokens == null) {
-
-                    Object.defineProperty(node, 'tokens', {
-                        // @ts-ignore
-                        ...definedPropertySettings,
-                        value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
-                    })
-                }
+                // if ((node as AstAtRule).tokens == null) {
+                //
+                //     Object.defineProperty(node, 'tokens', {
+                //         // @ts-ignore
+                //         ...definedPropertySettings,
+                //         value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
+                //     })
+                // }
 
                 if (replaceAstNodes((node as AstAtRule).tokens as Token[])) {
                     (node as AstAtRule).val = ((node as AstAtRule).tokens as Token[]).reduce((acc, curr) => acc + renderToken(curr), '');

@@ -2,14 +2,14 @@ import { EnumToken, SyntaxValidationResult } from '../types.js';
 import { getSyntaxConfig } from '../../validation/config.js';
 import '../../validation/parser/types.js';
 import '../../validation/parser/parse.js';
-import { splitRule, definedPropertySettings } from '../minify.js';
+import { splitRule } from '../minify.js';
 import { walkValues } from '../walk.js';
-import { parseAtRulePrelude, parseString } from '../../parser/parse.js';
+import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { renderToken } from '../../renderer/render.js';
-import { funcLike } from '../../renderer/color/utils/constants.js';
+import { funcLike } from '../../syntax/color/utils/constants.js';
 import '../../validation/syntaxes/complex-selector.js';
 import { evaluateSyntax } from '../../validation/syntax.js';
 
@@ -73,12 +73,15 @@ class ComputePrefixFeature {
     run(node) {
         if (node.typ == EnumToken.RuleNodeType) {
             node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? ',' : '') + curr.join(''), '');
-            if (node.raw != null) {
-                node.raw = replacePseudo(node.raw);
-            }
-            if (node.optimized != null) {
-                node.optimized.selector = replacePseudo(node.optimized.selector);
-            }
+            // if ((node as AstRule).raw != null) {
+            //
+            //     (node as AstRule).raw = replacePseudo((node as AstRule).raw as string[][]);
+            // }
+            //
+            // if ((node as AstRule).optimized != null) {
+            //
+            //     (node as AstRule).optimized!.selector = replacePseudo((node as AstRule).optimized!.selector as string[][]);
+            // }
             if (node.tokens != null) {
                 replaceAstNodes(node.tokens);
             }
@@ -114,10 +117,9 @@ class ComputePrefixFeature {
                 for (const { value } of walkValues(nodes)) {
                     if ((value.typ == EnumToken.IdenTokenType || funcLike.includes(value.typ))) {
                         const match = value.val.match(/^-([^-]+)-(.+)$/);
-                        if (match == null) {
-                            continue;
+                        if (match != null) {
+                            value.val = match[2];
                         }
-                        value.val = match[2];
                     }
                 }
                 if (SyntaxValidationResult.Valid == evaluateSyntax({ ...node, val: nodes }, {}).valid) {
@@ -133,13 +135,14 @@ class ComputePrefixFeature {
                 }
             }
             if (node.typ == EnumToken.AtRuleNodeType && node.val !== '') {
-                if (node.tokens == null) {
-                    Object.defineProperty(node, 'tokens', {
-                        // @ts-ignore
-                        ...definedPropertySettings,
-                        value: parseAtRulePrelude(parseString(node.val), node),
-                    });
-                }
+                // if ((node as AstAtRule).tokens == null) {
+                //
+                //     Object.defineProperty(node, 'tokens', {
+                //         // @ts-ignore
+                //         ...definedPropertySettings,
+                //         value: parseAtRulePrelude(parseString((node as AstAtRule).val), node as AstAtRule),
+                //     })
+                // }
                 if (replaceAstNodes(node.tokens)) {
                     node.val = node.tokens.reduce((acc, curr) => acc + renderToken(curr), '');
                 }

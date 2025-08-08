@@ -1,4 +1,4 @@
-export function run(describe, expect, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
 
     describe('CSS translate', function () {
         it('translateY #1', function () {
@@ -482,6 +482,21 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
 
   .now {
   
+  transform: scale()   
+}
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(``));
+        });
+
+        it('matrix #28', function () {
+            const nesting1 = `
+
+  .now {
+  
   transform: rotate3d(0,0,1,-10deg)   
 }
 `;
@@ -490,6 +505,154 @@ export function run(describe, expect, transform, parse, render, dirname, readFil
                 computeTransform: true
             }).then((result) => expect(result.code).equals(`.now {
  transform: rotate3d(0,0,1,-10deg)
+}`));
+        });
+
+        it('matrix #29', function () {
+            const nesting1 = `
+
+.foo-bar {
+    transform: matrix(2, 0, 0, 1, 0, 0, 5);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(``));
+        });
+
+        it('matrix #30', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: translateY(20px) translateZ(20px) translateX(0);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: translate3d(0,20px,20px)
+}`));
+        });
+
+        it('matrix #31', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: translateY(20px) translateZ(0) translateX(0);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: translateY(20px)
+}`));
+        });
+
+        it('matrix #32', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: translateY(0) translateZ(20px) translateX(0);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: translateZ(20px)
+}`));
+        });
+
+        it('matrix #33', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: translateY(0) translateZ(0) translateX(20px);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: translate(20px)
+}`));
+        });
+
+        it('matrix #34', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: translateY(0) translateZ(20px) translateX(5px);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: translate3d(5px,0,20px)
+}`));
+        });
+
+        it('matrix #35', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: skewY(10deg) translateX(10px) translateY(10px);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: matrix(1,.176327,0,1,10,11.7633)
+}`));
+        });
+
+        it('matrix #36', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: skewX(10deg);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: skew(10deg)
+}`));
+        });
+
+        it('matrix #37', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: perspective(500px) translate3d(10px, 0, 20px) rotateY(30deg);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: perspective(500px)translate3d(10px,0,20px)rotateY(30deg)
+}`));
+        });
+
+        it('matrix #38', function () {
+            const nesting1 = `
+
+.foo-bar {
+transform: perspective(500px) translate3d(10px, 0, 20px) rotateY(30deg) scaleX(2) scaleY(2) scaleZ(4);
+`;
+            return transform(nesting1, {
+                beautify: true,
+                computeTransform: true,
+                validation: true
+            }).then((result) => expect(result.code).equals(`.foo-bar {
+ transform: matrix3d(1.73205,0,-1,.002,0,2,0,0,2,0,3.4641,-.0069282,10,0,20,.96)
 }`));
         });
     });
