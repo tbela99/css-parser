@@ -295,7 +295,6 @@ export function parseSyntax(syntax: string): ValidationRootToken {
         chi: [] as ValidationToken[]
     }, 'pos', {...objectProperties, value: {ind: 0, lin: 1, col: 0}}) as ValidationRootToken;
 
-    // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
     return minify(doParseSyntax(syntax, tokenize(syntax), root)) as ValidationRootToken;
 }
 
@@ -563,11 +562,6 @@ function matchAtRule(syntax: string, iterator: Iterator<ValidationTokenIteratorV
                 token.typ = ValidationTokenEnum.AtRule;
                 break;
             }
-
-            // if (item.value.typ != ValidationTokenEnum.Whitespace) {
-            //
-            //     console.error('unexpected token', item.value);
-            // }
 
             item = iterator.next() as ValidationTokenIteratorValue;
 
@@ -1466,10 +1460,6 @@ export function renderSyntax(token: ValidationToken, parent?: ValidationToken): 
         case ValidationTokenEnum.DeclarationDefinitionToken:
 
             return (token as ValidationDeclarationDefinitionToken).nam + ': ' + renderSyntax((token as ValidationDeclarationDefinitionToken).val);
-
-        // case ValidationTokenEnum.ColumnArrayToken:
-        //
-        //     return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
 
         default:
 

@@ -17,7 +17,7 @@ import {cmyk2srgbvalues} from "./srgb.ts";
 
 export function hex2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = hex2lchvalues(token);
+    const values: number[] | null = hex2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -28,7 +28,7 @@ export function hex2lchToken(token: ColorToken): ColorToken | null {
 
 export function rgb2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = rgb2lchvalues(token);
+    const values: number[] | null = rgb2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -39,7 +39,7 @@ export function rgb2lchToken(token: ColorToken): ColorToken | null {
 
 export function hsl2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = hsl2lchvalues(token);
+    const values: number[] | null = hsl2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -50,7 +50,7 @@ export function hsl2lchToken(token: ColorToken): ColorToken | null {
 
 export function hwb2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = hwb2lchvalues(token);
+    const values: number[] | null = hwb2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -61,7 +61,7 @@ export function hwb2lchToken(token: ColorToken): ColorToken | null {
 
 export function cmyk2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = cmyk2lchvalues(token);
+    const values: number[] | null = cmyk2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -72,7 +72,7 @@ export function cmyk2lchToken(token: ColorToken): ColorToken | null {
 
 export function lab2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = lab2lchvalues(token);
+    const values: number[] | null = lab2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -94,7 +94,7 @@ export function oklab2lchToken(token: ColorToken): ColorToken | null {
 
 export function oklch2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = oklch2lchvalues(token);
+    const values: number[] | null = oklch2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -105,7 +105,7 @@ export function oklch2lchToken(token: ColorToken): ColorToken | null {
 
 export function color2lchToken(token: ColorToken): ColorToken | null {
 
-    const values = color2lchvalues(token);
+    const values: number[] | null = color2lchvalues(token);
 
     if (values == null) {
         return null;
@@ -140,7 +140,7 @@ function lchToken(values: number[]): ColorToken | null {
 
 export function hex2lchvalues(token: ColorToken): number[] | null {
 
-    const values = hex2labvalues(token);
+    const values: number[] | null = hex2labvalues(token);
 
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
@@ -155,21 +155,21 @@ export function rgb2lchvalues(token: ColorToken): number[] | null {
 
 export function hsl2lchvalues(token: ColorToken): number[] | null {
 
-    const values = hsl2labvalues(token);
+    const values: number[] | null = hsl2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function hwb2lchvalues(token: ColorToken): number[] | null {
 
-    const values = hwb2labvalues(token);
+    const values: number[] | null = hwb2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function lab2lchvalues(token: ColorToken): number[] | null {
 
-    const values = getLABComponents(token);
+    const values: number[] | null = getLABComponents(token);
 
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
@@ -184,14 +184,14 @@ export function srgb2lch(r: number, g: number, blue: number, alpha: number | nul
 export function oklab2lchvalues(token: ColorToken): number[] | null {
 
 
-    const values = oklab2labvalues(token);
+    const values: number[] | null = oklab2labvalues(token);
     // @ts-ignore
     return values == null ? null : labvalues2lchvalues(...values);
 }
 
 export function cmyk2lchvalues(token: ColorToken): number[] | null {
 
-    const values = cmyk2srgbvalues(token);
+    const values: number[] | null = cmyk2srgbvalues(token);
     // @ts-ignore
     return values == null ? null : srgb2lch(...values);
 }

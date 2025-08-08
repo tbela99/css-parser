@@ -21,18 +21,6 @@ export function validateAtRuleKeyframes(atRule: AstKeyframAtRule, options: Valid
 
     consumeWhitespace(tokens);
 
-    // if (tokens.length == 0) {
-    //
-    //     // @ts-ignore
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         context: [],
-    //         node: atRule,
-    //         syntax: '@keyframes',
-    //         error: 'expecting at-rule prelude'
-    //     } as ValidationSyntaxResult;
-    // }
-
     if (tokens.length == 0 || ![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
 
         // @ts-ignore

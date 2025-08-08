@@ -106,14 +106,6 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2HslToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2HslToken(token);
         }
     }
@@ -139,14 +131,6 @@ function convertColor(token, to) {
             case ColorType.DEVICE_CMYK:
                 return cmyk2hwbToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2hwbToken(token);
         }
     }
@@ -173,14 +157,6 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2cmykToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2cmykToken(token);
         }
     }
@@ -210,14 +186,6 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2HexToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2HexToken(token);
             case ColorType.RGB:
             case ColorType.RGBA:
@@ -244,14 +212,6 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2RgbToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2RgbToken(token);
         }
     }
@@ -277,14 +237,6 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2labToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2labToken(token);
         }
     }
@@ -310,14 +262,6 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2lchToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2lchToken(token);
         }
     }
@@ -343,14 +287,6 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2oklabToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2oklabToken(token);
         }
     }
@@ -376,14 +312,6 @@ function convertColor(token, to) {
             case ColorType.LCH:
                 return lch2oklchToken(token);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2oklchToken(token);
         }
     }
@@ -411,14 +339,6 @@ function convertColor(token, to) {
             case ColorType.OKLCH:
                 return oklch2colorToken(token, to);
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
                 return color2colorToken(token, to);
         }
     }
@@ -583,9 +503,7 @@ function color2srgbvalues(token) {
     return values;
 }
 function values2colortoken(values, to) {
-    // console.error({srgb2: values});
     values = srgb2srgbcolorspace(values, to);
-    // console.error({srgb3: values, to: ColorKind[to]});
     const chi = [
         { typ: EnumToken.NumberTokenType, val: String(values[0]) },
         { typ: EnumToken.NumberTokenType, val: String(values[1]) },

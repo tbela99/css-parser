@@ -3,12 +3,22 @@ import {convertColor} from "../color.ts";
 import {getOKLABComponents} from "../oklab.ts";
 import {ColorType} from "../../../ast/index.ts";
 
-
+/**
+ * Calculate the distance between two okLab colors.
+ * @param okLab1
+ * @param okLab2
+ */
 export function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number {
 
     return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
 }
 
+/**
+ * Check if two okLab colors are close.
+ * @param color1
+ * @param color2
+ * @param threshold
+ */
 export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = .01): boolean {
 
     color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;

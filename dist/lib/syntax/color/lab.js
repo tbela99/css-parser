@@ -15,7 +15,8 @@ import { XYZ_D65_to_D50 } from './xyzd50.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 function hex2labToken(token) {
-    return labToken(hex2labvalues(token));
+    const values = hex2labvalues(token);
+    return values == null ? null : labToken(values);
 }
 function rgb2labToken(token) {
     const values = rgb2labvalues(token);
@@ -95,8 +96,9 @@ function labToken(values) {
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
 function hex2labvalues(token) {
+    const values = hex2srgbvalues(token);
     // @ts-ignore
-    return srgb2labvalues(...hex2srgbvalues(token));
+    return values == null ? null : srgb2labvalues(...values);
 }
 function rgb2labvalues(token) {
     const values = rgb2srgb(token);

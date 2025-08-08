@@ -34,11 +34,6 @@ export function getSyntax(group: ValidationSyntaxGroupEnum, key: string | string
                     key = matches[1] + matches[3];
                 }
             }
-
-            // if (!(key in obj)) {
-            //
-            //     return null;
-            // }
         }
 
         // @ts-ignore

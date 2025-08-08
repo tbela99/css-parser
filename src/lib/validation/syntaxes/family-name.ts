@@ -11,19 +11,6 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
     consumeWhitespace(tokens);
 
-    // if (tokens.length == 0) {
-    //
-    //     // @ts-ignore
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         matches: [],
-    //         node: atRule,
-    //         syntax: null,
-    //         error: 'expected at-rule prelude',
-    //         tokens
-    //     } as ValidationSyntaxResult;
-    // }
-
     if (tokens.length == 0 || tokens[0].typ == EnumToken.CommaTokenType) {
 
         // @ts-ignore
@@ -38,27 +25,6 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
     }
 
     while (tokens.length > 0) {
-
-        // @ts-ignore
-        // if (tokens[0].typ == EnumToken.CommaTokenType) {
-        //
-        //     node = tokens.shift() as Token;
-        //
-        //     consumeWhitespace(tokens);
-        //
-        //     if (tokens.length == 0) {
-        //
-        //         // @ts-ignore
-        //         return {
-        //             valid: SyntaxValidationResult.Drop,
-        //             matches: [],
-        //             node,
-        //             syntax: null,
-        //             error: 'unexpected token',
-        //             tokens
-        //         } as ValidationSyntaxResult;
-        //     }
-        // }
 
         node = tokens[0];
 

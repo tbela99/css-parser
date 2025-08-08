@@ -92,12 +92,6 @@ function* consumeString(quoteStr, buffer, parseInfo) {
                 }
                 break;
             }
-            // if (i == 1) {
-            //
-            //     buffer += value + sequence[i];
-            //     next(parseInfo, 2);
-            //     continue;
-            // }
             if (escapeSequence.trimEnd().length > 0) {
                 const codepoint = parseInt(escapeSequence, 16);
                 if (codepoint == 0 ||
@@ -120,7 +114,6 @@ function* consumeString(quoteStr, buffer, parseInfo) {
             buffer += value;
             yield pushToken(buffer, parseInfo, hasNewLine ? EnumToken.BadStringTokenType : EnumToken.StringTokenType);
             next(parseInfo);
-            // i += value.length;
             buffer = '';
             return;
         }
@@ -162,17 +155,9 @@ function prev(parseInfo, count = 1) {
 function next(parseInfo, count = 1) {
     let char = '';
     let chr = '';
-    // if (count < 0) {
-    //
-    //     return '';
-    // }
     while (count-- && (chr = parseInfo.stream.charAt(parseInfo.currentPosition.ind + 1))) {
         char += chr;
         const codepoint = parseInfo.stream.charCodeAt(++parseInfo.currentPosition.ind);
-        // if (isNaN(codepoint)) {
-        //
-        //     return char;
-        // }
         if (isNewLine(codepoint)) {
             parseInfo.currentPosition.lin++;
             parseInfo.currentPosition.col = 0;

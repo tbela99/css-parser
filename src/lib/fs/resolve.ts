@@ -107,25 +107,8 @@ export function resolve(url: string, currentDirectory: string, cwd?: string): { 
 
         result = dirname(currentDirectory) + '/' + url;
     }
-    // else if (currentDirectory === '' || dirname(currentDirectory) === '') {
-    //
-    //     result = url;
-    // } else {
-    //
-    //     result = dirname(currentDirectory) + '/' + url;
-    // }
 
     let {parts, i} = splitPath(result);
-
-    // if (parts.length == 0) {
-    //
-    //     const path = result.charAt(0) == '/' ? '/' : '';
-    //
-    //     return {
-    //         absolute: path,
-    //         relative: path
-    //     }
-    // }
 
     const absolute = parts.join('/');
     const {parts: dirs} = splitPath(cwd ?? currentDirectory);

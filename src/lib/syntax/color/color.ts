@@ -249,14 +249,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return lch2HslToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2HslToken(token);
         }
@@ -301,14 +293,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return cmyk2hwbToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2hwbToken(token);
         }
@@ -353,14 +337,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return lch2cmykToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2cmykToken(token);
 
@@ -371,7 +347,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             case ColorType.HEX:
             case ColorType.LIT: {
 
-                const val = reduceHexValue(token.val);
+                const val: string = reduceHexValue(token.val);
 
                 return {
                     typ: EnumToken.ColorTokenType,
@@ -409,14 +385,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return lch2HexToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2HexToken(token);
 
@@ -463,14 +431,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return lch2RgbToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2RgbToken(token);
         }
@@ -515,14 +475,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return oklch2labToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2labToken(token);
         }
@@ -566,14 +518,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return oklch2lchToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2lchToken(token);
         }
@@ -618,14 +562,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return oklch2oklabToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2oklabToken(token);
         }
@@ -670,14 +606,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return lch2oklchToken(token);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2oklchToken(token);
         }
@@ -725,14 +653,6 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
                 return oklch2colorToken(token, to);
 
             case ColorType.COLOR:
-            case ColorType.XYZ:
-            case ColorType.SRGB:
-            case ColorType.REC2020:
-            case ColorType.XYZ_D50:
-            case ColorType.A98_RGB:
-            case ColorType.DISPLAY_P3:
-            case ColorType.SRGB_LINEAR:
-            case ColorType.PROPHOTO_RGB:
 
                 return color2colorToken(token, to);
         }
@@ -975,11 +895,7 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
 
 function values2colortoken(values: number[], to: ColorType): ColorToken {
 
-    // console.error({srgb2: values});
-
     values = srgb2srgbcolorspace(values, to);
-
-    // console.error({srgb3: values, to: ColorKind[to]});
 
     const chi: Token[] = <Token[]>[
 

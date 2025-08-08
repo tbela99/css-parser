@@ -299,6 +299,32 @@ console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
 
 ```
 
+### Convert colors
+
+```javascript
+import {transform} from '@tbela99/css-parser';
+
+
+const css = `
+.hsl { color: #b3222280; }
+`;
+const result: TransformResult = await transform(css, {
+    beautify: true,
+    convertColor: ColorType.SRGB
+});
+
+console.log(result.css);
+
+```
+
+result
+
+```css
+.hsl {
+    color: color(srgb .7019607843137254 .13333333333333333 .13333333333333333/50%)
+}
+```
+
 ### Merge similar rules
 
 CSS

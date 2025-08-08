@@ -18,12 +18,14 @@ import {XYZ_D65_to_D50} from "./xyzd50.ts";
 
 export function hex2labToken(token: ColorToken): ColorToken | null {
 
-    return labToken(hex2labvalues(token));
+    const values: number[] | null = hex2labvalues(token);
+
+    return values == null ? null : labToken(values);
 }
 
 export function rgb2labToken(token: ColorToken): ColorToken | null {
 
-    const values = rgb2labvalues(token);
+    const values: number[] | null = rgb2labvalues(token);
 
     if (values == null) {
         return null;
@@ -34,7 +36,7 @@ export function rgb2labToken(token: ColorToken): ColorToken | null {
 
 export function hsl2labToken(token: ColorToken): ColorToken | null {
 
-    const values = hsl2labvalues(token);
+    const values: number[] | null = hsl2labvalues(token);
 
     if (values == null) {
         return null;
@@ -45,7 +47,7 @@ export function hsl2labToken(token: ColorToken): ColorToken | null {
 
 export function hwb2labToken(token: ColorToken): ColorToken | null {
 
-    const values = hwb2labvalues(token);
+    const values: number[] | null = hwb2labvalues(token);
 
     if (values == null) {
         return null;
@@ -56,7 +58,7 @@ export function hwb2labToken(token: ColorToken): ColorToken | null {
 
 export function cmyk2labToken(token: ColorToken): ColorToken | null {
 
-    const values = cmyk2labvalues(token);
+    const values: number[] | null = cmyk2labvalues(token);
 
     if (values == null) {
         return null;
@@ -67,7 +69,7 @@ export function cmyk2labToken(token: ColorToken): ColorToken | null {
 
 export function lch2labToken(token: ColorToken): ColorToken | null {
 
-    const values = lch2labvalues(token);
+    const values: number[] | null = lch2labvalues(token);
 
     if (values == null) {
         return null;
@@ -78,7 +80,7 @@ export function lch2labToken(token: ColorToken): ColorToken | null {
 
 export function oklab2labToken(token: ColorToken): ColorToken | null {
 
-    const values = oklab2labvalues(token);
+    const values: number[] | null = oklab2labvalues(token);
 
     if (values == null) {
         return null;
@@ -89,7 +91,7 @@ export function oklab2labToken(token: ColorToken): ColorToken | null {
 
 export function oklch2labToken(token: ColorToken): ColorToken | null {
 
-    const values = oklch2labvalues(token);
+    const values: number[] | null = oklch2labvalues(token);
 
     if (values == null) {
         return null;
@@ -100,7 +102,7 @@ export function oklch2labToken(token: ColorToken): ColorToken | null {
 
 export function color2labToken(token: ColorToken): ColorToken | null {
 
-    const values = color2labvalues(token);
+    const values: number[] | null = color2labvalues(token);
 
     if (values == null) {
         return null;
@@ -137,10 +139,12 @@ function labToken(values: number[]): ColorToken | null {
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
 
-export function hex2labvalues(token: ColorToken) {
+export function hex2labvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = hex2srgbvalues(token);
 
     // @ts-ignore
-    return srgb2labvalues(...hex2srgbvalues(token));
+    return values == null ? null : srgb2labvalues(...values);
 }
 
 export function rgb2labvalues(token: ColorToken): number[] | null {

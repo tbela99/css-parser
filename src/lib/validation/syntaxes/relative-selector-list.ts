@@ -9,35 +9,7 @@ export function validateRelativeSelectorList(tokens: Token[], root?: AstAtRule |
 
     consumeWhitespace(tokens);
 
-    // if (tokens.length == 0) {
-    //
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         matches: [],
-    //         // @ts-ignore
-    //         node: root,
-    //         // @ts-ignore
-    //         syntax: null,
-    //         error: 'expecting relative selector list',
-    //         tokens
-    //     }
-    // }
-
     for (const t of splitTokenList(tokens)) {
-
-        // if (t.length == 0) {
-        //
-        //     return {
-        //         valid: SyntaxValidationResult.Drop,
-        //         matches: [],
-        //         // @ts-ignore
-        //         node: root,
-        //         // @ts-ignore
-        //         syntax: null,
-        //         error: 'unexpected comma',
-        //         tokens
-        //     }
-        // }
 
         const result: ValidationSyntaxResult = validateRelativeSelector(t, root, options);
 
