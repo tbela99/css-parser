@@ -1486,7 +1486,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
  */
 export function parseSelector(tokens: Token[]): Token[] {
 
-    for (const {value, previousValue, nextValue, parent} of walkValues(tokens)) {
+    for (const {value, parent} of walkValues(tokens)) {
 
         if (value.typ == EnumToken.CommentTokenType ||
             value.typ == EnumToken.WhitespaceTokenType ||
@@ -1801,21 +1801,21 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             typ: EnumToken.FunctionTokenType,
             val,
             chi: <Token[]>[]
-        };
+        }
     }
 
     if (isNumber(val)) {
         return <NumberToken>{
             typ: EnumToken.NumberTokenType,
             val
-        };
+        }
     }
 
     if (isPercentage(val)) {
         return <PercentageToken>{
             typ: EnumToken.PercentageTokenType,
             val: val.slice(0, -1)
-        };
+        }
     }
 
     if (isFlex(val)) {
@@ -1857,11 +1857,10 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             };
         }
 
-
         return <IdentToken>{
             typ: val.startsWith('--') ? EnumToken.DashedIdenTokenType : EnumToken.IdenTokenType,
             val
-        };
+        }
     }
 
     if (val.charAt(0) == '#' && isHexColor(val)) {
@@ -1870,27 +1869,27 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
             typ: EnumToken.ColorTokenType,
             val,
             kin: ColorType.HEX
-        };
+        }
     }
 
     if (val.charAt(0) == '#' && isHash(val)) {
         return <HashToken>{
             typ: EnumToken.HashTokenType,
             val
-        };
+        }
     }
 
     if ('"\''.includes(val.charAt(0))) {
         return <UnclosedStringToken>{
             typ: EnumToken.UnclosedStringTokenType,
             val
-        };
+        }
     }
 
     return <LiteralToken>{
         typ: EnumToken.LiteralTokenType,
         val
-    };
+    }
 }
 
 /**

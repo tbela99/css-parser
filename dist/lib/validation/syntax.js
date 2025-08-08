@@ -795,7 +795,7 @@ function matchPropertyType(syntax, context, options) {
             success = token.typ == EnumToken.HashTokenType;
             break;
         case 'string':
-            success = token.typ == EnumToken.StringTokenType || token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = token.typ == EnumToken.StringTokenType || token.typ == EnumToken.UrlTokenTokenType || token.typ == EnumToken.HashTokenType || token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'time':
             success = token.typ == EnumToken.TimeTokenType || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');

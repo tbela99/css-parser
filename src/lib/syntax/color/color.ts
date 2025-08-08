@@ -124,6 +124,11 @@ import {
 } from "./cmyk.ts";
 import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
 
+/**
+ * Converts a color token to another color space
+ * @param token
+ * @param to
+ */
 export function convertColor(token: ColorToken, to: ColorType): ColorToken | null {
 
     if (token.kin == ColorType.SYS ||

@@ -9,13 +9,13 @@ import '../../renderer/sourcemap/lib/encode.js';
 
 function stripCommaToken(tokenList) {
     let result = [];
-    let last = null;
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ == EnumToken.CommaTokenType && last != null && last.typ == EnumToken.CommaTokenType) {
-            return null;
-        }
+        // if (tokenList[i].typ == EnumToken.CommaTokenType && last != null && last.typ == EnumToken.CommaTokenType) {
+        //
+        //     return null;
+        // }
         if (tokenList[i].typ != EnumToken.WhitespaceTokenType) {
-            last = tokenList[i];
+            tokenList[i];
         }
         if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
             continue;
@@ -26,9 +26,10 @@ function stripCommaToken(tokenList) {
 }
 function splitTokenList(tokenList, split = [EnumToken.CommaTokenType]) {
     return tokenList.reduce((acc, curr) => {
-        if (curr.typ == EnumToken.CommentTokenType) {
-            return acc;
-        }
+        // if (curr.typ == EnumToken.CommentTokenType) {
+        //
+        //     return acc;
+        // }
         if (split.includes(curr.typ)) {
             acc.push([]);
         }

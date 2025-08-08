@@ -941,6 +941,13 @@ interface ValidationToken {
     };
 }
 
+/**
+ * Converts a color token to another color space
+ * @param token
+ * @param to
+ */
+declare function convertColor(token: ColorToken, to: ColorType): ColorToken | null;
+
 export declare interface Position {
 
     ind: number;
@@ -1359,4 +1366,4 @@ declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResu
  */
 declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
 
-export { ColorType, EnumToken, ValidationLevel, dirname, expand, isOkLabClose, load, minify, okLabDistance, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };
+export { ColorType, EnumToken, ValidationLevel, convertColor, dirname, expand, isOkLabClose, load, minify, okLabDistance, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };

@@ -108,17 +108,7 @@ function validateCompoundSelector(tokens, root, options) {
         while (tokens.length > 0 && tokens[0].typ == EnumToken.AttrTokenType) {
             const children = tokens[0].chi.slice();
             consumeWhitespace(children);
-            if (children.length == 0) {
-                // @ts-ignore
-                return {
-                    valid: SyntaxValidationResult.Drop,
-                    context: [],
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'invalid attribute selector'
-                };
-            }
-            if (![
+            if (children.length == 0 || ![
                 EnumToken.IdenTokenType,
                 EnumToken.NameSpaceAttributeTokenType,
                 EnumToken.MatchExpressionTokenType
@@ -151,20 +141,11 @@ function validateCompoundSelector(tokens, root, options) {
                         EnumToken.StartMatchTokenType, EnumToken.ContainMatchTokenType,
                         EnumToken.EndMatchTokenType, EnumToken.IncludeMatchTokenType
                     ].includes(children[0].op.typ) ||
-                    !([
+                    ![
                         EnumToken.StringTokenType,
                         EnumToken.IdenTokenType
-                    ].includes(children[0].r.typ))) {
-                    // @ts-ignore
-                    return {
-                        valid: SyntaxValidationResult.Drop,
-                        context: [],
-                        node: tokens[0],
-                        syntax: null,
-                        error: 'invalid attribute selector'
-                    };
-                }
-                if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+                    ].includes(children[0].r.typ) ||
+                    (children[0].attr != null && !['i', 's'].includes(children[0].attr))) {
                     // @ts-ignore
                     return {
                         valid: SyntaxValidationResult.Drop,

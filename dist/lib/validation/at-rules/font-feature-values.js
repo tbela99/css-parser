@@ -23,7 +23,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
             tokens: []
         };
     }
-    const result = validateFamilyName(atRule.tokens, atRule);
+    const result = validateFamilyName(atRule.tokens);
     if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }

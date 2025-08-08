@@ -27,6 +27,11 @@ import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2c
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
+/**
+ * Converts a color token to another color space
+ * @param token
+ * @param to
+ */
 function convertColor(token, to) {
     if (token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||

@@ -987,7 +987,7 @@ function parseAtRulePrelude(tokens, atRule) {
  * @param tokens
  */
 function parseSelector(tokens) {
-    for (const { value, previousValue, nextValue, parent } of walkValues(tokens)) {
+    for (const { value, parent } of walkValues(tokens)) {
         if (value.typ == EnumToken.CommentTokenType ||
             value.typ == EnumToken.WhitespaceTokenType ||
             value.typ == EnumToken.CommaTokenType ||

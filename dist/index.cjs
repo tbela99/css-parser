@@ -3749,6 +3749,11 @@ function xyz2la98rgb(x, y, z, a = null) {
     return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
 }
 
+/**
+ * Converts a color token to another color space
+ * @param token
+ * @param to
+ */
 function convertColor(token, to) {
     if (token.kin == exports.ColorType.SYS ||
         token.kin == exports.ColorType.DPSYS ||
@@ -13887,13 +13892,13 @@ function consumeWhitespace(tokens) {
 
 function stripCommaToken(tokenList) {
     let result = [];
-    let last = null;
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ == exports.EnumToken.CommaTokenType && last != null && last.typ == exports.EnumToken.CommaTokenType) {
-            return null;
-        }
+        // if (tokenList[i].typ == EnumToken.CommaTokenType && last != null && last.typ == EnumToken.CommaTokenType) {
+        //
+        //     return null;
+        // }
         if (tokenList[i].typ != exports.EnumToken.WhitespaceTokenType) {
-            last = tokenList[i];
+            tokenList[i];
         }
         if (tokenList[i].typ == exports.EnumToken.CommentTokenType || tokenList[i].typ == exports.EnumToken.CommaTokenType) {
             continue;
@@ -13904,9 +13909,10 @@ function stripCommaToken(tokenList) {
 }
 function splitTokenList(tokenList, split = [exports.EnumToken.CommaTokenType]) {
     return tokenList.reduce((acc, curr) => {
-        if (curr.typ == exports.EnumToken.CommentTokenType) {
-            return acc;
-        }
+        // if (curr.typ == EnumToken.CommentTokenType) {
+        //
+        //     return acc;
+        // }
         if (split.includes(curr.typ)) {
             acc.push([]);
         }
@@ -13921,18 +13927,19 @@ function validateFamilyName(tokens, atRule) {
     let node;
     tokens = tokens.slice();
     consumeWhitespace(tokens);
-    if (tokens.length == 0) {
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            matches: [],
-            node: atRule,
-            syntax: null,
-            error: 'expected at-rule prelude',
-            tokens
-        };
-    }
-    if (tokens[0].typ == exports.EnumToken.CommaTokenType) {
+    // if (tokens.length == 0) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: SyntaxValidationResult.Drop,
+    //         matches: [],
+    //         node: atRule,
+    //         syntax: null,
+    //         error: 'expected at-rule prelude',
+    //         tokens
+    //     } as ValidationSyntaxResult;
+    // }
+    if (tokens.length == 0 || tokens[0].typ == exports.EnumToken.CommaTokenType) {
         // @ts-ignore
         return {
             valid: SyntaxValidationResult.Drop,
@@ -13945,21 +13952,25 @@ function validateFamilyName(tokens, atRule) {
     }
     while (tokens.length > 0) {
         // @ts-ignore
-        if (tokens[0].typ == exports.EnumToken.CommaTokenType) {
-            node = tokens.shift();
-            consumeWhitespace(tokens);
-            if (tokens.length == 0) {
-                // @ts-ignore
-                return {
-                    valid: SyntaxValidationResult.Drop,
-                    matches: [],
-                    node,
-                    syntax: null,
-                    error: 'unexpected token',
-                    tokens
-                };
-            }
-        }
+        // if (tokens[0].typ == EnumToken.CommaTokenType) {
+        //
+        //     node = tokens.shift() as Token;
+        //
+        //     consumeWhitespace(tokens);
+        //
+        //     if (tokens.length == 0) {
+        //
+        //         // @ts-ignore
+        //         return {
+        //             valid: SyntaxValidationResult.Drop,
+        //             matches: [],
+        //             node,
+        //             syntax: null,
+        //             error: 'unexpected token',
+        //             tokens
+        //         } as ValidationSyntaxResult;
+        //     }
+        // }
         node = tokens[0];
         if (![exports.EnumToken.IdenTokenType, exports.EnumToken.StringTokenType].includes(node.typ)) {
             // @ts-ignore
@@ -13975,16 +13986,8 @@ function validateFamilyName(tokens, atRule) {
         tokens.shift();
         consumeWhitespace(tokens);
         // @ts-ignore
-        if (tokens.length > 0 && node.typ == exports.EnumToken.BadStringTokenType && tokens[0].typ != exports.EnumToken.CommaTokenType) {
-            // @ts-ignore
-            return {
-                valid: SyntaxValidationResult.Drop,
-                matches: [],
-                node: tokens[0],
-                syntax: null,
-                error: 'expected comma token',
-                tokens
-            };
+        if (tokens.length > 0 && tokens[0].typ == exports.EnumToken.CommaTokenType) {
+            tokens.shift();
         }
     }
     // @ts-ignore
@@ -14096,17 +14099,7 @@ function validateCompoundSelector(tokens, root, options) {
         while (tokens.length > 0 && tokens[0].typ == exports.EnumToken.AttrTokenType) {
             const children = tokens[0].chi.slice();
             consumeWhitespace(children);
-            if (children.length == 0) {
-                // @ts-ignore
-                return {
-                    valid: SyntaxValidationResult.Drop,
-                    context: [],
-                    node: tokens[0],
-                    syntax: null,
-                    error: 'invalid attribute selector'
-                };
-            }
-            if (![
+            if (children.length == 0 || ![
                 exports.EnumToken.IdenTokenType,
                 exports.EnumToken.NameSpaceAttributeTokenType,
                 exports.EnumToken.MatchExpressionTokenType
@@ -14139,20 +14132,11 @@ function validateCompoundSelector(tokens, root, options) {
                         exports.EnumToken.StartMatchTokenType, exports.EnumToken.ContainMatchTokenType,
                         exports.EnumToken.EndMatchTokenType, exports.EnumToken.IncludeMatchTokenType
                     ].includes(children[0].op.typ) ||
-                    !([
+                    ![
                         exports.EnumToken.StringTokenType,
                         exports.EnumToken.IdenTokenType
-                    ].includes(children[0].r.typ))) {
-                    // @ts-ignore
-                    return {
-                        valid: SyntaxValidationResult.Drop,
-                        context: [],
-                        node: tokens[0],
-                        syntax: null,
-                        error: 'invalid attribute selector'
-                    };
-                }
-                if (children[0].attr != null && !['i', 's'].includes(children[0].attr)) {
+                    ].includes(children[0].r.typ) ||
+                    (children[0].attr != null && !['i', 's'].includes(children[0].attr))) {
                     // @ts-ignore
                     return {
                         valid: SyntaxValidationResult.Drop,
@@ -14341,27 +14325,19 @@ function validateComplexSelectorList(tokens, root, options) {
 
 function validateKeyframeSelector(tokens, options) {
     consumeWhitespace(tokens);
-    if (tokens.length == 0) {
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            context: [],
-            node: null,
-            syntax: null,
-            error: 'expected keyframe selector'
-        };
-    }
+    // if (tokens.length == 0) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: SyntaxValidationResult.Drop,
+    //         context: [],
+    //         node: null,
+    //         syntax: null,
+    //         error: 'expected keyframe selector'
+    //     }
+    // }
     for (const t of splitTokenList(tokens)) {
-        if (t.length != 1) {
-            return {
-                valid: SyntaxValidationResult.Drop,
-                context: [],
-                node: t[0] ?? null,
-                syntax: null,
-                error: 'unexpected token'
-            };
-        }
-        if (t[0].typ != exports.EnumToken.PercentageTokenType && !(t[0].typ == exports.EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val))) {
+        if (t.length != 1 || (t[0].typ != exports.EnumToken.PercentageTokenType && !(t[0].typ == exports.EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val)))) {
             return {
                 valid: SyntaxValidationResult.Drop,
                 context: [],
@@ -15278,7 +15254,7 @@ function matchPropertyType(syntax, context, options) {
             success = token.typ == exports.EnumToken.HashTokenType;
             break;
         case 'string':
-            success = token.typ == exports.EnumToken.StringTokenType || token.typ == exports.EnumToken.IdenTokenType || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = token.typ == exports.EnumToken.StringTokenType || token.typ == exports.EnumToken.UrlTokenTokenType || token.typ == exports.EnumToken.HashTokenType || token.typ == exports.EnumToken.IdenTokenType || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'time':
             success = token.typ == exports.EnumToken.TimeTokenType || (token.typ == exports.EnumToken.FunctionTokenType && token.val == 'calc');
@@ -15504,42 +15480,44 @@ function flatten(syntax) {
 }
 
 function validateURL(token) {
-    if (token.typ == exports.EnumToken.UrlTokenTokenType) {
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Valid,
-            context: [],
-            node: token,
-            // @ts-ignore
-            syntax: 'url()',
-            error: ''
-        };
-    }
-    if (token.typ != exports.EnumToken.UrlFunctionTokenType) {
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            context: [],
-            node: token,
-            // @ts-ignore
-            syntax: 'url()',
-            error: 'expected url()'
-        };
-    }
+    // if (token.typ == EnumToken.UrlTokenTokenType) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: SyntaxValidationResult.Valid,
+    //         context: [],
+    //         node: token,
+    //         // @ts-ignore
+    //         syntax: 'url()',
+    //         error: ''
+    //     }
+    // }
+    // if (token.typ != EnumToken.UrlFunctionTokenType) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: SyntaxValidationResult.Drop,
+    //         context: [],
+    //         node: token,
+    //         // @ts-ignore
+    //         syntax: 'url()',
+    //         error: 'expected url()'
+    //     }
+    // }
     const children = token.chi.slice();
     consumeWhitespace(children);
-    if (children.length == 0 || ![exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
+    if (children.length > 0 && [exports.EnumToken.UrlTokenTokenType, exports.EnumToken.StringTokenType, exports.EnumToken.HashTokenType].includes(children[0].typ)) {
+        children.shift();
         // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            context: [],
-            node: children[0] ?? token,
-            // @ts-ignore
-            syntax: 'url()',
-            error: 'expected url-token'
-        };
+        // return {
+        //     valid: SyntaxValidationResult.Drop,
+        //     context: [],
+        //     node: children[0] ?? token,
+        //     // @ts-ignore
+        //     syntax: 'url()',
+        //     error: 'expected url-token'
+        // }
     }
-    children.shift();
     consumeWhitespace(children);
     if (children.length > 0) {
         // @ts-ignore
@@ -16449,7 +16427,7 @@ function validateAtRuleFontFeatureValues(atRule, options, root) {
             tokens: []
         };
     }
-    const result = validateFamilyName(atRule.tokens, atRule);
+    const result = validateFamilyName(atRule.tokens);
     if (result.valid == SyntaxValidationResult.Drop) {
         return result;
     }
@@ -18321,7 +18299,7 @@ function parseAtRulePrelude(tokens, atRule) {
  * @param tokens
  */
 function parseSelector(tokens) {
-    for (const { value, previousValue, nextValue, parent } of walkValues(tokens)) {
+    for (const { value, parent } of walkValues(tokens)) {
         if (value.typ == exports.EnumToken.CommentTokenType ||
             value.typ == exports.EnumToken.WhitespaceTokenType ||
             value.typ == exports.EnumToken.CommaTokenType ||
@@ -23229,6 +23207,7 @@ async function transform(css, options = {}) {
     });
 }
 
+exports.convertColor = convertColor;
 exports.dirname = dirname;
 exports.expand = expand;
 exports.isOkLabClose = isOkLabClose;

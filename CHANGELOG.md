@@ -1,5 +1,11 @@
 # Changelog
 
+## V1.2.0
+
+- [x] convert color to any supported color space #94
+- [x] dead code removal #93
+- [x] validation syntax update #92
+
 ## v1.1.1
 
 - [x] fix bug when css nesting is disabled #89

@@ -11,20 +11,20 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
 
     consumeWhitespace(tokens);
 
-    if (tokens.length == 0) {
+    // if (tokens.length == 0) {
+    //
+    //     // @ts-ignore
+    //     return {
+    //         valid: SyntaxValidationResult.Drop,
+    //         matches: [],
+    //         node: atRule,
+    //         syntax: null,
+    //         error: 'expected at-rule prelude',
+    //         tokens
+    //     } as ValidationSyntaxResult;
+    // }
 
-        // @ts-ignore
-        return {
-            valid: SyntaxValidationResult.Drop,
-            matches: [],
-            node: atRule,
-            syntax: null,
-            error: 'expected at-rule prelude',
-            tokens
-        } as ValidationSyntaxResult;
-    }
-
-    if (tokens[0].typ == EnumToken.CommaTokenType) {
+    if (tokens.length == 0 || tokens[0].typ == EnumToken.CommaTokenType) {
 
         // @ts-ignore
         return {
@@ -40,25 +40,25 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
     while (tokens.length > 0) {
 
         // @ts-ignore
-        if (tokens[0].typ == EnumToken.CommaTokenType) {
-
-            node = tokens.shift() as Token;
-
-            consumeWhitespace(tokens);
-
-            if (tokens.length == 0) {
-
-                // @ts-ignore
-                return {
-                    valid: SyntaxValidationResult.Drop,
-                    matches: [],
-                    node,
-                    syntax: null,
-                    error: 'unexpected token',
-                    tokens
-                } as ValidationSyntaxResult;
-            }
-        }
+        // if (tokens[0].typ == EnumToken.CommaTokenType) {
+        //
+        //     node = tokens.shift() as Token;
+        //
+        //     consumeWhitespace(tokens);
+        //
+        //     if (tokens.length == 0) {
+        //
+        //         // @ts-ignore
+        //         return {
+        //             valid: SyntaxValidationResult.Drop,
+        //             matches: [],
+        //             node,
+        //             syntax: null,
+        //             error: 'unexpected token',
+        //             tokens
+        //         } as ValidationSyntaxResult;
+        //     }
+        // }
 
         node = tokens[0];
 
@@ -79,17 +79,9 @@ export function validateFamilyName(tokens: Token[], atRule: AstAtRule): Validati
         consumeWhitespace(tokens);
 
         // @ts-ignore
-        if (tokens.length > 0 && node.typ == EnumToken.BadStringTokenType && tokens[0].typ != EnumToken.CommaTokenType) {
+        if (tokens.length > 0 && tokens[0].typ == EnumToken.CommaTokenType) {
 
-            // @ts-ignore
-            return {
-                valid: SyntaxValidationResult.Drop,
-                matches: [],
-                node: tokens[0],
-                syntax: null,
-                error: 'expected comma token',
-                tokens
-            } as ValidationSyntaxResult;
+            tokens.shift();
         }
     }
 

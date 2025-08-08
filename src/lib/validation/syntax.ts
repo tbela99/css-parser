@@ -1131,7 +1131,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'string':
 
-            success = token.typ == EnumToken.StringTokenType || token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = token.typ == EnumToken.StringTokenType || token.typ == EnumToken.UrlTokenTokenType || token.typ == EnumToken.HashTokenType || token.typ == EnumToken.IdenTokenType || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'time':
