@@ -840,7 +840,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                     continue;
                 }
 
-                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
+                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0);
 
                 if (!success) {
 
@@ -984,27 +984,27 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'angle':
 
-            success = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'length':
 
-            success = token.typ == EnumToken.LengthTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.LengthTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'percentage':
 
-            success = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'length-percentage':
 
-            success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'resolution':
 
-            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'hash-token':
@@ -1024,7 +1024,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'zero':
 
-            success = (token as DimensionToken).val == '0' || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = (token as DimensionToken).val == 0 || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'pseudo-element-selector':

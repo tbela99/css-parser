@@ -106,25 +106,6 @@ class InlineCssVariablesFeature {
                         replace(node, variableScope);
                     }
                 }
-                // else {
-                //
-                //     const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
-                //
-                //     info.globalScope = isRoot;
-                //
-                //     if (!isRoot) {
-                //
-                //         ++info.declarationCount;
-                //     }
-                //
-                //     if (info.replaceable) {
-                //
-                //         info.replaceable = isRoot && info.declarationCount == 1;
-                //     }
-                //
-                //     info.parent.add(ast);
-                //     info.node = (<AstDeclaration>node);
-                // }
             }
             else {
                 replace(node, variableScope);

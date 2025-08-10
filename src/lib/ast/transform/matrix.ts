@@ -5,7 +5,6 @@ import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts"
 import {eq} from "../../parser/utils/eq.ts";
 import {getNumber} from "../../syntax/color/index.ts";
 import type {NumberToken} from "../../validation/index.ts";
-import {minifyNumber} from "../../syntax/index.ts";
 
 export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
 
@@ -107,7 +106,7 @@ export function serialize(matrix: Matrix): Token {
 
                 acc.push({
                     typ: EnumToken.NumberTokenType,
-                    val: minifyNumber(t)
+                    val: t
                 })
 
                 return acc
@@ -127,7 +126,7 @@ export function serialize(matrix: Matrix): Token {
 
             acc.push({
                 typ: EnumToken.NumberTokenType,
-                val: minifyNumber(curr)
+                val: curr
             })
 
             return acc;

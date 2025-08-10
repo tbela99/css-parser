@@ -142,33 +142,117 @@ declare enum EnumToken {
     TimingFunction = 17,
     TimelineFunction = 16
 }
+/**
+ * color types enum
+ */
 declare enum ColorType {
+    /**
+     * system colors
+     */
     SYS = 0,
+    /**
+     * deprecated system colors
+     */
     DPSYS = 1,
+    /**
+     * colors as literals
+     */
     LIT = 2,
+    /**
+     * colors as hex values
+     */
     HEX = 3,
+    /**
+     * colors as rgb values
+     */
     RGBA = 4,
+    /**
+     * colors as hsl values
+     */
     HSLA = 5,
+    /**
+     * colors as hwb values
+     */
     HWB = 6,
+    /**
+     * colors as cmyk values
+     */
     CMYK = 7,
+    /**
+     * colors as oklab values
+     * */
     OKLAB = 8,
+    /**
+     * colors as oklch values
+     * */
     OKLCH = 9,
+    /**
+     * colors as lab values
+     */
     LAB = 10,
+    /**
+     * colors as lch values
+     */
     LCH = 11,
+    /**
+     * colors using color() function
+     */
     COLOR = 12,
+    /**
+     * color using srgb values
+     */
     SRGB = 13,
+    /**
+     * color using prophoto-rgb values
+     */
     PROPHOTO_RGB = 14,
+    /**
+     * color using a98-rgb values
+     */
     A98_RGB = 15,
+    /**
+     * color using rec2020 values
+     */
     REC2020 = 16,
+    /**
+     * color using display-p3 values
+     */
     DISPLAY_P3 = 17,
+    /**
+     * color using srgb-linear values
+     */
     SRGB_LINEAR = 18,
+    /**
+     * color using xyz-d50 values
+     */
     XYZ_D50 = 19,
+    /**
+     * color using xyz-d65 values
+     */
     XYZ_D65 = 20,
+    /**
+     * light-dark() color function
+     */
     LIGHT_DARK = 21,
+    /**
+     * color-mix() color function
+     */
     COLOR_MIX = 22,
+    /**
+     * alias for rgba
+     */
     RGB = 4,
+    /**
+     * alias for hsl
+     */
     HSL = 5,
+    /**
+     * alias for xyz-d65
+     */
     XYZ = 20,
+    /**
+     * alias for cmyk
+     */
     DEVICE_CMYK = 7
 }
 
@@ -232,7 +316,18 @@ declare function renderToken(token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
 }, reducer?: (acc: string, curr: Token) => string, errors?: ErrorDescription[]): string;
 
+/**
+ * Calculate the distance between two okLab colors.
+ * @param okLab1
+ * @param okLab2
+ */
 declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
+/**
+ * Check if two colors are close.
+ * @param color1
+ * @param color2
+ * @param threshold
+ */
 declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
 
 /**
@@ -315,7 +410,7 @@ export declare interface NestingSelectorToken extends BaseToken {
 export declare interface NumberToken extends BaseToken {
 
     typ: EnumToken.NumberTokenType,
-    val: string | FractionToken;
+    val: number | FractionToken;
 }
 
 export declare interface AtRuleToken extends BaseToken {
@@ -328,13 +423,13 @@ export declare interface AtRuleToken extends BaseToken {
 export declare interface PercentageToken extends BaseToken {
 
     typ: EnumToken.PercentageTokenType,
-    val: string | FractionToken;
+    val: number | FractionToken;
 }
 
 export declare interface FlexToken extends BaseToken {
 
     typ: EnumToken.FlexTokenType,
-    val: string | FractionToken;
+    val: number | FractionToken;
 }
 
 export declare interface FunctionToken extends BaseToken {
@@ -400,42 +495,42 @@ export declare interface UnclosedStringToken extends BaseToken {
 export declare interface DimensionToken extends BaseToken {
 
     typ: EnumToken.DimensionTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: string;
 }
 
 export declare interface LengthToken extends BaseToken {
 
     typ: EnumToken.LengthTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: string;
 }
 
 export declare interface AngleToken extends BaseToken {
 
     typ: EnumToken.AngleTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: string;
 }
 
 export declare interface TimeToken extends BaseToken {
 
     typ: EnumToken.TimeTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: 'ms' | 's';
 }
 
 export declare interface FrequencyToken extends BaseToken {
 
     typ: EnumToken.FrequencyTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: 'Hz' | 'Khz';
 }
 
 export declare interface ResolutionToken extends BaseToken {
 
     typ: EnumToken.ResolutionTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 
@@ -942,7 +1037,7 @@ interface ValidationToken {
 }
 
 /**
- * Converts a color token to another color space
+ * Converts a color to another color space
  * @param token
  * @param to
  */

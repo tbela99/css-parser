@@ -11,7 +11,7 @@ export function getComponents(token: ColorToken): Token[] | null {
         // @ts-ignore
         return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t: string, index: number) => {
 
-            return <NumberToken>{typ: EnumToken.Number, val: (index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255).toString()}
+            return <NumberToken>{typ: EnumToken.Number, val: index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255}
         });
     }
 

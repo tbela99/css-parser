@@ -23,7 +23,7 @@ function dedup(values: Token[][]): Token[][] {
             const t = <DimensionToken | NumberToken>value[i];
             const k = <DimensionToken | NumberToken>value[i == 1 ? 0 : i % 2];
 
-            if (t.val == k.val && t.val == '0') {
+            if (t.val == k.val && t.val == 0) {
 
                 if ((t.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>k)) ||
                     (k.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>t)) ||
@@ -76,7 +76,7 @@ export class PropertySet {
                 for (let token of this.declarations.get(this.config.shorthand).val) {
 
                     // @ts-ignore
-                    if (this.config.types.some(t => token.typ == EnumToken[t]) || (token.typ == EnumToken.NumberTokenType && token.val == '0' &&
+                    if (this.config.types.some(t => token.typ == EnumToken[t]) || (token.typ == EnumToken.NumberTokenType && token.val == 0 &&
                         (this.config.types.includes('Length') ||
                             this.config.types.includes('Angle') ||
                             this.config.types.includes('Dimension')

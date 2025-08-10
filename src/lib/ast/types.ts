@@ -1,7 +1,13 @@
+/**
+ * syntax validation enum
+ */
 export enum SyntaxValidationResult {
+    /** valid syntax */
     Valid,
+    /** drop invalid syntax */
     Drop,
-    Lenient/* preserve unknown at-rules, declarations and pseudo-classes */
+    /** preserve unknown at-rules, declarations and pseudo-classes */
+    Lenient
 }
 
 /**
@@ -156,34 +162,117 @@ export enum EnumToken {
     TimelineFunction = TimelineFunctionTokenType,
 }
 
-// xyz-d65 is an alias for xyz
+/**
+ * color types enum
+ */
 export enum ColorType {
 
+    /**
+     * system colors
+     */
     SYS,
+    /**
+     * deprecated system colors
+     */
     DPSYS,
+    /**
+     * colors as literals
+     */
     LIT,
+    /**
+     * colors as hex values
+     */
     HEX,
+    /**
+     * colors as rgb values
+     */
     RGBA,
+    /**
+     * colors as hsl values
+     */
     HSLA,
+    /**
+     * colors as hwb values
+     */
     HWB,
+    /**
+     * colors as cmyk values
+     */
     CMYK,
+    /**
+     * colors as oklab values
+     * */
     OKLAB,
+    /**
+     * colors as oklch values
+     * */
     OKLCH,
+    /**
+     * colors as lab values
+     */
     LAB,
+    /**
+     * colors as lch values
+     */
     LCH,
+    /**
+     * colors using color() function
+     */
     COLOR,
+    /**
+     * color using srgb values
+     */
     SRGB,
+    /**
+     * color using prophoto-rgb values
+     */
     PROPHOTO_RGB,
+    /**
+     * color using a98-rgb values
+     */
     A98_RGB,
+    /**
+     * color using rec2020 values
+     */
     REC2020,
+    /**
+     * color using display-p3 values
+     */
     DISPLAY_P3,
+    /**
+     * color using srgb-linear values
+     */
     SRGB_LINEAR,
+    /**
+     * color using xyz-d50 values
+     */
     XYZ_D50,
+    /**
+     * color using xyz-d65 values
+     */
     XYZ_D65,
+    /**
+     * light-dark() color function
+     */
     LIGHT_DARK,
+    /**
+     * color-mix() color function
+     */
     COLOR_MIX,
+    /**
+     * alias for rgba
+     */
     RGB = RGBA,
+    /**
+     * alias for hsl
+     */
     HSL = HSLA,
+    /**
+     * alias for xyz-d65
+     */
     XYZ = XYZ_D65,
+    /**
+     * alias for cmyk
+     */
     DEVICE_CMYK= CMYK
 }

@@ -42,15 +42,8 @@ function createContext(input) {
         },
         consume(token, howMany) {
             let newIndex = result.indexOf(token, this.index + 1);
-            // if (newIndex == -1 || newIndex < this.index) {
-            //     return false;
-            // }
             howMany ??= 0;
             let splice = 1;
-            // if (result[newIndex - 1]?.typ == EnumToken.WhitespaceTokenType) {
-            //     splice++;
-            //     newIndex--;
-            // }
             result.splice(this.index + 1, 0, ...result.splice(newIndex, splice + howMany));
             this.index += howMany + splice;
             return true;
@@ -72,10 +65,6 @@ function createContext(input) {
             this.index = index;
             return result[this.index] ?? null;
         },
-        // tokens<Token>(): Token[] {
-        //
-        //     return result as Token[];
-        // },
         slice() {
             return result.slice(this.index + 1);
         },
@@ -83,16 +72,7 @@ function createContext(input) {
             const context = createContext(result.slice());
             context.index = this.index;
             return context;
-        },
-        // @ts-ignore
-        // toJSON(): object {
-        //
-        //     return {
-        //         index: this.index,
-        //         slice: this.slice(),
-        //         tokens: this.tokens()
-        //     }
-        // }
+        }
     };
 }
 function evaluateSyntax(node, options) {
@@ -126,10 +106,6 @@ function evaluateSyntax(node, options) {
                 if (result.valid == SyntaxValidationResult.Valid && !result.context.done()) {
                     let token = null;
                     if ((token = result.context.next()) != null) {
-                        // if (token.typ == EnumToken.WhitespaceTokenType || token.typ == EnumToken.CommentTokenType) {
-                        //
-                        //     continue;
-                        // }
                         return {
                             ...result,
                             valid: SyntaxValidationResult.Drop,
@@ -145,13 +121,6 @@ function evaluateSyntax(node, options) {
                 };
             }
             break;
-        // case EnumToken.RuleNodeType:
-        // case EnumToken.AtRuleNodeType:
-        // case EnumToken.KeyframeAtRuleNodeType:
-        // case EnumToken.KeyFrameRuleNodeType:
-        // default:
-        //
-        //     throw new Error(`Not implemented: ${node.typ}`);
     }
     return {
         valid: SyntaxValidationResult.Valid,
@@ -193,8 +162,6 @@ function doEvaluateSyntax(syntaxes, context, options) {
             context
         };
     }
-    // console.error(`>> ${syntaxes.reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${context.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}`);
-    // console.error(new Error('doEvaluateSyntax'));
     for (; i < syntaxes.length; i++) {
         syntax = syntaxes[i];
         if (context.done()) {
@@ -312,16 +279,6 @@ function matchList(syntax, context, options) {
         while (!con.done() && con.peek()?.typ != EnumToken.CommaTokenType) {
             tokens.push(con.next());
         }
-        // if (tokens.length == 0) {
-        //
-        //     return {
-        //         valid: SyntaxValidationResult.Drop,
-        //         node: context.peek(),
-        //         syntax,
-        //         error: `could not match syntax: ${renderSyntax(syntax)}`,
-        //         context
-        //     }
-        // }
         result = doEvaluateSyntax([syntax], createContext(tokens), {
             ...options,
             isList: false,
@@ -406,22 +363,6 @@ function match(syntax, context, options) {
             };
         }
     }
-    // if (token.typ == EnumToken.WhitespaceTokenType) {
-    //
-    //     context.next();
-    //
-    //     // @ts-ignore
-    //     if (syntax?.typ == ValidationTokenEnum.Whitespace) {
-    //
-    //         return {
-    //             valid: SyntaxValidationResult.Valid,
-    //             node: null,
-    //             syntax,
-    //             error: '',
-    //             context
-    //         }
-    //     }
-    // }
     if (syntax.typ != ValidationTokenEnum.PropertyType && (token?.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val))) {
         const result = doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, token.val)?.[0]?.chi ?? [], createContext(token.chi), {
             ...options,
@@ -467,7 +408,6 @@ function match(syntax, context, options) {
                 };
             }
             result = match(getParsedSyntax("syntaxes" /* ValidationSyntaxGroupEnum.Syntaxes */, syntax.val + '()')?.[0], context, options);
-            // console.error(`>>[]
             if (result.valid == SyntaxValidationResult.Valid) {
                 context.next();
                 result.context = context;
@@ -482,49 +422,12 @@ function match(syntax, context, options) {
                 occurence: null,
                 atLeastOnce: null
             });
-        // case ValidationTokenEnum.Parens:
-        //
-        //     token = context.peek() as Token;
-        //     if (token.typ != EnumToken.ParensTokenType) {
-        //
-        //         break;
-        //     }
-        //
-        //     success = doEvaluateSyntax((syntax as ValidationParensToken).chi as ValidationToken[], createContext((token as ParensToken).chi), {
-        //         ...options,
-        //         isRepeatable: null,
-        //         isList: null,
-        //         occurence: null,
-        //         atLeastOnce: null
-        //     } as ValidationOptions).valid == SyntaxValidationResult.Valid;
-        //     break;
         case ValidationTokenEnum.Comma:
             success = context.peek()?.typ == EnumToken.CommaTokenType;
             if (success) {
                 context.next();
             }
             break;
-        // case ValidationTokenEnum.Number:
-        //
-        //     success = context.peek<Token>()?.typ == EnumToken.NumberTokenType;
-        //
-        //     if (success) {
-        //
-        //         context.next();
-        //     }
-        //
-        //     break;
-        //
-        // case ValidationTokenEnum.Whitespace:
-        //
-        //     success = context.peek<Token>()?.typ == EnumToken.WhitespaceTokenType;
-        //
-        //     if (success) {
-        //
-        //         context.next();
-        //     }
-        //
-        //     break;
         case ValidationTokenEnum.Separator:
             {
                 const token = context.peek();
@@ -541,13 +444,6 @@ function match(syntax, context, options) {
             }
             if (syntax.typ == ValidationTokenEnum.Function) {
                 success = funcLike.includes(token.typ) && syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && doEvaluateSyntax(syntax.chi, createContext(token.chi), options).valid == SyntaxValidationResult.Valid;
-                // console.error(`>> match: ${JSON.stringify({
-                //     syntax,
-                //     token,
-                //     // result,
-                //     tr2: syntax,
-                //     success
-                // }, null, 1)}`);
                 if (success) {
                     context.next();
                 }
@@ -566,7 +462,6 @@ function match(syntax, context, options) {
                 }
                 break;
             }
-        // throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)} : ${renderToken(context.peek() as Token)} : ${JSON.stringify(syntax, null, 1)} | ${JSON.stringify(context.peek(), null, 1)}`);
     }
     if (!success && token.typ == EnumToken.IdenTokenType && allValues.includes(token.val.toLowerCase())) {
         success = true;
@@ -679,7 +574,7 @@ function matchPropertyType(syntax, context, options) {
                     token = context.peek();
                     continue;
                 }
-                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0);
                 if (!success) {
                     break;
                 }
@@ -777,19 +672,19 @@ function matchPropertyType(syntax, context, options) {
             }
             break;
         case 'angle':
-            success = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0') || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0) || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'length':
-            success = token.typ == EnumToken.LengthTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0') || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = token.typ == EnumToken.LengthTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0) || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'percentage':
-            success = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0') || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0) || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'length-percentage':
-            success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0') || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0) || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'resolution':
-            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0') || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0) || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'hash-token':
             success = token.typ == EnumToken.HashTokenType;
@@ -801,7 +696,7 @@ function matchPropertyType(syntax, context, options) {
             success = token.typ == EnumToken.TimeTokenType || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'zero':
-            success = token.val == '0' || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
+            success = token.val == 0 || (token.typ == EnumToken.FunctionTokenType && token.val == 'calc');
             break;
         case 'pseudo-element-selector':
             success = token.typ == EnumToken.PseudoElementTokenType;
@@ -821,9 +716,6 @@ function matchPropertyType(syntax, context, options) {
                 }
             }
             break;
-        // default:
-        //
-        //     throw new Error(`Not implemented: ${ValidationTokenEnum[syntax.typ] ?? syntax.typ} : ${renderSyntax(syntax)}\n${JSON.stringify(syntax, null, 1)}`);
     }
     if (!success &&
         token.typ == EnumToken.FunctionTokenType &&
@@ -859,12 +751,7 @@ function someOf(syntaxes, context, options) {
     let success = false;
     const matched = [];
     for (i = 0; i < syntaxes.length; i++) {
-        // if (context.peek<Token>()?.typ == EnumToken.WhitespaceTokenType) {
-        //
-        //     context.next();
-        // }
         result = doEvaluateSyntax(syntaxes[i], context.clone(), options);
-        // console.error(`>> someOf: ${JSON.stringify({result}, null, 1)}`);
         if (result.valid == SyntaxValidationResult.Valid) {
             success = true;
             if (result.context.done()) {
@@ -877,8 +764,6 @@ function someOf(syntaxes, context, options) {
         // pick the best match
         matched.sort((a, b) => a.context.done() ? -1 : b.context.done() ? 1 : b.context.index - a.context.index);
     }
-    // console.error(JSON.stringify({matched}, null, 1));
-    // console.error(new Error('someOf'));
     return matched[0] ?? {
         valid: SyntaxValidationResult.Drop,
         node: context.peek(),
@@ -934,10 +819,6 @@ function allOf(syntax, context, options) {
     for (i = 0; i < slice.length; i++) {
         if (slice[i].typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(slice[i].val.toLowerCase())) {
             vars.push(slice[i]);
-            // if (slice[i + 1]?.typ == EnumToken.WhitespaceTokenType) {
-            //
-            //     vars.push(slice[++i]);
-            // }
             continue;
         }
         if (slice[i].typ == EnumToken.CommaTokenType || (slice[i].typ == EnumToken.LiteralTokenType && slice[i].val == '/')) {
@@ -964,7 +845,6 @@ function allOf(syntax, context, options) {
             }
             while (!cp.done()) {
                 result = doEvaluateSyntax(syntax[i], cp.clone(), { ...options, isOptional: false });
-                // console.error(`>> allOf: syntaxes[${i}]: ${syntax[i].length} ${syntax[i].reduce((acc, curr) => acc + renderSyntax(curr), '')}\n>> ${cp.slice<Token>().reduce((acc, curr) => acc + renderToken(curr), '')}\n>> ${JSON.stringify({result}, null, 1)}`);
                 if (result.valid == SyntaxValidationResult.Valid) {
                     let end = slice.indexOf(cp.current());
                     if (end == -1) {

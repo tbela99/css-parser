@@ -175,7 +175,6 @@ function parseSyntax(syntax) {
         typ: ValidationTokenEnum.Root,
         chi: []
     }, 'pos', { ...objectProperties, value: { ind: 0, lin: 1, col: 0 } });
-    // return minify(doParseSyntax(syntaxes, tokenize(syntaxes), root)) as ValidationRootToken;
     return minify(doParseSyntax(syntax, tokenize(syntax), root));
 }
 function matchParens(syntax, iterator) {
@@ -351,10 +350,6 @@ function matchAtRule(syntax, iterator) {
                 token.typ = ValidationTokenEnum.AtRule;
                 break;
             }
-            // if (item.value.typ != ValidationTokenEnum.Whitespace) {
-            //
-            //     console.error('unexpected token', item.value);
-            // }
             item = iterator.next();
             if (item.done) {
                 break;
@@ -971,9 +966,6 @@ function renderSyntax(token, parent) {
             return '{' + token.chi.reduce((acc, t) => acc + renderSyntax(t), '') + '}';
         case ValidationTokenEnum.DeclarationDefinitionToken:
             return token.nam + ': ' + renderSyntax(token.val);
-        // case ValidationTokenEnum.ColumnArrayToken:
-        //
-        //     return (token as ValidationColumnArrayToken).chi.reduce((acc: string, curr: ValidationToken) => acc + (acc.trim().length > 0 ? '||' : '') + renderSyntax(curr), '');
         default:
             throw new Error('Unhandled token: ' + JSON.stringify({ token }, null, 1));
     }

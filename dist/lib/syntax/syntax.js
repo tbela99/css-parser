@@ -510,7 +510,7 @@ function isIdentColor(token) {
     return token.typ == EnumToken.ColorTokenType && [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(token.kin) && isIdent(token.val);
 }
 function isPercentageToken(token) {
-    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == '0');
+    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && token.val == 0);
 }
 function isColor(token) {
     if (token.typ == EnumToken.ColorTokenType) {
@@ -633,12 +633,12 @@ function isColor(token) {
                         return false;
                     }
                     if (children[1].length == 2) {
-                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == '0'))) {
+                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && children[1][1].val == 0))) {
                             return false;
                         }
                     }
                     if (children[2].length == 2) {
-                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == '0'))) {
+                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && children[2][1].val == 0))) {
                             return false;
                         }
                     }
@@ -782,15 +782,6 @@ function isIdent(name) {
     }
     return true;
 }
-function isNonPrintable(codepoint) {
-    // null -> backspace
-    return (codepoint >= 0 && codepoint <= 0x8) ||
-        // tab
-        codepoint == 0xb ||
-        // delete
-        codepoint == 0x7f ||
-        (codepoint >= 0xe && codepoint <= 0x1f);
-}
 function isPseudo(name) {
     return name.charAt(0) == ':' &&
         ((name.endsWith('(') && isIdent(name.charAt(1) == ':' ? name.slice(2, -1) : name.slice(1, -1))) ||
@@ -897,7 +888,7 @@ function parseDimension(name) {
     }
     const dimension = {
         typ: EnumToken.DimensionTokenType,
-        val: name.slice(0, index),
+        val: +name.slice(0, index),
         unit: name.slice(index)
     };
     if (isAngle(dimension)) {
@@ -957,4 +948,4 @@ function isWhiteSpace(codepoint) {
         codepoint == 0xa || codepoint == 0xc || codepoint == 0xd;
 }
 
-export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNonPrintable, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };
+export { colorFontTech, fontFeaturesTech, fontFormat, isAngle, isAtKeyword, isColor, isColorspace, isDigit, isDimension, isFlex, isFrequency, isFunction, isHash, isHexColor, isHueInterpolationMethod, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isNewLine, isNumber, isPercentage, isPercentageToken, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolution, isTime, isWhiteSpace, mathFuncs, mediaTypes, mozExtensions, parseColor, parseDimension, pseudoAliasMap, pseudoElements, transformFunctions, webkitExtensions, wildCardFuncs };

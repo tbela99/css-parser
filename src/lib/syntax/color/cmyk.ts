@@ -129,11 +129,11 @@ function cmyktoken(values: number[]): ColorToken {
         chi: values.reduce((acc: Token[], curr: number, index: number) => index < 4 ? [...acc, {
             typ: EnumToken.PercentageTokenType,
             // @ts-ignore
-            val: (curr * 100) + ''
+            val: curr * 100
         } as Token] : [...acc, {
             typ: EnumToken.LiteralTokenType,
             val: '/'
-        } as Token, {typ: EnumToken.PercentageTokenType, val: (curr * 100).toFixed()} as Token], [] as Token[]) as Token[],
+        } as Token, {typ: EnumToken.PercentageTokenType, val: curr * 100} as Token], [] as Token[]) as Token[],
         kin: ColorType.DEVICE_CMYK
     }
 }

@@ -13,15 +13,6 @@ import './config.js';
 import { validateSelectorList } from './syntaxes/selector-list.js';
 
 function validateSelector(selector, options, root) {
-    // if (root == null) {
-    //
-    //     return validateSelectorList(selector, root, options);
-    // }
-    // @ts-ignore
-    // if (root.typ == EnumToken.AtRuleNodeType && root.nam.match(/^(-[a-z]+-)?keyframes$/)) {
-    //
-    //     return validateKeyframeBlockList(selector, root as AstAtRule, options);
-    // }
     let isNested = root.typ == EnumToken.RuleNodeType ? 1 : 0;
     let currentRoot = root.parent;
     while (currentRoot != null && isNested == 0) {

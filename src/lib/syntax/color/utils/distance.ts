@@ -14,7 +14,7 @@ export function okLabDistance(okLab1: [number, number, number], okLab2: [number,
 }
 
 /**
- * Check if two okLab colors are close.
+ * Check if two colors are close.
  * @param color1
  * @param color2
  * @param threshold
@@ -23,8 +23,6 @@ export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: 
 
     color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;
     color2 = convertColor(color2, ColorType.OKLAB ) as ColorToken;
-
-    // console.error(JSON.stringify({color1, color2}, null, 1));
 
     if (color1 == null || color2 == null) {
         return false;

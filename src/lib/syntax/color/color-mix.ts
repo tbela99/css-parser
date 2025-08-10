@@ -1,4 +1,4 @@
-import type {ColorToken, IdentToken, PercentageToken, Token} from "../../../@types/index.d.ts";
+import type {ColorToken, IdentToken, NumberToken, PercentageToken, Token} from "../../../@types/index.d.ts";
 import {ColorType, EnumToken} from "../../ast/index.ts";
 import {getNumber} from "./color.ts";
 import {srgb2lsrgbvalues, srgbvalues} from "./srgb.ts";
@@ -67,9 +67,9 @@ function interpolateHue(interpolationMethod: IdentToken, h1: number, h2: number)
     return [h1, h2];
 }
 
-export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentToken | null, color1: ColorToken, percentage1: PercentageToken | null, color2: ColorToken, percentage2: PercentageToken | null): ColorToken | null {
+export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentToken | null, color1: ColorToken, percentage1: PercentageToken | NumberToken | null, color2: ColorToken, percentage2: PercentageToken | NumberToken | null): ColorToken | null {
 
-    if (color1.val == 'currentcolor' || color2.val == 'currentcolor') {
+    if (color1.val.toLowerCase() == 'currentcolor' || color2.val == 'currentcolor'.toLowerCase()) {
 
         return null;
     }
@@ -89,9 +89,9 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
         if (percentage2 == null) {
 
             // @ts-ignore
-            percentage1 = {typ: EnumToken.NumberTokenType, val: '.5'};
+            percentage1 = {typ: EnumToken.NumberTokenType, val: .5};
             // @ts-ignore
-            percentage2 = {typ: EnumToken.NumberTokenType, val: '.5'};
+            percentage2 = {typ: EnumToken.NumberTokenType, val: .5};
         } else {
 
             if (+percentage2.val <= 0) {
@@ -101,12 +101,11 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
 
             if (+percentage2.val >= 100) {
 
-                // @ts-ignore
-                percentage2 = {typ: EnumToken.NumberTokenType, val: '1'};
+                percentage2 = {typ: EnumToken.NumberTokenType, val: 1} as NumberToken;
             }
 
             // @ts-ignore
-            percentage1 = {typ: EnumToken.NumberTokenType, val: String(1 - percentage2.val / 100)};
+            percentage1 = {typ: EnumToken.NumberTokenType, val: 1 - (percentage2 as NumberToken).val / 100};
         }
     } else {
 
@@ -122,11 +121,11 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
             if (percentage1.val >= 100) {
 
                 // @ts-ignore
-                percentage1 = {typ: EnumToken.NumberTokenType, val: '1'};
+                percentage1 = {typ: EnumToken.NumberTokenType, val: 1};
             }
 
             // @ts-ignore
-            percentage2 = {typ: EnumToken.NumberTokenType, val: String(1 - percentage1.val / 100)};
+            percentage2 = {typ: EnumToken.NumberTokenType, val: 1 - percentage1.val / 100};
         } else {
 
             // @ts-ignore
@@ -372,7 +371,7 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
                     return {
 
                         typ: EnumToken.NumberTokenType,
-                        val: String(v)
+                        val: v
                     }
                 }),
                 kin: ColorType.LCH
@@ -444,11 +443,11 @@ export function colorMix(colorSpace: IdentToken, hueInterpolationMethod: IdentTo
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
 
                 // @ts-ignore
-                result.chi[0] = {typ: EnumToken.AngleTokenType, val: String(result.chi[0].val * 360), unit: 'deg'};
+                result.chi[0] = {typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360};
                 // @ts-ignore
-                result.chi[1] = {typ: EnumToken.PercentageTokenType, val: String(result.chi[1].val * 100)};
+                result.chi[1] = {typ: EnumToken.PercentageTokenType, val: result.chi[1].val * 100};
                 // @ts-ignore
-                result.chi[2] = {typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100)};
+                result.chi[2] = {typ: EnumToken.PercentageTokenType, val: result.chi[2].val * 100};
 
             }
 

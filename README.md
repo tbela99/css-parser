@@ -302,7 +302,7 @@ console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
 ### Convert colors
 
 ```javascript
-import {transform} from '@tbela99/css-parser';
+import {transform, ColorType} from '@tbela99/css-parser';
 
 
 const css = `

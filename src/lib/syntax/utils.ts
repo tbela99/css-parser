@@ -51,7 +51,7 @@ export function length2Px(value: LengthToken | NumberToken): number | null {
  */
 export function minifyNumber(val: string | number): string {
 
-    val = String(+val);
+    val = String(val);
 
     if (val === '0') {
 

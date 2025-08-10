@@ -99,14 +99,14 @@ export function hwbToken(values: number[]): ColorToken {
 
     const chi: Token[] = <Token[]>[
 
-        {typ: EnumToken.NumberTokenType, val: String(values[0])},
-        {typ: EnumToken.PercentageTokenType, val: String(values[1] * 100)},
-        {typ: EnumToken.PercentageTokenType, val: String(values[2] * 100)},
+        {typ: EnumToken.NumberTokenType, val: values[0]},
+        {typ: EnumToken.PercentageTokenType, val: values[1] * 100},
+        {typ: EnumToken.PercentageTokenType, val: values[2] * 100},
     ];
 
     if (values.length == 4) {
 
-        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {typ: EnumToken.PercentageTokenType, val: String((values[3] * 100).toFixed())});
+        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {typ: EnumToken.PercentageTokenType, val: values[3] * 100});
     }
 
     return {

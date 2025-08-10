@@ -581,7 +581,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             if (curr.typ == EnumToken.IdenTokenType && curr.val == 'from') {
                                 Object.assign(curr, { typ: EnumToken.PercentageTokenType, val: '0' });
                             }
-                            else if (curr.typ == EnumToken.PercentageTokenType && curr.val == '100') {
+                            else if (curr.typ == EnumToken.PercentageTokenType && curr.val == 100) {
                                 Object.assign(curr, { typ: EnumToken.IdenTokenType, val: 'to' });
                             }
                         }
@@ -658,7 +658,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             val: tokens[i].val.charAt(0)
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: tokens[i].val.slice(1)
+                            val: +tokens[i].val.slice(1)
                         });
                     }
                     else if (start == '/' && isFunction(val)) {
@@ -1194,19 +1194,19 @@ function getTokenType(val, hint) {
     if (isNumber(val)) {
         return {
             typ: EnumToken.NumberTokenType,
-            val
+            val: +val
         };
     }
     if (isPercentage(val)) {
         return {
             typ: EnumToken.PercentageTokenType,
-            val: val.slice(0, -1)
+            val: +val.slice(0, -1)
         };
     }
     if (isFlex(val)) {
         return {
             typ: EnumToken.FlexTokenType,
-            val: val.slice(0, -2)
+            val: +val.slice(0, -2)
         };
     }
     if (isDimension(val)) {

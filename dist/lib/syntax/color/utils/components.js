@@ -13,7 +13,7 @@ function getComponents(token) {
         const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t, index) => {
-            return { typ: EnumToken.Number, val: (index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255).toString() };
+            return { typ: EnumToken.Number, val: index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255 };
         });
     }
     const result = [];

@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.0
+
+- [x] numerical and dimension tokens use numbers instead of string
+
 ## V1.2.0
 
 - [x] convert color to any supported color space #94

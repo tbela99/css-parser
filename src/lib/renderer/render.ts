@@ -40,8 +40,7 @@ import type {
     RenderOptions,
     RenderResult,
     StringToken,
-    Token,
-    UrlToken
+    Token
 } from "../../@types/index.d.ts";
 import {convertColor, getAngle} from "../syntax/color/index.ts";
 import {ColorType, EnumToken, expand} from "../ast/index.ts";
@@ -799,13 +798,13 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
         case EnumToken.PercentageTokenType:
 
             const uni: string = token.typ == EnumToken.PercentageTokenType ? '%' : 'fr';
-            const perc: string = (<FractionToken>(token as PercentageToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as PercentageToken).val, options, cache) : minifyNumber(<string>(token as PercentageToken).val);
+            const perc: string = (<FractionToken>(token as PercentageToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as PercentageToken).val, options, cache) : minifyNumber((token as PercentageToken).val as number);
 
             return options.minify && perc == '0' ? '0' : (perc.includes('/') ? perc.replace('/', uni + '/') : perc + uni);
 
         case EnumToken.NumberTokenType:
 
-            return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as NumberToken).val, options, cache) : minifyNumber(<string>(token as NumberToken).val);
+            return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType ? renderToken(<FractionToken>(token as NumberToken).val, options, cache) : minifyNumber((token as NumberToken).val as number);
 
         case EnumToken.CommentTokenType:
 
@@ -825,41 +824,41 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.UrlTokenTokenType:
 
-            if (token.typ == EnumToken.UrlTokenTokenType) {
-
-                if (options.output != null) {
-
-                    if (!('original' in token)) {
-
-                        // do not modify original token
-                        token = {...token};
-                        Object.defineProperty(token, 'original', {
-                            enumerable: false,
-                            writable: false,
-                            value: (token as UrlToken).val
-                        })
-                    }
-
-                    // @ts-ignore
-                    if (!(token.original in cache)) {
-
-                        let output: string = <string>options.output ?? '';
-                        const key = output + 'abs';
-
-                        if (!(key in cache)) {
-
-                            // @ts-ignore
-                            cache[key] = options.dirname(options.resolve(output, options.cwd).absolute);
-                        }
-
-                        // @ts-ignore
-                        cache[token.original] = options.resolve(token.original, cache[key]).relative;
-                    }
-
-                    // @ts-ignore
-                    token.val = cache[token.original];
-                }
-            }
+            // if (token.typ == EnumToken.UrlTokenTokenType) {
+            //
+            //     if (options.output != null) {
+            //
+            //         if (!('original' in token)) {
+            //
+            //             // do not modify original token
+            //             token = {...token};
+            //             Object.defineProperty(token, 'original', {
+            //                 enumerable: false,
+            //                 writable: false,
+            //                 value: (token as UrlToken).val
+            //             })
+            //         }
+            //
+            //         // @ts-ignore
+            //         if (!(token.original in cache)) {
+            //
+            //             let output: string = <string>options.output ?? '';
+            //             const key = output + 'abs';
+            //
+            //             if (!(key in cache)) {
+            //
+            //                 // @ts-ignore
+            //                 cache[key] = options.dirname(options.resolve(output, options.cwd).absolute);
+            //             }
+            //
+            //             // @ts-ignore
+            //             cache[token.original] = options.resolve(token.original, cache[key]).relative;
+            //         }
+            //
+            //         // @ts-ignore
+            //         token.val = cache[token.original];
+            //     }
+            // }
 
         case EnumToken.HashTokenType:
         case EnumToken.IdenTokenType:

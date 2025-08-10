@@ -57,7 +57,7 @@ function interpolateHue(interpolationMethod, h1, h2) {
     return [h1, h2];
 }
 function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color2, percentage2) {
-    if (color1.val == 'currentcolor' || color2.val == 'currentcolor') {
+    if (color1.val.toLowerCase() == 'currentcolor' || color2.val == 'currentcolor'.toLowerCase()) {
         return null;
     }
     if (hueInterpolationMethod != null && isRectangularOrthogonalColorspace(colorSpace)) {
@@ -69,20 +69,19 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
     if (percentage1 == null) {
         if (percentage2 == null) {
             // @ts-ignore
-            percentage1 = { typ: EnumToken.NumberTokenType, val: '.5' };
+            percentage1 = { typ: EnumToken.NumberTokenType, val: .5 };
             // @ts-ignore
-            percentage2 = { typ: EnumToken.NumberTokenType, val: '.5' };
+            percentage2 = { typ: EnumToken.NumberTokenType, val: .5 };
         }
         else {
             if (+percentage2.val <= 0) {
                 return null;
             }
             if (+percentage2.val >= 100) {
-                // @ts-ignore
-                percentage2 = { typ: EnumToken.NumberTokenType, val: '1' };
+                percentage2 = { typ: EnumToken.NumberTokenType, val: 1 };
             }
             // @ts-ignore
-            percentage1 = { typ: EnumToken.NumberTokenType, val: String(1 - percentage2.val / 100) };
+            percentage1 = { typ: EnumToken.NumberTokenType, val: 1 - percentage2.val / 100 };
         }
     }
     else {
@@ -94,10 +93,10 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             // @ts-ignore
             if (percentage1.val >= 100) {
                 // @ts-ignore
-                percentage1 = { typ: EnumToken.NumberTokenType, val: '1' };
+                percentage1 = { typ: EnumToken.NumberTokenType, val: 1 };
             }
             // @ts-ignore
-            percentage2 = { typ: EnumToken.NumberTokenType, val: String(1 - percentage1.val / 100) };
+            percentage2 = { typ: EnumToken.NumberTokenType, val: 1 - percentage1.val / 100 };
         }
         else {
             // @ts-ignore
@@ -275,7 +274,7 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
                 chi: values.map(v => {
                     return {
                         typ: EnumToken.NumberTokenType,
-                        val: String(v)
+                        val: v
                     };
                 }),
                 kin: ColorType.LCH
@@ -332,11 +331,11 @@ function colorMix(colorSpace, hueInterpolationMethod, color1, percentage1, color
             };
             if (colorSpace.val == 'hsl' || colorSpace.val == 'hwb') {
                 // @ts-ignore
-                result.chi[0] = { typ: EnumToken.AngleTokenType, val: String(result.chi[0].val * 360), unit: 'deg' };
+                result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val * 360 };
                 // @ts-ignore
-                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: String(result.chi[1].val * 100) };
+                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: result.chi[1].val * 100 };
                 // @ts-ignore
-                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: String(result.chi[2].val * 100) };
+                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: result.chi[2].val * 100 };
             }
             return result;
     }

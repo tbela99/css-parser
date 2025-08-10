@@ -14,7 +14,7 @@ function matchType(val, properties) {
         (properties.types.some((t) => EnumToken[t] == val.typ))) {
         return true;
     }
-    if (val.typ == EnumToken.NumberTokenType && val.val == '0') {
+    if (val.typ == EnumToken.NumberTokenType && val.val == 0) {
         // @ts-ignore
         return properties.types.some((type) => {
             // @ts-ignore

@@ -66,7 +66,7 @@ export declare interface NestingSelectorToken extends BaseToken {
 export declare interface NumberToken extends BaseToken {
 
     typ: EnumToken.NumberTokenType,
-    val: string | FractionToken;
+    val: number | FractionToken;
 }
 
 export declare interface AtRuleToken extends BaseToken {
@@ -79,13 +79,13 @@ export declare interface AtRuleToken extends BaseToken {
 export declare interface PercentageToken extends BaseToken {
 
     typ: EnumToken.PercentageTokenType,
-    val: string | FractionToken;
+    val: number | FractionToken;
 }
 
 export declare interface FlexToken extends BaseToken {
 
     typ: EnumToken.FlexTokenType,
-    val: string | FractionToken;
+    val: number | FractionToken;
 }
 
 export declare interface FunctionToken extends BaseToken {
@@ -151,42 +151,42 @@ export declare interface UnclosedStringToken extends BaseToken {
 export declare interface DimensionToken extends BaseToken {
 
     typ: EnumToken.DimensionTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: string;
 }
 
 export declare interface LengthToken extends BaseToken {
 
     typ: EnumToken.LengthTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: string;
 }
 
 export declare interface AngleToken extends BaseToken {
 
     typ: EnumToken.AngleTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: string;
 }
 
 export declare interface TimeToken extends BaseToken {
 
     typ: EnumToken.TimeTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: 'ms' | 's';
 }
 
 export declare interface FrequencyToken extends BaseToken {
 
     typ: EnumToken.FrequencyTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: 'Hz' | 'Khz';
 }
 
 export declare interface ResolutionToken extends BaseToken {
 
     typ: EnumToken.ResolutionTokenType;
-    val: string | FractionToken;
+    val: number | FractionToken;
     unit: 'dpi' | 'dpcm' | 'dppx' | 'x';
 }
 

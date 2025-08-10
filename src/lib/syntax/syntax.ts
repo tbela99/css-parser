@@ -561,7 +561,7 @@ export function isIdentColor(token: Token): boolean {
 
 export function isPercentageToken(token: Token): boolean {
 
-    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
+    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0);
 }
 
 export function isColor(token: Token): boolean {
@@ -744,7 +744,7 @@ export function isColor(token: Token): boolean {
 
                     if (children[1].length == 2) {
 
-                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && (children[1][1] as NumberToken).val == '0'))) {
+                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && (children[1][1] as NumberToken).val == 0))) {
 
                             return false;
                         }
@@ -752,7 +752,7 @@ export function isColor(token: Token): boolean {
 
                     if (children[2].length == 2) {
 
-                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && (children[2][1] as NumberToken).val == '0'))) {
+                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && (children[2][1] as NumberToken).val == 0))) {
 
                             return false;
                         }
@@ -1147,7 +1147,7 @@ export function parseDimension(name: string): DimensionToken | LengthToken | Ang
 
     const dimension = <DimensionToken>{
         typ: EnumToken.DimensionTokenType,
-        val: name.slice(0, index),
+        val: +name.slice(0, index),
         unit: name.slice(index)
     };
 

@@ -9,7 +9,6 @@ import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import '../../renderer/sourcemap/lib/encode.js';
-import { minifyNumber } from '../../syntax/utils.js';
 
 function parseMatrix(mat) {
     if (mat.typ == EnumToken.IdenTokenType) {
@@ -88,7 +87,7 @@ function serialize(matrix) {
                 }
                 acc.push({
                     typ: EnumToken.NumberTokenType,
-                    val: minifyNumber(t)
+                    val: t
                 });
                 return acc;
             }, [])
@@ -103,7 +102,7 @@ function serialize(matrix) {
             }
             acc.push({
                 typ: EnumToken.NumberTokenType,
-                val: minifyNumber(curr)
+                val: curr
             });
             return acc;
         }, [])

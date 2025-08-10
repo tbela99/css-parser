@@ -3,7 +3,7 @@ import '../ast/minify.js';
 import '../ast/walk.js';
 import './parse.js';
 import './utils/config.js';
-import { isWhiteSpace, isIdentStart, isIdent, isNewLine, isDigit, isNonPrintable } from '../syntax/syntax.js';
+import { isWhiteSpace, isIdentStart, isIdent, isNewLine, isDigit } from '../syntax/syntax.js';
 import '../syntax/color/utils/constants.js';
 import '../renderer/sourcemap/lib/encode.js';
 
@@ -424,8 +424,6 @@ function* tokenize(stream) {
                     value = peek(parseInfo);
                     // let cp: number;
                     let whitespace = '';
-                    let hasWhiteSpace = false;
-                    let errorState = false;
                     if (value == '"' || value == "'") {
                         const quote = value;
                         let inquote = true;
@@ -465,7 +463,6 @@ function* tokenize(stream) {
                                 if (isWhiteSpace(charCode)) {
                                     whitespace += value;
                                     while (value = peek(parseInfo)) {
-                                        hasWhiteSpace = true;
                                         if (isWhiteSpace(value?.charCodeAt(0))) {
                                             whitespace += next(parseInfo);
                                             continue;
@@ -521,42 +518,33 @@ function* tokenize(stream) {
                                 buffer = '';
                                 break;
                             }
-                            if (isWhiteSpace(charCode)) {
-                                hasWhiteSpace = true;
-                                whitespace = value;
-                                while (isWhiteSpace(peek(parseInfo)?.charCodeAt(0))) {
-                                    whitespace += next(parseInfo);
-                                }
-                                continue;
-                            }
-                            if (isNonPrintable(charCode) ||
-                                // '"'
-                                charCode == 0x22 ||
-                                // "'"
-                                charCode == 0x27 ||
-                                // \('
-                                charCode == 0x28 ||
-                                hasWhiteSpace) {
-                                errorState = true;
-                            }
-                            if (errorState) {
-                                buffer += whitespace + value;
-                                while (value = peek(parseInfo)) {
-                                    charCode = value.charCodeAt(0);
-                                    if (charCode == 0x5c) {
-                                        buffer += next(parseInfo, 2);
-                                        continue;
-                                    }
-                                    // ')'
-                                    if (charCode == 0x29) {
-                                        break;
-                                    }
-                                    buffer += next(parseInfo);
-                                }
-                                yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
-                                buffer = '';
-                                break;
-                            }
+                            // if (errorState) {
+                            //
+                            //     buffer += whitespace + value;
+                            //
+                            //     while (value = peek(parseInfo)) {
+                            //
+                            //         charCode = value.charCodeAt(0);
+                            //
+                            //         if (charCode == 0x5c) {
+                            //
+                            //             buffer += next(parseInfo, 2);
+                            //             continue;
+                            //         }
+                            //
+                            //         // ')'
+                            //         if (charCode == 0x29) {
+                            //
+                            //             break;
+                            //         }
+                            //
+                            //         buffer += next(parseInfo);
+                            //     }
+                            //
+                            //     yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
+                            //     buffer = '';
+                            //     break;
+                            // }
                             buffer += value;
                         }
                     }

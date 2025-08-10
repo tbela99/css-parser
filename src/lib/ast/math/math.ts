@@ -3,7 +3,7 @@ import {EnumToken} from "../types.ts";
 
 import {minifyNumber} from "../../syntax/index.ts";
 
-export function gcd (x: number, y: number): number {
+export function gcd(x: number, y: number): number {
 
     x = Math.abs(x);
     y = Math.abs(y);
@@ -73,21 +73,21 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
 
                 return minifyNumber(result).length < r2.length ? result : {
                     typ: EnumToken.FractionTokenType,
-                    l: {typ: EnumToken.NumberTokenType, val: minifyNumber(r[0])},
-                    r: {typ: EnumToken.NumberTokenType, val: minifyNumber(r[1])}
+                    l: {typ: EnumToken.NumberTokenType, val: r[0]},
+                    r: {typ: EnumToken.NumberTokenType, val: r[1]}
                 };
         }
     }
 
     let l1: FractionToken = typeof a == 'number' ? {
         typ: EnumToken.FractionTokenType,
-        l: {typ: EnumToken.NumberTokenType, val: minifyNumber(a)},
-        r: {typ: EnumToken.NumberTokenType, val: '1'}
+        l: {typ: EnumToken.NumberTokenType, val: a},
+        r: {typ: EnumToken.NumberTokenType, val: 1}
     } : a;
     let r1: FractionToken = typeof b == 'number' ? {
         typ: EnumToken.FractionTokenType,
-        l: {typ: EnumToken.NumberTokenType, val: minifyNumber(b)},
-        r: {typ: EnumToken.NumberTokenType, val: '1'}
+        l: {typ: EnumToken.NumberTokenType, val:b},
+        r: {typ: EnumToken.NumberTokenType, val: 1}
     } : b;
 
     let l2: number;
@@ -140,8 +140,8 @@ export function compute(a: number | FractionToken, b: number | FractionToken, op
     const result: number = a2[0] / a2[1];
     return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length ? result : {
         typ: EnumToken.FractionTokenType,
-        l: {typ: EnumToken.NumberTokenType, val: minifyNumber(a2[0])},
-        r: {typ: EnumToken.NumberTokenType, val: minifyNumber(a2[1])}
+        l: {typ: EnumToken.NumberTokenType, val: a2[0]},
+        r: {typ: EnumToken.NumberTokenType, val: a2[1]}
     };
 }
 

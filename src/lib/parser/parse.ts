@@ -905,7 +905,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         if (curr.typ == EnumToken.IdenTokenType && (curr as IdentToken).val == 'from') {
 
                             Object.assign(curr, {typ: EnumToken.PercentageTokenType, val: '0'})
-                        } else if (curr.typ == EnumToken.PercentageTokenType && (curr as PercentageToken).val == '100') {
+                        } else if (curr.typ == EnumToken.PercentageTokenType && (curr as PercentageToken).val == 100) {
 
                             Object.assign(curr, {typ: EnumToken.IdenTokenType, val: 'to'})
                         }
@@ -1010,7 +1010,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             val: (tokens[i] as LiteralToken).val.charAt(0)
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: (tokens[i] as LiteralToken).val.slice(1)
+                            val: +(tokens[i] as LiteralToken).val.slice(1)
                         });
                     } else if (start == '/' && isFunction(val)) {
 
@@ -1746,21 +1746,21 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
     if (isNumber(val)) {
         return <NumberToken>{
             typ: EnumToken.NumberTokenType,
-            val
+            val: +val
         }
     }
 
     if (isPercentage(val)) {
         return <PercentageToken>{
             typ: EnumToken.PercentageTokenType,
-            val: val.slice(0, -1)
+            val: +val.slice(0, -1)
         }
     }
 
     if (isFlex(val)) {
         return <FlexToken>{
             typ: EnumToken.FlexTokenType,
-            val: val.slice(0, -2)
+            val: +val.slice(0, -2)
         };
     }
 

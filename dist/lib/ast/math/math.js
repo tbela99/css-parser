@@ -52,20 +52,20 @@ function compute(a, b, op) {
                 const r2 = minifyNumber(r[0]) + '/' + minifyNumber(r[1]);
                 return minifyNumber(result).length < r2.length ? result : {
                     typ: EnumToken.FractionTokenType,
-                    l: { typ: EnumToken.NumberTokenType, val: minifyNumber(r[0]) },
-                    r: { typ: EnumToken.NumberTokenType, val: minifyNumber(r[1]) }
+                    l: { typ: EnumToken.NumberTokenType, val: r[0] },
+                    r: { typ: EnumToken.NumberTokenType, val: r[1] }
                 };
         }
     }
     let l1 = typeof a == 'number' ? {
         typ: EnumToken.FractionTokenType,
-        l: { typ: EnumToken.NumberTokenType, val: minifyNumber(a) },
-        r: { typ: EnumToken.NumberTokenType, val: '1' }
+        l: { typ: EnumToken.NumberTokenType, val: a },
+        r: { typ: EnumToken.NumberTokenType, val: 1 }
     } : a;
     let r1 = typeof b == 'number' ? {
         typ: EnumToken.FractionTokenType,
-        l: { typ: EnumToken.NumberTokenType, val: minifyNumber(b) },
-        r: { typ: EnumToken.NumberTokenType, val: '1' }
+        l: { typ: EnumToken.NumberTokenType, val: b },
+        r: { typ: EnumToken.NumberTokenType, val: 1 }
     } : b;
     let l2;
     let r2;
@@ -103,8 +103,8 @@ function compute(a, b, op) {
     const result = a2[0] / a2[1];
     return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length ? result : {
         typ: EnumToken.FractionTokenType,
-        l: { typ: EnumToken.NumberTokenType, val: minifyNumber(a2[0]) },
-        r: { typ: EnumToken.NumberTokenType, val: minifyNumber(a2[1]) }
+        l: { typ: EnumToken.NumberTokenType, val: a2[0] },
+        r: { typ: EnumToken.NumberTokenType, val: a2[1] }
     };
 }
 function rem(...a) {
