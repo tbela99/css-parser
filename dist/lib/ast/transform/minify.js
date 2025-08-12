@@ -242,10 +242,13 @@ function minify(matrix) {
     ] : result;
 }
 function eqMatrix(a, b) {
+    // console.error(JSON.stringify({a, b}, null, 1));
     let mat = identity();
     let tmp = identity();
     // @ts-ignore
-    const data = Array.isArray(a) ? a : parseMatrix(a);
+    const data = (Array.isArray(a) ? a : parseMatrix(a));
+    // toZero(data);
+    // console.error({data});
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
         if (tmp == null) {
@@ -253,12 +256,14 @@ function eqMatrix(a, b) {
         }
         mat = multiply(mat, tmp);
     }
+    // toZero(mat);
+    // console.error({mat});
     if (mat == null) {
         return false;
     }
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
-            if (Math.abs(mat[i][j] - data[i][j]) > epsilon) {
+            if (Math.abs(mat[i * 4 + j] - data[i * 4 + j]) > epsilon) {
                 return false;
             }
         }

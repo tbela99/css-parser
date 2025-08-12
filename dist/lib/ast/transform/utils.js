@@ -1,9 +1,8 @@
 const epsilon = 1e-5;
 function identity() {
-    return [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
 function pLength(point) {
-    // Calcul de la norme euclidienne
     return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
 }
 function normalize(point) {
@@ -12,23 +11,19 @@ function normalize(point) {
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
 }
 function dot(point1, point2) {
-    // if (point1.length === 4 && point2.length === 4) {
-    //
-    //     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
-    // }
-    let result = 0;
-    for (let i = 0; i < point1.length; i++) {
-        result += point1[i] * point2[i];
+    if (point1.length === 4 && point2.length === 4) {
+        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
     }
-    return result;
-    // return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 function multiply(matrixA, matrixB) {
-    let result = Array(4).fill(0).map(() => Array(4).fill(0));
+    let result = new Array(16).fill(0);
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
             for (let k = 0; k < 4; k++) {
-                result[j][i] += matrixA[k][i] * matrixB[j][k];
+                // Utiliser l'indexation linéaire pour accéder aux éléments
+                // Pour une matrice 4x4, l'index est (row * 4 + col)
+                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
             }
         }
     }
@@ -36,20 +31,17 @@ function multiply(matrixA, matrixB) {
 }
 function inverse(matrix) {
     // Create augmented matrix [matrix | identity]
-    let augmented = matrix.map((row, i) => [
-        ...row,
-        ...(i === 0 ? [1, 0, 0, 0] :
-            i === 1 ? [0, 1, 0, 0] :
-                i === 2 ? [0, 0, 1, 0] :
-                    [0, 0, 0, 1])
-    ]);
+    let augmented = [
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+    ];
     // Gaussian elimination with partial pivoting
     for (let col = 0; col < 4; col++) {
         // Find pivot row with maximum absolute value
         let maxRow = col;
-        let maxVal = Math.abs(augmented[col][col]);
+        let maxVal = Math.abs(augmented[col * 4 + col]);
         for (let row = col + 1; row < 4; row++) {
-            let val = Math.abs(augmented[row][col]);
+            let val = Math.abs(augmented[row * 4 + col]);
             if (val > maxVal) {
                 maxVal = val;
                 maxRow = row;
@@ -64,22 +56,22 @@ function inverse(matrix) {
             [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
         }
         // Scale pivot row to make pivot element 1
-        let pivot = augmented[col][col];
+        let pivot = augmented[col * 4 + col];
         for (let j = 0; j < 8; j++) {
-            augmented[col][j] /= pivot;
+            augmented[col * 4 + j] /= pivot;
         }
         // Eliminate column in other rows
         for (let row = 0; row < 4; row++) {
             if (row !== col) {
-                let factor = augmented[row][col];
+                let factor = augmented[row * 4 + col];
                 for (let j = 0; j < 8; j++) {
-                    augmented[row][j] -= factor * augmented[col][j];
+                    augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
                 }
             }
         }
     }
     // Extract the inverse from the right side of the augmented matrix
-    return augmented.map(row => row.slice(4));
+    return augmented.slice(0, 16);
 }
 // function transpose(matrix: Matrix): Matrix {
 //     // Crée une nouvelle matrice vide 4x4
@@ -103,7 +95,7 @@ function round(number) {
 // translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
 // translate → rotate → skew → scale
 function decompose(original) {
-    const matrix = original.flat();
+    const matrix = original.slice();
     // Normalize last row
     if (matrix[15] === 0) {
         return null;
@@ -120,7 +112,7 @@ function decompose(original) {
         perspectiveMatrix[11] = 0;
         perspectiveMatrix[15] = 1;
         // @ts-ignore
-        const inverted = inverse(original.reduce((acc, row, i) => acc.concat([row.slice()]), []))?.flat?.();
+        const inverted = inverse(original.slice());
         if (!inverted) {
             return null;
         }
@@ -243,16 +235,16 @@ function toZero(v) {
 // https://drafts.csswg.org/css-transforms-1/#2d-matrix
 function is2DMatrix(matrix) {
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[0][2] === 0 &&
-        matrix[0][3] === 0 &&
-        matrix[1][2] === 0 &&
-        matrix[1][3] === 0 &&
-        matrix[2][0] === 0 &&
-        matrix[2][1] === 0 &&
-        matrix[2][3] === 0 &&
-        matrix[3][2] === 0 &&
-        matrix[2][2] === 1 &&
-        matrix[3][3] === 1;
+    return matrix[0 * 4 + 2] === 0 &&
+        matrix[0 * 4 + 3] === 0 &&
+        matrix[1 * 4 + 2] === 0 &&
+        matrix[1 * 4 + 3] === 0 &&
+        matrix[2 * 4 + 0] === 0 &&
+        matrix[2 * 4 + 1] === 0 &&
+        matrix[2 * 4 + 3] === 0 &&
+        matrix[3 * 4 + 2] === 0 &&
+        matrix[2 * 4 + 2] === 1 &&
+        matrix[3 * 4 + 3] === 1;
 }
 
 export { decompose, epsilon, identity, is2DMatrix, multiply, round, toZero };

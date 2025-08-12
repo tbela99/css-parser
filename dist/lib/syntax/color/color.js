@@ -36,7 +36,7 @@ function convertColor(token, to) {
     if (token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||
         (isIdentColor(token) &&
-            ('currentcolor'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0))) {
+            'currentcolor' == token.val.toLowerCase())) {
         return token;
     }
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {

@@ -1,5 +1,5 @@
 import type {Matrix} from "./utils.ts";
-import {identity, is2DMatrix, toZero} from "./utils.ts";
+import {identity, is2DMatrix} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import type {FunctionToken, IdentToken, Token} from "../../../@types/index.d.ts";
 import {eq} from "../../parser/utils/eq.ts";
@@ -14,7 +14,6 @@ export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
     }
 
     const children = (mat as FunctionToken).chi.filter((t: Token) => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType);
-
     const values: number[] = [];
 
     for (const child of children) {
@@ -39,30 +38,30 @@ export function matrix(values: [number, number, number, number, number, number] 
 
     if (values.length === 6) {
 
-        matrix[0][0] = values[0];
-        matrix[0][1] = values[1];
-        matrix[1][0] = values[2];
-        matrix[1][1] = values[3];
-        matrix[3][0] = values[4];
-        matrix[3][1] = values[5];
+        matrix[0* 4 +0] = values[0];
+        matrix[0* 4 +1] = values[1];
+        matrix[1* 4 +0] = values[2];
+        matrix[1* 4 +1] = values[3];
+        matrix[3* 4 +0] = values[4];
+        matrix[3* 4 +1] = values[5];
     } else if (values.length === 16) {
 
-        matrix[0][0] = values[0];
-        matrix[0][1] = values[1];
-        matrix[0][2] = values[2];
-        matrix[0][3] = values[3];
-        matrix[1][0] = values[4];
-        matrix[1][1] = values[5];
-        matrix[1][2] = values[6];
-        matrix[1][3] = values[7];
-        matrix[2][0] = values[8];
-        matrix[2][1] = values[9];
-        matrix[2][2] = values[10];
-        matrix[2][3] = values[11];
-        matrix[3][0] = values[12];
-        matrix[3][1] = values[13];
-        matrix[3][2] = values[14];
-        matrix[3][3] = values[15];
+        matrix[0* 4 +0] = values[0];
+        matrix[0* 4 +1] = values[1];
+        matrix[0* 4 +2] = values[2];
+        matrix[0* 4 +3] = values[3];
+        matrix[1* 4 +0] = values[4];
+        matrix[1* 4 +1] = values[5];
+        matrix[1* 4 +2] = values[6];
+        matrix[1* 4 +3] = values[7];
+        matrix[2* 4 +0] = values[8];
+        matrix[2* 4 +1] = values[9];
+        matrix[2* 4 +2] = values[10];
+        matrix[2* 4 +3] = values[11];
+        matrix[3* 4 +0] = values[12];
+        matrix[3* 4 +1] = values[13];
+        matrix[3* 4 +2] = values[14];
+        matrix[3* 4 +3] = values[15];
     } else {
 
         return null;
@@ -73,7 +72,7 @@ export function matrix(values: [number, number, number, number, number, number] 
 
 export function serialize(matrix: Matrix): Token {
 
-    matrix = matrix.map(t => toZero(t.slice())) as Matrix;
+    matrix = matrix.slice() as Matrix;
 
     // @ts-ignore
     if (eq(matrix, identity())) {
@@ -91,12 +90,12 @@ export function serialize(matrix: Matrix): Token {
             typ: EnumToken.FunctionTokenType,
             val: 'matrix',
             chi: [
-                matrix[0][0],
-                matrix[0][1],
-                matrix[1][0],
-                matrix[1][1],
-                matrix[3][0],
-                matrix[3][1]
+                matrix[0* 4 +0],
+                matrix[0* 4 +1],
+                matrix[1* 4 +0],
+                matrix[1* 4 +1],
+                matrix[3* 4 +0],
+                matrix[3* 4 +1]
             ].reduce((acc, t) => {
 
                 if (acc.length > 0) {
@@ -117,7 +116,7 @@ export function serialize(matrix: Matrix): Token {
     return {
         typ: EnumToken.FunctionTokenType,
         val: 'matrix3d',
-        chi: matrix.flat().reduce((acc: Token[], curr: number) => {
+        chi: matrix.reduce((acc: Token[], curr: number) => {
 
             if (acc.length > 0) {
 

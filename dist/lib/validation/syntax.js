@@ -172,7 +172,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
         }
         token = context.peek();
         // if var() is the last token, then match the remaining syntax and return
-        if (context.length == 1 && token.typ == EnumToken.FunctionTokenType && 'var'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0) {
+        if (context.length == 1 && token.typ == EnumToken.FunctionTokenType && 'var' === token.val?.toLowerCase?.()) {
             return doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, 'var')?.[0]?.chi ?? [], createContext(token.chi), options);
         }
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
@@ -380,7 +380,7 @@ function match(syntax, context, options) {
         case ValidationTokenEnum.Keyword:
             success = (token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType || isIdentColor(token)) &&
                 (token.val == syntax.val ||
-                    syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 ||
+                    syntax.val === token.val?.toLowerCase?.() ||
                     // config.declarations.all
                     allValues.includes(token.val.toLowerCase()));
             if (success) {
@@ -443,7 +443,7 @@ function match(syntax, context, options) {
                 break;
             }
             if (syntax.typ == ValidationTokenEnum.Function) {
-                success = funcLike.includes(token.typ) && syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && doEvaluateSyntax(syntax.chi, createContext(token.chi), options).valid == SyntaxValidationResult.Valid;
+                success = funcLike.includes(token.typ) && syntax.val.toLowerCase() === token.val?.toLowerCase?.() && doEvaluateSyntax(syntax.chi, createContext(token.chi), options).valid == SyntaxValidationResult.Valid;
                 if (success) {
                     context.next();
                 }
@@ -624,14 +624,14 @@ function matchPropertyType(syntax, context, options) {
             success = token.typ == EnumToken.DashedIdenTokenType;
             break;
         case 'system-color':
-            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.SYS) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.SYS) || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'deprecated-system-color':
-            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.DPSYS) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == EnumToken.ColorTokenType && token.kin == ColorType.DPSYS) || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'color':
         case 'color-base':
-            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.IdenTokenType && token.val.localeCompare('transparent', 'en', { sensitivity: 'base' }) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == EnumToken.IdenTokenType && 'transparent' === token.val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             if (!success && token.typ == EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
                 success = doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, token.val)?.[0]?.chi, createContext(token.chi), {
                     ...options,

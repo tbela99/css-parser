@@ -94,8 +94,7 @@ function validateAtRuleImport(atRule, options, root) {
     if (tokens.length > 0) {
         // @ts-ignore
         if (tokens[0].typ == EnumToken.IdenTokenType) {
-            // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
+            if ('layer' === tokens[0].val.toLowerCase()) {
                 tokens.shift();
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
@@ -113,7 +112,7 @@ function validateAtRuleImport(atRule, options, root) {
         // @ts-ignore
         else if (tokens[0].typ == EnumToken.FunctionTokenType) {
             // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
+            if ('layer' === tokens[0].val.toLowerCase()) {
                 const result = validateLayerName(tokens[0].chi);
                 if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
@@ -122,8 +121,9 @@ function validateAtRuleImport(atRule, options, root) {
                 // @ts-ignore
                 consumeWhitespace(tokens);
             }
+            // tokens[0]?.val
             // @ts-ignore
-            if ('supports'.localeCompare(tokens[0]?.val, undefined, { sensitivity: 'base' }) == 0) {
+            if ('supports' === tokens[0]?.val?.toLowerCase?.()) {
                 const result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
                 if (result.valid == SyntaxValidationResult.Drop) {
                     return result;

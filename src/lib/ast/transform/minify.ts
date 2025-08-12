@@ -294,11 +294,17 @@ export function minify(matrix: Matrix): Token[] | null {
 
 export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 
+    // console.error(JSON.stringify({a, b}, null, 1));
+
     let mat: Matrix = identity();
     let tmp: Matrix = identity();
 
     // @ts-ignore
-    const data = Array.isArray(a) ? a : parseMatrix(a) as Matrix;
+    const data = (Array.isArray(a) ? a : parseMatrix(a)) as Matrix;
+
+    // toZero(data);
+
+    // console.error({data});
 
     for (const transform of b) {
 
@@ -312,6 +318,9 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
         mat = multiply(mat, tmp);
     }
 
+    // toZero(mat);
+    // console.error({mat});
+
     if (mat == null) {
 
         return false;
@@ -321,7 +330,7 @@ export function eqMatrix(a: FunctionToken | Matrix, b: Token[]): boolean {
 
         for (let j = 0; j < 4; j++) {
 
-            if (Math.abs(mat[i][j] - data[i][j]) > epsilon) {
+            if (Math.abs(mat[i * 4 + j] - data[i * 4 + j]) > epsilon) {
 
                 return false;
             }

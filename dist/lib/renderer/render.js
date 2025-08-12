@@ -325,7 +325,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             if (Array.isArray(token.chi)) {
                 const isLegacy = ['rgb', 'rgba', 'hsl', 'hsla'].includes(token.val.toLowerCase());
                 const useAlpha = (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'oklab', 'oklch', 'lab', 'lch'].includes(token.val.toLowerCase()) && token.chi.length == 4) ||
-                    ('color'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && token.chi.length == 5);
+                    ('color' == token.val.toLowerCase() && token.chi.length == 5);
                 return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr, index, array) => {
                     if (/[,/]\s*$/.test(acc)) {
                         if (curr.typ == EnumToken.WhitespaceTokenType) {

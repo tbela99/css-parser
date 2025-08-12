@@ -499,12 +499,12 @@ function isPolarColorspace(token) {
 }
 function isHueInterpolationMethod(token) {
     if (!Array.isArray(token)) {
-        return token.typ == EnumToken.IdenTokenType && 'hue'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0;
+        return token.typ == EnumToken.IdenTokenType && 'hue' === token.val?.toLowerCase?.();
     }
     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
         return false;
     }
-    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val) && 'hue'.localeCompare(token[1].val, undefined, { sensitivity: 'base' }) == 0;
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val?.toLowerCase?.()) && 'hue' === token[1].val?.toLowerCase?.();
 }
 function isIdentColor(token) {
     return token.typ == EnumToken.ColorTokenType && [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(token.kin) && isIdent(token.val);
@@ -621,7 +621,7 @@ function isColor(token) {
                 if (children.length == 3) {
                     if (children[0].length > 4 ||
                         children[0][0].typ != EnumToken.IdenTokenType ||
-                        'in'.localeCompare(children[0][0].val, undefined, { sensitivity: 'base' }) != 0 ||
+                        'in' !== children[0][0].val?.toLowerCase?.() ||
                         !isColorspace(children[0][1]) ||
                         (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
                         children[1].length > 2 ||

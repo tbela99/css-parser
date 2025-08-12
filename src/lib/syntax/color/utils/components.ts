@@ -1,5 +1,5 @@
 import type {ColorToken, NumberToken, Token} from "../../../../@types/index.d.ts";
-import {ColorType, EnumToken} from "../../../ast/index.ts";
+import {ColorType, EnumToken, walkValues} from "../../../ast/index.ts";
 import {COLORS_NAMES} from "./constants.ts";
 import {expandHexValue} from "../hex.ts";
 
@@ -25,7 +25,24 @@ export function getComponents(token: ColorToken): Token[] | null {
             continue;
         }
 
-        if (child.typ == EnumToken.ColorTokenType && (child as ColorToken).val.localeCompare('currentcolor', undefined, {sensitivity: 'base'}) == 0) {
+        if (child.typ == EnumToken.FunctionTokenType) {
+
+            if ('var' == child.val.toLowerCase()) {
+
+                return null;
+            } else {
+
+                for (const {value} of walkValues(child.chi)) {
+
+                    if (value.typ == EnumToken.FunctionTokenType && 'var' === value.val.toLowerCase()) {
+
+                        return null;
+                    }
+                }
+            }
+        }
+
+        if (child.typ == EnumToken.ColorTokenType && 'currentcolor' === (child as ColorToken).val.toLowerCase()) {
 
             return null;
         }
@@ -33,5 +50,5 @@ export function getComponents(token: ColorToken): Token[] | null {
         result.push(child);
     }
 
-    return  result;
+    return result;
 }

@@ -859,9 +859,10 @@ function parseAtRulePrelude(tokens, atRule) {
                 }
             }
         }
+        const val = value.typ == EnumToken.IdenTokenType ? value.val.toLowerCase() : null;
         if (value.typ == EnumToken.IdenTokenType) {
             if (parent == null && mediaTypes.some((t) => {
-                if (value.val.localeCompare(t, 'en', { sensitivity: 'base' }) == 0) {
+                if (val === t) {
                     // @ts-ignore
                     value.typ = EnumToken.MediaFeatureTokenType;
                     return true;
@@ -870,18 +871,18 @@ function parseAtRulePrelude(tokens, atRule) {
             })) {
                 continue;
             }
-            if (value.typ == EnumToken.IdenTokenType && 'and'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'and' === val) {
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureAndTokenType;
                 continue;
             }
-            if (value.typ == EnumToken.IdenTokenType && 'or'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'or' === val) {
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureOrTokenType;
                 continue;
             }
             if (value.typ == EnumToken.IdenTokenType &&
-                ['not', 'only'].some((t) => t.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0)) {
+                ['not', 'only'].some((t) => val === t)) {
                 // @ts-ignore
                 const array = parent?.chi ?? tokens;
                 const startIndex = array.indexOf(value);

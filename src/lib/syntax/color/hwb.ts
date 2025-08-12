@@ -106,7 +106,10 @@ export function hwbToken(values: number[]): ColorToken {
 
     if (values.length == 4) {
 
-        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {typ: EnumToken.PercentageTokenType, val: values[3] * 100});
+        chi.push({typ: EnumToken.LiteralTokenType, val: '/'}, {
+            typ: EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
 
     return {
@@ -155,22 +158,39 @@ export function hsl2hwbvalues(token: ColorToken): number[] {
     }));
 }
 
-export function lab2hwbvalues(token: ColorToken): number[] {
+export function lab2hwbvalues(token: ColorToken): number[] | null {
 
+    const values: number[] | null = lab2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...lab2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 
-export function lch2hwbvalues(token: ColorToken): number[] {
+export function lch2hwbvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = lch2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return srgb2hwb(...lch2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 
-export function oklab2hwbvalues(token: ColorToken): number[] {
+export function oklab2hwbvalues(token: ColorToken): number[] | null {
+
+    const values: number[] | null = oklab2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
 
     // @ts-ignore
-    return srgb2hwb(...oklab2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 
 export function oklch2hwbvalues(token: ColorToken): number[] {
@@ -217,10 +237,15 @@ function rgb2whiteness(r: number, g: number, b: number): number {
     return Math.min(r, g, b);
 }
 
-export function color2hwbvalues(token: ColorToken): number[] {
+export function color2hwbvalues(token: ColorToken): number[] | null {
 
+    const values: number[] | null = color2srgbvalues(token);
+
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...color2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 
 export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {

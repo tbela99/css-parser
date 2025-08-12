@@ -75,7 +75,10 @@ function hwbToken(values) {
         { typ: EnumToken.PercentageTokenType, val: values[2] * 100 },
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, { typ: EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push({ typ: EnumToken.LiteralTokenType, val: '/' }, {
+            typ: EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
     return {
         typ: EnumToken.ColorTokenType,
@@ -110,16 +113,28 @@ function hsl2hwbvalues(token) {
     }));
 }
 function lab2hwbvalues(token) {
+    const values = lab2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...lab2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function lch2hwbvalues(token) {
+    const values = lch2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...lch2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function oklab2hwbvalues(token) {
+    const values = oklab2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...oklab2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function oklch2hwbvalues(token) {
     const values = oklch2srgbvalues(token);
@@ -153,8 +168,12 @@ function rgb2whiteness(r, g, b) {
     return Math.min(r, g, b);
 }
 function color2hwbvalues(token) {
+    const values = color2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...color2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function srgb2hwb(r, g, b, a = null, fallback = 0) {
     r *= 100;

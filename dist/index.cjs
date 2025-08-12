@@ -1864,7 +1864,19 @@ function getComponents(token) {
         ].includes(child.typ)) {
             continue;
         }
-        if (child.typ == exports.EnumToken.ColorTokenType && child.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
+        if (child.typ == exports.EnumToken.FunctionTokenType) {
+            if ('var' == child.val.toLowerCase()) {
+                return null;
+            }
+            else {
+                for (const { value } of walkValues(child.chi)) {
+                    if (value.typ == exports.EnumToken.FunctionTokenType && 'var' === value.val.toLowerCase()) {
+                        return null;
+                    }
+                }
+            }
+        }
+        if (child.typ == exports.EnumToken.ColorTokenType && 'currentcolor' === child.val.toLowerCase()) {
             return null;
         }
         result.push(child);
@@ -2296,7 +2308,10 @@ function hwbToken(values) {
         { typ: exports.EnumToken.PercentageTokenType, val: values[2] * 100 },
     ];
     if (values.length == 4) {
-        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, { typ: exports.EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push({ typ: exports.EnumToken.LiteralTokenType, val: '/' }, {
+            typ: exports.EnumToken.PercentageTokenType,
+            val: values[3] * 100
+        });
     }
     return {
         typ: exports.EnumToken.ColorTokenType,
@@ -2331,16 +2346,28 @@ function hsl2hwbvalues(token) {
     }));
 }
 function lab2hwbvalues(token) {
+    const values = lab2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...lab2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function lch2hwbvalues(token) {
+    const values = lch2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...lch2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function oklab2hwbvalues(token) {
+    const values = oklab2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...oklab2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function oklch2hwbvalues(token) {
     const values = oklch2srgbvalues(token);
@@ -2374,8 +2401,12 @@ function rgb2whiteness(r, g, b) {
     return Math.min(r, g, b);
 }
 function color2hwbvalues(token) {
+    const values = color2srgbvalues(token);
+    if (values == null) {
+        return null;
+    }
     // @ts-ignore
-    return srgb2hwb(...color2srgbvalues(token));
+    return srgb2hwb(...values);
 }
 function srgb2hwb(r, g, b, a = null, fallback = 0) {
     r *= 100;
@@ -3729,7 +3760,7 @@ function convertColor(token, to) {
     if (token.kin == exports.ColorType.SYS ||
         token.kin == exports.ColorType.DPSYS ||
         (isIdentColor(token) &&
-            ('currentcolor'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0))) {
+            'currentcolor' == token.val.toLowerCase())) {
         return token;
     }
     if (token.kin == exports.ColorType.COLOR_MIX && to != exports.ColorType.COLOR_MIX) {
@@ -4679,7 +4710,7 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
             if (Array.isArray(token.chi)) {
                 const isLegacy = ['rgb', 'rgba', 'hsl', 'hsla'].includes(token.val.toLowerCase());
                 const useAlpha = (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'oklab', 'oklch', 'lab', 'lch'].includes(token.val.toLowerCase()) && token.chi.length == 4) ||
-                    ('color'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && token.chi.length == 5);
+                    ('color' == token.val.toLowerCase() && token.chi.length == 5);
                 return (token.val.endsWith('a') ? token.val.slice(0, -1) : token.val) + '(' + token.chi.reduce((acc, curr, index, array) => {
                     if (/[,/]\s*$/.test(acc)) {
                         if (curr.typ == exports.EnumToken.WhitespaceTokenType) {
@@ -5448,12 +5479,12 @@ function isPolarColorspace(token) {
 }
 function isHueInterpolationMethod(token) {
     if (!Array.isArray(token)) {
-        return token.typ == exports.EnumToken.IdenTokenType && 'hue'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0;
+        return token.typ == exports.EnumToken.IdenTokenType && 'hue' === token.val?.toLowerCase?.();
     }
     if (token.length != 2 || token[0].typ != exports.EnumToken.IdenTokenType || token[1].typ != exports.EnumToken.IdenTokenType) {
         return false;
     }
-    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val) && 'hue'.localeCompare(token[1].val, undefined, { sensitivity: 'base' }) == 0;
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes(token[0].val?.toLowerCase?.()) && 'hue' === token[1].val?.toLowerCase?.();
 }
 function isIdentColor(token) {
     return token.typ == exports.EnumToken.ColorTokenType && [exports.ColorType.SYS, exports.ColorType.DPSYS, exports.ColorType.LIT].includes(token.kin) && isIdent(token.val);
@@ -5570,7 +5601,7 @@ function isColor(token) {
                 if (children.length == 3) {
                     if (children[0].length > 4 ||
                         children[0][0].typ != exports.EnumToken.IdenTokenType ||
-                        'in'.localeCompare(children[0][0].val, undefined, { sensitivity: 'base' }) != 0 ||
+                        'in' !== children[0][0].val?.toLowerCase?.() ||
                         !isColorspace(children[0][1]) ||
                         (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
                         children[1].length > 2 ||
@@ -14183,7 +14214,7 @@ function doEvaluateSyntax(syntaxes, context, options) {
         }
         token = context.peek();
         // if var() is the last token, then match the remaining syntax and return
-        if (context.length == 1 && token.typ == exports.EnumToken.FunctionTokenType && 'var'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0) {
+        if (context.length == 1 && token.typ == exports.EnumToken.FunctionTokenType && 'var' === token.val?.toLowerCase?.()) {
             return doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, 'var')?.[0]?.chi ?? [], createContext(token.chi), options);
         }
         if (syntax.typ == ValidationTokenEnum.Whitespace) {
@@ -14391,7 +14422,7 @@ function match(syntax, context, options) {
         case ValidationTokenEnum.Keyword:
             success = (token.typ == exports.EnumToken.IdenTokenType || token.typ == exports.EnumToken.DashedIdenTokenType || isIdentColor(token)) &&
                 (token.val == syntax.val ||
-                    syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 ||
+                    syntax.val === token.val?.toLowerCase?.() ||
                     // config.declarations.all
                     allValues.includes(token.val.toLowerCase()));
             if (success) {
@@ -14454,7 +14485,7 @@ function match(syntax, context, options) {
                 break;
             }
             if (syntax.typ == ValidationTokenEnum.Function) {
-                success = funcLike.includes(token.typ) && syntax.val.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0 && doEvaluateSyntax(syntax.chi, createContext(token.chi), options).valid == SyntaxValidationResult.Valid;
+                success = funcLike.includes(token.typ) && syntax.val.toLowerCase() === token.val?.toLowerCase?.() && doEvaluateSyntax(syntax.chi, createContext(token.chi), options).valid == SyntaxValidationResult.Valid;
                 if (success) {
                     context.next();
                 }
@@ -14635,14 +14666,14 @@ function matchPropertyType(syntax, context, options) {
             success = token.typ == exports.EnumToken.DashedIdenTokenType;
             break;
         case 'system-color':
-            success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.SYS) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.SYS) || (token.typ == exports.EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'deprecated-system-color':
-            success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.DPSYS) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = (token.typ == exports.EnumToken.ColorTokenType && token.kin == exports.ColorType.DPSYS) || (token.typ == exports.EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             break;
         case 'color':
         case 'color-base':
-            success = token.typ == exports.EnumToken.ColorTokenType || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('currentcolor', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.IdenTokenType && token.val.localeCompare('transparent', 'en', { sensitivity: 'base' }) == 0) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
+            success = token.typ == exports.EnumToken.ColorTokenType || (token.typ == exports.EnumToken.IdenTokenType && 'currentcolor' === token.val.toLowerCase()) || (token.typ == exports.EnumToken.IdenTokenType && 'transparent' === token.val.toLowerCase()) || (token.typ == exports.EnumToken.FunctionTokenType && wildCardFuncs.includes(token.val));
             if (!success && token.typ == exports.EnumToken.FunctionTokenType && colorsFunc.includes(token.val)) {
                 success = doEvaluateSyntax(getParsedSyntax("functions" /* ValidationSyntaxGroupEnum.Functions */, token.val)?.[0]?.chi, createContext(token.chi), {
                     ...options,
@@ -15541,7 +15572,7 @@ function validateSupportCondition(atRule, token) {
     if (token.typ == exports.EnumToken.MediaFeatureNotTokenType) {
         return validateSupportCondition(atRule, token.val);
     }
-    if (token.typ == exports.EnumToken.FunctionTokenType && token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
+    if (token.typ == exports.EnumToken.FunctionTokenType && 'selector' === token.val.toLowerCase()) {
         return {
             valid: SyntaxValidationResult.Valid,
             context: [],
@@ -15598,7 +15629,7 @@ function validateSupportFeature(token) {
         return validateSupportFeature(token.val);
     }
     if (token.typ == exports.EnumToken.FunctionTokenType) {
-        if (token.val.localeCompare('selector', undefined, { sensitivity: 'base' }) == 0) {
+        if ('selector' === token.val.toLowerCase()) {
             return {
                 valid: SyntaxValidationResult.Valid,
                 context: [],
@@ -15607,10 +15638,10 @@ function validateSupportFeature(token) {
                 error: ''
             };
         }
-        if (token.val.localeCompare('font-tech', undefined, { sensitivity: 'base' }) == 0) {
+        if ('font-tech' === token.val.toLowerCase()) {
             const chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
             // @ts-ignore
-            return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
+            return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).includes(chi[0].val.toLowerCase()) ?
                 {
                     valid: SyntaxValidationResult.Valid,
                     context: [],
@@ -15626,10 +15657,10 @@ function validateSupportFeature(token) {
                     error: 'expected font-tech'
                 };
         }
-        if (token.val.localeCompare('font-format', undefined, { sensitivity: 'base' }) == 0) {
+        if ('font-format' === token.val.toLowerCase()) {
             const chi = token.chi.filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.CommentTokenType].includes(t.typ));
             // @ts-ignore
-            return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare(chi[0].val, undefined, { sensitivity: 'base' }) == 0) ?
+            return chi.length == 1 && chi[0].typ == exports.EnumToken.IdenTokenType && fontFormat.includes(chi[0].val, toLowerCase()) ?
                 {
                     valid: SyntaxValidationResult.Valid,
                     context: [],
@@ -15736,8 +15767,7 @@ function validateAtRuleImport(atRule, options, root) {
     if (tokens.length > 0) {
         // @ts-ignore
         if (tokens[0].typ == exports.EnumToken.IdenTokenType) {
-            // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
+            if ('layer' === tokens[0].val.toLowerCase()) {
                 tokens.shift();
                 // @ts-ignore
                 if (!consumeWhitespace(tokens)) {
@@ -15755,7 +15785,7 @@ function validateAtRuleImport(atRule, options, root) {
         // @ts-ignore
         else if (tokens[0].typ == exports.EnumToken.FunctionTokenType) {
             // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, { sensitivity: 'base' }) == 0) {
+            if ('layer' === tokens[0].val.toLowerCase()) {
                 const result = validateLayerName(tokens[0].chi);
                 if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
@@ -15764,8 +15794,9 @@ function validateAtRuleImport(atRule, options, root) {
                 // @ts-ignore
                 consumeWhitespace(tokens);
             }
+            // tokens[0]?.val
             // @ts-ignore
-            if ('supports'.localeCompare(tokens[0]?.val, undefined, { sensitivity: 'base' }) == 0) {
+            if ('supports' === tokens[0]?.val?.toLowerCase?.()) {
                 const result = validateAtRuleSupportsConditions(atRule, tokens[0].chi);
                 if (result.valid == SyntaxValidationResult.Drop) {
                     return result;
@@ -15947,7 +15978,7 @@ function validateAtRuleDocument(atRule, options, root) {
             };
         }
         // @ts-ignore
-        if ((t[0].typ != exports.EnumToken.FunctionTokenType && t[0].typ != exports.EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
+        if ((t[0].typ != exports.EnumToken.FunctionTokenType && t[0].typ != exports.EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].includes(t[0].val?.toLowerCase?.())) {
             return {
                 valid: SyntaxValidationResult.Drop,
                 context: [],
@@ -17550,9 +17581,10 @@ function parseAtRulePrelude(tokens, atRule) {
                 }
             }
         }
+        const val = value.typ == exports.EnumToken.IdenTokenType ? value.val.toLowerCase() : null;
         if (value.typ == exports.EnumToken.IdenTokenType) {
             if (parent == null && mediaTypes.some((t) => {
-                if (value.val.localeCompare(t, 'en', { sensitivity: 'base' }) == 0) {
+                if (val === t) {
                     // @ts-ignore
                     value.typ = exports.EnumToken.MediaFeatureTokenType;
                     return true;
@@ -17561,18 +17593,18 @@ function parseAtRulePrelude(tokens, atRule) {
             })) {
                 continue;
             }
-            if (value.typ == exports.EnumToken.IdenTokenType && 'and'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+            if (value.typ == exports.EnumToken.IdenTokenType && 'and' === val) {
                 // @ts-ignore
                 value.typ = exports.EnumToken.MediaFeatureAndTokenType;
                 continue;
             }
-            if (value.typ == exports.EnumToken.IdenTokenType && 'or'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+            if (value.typ == exports.EnumToken.IdenTokenType && 'or' === val) {
                 // @ts-ignore
                 value.typ = exports.EnumToken.MediaFeatureOrTokenType;
                 continue;
             }
             if (value.typ == exports.EnumToken.IdenTokenType &&
-                ['not', 'only'].some((t) => t.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0)) {
+                ['not', 'only'].some((t) => val === t)) {
                 // @ts-ignore
                 const array = parent?.chi ?? tokens;
                 const startIndex = array.indexOf(value);
@@ -19776,10 +19808,9 @@ class ComputeCalcExpressionFeature {
 
 const epsilon = 1e-5;
 function identity() {
-    return [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
 function pLength(point) {
-    // Calcul de la norme euclidienne
     return Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
 }
 function normalize(point) {
@@ -19788,23 +19819,19 @@ function normalize(point) {
     return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
 }
 function dot(point1, point2) {
-    // if (point1.length === 4 && point2.length === 4) {
-    //
-    //     return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
-    // }
-    let result = 0;
-    for (let i = 0; i < point1.length; i++) {
-        result += point1[i] * point2[i];
+    if (point1.length === 4 && point2.length === 4) {
+        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
     }
-    return result;
-    // return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
 }
 function multiply(matrixA, matrixB) {
-    let result = Array(4).fill(0).map(() => Array(4).fill(0));
+    let result = new Array(16).fill(0);
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
             for (let k = 0; k < 4; k++) {
-                result[j][i] += matrixA[k][i] * matrixB[j][k];
+                // Utiliser l'indexation linéaire pour accéder aux éléments
+                // Pour une matrice 4x4, l'index est (row * 4 + col)
+                result[j * 4 + i] += matrixA[k * 4 + i] * matrixB[j * 4 + k];
             }
         }
     }
@@ -19812,20 +19839,17 @@ function multiply(matrixA, matrixB) {
 }
 function inverse(matrix) {
     // Create augmented matrix [matrix | identity]
-    let augmented = matrix.map((row, i) => [
-        ...row,
-        ...(i === 0 ? [1, 0, 0, 0] :
-            i === 1 ? [0, 1, 0, 0] :
-                i === 2 ? [0, 0, 1, 0] :
-                    [0, 0, 0, 1])
-    ]);
+    let augmented = [
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+    ];
     // Gaussian elimination with partial pivoting
     for (let col = 0; col < 4; col++) {
         // Find pivot row with maximum absolute value
         let maxRow = col;
-        let maxVal = Math.abs(augmented[col][col]);
+        let maxVal = Math.abs(augmented[col * 4 + col]);
         for (let row = col + 1; row < 4; row++) {
-            let val = Math.abs(augmented[row][col]);
+            let val = Math.abs(augmented[row * 4 + col]);
             if (val > maxVal) {
                 maxVal = val;
                 maxRow = row;
@@ -19840,22 +19864,22 @@ function inverse(matrix) {
             [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
         }
         // Scale pivot row to make pivot element 1
-        let pivot = augmented[col][col];
+        let pivot = augmented[col * 4 + col];
         for (let j = 0; j < 8; j++) {
-            augmented[col][j] /= pivot;
+            augmented[col * 4 + j] /= pivot;
         }
         // Eliminate column in other rows
         for (let row = 0; row < 4; row++) {
             if (row !== col) {
-                let factor = augmented[row][col];
+                let factor = augmented[row * 4 + col];
                 for (let j = 0; j < 8; j++) {
-                    augmented[row][j] -= factor * augmented[col][j];
+                    augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
                 }
             }
         }
     }
     // Extract the inverse from the right side of the augmented matrix
-    return augmented.map(row => row.slice(4));
+    return augmented.slice(0, 16);
 }
 // function transpose(matrix: Matrix): Matrix {
 //     // Crée une nouvelle matrice vide 4x4
@@ -19879,7 +19903,7 @@ function round(number) {
 // translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
 // translate → rotate → skew → scale
 function decompose(original) {
-    const matrix = original.flat();
+    const matrix = original.slice();
     // Normalize last row
     if (matrix[15] === 0) {
         return null;
@@ -19896,7 +19920,7 @@ function decompose(original) {
         perspectiveMatrix[11] = 0;
         perspectiveMatrix[15] = 1;
         // @ts-ignore
-        const inverted = inverse(original.reduce((acc, row, i) => acc.concat([row.slice()]), []))?.flat?.();
+        const inverted = inverse(original.slice());
         if (!inverted) {
             return null;
         }
@@ -20019,44 +20043,44 @@ function toZero(v) {
 // https://drafts.csswg.org/css-transforms-1/#2d-matrix
 function is2DMatrix(matrix) {
     // m13,m14,  m23, m24, m31, m32, m34, m43 are all 0
-    return matrix[0][2] === 0 &&
-        matrix[0][3] === 0 &&
-        matrix[1][2] === 0 &&
-        matrix[1][3] === 0 &&
-        matrix[2][0] === 0 &&
-        matrix[2][1] === 0 &&
-        matrix[2][3] === 0 &&
-        matrix[3][2] === 0 &&
-        matrix[2][2] === 1 &&
-        matrix[3][3] === 1;
+    return matrix[0 * 4 + 2] === 0 &&
+        matrix[0 * 4 + 3] === 0 &&
+        matrix[1 * 4 + 2] === 0 &&
+        matrix[1 * 4 + 3] === 0 &&
+        matrix[2 * 4 + 0] === 0 &&
+        matrix[2 * 4 + 1] === 0 &&
+        matrix[2 * 4 + 3] === 0 &&
+        matrix[3 * 4 + 2] === 0 &&
+        matrix[2 * 4 + 2] === 1 &&
+        matrix[3 * 4 + 3] === 1;
 }
 
 function translateX(x, from) {
     const matrix = identity();
-    matrix[3][0] = x;
+    matrix[3 * 4 + 0] = x;
     return multiply(from, matrix);
 }
 function translateY(y, from) {
     const matrix = identity();
-    matrix[3][1] = y;
+    matrix[3 * 4 + 1] = y;
     return multiply(from, matrix);
 }
 function translateZ(z, from) {
     const matrix = identity();
-    matrix[3][2] = z;
+    matrix[3 * 4 + 2] = z;
     return multiply(from, matrix);
 }
 function translate(translate, from) {
     const matrix = identity();
-    matrix[3][0] = translate[0];
-    matrix[3][1] = translate[1] ?? 0;
+    matrix[3 * 4 + 0] = translate[0];
+    matrix[3 * 4 + 1] = translate[1] ?? 0;
     return multiply(from, matrix);
 }
 function translate3d(translate, from) {
     const matrix = identity();
-    matrix[3][0] = translate[0];
-    matrix[3][1] = translate[1];
-    matrix[3][2] = translate[2];
+    matrix[3 * 4 + 0] = translate[0];
+    matrix[3 * 4 + 1] = translate[1];
+    matrix[3 * 4 + 2] = translate[2];
     return multiply(from, matrix);
 }
 
@@ -20077,52 +20101,52 @@ function rotate3D(angle, x, y, z, from) {
     x *= unit;
     y *= unit;
     z *= unit;
-    matrix[0][0] = 1 - 2 * (y * y + z * z) * sq;
-    matrix[0][1] = 2 * (x * y * sq + z * sc);
-    matrix[0][2] = 2 * (x * z * sq - y * sc);
-    matrix[1][0] = 2 * (x * y * sq - z * sc);
-    matrix[1][1] = 1 - 2 * (x * x + z * z) * sq;
-    matrix[1][2] = 2 * (y * z * sq + x * sc);
-    matrix[2][0] = 2 * (x * z * sq + y * sc);
-    matrix[2][1] = 2 * (y * z * sq - x * sc);
-    matrix[2][2] = 1 - 2 * (x * x + y * y) * sq;
+    matrix[0 * 4 + 0] = 1 - 2 * (y * y + z * z) * sq;
+    matrix[0 * 4 + 1] = 2 * (x * y * sq + z * sc);
+    matrix[0 * 4 + 2] = 2 * (x * z * sq - y * sc);
+    matrix[1 * 4 + 0] = 2 * (x * y * sq - z * sc);
+    matrix[1 * 4 + 1] = 1 - 2 * (x * x + z * z) * sq;
+    matrix[1 * 4 + 2] = 2 * (y * z * sq + x * sc);
+    matrix[2 * 4 + 0] = 2 * (x * z * sq + y * sc);
+    matrix[2 * 4 + 1] = 2 * (y * z * sq - x * sc);
+    matrix[2 * 4 + 2] = 1 - 2 * (x * x + y * y) * sq;
     return multiply(from, matrix);
 }
 function rotate(angle, from) {
     const matrix = identity();
-    matrix[0][0] = Math.cos(angle);
-    matrix[0][1] = Math.sin(angle);
-    matrix[1][0] = -Math.sin(angle);
-    matrix[1][1] = Math.cos(angle);
+    matrix[0 * 4 + 0] = Math.cos(angle);
+    matrix[0 * 4 + 1] = Math.sin(angle);
+    matrix[1 * 4 + 0] = -Math.sin(angle);
+    matrix[1 * 4 + 1] = Math.cos(angle);
     return multiply(from, matrix);
 }
 
 function scaleX(x, from) {
     const matrix = identity();
-    matrix[0][0] = x;
+    matrix[0 * 4 + 0] = x;
     return multiply(from, matrix);
 }
 function scaleY(y, from) {
     const matrix = identity();
-    matrix[1][1] = y;
+    matrix[1 * 4 + 1] = y;
     return multiply(from, matrix);
 }
 function scaleZ(z, from) {
     const matrix = identity();
-    matrix[2][2] = z;
+    matrix[2 * 4 + 2] = z;
     return multiply(from, matrix);
 }
 function scale(x, y, from) {
     const matrix = identity();
-    matrix[0][0] = x;
-    matrix[1][1] = y;
+    matrix[0 * 4 + 0] = x;
+    matrix[1 * 4 + 1] = y;
     return multiply(from, matrix);
 }
 function scale3d(x, y, z, from) {
     const matrix = identity();
-    matrix[0][0] = x;
-    matrix[1][1] = y;
-    matrix[2][2] = z;
+    matrix[0 * 4 + 0] = x;
+    matrix[1 * 4 + 1] = y;
+    matrix[2 * 4 + 2] = z;
     return multiply(from, matrix);
 }
 
@@ -20146,30 +20170,30 @@ function parseMatrix(mat) {
 function matrix(values) {
     const matrix = identity();
     if (values.length === 6) {
-        matrix[0][0] = values[0];
-        matrix[0][1] = values[1];
-        matrix[1][0] = values[2];
-        matrix[1][1] = values[3];
-        matrix[3][0] = values[4];
-        matrix[3][1] = values[5];
+        matrix[0 * 4 + 0] = values[0];
+        matrix[0 * 4 + 1] = values[1];
+        matrix[1 * 4 + 0] = values[2];
+        matrix[1 * 4 + 1] = values[3];
+        matrix[3 * 4 + 0] = values[4];
+        matrix[3 * 4 + 1] = values[5];
     }
     else if (values.length === 16) {
-        matrix[0][0] = values[0];
-        matrix[0][1] = values[1];
-        matrix[0][2] = values[2];
-        matrix[0][3] = values[3];
-        matrix[1][0] = values[4];
-        matrix[1][1] = values[5];
-        matrix[1][2] = values[6];
-        matrix[1][3] = values[7];
-        matrix[2][0] = values[8];
-        matrix[2][1] = values[9];
-        matrix[2][2] = values[10];
-        matrix[2][3] = values[11];
-        matrix[3][0] = values[12];
-        matrix[3][1] = values[13];
-        matrix[3][2] = values[14];
-        matrix[3][3] = values[15];
+        matrix[0 * 4 + 0] = values[0];
+        matrix[0 * 4 + 1] = values[1];
+        matrix[0 * 4 + 2] = values[2];
+        matrix[0 * 4 + 3] = values[3];
+        matrix[1 * 4 + 0] = values[4];
+        matrix[1 * 4 + 1] = values[5];
+        matrix[1 * 4 + 2] = values[6];
+        matrix[1 * 4 + 3] = values[7];
+        matrix[2 * 4 + 0] = values[8];
+        matrix[2 * 4 + 1] = values[9];
+        matrix[2 * 4 + 2] = values[10];
+        matrix[2 * 4 + 3] = values[11];
+        matrix[3 * 4 + 0] = values[12];
+        matrix[3 * 4 + 1] = values[13];
+        matrix[3 * 4 + 2] = values[14];
+        matrix[3 * 4 + 3] = values[15];
     }
     else {
         return null;
@@ -20177,7 +20201,7 @@ function matrix(values) {
     return matrix;
 }
 function serialize(matrix) {
-    matrix = matrix.map(t => toZero(t.slice()));
+    matrix = matrix.slice();
     // @ts-ignore
     if (eq(matrix, identity())) {
         return {
@@ -20191,12 +20215,12 @@ function serialize(matrix) {
             typ: exports.EnumToken.FunctionTokenType,
             val: 'matrix',
             chi: [
-                matrix[0][0],
-                matrix[0][1],
-                matrix[1][0],
-                matrix[1][1],
-                matrix[3][0],
-                matrix[3][1]
+                matrix[0 * 4 + 0],
+                matrix[0 * 4 + 1],
+                matrix[1 * 4 + 0],
+                matrix[1 * 4 + 1],
+                matrix[3 * 4 + 0],
+                matrix[3 * 4 + 1]
             ].reduce((acc, t) => {
                 if (acc.length > 0) {
                     acc.push({ typ: exports.EnumToken.CommaTokenType });
@@ -20212,7 +20236,7 @@ function serialize(matrix) {
     return {
         typ: exports.EnumToken.FunctionTokenType,
         val: 'matrix3d',
-        chi: matrix.flat().reduce((acc, curr) => {
+        chi: matrix.reduce((acc, curr) => {
             if (acc.length > 0) {
                 acc.push({ typ: exports.EnumToken.CommaTokenType });
             }
@@ -20464,10 +20488,13 @@ function minify$1(matrix) {
     ] : result;
 }
 function eqMatrix(a, b) {
+    // console.error(JSON.stringify({a, b}, null, 1));
     let mat = identity();
     let tmp = identity();
     // @ts-ignore
-    const data = Array.isArray(a) ? a : parseMatrix(a);
+    const data = (Array.isArray(a) ? a : parseMatrix(a));
+    // toZero(data);
+    // console.error({data});
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
         if (tmp == null) {
@@ -20475,12 +20502,14 @@ function eqMatrix(a, b) {
         }
         mat = multiply(mat, tmp);
     }
+    // toZero(mat);
+    // console.error({mat});
     if (mat == null) {
         return false;
     }
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
-            if (Math.abs(mat[i][j] - data[i][j]) > epsilon) {
+            if (Math.abs(mat[i * 4 + j] - data[i * 4 + j]) > epsilon) {
                 return false;
             }
         }
@@ -20490,20 +20519,20 @@ function eqMatrix(a, b) {
 
 function skewX(x, from) {
     const matrix = identity();
-    matrix[1][0] = Math.tan(x);
+    matrix[1 * 4 + 0] = Math.tan(x);
     return multiply(from, matrix);
 }
 function skewY(y, from) {
     const matrix = identity();
-    matrix[0][1] = Math.tan(y);
+    matrix[0 * 4 + 1] = Math.tan(y);
     return multiply(from, matrix);
 }
 // convert angle to radian
 function skew(values, from) {
     const matrix = identity();
-    matrix[1][0] = Math.tan(values[0]);
+    matrix[1 * 4 + 0] = Math.tan(values[0]);
     if (values.length > 1) {
-        matrix[0][1] = Math.tan(values[1]);
+        matrix[0 * 4 + 1] = Math.tan(values[1]);
     }
     return multiply(from, matrix);
 }
@@ -20511,17 +20540,13 @@ function skew(values, from) {
 function perspective(x, from) {
     const matrix = identity();
     // @ts-ignore
-    matrix[2][3] = typeof x == 'object' && x.val == 'none' ? 0 : x == 0 ? Number.NEGATIVE_INFINITY : -1 / x;
+    matrix[2 * 4 + 3] = typeof x == 'object' && x.val == 'none' ? 0 : x == 0 ? Number.NEGATIVE_INFINITY : -1 / x;
     return multiply(from, matrix);
 }
 
 function compute(transformLists) {
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
-    // if (transformLists.length == 0) {
-    //
-    //     return null;
-    // }
     let matrix = identity();
     let mat;
     const cumulative = [];
@@ -20546,8 +20571,10 @@ function compute(transformLists) {
             });
         }
     }
+    // console.error({matrix});
+    // matrix = toZero(matrix) as Matrix;
     return {
-        matrix: serialize(matrix),
+        matrix: serialize(toZero(matrix)),
         cumulative,
         minified: minify$1(matrix) ?? [serialized]
     };
@@ -20557,10 +20584,6 @@ function computeMatrix(transformList, matrixVar) {
     let val;
     let i = 0;
     for (; i < transformList.length; i++) {
-        // if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
-        //
-        //     continue;
-        // }
         if (transformList[i].typ != exports.EnumToken.FunctionTokenType || !transformFunctions.includes(transformList[i].val)) {
             return null;
         }
@@ -20573,16 +20596,7 @@ function computeMatrix(transformList, matrixVar) {
                 {
                     values.length = 0;
                     const children = stripCommaToken(transformList[i].chi.slice());
-                    // if (children == null || children.length == 0) {
-                    //
-                    //     return null;
-                    // }
                     const valCount = transformList[i].val == 'translate3d' || transformList[i].val == 'translate' ? 3 : 1;
-                    // if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'none') {
-                    //
-                    //     values.fill(0, 0, valCount);
-                    //
-                    // } else {
                     for (let j = 0; j < children.length; j++) {
                         if (children[j].typ == exports.EnumToken.WhitespaceTokenType) {
                             continue;
@@ -20593,7 +20607,6 @@ function computeMatrix(transformList, matrixVar) {
                         }
                         values.push(val);
                     }
-                    // }
                     if (values.length == 0 || values.length > valCount) {
                         return null;
                     }
@@ -20628,10 +20641,6 @@ function computeMatrix(transformList, matrixVar) {
                     let values = [];
                     let valuesCount = transformList[i].val == 'rotate3d' ? 4 : 1;
                     for (const child of stripCommaToken(transformList[i].chi.slice())) {
-                        // if (child.typ == EnumToken.WhitespaceTokenType) {
-                        //
-                        //     continue;
-                        // }
                         values.push(child);
                         if (transformList[i].val == 'rotateX') {
                             x = 1;
@@ -20674,19 +20683,11 @@ function computeMatrix(transformList, matrixVar) {
                     const children = stripCommaToken(transformList[i].chi.slice());
                     for (let k = 0; k < children.length; k++) {
                         child = children[k];
-                        // if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
-                        //
-                        //     continue;
-                        // }
                         if (child.typ != exports.EnumToken.NumberTokenType) {
                             return null;
                         }
                         values.push(getNumber(child));
                     }
-                    // if (values.length == 0) {
-                    //
-                    //     return null;
-                    // }
                     if (transformList[i].val == 'scale3d') {
                         if (values.length != 3) {
                             return null;
@@ -20730,10 +20731,6 @@ function computeMatrix(transformList, matrixVar) {
                             continue;
                         }
                         value = getAngle(child);
-                        // if (value == null) {
-                        //
-                        //     return null;
-                        // }
                         values.push(value * 2 * Math.PI);
                     }
                     if (values.length == 0 || (values.length > (transformList[i].val == 'skew' ? 2 : 1))) {
@@ -20774,7 +20771,6 @@ function computeMatrix(transformList, matrixVar) {
                 }
                 break;
             case 'matrix3d':
-            // return null;
             case 'matrix':
                 {
                     const values = [];

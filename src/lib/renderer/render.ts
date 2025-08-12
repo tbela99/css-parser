@@ -500,7 +500,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
             if (options.convertColor !== false) {
 
-                const value = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
+                const value: ColorToken | null = convertColor(token, typeof options.convertColor == 'boolean' ? ColorType.HEX : ColorType[(ColorType[options.convertColor ?? 'HEX'] as string)?.toUpperCase?.().replaceAll?.('-', '_') as keyof typeof ColorType] ?? ColorType.HEX);
 
                 //
                 if (value != null) {
@@ -518,7 +518,7 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
                 const isLegacy: boolean = ['rgb', 'rgba', 'hsl', 'hsla'].includes((token as ColorToken).val.toLowerCase());
                 const useAlpha: boolean = (['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'oklab', 'oklch', 'lab', 'lch'].includes((token as ColorToken).val.toLowerCase()) && (token as ColorToken).chi!.length == 4) ||
-                    ('color'.localeCompare((token as ColorToken).val, undefined, {sensitivity: 'base'}) == 0 && (token as ColorToken).chi!.length == 5);
+                    ('color' == (token as ColorToken).val.toLowerCase() && (token as ColorToken).chi!.length == 5);
                 return ((token as ColorToken).val.endsWith('a') ? (token as ColorToken).val.slice(0, -1) : (token as ColorToken).val) + '(' + (token as ColorToken).chi!.reduce((acc: string, curr: Token, index: number, array: Token[]) => {
 
                     if (/[,/]\s*$/.test(acc)) {
@@ -824,41 +824,41 @@ export function renderToken(token: Token, options: RenderOptions = {}, cache: {
 
         case EnumToken.UrlTokenTokenType:
 
-            // if (token.typ == EnumToken.UrlTokenTokenType) {
-            //
-            //     if (options.output != null) {
-            //
-            //         if (!('original' in token)) {
-            //
-            //             // do not modify original token
-            //             token = {...token};
-            //             Object.defineProperty(token, 'original', {
-            //                 enumerable: false,
-            //                 writable: false,
-            //                 value: (token as UrlToken).val
-            //             })
-            //         }
-            //
-            //         // @ts-ignore
-            //         if (!(token.original in cache)) {
-            //
-            //             let output: string = <string>options.output ?? '';
-            //             const key = output + 'abs';
-            //
-            //             if (!(key in cache)) {
-            //
-            //                 // @ts-ignore
-            //                 cache[key] = options.dirname(options.resolve(output, options.cwd).absolute);
-            //             }
-            //
-            //             // @ts-ignore
-            //             cache[token.original] = options.resolve(token.original, cache[key]).relative;
-            //         }
-            //
-            //         // @ts-ignore
-            //         token.val = cache[token.original];
-            //     }
-            // }
+        // if (token.typ == EnumToken.UrlTokenTokenType) {
+        //
+        //     if (options.output != null) {
+        //
+        //         if (!('original' in token)) {
+        //
+        //             // do not modify original token
+        //             token = {...token};
+        //             Object.defineProperty(token, 'original', {
+        //                 enumerable: false,
+        //                 writable: false,
+        //                 value: (token as UrlToken).val
+        //             })
+        //         }
+        //
+        //         // @ts-ignore
+        //         if (!(token.original in cache)) {
+        //
+        //             let output: string = <string>options.output ?? '';
+        //             const key = output + 'abs';
+        //
+        //             if (!(key in cache)) {
+        //
+        //                 // @ts-ignore
+        //                 cache[key] = options.dirname(options.resolve(output, options.cwd).absolute);
+        //             }
+        //
+        //             // @ts-ignore
+        //             cache[token.original] = options.resolve(token.original, cache[key]).relative;
+        //         }
+        //
+        //         // @ts-ignore
+        //         token.val = cache[token.original];
+        //     }
+        // }
 
         case EnumToken.HashTokenType:
         case EnumToken.IdenTokenType:

@@ -543,7 +543,7 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
 
     if (!Array.isArray(token)) {
 
-        return token.typ == EnumToken.IdenTokenType && 'hue'.localeCompare((token as IdentToken).val, undefined, {sensitivity: 'base'}) == 0;
+        return token.typ == EnumToken.IdenTokenType && 'hue' === (token as IdentToken).val?.toLowerCase?.();
     }
 
     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
@@ -551,7 +551,7 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
         return false;
     }
 
-    return ['shorter', 'longer', 'increasing', 'decreasing'].includes((token[0] as IdentToken).val) && 'hue'.localeCompare((token[1] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0;
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes((token[0] as IdentToken).val?.toLowerCase?.()) && 'hue' === (token[1] as IdentToken).val?.toLowerCase?.();
 }
 
 export function isIdentColor(token: Token): boolean {
@@ -729,7 +729,7 @@ export function isColor(token: Token): boolean {
 
                     if (children[0].length > 4 ||
                         children[0][0].typ != EnumToken.IdenTokenType ||
-                        'in'.localeCompare((children[0][0] as IdentToken).val, undefined, {sensitivity: 'base'}) != 0 ||
+                        'in' !== (children[0][0] as IdentToken).val?.toLowerCase?.() ||
                         !isColorspace(children[0][1]) ||
                         (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
                         children[1].length > 2 ||

@@ -1364,4 +1364,40 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
  color: #88ca87
 }`));
     });
+
+    it('color mix #134', function () {
+        return transform(`
+
+:root {
+--color: green;
+}
+._19_u :focus {
+    color:  hsl(from var(--color) calc(h * 2) s l);
+}
+:root {
+--preferred-width: 20px;
+}
+.foo-bar {
+    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);
+    height: calc(100% / 4);
+    transform: scaleX(1.5)  scaleY(2);
+}}
+`, {
+            computeCalcExpression: true,
+            beautify: true
+        }).then(result => expect(result.code).equals(`:root {
+ --color: green
+}
+._19_u :focus {
+ color: hsl(from var(--color) calc(h*2) s l)
+}
+:root {
+ --preferred-width: 20px
+}
+.foo-bar {
+ width: calc((var(--preferred-width) + 1px)/3 + 5px);
+ height: 25%;
+ transform: scale(1.5,2)
+}`));
+    });
 }

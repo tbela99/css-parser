@@ -3,6 +3,7 @@
 ## v1.3.0
 
 - [x] numerical and dimension tokens use numbers instead of string
+- [x] fix bug when inlineCssVariables is disabled and computeCalcExpression is enabled
 
 ## V1.2.0
 

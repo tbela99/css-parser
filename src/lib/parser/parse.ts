@@ -1298,11 +1298,13 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
             }
         }
 
+        const val: string | null = value.typ == EnumToken.IdenTokenType ? (value as IdentToken).val.toLowerCase() : null;
+
         if (value.typ == EnumToken.IdenTokenType) {
 
             if (parent == null && mediaTypes.some((t: string) => {
 
-                if ((value as IdentToken).val.localeCompare(t, 'en', {sensitivity: 'base'}) == 0) {
+                if (val === t) {
 
                     // @ts-ignore
                     value.typ = EnumToken.MediaFeatureTokenType;
@@ -1315,14 +1317,14 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
                 continue;
             }
 
-            if (value.typ == EnumToken.IdenTokenType && 'and'.localeCompare((value as IdentToken).val, 'en', {sensitivity: 'base'}) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'and' === val) {
 
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureAndTokenType;
                 continue;
             }
 
-            if (value.typ == EnumToken.IdenTokenType && 'or'.localeCompare((value as IdentToken).val, 'en', {sensitivity: 'base'}) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'or' === val) {
 
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureOrTokenType;
@@ -1330,7 +1332,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
             }
 
             if (value.typ == EnumToken.IdenTokenType &&
-                ['not', 'only'].some((t: string): boolean => t.localeCompare((value as IdentToken).val, 'en', {sensitivity: 'base'}) == 0)) {
+                ['not', 'only'].some((t: string): boolean => val === t)) {
 
                 // @ts-ignore
                 const array: Token[] = parent?.chi ?? tokens as Token[];
@@ -1503,9 +1505,7 @@ export function parseSelector(tokens: Token[]): Token[] {
 
                 // @ts-ignore
                 value.typ = EnumToken.ChildCombinatorTokenType;
-            }
-
-            else if (value.typ == EnumToken.LiteralTokenType) {
+            } else if (value.typ == EnumToken.LiteralTokenType) {
 
                 if ((<LiteralToken>value).val.charAt(0) == '&') {
 
