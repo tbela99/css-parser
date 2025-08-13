@@ -243,6 +243,19 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
 
+            const node: Token = getTokenType(item.token, item.hint);
+
+            errors.push({
+                action: 'drop',
+                message: 'Bad token',
+                syntax: null,
+                node,
+                location: {
+                    src,
+                    sta: item.sta,
+                    end: item.end
+                }
+            });
             // bad token
             continue;
         }
@@ -310,7 +323,12 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     errors.push({
                         action: 'drop',
                         message: 'invalid block',
-                        rawTokens: tokens.slice()
+                        rawTokens: tokens.slice(),
+                        location: {
+                            src,
+                            sta: tokens[0].sta,
+                            end: tokens[tokens.length - 1].end
+                        }
                     });
                 }
             }
@@ -563,6 +581,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 errors.push({
                     action: 'drop',
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                    node: tokens[i],
                     location
                 });
                 continue;
@@ -607,7 +626,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
     if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
 
-        const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
+        const atRule: AtRuleToken = tokens.shift() as AtRuleToken;
         const location: Location = <Location>map.get(atRule);
 
         // @ts-ignore
@@ -637,7 +656,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes((<AstInvalidAtRule>context.chi[i]).nam as string))) {
 
-                            errors.push({action: 'drop', message: 'invalid @import', location});
+                            // @ts-ignore
+                            errors.push({action: 'drop', message: 'invalid @import', location, rawTokens: [atRule,...tokens]});
                             return null;
                         }
                     }
@@ -742,7 +762,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         action: 'drop',
                         message: '@charset must have only one space',
                         // @ts-ignore
-                        location
+                        location, rawTokens: [atRule,...tokens]
                     });
 
                     return null;
@@ -841,6 +861,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             errors.push({
                 action: 'drop',
                 message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                node,
                 // @ts-ignore
                 location: {src, ...(map.get(valid.node) ?? location)}
             });
@@ -905,7 +926,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         if (curr.typ == EnumToken.IdenTokenType && (curr as IdentToken).val == 'from') {
 
                             Object.assign(curr, {typ: EnumToken.PercentageTokenType, val: '0'})
-                        } else if (curr.typ == EnumToken.PercentageTokenType && (curr as PercentageToken).val == '100') {
+                        } else if (curr.typ == EnumToken.PercentageTokenType && (curr as PercentageToken).val == 100) {
 
                             Object.assign(curr, {typ: EnumToken.IdenTokenType, val: 'to'})
                         }
@@ -980,6 +1001,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 errors.push({
                     action: 'drop',
                     message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                    node,
                     // @ts-ignore
                     location
                 });
@@ -1010,7 +1032,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             val: (tokens[i] as LiteralToken).val.charAt(0)
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: (tokens[i] as LiteralToken).val.slice(1)
+                            val: +(tokens[i] as LiteralToken).val.slice(1)
                         });
                     } else if (start == '/' && isFunction(val)) {
 
@@ -1298,11 +1320,13 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
             }
         }
 
+        const val: string | null = value.typ == EnumToken.IdenTokenType ? (value as IdentToken).val.toLowerCase() : null;
+
         if (value.typ == EnumToken.IdenTokenType) {
 
             if (parent == null && mediaTypes.some((t: string) => {
 
-                if ((value as IdentToken).val.localeCompare(t, 'en', {sensitivity: 'base'}) == 0) {
+                if (val === t) {
 
                     // @ts-ignore
                     value.typ = EnumToken.MediaFeatureTokenType;
@@ -1315,14 +1339,14 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
                 continue;
             }
 
-            if (value.typ == EnumToken.IdenTokenType && 'and'.localeCompare((value as IdentToken).val, 'en', {sensitivity: 'base'}) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'and' === val) {
 
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureAndTokenType;
                 continue;
             }
 
-            if (value.typ == EnumToken.IdenTokenType && 'or'.localeCompare((value as IdentToken).val, 'en', {sensitivity: 'base'}) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'or' === val) {
 
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureOrTokenType;
@@ -1330,7 +1354,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
             }
 
             if (value.typ == EnumToken.IdenTokenType &&
-                ['not', 'only'].some((t: string): boolean => t.localeCompare((value as IdentToken).val, 'en', {sensitivity: 'base'}) == 0)) {
+                ['not', 'only'].some((t: string): boolean => val === t)) {
 
                 // @ts-ignore
                 const array: Token[] = parent?.chi ?? tokens as Token[];
@@ -1503,9 +1527,7 @@ export function parseSelector(tokens: Token[]): Token[] {
 
                 // @ts-ignore
                 value.typ = EnumToken.ChildCombinatorTokenType;
-            }
-
-            else if (value.typ == EnumToken.LiteralTokenType) {
+            } else if (value.typ == EnumToken.LiteralTokenType) {
 
                 if ((<LiteralToken>value).val.charAt(0) == '&') {
 
@@ -1746,21 +1768,21 @@ export function getTokenType(val: string, hint?: EnumToken): Token {
     if (isNumber(val)) {
         return <NumberToken>{
             typ: EnumToken.NumberTokenType,
-            val
+            val: +val
         }
     }
 
     if (isPercentage(val)) {
         return <PercentageToken>{
             typ: EnumToken.PercentageTokenType,
-            val: val.slice(0, -1)
+            val: +val.slice(0, -1)
         }
     }
 
     if (isFlex(val)) {
         return <FlexToken>{
             typ: EnumToken.FlexTokenType,
-            val: val.slice(0, -2)
+            val: +val.slice(0, -2)
         };
     }
 
@@ -1922,7 +1944,8 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
                         Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
                     }
-                } else if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == '|') {
+                } else
+                    if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == '|') {
 
                     let upper: number = m;
                     let lower: number = m;

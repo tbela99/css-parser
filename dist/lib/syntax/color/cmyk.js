@@ -92,11 +92,11 @@ function cmyktoken(values) {
         chi: values.reduce((acc, curr, index) => index < 4 ? [...acc, {
                 typ: EnumToken.PercentageTokenType,
                 // @ts-ignore
-                val: (curr * 100) + ''
+                val: curr * 100
             }] : [...acc, {
                 typ: EnumToken.LiteralTokenType,
                 val: '/'
-            }, { typ: EnumToken.PercentageTokenType, val: (curr * 100).toFixed() }], []),
+            }, { typ: EnumToken.PercentageTokenType, val: curr * 100 }], []),
         kin: ColorType.DEVICE_CMYK
     };
 }

@@ -1,8 +1,14 @@
+/**
+ * syntax validation enum
+ */
 var SyntaxValidationResult;
 (function (SyntaxValidationResult) {
+    /** valid syntax */
     SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
+    /** drop invalid syntax */
     SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
-    SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient"; /* preserve unknown at-rules, declarations and pseudo-classes */
+    /** preserve unknown at-rules, declarations and pseudo-classes */
+    SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
  * validation level enum
@@ -154,35 +160,118 @@ var EnumToken;
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
-// xyz-d65 is an alias for xyz
+/**
+ * color types enum
+ */
 var ColorType;
 (function (ColorType) {
+    /**
+     * system colors
+     */
     ColorType[ColorType["SYS"] = 0] = "SYS";
+    /**
+     * deprecated system colors
+     */
     ColorType[ColorType["DPSYS"] = 1] = "DPSYS";
+    /**
+     * colors as literals
+     */
     ColorType[ColorType["LIT"] = 2] = "LIT";
+    /**
+     * colors as hex values
+     */
     ColorType[ColorType["HEX"] = 3] = "HEX";
+    /**
+     * colors as rgb values
+     */
     ColorType[ColorType["RGBA"] = 4] = "RGBA";
+    /**
+     * colors as hsl values
+     */
     ColorType[ColorType["HSLA"] = 5] = "HSLA";
+    /**
+     * colors as hwb values
+     */
     ColorType[ColorType["HWB"] = 6] = "HWB";
+    /**
+     * colors as cmyk values
+     */
     ColorType[ColorType["CMYK"] = 7] = "CMYK";
+    /**
+     * colors as oklab values
+     * */
     ColorType[ColorType["OKLAB"] = 8] = "OKLAB";
+    /**
+     * colors as oklch values
+     * */
     ColorType[ColorType["OKLCH"] = 9] = "OKLCH";
+    /**
+     * colors as lab values
+     */
     ColorType[ColorType["LAB"] = 10] = "LAB";
+    /**
+     * colors as lch values
+     */
     ColorType[ColorType["LCH"] = 11] = "LCH";
+    /**
+     * colors using color() function
+     */
     ColorType[ColorType["COLOR"] = 12] = "COLOR";
+    /**
+     * color using srgb values
+     */
     ColorType[ColorType["SRGB"] = 13] = "SRGB";
+    /**
+     * color using prophoto-rgb values
+     */
     ColorType[ColorType["PROPHOTO_RGB"] = 14] = "PROPHOTO_RGB";
+    /**
+     * color using a98-rgb values
+     */
     ColorType[ColorType["A98_RGB"] = 15] = "A98_RGB";
+    /**
+     * color using rec2020 values
+     */
     ColorType[ColorType["REC2020"] = 16] = "REC2020";
+    /**
+     * color using display-p3 values
+     */
     ColorType[ColorType["DISPLAY_P3"] = 17] = "DISPLAY_P3";
+    /**
+     * color using srgb-linear values
+     */
     ColorType[ColorType["SRGB_LINEAR"] = 18] = "SRGB_LINEAR";
+    /**
+     * color using xyz-d50 values
+     */
     ColorType[ColorType["XYZ_D50"] = 19] = "XYZ_D50";
+    /**
+     * color using xyz-d65 values
+     */
     ColorType[ColorType["XYZ_D65"] = 20] = "XYZ_D65";
+    /**
+     * light-dark() color function
+     */
     ColorType[ColorType["LIGHT_DARK"] = 21] = "LIGHT_DARK";
+    /**
+     * color-mix() color function
+     */
     ColorType[ColorType["COLOR_MIX"] = 22] = "COLOR_MIX";
+    /**
+     * alias for rgba
+     */
     ColorType[ColorType["RGB"] = 4] = "RGB";
+    /**
+     * alias for hsl
+     */
     ColorType[ColorType["HSL"] = 5] = "HSL";
+    /**
+     * alias for xyz-d65
+     */
     ColorType[ColorType["XYZ"] = 20] = "XYZ";
+    /**
+     * alias for cmyk
+     */
     ColorType[ColorType["DEVICE_CMYK"] = 7] = "DEVICE_CMYK";
 })(ColorType || (ColorType = {}));
 

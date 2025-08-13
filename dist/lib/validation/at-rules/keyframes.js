@@ -21,17 +21,6 @@ function validateAtRuleKeyframes(atRule, options, root) {
     }
     const tokens = atRule.tokens.filter((t) => t.typ != EnumToken.CommentTokenType).slice();
     consumeWhitespace(tokens);
-    // if (tokens.length == 0) {
-    //
-    //     // @ts-ignore
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         context: [],
-    //         node: atRule,
-    //         syntax: '@keyframes',
-    //         error: 'expecting at-rule prelude'
-    //     } as ValidationSyntaxResult;
-    // }
     if (tokens.length == 0 || ![EnumToken.StringTokenType, EnumToken.IdenTokenType].includes(tokens[0].typ)) {
         // @ts-ignore
         return {

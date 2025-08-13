@@ -70,7 +70,7 @@ function getValue(t, converted, component) {
         }
         return {
             typ: EnumToken.NumberTokenType,
-            val: String(value)
+            val: value
         };
     }
     return t;

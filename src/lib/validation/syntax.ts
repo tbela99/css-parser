@@ -272,7 +272,7 @@ export function doEvaluateSyntax(syntaxes: ValidationToken[], context: Context<T
         token = context.peek<Token>() as Token;
 
         // if var() is the last token, then match the remaining syntax and return
-        if (context.length == 1 && token.typ == EnumToken.FunctionTokenType && 'var'.localeCompare((token as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0) {
+        if (context.length == 1 && token.typ == EnumToken.FunctionTokenType && 'var' === (token as FunctionToken).val?.toLowerCase?.()) {
 
             return doEvaluateSyntax((getParsedSyntax(ValidationSyntaxGroupEnum.Functions, 'var')?.[0] as ValidationFunctionToken)?.chi ?? [] as ValidationToken[], createContext((token as FunctionToken).chi), options);
         }
@@ -571,7 +571,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             success = (token.typ == EnumToken.IdenTokenType || token.typ == EnumToken.DashedIdenTokenType || isIdentColor(token)) &&
                 ((token as IdentToken).val == (syntax as ValidationKeywordToken).val ||
-                    (syntax as ValidationKeywordToken).val.localeCompare((token as IdentToken).val, undefined, {sensitivity: 'base'}) == 0 ||
+                    (syntax as ValidationKeywordToken).val === (token as IdentToken).val?.toLowerCase?.() ||
                     // config.declarations.all
                     allValues.includes((token as IdentToken).val.toLowerCase()));
 
@@ -665,7 +665,7 @@ function match(syntax: ValidationToken, context: Context<Token>, options: Valida
 
             if (syntax.typ == ValidationTokenEnum.Function) {
 
-                success = funcLike.includes(token.typ) && (syntax as ValidationFunctionToken).val.localeCompare((token as FunctionToken).val, undefined, {sensitivity: 'base'}) == 0 && doEvaluateSyntax((syntax as ValidationFunctionToken).chi as ValidationToken[], createContext((token as FunctionToken).chi), options).valid == SyntaxValidationResult.Valid;
+                success = funcLike.includes(token.typ) && (syntax as ValidationFunctionToken).val.toLowerCase() === (token as FunctionToken).val?.toLowerCase?.() && doEvaluateSyntax((syntax as ValidationFunctionToken).chi as ValidationToken[], createContext((token as FunctionToken).chi), options).valid == SyntaxValidationResult.Valid;
 
                 if (success) {
 
@@ -840,7 +840,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
                     continue;
                 }
 
-                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
+                success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0);
 
                 if (!success) {
 
@@ -911,18 +911,18 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'system-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.SYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.SYS) || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'deprecated-system-color':
 
-            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.DPSYS) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = (token.typ == EnumToken.ColorTokenType && (token as ColorToken).kin == ColorType.DPSYS) || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
             break;
 
         case 'color':
         case 'color-base':
 
-            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('currentcolor', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.IdenTokenType && (token as IdentToken).val.localeCompare('transparent', 'en', {sensitivity: 'base'}) == 0) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
+            success = token.typ == EnumToken.ColorTokenType || (token.typ == EnumToken.IdenTokenType && 'currentcolor' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.IdenTokenType && 'transparent' === (token as IdentToken).val.toLowerCase()) || (token.typ == EnumToken.FunctionTokenType && wildCardFuncs.includes((token as FunctionToken).val));
 
             if (!success && token.typ == EnumToken.FunctionTokenType && colorsFunc.includes((token as FunctionToken).val)) {
 
@@ -984,27 +984,27 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'angle':
 
-            success = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.AngleTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'length':
 
-            success = token.typ == EnumToken.LengthTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.LengthTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'percentage':
 
-            success = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'length-percentage':
 
-            success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.LengthTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'resolution':
 
-            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0') || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = token.typ == EnumToken.ResolutionTokenType || token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0) || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'hash-token':
@@ -1024,7 +1024,7 @@ function matchPropertyType(syntax: ValidationPropertyToken, context: Context<Tok
 
         case 'zero':
 
-            success = (token as DimensionToken).val == '0' || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
+            success = (token as DimensionToken).val == 0 || (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val == 'calc');
             break;
 
         case 'pseudo-element-selector':

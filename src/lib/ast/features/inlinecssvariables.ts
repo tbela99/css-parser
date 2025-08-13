@@ -51,7 +51,7 @@ function replace(node: AstDeclaration | AstRule | AstComment | AstRuleList, vari
 
     for (const {value, parent: parentValue} of walkValues((<AstDeclaration>node).val)) {
 
-        if (value.typ == EnumToken.FunctionTokenType && (<FunctionToken>value).val == 'var') {
+        if (value.typ == EnumToken.FunctionTokenType && (value as FunctionToken).val == 'var') {
 
             if ((value as FunctionToken).chi.length == 1 && (value as FunctionToken).chi[0].typ == EnumToken.DashedIdenTokenType) {
 
@@ -166,25 +166,7 @@ export class InlineCssVariablesFeature {
                         replace(node, variableScope);
                     }
                 }
-                // else {
-                //
-                //     const info: VariableScopeInfo = <VariableScopeInfo>variableScope.get((<AstDeclaration>node).nam);
-                //
-                //     info.globalScope = isRoot;
-                //
-                //     if (!isRoot) {
-                //
-                //         ++info.declarationCount;
-                //     }
-                //
-                //     if (info.replaceable) {
-                //
-                //         info.replaceable = isRoot && info.declarationCount == 1;
-                //     }
-                //
-                //     info.parent.add(ast);
-                //     info.node = (<AstDeclaration>node);
-                // }
+
             } else {
 
                 replace(node, variableScope);

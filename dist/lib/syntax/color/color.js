@@ -28,7 +28,7 @@ import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
 import '../../renderer/sourcemap/lib/encode.js';
 
 /**
- * Converts a color token to another color space
+ * Converts a color to another color space
  * @param token
  * @param to
  */
@@ -36,7 +36,7 @@ function convertColor(token, to) {
     if (token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||
         (isIdentColor(token) &&
-            ('currentcolor'.localeCompare(token.val, undefined, { sensitivity: 'base' }) == 0))) {
+            'currentcolor' == token.val.toLowerCase())) {
         return token;
     }
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
@@ -505,14 +505,14 @@ function color2srgbvalues(token) {
 function values2colortoken(values, to) {
     values = srgb2srgbcolorspace(values, to);
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: String(values[0]) },
-        { typ: EnumToken.NumberTokenType, val: String(values[1]) },
-        { typ: EnumToken.NumberTokenType, val: String(values[2]) },
+        { typ: EnumToken.NumberTokenType, val: values[0] },
+        { typ: EnumToken.NumberTokenType, val: values[1] },
+        { typ: EnumToken.NumberTokenType, val: values[2] },
     ];
     if (values.length == 4) {
         chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
             typ: EnumToken.PercentageTokenType,
-            val: (values[3] * 100).toFixed()
+            val: values[3] * 100
         });
     }
     const colorSpace = ColorType[to].toLowerCase().replaceAll('_', '-');
@@ -533,7 +533,7 @@ function getNumber(token) {
         return 0;
     }
     // @ts-ignore
-    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
+    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : token.val;
 }
 /**
  * convert angle to turn

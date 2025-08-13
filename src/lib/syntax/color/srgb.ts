@@ -130,7 +130,7 @@ export function hwb2srgbvalues(token: ColorToken): number[] | null {
     return rgb;
 }
 
-export function hsl2srgb(token: ColorToken): number[] | null{
+export function hsl2srgb(token: ColorToken): number[] | null {
 
     let {h, s, l, a} = hslvalues(token) ?? {};
 
@@ -145,7 +145,7 @@ export function hsl2srgb(token: ColorToken): number[] | null{
 
 export function cmyk2srgbvalues(token: ColorToken): number[] | null {
 
-    const components: Token[] | null= getComponents(token);
+    const components: Token[] | null = getComponents(token);
 
     if (components == null) {
 
@@ -200,7 +200,7 @@ export function cmyk2srgbvalues(token: ColorToken): number[] | null {
     return rgb;
 }
 
-export function oklab2srgbvalues(token: ColorToken): number[] | null{
+export function oklab2srgbvalues(token: ColorToken): number[] | null {
 
     const [l, a, b, alpha] = getOKLABComponents(token) ?? [];
 
@@ -339,7 +339,7 @@ export function hslvalues2srgbvalues(h: number, s: number, l: number, a: number 
     return values;
 }
 
-export function lab2srgbvalues(token: ColorToken): number[] | null{
+export function lab2srgbvalues(token: ColorToken): number[] | null {
 
     const [l, a, b, alpha] = getLABComponents(token) ?? [];
 

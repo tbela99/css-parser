@@ -12,7 +12,7 @@ export function matchType(val: Token, properties: PropertyMapType): boolean {
         return true;
     }
 
-    if (val.typ == EnumToken.NumberTokenType && (val as NumberToken).val == '0') {
+    if (val.typ == EnumToken.NumberTokenType && (val as NumberToken).val == 0) {
 
         // @ts-ignore
         return properties.types.some((type: keyof EnumToken) => {

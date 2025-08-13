@@ -1,6 +1,6 @@
 import { ColorType, EnumToken } from '../../../ast/types.js';
 import '../../../ast/minify.js';
-import '../../../ast/walk.js';
+import { walkValues } from '../../../ast/walk.js';
 import '../../../parser/parse.js';
 import '../../../parser/tokenize.js';
 import '../../../parser/utils/config.js';
@@ -13,7 +13,7 @@ function getComponents(token) {
         const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
         // @ts-ignore
         return value.slice(1).match(/([a-fA-F0-9]{2})/g).map((t, index) => {
-            return { typ: EnumToken.Number, val: (index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255).toString() };
+            return { typ: EnumToken.Number, val: index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255 };
         });
     }
     const result = [];
@@ -23,7 +23,19 @@ function getComponents(token) {
         ].includes(child.typ)) {
             continue;
         }
-        if (child.typ == EnumToken.ColorTokenType && child.val.localeCompare('currentcolor', undefined, { sensitivity: 'base' }) == 0) {
+        if (child.typ == EnumToken.FunctionTokenType) {
+            if ('var' == child.val.toLowerCase()) {
+                return null;
+            }
+            else {
+                for (const { value } of walkValues(child.chi)) {
+                    if (value.typ == EnumToken.FunctionTokenType && 'var' === value.val.toLowerCase()) {
+                        return null;
+                    }
+                }
+            }
+        }
+        if (child.typ == EnumToken.ColorTokenType && 'currentcolor' === child.val.toLowerCase()) {
             return null;
         }
         result.push(child);

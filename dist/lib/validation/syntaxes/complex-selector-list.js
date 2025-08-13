@@ -13,17 +13,6 @@ import { splitTokenList } from '../utils/list.js';
 function validateComplexSelectorList(tokens, root, options) {
     tokens = tokens.slice();
     consumeWhitespace(tokens);
-    // if (tokens.length == 0) {
-    //
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         context: [],
-    //         // @ts-ignore
-    //         node: root,
-    //         syntax: null,
-    //         error: 'expecting complex selector list'
-    //     }
-    // }
     let result = null;
     for (const t of splitTokenList(tokens)) {
         result = validateSelector(t, root, options);

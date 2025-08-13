@@ -36,26 +36,12 @@ function minify(matrix) {
                 coordinates.delete(i == 0 ? 'x' : i == 1 ? 'y' : 'z');
             }
         }
-        // if (coordinates.size == 3) {
-        //
-        //     result.push({
-        //         typ: EnumToken.FunctionTokenType,
-        //         val: 'translate3d',
-        //         chi: [
-        //             {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px'},
-        //             {typ: EnumToken.CommaTokenType},
-        //             {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px'},
-        //             {typ: EnumToken.CommaTokenType},
-        //             {typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]) + '', unit: 'px'}
-        //         ]
-        //     })
-        // } else
         if (coordinates.size == 1) {
             if (coordinates.has('x')) {
                 result.push({
                     typ: EnumToken.FunctionTokenType,
                     val: 'translate',
-                    chi: [{ typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px' }]
+                    chi: [{ typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]), unit: 'px' }]
                 });
             }
             else {
@@ -64,7 +50,7 @@ function minify(matrix) {
                 result.push({
                     typ: EnumToken.FunctionTokenType,
                     val: 'translate' + axis.toUpperCase(),
-                    chi: [{ typ: EnumToken.LengthTokenType, val: round(decomposed.translate[index]) + '', unit: 'px' }]
+                    chi: [{ typ: EnumToken.LengthTokenType, val: round(decomposed.translate[index]), unit: 'px' }]
                 });
             }
         }
@@ -75,15 +61,15 @@ function minify(matrix) {
                 chi: [
                     decomposed.translate[0] == 0 ? {
                         typ: EnumToken.NumberTokenType,
-                        'val': '0'
-                    } : { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px' },
+                        val: 0
+                    } : { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]), unit: 'px' },
                     { typ: EnumToken.CommaTokenType },
                     decomposed.translate[1] == 0 ? {
                         typ: EnumToken.NumberTokenType,
-                        'val': '0'
-                    } : { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px' },
+                        val: 0
+                    } : { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]), unit: 'px' },
                     { typ: EnumToken.CommaTokenType },
-                    { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]) + '', unit: 'px' }
+                    { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[2]), unit: 'px' }
                 ]
             });
         }
@@ -92,9 +78,9 @@ function minify(matrix) {
                 typ: EnumToken.FunctionTokenType,
                 val: 'translate',
                 chi: [
-                    { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]) + '', unit: 'px' },
+                    { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[0]), unit: 'px' },
                     { typ: EnumToken.CommaTokenType },
-                    { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]) + '', unit: 'px' }
+                    { typ: EnumToken.LengthTokenType, val: round(decomposed.translate[1]), unit: 'px' }
                 ]
             });
         }
@@ -108,7 +94,7 @@ function minify(matrix) {
                 chi: [
                     {
                         typ: EnumToken.AngleTokenType,
-                        val: '' + round(angle),
+                        val: round(angle),
                         unit: 'deg'
                     }
                 ]
@@ -121,7 +107,7 @@ function minify(matrix) {
                 chi: [
                     {
                         typ: EnumToken.AngleTokenType,
-                        val: '' + round(angle),
+                        val: round(angle),
                         unit: 'deg'
                     }
                 ]
@@ -134,7 +120,7 @@ function minify(matrix) {
                 chi: [
                     {
                         typ: EnumToken.AngleTokenType,
-                        val: '' + round(angle),
+                        val: round(angle),
                         unit: 'deg'
                     }
                 ]
@@ -147,22 +133,22 @@ function minify(matrix) {
                 chi: [
                     {
                         typ: EnumToken.NumberTokenType,
-                        val: '' + round(x)
+                        val: round(x)
                     },
                     { typ: EnumToken.CommaTokenType },
                     {
                         typ: EnumToken.NumberTokenType,
-                        val: '' + round(y)
+                        val: round(y)
                     },
                     { typ: EnumToken.CommaTokenType },
                     {
                         typ: EnumToken.NumberTokenType,
-                        val: '' + round(z)
+                        val: round(z)
                     },
                     { typ: EnumToken.CommaTokenType },
                     {
                         typ: EnumToken.AngleTokenType,
-                        val: '' + round(angle),
+                        val: round(angle),
                         unit: 'deg'
                     }
                 ]
@@ -185,7 +171,7 @@ function minify(matrix) {
                 typ: EnumToken.FunctionTokenType,
                 val: 'skew' + (skew.has('x') ? '' : 'Y'),
                 chi: [
-                    { typ: EnumToken.AngleTokenType, val: '' + round(decomposed.skew[0]), unit: 'deg' }
+                    { typ: EnumToken.AngleTokenType, val: round(decomposed.skew[0]), unit: 'deg' }
                 ]
             });
         }
@@ -194,9 +180,9 @@ function minify(matrix) {
                 typ: EnumToken.FunctionTokenType,
                 val: 'skew',
                 chi: [
-                    { typ: EnumToken.AngleTokenType, val: '' + round(decomposed.skew[0]), unit: 'deg' },
+                    { typ: EnumToken.AngleTokenType, val: round(decomposed.skew[0]), unit: 'deg' },
                     { typ: EnumToken.CommaTokenType },
-                    { typ: EnumToken.AngleTokenType, val: '' + round(decomposed.skew[1]), unit: 'deg' }
+                    { typ: EnumToken.AngleTokenType, val: round(decomposed.skew[1]), unit: 'deg' }
                 ]
             });
         }
@@ -218,7 +204,7 @@ function minify(matrix) {
                 typ: EnumToken.FunctionTokenType,
                 val: 'scale' + prefix,
                 chi: [
-                    { typ: EnumToken.NumberTokenType, val: '' + round(prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx) }
+                    { typ: EnumToken.NumberTokenType, val: round(prefix == 'Z' ? sz : prefix == 'Y' ? sy : sx) }
                 ]
             });
         }
@@ -227,9 +213,9 @@ function minify(matrix) {
                 typ: EnumToken.FunctionTokenType,
                 val: 'scale',
                 chi: [
-                    { typ: EnumToken.NumberTokenType, val: '' + round(sx) },
+                    { typ: EnumToken.NumberTokenType, val: round(sx) },
                     { typ: EnumToken.CommaTokenType },
-                    { typ: EnumToken.NumberTokenType, val: '' + round(sy) },
+                    { typ: EnumToken.NumberTokenType, val: round(sy) },
                 ]
             });
         }
@@ -238,25 +224,15 @@ function minify(matrix) {
                 typ: EnumToken.FunctionTokenType,
                 val: 'scale3d',
                 chi: [
-                    { typ: EnumToken.NumberTokenType, val: '' + round(sx) },
+                    { typ: EnumToken.NumberTokenType, val: round(sx) },
                     { typ: EnumToken.CommaTokenType },
-                    { typ: EnumToken.NumberTokenType, val: '' + round(sy) },
+                    { typ: EnumToken.NumberTokenType, val: round(sy) },
                     { typ: EnumToken.CommaTokenType },
-                    { typ: EnumToken.NumberTokenType, val: '' + round(sz) }
+                    { typ: EnumToken.NumberTokenType, val: round(sz) }
                 ]
             });
         }
     }
-    // if (transforms.has('perspective')) {
-    //
-    //     result.push({
-    //         typ: EnumToken.FunctionTokenType,
-    //         val: 'perspective',
-    //         chi: [
-    //             {typ: EnumToken.Length, val: '' + round(1 / decomposed.perspective[2]), unit: 'px'},
-    //         ]
-    //     });
-    // }
     // identity
     return result.length == 0 || (result.length == 1 && eqMatrix(identity(), result)) ? [
         {
@@ -266,10 +242,13 @@ function minify(matrix) {
     ] : result;
 }
 function eqMatrix(a, b) {
+    // console.error(JSON.stringify({a, b}, null, 1));
     let mat = identity();
     let tmp = identity();
     // @ts-ignore
-    const data = Array.isArray(a) ? a : parseMatrix(a);
+    const data = (Array.isArray(a) ? a : parseMatrix(a));
+    // toZero(data);
+    // console.error({data});
     for (const transform of b) {
         tmp = computeMatrix([transform], identity());
         if (tmp == null) {
@@ -277,12 +256,14 @@ function eqMatrix(a, b) {
         }
         mat = multiply(mat, tmp);
     }
+    // toZero(mat);
+    // console.error({mat});
     if (mat == null) {
         return false;
     }
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
-            if (Math.abs(mat[i][j] - data[i][j]) > epsilon) {
+            if (Math.abs(mat[i * 4 + j] - data[i * 4 + j]) > epsilon) {
                 return false;
             }
         }

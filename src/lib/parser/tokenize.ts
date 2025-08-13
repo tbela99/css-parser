@@ -739,18 +739,18 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                                 break;
                             }
 
-                            if (isWhiteSpace(charCode)) {
-
-                                hasWhiteSpace = true;
-                                whitespace = value;
-
-                                while (isWhiteSpace(peek(parseInfo)?.charCodeAt(0))) {
-
-                                    whitespace += next(parseInfo);
-                                }
-
-                                continue;
-                            }
+                            // if (isWhiteSpace(charCode)) {
+                            //
+                            //     hasWhiteSpace = true;
+                            //     whitespace = value;
+                            //
+                            //     while (isWhiteSpace(peek(parseInfo)?.charCodeAt(0))) {
+                            //
+                            //         whitespace += next(parseInfo);
+                            //     }
+                            //
+                            //     continue;
+                            // }
 
                             if (isNonPrintable(charCode) ||
                                 // '"'
@@ -764,33 +764,33 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
                                 errorState = true;
                             }
 
-                            if (errorState) {
-
-                                buffer += whitespace + value;
-
-                                while (value = peek(parseInfo)) {
-
-                                    charCode = value.charCodeAt(0);
-
-                                    if (charCode == 0x5c) {
-
-                                        buffer += next(parseInfo, 2);
-                                        continue;
-                                    }
-
-                                    // ')'
-                                    if (charCode == 0x29) {
-
-                                        break;
-                                    }
-
-                                    buffer += next(parseInfo);
-                                }
-
-                                yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
-                                buffer = '';
-                                break;
-                            }
+                            // if (errorState) {
+                            //
+                            //     buffer += whitespace + value;
+                            //
+                            //     while (value = peek(parseInfo)) {
+                            //
+                            //         charCode = value.charCodeAt(0);
+                            //
+                            //         if (charCode == 0x5c) {
+                            //
+                            //             buffer += next(parseInfo, 2);
+                            //             continue;
+                            //         }
+                            //
+                            //         // ')'
+                            //         if (charCode == 0x29) {
+                            //
+                            //             break;
+                            //         }
+                            //
+                            //         buffer += next(parseInfo);
+                            //     }
+                            //
+                            //     yield pushToken(buffer, parseInfo, EnumToken.BadUrlTokenType);
+                            //     buffer = '';
+                            //     break;
+                            // }
 
                             buffer += value;
                         }

@@ -45,7 +45,7 @@ function validateAtRuleDocument(atRule, options, root) {
             };
         }
         // @ts-ignore
-        if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].some((f) => f.localeCompare(t[0].val, undefined, { sensitivity: 'base' }) == 0)) {
+        if ((t[0].typ != EnumToken.FunctionTokenType && t[0].typ != EnumToken.UrlFunctionTokenType) || !['url', 'url-prefix', 'domain', 'media-document', 'regexp'].includes(t[0].val?.toLowerCase?.())) {
             return {
                 valid: SyntaxValidationResult.Drop,
                 context: [],

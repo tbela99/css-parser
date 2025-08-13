@@ -66,15 +66,13 @@ export class TransformCssFeature {
                 if (curr.typ == EnumToken.FunctionTokenType && 'skew' == curr.val.toLowerCase()) {
 
                     if (
-                        (curr as FunctionToken).chi.length == 3                         ) {
+                        (curr as FunctionToken).chi.length == 3) {
 
-                        if (((curr as FunctionToken).chi[2] as AngleToken).val =='0') {
+                        if (((curr as FunctionToken).chi[2] as AngleToken).val == 0) {
 
                             (curr as FunctionToken).chi.length = 1;
                             (curr as FunctionToken).val = 'skew';
-                        }
-
-                        else if (((curr as FunctionToken).chi[0] as AngleToken).val =='0') {
+                        } else if (((curr as FunctionToken).chi[0] as AngleToken).val == 0) {
 
                             (curr as FunctionToken).chi = [(curr as FunctionToken).chi[2]];
                             (curr as FunctionToken).val = 'skewY';

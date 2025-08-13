@@ -125,7 +125,7 @@ import {
 import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
 
 /**
- * Converts a color token to another color space
+ * Converts a color to another color space
  * @param token
  * @param to
  */
@@ -134,7 +134,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
     if (token.kin == ColorType.SYS ||
         token.kin == ColorType.DPSYS ||
         (isIdentColor(token) &&
-            ('currentcolor'.localeCompare(token.val, undefined, {sensitivity: 'base'}) == 0))
+            'currentcolor' == token.val.toLowerCase())
     ) {
 
         return token
@@ -142,7 +142,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
     if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
 
-        const children: Token[][] = (<Token[]>(token as ColorToken).chi).reduce((acc: Token[][], t: Token) => {
+        const children: Token[][] = ((token as ColorToken).chi as Token[]).reduce((acc: Token[][], t: Token) => {
 
             if (t.typ == EnumToken.ColorTokenType) {
 
@@ -156,9 +156,9 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
             }
 
             return acc;
-        }, <Token[][]>[[]]);
+        }, [[]] as Token[][]);
 
-        token = colorMix(<IdentToken>children[0][1], <IdentToken>children[0][2], <ColorToken>children[1][0], <PercentageToken>children[1][1], <ColorToken>children[2][0], <PercentageToken>children[2][1]) as ColorToken;
+        token = colorMix(children[0][1] as IdentToken, children[0][2] as IdentToken, children[1][0] as ColorToken, children[1][1] as PercentageToken, children[2][0] as ColorToken, children[2][1] as PercentageToken) as ColorToken;
 
         if (token == null) {
 
@@ -175,7 +175,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
             // @ts-ignore
             const color: ColorToken = chi[1];
-            const components: Record<RelativeColorTypes, Token> = <Record<RelativeColorTypes, Token>>parseRelativeColor((token as ColorToken).val.toLowerCase() == 'color' ? (<IdentToken>chi[offset]).val : <string>(token as ColorToken).val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+            const components: Record<RelativeColorTypes, Token> = parseRelativeColor((token as ColorToken).val.toLowerCase() == 'color' ? (chi[offset] as IdentToken).val : (token as ColorToken).val as string, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]) as Record<RelativeColorTypes, Token>;
 
             if (components != null) {
 
@@ -202,7 +202,7 @@ export function convertColor(token: ColorToken, to: ColorType): ColorToken | nul
 
     if (token.kin == ColorType.COLOR) {
 
-        const colorSpace: IdentToken = <IdentToken>(<Token[]>token.chi).find(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
+        const colorSpace: IdentToken = (token.chi as Token[]).find(t => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) as IdentToken;
 
         if (colorSpace.val == ColorType[to].toLowerCase().replaceAll('_', '-')) {
 
@@ -849,8 +849,8 @@ export function color2srgbvalues(token: ColorToken): number[] | null {
         return null;
     }
 
-    const colorSpace: IdentToken = <IdentToken>components.shift();
-    let values: number[] = components.map((val: Token) => getNumber(<IdentToken | NumberToken | PercentageToken>val));
+    const colorSpace: IdentToken = components.shift() as IdentToken;
+    let values: number[] = components.map((val: Token) => getNumber(val as IdentToken | NumberToken | PercentageToken));
 
     switch (colorSpace.val.toLowerCase()) {
 
@@ -897,35 +897,35 @@ function values2colortoken(values: number[], to: ColorType): ColorToken {
 
     values = srgb2srgbcolorspace(values, to);
 
-    const chi: Token[] = <Token[]>[
+    const chi: Token[] = [
 
-        {typ: EnumToken.NumberTokenType, val: String(values[0])},
-        {typ: EnumToken.NumberTokenType, val: String(values[1])},
-        {typ: EnumToken.NumberTokenType, val: String(values[2])},
-    ];
+        {typ: EnumToken.NumberTokenType, val: values[0]},
+        {typ: EnumToken.NumberTokenType, val: values[1]},
+        {typ: EnumToken.NumberTokenType, val: values[2]},
+    ] as Token[];
 
     if (values.length == 4) {
 
         chi.push(
             {typ: EnumToken.LiteralTokenType, val: "/"}, {
                 typ: EnumToken.PercentageTokenType,
-                val: (values[3] * 100).toFixed()
+                val: values[3] * 100
             });
     }
 
     const colorSpace: string = ColorType[to].toLowerCase().replaceAll('_', '-');
 
-    return colorFuncColorSpace.includes(colorSpace) ? <ColorToken>{
+    return colorFuncColorSpace.includes(colorSpace) ? {
         typ: EnumToken.ColorTokenType,
         val: 'color',
-        chi: [<Token>{typ: EnumToken.IdenTokenType, val: colorSpace}].concat(chi),
+        chi: [{typ: EnumToken.IdenTokenType, val: colorSpace} as Token].concat(chi),
         kin: ColorType.COLOR
-    } : <ColorToken>{
+    } as ColorToken : {
         typ: EnumToken.ColorTokenType,
         val: colorSpace,
         chi,
         kin: to
-    }
+    } as ColorToken
 }
 
 /**
@@ -936,27 +936,27 @@ export function clamp(token: ColorToken): ColorToken {
 
     if (token.kin == ColorType.RGB) {
 
-        (<Token[]>token.chi).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token: Token, index: number) => {
+        (token.chi as Token[]).filter((token: Token) => ![EnumToken.LiteralTokenType, EnumToken.CommaTokenType, EnumToken.WhitespaceTokenType].includes(token.typ)).forEach((token: Token, index: number) => {
 
             if (index <= 2) {
 
                 if (token.typ == EnumToken.NumberTokenType) {
 
-                    (token as NumberToken).val = String(minmax(+(token as NumberToken).val, 0, 255));
+                    (token as NumberToken).val = minmax(+(token as NumberToken).val, 0, 255);
 
                 } else if (token.typ == EnumToken.PercentageTokenType) {
 
-                    (token as PercentageToken).val = String(minmax(+(token as PercentageToken).val, 0, 100));
+                    (token as PercentageToken).val = minmax(+(token as PercentageToken).val, 0, 100);
                 }
             } else {
 
                 if (token.typ == EnumToken.NumberTokenType) {
 
-                    (token as NumberToken).val = String(minmax(+(token as NumberToken).val, 0, 1));
+                    (token as NumberToken).val = minmax(+(token as NumberToken).val, 0, 1);
 
                 } else if (token.typ == EnumToken.PercentageTokenType) {
 
-                    (token as PercentageToken).val = String(minmax(+(token as PercentageToken).val, 0, 100));
+                    (token as PercentageToken).val = minmax(+(token as PercentageToken).val, 0, 100);
                 }
             }
         });
@@ -973,7 +973,7 @@ export function getNumber(token: NumberToken | PercentageToken | IdentToken): nu
     }
 
     // @ts-ignore
-    return token.typ == EnumToken.PercentageTokenType ? token.val / 100 : +token.val;
+    return (token as PercentageToken | NumberToken).typ == EnumToken.PercentageTokenType ? (token as PercentageToken | NumberToken).val / 100 : (token as PercentageToken | NumberToken).val;
 }
 
 /**

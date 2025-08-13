@@ -116,14 +116,14 @@ function rgb2RgbToken(values: number[]): ColorToken | null {
 
     const chi: Token[] = <Token[]>[
 
-        {typ: EnumToken.NumberTokenType, val: String(values[0])},
-        {typ: EnumToken.NumberTokenType, val: String(values[1])},
-        {typ: EnumToken.NumberTokenType, val: String(values[2])},
+        {typ: EnumToken.NumberTokenType, val: values[0]},
+        {typ: EnumToken.NumberTokenType, val: values[1]},
+        {typ: EnumToken.NumberTokenType, val: values[2]},
     ];
 
     if (values.length == 4) {
 
-        chi.push({typ: EnumToken.PercentageTokenType, val: (values[3] * 100).toFixed()});
+        chi.push({typ: EnumToken.PercentageTokenType, val: values[3] * 100});
     }
 
     return {

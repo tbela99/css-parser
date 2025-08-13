@@ -97,7 +97,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.1.2/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.0/web';
 
 
     const css = `
@@ -302,7 +302,7 @@ console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
 ### Convert colors
 
 ```javascript
-import {transform} from '@tbela99/css-parser';
+import {transform, ColorType} from '@tbela99/css-parser';
 
 
 const css = `

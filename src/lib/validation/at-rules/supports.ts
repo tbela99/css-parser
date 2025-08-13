@@ -213,7 +213,7 @@ export function validateSupportCondition(atRule: AstAtRule, token: Token): Valid
         return validateSupportCondition(atRule, (token as MediaFeatureNotToken).val);
     }
 
-    if (token.typ == EnumToken.FunctionTokenType && (token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
+    if (token.typ == EnumToken.FunctionTokenType && 'selector' === (token as FunctionToken).val.toLowerCase()) {
 
         return {
             valid: SyntaxValidationResult.Valid,
@@ -286,7 +286,7 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
 
     if (token.typ == EnumToken.FunctionTokenType) {
 
-        if ((token as FunctionToken).val.localeCompare('selector', undefined, {sensitivity: 'base'}) == 0) {
+        if ('selector' === (token as FunctionToken).val.toLowerCase()) {
 
             return {
                 valid: SyntaxValidationResult.Valid,
@@ -297,11 +297,11 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
             }
         }
 
-        if ((token as FunctionToken).val.localeCompare('font-tech', undefined, {sensitivity: 'base'}) == 0) {
+        if ('font-tech' === (token as FunctionToken).val.toLowerCase()) {
 
             const chi: Token[] = (token as FunctionToken).chi.filter((t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
             // @ts-ignore
-            return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
+            return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && colorFontTech.concat(fontFeaturesTech).includes((chi[0] as IdentToken).val.toLowerCase()) ?
 
                 {
                     valid: SyntaxValidationResult.Valid,
@@ -319,11 +319,11 @@ function validateSupportFeature(token: Token): ValidationSyntaxResult {
                 };
         }
 
-        if ((token as FunctionToken).val.localeCompare('font-format', undefined, {sensitivity: 'base'}) == 0) {
+        if ('font-format' === (token as FunctionToken).val.toLowerCase()) {
 
             const chi: Token[] = (token as FunctionToken).chi.filter((t: Token): boolean => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
             // @ts-ignore
-            return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.some((t) => t.localeCompare((chi[0] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0) ?
+            return chi.length == 1 && chi[0].typ == EnumToken.IdenTokenType && fontFormat.includes((chi[0] as IdentToken).val, toLowerCase()) ?
 
                 {
                     valid: SyntaxValidationResult.Valid,

@@ -108,7 +108,7 @@ function getValue(t: Token, converted: ColorToken, component: string): Token {
 
         return {
             typ: EnumToken.NumberTokenType,
-            val: String(value)
+            val: value
         }
     }
 

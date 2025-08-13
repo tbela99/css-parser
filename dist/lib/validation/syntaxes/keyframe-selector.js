@@ -11,17 +11,6 @@ import '../../renderer/sourcemap/lib/encode.js';
 
 function validateKeyframeSelector(tokens, options) {
     consumeWhitespace(tokens);
-    // if (tokens.length == 0) {
-    //
-    //     // @ts-ignore
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         context: [],
-    //         node: null,
-    //         syntax: null,
-    //         error: 'expected keyframe selector'
-    //     }
-    // }
     for (const t of splitTokenList(tokens)) {
         if (t.length != 1 || (t[0].typ != EnumToken.PercentageTokenType && !(t[0].typ == EnumToken.IdenTokenType && ['from', 'to', 'cover', 'contain', 'entry', 'exit', 'entry-crossing', 'exit-crossing'].includes(t[0].val)))) {
             return {

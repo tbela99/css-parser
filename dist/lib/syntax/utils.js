@@ -50,7 +50,7 @@ function length2Px(value) {
  * @param val
  */
 function minifyNumber(val) {
-    val = String(+val);
+    val = String(val);
     if (val === '0') {
         return '0';
     }

@@ -22,17 +22,17 @@ export function rotate3D(angle: number, x: number, y: number, z: number, from: M
     y *= unit;
     z *= unit;
 
-    matrix[0][0] = 1 - 2 * (y * y + z * z) * sq;
-    matrix[0][1] = 2 * (x * y * sq + z * sc);
-    matrix[0][2] = 2 * (x * z * sq - y * sc);
+    matrix[0* 4 +0] = 1 - 2 * (y * y + z * z) * sq;
+    matrix[0* 4 +1] = 2 * (x * y * sq + z * sc);
+    matrix[0* 4 +2] = 2 * (x * z * sq - y * sc);
 
-    matrix[1][0] = 2 * (x * y * sq - z * sc);
-    matrix[1][1] = 1 - 2 * (x * x + z * z) * sq;
-    matrix[1][2] = 2 * (y * z * sq + x * sc);
+    matrix[1* 4 +0] = 2 * (x * y * sq - z * sc);
+    matrix[1* 4 +1] = 1 - 2 * (x * x + z * z) * sq;
+    matrix[1* 4 +2] = 2 * (y * z * sq + x * sc);
 
-    matrix[2][0] = 2 * (x * z * sq + y * sc);
-    matrix[2][1] = 2 * (y * z * sq - x * sc);
-    matrix[2][2] = 1 - 2 * (x * x + y * y) * sq;
+    matrix[2* 4 +0] = 2 * (x * z * sq + y * sc);
+    matrix[2* 4 +1] = 2 * (y * z * sq - x * sc);
+    matrix[2* 4 +2] = 1 - 2 * (x * x + y * y) * sq;
 
     return multiply(from, matrix);
 }
@@ -40,10 +40,10 @@ export function rotate3D(angle: number, x: number, y: number, z: number, from: M
 export function rotate(angle: number, from: Matrix): Matrix {
 
     const matrix: Matrix = identity();
-    matrix[0][0] = Math.cos(angle);
-    matrix[0][1] = Math.sin(angle);
-    matrix[1][0] = -Math.sin(angle);
-    matrix[1][1] = Math.cos(angle);
+    matrix[0* 4 +0] = Math.cos(angle);
+    matrix[0* 4 +1] = Math.sin(angle);
+    matrix[1* 4 +0] = -Math.sin(angle);
+    matrix[1* 4 +1] = Math.cos(angle);
 
     return multiply(from, matrix);
 }

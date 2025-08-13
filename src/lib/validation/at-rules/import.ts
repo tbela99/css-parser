@@ -3,6 +3,7 @@ import type {
     AstNode,
     FunctionToken,
     FunctionURLToken,
+    IdentToken,
     Token,
     ValidationOptions
 } from "../../../@types/index.d.ts";
@@ -110,8 +111,7 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         // @ts-ignore
         if (tokens[0].typ == EnumToken.IdenTokenType) {
 
-            // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, {sensitivity: 'base'}) == 0) {
+            if ('layer' === (tokens[0] as IdentToken).val.toLowerCase()) {
 
                 tokens.shift();
 
@@ -134,9 +134,9 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
         else if (tokens[0].typ == EnumToken.FunctionTokenType) {
 
             // @ts-ignore
-            if ('layer'.localeCompare(tokens[0].val, undefined, {sensitivity: 'base'}) == 0) {
+            if ('layer' === (tokens[0] as FunctionToken).val.toLowerCase()) {
 
-                const result = validateLayerName((tokens[0] as FunctionToken).chi);
+                const result: ValidationSyntaxResult = validateLayerName((tokens[0] as FunctionToken).chi);
 
                 if (result.valid == SyntaxValidationResult.Drop) {
 
@@ -148,8 +148,9 @@ export function validateAtRuleImport(atRule: AstAtRule, options: ValidationOptio
                 consumeWhitespace(tokens);
             }
 
+            // tokens[0]?.val
             // @ts-ignore
-            if ('supports'.localeCompare(tokens[0]?.val, undefined, {sensitivity: 'base'}) == 0) {
+            if ('supports' === (tokens[0] as FunctionToken)?.val?.toLowerCase?.()) {
 
                 const result = validateAtRuleSupportsConditions(atRule, (tokens[0] as FunctionToken).chi) as ValidationSyntaxResult;
 

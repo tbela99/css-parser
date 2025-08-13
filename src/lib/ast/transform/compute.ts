@@ -1,6 +1,6 @@
 import type {AngleToken, FunctionToken, IdentToken, LengthToken, NumberToken, Token} from "../../../@types/token.d.ts";
 import type {Matrix} from "./utils.ts";
-import {identity, multiply} from "./utils.ts";
+import {identity, multiply, toZero} from "./utils.ts";
 import {EnumToken} from "../types.ts";
 import {length2Px, transformFunctions} from "../../syntax/index.ts";
 import {stripCommaToken} from "../../validation/utils/index.ts";
@@ -21,11 +21,6 @@ export function compute(transformLists: Token[]): {
 
     transformLists = transformLists.slice();
     stripCommaToken(transformLists);
-
-    // if (transformLists.length == 0) {
-    //
-    //     return null;
-    // }
 
     let matrix: Matrix | null = identity();
     let mat: Matrix;
@@ -64,8 +59,12 @@ export function compute(transformLists: Token[]): {
         }
     }
 
+    // console.error({matrix});
+
+    // matrix = toZero(matrix) as Matrix;
+
     return {
-        matrix: serialize(matrix),
+        matrix: serialize(toZero(matrix) as Matrix),
         cumulative,
         minified: minify(matrix) ?? [serialized]
     }
@@ -78,11 +77,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
     let i: number = 0;
 
     for (; i < transformList.length; i++) {
-
-        // if (transformList[i].typ == EnumToken.WhitespaceTokenType) {
-        //
-        //     continue;
-        // }
 
         if (transformList[i].typ != EnumToken.FunctionTokenType || !transformFunctions.includes((transformList[i] as FunctionToken).val)) {
 
@@ -98,20 +92,9 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
             case 'translate3d': {
 
                 values.length = 0;
+
                 const children = stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[];
-
-                // if (children == null || children.length == 0) {
-                //
-                //     return null;
-                // }
-
                 const valCount: number = (transformList[i] as FunctionToken).val == 'translate3d' || (transformList[i] as FunctionToken).val == 'translate' ? 3 : 1;
-
-                // if (children.length == 1 && children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == 'none') {
-                //
-                //     values.fill(0, 0, valCount);
-                //
-                // } else {
 
                 for (let j = 0; j < children.length; j++) {
 
@@ -129,7 +112,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                     values.push(val as number);
                 }
-                // }
 
                 if (values.length == 0 || values.length > valCount) {
 
@@ -172,11 +154,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                 let valuesCount: number = (transformList[i] as FunctionToken).val == 'rotate3d' ? 4 : 1;
 
                 for (const child of stripCommaToken((transformList[i] as FunctionToken).chi.slice()) as Token[]) {
-
-                    // if (child.typ == EnumToken.WhitespaceTokenType) {
-                    //
-                    //     continue;
-                    // }
 
                     values.push(child);
 
@@ -238,11 +215,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                     child = children[k];
 
-                    // if (child.typ == EnumToken.CommentTokenType || child.typ == EnumToken.WhitespaceTokenType) {
-                    //
-                    //     continue;
-                    // }
-
                     if (child.typ != EnumToken.NumberTokenType) {
 
                         return null;
@@ -250,11 +222,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
 
                     values.push(getNumber(child as NumberToken));
                 }
-
-                // if (values.length == 0) {
-                //
-                //     return null;
-                // }
 
                 if ((transformList[i] as FunctionToken).val == 'scale3d') {
 
@@ -316,12 +283,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                     }
 
                     value = getAngle(child as AngleToken | NumberToken);
-
-                    // if (value == null) {
-                    //
-                    //     return null;
-                    // }
-
                     values.push(value * 2 * Math.PI);
                 }
 
@@ -384,8 +345,6 @@ export function computeMatrix(transformList: Token[], matrixVar: Matrix): Matrix
                 break;
 
             case 'matrix3d':
-            // return null;
-
             case 'matrix': {
 
                 const values: number[] = [];

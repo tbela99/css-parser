@@ -12,18 +12,6 @@ function validateFamilyName(tokens, atRule) {
     let node;
     tokens = tokens.slice();
     consumeWhitespace(tokens);
-    // if (tokens.length == 0) {
-    //
-    //     // @ts-ignore
-    //     return {
-    //         valid: SyntaxValidationResult.Drop,
-    //         matches: [],
-    //         node: atRule,
-    //         syntax: null,
-    //         error: 'expected at-rule prelude',
-    //         tokens
-    //     } as ValidationSyntaxResult;
-    // }
     if (tokens.length == 0 || tokens[0].typ == EnumToken.CommaTokenType) {
         // @ts-ignore
         return {
@@ -36,26 +24,6 @@ function validateFamilyName(tokens, atRule) {
         };
     }
     while (tokens.length > 0) {
-        // @ts-ignore
-        // if (tokens[0].typ == EnumToken.CommaTokenType) {
-        //
-        //     node = tokens.shift() as Token;
-        //
-        //     consumeWhitespace(tokens);
-        //
-        //     if (tokens.length == 0) {
-        //
-        //         // @ts-ignore
-        //         return {
-        //             valid: SyntaxValidationResult.Drop,
-        //             matches: [],
-        //             node,
-        //             syntax: null,
-        //             error: 'unexpected token',
-        //             tokens
-        //         } as ValidationSyntaxResult;
-        //     }
-        // }
         node = tokens[0];
         if (![EnumToken.IdenTokenType, EnumToken.StringTokenType].includes(node.typ)) {
             // @ts-ignore

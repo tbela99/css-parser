@@ -43,11 +43,11 @@ class TransformCssFeature {
             const children = node.val.reduce((acc, curr) => {
                 if (curr.typ == EnumToken.FunctionTokenType && 'skew' == curr.val.toLowerCase()) {
                     if (curr.chi.length == 3) {
-                        if (curr.chi[2].val == '0') {
+                        if (curr.chi[2].val == 0) {
                             curr.chi.length = 1;
                             curr.val = 'skew';
                         }
-                        else if (curr.chi[0].val == '0') {
+                        else if (curr.chi[0].val == 0) {
                             curr.chi = [curr.chi[2]];
                             curr.val = 'skewY';
                         }

@@ -86,9 +86,6 @@ export class ComputeCalcExpressionFeature {
                         if (slice != null && node.typ == EnumToken.FunctionTokenType && mathFuncs.includes((node as FunctionToken).val)) {
 
                             // @ts-ignore
-                            const cp: Token[] = (node.typ == EnumToken.FunctionTokenType && mathFuncs.includes(node.val) && node.val != 'calc' ? [node] : (node.typ == EnumToken.DeclarationNodeType ? (<AstDeclaration>node).val : node.chi)).slice();
-                            const values: Token[] = evaluate(cp);
-
                             const key = 'chi' in node ? 'chi' : 'val';
 
                             const str1: string = renderToken({...node, [key]: slice} as Token);
@@ -99,11 +96,6 @@ export class ComputeCalcExpressionFeature {
                                 // @ts-ignore
                                 node[key] = slice;
                             }
-                            // else {
-                            //
-                            //     // @ts-ignore
-                            //     node[key] = values;
-                            // }
 
                             return WalkerOptionEnum.Ignore;
                         }
@@ -115,7 +107,7 @@ export class ComputeCalcExpressionFeature {
 
                 if (value != null && value.typ == EnumToken.FunctionTokenType && mathFuncs.includes((value as FunctionToken).val)) {
 
-                    if (!set.has(<FunctionToken>value)) {
+                    if (!set.has(value as FunctionToken)) {
 
                         set.add(value);
 
@@ -130,23 +122,11 @@ export class ComputeCalcExpressionFeature {
 
                             if (values.length == 1 && values[0].typ != EnumToken.BinaryExpressionTokenType) {
 
-                                // if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-                                //
-                                //     if ((parent as BinaryExpressionToken).l == value) {
-                                //
-                                //         (parent as BinaryExpressionToken).l = values[0];
-                                //     } else {
-                                //
-                                //         (parent as BinaryExpressionToken).r = values[0];
-                                //     }
-                                // } else {
-
                                     for (let i = 0; i < children.length; i++) {
 
                                         if (children[i] == value) {
 
-                                            // @ts-ignore
-                                            children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') && typeof (values[0] as NumberToken).val != 'string' ? {
+                                            children.splice(i, 1, !(parent.typ == EnumToken.FunctionTokenType && parent.val == 'calc') && (typeof (values[0] as NumberToken).val != 'number' && !(values[0].typ == EnumToken.FunctionTokenType && mathFuncs.includes((values[0] as FunctionToken).val))) ? {
                                                 typ: EnumToken.FunctionTokenType,
                                                 val: 'calc',
                                                 chi: values
@@ -154,7 +134,6 @@ export class ComputeCalcExpressionFeature {
                                             break;
                                         }
                                     }
-                                // }
 
                             } else {
 
@@ -162,17 +141,11 @@ export class ComputeCalcExpressionFeature {
 
                                     if (children[i] == value) {
 
-                                        // if (parent.typ == EnumToken.FunctionTokenType && (parent as FunctionToken).val == 'calc') {
-                                        //
-                                        //     children.splice(i, 1, ...values);
-                                        // } else {
-
                                             children.splice(i, 1, {
                                                 typ: EnumToken.FunctionTokenType,
                                                 val: 'calc',
                                                 chi: values
                                             });
-                                        // }
 
                                         break;
                                     }

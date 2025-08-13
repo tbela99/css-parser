@@ -122,6 +122,18 @@ async function doParse(iterator, options = {}) {
         stats.bytesIn = item.bytesIn;
         rawTokens.push(item);
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
+            const node = getTokenType(item.token, item.hint);
+            errors.push({
+                action: 'drop',
+                message: 'Bad token',
+                syntax: null,
+                node,
+                location: {
+                    src,
+                    sta: item.sta,
+                    end: item.end
+                }
+            });
             // bad token
             continue;
         }
@@ -166,7 +178,12 @@ async function doParse(iterator, options = {}) {
                     errors.push({
                         action: 'drop',
                         message: 'invalid block',
-                        rawTokens: tokens.slice()
+                        rawTokens: tokens.slice(),
+                        location: {
+                            src,
+                            sta: tokens[0].sta,
+                            end: tokens[tokens.length - 1].end
+                        }
                     });
                 }
             }
@@ -334,6 +351,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 errors.push({
                     action: 'drop',
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                    node: tokens[i],
                     location
                 });
                 continue;
@@ -388,7 +406,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         if (!(type == EnumToken.InvalidAtRuleTokenType &&
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
-                            errors.push({ action: 'drop', message: 'invalid @import', location });
+                            // @ts-ignore
+                            errors.push({ action: 'drop', message: 'invalid @import', location, rawTokens: [atRule, ...tokens] });
                             return null;
                         }
                     }
@@ -464,7 +483,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         action: 'drop',
                         message: '@charset must have only one space',
                         // @ts-ignore
-                        location
+                        location, rawTokens: [atRule, ...tokens]
                     });
                     return null;
                 }
@@ -533,6 +552,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             errors.push({
                 action: 'drop',
                 message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                node,
                 // @ts-ignore
                 location: { src, ...(map.get(valid.node) ?? location) }
             });
@@ -581,7 +601,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             if (curr.typ == EnumToken.IdenTokenType && curr.val == 'from') {
                                 Object.assign(curr, { typ: EnumToken.PercentageTokenType, val: '0' });
                             }
-                            else if (curr.typ == EnumToken.PercentageTokenType && curr.val == '100') {
+                            else if (curr.typ == EnumToken.PercentageTokenType && curr.val == 100) {
                                 Object.assign(curr, { typ: EnumToken.IdenTokenType, val: 'to' });
                             }
                         }
@@ -634,6 +654,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 errors.push({
                     action: 'drop',
                     message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                    node,
                     // @ts-ignore
                     location
                 });
@@ -658,7 +679,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             val: tokens[i].val.charAt(0)
                         }, {
                             typ: EnumToken.NumberTokenType,
-                            val: tokens[i].val.slice(1)
+                            val: +tokens[i].val.slice(1)
                         });
                     }
                     else if (start == '/' && isFunction(val)) {
@@ -859,9 +880,10 @@ function parseAtRulePrelude(tokens, atRule) {
                 }
             }
         }
+        const val = value.typ == EnumToken.IdenTokenType ? value.val.toLowerCase() : null;
         if (value.typ == EnumToken.IdenTokenType) {
             if (parent == null && mediaTypes.some((t) => {
-                if (value.val.localeCompare(t, 'en', { sensitivity: 'base' }) == 0) {
+                if (val === t) {
                     // @ts-ignore
                     value.typ = EnumToken.MediaFeatureTokenType;
                     return true;
@@ -870,18 +892,18 @@ function parseAtRulePrelude(tokens, atRule) {
             })) {
                 continue;
             }
-            if (value.typ == EnumToken.IdenTokenType && 'and'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'and' === val) {
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureAndTokenType;
                 continue;
             }
-            if (value.typ == EnumToken.IdenTokenType && 'or'.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0) {
+            if (value.typ == EnumToken.IdenTokenType && 'or' === val) {
                 // @ts-ignore
                 value.typ = EnumToken.MediaFeatureOrTokenType;
                 continue;
             }
             if (value.typ == EnumToken.IdenTokenType &&
-                ['not', 'only'].some((t) => t.localeCompare(value.val, 'en', { sensitivity: 'base' }) == 0)) {
+                ['not', 'only'].some((t) => val === t)) {
                 // @ts-ignore
                 const array = parent?.chi ?? tokens;
                 const startIndex = array.indexOf(value);
@@ -1194,19 +1216,19 @@ function getTokenType(val, hint) {
     if (isNumber(val)) {
         return {
             typ: EnumToken.NumberTokenType,
-            val
+            val: +val
         };
     }
     if (isPercentage(val)) {
         return {
             typ: EnumToken.PercentageTokenType,
-            val: val.slice(0, -1)
+            val: +val.slice(0, -1)
         };
     }
     if (isFlex(val)) {
         return {
             typ: EnumToken.FlexTokenType,
-            val: val.slice(0, -2)
+            val: +val.slice(0, -2)
         };
     }
     if (isDimension(val)) {

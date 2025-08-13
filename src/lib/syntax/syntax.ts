@@ -543,7 +543,7 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
 
     if (!Array.isArray(token)) {
 
-        return token.typ == EnumToken.IdenTokenType && 'hue'.localeCompare((token as IdentToken).val, undefined, {sensitivity: 'base'}) == 0;
+        return token.typ == EnumToken.IdenTokenType && 'hue' === (token as IdentToken).val?.toLowerCase?.();
     }
 
     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
@@ -551,7 +551,7 @@ export function isHueInterpolationMethod(token: Token | Token[]): boolean {
         return false;
     }
 
-    return ['shorter', 'longer', 'increasing', 'decreasing'].includes((token[0] as IdentToken).val) && 'hue'.localeCompare((token[1] as IdentToken).val, undefined, {sensitivity: 'base'}) == 0;
+    return ['shorter', 'longer', 'increasing', 'decreasing'].includes((token[0] as IdentToken).val?.toLowerCase?.()) && 'hue' === (token[1] as IdentToken).val?.toLowerCase?.();
 }
 
 export function isIdentColor(token: Token): boolean {
@@ -561,7 +561,7 @@ export function isIdentColor(token: Token): boolean {
 
 export function isPercentageToken(token: Token): boolean {
 
-    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == '0');
+    return token.typ == EnumToken.PercentageTokenType || (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0);
 }
 
 export function isColor(token: Token): boolean {
@@ -729,7 +729,7 @@ export function isColor(token: Token): boolean {
 
                     if (children[0].length > 4 ||
                         children[0][0].typ != EnumToken.IdenTokenType ||
-                        'in'.localeCompare((children[0][0] as IdentToken).val, undefined, {sensitivity: 'base'}) != 0 ||
+                        'in' !== (children[0][0] as IdentToken).val?.toLowerCase?.() ||
                         !isColorspace(children[0][1]) ||
                         (children[0].length >= 3 && !isHueInterpolationMethod(children[0].slice(2))) ||
                         children[1].length > 2 ||
@@ -744,7 +744,7 @@ export function isColor(token: Token): boolean {
 
                     if (children[1].length == 2) {
 
-                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && (children[1][1] as NumberToken).val == '0'))) {
+                        if (!(children[1][1].typ == EnumToken.PercentageTokenType || (children[1][1].typ == EnumToken.NumberTokenType && (children[1][1] as NumberToken).val == 0))) {
 
                             return false;
                         }
@@ -752,7 +752,7 @@ export function isColor(token: Token): boolean {
 
                     if (children[2].length == 2) {
 
-                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && (children[2][1] as NumberToken).val == '0'))) {
+                        if (!(children[2][1].typ == EnumToken.PercentageTokenType || (children[2][1].typ == EnumToken.NumberTokenType && (children[2][1] as NumberToken).val == 0))) {
 
                             return false;
                         }
@@ -1147,7 +1147,7 @@ export function parseDimension(name: string): DimensionToken | LengthToken | Ang
 
     const dimension = <DimensionToken>{
         typ: EnumToken.DimensionTokenType,
-        val: name.slice(0, index),
+        val: +name.slice(0, index),
         unit: name.slice(index)
     };
 
