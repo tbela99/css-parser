@@ -243,6 +243,19 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
 
+            const node: Token = getTokenType(item.token, item.hint);
+
+            errors.push({
+                action: 'drop',
+                message: 'Bad token',
+                syntax: null,
+                node,
+                location: {
+                    src,
+                    sta: item.sta,
+                    end: item.end
+                }
+            });
             // bad token
             continue;
         }
@@ -310,7 +323,12 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
                     errors.push({
                         action: 'drop',
                         message: 'invalid block',
-                        rawTokens: tokens.slice()
+                        rawTokens: tokens.slice(),
+                        location: {
+                            src,
+                            sta: tokens[0].sta,
+                            end: tokens[tokens.length - 1].end
+                        }
                     });
                 }
             }
@@ -563,6 +581,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 errors.push({
                     action: 'drop',
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                    node: tokens[i],
                     location
                 });
                 continue;
@@ -607,7 +626,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
 
     if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
 
-        const atRule: AtRuleToken = <AtRuleToken>tokens.shift();
+        const atRule: AtRuleToken = tokens.shift() as AtRuleToken;
         const location: Location = <Location>map.get(atRule);
 
         // @ts-ignore
@@ -637,7 +656,8 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes((<AstInvalidAtRule>context.chi[i]).nam as string))) {
 
-                            errors.push({action: 'drop', message: 'invalid @import', location});
+                            // @ts-ignore
+                            errors.push({action: 'drop', message: 'invalid @import', location, rawTokens: [atRule,...tokens]});
                             return null;
                         }
                     }
@@ -742,7 +762,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         action: 'drop',
                         message: '@charset must have only one space',
                         // @ts-ignore
-                        location
+                        location, rawTokens: [atRule,...tokens]
                     });
 
                     return null;
@@ -841,6 +861,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
             errors.push({
                 action: 'drop',
                 message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                node,
                 // @ts-ignore
                 location: {src, ...(map.get(valid.node) ?? location)}
             });
@@ -980,6 +1001,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                 errors.push({
                     action: 'drop',
                     message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, {minify: false}), '') + '"',
+                    node,
                     // @ts-ignore
                     location
                 });
@@ -1922,7 +1944,8 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
                         Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
                     }
-                } else if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == '|') {
+                } else
+                    if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == '|') {
 
                     let upper: number = m;
                     let lower: number = m;

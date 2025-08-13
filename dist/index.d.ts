@@ -1254,7 +1254,8 @@ export declare interface ErrorDescription {
     // drop rule or declaration | fix rule or declaration
     action: 'drop' | 'ignore';
     message: string;
-    syntax?: string;
+    syntax?: string | null;
+    node?: Token | AstNode | null;
     location?: Location;
     error?: Error;
     rawTokens?: TokenizeResult[];

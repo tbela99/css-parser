@@ -122,6 +122,18 @@ async function doParse(iterator, options = {}) {
         stats.bytesIn = item.bytesIn;
         rawTokens.push(item);
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
+            const node = getTokenType(item.token, item.hint);
+            errors.push({
+                action: 'drop',
+                message: 'Bad token',
+                syntax: null,
+                node,
+                location: {
+                    src,
+                    sta: item.sta,
+                    end: item.end
+                }
+            });
             // bad token
             continue;
         }
@@ -166,7 +178,12 @@ async function doParse(iterator, options = {}) {
                     errors.push({
                         action: 'drop',
                         message: 'invalid block',
-                        rawTokens: tokens.slice()
+                        rawTokens: tokens.slice(),
+                        location: {
+                            src,
+                            sta: tokens[0].sta,
+                            end: tokens[tokens.length - 1].end
+                        }
                     });
                 }
             }
@@ -334,6 +351,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 errors.push({
                     action: 'drop',
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
+                    node: tokens[i],
                     location
                 });
                 continue;
@@ -388,7 +406,8 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         if (!(type == EnumToken.InvalidAtRuleTokenType &&
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
-                            errors.push({ action: 'drop', message: 'invalid @import', location });
+                            // @ts-ignore
+                            errors.push({ action: 'drop', message: 'invalid @import', location, rawTokens: [atRule, ...tokens] });
                             return null;
                         }
                     }
@@ -464,7 +483,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                         action: 'drop',
                         message: '@charset must have only one space',
                         // @ts-ignore
-                        location
+                        location, rawTokens: [atRule, ...tokens]
                     });
                     return null;
                 }
@@ -533,6 +552,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
             errors.push({
                 action: 'drop',
                 message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                node,
                 // @ts-ignore
                 location: { src, ...(map.get(valid.node) ?? location) }
             });
@@ -634,6 +654,7 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                 errors.push({
                     action: 'drop',
                     message: valid.error + ' - "' + tokens.reduce((acc, curr) => acc + renderToken(curr, { minify: false }), '') + '"',
+                    node,
                     // @ts-ignore
                     location
                 });
