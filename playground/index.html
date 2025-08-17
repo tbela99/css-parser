@@ -33,19 +33,16 @@
         }
 
         .css-tree {
-
             list-style: none;
             font-size: 14px;
 
             .property {
-
                 cursor: pointer;
             }
 
             ul {
                 list-style: none;
-                padding-left: 15px;
-
+     padding-left: 15px;
                 > li:not(.tree-collapsed) > .tree-more-dots {
 
                     display: none;
@@ -532,7 +529,7 @@
             let value;
             let name;
 
-            for (const option of document.querySelectorAll(':scope :is(input[type=checkbox][name]:checked,input[type=radio][name]:checked,select[name^="parseoptions["],select[name^="renderoptions["])')) {
+            for (const option of document.querySelectorAll(':scope :is(input[type=checkbox][name],input[type=radio][name]:checked,select[name^="parseoptions["],select[name^="renderoptions["])')) {
 
                 name = option.name;
                 value = option.tagName === 'SELECT' ? option.value : option.checked;
