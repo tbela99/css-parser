@@ -507,7 +507,9 @@
 
         const e = Math.floor(Math.log(size) / Math.log(1024));
 
-        return (size / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units?.[e] ?? s[e]);
+        size = (size / Math.pow(1024, Math.floor(e))).toFixed(2);
+
+        return (Number.isInteger(size) ? size : size.toFixed(2)) + " " + (units?.[e] ?? s[e]);
     }
 
     css.addEventListener('change', async (e) => {
@@ -586,7 +588,7 @@
                     ['Ratio', (100 * (1 - transformResult.code.length / transformResult.stats.bytesIn)).toFixed(2) + ' %'],
                     ['Input', toFileSize(transformResult.stats.bytesIn)],
                     ['Output', toFileSize(transformResult.code.length)]
-                ]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : value}`, '');
+                ]).reduce((acc, [key, value]) => acc + (acc.length > 0 ? '\n' : '') + `${key}: ${typeof value === 'number' ? toFileSize(value) : typeof value === 'object' ? JSON.stringify(value) : value}`, '');
 
                 buildTree(tree, transformResult.ast, {
                     rootName: EnumToken[transformResult.ast.typ],
