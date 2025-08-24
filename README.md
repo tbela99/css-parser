@@ -134,7 +134,9 @@ Parse and render css in a single pass.
 
 ```typescript
 
-transform(css, transformOptions: TransformOptions = {}): TransformResult
+transform(css: string | ReadableStream<string>, transformOptions: TransformOptions = {}): TransformResult
+parse(css: string | ReadableStream<string>, parseOptions: ParseOptions = {}): ParseResult;
+render(ast: AstNode, renderOptions: RenderOptions = {}): RenderResult;
 ```
 
 ### Example
@@ -144,6 +146,21 @@ transform(css, transformOptions: TransformOptions = {}): TransformResult
 import {transform} from '@tbela99/css-parser';
 
 const {ast, code, map, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
+```
+
+### Example
+
+Read from stdin with node using readable stream
+
+```typescript
+import {transform} from "../src/node";
+import {Readable} from "node:stream";
+import type {TransformResult} from '../src/@types/index.d.ts';
+
+const readableStream: ReadableStream<string> = Readable.toWeb(process.stdin) as ReadableStream<string>;
+const result: TransformResult = await transform(readableStream, {beautify: true});
+
+console.log(result.code);
 ```
 
 ### TransformOptions
@@ -215,17 +232,17 @@ Include ParseOptions and RenderOptions
   - true: same as ColorType.HEX
   - false: no color conversion
   - ColorType.HEX
-  - ColorType.RGB/ColorType.RGBA
+  - ColorType.RGB or ColorType.RGBA
   - ColorType.HSL
   - ColorType.HWB
-  - ColorType.CMYK/ColorType.DEVICE_CMYK
+  - ColorType.CMYK or ColorType.DEVICE_CMYK
   - ColorType.SRGB
   - ColorType.SRGB_LINEAR
   - ColorType.DISPLAY_P3
   - ColorType.PROPHOTO_RGB
   - ColorType.A98_RGB
   - ColorType.REC2020
-  - ColorType.XYZ/ColorType.XYZ_D65
+  - ColorType.XYZ or ColorType.XYZ_D65
   - ColorType.XYZ_D50
   - ColorType.LAB
   - ColorType.LCH

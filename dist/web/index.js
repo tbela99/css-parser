@@ -9,7 +9,7 @@ export { convertColor } from '../lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from '../lib/syntax/color/utils/distance.js';
 import { doParse } from '../lib/parser/parse.js';
 export { parseString, parseTokens } from '../lib/parser/parse.js';
-import '../lib/parser/tokenize.js';
+import { tokenizeStream, tokenize } from '../lib/parser/tokenize.js';
 import '../lib/parser/utils/config.js';
 import '../lib/validation/config.js';
 import '../lib/validation/parser/types.js';
@@ -17,14 +17,20 @@ import '../lib/validation/parser/parse.js';
 import '../lib/validation/syntaxes/complex-selector.js';
 import '../lib/validation/syntax.js';
 import { dirname, resolve } from '../lib/fs/resolve.js';
-import { load } from './load.js';
+import { getStream } from './load.js';
 
+// /**
+//  * web module entry point
+//  * @module node
+//  */
 /**
  * render ast node
+ * @param data
+ * @param options
  */
 function render(data, options = {}) {
     return doRender(data, Object.assign(options, {
-        load,
+        getStream,
         resolve,
         dirname,
         cwd: options.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
@@ -32,17 +38,36 @@ function render(data, options = {}) {
 }
 /**
  * parse css
+ * @param iterator
+ * @param opt
  */
 async function parse(iterator, opt = {}) {
-    return doParse(iterator, Object.assign(opt, {
-        load,
+    return doParse(iterator instanceof ReadableStream ? tokenizeStream(iterator) : tokenize({
+        stream: iterator,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    }), Object.assign(opt, {
+        getStream,
         resolve,
         dirname,
         cwd: opt.cwd ?? self.location.pathname.endsWith('/') ? self.location.pathname : dirname(self.location.pathname)
     }));
 }
 /**
- * parse and render css
+ * transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *     // remote file
+ *     let result = await transform('https://docs.deno.com/styles.css');
+ *     console.log(result.code);
+ *
+ *     // local file
+ *      result = await transform('./css/styles.css');
+ *     console.log(result.code);
+ * ```
  */
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
@@ -63,4 +88,4 @@ async function transform(css, options = {}) {
     });
 }
 
-export { dirname, load, parse, render, resolve, transform };
+export { dirname, getStream, parse, render, resolve, transform };

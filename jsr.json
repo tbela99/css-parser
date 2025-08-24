@@ -29,7 +29,10 @@
       ".idea",
       "ROADMAP.md",
       "docs",
-      "package-lock.json"
+      "package-lock.json",
+      "typedoc.json",
+      "typedoc-tsconfig.jsonc",
+      "docs/"
     ]
   },
   "exports": {

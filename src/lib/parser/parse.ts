@@ -19,7 +19,7 @@ import {
     pseudoElements
 } from "../syntax/index.ts";
 import {parseDeclarationNode} from './utils/index.ts';
-import {colorsFunc, renderToken} from "../renderer/index.ts";
+import {renderToken} from "../renderer/index.ts";
 import {COLORS_NAMES} from "../syntax/color/index.ts";
 import {
     ColorType,
@@ -34,7 +34,7 @@ import {
     WalkerOptionEnum,
     walkValues
 } from "../ast/index.ts";
-import {tokenize} from "./tokenize.ts";
+import {tokenize, tokenizeStream} from "./tokenize.ts";
 import type {
     AstAtRule,
     AstComment,
@@ -88,6 +88,7 @@ import type {
     ParensEndToken,
     ParensStartToken,
     ParensToken,
+    ParseInfo,
     ParseResult,
     ParseResultStats,
     ParserOptions,
@@ -109,7 +110,14 @@ import type {
     UrlToken,
     WhitespaceToken
 } from "../../@types/index.d.ts";
-import {deprecatedSystemColors, funcLike, systemColors, timelineFunc, timingFunc} from "../syntax/color/utils/index.ts";
+import {
+    colorsFunc,
+    deprecatedSystemColors,
+    funcLike,
+    systemColors,
+    timelineFunc,
+    timingFunc
+} from "../syntax/color/utils/index.ts";
 import {validateAtRule, validateSelector} from "../validation/index.ts";
 import type {ValidationResult, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {validateAtRuleKeyframes} from "../validation/at-rules/index.ts";
@@ -117,6 +125,7 @@ import {validateKeyframeSelector} from "../validation/syntaxes/index.ts";
 import {evaluateSyntax} from "../validation/syntax.ts";
 import {splitTokenList} from "../validation/utils/index.ts";
 import {buildExpression} from "../ast/math/index.ts";
+import Iterator = NodeJS.Iterator;
 
 export const urlTokenMatcher: RegExp = /^(["']?)[a-zA-Z0-9_/.-][a-zA-Z0-9_/:.#?-]+(\1)$/;
 const trimWhiteSpace: EnumToken[] = [EnumToken.CommentTokenType, EnumToken.GtTokenType, EnumToken.GteTokenType, EnumToken.LtTokenType, EnumToken.LteTokenType, EnumToken.ColumnCombinatorTokenType];
@@ -142,10 +151,10 @@ function reject(reason?: any) {
 
 /**
  * parse css string
- * @param iterator
+ * @param iter
  * @param options
  */
-export async function doParse(iterator: string, options: ParserOptions = {}): Promise<ParseResult> {
+export async function doParse(iter: Generator<TokenizeResult> | AsyncGenerator<TokenizeResult>, options: ParserOptions = {}): Promise<ParseResult> {
 
     if (options.signal != null) {
 
@@ -229,13 +238,15 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
         };
     }
 
-    const iter: Generator<TokenizeResult> = tokenize(iterator);
     let item: TokenizeResult;
     let node: AstAtRule | AstRule | AstKeyFrameRule | AstKeyframAtRule | AstInvalidRule | AstDeclaration | AstComment | null;
     const rawTokens: TokenizeResult[] = [];
     const imports: AstAtRule[] = [];
 
-    while (item = iter.next().value) {
+    // @ts-ignore ignore error
+    const isAsync: boolean = typeof iter[Symbol.asyncIterator] === 'function';
+
+    while (item = isAsync ? (await iter.next()).value as TokenizeResult : (iter as Iterator<TokenizeResult>).next().value as TokenizeResult) {
 
         stats.bytesIn = item.bytesIn;
 
@@ -298,7 +309,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
                 do {
 
-                    item = iter.next().value;
+                    item = isAsync ? (await iter.next()).value as TokenizeResult : (iter as Iterator<TokenizeResult>).next().value as TokenizeResult;
 
                     if (item == null) {
 
@@ -388,8 +399,8 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
 
-            // @ts-ignore
-            const index: number = context.chi.findIndex((node: AstNode): boolean => node == context);
+            // @ts-ignore ignore error
+            const index: number = context.chi.findIndex((node: AstNode): boolean => node === context);
 
             if (index > -1) {
 
@@ -407,14 +418,23 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
             try {
 
-                const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
+                const root: ParseResult = await options.getStream!(url, <string>options.src).then(async (stream: ReadableStream) => {
 
-                    return doParse(src, Object.assign({}, options, {
+                    return doParse(tokenizeStream(stream), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: options.resolve!(url, options.src as string).absolute
-                    }))
+                    })) // )
                 });
+
+                // const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
+                //
+                //     return doParse(src, Object.assign({}, options, {
+                //         minify: false,
+                //         setParent: false,
+                //         src: options.resolve!(url, options.src as string).absolute
+                //     }))
+                // });
 
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
@@ -428,7 +448,7 @@ export async function doParse(iterator: string, options: ParserOptions = {}): Pr
 
             } catch (error) {
 
-                // @ts-ignore
+                // @ts-ignore ignore error
                 errors.push({action: 'ignore', message: 'doParse: ' + error.message as string, error});
             }
         }));
@@ -657,7 +677,13 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                             ['charset', 'layer', 'import'].includes((<AstInvalidAtRule>context.chi[i]).nam as string))) {
 
                             // @ts-ignore
-                            errors.push({action: 'drop', message: 'invalid @import', location, rawTokens: [atRule,...tokens]});
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid @import',
+                                location,
+                                // @ts-ignore
+                                rawTokens: [atRule, ...tokens]
+                            });
                             return null;
                         }
                     }
@@ -762,7 +788,7 @@ function parseNode(results: TokenizeResult[], context: AstRuleList | AstInvalidR
                         action: 'drop',
                         message: '@charset must have only one space',
                         // @ts-ignore
-                        location, rawTokens: [atRule,...tokens]
+                        location, rawTokens: [atRule, ...tokens]
                     });
 
                     return null;
@@ -1640,7 +1666,14 @@ export function parseSelector(tokens: Token[]): Token[] {
  */
 export function parseString(src: string, options: { location: boolean } = {location: false}): Token[] {
 
-    return parseTokens([...tokenize(src)].reduce((acc, t) => {
+    const parseInfo: ParseInfo = {
+        stream: src,
+        buffer: '',
+        position: {ind: 0, lin: 1, col: 1},
+        currentPosition: {ind: -1, lin: 1, col: 0}
+    }
+
+    return parseTokens([...tokenize(parseInfo)].reduce((acc, t) => {
 
         if (t.hint == EnumToken.EOFTokenType) {
 
@@ -1944,8 +1977,7 @@ export function parseTokens(tokens: Token[], options: ParseTokenOptions = {}): T
                     if ((slice.charAt(0) != '-' || (slice.charAt(0) == '-' && isIdentStart(slice.charCodeAt(1)))) && isIdent(slice)) {
                         Object.assign(val, {typ: EnumToken.IdenTokenType, val: slice});
                     }
-                } else
-                    if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == '|') {
+                } else if (val.typ == EnumToken.LiteralTokenType && (val as LiteralToken).val == '|') {
 
                     let upper: number = m;
                     let lower: number = m;

@@ -6,7 +6,7 @@ import type {AstAtRule, AstNode, AstRule, AstRuleStyleSheet, LiteralToken, Token
 import {EnumToken} from "./types.ts";
 
 /**
- * expand nested css ast
+ * expand css nesting ast nodes
  * @param ast
  */
 export function expand(ast: AstNode): AstNode {

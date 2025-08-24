@@ -20,3 +20,6 @@
 /sw.js
 /jsr.json
 /.editorconfig
+/typedoc-tsconfig.jsonc
+/typedoc.json
+/docs

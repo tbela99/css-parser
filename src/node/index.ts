@@ -1,5 +1,6 @@
 import type {
     AstNode,
+    ParseInfo,
     ParseResult,
     ParserOptions,
     RenderOptions,
@@ -8,35 +9,108 @@ import type {
     TransformResult
 } from "../@types/index.d.ts";
 import process from 'node:process';
-import {doParse, doRender} from "../lib/index.ts";
+import {doParse, doRender, tokenize, tokenizeStream} from "../lib/index.ts";
 import {dirname, resolve} from "../lib/fs/index.ts";
-import {load} from "./load.ts";
+import {getStream} from "./load.ts";
+
+export type * from "../@types/ast.d.ts";
+export type * from "../@types/token.d.ts";
+export type * from "../@types/parse.d.ts";
+export type{
+    AstNode,
+    ParseResult,
+    ParserOptions,
+    RenderOptions,
+    RenderResult,
+    TransformOptions,
+    TransformResult
+} from "../@types/index.d.ts";
 
 export {
-    minify, expand, parseString, parseTokens, renderToken, walk, walkValues, convertColor, isOkLabClose, okLabDistance, EnumToken, ValidationLevel, ColorType
+    minify,
+    expand,
+    parseString,
+    parseTokens,
+    renderToken,
+    walk,
+    walkValues,
+    convertColor,
+    isOkLabClose,
+    okLabDistance,
+    EnumToken,
+    ValidationLevel,
+    ColorType,
+    SourceMap
 } from '../lib/index.ts';
-export {dirname, resolve, load};
+export {dirname, resolve, getStream};
+
+// /**
+//  * node module entry point
+//  * @module web
+//  */
+
 
 /**
- * render ast node
+ * render ast tree
+ * @param data
+ * @param options
  */
 export function render(data: AstNode, options: RenderOptions = {}): RenderResult {
 
-    return doRender(data, Object.assign(options, {load, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
+    return doRender(data, Object.assign(options, {getStream, resolve, dirname, cwd: options.cwd ?? process.cwd()}));
+}
+
+/**
+ * parse css file
+ * @param file url or path
+ * @param options
+ */
+export async function parseFile(file: string, options: ParserOptions = {}): Promise<ParseResult> {
+
+    return getStream(file).then(css => parse(css, options));
 }
 
 /**
  * parse css
+ * @param iterator
+ * @param opt
  */
-export async function parse(iterator: string, opt: ParserOptions = {}): Promise<ParseResult> {
+export async function parse(iterator: string | ReadableStream<string>, opt: ParserOptions = {}): Promise<ParseResult> {
 
-    return doParse(iterator, Object.assign(opt, {load, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
+    return doParse(iterator instanceof ReadableStream ? tokenizeStream(iterator) : tokenize({
+        stream: iterator,
+        buffer: '',
+        position: {ind: 0, lin: 1, col: 1},
+        currentPosition: {ind: -1, lin: 1, col: 0}
+    } as ParseInfo), Object.assign(opt, {getStream, resolve, dirname, cwd: opt.cwd ?? process.cwd()}));
 }
 
 /**
- * parse and render css
+ * transform css file
+ * @param file url or path
+ * @param options
  */
-export async function transform(css: string, options: TransformOptions = {}): Promise<TransformResult> {
+export async function transformFile(file: string, options: TransformOptions = {}): Promise<TransformResult> {
+
+    return getStream(file).then(css => transform(css, options));
+}
+
+/**
+ * transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *     // remote file
+ *     let result = await transform('https://docs.deno.com/styles.css');
+ *     console.log(result.code);
+ *
+ *     // local file
+ *      result = await transform('./css/styles.css');
+ *     console.log(result.code);
+ * ```
+ */
+export async function transform(css: string | ReadableStream<string>, options: TransformOptions = {}): Promise<TransformResult> {
 
     options = {minify: true, removeEmpty: true, removeCharset: true, ...options};
 

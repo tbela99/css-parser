@@ -1,7 +1,8 @@
 'use strict';
 
 var process = require('node:process');
-var promises = require('node:fs/promises');
+var node_fs = require('node:fs');
+var node_stream = require('node:stream');
 
 /**
  * syntax validation enum
@@ -16,7 +17,7 @@ var SyntaxValidationResult;
     SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
 })(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
- * validation level enum
+ * enum of validation levels
  */
 exports.ValidationLevel = void 0;
 (function (ValidationLevel) {
@@ -34,139 +35,504 @@ exports.ValidationLevel = void 0;
     ValidationLevel[ValidationLevel["All"] = 2] = "All"; // selectors + at-rules + declarations
 })(exports.ValidationLevel || (exports.ValidationLevel = {}));
 /**
- * token types enum
+ * enum of all token types
  */
 exports.EnumToken = void 0;
 (function (EnumToken) {
+    /**
+     * comment token
+     */
     EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";
+    /**
+     * cdata section token
+     */
     EnumToken[EnumToken["CDOCOMMTokenType"] = 1] = "CDOCOMMTokenType";
+    /**
+     * style sheet node type
+     */
     EnumToken[EnumToken["StyleSheetNodeType"] = 2] = "StyleSheetNodeType";
+    /**
+     * at-rule node type
+     */
     EnumToken[EnumToken["AtRuleNodeType"] = 3] = "AtRuleNodeType";
+    /**
+     * rule node type
+     */
     EnumToken[EnumToken["RuleNodeType"] = 4] = "RuleNodeType";
+    /**
+     * declaration node type
+     */
     EnumToken[EnumToken["DeclarationNodeType"] = 5] = "DeclarationNodeType";
+    /**
+     * literal token type
+     */
     EnumToken[EnumToken["LiteralTokenType"] = 6] = "LiteralTokenType";
+    /**
+     * identifier token type
+     */
     EnumToken[EnumToken["IdenTokenType"] = 7] = "IdenTokenType";
+    /**
+     * dashed identifier token type
+     */
     EnumToken[EnumToken["DashedIdenTokenType"] = 8] = "DashedIdenTokenType";
+    /**
+     * comma token type
+     */
     EnumToken[EnumToken["CommaTokenType"] = 9] = "CommaTokenType";
+    /**
+     * colon token type
+     */
     EnumToken[EnumToken["ColonTokenType"] = 10] = "ColonTokenType";
+    /**
+     * semicolon token type
+     */
     EnumToken[EnumToken["SemiColonTokenType"] = 11] = "SemiColonTokenType";
+    /**
+     * number token type
+     */
     EnumToken[EnumToken["NumberTokenType"] = 12] = "NumberTokenType";
+    /**
+     * at-rule token type
+     */
     EnumToken[EnumToken["AtRuleTokenType"] = 13] = "AtRuleTokenType";
+    /**
+     * percentage token type
+     */
     EnumToken[EnumToken["PercentageTokenType"] = 14] = "PercentageTokenType";
+    /**
+     * function token type
+     */
     EnumToken[EnumToken["FunctionTokenType"] = 15] = "FunctionTokenType";
+    /**
+     * timeline function token type
+     */
     EnumToken[EnumToken["TimelineFunctionTokenType"] = 16] = "TimelineFunctionTokenType";
+    /**
+     * timing function token type
+     */
     EnumToken[EnumToken["TimingFunctionTokenType"] = 17] = "TimingFunctionTokenType";
+    /**
+     * url function token type
+     */
     EnumToken[EnumToken["UrlFunctionTokenType"] = 18] = "UrlFunctionTokenType";
+    /**
+     * image function token type
+     */
     EnumToken[EnumToken["ImageFunctionTokenType"] = 19] = "ImageFunctionTokenType";
+    /**
+     * string token type
+     */
     EnumToken[EnumToken["StringTokenType"] = 20] = "StringTokenType";
+    /**
+     * unclosed string token type
+     */
     EnumToken[EnumToken["UnclosedStringTokenType"] = 21] = "UnclosedStringTokenType";
+    /**
+     * dimension token type
+     */
     EnumToken[EnumToken["DimensionTokenType"] = 22] = "DimensionTokenType";
+    /**
+     * length token type
+     */
     EnumToken[EnumToken["LengthTokenType"] = 23] = "LengthTokenType";
+    /**
+     * angle token type
+     */
     EnumToken[EnumToken["AngleTokenType"] = 24] = "AngleTokenType";
+    /**
+     * time token type
+     */
     EnumToken[EnumToken["TimeTokenType"] = 25] = "TimeTokenType";
+    /**
+     * frequency token type
+     */
     EnumToken[EnumToken["FrequencyTokenType"] = 26] = "FrequencyTokenType";
+    /**
+     * resolution token type
+     */
     EnumToken[EnumToken["ResolutionTokenType"] = 27] = "ResolutionTokenType";
+    /**
+     * hash token type
+     */
     EnumToken[EnumToken["HashTokenType"] = 28] = "HashTokenType";
+    /**
+     * block start token type
+     */
     EnumToken[EnumToken["BlockStartTokenType"] = 29] = "BlockStartTokenType";
+    /**
+     * block end token type
+     */
     EnumToken[EnumToken["BlockEndTokenType"] = 30] = "BlockEndTokenType";
+    /**
+     * attribute start token type
+     */
     EnumToken[EnumToken["AttrStartTokenType"] = 31] = "AttrStartTokenType";
+    /**
+     * attribute end token type
+     */
     EnumToken[EnumToken["AttrEndTokenType"] = 32] = "AttrEndTokenType";
+    /**
+     * start parentheses token type
+     */
     EnumToken[EnumToken["StartParensTokenType"] = 33] = "StartParensTokenType";
+    /**
+     * end parentheses token type
+     */
     EnumToken[EnumToken["EndParensTokenType"] = 34] = "EndParensTokenType";
+    /**
+     * parentheses token type
+     */
     EnumToken[EnumToken["ParensTokenType"] = 35] = "ParensTokenType";
+    /**
+     * whitespace token type
+     */
     EnumToken[EnumToken["WhitespaceTokenType"] = 36] = "WhitespaceTokenType";
+    /**
+     * include match token type
+     */
     EnumToken[EnumToken["IncludeMatchTokenType"] = 37] = "IncludeMatchTokenType";
+    /**
+     * dash match token type
+     */
     EnumToken[EnumToken["DashMatchTokenType"] = 38] = "DashMatchTokenType";
+    /**
+     * equal match token type
+     */
     EnumToken[EnumToken["EqualMatchTokenType"] = 39] = "EqualMatchTokenType";
+    /**
+     * less than token type
+     */
     EnumToken[EnumToken["LtTokenType"] = 40] = "LtTokenType";
+    /**
+     * less than or equal to token type
+     */
     EnumToken[EnumToken["LteTokenType"] = 41] = "LteTokenType";
+    /**
+     * greater than token type
+     */
     EnumToken[EnumToken["GtTokenType"] = 42] = "GtTokenType";
+    /**
+     * greater than or equal to token type
+     */
     EnumToken[EnumToken["GteTokenType"] = 43] = "GteTokenType";
+    /**
+     * pseudo-class token type
+     */
     EnumToken[EnumToken["PseudoClassTokenType"] = 44] = "PseudoClassTokenType";
+    /**
+     * pseudo-class function token type
+     */
     EnumToken[EnumToken["PseudoClassFuncTokenType"] = 45] = "PseudoClassFuncTokenType";
+    /**
+     * delimiter token type
+     */
     EnumToken[EnumToken["DelimTokenType"] = 46] = "DelimTokenType";
+    /**
+     * URL token type
+     */
     EnumToken[EnumToken["UrlTokenTokenType"] = 47] = "UrlTokenTokenType";
+    /**
+     * end of file token type
+     */
     EnumToken[EnumToken["EOFTokenType"] = 48] = "EOFTokenType";
+    /**
+     * important token type
+     */
     EnumToken[EnumToken["ImportantTokenType"] = 49] = "ImportantTokenType";
+    /**
+     * color token type
+     */
     EnumToken[EnumToken["ColorTokenType"] = 50] = "ColorTokenType";
+    /**
+     * attribute token type
+     */
     EnumToken[EnumToken["AttrTokenType"] = 51] = "AttrTokenType";
+    /**
+     * bad comment token type
+     */
     EnumToken[EnumToken["BadCommentTokenType"] = 52] = "BadCommentTokenType";
+    /**
+     * bad cdo token type
+     */
     EnumToken[EnumToken["BadCdoTokenType"] = 53] = "BadCdoTokenType";
+    /**
+     * bad URL token type
+     */
     EnumToken[EnumToken["BadUrlTokenType"] = 54] = "BadUrlTokenType";
+    /**
+     * bad string token type
+     */
     EnumToken[EnumToken["BadStringTokenType"] = 55] = "BadStringTokenType";
+    /**
+     * binary expression token type
+     */
     EnumToken[EnumToken["BinaryExpressionTokenType"] = 56] = "BinaryExpressionTokenType";
+    /**
+     * unary expression token type
+     */
     EnumToken[EnumToken["UnaryExpressionTokenType"] = 57] = "UnaryExpressionTokenType";
+    /**
+     * flex token type
+     */
     EnumToken[EnumToken["FlexTokenType"] = 58] = "FlexTokenType";
-    /* catch all */
+    /**
+     *  token list token type
+     */
     EnumToken[EnumToken["ListToken"] = 59] = "ListToken";
     /* arithmetic tokens */
+    /**
+     * addition token type
+     */
     EnumToken[EnumToken["Add"] = 60] = "Add";
+    /**
+     * multiplication token type
+     */
     EnumToken[EnumToken["Mul"] = 61] = "Mul";
+    /**
+     * division token type
+     */
     EnumToken[EnumToken["Div"] = 62] = "Div";
+    /**
+     * subtraction token type
+     */
     EnumToken[EnumToken["Sub"] = 63] = "Sub";
     /* new tokens */
+    /**
+     * column combinator token type
+     */
     EnumToken[EnumToken["ColumnCombinatorTokenType"] = 64] = "ColumnCombinatorTokenType";
+    /**
+     * contain match token type
+     */
     EnumToken[EnumToken["ContainMatchTokenType"] = 65] = "ContainMatchTokenType";
+    /**
+     * start match token type
+     */
     EnumToken[EnumToken["StartMatchTokenType"] = 66] = "StartMatchTokenType";
+    /**
+     * end match token type
+     */
     EnumToken[EnumToken["EndMatchTokenType"] = 67] = "EndMatchTokenType";
+    /**
+     * match expression token type
+     */
     EnumToken[EnumToken["MatchExpressionTokenType"] = 68] = "MatchExpressionTokenType";
+    /**
+     * namespace attribute token type
+     */
     EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 69] = "NameSpaceAttributeTokenType";
+    /**
+     * fraction token type
+     */
     EnumToken[EnumToken["FractionTokenType"] = 70] = "FractionTokenType";
+    /**
+     * identifier list token type
+     */
     EnumToken[EnumToken["IdenListTokenType"] = 71] = "IdenListTokenType";
+    /**
+     * grid template function token type
+     */
     EnumToken[EnumToken["GridTemplateFuncTokenType"] = 72] = "GridTemplateFuncTokenType";
+    /**
+     * keyframe rule node type
+     */
     EnumToken[EnumToken["KeyFrameRuleNodeType"] = 73] = "KeyFrameRuleNodeType";
+    /**
+     * class selector token type
+     */
     EnumToken[EnumToken["ClassSelectorTokenType"] = 74] = "ClassSelectorTokenType";
+    /**
+     * universal selector token type
+     */
     EnumToken[EnumToken["UniversalSelectorTokenType"] = 75] = "UniversalSelectorTokenType";
+    /**
+     * child combinator token type
+     */
     EnumToken[EnumToken["ChildCombinatorTokenType"] = 76] = "ChildCombinatorTokenType";
+    /**
+     * descendant combinator token type
+     */
     EnumToken[EnumToken["DescendantCombinatorTokenType"] = 77] = "DescendantCombinatorTokenType";
+    /**
+     * next sibling combinator token type
+     */
     EnumToken[EnumToken["NextSiblingCombinatorTokenType"] = 78] = "NextSiblingCombinatorTokenType";
+    /**
+     * subsequent sibling combinator token type
+     */
     EnumToken[EnumToken["SubsequentSiblingCombinatorTokenType"] = 79] = "SubsequentSiblingCombinatorTokenType";
+    /**
+     * nesting selector token type
+     */
     EnumToken[EnumToken["NestingSelectorTokenType"] = 80] = "NestingSelectorTokenType";
+    /**
+     * invalid rule token type
+     */
     EnumToken[EnumToken["InvalidRuleTokenType"] = 81] = "InvalidRuleTokenType";
+    /**
+     * invalid class selector token type
+     */
     EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 82] = "InvalidClassSelectorTokenType";
+    /**
+     * invalid attribute token type
+     */
     EnumToken[EnumToken["InvalidAttrTokenType"] = 83] = "InvalidAttrTokenType";
+    /**
+     * invalid at rule token type
+     */
     EnumToken[EnumToken["InvalidAtRuleTokenType"] = 84] = "InvalidAtRuleTokenType";
+    /**
+     * media query condition token type
+     */
     EnumToken[EnumToken["MediaQueryConditionTokenType"] = 85] = "MediaQueryConditionTokenType";
+    /**
+     * media feature token type
+     */
     EnumToken[EnumToken["MediaFeatureTokenType"] = 86] = "MediaFeatureTokenType";
+    /**
+     * media feature only token type
+     */
     EnumToken[EnumToken["MediaFeatureOnlyTokenType"] = 87] = "MediaFeatureOnlyTokenType";
+    /**
+     * media feature not token type
+     */
     EnumToken[EnumToken["MediaFeatureNotTokenType"] = 88] = "MediaFeatureNotTokenType";
+    /**
+     * media feature and token type
+     */
     EnumToken[EnumToken["MediaFeatureAndTokenType"] = 89] = "MediaFeatureAndTokenType";
+    /**
+     * media feature or token type
+     */
     EnumToken[EnumToken["MediaFeatureOrTokenType"] = 90] = "MediaFeatureOrTokenType";
+    /**
+     * pseudo page token type
+     */
     EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
+    /**
+     * pseudo element token type
+     */
     EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
+    /**
+     * keyframe at rule node type
+     */
     EnumToken[EnumToken["KeyframeAtRuleNodeType"] = 93] = "KeyframeAtRuleNodeType";
+    /**
+     * invalid declaration node type
+     */
     EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
     /* aliases */
+    /**
+     * alias for time token type
+     */
     EnumToken[EnumToken["Time"] = 25] = "Time";
+    /**
+     * alias for identifier token type
+     */
     EnumToken[EnumToken["Iden"] = 7] = "Iden";
+    /**
+     * alias for end of file token type
+     */
     EnumToken[EnumToken["EOF"] = 48] = "EOF";
+    /**
+     * alias for hash token type
+     */
     EnumToken[EnumToken["Hash"] = 28] = "Hash";
+    /**
+     * alias for flex token type
+     */
     EnumToken[EnumToken["Flex"] = 58] = "Flex";
+    /**
+     * alias for angle token type
+     */
     EnumToken[EnumToken["Angle"] = 24] = "Angle";
+    /**
+     * alias for color token type
+     */
     EnumToken[EnumToken["Color"] = 50] = "Color";
+    /**
+     * alias for comma token type
+     */
     EnumToken[EnumToken["Comma"] = 9] = "Comma";
+    /**
+     * alias for string token type
+     */
     EnumToken[EnumToken["String"] = 20] = "String";
+    /**
+     * alias for length token type
+     */
     EnumToken[EnumToken["Length"] = 23] = "Length";
+    /**
+     * alias for number token type
+     */
     EnumToken[EnumToken["Number"] = 12] = "Number";
+    /**
+     * alias for percentage token type
+     */
     EnumToken[EnumToken["Perc"] = 14] = "Perc";
+    /**
+     * alias for literal token type
+     */
     EnumToken[EnumToken["Literal"] = 6] = "Literal";
+    /**
+     * alias for comment token type
+     */
     EnumToken[EnumToken["Comment"] = 0] = "Comment";
+    /**
+     * alias for url function token type
+     */
     EnumToken[EnumToken["UrlFunc"] = 18] = "UrlFunc";
+    /**
+     * alias for dimension token type
+     */
     EnumToken[EnumToken["Dimension"] = 22] = "Dimension";
+    /**
+     * alias for frequency token type
+     */
     EnumToken[EnumToken["Frequency"] = 26] = "Frequency";
+    /**
+     * alias for resolution token type
+     */
     EnumToken[EnumToken["Resolution"] = 27] = "Resolution";
+    /**
+     * alias for whitespace token type
+     */
     EnumToken[EnumToken["Whitespace"] = 36] = "Whitespace";
+    /**
+     * alias for identifier list token type
+     */
     EnumToken[EnumToken["IdenList"] = 71] = "IdenList";
+    /**
+     * alias for dashed identifier token type
+     */
     EnumToken[EnumToken["DashedIden"] = 8] = "DashedIden";
+    /**
+     * alias for grid template function token type
+     */
     EnumToken[EnumToken["GridTemplateFunc"] = 72] = "GridTemplateFunc";
+    /**
+     * alias for image function token type
+     */
     EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
+    /**
+     * alias for comment node type
+     */
     EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
+    /**
+     * alias for cdata section node type
+     */
     EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
+    /**
+     * alias for timing function token type
+     */
     EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
+    /**
+     * alias for timeline function token type
+     */
     EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
 })(exports.EnumToken || (exports.EnumToken = {}));
 /**
- * color types enum
+ * supported color types enum
  */
 exports.ColorType = void 0;
 (function (ColorType) {
@@ -1893,7 +2259,7 @@ function okLabDistance(okLab1, okLab2) {
     return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
 }
 /**
- * Check if two colors are close.
+ * Check if two colors are close in okLab space.
  * @param color1
  * @param color2
  * @param threshold
@@ -3755,6 +4121,13 @@ function xyz2la98rgb(x, y, z, a = null) {
  * Converts a color to another color space
  * @param token
  * @param to
+ *
+ * <code>
+ *
+ *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
+ *     const result = convertColor(token, ColorType.LCH);
+ *
+ * </code>
  */
 function convertColor(token, to) {
     if (token.kin == exports.ColorType.SYS ||
@@ -7581,7 +7954,7 @@ var TokenMap;
 })(TokenMap || (TokenMap = {}));
 function consumeWhiteSpace(parseInfo) {
     let count = 0;
-    while (isWhiteSpace(parseInfo.stream.charAt(count + parseInfo.currentPosition.ind + 1).charCodeAt(0))) {
+    while (isWhiteSpace(parseInfo.stream.charCodeAt(count + parseInfo.currentPosition.ind + 1))) {
         count++;
     }
     next(parseInfo, count);
@@ -7711,17 +8084,14 @@ function next(parseInfo, count = 1) {
 }
 /**
  * tokenize css string
- * @param stream
+ * @param parseInfo
+ * @param yieldEOFToken
  */
-function* tokenize$1(stream) {
-    const parseInfo = {
-        stream,
-        position: { ind: 0, lin: 1, col: 1 },
-        currentPosition: { ind: -1, lin: 1, col: 0 }
-    };
+function* tokenize$1(parseInfo, yieldEOFToken = true) {
     let value;
-    let buffer = '';
+    let buffer = parseInfo.buffer;
     let charCode;
+    parseInfo.buffer = '';
     while (value = next(parseInfo)) {
         charCode = value.charCodeAt(0);
         if (isWhiteSpace(charCode)) {
@@ -8162,10 +8532,37 @@ function* tokenize$1(stream) {
                 break;
         }
     }
-    if (buffer.length > 0) {
-        yield pushToken(buffer, parseInfo);
+    if (yieldEOFToken) {
+        if (buffer.length > 0) {
+            yield pushToken(buffer, parseInfo);
+        }
+        yield pushToken('', parseInfo, exports.EnumToken.EOFTokenType);
     }
-    yield pushToken('', parseInfo, exports.EnumToken.EOFTokenType);
+    else {
+        parseInfo.buffer = buffer;
+    }
+}
+/**
+ * tokenize css stream
+ * @param input
+ */
+async function* tokenizeStream(input) {
+    const parseInfo = {
+        stream: '',
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    };
+    const decoder = new TextDecoder('utf-8');
+    const reader = input.getReader();
+    while (true) {
+        const { done, value } = await reader.read();
+        parseInfo.stream += decoder.decode(value, { stream: true });
+        yield* tokenize$1(parseInfo, done);
+        if (done) {
+            break;
+        }
+    }
 }
 
 var declarations = {
@@ -8473,10 +8870,10 @@ var declarations = {
 		syntax: "normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position>"
 	},
 	"align-items": {
-		syntax: "normal | stretch | <baseline-position> | [ <overflow-position>? <self-position> ]"
+		syntax: "normal | stretch | <baseline-position> | [ <overflow-position>? <self-position> ] | anchor-center"
 	},
 	"align-self": {
-		syntax: "auto | normal | stretch | <baseline-position> | <overflow-position>? <self-position>"
+		syntax: "auto | normal | stretch | <baseline-position> | <overflow-position>? <self-position> | anchor-center"
 	},
 	"align-tracks": {
 		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#"
@@ -8536,7 +8933,7 @@ var declarations = {
 		syntax: "<easing-function>#"
 	},
 	appearance: {
-		syntax: "none | auto | textfield | menulist-button | <compat-auto>"
+		syntax: "none | auto | <compat-auto> | <compat-special>"
 	},
 	"aspect-ratio": {
 		syntax: "auto || <ratio>"
@@ -8548,7 +8945,7 @@ var declarations = {
 		syntax: "visible | hidden"
 	},
 	background: {
-		syntax: "[ <bg-layer> , ]* <final-bg-layer>"
+		syntax: "<bg-layer>#? , <final-bg-layer>"
 	},
 	"background-attachment": {
 		syntax: "<attachment>#"
@@ -8635,10 +9032,10 @@ var declarations = {
 		syntax: "<'border-top-color'>"
 	},
 	"border-bottom-left-radius": {
-		syntax: "<length-percentage>{1,2}"
+		syntax: "<length-percentage [0,∞]>{1,2}"
 	},
 	"border-bottom-right-radius": {
-		syntax: "<length-percentage>{1,2}"
+		syntax: "<length-percentage [0,∞]>{1,2}"
 	},
 	"border-bottom-style": {
 		syntax: "<line-style>"
@@ -8647,7 +9044,7 @@ var declarations = {
 		syntax: "<line-width>"
 	},
 	"border-collapse": {
-		syntax: "collapse | separate"
+		syntax: "separate | collapse"
 	},
 	"border-color": {
 		syntax: "<color>{1,4}"
@@ -8662,19 +9059,19 @@ var declarations = {
 		syntax: "<'border-image-source'> || <'border-image-slice'> [ / <'border-image-width'> | / <'border-image-width'>? / <'border-image-outset'> ]? || <'border-image-repeat'>"
 	},
 	"border-image-outset": {
-		syntax: "[ <length> | <number> ]{1,4}"
+		syntax: "[ <length [0,∞]> | <number [0,∞]> ]{1,4}  "
 	},
 	"border-image-repeat": {
 		syntax: "[ stretch | repeat | round | space ]{1,2}"
 	},
 	"border-image-slice": {
-		syntax: "<number-percentage>{1,4} && fill?"
+		syntax: "[ <number [0,∞]> | <percentage [0,∞]> ]{1,4}  && fill?"
 	},
 	"border-image-source": {
 		syntax: "none | <image>"
 	},
 	"border-image-width": {
-		syntax: "[ <length-percentage> | <number> | auto ]{1,4}"
+		syntax: "[ <length-percentage [0,∞]> | <number [0,∞]> | auto ]{1,4}"
 	},
 	"border-inline": {
 		syntax: "<'border-block-start'>"
@@ -8725,7 +9122,7 @@ var declarations = {
 		syntax: "<line-width>"
 	},
 	"border-radius": {
-		syntax: "<length-percentage>{1,4} [ / <length-percentage>{1,4} ]?"
+		syntax: "<length-percentage [0,∞]>{1,4} [ / <length-percentage [0,∞]>{1,4} ]?"
 	},
 	"border-right": {
 		syntax: "<line-width> || <line-style> || <color>"
@@ -8740,7 +9137,7 @@ var declarations = {
 		syntax: "<line-width>"
 	},
 	"border-spacing": {
-		syntax: "<length> <length>?"
+		syntax: "<length>{1,2}"
 	},
 	"border-start-end-radius": {
 		syntax: "<'border-top-left-radius'>"
@@ -8758,10 +9155,10 @@ var declarations = {
 		syntax: "<color>"
 	},
 	"border-top-left-radius": {
-		syntax: "<length-percentage>{1,2}"
+		syntax: "<length-percentage [0,∞]>{1,2}"
 	},
 	"border-top-right-radius": {
-		syntax: "<length-percentage>{1,2}"
+		syntax: "<length-percentage [0,∞]>{1,2}"
 	},
 	"border-top-style": {
 		syntax: "<line-style>"
@@ -8773,7 +9170,7 @@ var declarations = {
 		syntax: "<line-width>{1,4}"
 	},
 	bottom: {
-		syntax: "<length> | <percentage> | auto"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"box-align": {
 		syntax: "start | center | end | baseline | stretch"
@@ -8908,7 +9305,7 @@ var declarations = {
 		syntax: "normal | [ [ size | inline-size ] || scroll-state ]"
 	},
 	content: {
-		syntax: "normal | none | [ <content-replacement> | <content-list> ] [/ [ <string> | <counter> ]+ ]?"
+		syntax: "normal | none | [ <content-replacement> | <content-list> ] [ / [ <string> | <counter> | <attr()> ]+ ]?"
 	},
 	"content-visibility": {
 		syntax: "visible | auto | hidden"
@@ -9202,16 +9599,16 @@ var declarations = {
 		syntax: "normal | <content-distribution> | <overflow-position>? [ <content-position> | left | right ]"
 	},
 	"justify-items": {
-		syntax: "normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ] | legacy | legacy && [ left | right | center ]"
+		syntax: "normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ] | legacy | legacy && [ left | right | center ] | anchor-center"
 	},
 	"justify-self": {
-		syntax: "auto | normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ]"
+		syntax: "auto | normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ] | anchor-center"
 	},
 	"justify-tracks": {
 		syntax: "[ normal | <content-distribution> | <overflow-position>? [ <content-position> | left | right ] ]#"
 	},
 	left: {
-		syntax: "<length> | <percentage> | auto"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"letter-spacing": {
 		syntax: "normal | <length> normal | <length-percentage>"
@@ -9256,7 +9653,7 @@ var declarations = {
 		syntax: "<'margin-top'>"
 	},
 	"margin-bottom": {
-		syntax: "<length-percentage> | auto"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-inline": {
 		syntax: "<'margin-top'>{1,2}"
@@ -9268,13 +9665,13 @@ var declarations = {
 		syntax: "<'margin-top'>"
 	},
 	"margin-left": {
-		syntax: "<length-percentage> | auto"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-right": {
-		syntax: "<length-percentage> | auto"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-top": {
-		syntax: "<length-percentage> | auto"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-trim": {
 		syntax: "none | in-flow | all"
@@ -9382,7 +9779,7 @@ var declarations = {
 		syntax: "auto | <length-percentage [0,∞]> | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"mix-blend-mode": {
-		syntax: "<blend-mode> | plus-lighter"
+		syntax: "<blend-mode> | plus-darker | plus-lighter"
 	},
 	"object-fit": {
 		syntax: "fill | contain | cover | none | scale-down"
@@ -9580,7 +9977,7 @@ var declarations = {
 		syntax: "none | both | horizontal | vertical | block | inline"
 	},
 	right: {
-		syntax: "<length> | <percentage> | auto"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	rotate: {
 		syntax: "none | <angle> | [ x | y | z | <number>{3} ] && <angle>"
@@ -9880,7 +10277,7 @@ var declarations = {
 		syntax: "none | <dashed-ident>#"
 	},
 	top: {
-		syntax: "<length> | <percentage> | auto"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"touch-action": {
 		syntax: "auto | none | [ [ pan-x | pan-left | pan-right ] || [ pan-y | pan-up | pan-down ] || pinch-zoom ] | manipulation"
@@ -10559,7 +10956,7 @@ var syntaxes = {
 		syntax: "<visual-box> | border-area | text"
 	},
 	"bg-image": {
-		syntax: "none | <image>"
+		syntax: "<image> | none"
 	},
 	"bg-layer": {
 		syntax: "<bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <visual-box> || <visual-box>"
@@ -10568,7 +10965,7 @@ var syntaxes = {
 		syntax: "[ [ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] | [ center | [ left | right ] <length-percentage>? ] && [ center | [ top | bottom ] <length-percentage>? ] ]"
 	},
 	"bg-size": {
-		syntax: "[ <length-percentage> | auto ]{1,2} | cover | contain"
+		syntax: "[ <length-percentage [0,∞]> | auto ]{1,2} | cover | contain"
 	},
 	"blend-mode": {
 		syntax: "normal | multiply | screen | overlay | darken | lighten | color-dodge | color-burn | hard-light | soft-light | difference | exclusion | hue | saturation | color | luminosity"
@@ -10658,7 +11055,10 @@ var syntaxes = {
 		syntax: "[ common-ligatures | no-common-ligatures ]"
 	},
 	"compat-auto": {
-		syntax: "searchfield | textarea | push-button | slider-horizontal | checkbox | radio | square-button | menulist | listbox | meter | progress-bar | button"
+		syntax: "searchfield | textarea | checkbox | radio | menulist | listbox | meter | progress-bar | button"
+	},
+	"compat-special": {
+		syntax: "textfield | menulist-button"
 	},
 	"complex-selector": {
 		syntax: "<complex-selector-unit> [ <combinator>? <complex-selector-unit> ]*"
@@ -10838,7 +11238,7 @@ var syntaxes = {
 		syntax: "[ <filter-function> | <url> ]+"
 	},
 	"final-bg-layer": {
-		syntax: "<'background-color'> || <bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <visual-box> || <visual-box>"
+		syntax: "<bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <visual-box> || <visual-box> || <'background-color'>"
 	},
 	"fit-content()": {
 		syntax: "fit-content( <length-percentage [0,∞]> )"
@@ -16762,10 +17162,10 @@ function reject(reason) {
 }
 /**
  * parse css string
- * @param iterator
+ * @param iter
  * @param options
  */
-async function doParse(iterator, options = {}) {
+async function doParse(iter, options = {}) {
     if (options.signal != null) {
         options.signal.addEventListener('abort', reject);
     }
@@ -16835,12 +17235,13 @@ async function doParse(iterator, options = {}) {
             src: ''
         };
     }
-    const iter = tokenize$1(iterator);
     let item;
     let node;
     const rawTokens = [];
     const imports = [];
-    while (item = iter.next().value) {
+    // @ts-ignore ignore error
+    const isAsync = typeof iter[Symbol.asyncIterator] === 'function';
+    while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
         rawTokens.push(item);
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
@@ -16884,7 +17285,7 @@ async function doParse(iterator, options = {}) {
                 let inBlock = 1;
                 tokens = [item];
                 do {
-                    item = iter.next().value;
+                    item = isAsync ? (await iter.next()).value : iter.next().value;
                     if (item == null) {
                         break;
                     }
@@ -16946,8 +17347,8 @@ async function doParse(iterator, options = {}) {
             }
         }
         if (context != null && context.typ == exports.EnumToken.InvalidRuleTokenType) {
-            // @ts-ignore
-            const index = context.chi.findIndex((node) => node == context);
+            // @ts-ignore ignore error
+            const index = context.chi.findIndex((node) => node === context);
             if (index > -1) {
                 context.chi.splice(index, 1);
             }
@@ -16958,13 +17359,21 @@ async function doParse(iterator, options = {}) {
             const token = node.tokens[0];
             const url = token.typ == exports.EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const root = await options.load(url, options.src).then((src) => {
-                    return doParse(src, Object.assign({}, options, {
+                const root = await options.getStream(url, options.src).then(async (stream) => {
+                    return doParse(tokenizeStream(stream), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: options.resolve(url, options.src).absolute
-                    }));
+                    })); // )
                 });
+                // const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
+                //
+                //     return doParse(src, Object.assign({}, options, {
+                //         minify: false,
+                //         setParent: false,
+                //         src: options.resolve!(url, options.src as string).absolute
+                //     }))
+                // });
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
                 node.parent.chi.splice(node.parent.chi.indexOf(node), 1, ...root.ast.chi);
@@ -16973,7 +17382,7 @@ async function doParse(iterator, options = {}) {
                 }
             }
             catch (error) {
-                // @ts-ignore
+                // @ts-ignore ignore error
                 errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
             }
         }));
@@ -17129,7 +17538,13 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
                             // @ts-ignore
-                            errors.push({ action: 'drop', message: 'invalid @import', location, rawTokens: [atRule, ...tokens] });
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid @import',
+                                location,
+                                // @ts-ignore
+                                rawTokens: [atRule, ...tokens]
+                            });
                             return null;
                         }
                     }
@@ -17832,7 +18247,13 @@ function parseSelector(tokens) {
  * @param options
  */
 function parseString(src, options = { location: false }) {
-    return parseTokens([...tokenize$1(src)].reduce((acc, t) => {
+    const parseInfo = {
+        stream: src,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    };
+    return parseTokens([...tokenize$1(parseInfo)].reduce((acc, t) => {
         if (t.hint == exports.EnumToken.EOFTokenType) {
             return acc;
         }
@@ -20947,7 +21368,7 @@ const notEndingWith = ['(', '['].concat(combinators);
 // @ts-ignore
 const features = Object.values(allFeatures).sort((a, b) => a.ordering - b.ordering);
 /**
- * minify ast
+ * apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -21019,7 +21440,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     doMinify(ast, options, recursive, errors, nestingContent, context);
     parents = [ast];
     for (const parent of parents) {
-        // parent = parents.shift() as AstNode;
         if (parent.typ == exports.EnumToken.CommentTokenType ||
             parent.typ == exports.EnumToken.CDOCOMMTokenType) {
             continue;
@@ -21062,17 +21482,7 @@ function reduce(acc, curr, index, array) {
         if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
             curr.splice(0, 2);
         }
-        // else if (combinators.includes(curr[1])) {
-        //
-        //     curr.shift();
-        // }
     }
-    // else { // @ts-ignore
-    //     if (this.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
-    //
-    //         curr.unshift('&', ' ');
-    //     }
-    // }
     acc.push(curr.join(''));
     return acc;
 }
@@ -21102,13 +21512,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             }
             // @ts-ignore
             node = ast.chi[i];
-            // @ts-ignore
-            // if (previous == node) {
-            //
-            //     // @ts-ignore
-            //     ast.chi.splice(i--, 1);
-            //     continue;
-            // }
             if (node.typ == exports.EnumToken.AtRuleNodeType && node.nam == 'font-face') {
                 continue;
             }
@@ -21260,12 +21663,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 curr.splice(0, 2);
                             }
                             else {
-                                // if (ast.typ != EnumToken.RuleNodeType && combinators.includes(curr[1])) {
-                                //
-                                //     wrap = false;
-                                // } else {
                                 curr.splice(0, 1);
-                                // }
                             }
                         }
                         else if (combinators.includes(curr[0])) {
@@ -21307,11 +21705,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     }
                     // @ts-ignore
                     let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
-                    // if (rule.includes('&')) {
-                    //
-                    //     // @ts-ignore
-                    //     rule = replaceCompound(rule, node.optimized.optimized[0]);
-                    // }
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
                     }
@@ -21344,13 +21737,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 node.chi.unshift(...previous.chi);
                                 // @ts-ignore
                                 ast.chi.splice(nodeIndex, 1);
-                                // @ts-ignore
-                                // if (!hasDeclaration(node)) {
-                                //     // @ts-ignore
-                                //     // minifyRule(node, <MinifyOptions>options, ast, context);
-                                //     // } else {
-                                //     doMinify(node, options, recursive, errors, nestingContent, context);
-                                // }
                                 i--;
                                 previous = node;
                                 nodeIndex = i;
@@ -21362,13 +21748,10 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     if (intersect.node1.chi.length == 0) {
                                         // @ts-ignore
                                         ast.chi.splice(i--, 1);
-                                        // @ts-ignore
-                                        // node = ast.chi[i];
                                     }
                                     else {
                                         // @ts-ignore
                                         ast.chi.splice(i--, 1, intersect.node1);
-                                        // node = ast.chi intersect.node1;
                                     }
                                     if (intersect.node2.chi.length == 0) {
                                         // @ts-ignore
@@ -21401,33 +21784,11 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (recursive && previous != node) {
                         // @ts-ignore
                         if (!hasDeclaration(previous)) {
-                            // @ts-ignore
-                            // minifyRule(previous, <MinifyOptions>options, ast, context);
-                            // } else {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
-                // else {
-                //
-                //     if ('chi' in previous) {
-                //
-                //         // @ts-ignore
-                //         if (!hasDeclaration(previous)) {
-                //
-                //             // @ts-ignore
-                //             // minifyRule(previous, <MinifyOptions>options, ast, context);
-                //             // } else {
-                //
-                //             doMinify(previous, options, recursive, errors, nestingContent, context);
-                //         }
-                //     }
-                // }
             }
-            // else if ('chi' in node) {
-            //
-            //     doMinify(node, options, recursive, errors, nestingContent, context);
-            // }
             if (!nestingContent &&
                 // @ts-ignore
                 previous != null &&
@@ -21477,9 +21838,6 @@ function hasDeclaration(node) {
  * @param selector
  */
 function optimizeSelector(selector) {
-    // if (selector.length == 0) {
-    //     return null;
-    // }
     selector = selector.reduce((acc, curr) => {
         // @ts-ignore
         if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
@@ -21527,11 +21885,6 @@ function optimizeSelector(selector) {
         break;
     }
     selector.forEach((selector) => selector.splice(0, optimized.length));
-    // combinator
-    // if (combinators.includes(<string>optimized.at(-1))) {
-    //     const combinator: string = <string>optimized.pop();
-    //     selector.forEach((selector: string[]) => selector.unshift(combinator));
-    // }
     let reducible = optimized.length == 1;
     if (optimized[0] == '&') {
         if (optimized[1] == ' ') {
@@ -21586,17 +21939,6 @@ function splitRule(buffer) {
     for (let i = 0; i < buffer.length; i++) {
         let chr = buffer.charAt(i);
         if (isWhiteSpace(chr.charCodeAt(0))) {
-            // let k: number = i;
-            // while (k + 1 < buffer.length) {
-            //
-            //     if (isWhiteSpace(buffer[k + 1].charCodeAt(0))) {
-            //
-            //         k++;
-            //         continue;
-            //     }
-            //
-            //     break;
-            // }
             if (str !== '') {
                 // @ts-ignore
                 result.at(-1).push(str);
@@ -21658,22 +22000,6 @@ function splitRule(buffer) {
             str += buffer.charAt(++i);
             continue;
         }
-        // if (chr == '"' || chr == "'") {
-        //
-        //     let k = i;
-        //     while (++k < buffer.length) {
-        //         chr = buffer.charAt(k);
-        //         str += chr;
-        //         if (chr == '//') {
-        //             str += buffer.charAt(++k);
-        //             continue;
-        //         }
-        //         if (chr == buffer.charAt(i)) {
-        //             break;
-        //         }
-        //     }
-        //     continue;
-        // }
         if (chr == '(' || chr == '[') {
             const open = chr;
             const close = chr == '(' ? ')' : ']';
@@ -21707,10 +22033,6 @@ function splitRule(buffer) {
     return result;
 }
 function reduceSelector(acc, curr) {
-    // if (acc === null) {
-    //
-    //     return null;
-    // }
     let hasCompoundSelector = true;
     // @ts-ignore
     curr = curr.slice(this.match[0].length);
@@ -21722,16 +22044,6 @@ function reduceSelector(acc, curr) {
         }
         break;
     }
-    // invalid function match
-    // if (curr.length > 0 && curr[0].endsWith('(') && curr.at(-1) != ')') {
-    //
-    //     return null;
-    // }
-    //
-    // if (curr.length == 1 && combinators.includes(curr[0].charAt(0))) {
-    //
-    //     return null;
-    // }
     if (hasCompoundSelector && curr.length > 0) {
         hasCompoundSelector = !['&'].concat(combinators).includes(curr[0].charAt(0));
     }
@@ -21741,15 +22053,6 @@ function reduceSelector(acc, curr) {
             if (index == 0) {
                 canReduce = curr[1] == '&';
             }
-            // else if (token.endsWith('(')) {
-            //
-            //     if (inFunction == 0) {
-            //
-            //         canReduce = false;
-            //     }
-            //
-            //     inFunction++;
-            // }
             else if (token == ')') ;
             else if (token == ',') {
                 if (!canReduce) {
@@ -21761,10 +22064,6 @@ function reduceSelector(acc, curr) {
                 acc.at(-1)?.push(token);
             return acc;
         }, [[]]);
-        // if (inFunction > 0) {
-        //
-        //     canReduce = false;
-        // }
         if (canReduce) {
             curr = isCompound.reduce((acc, curr) => {
                 if (acc.length > 0) {
@@ -21779,7 +22078,7 @@ function reduceSelector(acc, curr) {
     acc.push(this.match.length == 0 ? ['&'] : (hasCompoundSelector && curr[0] != '&' && (curr.length == 0 || !combinators.includes(curr[0].charAt(0))) ? ['&'].concat(curr) : curr));
     return acc;
 }
-function matchSelectors(selector1, selector2, parentType, errors) {
+function matchSelectors(selector1, selector2 /*, parentType: EnumToken, errors: ErrorDescription[] */) {
     let match = [[]];
     const j = Math.min(selector1.reduce((acc, curr) => Math.min(acc, curr.length), selector1.length > 0 ? selector1[0].length : 0), selector2.reduce((acc, curr) => Math.min(acc, curr.length), selector2.length > 0 ? selector2[0].length : 0));
     let i = 0;
@@ -21810,52 +22109,15 @@ function matchSelectors(selector1, selector2, parentType, errors) {
         if (!matching) {
             break;
         }
-        // if (token == ',') {
-        //
-        //     match.push([]);
-        // } else {
         if (token.endsWith('(')) {
             matchFunction++;
         }
-        // if (token.endsWith('[')) {
-        //
-        //     inAttr++;
-        // } else if (token == ')') {
-        //
-        //     matchFunction--;
-        // } else if (token == ']') {
-        //
-        //     inAttr--;
-        // }
         match.at(-1).push(token);
-        // }
     }
     // invalid function
     if (matchFunction != 0 || inAttr != 0) {
         return null;
     }
-    // if (parentType != EnumToken.RuleNodeType) {
-    //
-    //     for (const part of match) {
-    //
-    //         if (part.length > 0 && combinators.includes(part[0].charAt(0))) {
-    //
-    //             return null;
-    //         }
-    //     }
-    // }
-    // if (match.length > 1) {
-    //
-    //     errors?.push({
-    //         action: 'ignore',
-    //         message: `minify: unsupported multilevel matching\n${JSON.stringify({
-    //             match,
-    //             selector1,
-    //             selector2
-    //         }, null, 1)}`
-    //     });
-    //     return null;
-    // }
     for (const part of match) {
         while (part.length > 0) {
             const token = part.at(-1);
@@ -21961,10 +22223,6 @@ function diff(n1, n2, reducer, options = {}) {
     }
     let i = node1.chi.length;
     let j = node2.chi.length;
-    // if (i == 0 || j == 0) {
-    //
-    //     return null;
-    // }
     const raw1 = node1.raw;
     const raw2 = node2.raw;
     if (raw1 != null && raw2 != null) {
@@ -22035,10 +22293,6 @@ function diff(n1, n2, reducer, options = {}) {
             continue;
         }
         j = node2.chi.length;
-        // if (j == 0) {
-        //
-        //     break;
-        // }
         while (j--) {
             if (node2.chi[j].typ == exports.EnumToken.CommentNodeType) {
                 continue;
@@ -22119,7 +22373,7 @@ function reduceRuleSelector(node) {
 }
 
 /**
- * expand nested css ast
+ * expand css nesting ast nodes
  * @param ast
  */
 function expand(ast) {
@@ -22401,36 +22655,77 @@ function replaceCompoundLiteral(selector, replace) {
     }, '');
 }
 
-function parseResponse(response) {
-    if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`);
-    }
-    return response.text();
-}
 /**
- * load file
+ * load file or url as stream
  * @param url
  * @param currentFile
  */
-async function load(url, currentFile = '.') {
+async function getStream(url, currentFile = '.') {
     const resolved = resolve(url, currentFile);
-    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : promises.readFile(resolved.absolute, { encoding: 'utf-8' });
+    // @ts-ignore
+    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then((response) => {
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+        }
+        return response.body;
+    }) : node_stream.Readable.toWeb(node_fs.createReadStream(resolved.absolute));
 }
 
+// /**
+//  * node module entry point
+//  * @module web
+//  */
 /**
- * render ast node
+ * render ast tree
+ * @param data
+ * @param options
  */
 function render(data, options = {}) {
-    return doRender(data, Object.assign(options, { load, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
+    return doRender(data, Object.assign(options, { getStream, resolve, dirname, cwd: options.cwd ?? process.cwd() }));
+}
+/**
+ * parse css file
+ * @param file url or path
+ * @param options
+ */
+async function parseFile(file, options = {}) {
+    return getStream(file).then(css => parse(css, options));
 }
 /**
  * parse css
+ * @param iterator
+ * @param opt
  */
 async function parse(iterator, opt = {}) {
-    return doParse(iterator, Object.assign(opt, { load, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
+    return doParse(iterator instanceof ReadableStream ? tokenizeStream(iterator) : tokenize$1({
+        stream: iterator,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    }), Object.assign(opt, { getStream, resolve, dirname, cwd: opt.cwd ?? process.cwd() }));
 }
 /**
- * parse and render css
+ * transform css file
+ * @param file url or path
+ * @param options
+ */
+async function transformFile(file, options = {}) {
+    return getStream(file).then(css => transform(css, options));
+}
+/**
+ * transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *     // remote file
+ *     let result = await transform('https://docs.deno.com/styles.css');
+ *     console.log(result.code);
+ *
+ *     // local file
+ *      result = await transform('./css/styles.css');
+ *     console.log(result.code);
+ * ```
  */
 async function transform(css, options = {}) {
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
@@ -22454,16 +22749,18 @@ async function transform(css, options = {}) {
 exports.convertColor = convertColor;
 exports.dirname = dirname;
 exports.expand = expand;
+exports.getStream = getStream;
 exports.isOkLabClose = isOkLabClose;
-exports.load = load;
 exports.minify = minify;
 exports.okLabDistance = okLabDistance;
 exports.parse = parse;
+exports.parseFile = parseFile;
 exports.parseString = parseString;
 exports.parseTokens = parseTokens;
 exports.render = render;
 exports.renderToken = renderToken;
 exports.resolve = resolve;
 exports.transform = transform;
+exports.transformFile = transformFile;
 exports.walk = walk;
 exports.walkValues = walkValues;

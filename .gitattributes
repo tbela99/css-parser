@@ -1,5 +1,8 @@
 /test/ export-ignore
 /docs/ export-ignore
+/typedoc.json export-ignore
+/docs/ export-ignore
+/.typedoc-tsconfig.jsonc export-ignore
 /.editorconfig export-ignore
 /build.sh export-ignore linguist-vendored
 /Writerside export-ignore linguist-vendored

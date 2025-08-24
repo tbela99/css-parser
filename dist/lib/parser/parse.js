@@ -8,7 +8,7 @@ import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
 import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
-import { tokenize } from './tokenize.js';
+import { tokenize, tokenizeStream } from './tokenize.js';
 import '../validation/config.js';
 import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
@@ -40,10 +40,10 @@ function reject(reason) {
 }
 /**
  * parse css string
- * @param iterator
+ * @param iter
  * @param options
  */
-async function doParse(iterator, options = {}) {
+async function doParse(iter, options = {}) {
     if (options.signal != null) {
         options.signal.addEventListener('abort', reject);
     }
@@ -113,12 +113,13 @@ async function doParse(iterator, options = {}) {
             src: ''
         };
     }
-    const iter = tokenize(iterator);
     let item;
     let node;
     const rawTokens = [];
     const imports = [];
-    while (item = iter.next().value) {
+    // @ts-ignore ignore error
+    const isAsync = typeof iter[Symbol.asyncIterator] === 'function';
+    while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
         rawTokens.push(item);
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
@@ -162,7 +163,7 @@ async function doParse(iterator, options = {}) {
                 let inBlock = 1;
                 tokens = [item];
                 do {
-                    item = iter.next().value;
+                    item = isAsync ? (await iter.next()).value : iter.next().value;
                     if (item == null) {
                         break;
                     }
@@ -224,8 +225,8 @@ async function doParse(iterator, options = {}) {
             }
         }
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
-            // @ts-ignore
-            const index = context.chi.findIndex((node) => node == context);
+            // @ts-ignore ignore error
+            const index = context.chi.findIndex((node) => node === context);
             if (index > -1) {
                 context.chi.splice(index, 1);
             }
@@ -236,13 +237,21 @@ async function doParse(iterator, options = {}) {
             const token = node.tokens[0];
             const url = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const root = await options.load(url, options.src).then((src) => {
-                    return doParse(src, Object.assign({}, options, {
+                const root = await options.getStream(url, options.src).then(async (stream) => {
+                    return doParse(tokenizeStream(stream), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: options.resolve(url, options.src).absolute
-                    }));
+                    })); // )
                 });
+                // const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
+                //
+                //     return doParse(src, Object.assign({}, options, {
+                //         minify: false,
+                //         setParent: false,
+                //         src: options.resolve!(url, options.src as string).absolute
+                //     }))
+                // });
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
                 node.parent.chi.splice(node.parent.chi.indexOf(node), 1, ...root.ast.chi);
@@ -251,7 +260,7 @@ async function doParse(iterator, options = {}) {
                 }
             }
             catch (error) {
-                // @ts-ignore
+                // @ts-ignore ignore error
                 errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
             }
         }));
@@ -407,7 +416,13 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
                             // @ts-ignore
-                            errors.push({ action: 'drop', message: 'invalid @import', location, rawTokens: [atRule, ...tokens] });
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid @import',
+                                location,
+                                // @ts-ignore
+                                rawTokens: [atRule, ...tokens]
+                            });
                             return null;
                         }
                     }
@@ -1110,7 +1125,13 @@ function parseSelector(tokens) {
  * @param options
  */
 function parseString(src, options = { location: false }) {
-    return parseTokens([...tokenize(src)].reduce((acc, t) => {
+    const parseInfo = {
+        stream: src,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    };
+    return parseTokens([...tokenize(parseInfo)].reduce((acc, t) => {
         if (t.hint == EnumToken.EOFTokenType) {
             return acc;
         }

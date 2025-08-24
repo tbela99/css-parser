@@ -1,21 +1,11 @@
 import {matchUrl, resolve} from "../lib/fs/index.ts";
 
-function parseResponse(response: Response) {
-
-    if (!response.ok) {
-
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`)
-    }
-
-    return response.text();
-}
-
 /**
- * load file
+ * load file or url as stream
  * @param url
  * @param currentFile
  */
-export async function load(url: string, currentFile: string): Promise<string> {
+export async function getStream(url: string, currentFile: string): Promise<ReadableStream<string>> {
 
     let t: URL;
 
@@ -33,5 +23,13 @@ export async function load(url: string, currentFile: string): Promise<string> {
     }
 
     // @ts-ignore
-    return fetch(t, t.origin != self.origin ? {mode: 'cors'} : {}).then(parseResponse);
+    return fetch(t, t.origin != self.origin ? {mode: 'cors'} : {}).then((response: Response) => {
+
+        if (!response.ok) {
+
+            throw new Error(`${response.status} ${response.statusText} ${response.url}`)
+        }
+
+        return response.body;
+    });
 }

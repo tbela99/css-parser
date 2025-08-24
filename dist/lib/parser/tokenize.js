@@ -40,7 +40,7 @@ var TokenMap;
 })(TokenMap || (TokenMap = {}));
 function consumeWhiteSpace(parseInfo) {
     let count = 0;
-    while (isWhiteSpace(parseInfo.stream.charAt(count + parseInfo.currentPosition.ind + 1).charCodeAt(0))) {
+    while (isWhiteSpace(parseInfo.stream.charCodeAt(count + parseInfo.currentPosition.ind + 1))) {
         count++;
     }
     next(parseInfo, count);
@@ -170,17 +170,14 @@ function next(parseInfo, count = 1) {
 }
 /**
  * tokenize css string
- * @param stream
+ * @param parseInfo
+ * @param yieldEOFToken
  */
-function* tokenize(stream) {
-    const parseInfo = {
-        stream,
-        position: { ind: 0, lin: 1, col: 1 },
-        currentPosition: { ind: -1, lin: 1, col: 0 }
-    };
+function* tokenize(parseInfo, yieldEOFToken = true) {
     let value;
-    let buffer = '';
+    let buffer = parseInfo.buffer;
     let charCode;
+    parseInfo.buffer = '';
     while (value = next(parseInfo)) {
         charCode = value.charCodeAt(0);
         if (isWhiteSpace(charCode)) {
@@ -621,10 +618,37 @@ function* tokenize(stream) {
                 break;
         }
     }
-    if (buffer.length > 0) {
-        yield pushToken(buffer, parseInfo);
+    if (yieldEOFToken) {
+        if (buffer.length > 0) {
+            yield pushToken(buffer, parseInfo);
+        }
+        yield pushToken('', parseInfo, EnumToken.EOFTokenType);
     }
-    yield pushToken('', parseInfo, EnumToken.EOFTokenType);
+    else {
+        parseInfo.buffer = buffer;
+    }
+}
+/**
+ * tokenize css stream
+ * @param input
+ */
+async function* tokenizeStream(input) {
+    const parseInfo = {
+        stream: '',
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    };
+    const decoder = new TextDecoder('utf-8');
+    const reader = input.getReader();
+    while (true) {
+        const { done, value } = await reader.read();
+        parseInfo.stream += decoder.decode(value, { stream: true });
+        yield* tokenize(parseInfo, done);
+        if (done) {
+            break;
+        }
+    }
 }
 
-export { tokenize };
+export { tokenize, tokenizeStream };

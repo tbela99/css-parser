@@ -1,17 +1,11 @@
 import { matchUrl, resolve } from '../lib/fs/resolve.js';
 
-function parseResponse(response) {
-    if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`);
-    }
-    return response.text();
-}
 /**
- * load file
+ * load file or url as stream
  * @param url
  * @param currentFile
  */
-async function load(url, currentFile) {
+async function getStream(url, currentFile) {
     let t;
     if (matchUrl.test(url)) {
         t = new URL(url);
@@ -25,7 +19,12 @@ async function load(url, currentFile) {
         t = new URL(path, self.origin);
     }
     // @ts-ignore
-    return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then(parseResponse);
+    return fetch(t, t.origin != self.origin ? { mode: 'cors' } : {}).then((response) => {
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText} ${response.url}`);
+        }
+        return response.body;
+    });
 }
 
-export { load };
+export { getStream };

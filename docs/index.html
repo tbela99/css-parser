@@ -1,0 +1,594 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@tbela99/css-parser</title><meta name="description" content="Documentation for @tbela99/css-parser"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script><script async src="assets/hierarchy.js" id="tsd-hierarchy-script"></script><style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-sys-color-primary: #f6be46;
+    --md-sys-color-on-primary: #412d00;
+    --md-sys-color-primary-container: #5d4200;
+    --md-sys-color-on-primary-container: #ffdea3;
+    --md-sys-color-secondary: #d9c4a0;
+    --md-sys-color-on-secondary: #3b2f15;
+    --md-sys-color-secondary-container: #53452a;
+    --md-sys-color-on-secondary-container: #f6e0bb;
+    --md-sys-color-tertiary: #b2cfa8;
+    --md-sys-color-on-tertiary: #1e361a;
+    --md-sys-color-tertiary-container: #344d2f;
+    --md-sys-color-on-tertiary-container: #cdebc2;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffb4ab;
+    --md-sys-color-background: #1e1b16;
+    --md-sys-color-on-background: #e9e1d9;
+    --md-sys-color-surface: #1e1b16;
+    --md-sys-color-on-surface: #e9e1d9;
+    --md-sys-color-surface-variant: #4e4639;
+    --md-sys-color-on-surface-variant: #d1c5b4;
+    --md-sys-color-outline: #9a8f80;
+    --md-sys-color-outline-variant: #4e4639;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #e9e1d9;
+    --md-sys-color-inverse-on-surface: #34302a;
+    --md-sys-color-inverse-primary: #7a5900;
+    --md-sys-color-surface-dim: #16130e;
+    --md-sys-color-surface-bright: #3d3933;
+    --md-sys-color-surface-container-lowest: #110e09;
+    --md-sys-color-surface-container-low: #1e1b16;
+    --md-sys-color-surface-container: #221f1a;
+    --md-sys-color-surface-container-high: #2d2924;
+    --md-sys-color-surface-container-highest: #38342e
+  }
+}
+:root[data-theme="dark"] {
+  --md-sys-color-primary: #f6be46;
+  --md-sys-color-on-primary: #412d00;
+  --md-sys-color-primary-container: #5d4200;
+  --md-sys-color-on-primary-container: #ffdea3;
+  --md-sys-color-secondary: #d9c4a0;
+  --md-sys-color-on-secondary: #3b2f15;
+  --md-sys-color-secondary-container: #53452a;
+  --md-sys-color-on-secondary-container: #f6e0bb;
+  --md-sys-color-tertiary: #b2cfa8;
+  --md-sys-color-on-tertiary: #1e361a;
+  --md-sys-color-tertiary-container: #344d2f;
+  --md-sys-color-on-tertiary-container: #cdebc2;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffb4ab;
+  --md-sys-color-background: #1e1b16;
+  --md-sys-color-on-background: #e9e1d9;
+  --md-sys-color-surface: #1e1b16;
+  --md-sys-color-on-surface: #e9e1d9;
+  --md-sys-color-surface-variant: #4e4639;
+  --md-sys-color-on-surface-variant: #d1c5b4;
+  --md-sys-color-outline: #9a8f80;
+  --md-sys-color-outline-variant: #4e4639;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #e9e1d9;
+  --md-sys-color-inverse-on-surface: #34302a;
+  --md-sys-color-inverse-primary: #7a5900;
+  --md-sys-color-surface-dim: #16130e;
+  --md-sys-color-surface-bright: #3d3933;
+  --md-sys-color-surface-container-lowest: #110e09;
+  --md-sys-color-surface-container-low: #1e1b16;
+  --md-sys-color-surface-container: #221f1a;
+  --md-sys-color-surface-container-high: #2d2924;
+  --md-sys-color-surface-container-highest: #38342e
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --md-sys-color-primary: #7a5900;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-primary-container: #ffdea3;
+    --md-sys-color-on-primary-container: #261900;
+    --md-sys-color-secondary: #6c5c3f;
+    --md-sys-color-on-secondary: #ffffff;
+    --md-sys-color-secondary-container: #f6e0bb;
+    --md-sys-color-on-secondary-container: #251a04;
+    --md-sys-color-tertiary: #4b6545;
+    --md-sys-color-on-tertiary: #ffffff;
+    --md-sys-color-tertiary-container: #cdebc2;
+    --md-sys-color-on-tertiary-container: #092007;
+    --md-sys-color-error: #ba1a1a;
+    --md-sys-color-on-error: #ffffff;
+    --md-sys-color-error-container: #ffdad6;
+    --md-sys-color-on-error-container: #410002;
+    --md-sys-color-background: #fffbff;
+    --md-sys-color-on-background: #1e1b16;
+    --md-sys-color-surface: #fffbff;
+    --md-sys-color-on-surface: #1e1b16;
+    --md-sys-color-surface-variant: #ede1cf;
+    --md-sys-color-on-surface-variant: #4e4639;
+    --md-sys-color-outline: #7f7667;
+    --md-sys-color-outline-variant: #d1c5b4;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #34302a;
+    --md-sys-color-inverse-on-surface: #f8efe7;
+    --md-sys-color-inverse-primary: #f6be46;
+    --md-sys-color-surface-dim: #e1d9d0;
+    --md-sys-color-surface-bright: #fff8f2;
+    --md-sys-color-surface-container-lowest: #ffffff;
+    --md-sys-color-surface-container-low: #fbf2e9;
+    --md-sys-color-surface-container: #f5ede4;
+    --md-sys-color-surface-container-high: #efe7de;
+    --md-sys-color-surface-container-highest: #e9e1d9
+  }
+}
+:root[data-theme="light"] {
+  --md-sys-color-primary: #7a5900;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #ffdea3;
+  --md-sys-color-on-primary-container: #261900;
+  --md-sys-color-secondary: #6c5c3f;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #f6e0bb;
+  --md-sys-color-on-secondary-container: #251a04;
+  --md-sys-color-tertiary: #4b6545;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #cdebc2;
+  --md-sys-color-on-tertiary-container: #092007;
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-background: #fffbff;
+  --md-sys-color-on-background: #1e1b16;
+  --md-sys-color-surface: #fffbff;
+  --md-sys-color-on-surface: #1e1b16;
+  --md-sys-color-surface-variant: #ede1cf;
+  --md-sys-color-on-surface-variant: #4e4639;
+  --md-sys-color-outline: #7f7667;
+  --md-sys-color-outline-variant: #d1c5b4;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #34302a;
+  --md-sys-color-inverse-on-surface: #f8efe7;
+  --md-sys-color-inverse-primary: #f6be46;
+  --md-sys-color-surface-dim: #e1d9d0;
+  --md-sys-color-surface-bright: #fff8f2;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #fbf2e9;
+  --md-sys-color-surface-container: #f5ede4;
+  --md-sys-color-surface-container-high: #efe7de;
+  --md-sys-color-surface-container-highest: #e9e1d9
+}
+</style><link rel="stylesheet" href="assets/material-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">@tbela99/css-parser</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>@tbela99/css-parser</h1></div><div class="tsd-panel tsd-typography"><p><a href="https://tbela99.github.io/css-parser/playground/"><img src="https://img.shields.io/badge/playground-try%20it%20now-%230a7398" alt="playground"></a> <a href="https://www.npmjs.com/package/@tbela99/css-parser"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&amp;query=version&amp;logo=npm&amp;label=npm&amp;link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser" alt="npm"></a> <a href="https://jsr.io/@tbela99/css-parser"><img src="https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser" alt="npm"></a> <a href="https://github.com/tbela99/css-parser/actions"><img src="https://tbela99.github.io/css-parser/badges/coverage.svg" alt="cov"></a> <a href="https://www.npmjs.com/package/@tbela99/css-parser"><img src="https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser" alt="NPM Downloads"></a> <a href="https://www.npmjs.com/package/@tbela99/css-parser"><img src="https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs" alt="bundle size"></a></p>
+<h1 id="css-parser" class="tsd-anchor-link">css-parser<a href="#css-parser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><p>CSS parser and minifier for node and the browser</p>
+<h2 id="installation" class="tsd-anchor-link">Installation<a href="#installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>From npm</p>
+<pre><code class="shell"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">@tbela99/css-parser</span>
+</code><button type="button">Copy</button></pre>
+
+<p>from jsr</p>
+<pre><code class="shell"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">deno</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">@tbela99/css-parser</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="features" class="tsd-anchor-link">Features<a href="#features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>no dependency</li>
+<li>CSS validation based upon mdn-data</li>
+<li>fault-tolerant parser, will try to fix invalid tokens according to the CSS syntax module 3 recommendations.</li>
+<li>fast and efficient minification without unsafe transforms,
+see <a href="https://tbela99.github.io/css-parser/benchmark/index.html">benchmark</a></li>
+<li>minify colors: color(), lab(), lch(), oklab(), oklch(), color-mix(), light-dark(), system colors and
+relative color</li>
+<li>generate nested css rules</li>
+<li>convert nested css rules to legacy syntax</li>
+<li>convert colors to any supported color format</li>
+<li>generate sourcemap</li>
+<li>compute css shorthands. see supported properties list below</li>
+<li>minify css transform functions</li>
+<li>evaluate math functions: calc(), clamp(), min(), max(), etc.</li>
+<li>inline css variables</li>
+<li>remove duplicate properties</li>
+<li>flatten @import rules</li>
+<li>experimental CSS prefix removal</li>
+</ul>
+<h2 id="playground" class="tsd-anchor-link">Playground<a href="#playground" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Try it <a href="https://tbela99.github.io/css-parser/playground/">online</a></p>
+<h2 id="exports" class="tsd-anchor-link">Exports<a href="#exports" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>There are several ways to import the library into your application.</p>
+<h3 id="node-exports" class="tsd-anchor-link">Node exports<a href="#node-exports" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>import as a module</p>
+<pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">// ...</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="deno-exports" class="tsd-anchor-link">Deno exports<a href="#deno-exports" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>import as a module</p>
+<pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">// ...</span>
+</code><button type="button">Copy</button></pre>
+
+<p>import as a CommonJS module</p>
+<pre><code class="javascript"><br/><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">transform</span><span class="hl-1">} = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&#39;@tbela99/css-parser/cjs&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">// ...</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="web-export" class="tsd-anchor-link">Web export<a href="#web-export" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Programmatic import</p>
+<pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser/web&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">// ...</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Javascript module from cdn</p>
+<pre><code class="html"><br/><span class="hl-8">&lt;</span><span class="hl-9">script</span><span class="hl-10"> </span><span class="hl-11">type</span><span class="hl-10">=</span><span class="hl-12">&quot;module&quot;</span><span class="hl-8">&gt;</span><br/><br/><span class="hl-10">    </span><span class="hl-3">import</span><span class="hl-10"> {</span><span class="hl-4">transform</span><span class="hl-10">} </span><span class="hl-3">from</span><span class="hl-10"> </span><span class="hl-2">&#39;https://esm.sh/@tbela99/css-parser@1.3.0/web&#39;</span><span class="hl-10">;</span><br/><br/><br/><span class="hl-10">    </span><span class="hl-6">const</span><span class="hl-10"> </span><span class="hl-7">css</span><span class="hl-10"> </span><span class="hl-1">=</span><span class="hl-10"> </span><span class="hl-2">`</span><br/><span class="hl-2">    .s {</span><br/><br/><span class="hl-2">    background: color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow);</span><br/><span class="hl-2">}</span><br/><span class="hl-2">    `</span><span class="hl-10">;</span><br/><br/><span class="hl-10">    </span><span class="hl-4">console</span><span class="hl-10">.</span><span class="hl-0">debug</span><span class="hl-10">(</span><span class="hl-3">await</span><span class="hl-10"> </span><span class="hl-0">transform</span><span class="hl-10">(</span><span class="hl-4">css</span><span class="hl-10">).</span><span class="hl-0">then</span><span class="hl-10">(</span><span class="hl-4">r</span><span class="hl-10"> </span><span class="hl-6">=&gt;</span><span class="hl-10"> </span><span class="hl-4">r</span><span class="hl-10">.</span><span class="hl-4">code</span><span class="hl-10">));</span><br/><br/><span class="hl-8">&lt;/</span><span class="hl-9">script</span><span class="hl-8">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Javascript module</p>
+<pre><code class="javascript"><br/><span class="hl-8">&lt;</span><span class="hl-9">script</span><span class="hl-1"> </span><span class="hl-11">src</span><span class="hl-1">=</span><span class="hl-2">&quot;dist/web/index.js&quot;</span><span class="hl-1"> </span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;module&quot;</span><span class="hl-8">&gt;&lt;/</span><span class="hl-9">script</span><span class="hl-8">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Single Javascript file</p>
+<pre><code class="javascript"><br/><span class="hl-8">&lt;</span><span class="hl-9">script</span><span class="hl-1"> </span><span class="hl-11">src</span><span class="hl-1">=</span><span class="hl-2">&quot;dist/index-umd-web.js&quot;</span><span class="hl-8">&gt;&lt;/</span><span class="hl-9">script</span><span class="hl-8">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="transform" class="tsd-anchor-link">Transform<a href="#transform" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Parse and render css in a single pass.</p>
+<h3 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="typescript"><br/><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">: </span><span class="hl-4">string</span><span class="hl-1"> | </span><span class="hl-4">ReadableStream</span><span class="hl-1">&lt;</span><span class="hl-4">string</span><span class="hl-1">&gt;, </span><span class="hl-4">transformOptions</span><span class="hl-1">: </span><span class="hl-4">TransformOptions</span><span class="hl-1"> = {}): </span><span class="hl-4">TransformResult</span><br/><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">: </span><span class="hl-4">string</span><span class="hl-1"> | </span><span class="hl-4">ReadableStream</span><span class="hl-1">&lt;</span><span class="hl-4">string</span><span class="hl-1">&gt;, </span><span class="hl-4">parseOptions</span><span class="hl-1">: </span><span class="hl-4">ParseOptions</span><span class="hl-1"> = {}): </span><span class="hl-4">ParseResult</span><span class="hl-1">;</span><br/><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">ast</span><span class="hl-1">: </span><span class="hl-4">AstNode</span><span class="hl-1">, </span><span class="hl-4">renderOptions</span><span class="hl-1">: </span><span class="hl-4">RenderOptions</span><span class="hl-1"> = {}): </span><span class="hl-4">RenderResult</span><span class="hl-1">;</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="example" class="tsd-anchor-link">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">ast</span><span class="hl-1">, </span><span class="hl-7">code</span><span class="hl-1">, </span><span class="hl-7">map</span><span class="hl-1">, </span><span class="hl-7">errors</span><span class="hl-1">, </span><span class="hl-7">stats</span><span class="hl-1">} = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">, </span><span class="hl-4">resolveImport:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">, </span><span class="hl-4">cwd:</span><span class="hl-1"> </span><span class="hl-2">&#39;files/css&#39;</span><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="example-1" class="tsd-anchor-link">Example<a href="#example-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Read from stdin with node using readable stream</p>
+<pre><code class="typescript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/node&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">Readable</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:stream&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-3">type</span><span class="hl-1"> {</span><span class="hl-4">TransformResult</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;../src/@types/index.d.ts&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">readableStream</span><span class="hl-1">: </span><span class="hl-13">ReadableStream</span><span class="hl-1">&lt;</span><span class="hl-13">string</span><span class="hl-1">&gt; = </span><span class="hl-4">Readable</span><span class="hl-1">.</span><span class="hl-0">toWeb</span><span class="hl-1">(</span><span class="hl-4">process</span><span class="hl-1">.</span><span class="hl-4">stdin</span><span class="hl-1">) </span><span class="hl-3">as</span><span class="hl-1"> </span><span class="hl-13">ReadableStream</span><span class="hl-1">&lt;</span><span class="hl-13">string</span><span class="hl-1">&gt;;</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">result</span><span class="hl-1">: </span><span class="hl-13">TransformResult</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">readableStream</span><span class="hl-1">, {</span><span class="hl-4">beautify:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">});</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="transformoptions" class="tsd-anchor-link">TransformOptions<a href="#transformoptions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Include ParseOptions and RenderOptions</p>
+<h4 id="parseoptions" class="tsd-anchor-link">ParseOptions<a href="#parseoptions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><blockquote>
+<p>Minify Options</p>
+</blockquote>
+<ul>
+<li>minify: boolean, optional. default to <em>true</em>. optimize ast.</li>
+<li>pass: number, optional. minification pass. default to 1</li>
+<li>nestingRules: boolean, optional. automatically generated nested rules.</li>
+<li>expandNestingRules: boolean, optional. convert nesting rules into separate rules. will automatically set nestingRules
+to false.</li>
+<li>removeDuplicateDeclarations: boolean, optional. remove duplicate declarations.</li>
+<li>computeTransform: boolean, optional. compute css transform functions.</li>
+<li>computeShorthand: boolean, optional. compute shorthand properties.</li>
+<li>computeCalcExpression: boolean, optional. evaluate calc() expression</li>
+<li>inlineCssVariables: boolean, optional. replace some css variables with their actual value. they must be declared once
+in the :root {} or html {} rule.</li>
+<li>removeEmpty: boolean, optional. remove empty rule lists from the ast.</li>
+</ul>
+<blockquote>
+<p>CSS Prefix Removal Options</p>
+</blockquote>
+<ul>
+<li>removePrefix: boolean, optional. remove CSS prefixes.</li>
+</ul>
+<blockquote>
+<p>Validation Options</p>
+</blockquote>
+<ul>
+<li>validation: ValidationLevel | boolean, optional. enable validation. permitted values are:
+<ul>
+<li>ValidationLevel.None: no validation</li>
+<li>ValidationLevel.Default: validate selectors and at-rules (default)</li>
+<li>ValidationLevel.All. validate all nodes</li>
+<li>true: same as ValidationLevel.All.</li>
+<li>false: same as ValidationLevel.None</li>
+</ul>
+</li>
+<li>lenient: boolean, optional. preserve invalid tokens.</li>
+</ul>
+<blockquote>
+<p>Sourcemap Options</p>
+</blockquote>
+<ul>
+<li>src: string, optional. original css file location to be used with sourcemap, also used to resolve url().</li>
+<li>sourcemap: boolean, optional. preserve node location data.</li>
+</ul>
+<blockquote>
+<p>Ast Traversal Options</p>
+</blockquote>
+<ul>
+<li>visitor: VisitorNodeMap, optional. node visitor used to transform the ast.</li>
+</ul>
+<blockquote>
+<p>Urls and @import Options</p>
+</blockquote>
+<ul>
+<li>resolveImport: boolean, optional. replace @import rule by the content of the referenced stylesheet.</li>
+<li>resolveUrls: boolean, optional. resolve css 'url()' according to the parameters 'src' and 'cwd'</li>
+</ul>
+<blockquote>
+<p>Misc Options</p>
+</blockquote>
+<ul>
+<li>removeCharset: boolean, optional. remove @charset.</li>
+<li>cwd: string, optional. destination directory used to resolve url().</li>
+<li>signal: AbortSignal, optional. abort parsing.</li>
+</ul>
+<h4 id="renderoptions" class="tsd-anchor-link">RenderOptions<a href="#renderoptions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4><blockquote>
+<p>Minify Options</p>
+</blockquote>
+<ul>
+<li>beautify: boolean, optional. default to <em>false</em>. beautify css output.</li>
+<li>minify: boolean, optional. default to <em>true</em>. minify css values.</li>
+<li>withParents: boolean, optional. render this node and its parents.</li>
+<li>removeEmpty: boolean, optional. remove empty rule lists from the ast.</li>
+<li>expandNestingRules: boolean, optional. expand nesting rules.</li>
+<li>preserveLicense: boolean, force preserving comments starting with '/*!' when minify is enabled.</li>
+<li>removeComments: boolean, remove comments in generated css.</li>
+<li>convertColor: boolean | ColorType, convert colors to the specified color. default to ColorType.HEX. supported values are:
+<ul>
+<li>true: same as ColorType.HEX</li>
+<li>false: no color conversion</li>
+<li>ColorType.HEX</li>
+<li>ColorType.RGB or ColorType.RGBA</li>
+<li>ColorType.HSL</li>
+<li>ColorType.HWB</li>
+<li>ColorType.CMYK or ColorType.DEVICE_CMYK</li>
+<li>ColorType.SRGB</li>
+<li>ColorType.SRGB_LINEAR</li>
+<li>ColorType.DISPLAY_P3</li>
+<li>ColorType.PROPHOTO_RGB</li>
+<li>ColorType.A98_RGB</li>
+<li>ColorType.REC2020</li>
+<li>ColorType.XYZ or ColorType.XYZ_D65</li>
+<li>ColorType.XYZ_D50</li>
+<li>ColorType.LAB</li>
+<li>ColorType.LCH</li>
+<li>ColorType.OKLAB</li>
+<li>ColorType.OKLCH</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>Sourcemap Options</p>
+</blockquote>
+<ul>
+<li>sourcemap: boolean | 'inline', optional. generate sourcemap.</li>
+</ul>
+<blockquote>
+<p>Misc Options</p>
+</blockquote>
+<ul>
+<li>indent: string, optional. css indention string. uses space character by default.</li>
+<li>newLine: string, optional. new line character.</li>
+<li>output: string, optional. file where to store css. url() are resolved according to the specified value. no file is
+created though.</li>
+<li>cwd: string, optional. destination directory used to resolve url().</li>
+</ul>
+<h2 id="parsing" class="tsd-anchor-link">Parsing<a href="#parsing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="usage-1" class="tsd-anchor-link">Usage<a href="#usage-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">parseOptions</span><span class="hl-1"> = {})</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="example-2" class="tsd-anchor-link">Example<a href="#example-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">ast</span><span class="hl-1">, </span><span class="hl-7">errors</span><span class="hl-1">, </span><span class="hl-7">stats</span><span class="hl-1">} = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="rendering" class="tsd-anchor-link">Rendering<a href="#rendering" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="usage-2" class="tsd-anchor-link">Usage<a href="#usage-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">ast</span><span class="hl-1">, </span><span class="hl-4">RenderOptions</span><span class="hl-1"> = {});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="examples" class="tsd-anchor-link">Examples<a href="#examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Rendering ast</p>
+<pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><span class="hl-2">@media screen and (min-width: 40em) {</span><br/><span class="hl-2">    .featurette-heading {</span><br/><span class="hl-2">        font-size: 50px;</span><br/><span class="hl-2">    }</span><br/><span class="hl-2">    .a {</span><br/><span class="hl-2">        color: red;</span><br/><span class="hl-2">        width: 3px;</span><br/><span class="hl-2">    }</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">result</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">);</span><br/><br/><span class="hl-5">// print declaration without parents</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">error</span><span class="hl-1">(</span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">.</span><span class="hl-4">chi</span><span class="hl-1">[</span><span class="hl-14">0</span><span class="hl-1">].</span><span class="hl-4">chi</span><span class="hl-1">[</span><span class="hl-14">1</span><span class="hl-1">].</span><span class="hl-4">chi</span><span class="hl-1">[</span><span class="hl-14">1</span><span class="hl-1">], {</span><span class="hl-4">withParents:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}));</span><br/><span class="hl-5">// -&gt; width:3px</span><br/><br/><span class="hl-5">// print declaration with parents</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">.</span><span class="hl-4">chi</span><span class="hl-1">[</span><span class="hl-14">0</span><span class="hl-1">].</span><span class="hl-4">chi</span><span class="hl-1">[</span><span class="hl-14">1</span><span class="hl-1">].</span><span class="hl-4">chi</span><span class="hl-1">[</span><span class="hl-14">1</span><span class="hl-1">], {</span><span class="hl-4">withParents:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">}));</span><br/><span class="hl-5">// -&gt; @media screen and (min-width:40em){.a{width:3px}}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="convert-colors" class="tsd-anchor-link">Convert colors<a href="#convert-colors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">, </span><span class="hl-4">ColorType</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><span class="hl-2">.hsl { color: #b3222280; }</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">result</span><span class="hl-1">: </span><span class="hl-13">TransformResult</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, {</span><br/><span class="hl-1">    </span><span class="hl-4">beautify:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">convertColor:</span><span class="hl-1"> </span><span class="hl-4">ColorType</span><span class="hl-1">.</span><span class="hl-7">SRGB</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">css</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>result</p>
+<pre><code class="css"><span class="hl-15">.hsl</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-0">color</span><span class="hl-1">(</span><span class="hl-16">srgb</span><span class="hl-1"> </span><span class="hl-14">.7019607843137254</span><span class="hl-1"> </span><span class="hl-14">.13333333333333333</span><span class="hl-1"> </span><span class="hl-14">.13333333333333333</span><span class="hl-1">/</span><span class="hl-14">50%</span><span class="hl-1">)</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="merge-similar-rules" class="tsd-anchor-link">Merge similar rules<a href="#merge-similar-rules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>CSS</p>
+<pre><code class="css"><br/><span class="hl-15">.clear</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">width</span><span class="hl-1">: </span><span class="hl-14">0</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">height</span><span class="hl-1">: </span><span class="hl-14">0</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-16">transparent</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.clearfix:before</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">    </span><span class="hl-11">height</span><span class="hl-1">: </span><span class="hl-14">0</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">width</span><span class="hl-1">: </span><span class="hl-14">0</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">result</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>Result</p>
+<pre><code class="css"><span class="hl-15">.clear</span><span class="hl-1">, </span><span class="hl-15">.clearfix:before</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">height</span><span class="hl-1">: </span><span class="hl-14">0</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">width</span><span class="hl-1">: </span><span class="hl-14">0</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.clear</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-16">#0000</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="automatic-css-nesting" class="tsd-anchor-link">Automatic CSS Nesting<a href="#automatic-css-nesting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>CSS</p>
+<pre><code class="javascript"><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">parse</span><span class="hl-1">, </span><span class="hl-7">render</span><span class="hl-1">} = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@tbela99/css-parser/cjs&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><span class="hl-2">table.colortable td {</span><br/><span class="hl-2"> text-align:center;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">table.colortable td.c {</span><br/><span class="hl-2"> text-transform:uppercase;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">table.colortable td:first-child, table.colortable td:first-child+td {</span><br/><span class="hl-2"> border:1px solid black;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">table.colortable th {</span><br/><span class="hl-2"> text-align:center;</span><br/><span class="hl-2"> background:black;</span><br/><span class="hl-2"> color:white;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">result</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, {</span><span class="hl-4">nestingRules:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">}).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}).</span><span class="hl-4">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Result</p>
+<pre><code class="css"><span class="hl-15">table.colortable</span><span class="hl-1"> {</span><br/><span class="hl-1">    &amp; td {</span><br/><span class="hl-1">        </span><span class="hl-11">text-align</span><span class="hl-1">: </span><span class="hl-16">center</span><span class="hl-1">;</span><br/><br/><span class="hl-1">        &amp;.c {</span><br/><span class="hl-1">            </span><span class="hl-11">text-transform</span><span class="hl-1">: </span><span class="hl-16">uppercase</span><br/><span class="hl-1">        }</span><br/><br/><span class="hl-1">        &amp;</span><span class="hl-15">:first-child</span><span class="hl-1">, &amp;</span><span class="hl-15">:first-child</span><span class="hl-1"> + </span><span class="hl-15">td</span><span class="hl-1"> {</span><br/><span class="hl-1">            </span><span class="hl-11">border</span><span class="hl-1">: </span><span class="hl-14">1px</span><span class="hl-1"> </span><span class="hl-16">solid</span><span class="hl-1"> </span><span class="hl-16">#000</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">    &amp; </span><span class="hl-15">th</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-11">text-align</span><span class="hl-1">: </span><span class="hl-16">center</span><span class="hl-1">;</span><br/><span class="hl-1">        </span><span class="hl-11">background</span><span class="hl-1">: </span><span class="hl-16">#000</span><span class="hl-1">;</span><br/><span class="hl-1">        </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-16">#fff</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="css-validation" class="tsd-anchor-link">CSS Validation<a href="#css-validation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>CSS</p>
+<pre><code class="css"><br/><span class="hl-17">#404</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1">, </span><span class="hl-17">#404</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> {</span><br/><span class="hl-1">    --animate-duration: 1s;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-1">.s [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1">]]</span><br/><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1">] {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-6">i</span><span class="hl-1">] {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-11">s</span><span class="hl-1">]</span><br/><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><br/><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-11">b</span><span class="hl-1">]</span><br/><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-11">b</span><span class="hl-1">],{</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><br/><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-11">b</span><span class="hl-1">]</span><br/><span class="hl-1">+ {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-11">b</span><span class="hl-1">]</span><br/><span class="hl-1">+ </span><span class="hl-15">b</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1"> </span><span class="hl-6">i</span><span class="hl-1">] + </span><span class="hl-15">b</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><br/><span class="hl-15">.s</span><span class="hl-1"> [</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">&quot;text&quot;</span><span class="hl-1">())]{</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><span class="hl-17">.s(</span><span class="hl-1">){</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><span class="hl-15">.s:focus</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>with validation enabled</p>
+<pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1"> = {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">, </span><span class="hl-4">validate:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">};</span><br/><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">code</span><span class="hl-1">} = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}));</span><br/><span class="hl-5">//</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-4">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="css"><span class="hl-15">.s:is</span><span class="hl-1">([</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-6">i</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-11">s</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-6">i</span><span class="hl-1">]+</span><span class="hl-15">b</span><span class="hl-1">,</span><span class="hl-15">:focus</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>with validation disabled</p>
+<pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1"> = {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">, </span><span class="hl-4">validate:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">};</span><br/><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">code</span><span class="hl-1">} = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}));</span><br/><span class="hl-5">//</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-4">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="css"><span class="hl-15">.s:is</span><span class="hl-1">([</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-6">i</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-11">s</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-11">b</span><span class="hl-1">],[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-11">b</span><span class="hl-1">]+</span><span class="hl-15">b</span><span class="hl-1">,[</span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-2">text</span><span class="hl-1"> </span><span class="hl-6">i</span><span class="hl-1">]+</span><span class="hl-15">b</span><span class="hl-1">,</span><span class="hl-15">:focus</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-11">--animate-duration</span><span class="hl-1">: </span><span class="hl-14">1s</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="nested-css-expansion" class="tsd-anchor-link">Nested CSS Expansion<a href="#nested-css-expansion" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>CSS</p>
+<pre><code class="css"><span class="hl-15">table.colortable</span><span class="hl-1"> {</span><br/><span class="hl-1">    &amp; td {</span><br/><span class="hl-1">        </span><span class="hl-11">text-align</span><span class="hl-1">: </span><span class="hl-16">center</span><span class="hl-1">;</span><br/><br/><span class="hl-1">        &amp;.c {</span><br/><span class="hl-1">            </span><span class="hl-11">text-transform</span><span class="hl-1">: </span><span class="hl-16">uppercase</span><br/><span class="hl-1">        }</span><br/><br/><span class="hl-1">        &amp;</span><span class="hl-15">:first-child</span><span class="hl-1">, &amp;</span><span class="hl-15">:first-child</span><span class="hl-1"> + </span><span class="hl-15">td</span><span class="hl-1"> {</span><br/><span class="hl-1">            </span><span class="hl-11">border</span><span class="hl-1">: </span><span class="hl-14">1px</span><span class="hl-1"> </span><span class="hl-16">solid</span><span class="hl-1"> </span><span class="hl-16">#000</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><br/><span class="hl-1">    &amp; </span><span class="hl-15">th</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-11">text-align</span><span class="hl-1">: </span><span class="hl-16">center</span><span class="hl-1">;</span><br/><span class="hl-1">        </span><span class="hl-11">background</span><span class="hl-1">: </span><span class="hl-16">#000</span><span class="hl-1">;</span><br/><span class="hl-1">        </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-16">#fff</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Javascript</p>
+<pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1"> = {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">};</span><br/><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">code</span><span class="hl-1">} = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">, </span><span class="hl-4">expandNestingRules:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">}));</span><br/><span class="hl-5">//</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-4">code</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Result</p>
+<pre><code class="css"><br/><span class="hl-15">table.colortable</span><span class="hl-1"> </span><span class="hl-15">td</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">text-align</span><span class="hl-1">: </span><span class="hl-16">center</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">table.colortable</span><span class="hl-1"> </span><span class="hl-15">td.c</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">text-transform</span><span class="hl-1">: </span><span class="hl-16">uppercase</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">table.colortable</span><span class="hl-1"> </span><span class="hl-15">td:first-child</span><span class="hl-1">, </span><span class="hl-15">table.colortable</span><span class="hl-1"> </span><span class="hl-15">td:first-child</span><span class="hl-1"> + </span><span class="hl-15">td</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">border</span><span class="hl-1">: </span><span class="hl-14">1px</span><span class="hl-1"> </span><span class="hl-16">solid</span><span class="hl-1"> </span><span class="hl-16">black</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">table.colortable</span><span class="hl-1"> </span><span class="hl-15">th</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">text-align</span><span class="hl-1">: </span><span class="hl-16">center</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">background</span><span class="hl-1">: </span><span class="hl-16">black</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-16">white</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="calc-resolution" class="tsd-anchor-link">Calc() resolution<a href="#calc-resolution" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><span class="hl-2">a {</span><br/><br/><span class="hl-2">width: calc(100px * log(625, 5));</span><br/><span class="hl-2">}</span><br/><span class="hl-2">.foo-bar {</span><br/><span class="hl-2">    width: calc(100px * 2);</span><br/><span class="hl-2">    height: calc(((75.37% - 63.5px) - 900px) + (2 * 100px));</span><br/><span class="hl-2">    max-width: calc(3.5rem + calc(var(--bs-border-width) * 2));</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">prettyPrint</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}).</span><span class="hl-4">code</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>result</p>
+<pre><code class="css"><span class="hl-15">a</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">width</span><span class="hl-1">: </span><span class="hl-14">400px</span><span class="hl-1">;</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-15">.foo-bar</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">width</span><span class="hl-1">: </span><span class="hl-14">200px</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">height</span><span class="hl-1">: </span><span class="hl-0">calc</span><span class="hl-1">(</span><span class="hl-14">75.37%</span><span class="hl-1"> - </span><span class="hl-14">763.5px</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-11">max-width</span><span class="hl-1">: </span><span class="hl-0">calc</span><span class="hl-1">(</span><span class="hl-14">3.5rem</span><span class="hl-1"> + </span><span class="hl-0">var</span><span class="hl-1">(</span><span class="hl-11">--bs-border-width</span><span class="hl-1">) * </span><span class="hl-14">2</span><span class="hl-1">)</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="css-variable-inlining" class="tsd-anchor-link">CSS variable inlining<a href="#css-variable-inlining" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:root {</span><br/><br/><span class="hl-2">--preferred-width: 20px;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">.foo-bar {</span><br/><br/><span class="hl-2">    width: calc(calc(var(--preferred-width) + 1px) / 3 + 5px);</span><br/><span class="hl-2">    height: calc(100% / 4);}</span><br/><span class="hl-2">`</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">prettyPrint</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, {</span><span class="hl-4">inlineCssVariables:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">}).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}).</span><span class="hl-4">code</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>result</p>
+<pre><code class="css"><span class="hl-15">.foo-bar</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">width</span><span class="hl-1">: </span><span class="hl-14">12px</span><span class="hl-1">;</span><br/><span class="hl-1">    </span><span class="hl-11">height</span><span class="hl-1">: </span><span class="hl-14">25%</span><br/><span class="hl-1">}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="css-variable-inlining-and-relative-color" class="tsd-anchor-link">CSS variable inlining and relative color<a href="#css-variable-inlining-and-relative-color" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">:root {</span><br/><span class="hl-2">--color: green;</span><br/><span class="hl-2">}</span><br/><span class="hl-2">._19_u :focus {</span><br/><span class="hl-2">    color:  hsl(from var(--color) calc(h * 2) s l);</span><br/><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">prettyPrint</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, {</span><span class="hl-4">inlineCssVariables:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">}).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}).</span><span class="hl-4">code</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>result</p>
+<pre><code class="css"><span class="hl-15">._19_u</span><span class="hl-1"> </span><span class="hl-15">:focus</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">color</span><span class="hl-1">: </span><span class="hl-16">navy</span><br/><span class="hl-1">}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="css-variable-inlining-and-relative-color-1" class="tsd-anchor-link">CSS variable inlining and relative color<a href="#css-variable-inlining-and-relative-color-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="javascript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parse</span><span class="hl-1">, </span><span class="hl-4">render</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">html { --bluegreen:  oklab(54.3% -22.5% -5%); }</span><br/><span class="hl-2">.overlay {</span><br/><span class="hl-2">  background:  oklab(from var(--bluegreen) calc(1.0 - l) calc(a * 0.8) b);</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">prettyPrint</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, {</span><span class="hl-4">inlineCssVariables:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">}).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">.</span><span class="hl-4">ast</span><span class="hl-1">, {</span><span class="hl-4">minify:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">}).</span><span class="hl-4">code</span><span class="hl-1">);</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<p>result</p>
+<pre><code class="css"><span class="hl-15">.overlay</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-11">background</span><span class="hl-1">: </span><span class="hl-16">#0c6464</span><br/><span class="hl-1">}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h1 id="node-walker" class="tsd-anchor-link">Node Walker<a href="#node-walker" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1><pre><code class="javascript"><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">walk</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tbela99/css-parser&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">for</span><span class="hl-1"> (</span><span class="hl-6">const</span><span class="hl-1"> {</span><span class="hl-7">node</span><span class="hl-1">, </span><span class="hl-7">parent</span><span class="hl-1">, </span><span class="hl-7">root</span><span class="hl-1">} </span><span class="hl-6">of</span><span class="hl-1"> </span><span class="hl-0">walk</span><span class="hl-1">(</span><span class="hl-4">ast</span><span class="hl-1">)) {</span><br/><br/><span class="hl-1">    </span><span class="hl-5">// do something</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="ast" class="tsd-anchor-link">AST<a href="#ast" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="comment" class="tsd-anchor-link">Comment<a href="#comment" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>typ: number</li>
+<li>val: string, the comment</li>
+</ul>
+<h3 id="declaration" class="tsd-anchor-link">Declaration<a href="#declaration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>typ: number</li>
+<li>nam: string, declaration name</li>
+<li>val: array of tokens</li>
+</ul>
+<h3 id="rule" class="tsd-anchor-link">Rule<a href="#rule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>typ: number</li>
+<li>sel: string, css selector</li>
+<li>chi: array of children</li>
+</ul>
+<h3 id="atrule" class="tsd-anchor-link">AtRule<a href="#atrule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>typ: number</li>
+<li>nam: string. AtRule name</li>
+<li>val: rule prelude</li>
+</ul>
+<h3 id="atrulestylesheet" class="tsd-anchor-link">AtRuleStyleSheet<a href="#atrulestylesheet" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>typ: number</li>
+<li>chi: array of children</li>
+</ul>
+<h3 id="keyframerule" class="tsd-anchor-link">KeyFrameRule<a href="#keyframerule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>typ: number</li>
+<li>sel: string, css selector</li>
+<li>chi: array of children</li>
+</ul>
+<h2 id="sourcemap" class="tsd-anchor-link">Sourcemap<a href="#sourcemap" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>[x] sourcemap generation</li>
+</ul>
+<h2 id="minification" class="tsd-anchor-link">Minification<a href="#minification" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>[x] minify keyframes</li>
+<li>[x] minify transform functions</li>
+<li>[x] evaluate math functions calc(), clamp(), min(), max(), round(), mod(), rem(), sin(), cos(), tan(), asin(),
+acos(), atan(), atan2(), pow(), sqrt(), hypot(), log(), exp(), abs(), sign()</li>
+<li>[x] minify colors</li>
+<li>[x] minify numbers and Dimensions tokens</li>
+<li>[x] multi-pass minification</li>
+<li>[x] inline css variables</li>
+<li>[x] merge identical rules</li>
+<li>[x] merge adjacent rules</li>
+<li>[x] compute shorthand: see the list below</li>
+<li>[x] remove redundant declarations</li>
+<li>[x] conditionally unwrap :is()</li>
+<li>[x] automatic css nesting</li>
+<li>[x] automatically wrap selectors using :is()</li>
+<li>[x] avoid reparsing (declarations, selectors, at-rule)</li>
+<li>[x] node and browser versions</li>
+<li>[x] decode and replace utf-8 escape sequence</li>
+<li>[x] experimental CSS prefix removal</li>
+</ul>
+<h2 id="computed-shorthands-properties" class="tsd-anchor-link">Computed shorthands properties<a href="#computed-shorthands-properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>[ ] ~all~</li>
+<li>[x] animation</li>
+<li>[x] background</li>
+<li>[x] border</li>
+<li>[ ] border-block-end</li>
+<li>[ ] border-block-start</li>
+<li>[x] border-bottom</li>
+<li>[x] border-color</li>
+<li>[ ] border-image</li>
+<li>[ ] border-inline-end</li>
+<li>[ ] border-inline-start</li>
+<li>[x] border-left</li>
+<li>[x] border-radius</li>
+<li>[x] border-right</li>
+<li>[x] border-style</li>
+<li>[x] border-top</li>
+<li>[x] border-width</li>
+<li>[x] column-rule</li>
+<li>[x] columns</li>
+<li>[x] container</li>
+<li>[ ] contain-intrinsic-size</li>
+<li>[x] flex</li>
+<li>[x] flex-flow</li>
+<li>[x] font</li>
+<li>[ ] font-synthesis</li>
+<li>[ ] font-variant</li>
+<li>[x] gap</li>
+<li>[ ] grid</li>
+<li>[ ] grid-area</li>
+<li>[ ] grid-column</li>
+<li>[ ] grid-row</li>
+<li>[ ] grid-template</li>
+<li>[x] inset</li>
+<li>[x] list-style</li>
+<li>[x] margin</li>
+<li>[ ] mask</li>
+<li>[ ] offset</li>
+<li>[x] outline</li>
+<li>[x] overflow</li>
+<li>[x] padding</li>
+<li>[ ] place-content</li>
+<li>[ ] place-items</li>
+<li>[ ] place-self</li>
+<li>[ ] scroll-margin</li>
+<li>[ ] scroll-padding</li>
+<li>[ ] scroll-timeline</li>
+<li>[x] text-decoration</li>
+<li>[x] text-emphasis</li>
+<li>[x] transition</li>
+</ul>
+<h2 id="performance" class="tsd-anchor-link">Performance<a href="#performance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>[x] flatten @import</li>
+</ul>
+<h2 id="node-transformation" class="tsd-anchor-link">Node Transformation<a href="#node-transformation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Ast can be transformed using node visitors</p>
+<h3 id="exemple-1-declaration" class="tsd-anchor-link">Exemple 1: Declaration<a href="#exemple-1-declaration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>the visitor is called for any declaration encountered</p>
+<pre><code class="typescript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">AstDeclaration</span><span class="hl-1">, </span><span class="hl-4">ParserOptions</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/@types&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1">: </span><span class="hl-13">ParserOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-4">visitor:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">        </span><span class="hl-0">Declaration</span><span class="hl-4">:</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">: </span><span class="hl-13">AstDeclaration</span><span class="hl-1">) </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">            </span><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">.</span><span class="hl-4">nam</span><span class="hl-1"> == </span><span class="hl-2">&#39;-webkit-transform&#39;</span><span class="hl-1">) {</span><br/><br/><span class="hl-1">                </span><span class="hl-4">node</span><span class="hl-1">.</span><span class="hl-4">nam</span><span class="hl-1"> = </span><span class="hl-2">&#39;transform&#39;</span><br/><span class="hl-1">            }</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">.foo {</span><br/><span class="hl-2">    -webkit-transform: scale(calc(100 * 2/ 15));</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">));</span><br/><br/><span class="hl-5">// .foo{transform:scale(calc(40/3))}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="exemple-2-declaration" class="tsd-anchor-link">Exemple 2: Declaration<a href="#exemple-2-declaration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>the visitor is called only on 'height' declarations</p>
+<pre><code class="typescript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">AstDeclaration</span><span class="hl-1">, </span><span class="hl-4">LengthToken</span><span class="hl-1">, </span><span class="hl-4">ParserOptions</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/@types&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">EnumToken</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/lib&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/node&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1">: </span><span class="hl-13">ParserOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-4">visitor:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">        </span><span class="hl-4">Declaration:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">            </span><span class="hl-5">// called only for height declaration</span><br/><span class="hl-1">            </span><span class="hl-0">height</span><span class="hl-4">:</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">: </span><span class="hl-13">AstDeclaration</span><span class="hl-1">): </span><span class="hl-13">AstDeclaration</span><span class="hl-1">[] </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><br/><br/><span class="hl-1">                </span><span class="hl-3">return</span><span class="hl-1"> [</span><br/><span class="hl-1">                    </span><span class="hl-4">node</span><span class="hl-1">,</span><br/><span class="hl-1">                    {</span><br/><br/><span class="hl-1">                        </span><span class="hl-4">typ:</span><span class="hl-1"> </span><span class="hl-4">EnumToken</span><span class="hl-1">.</span><span class="hl-4">DeclarationNodeType</span><span class="hl-1">,</span><br/><span class="hl-1">                        </span><span class="hl-4">nam:</span><span class="hl-1"> </span><span class="hl-2">&#39;width&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">                        </span><span class="hl-4">val:</span><span class="hl-1"> [</span><br/><span class="hl-1">                            &lt;</span><span class="hl-13">LengthToken</span><span class="hl-1">&gt;{</span><br/><span class="hl-1">                                </span><span class="hl-4">typ:</span><span class="hl-1"> </span><span class="hl-4">EnumToken</span><span class="hl-1">.</span><span class="hl-4">Length</span><span class="hl-1">,</span><br/><span class="hl-1">                                </span><span class="hl-4">val:</span><span class="hl-1"> </span><span class="hl-2">&#39;3&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">                                </span><span class="hl-4">unit:</span><span class="hl-1"> </span><span class="hl-2">&#39;px&#39;</span><br/><span class="hl-1">                            }</span><br/><span class="hl-1">                        ]</span><br/><span class="hl-1">                    }</span><br/><span class="hl-1">                ];</span><br/><span class="hl-1">            }</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">.foo {</span><br/><span class="hl-2">    height: calc(100px * 2/ 15);</span><br/><span class="hl-2">}</span><br/><span class="hl-2">.selector {</span><br/><span class="hl-2">color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180)) </span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">));</span><br/><br/><span class="hl-5">// .foo{height:calc(40px/3);width:3px}.selector{color:#0880b0}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="exemple-3-at-rule" class="tsd-anchor-link">Exemple 3: At-Rule<a href="#exemple-3-at-rule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>the visitor is called on any at-rule</p>
+<pre><code class="typescript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">AstAtRule</span><span class="hl-1">, </span><span class="hl-4">ParserOptions</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/@types&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/node&quot;</span><span class="hl-1">;</span><br/><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1">: </span><span class="hl-13">ParserOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-4">visitor:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">        </span><span class="hl-0">AtRule</span><span class="hl-4">:</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">: </span><span class="hl-13">AstAtRule</span><span class="hl-1">): </span><span class="hl-13">AstAtRule</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">            </span><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">.</span><span class="hl-4">nam</span><span class="hl-1"> == </span><span class="hl-2">&#39;media&#39;</span><span class="hl-1">) {</span><br/><br/><span class="hl-1">                </span><span class="hl-3">return</span><span class="hl-1"> {...</span><span class="hl-4">node</span><span class="hl-1">, </span><span class="hl-4">val:</span><span class="hl-1"> </span><span class="hl-2">&#39;all&#39;</span><span class="hl-1">}</span><br/><span class="hl-1">            }</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">@media screen {</span><br/><span class="hl-2">       </span><br/><span class="hl-2">    .foo {</span><br/><br/><span class="hl-2">            height: calc(100px * 2/ 15);    </span><br/><span class="hl-2">    } </span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">));</span><br/><br/><span class="hl-5">// .foo{height:calc(40px/3)}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="exemple-4-at-rule" class="tsd-anchor-link">Exemple 4: At-Rule<a href="#exemple-4-at-rule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>the visitor is called only for at-rule media</p>
+<pre><code class="typescript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">AstAtRule</span><span class="hl-1">, </span><span class="hl-4">ParserOptions</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/@types&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/node&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1">: </span><span class="hl-13">ParserOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-4">visitor:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">        </span><span class="hl-4">AtRule:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">            </span><span class="hl-0">media</span><span class="hl-4">:</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">: </span><span class="hl-13">AstAtRule</span><span class="hl-1">): </span><span class="hl-13">AstAtRule</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">                </span><span class="hl-3">return</span><span class="hl-1"> {...</span><span class="hl-4">node</span><span class="hl-1">, </span><span class="hl-4">val:</span><span class="hl-1"> </span><span class="hl-2">&#39;all&#39;</span><span class="hl-1">}</span><br/><span class="hl-1">            }</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">@media screen {</span><br/><span class="hl-2">       </span><br/><span class="hl-2">    .foo {</span><br/><br/><span class="hl-2">            height: calc(100px * 2/ 15);    </span><br/><span class="hl-2">    } </span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">));</span><br/><br/><span class="hl-5">// .foo{height:calc(40px/3)}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="exemple-5-rule" class="tsd-anchor-link">Exemple 5: Rule<a href="#exemple-5-rule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>the visitor is called on any Rule</p>
+<pre><code class="typescript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">AstAtRule</span><span class="hl-1">, </span><span class="hl-4">ParserOptions</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/@types&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/node&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1">: </span><span class="hl-13">ParserOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-4">visitor:</span><span class="hl-1"> {</span><br/><br/><br/><span class="hl-1">        </span><span class="hl-0">Rule</span><span class="hl-1">(</span><span class="hl-4">node</span><span class="hl-1">: </span><span class="hl-13">AstRule</span><span class="hl-1">): </span><span class="hl-13">AstRule</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">            </span><span class="hl-3">return</span><span class="hl-1"> {...</span><span class="hl-4">node</span><span class="hl-1">, </span><span class="hl-4">sel:</span><span class="hl-1"> </span><span class="hl-2">&#39;.foo,.bar,.fubar&#39;</span><span class="hl-1">};</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">    .foo {</span><br/><br/><span class="hl-2">            height: calc(100px * 2/ 15);    </span><br/><span class="hl-2">    } </span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">));</span><br/><br/><span class="hl-5">// .foo,.bar,.fubar{height:calc(40px/3)}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="exemple-6-rule" class="tsd-anchor-link">Exemple 6: Rule<a href="#exemple-6-rule" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Adding declarations to any rule</p>
+<pre><code class="typescript"><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">transform</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/node&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">AstRule</span><span class="hl-1">, </span><span class="hl-4">ParserOptions</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/@types&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> {</span><span class="hl-4">parseDeclarations</span><span class="hl-1">} </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/lib&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1">: </span><span class="hl-13">ParserOptions</span><span class="hl-1"> = {</span><br/><br/><span class="hl-1">    </span><span class="hl-4">removeEmpty:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">visitor:</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">        </span><span class="hl-0">Rule</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-6">async</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">: </span><span class="hl-13">AstRule</span><span class="hl-1">): </span><span class="hl-13">Promise</span><span class="hl-1">&lt;</span><span class="hl-13">AstRule</span><span class="hl-1"> | </span><span class="hl-13">null</span><span class="hl-1">&gt; </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">            </span><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-4">node</span><span class="hl-1">.</span><span class="hl-4">sel</span><span class="hl-1"> == </span><span class="hl-2">&#39;.foo&#39;</span><span class="hl-1">) {</span><br/><br/><span class="hl-1">                </span><span class="hl-4">node</span><span class="hl-1">.</span><span class="hl-4">chi</span><span class="hl-1">.</span><span class="hl-0">push</span><span class="hl-1">(...</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">parseDeclarations</span><span class="hl-1">(</span><span class="hl-2">&#39;width: 3px&#39;</span><span class="hl-1">));</span><br/><span class="hl-1">                </span><span class="hl-3">return</span><span class="hl-1"> </span><span class="hl-4">node</span><span class="hl-1">;</span><br/><span class="hl-1">            }</span><br/><br/><span class="hl-1">            </span><span class="hl-3">return</span><span class="hl-1"> </span><span class="hl-6">null</span><span class="hl-1">;</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">css</span><span class="hl-1"> = </span><span class="hl-2">`</span><br/><br/><span class="hl-2">.foo {</span><br/><span class="hl-2">}</span><br/><span class="hl-2">`</span><span class="hl-1">;</span><br/><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">debug</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">transform</span><span class="hl-1">(</span><span class="hl-4">css</span><span class="hl-1">, </span><span class="hl-4">options</span><span class="hl-1">));</span><br/><br/><span class="hl-5">// .foo{width:3px}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#css-parser"><span>css-<wbr/>parser</span></a><ul><li><a href="#installation"><span>Installation</span></a></li><li><a href="#features"><span>Features</span></a></li><li><a href="#playground"><span>Playground</span></a></li><li><a href="#exports"><span>Exports</span></a></li><li><ul><li><a href="#node-exports"><span>Node exports</span></a></li><li><a href="#deno-exports"><span>Deno exports</span></a></li><li><a href="#web-export"><span>Web export</span></a></li></ul></li><li><a href="#transform"><span>Transform</span></a></li><li><ul><li><a href="#usage"><span>Usage</span></a></li><li><a href="#example"><span>Example</span></a></li><li><a href="#example-1"><span>Example</span></a></li><li><a href="#transformoptions"><span>Transform<wbr/>Options</span></a></li><li><ul><li><a href="#parseoptions"><span>Parse<wbr/>Options</span></a></li><li><a href="#renderoptions"><span>Render<wbr/>Options</span></a></li></ul></li></ul></li><li><a href="#parsing"><span>Parsing</span></a></li><li><ul><li><a href="#usage-1"><span>Usage</span></a></li><li><a href="#example-2"><span>Example</span></a></li></ul></li><li><a href="#rendering"><span>Rendering</span></a></li><li><ul><li><a href="#usage-2"><span>Usage</span></a></li><li><a href="#examples"><span>Examples</span></a></li><li><a href="#convert-colors"><span>Convert colors</span></a></li><li><a href="#merge-similar-rules"><span>Merge similar rules</span></a></li><li><a href="#automatic-css-nesting"><span>Automatic <wbr/>CSS <wbr/>Nesting</span></a></li><li><a href="#css-validation"><span>CSS <wbr/>Validation</span></a></li><li><a href="#nested-css-expansion"><span>Nested <wbr/>CSS <wbr/>Expansion</span></a></li><li><a href="#calc-resolution"><span>Calc() resolution</span></a></li><li><a href="#css-variable-inlining"><span>CSS variable inlining</span></a></li><li><a href="#css-variable-inlining-and-relative-color"><span>CSS variable inlining and relative color</span></a></li><li><a href="#css-variable-inlining-and-relative-color-1"><span>CSS variable inlining and relative color</span></a></li></ul></li></ul><a href="#node-walker"><span>Node <wbr/>Walker</span></a><ul><li><a href="#ast"><span>AST</span></a></li><li><ul><li><a href="#comment"><span>Comment</span></a></li><li><a href="#declaration"><span>Declaration</span></a></li><li><a href="#rule"><span>Rule</span></a></li><li><a href="#atrule"><span>At<wbr/>Rule</span></a></li><li><a href="#atrulestylesheet"><span>At<wbr/>Rule<wbr/>Style<wbr/>Sheet</span></a></li><li><a href="#keyframerule"><span>Key<wbr/>Frame<wbr/>Rule</span></a></li></ul></li><li><a href="#sourcemap"><span>Sourcemap</span></a></li><li><a href="#minification"><span>Minification</span></a></li><li><a href="#computed-shorthands-properties"><span>Computed shorthands properties</span></a></li><li><a href="#performance"><span>Performance</span></a></li><li><a href="#node-transformation"><span>Node <wbr/>Transformation</span></a></li><li><ul><li><a href="#exemple-1-declaration"><span>Exemple 1: <wbr/>Declaration</span></a></li><li><a href="#exemple-2-declaration"><span>Exemple 2: <wbr/>Declaration</span></a></li><li><a href="#exemple-3-at-rule"><span>Exemple 3: <wbr/>At-<wbr/>Rule</span></a></li><li><a href="#exemple-4-at-rule"><span>Exemple 4: <wbr/>At-<wbr/>Rule</span></a></li><li><a href="#exemple-5-rule"><span>Exemple 5: <wbr/>Rule</span></a></li><li><a href="#exemple-6-rule"><span>Exemple 6: <wbr/>Rule</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@tbela99/css-parser</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div><script>
+          try {
+            const generateLinkElement = document.querySelector(".tsd-generator a");
+            const link = document.createElement("a");
+            Object.assign(link, {
+              href: "https://github.com/dmnsgn/typedoc-material-theme",
+              target: "_blank",
+              rel: "noreferrer",
+              innerText: "typedoc-material-theme."
+            });
+            generateLinkElement.insertAdjacentElement("afterend", link);
+            generateLinkElement.insertAdjacentText("afterend", " with ");
+          } catch (error) {
+
+          }
+        </script></body></html>

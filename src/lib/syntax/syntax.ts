@@ -1,7 +1,6 @@
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
 
-import {colorsFunc} from "../renderer/index.ts";
 import {COLORS_NAMES} from "./color/index.ts";
 import type {
     AngleToken,
@@ -16,7 +15,7 @@ import type {
     Token
 } from "../../@types/index.d.ts";
 import {ColorType, EnumToken, WalkerOptionEnum, walkValues} from "../ast/index.ts";
-import {funcLike} from "./color/utils/index.ts";
+import {colorsFunc, funcLike} from "./color/utils/index.ts";
 import {buildExpression} from "../ast/math/index.ts";
 
 // '\\'

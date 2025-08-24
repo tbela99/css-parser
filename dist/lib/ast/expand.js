@@ -8,7 +8,7 @@ import { renderToken } from '../renderer/render.js';
 import '../syntax/color/utils/constants.js';
 
 /**
- * expand nested css ast
+ * expand css nesting ast nodes
  * @param ast
  */
 function expand(ast) {

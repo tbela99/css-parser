@@ -18,7 +18,7 @@ function okLabDistance(okLab1, okLab2) {
     return Math.sqrt(Math.pow(okLab1[0] - okLab2[0], 2) + Math.pow(okLab1[1] - okLab2[1], 2) + Math.pow(okLab1[2] - okLab2[2], 2));
 }
 /**
- * Check if two colors are close.
+ * Check if two colors are close in okLab space.
  * @param color1
  * @param color2
  * @param threshold

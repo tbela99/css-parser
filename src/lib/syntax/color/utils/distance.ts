@@ -14,7 +14,7 @@ export function okLabDistance(okLab1: [number, number, number], okLab2: [number,
 }
 
 /**
- * Check if two colors are close.
+ * Check if two colors are close in okLab space.
  * @param color1
  * @param color2
  * @param threshold

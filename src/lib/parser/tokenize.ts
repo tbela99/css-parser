@@ -1,4 +1,4 @@
-import type {Position, TokenizeResult} from "../../@types/index.d.ts";
+import type {ParseInfo, TokenizeResult} from "../../@types/index.d.ts";
 import {EnumToken} from "../ast/index.ts";
 import {isDigit, isIdent, isIdentStart, isNewLine, isNonPrintable, isWhiteSpace} from "../syntax/index.ts";
 
@@ -34,20 +34,11 @@ const enum TokenMap {
     AT = 64, // '@', AT
 }
 
-declare type InputStream = string;
-
-declare interface ParseInfo {
-
-    stream: InputStream;
-    position: Position;
-    currentPosition: Position;
-}
-
 function consumeWhiteSpace(parseInfo: ParseInfo): number {
 
     let count: number = 0;
 
-    while (isWhiteSpace(parseInfo.stream.charAt(count + parseInfo.currentPosition.ind + 1).charCodeAt(0))) {
+    while (isWhiteSpace(parseInfo.stream.charCodeAt(count + parseInfo.currentPosition.ind + 1))) {
 
         count++;
     }
@@ -232,19 +223,17 @@ function next(parseInfo: ParseInfo, count: number = 1): string {
 
 /**
  * tokenize css string
- * @param stream
+ * @param parseInfo
+ * @param yieldEOFToken
  */
-export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
-
-    const parseInfo: ParseInfo = {
-        stream,
-        position: {ind: 0, lin: 1, col: 1},
-        currentPosition: {ind: -1, lin: 1, col: 0}
-    };
+export function* tokenize(parseInfo: ParseInfo, yieldEOFToken: boolean = true): Generator<TokenizeResult> {
 
     let value: string;
-    let buffer: string = '';
+    let buffer: string = parseInfo.buffer;
     let charCode: number;
+
+    parseInfo.buffer = '';
+
     while (value = next(parseInfo)) {
 
         charCode = value.charCodeAt(0);
@@ -903,9 +892,46 @@ export function* tokenize(stream: InputStream): Generator<TokenizeResult> {
         }
     }
 
-    if (buffer.length > 0) {
-        yield pushToken(buffer, parseInfo);
+    if (yieldEOFToken) {
+
+        if (buffer.length > 0) {
+            yield pushToken(buffer, parseInfo);
+        }
+
+        yield pushToken('', parseInfo, EnumToken.EOFTokenType);
     }
 
-    yield pushToken('', parseInfo, EnumToken.EOFTokenType);
+    else {
+
+        parseInfo.buffer = buffer;
+    }
+}
+
+/**
+ * tokenize css stream
+ * @param input
+ */
+export async function* tokenizeStream(input: ReadableStream): AsyncGenerator<TokenizeResult> {
+
+    const parseInfo: ParseInfo = {
+        stream: '',
+        buffer: '',
+        position: {ind: 0, lin: 1, col: 1},
+        currentPosition: {ind: -1, lin: 1, col: 0}
+    };
+
+    const decoder = new TextDecoder('utf-8');
+    const reader = input.getReader();
+
+    while (true) {
+
+        const {done, value} = await reader.read();
+
+        parseInfo.stream += decoder.decode(value, {stream: true});
+        yield *tokenize(parseInfo, done);
+
+        if (done) {
+            break;
+        }
+    }
 }

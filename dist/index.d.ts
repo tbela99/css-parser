@@ -1,5 +1,5 @@
 /**
- * validation level enum
+ * enum of validation levels
  */
 declare enum ValidationLevel {
     /**
@@ -16,134 +16,500 @@ declare enum ValidationLevel {
     All = 2
 }
 /**
- * token types enum
+ * enum of all token types
  */
 declare enum EnumToken {
+    /**
+     * comment token
+     */
     CommentTokenType = 0,
+    /**
+     * cdata section token
+     */
     CDOCOMMTokenType = 1,
+    /**
+     * style sheet node type
+     */
     StyleSheetNodeType = 2,
+    /**
+     * at-rule node type
+     */
     AtRuleNodeType = 3,
+    /**
+     * rule node type
+     */
     RuleNodeType = 4,
+    /**
+     * declaration node type
+     */
     DeclarationNodeType = 5,
+    /**
+     * literal token type
+     */
     LiteralTokenType = 6,
+    /**
+     * identifier token type
+     */
     IdenTokenType = 7,
+    /**
+     * dashed identifier token type
+     */
     DashedIdenTokenType = 8,
+    /**
+     * comma token type
+     */
     CommaTokenType = 9,
+    /**
+     * colon token type
+     */
     ColonTokenType = 10,
+    /**
+     * semicolon token type
+     */
     SemiColonTokenType = 11,
+    /**
+     * number token type
+     */
     NumberTokenType = 12,
+    /**
+     * at-rule token type
+     */
     AtRuleTokenType = 13,
+    /**
+     * percentage token type
+     */
     PercentageTokenType = 14,
+    /**
+     * function token type
+     */
     FunctionTokenType = 15,
+    /**
+     * timeline function token type
+     */
     TimelineFunctionTokenType = 16,
+    /**
+     * timing function token type
+     */
     TimingFunctionTokenType = 17,
+    /**
+     * url function token type
+     */
     UrlFunctionTokenType = 18,
+    /**
+     * image function token type
+     */
     ImageFunctionTokenType = 19,
+    /**
+     * string token type
+     */
     StringTokenType = 20,
+    /**
+     * unclosed string token type
+     */
     UnclosedStringTokenType = 21,
+    /**
+     * dimension token type
+     */
     DimensionTokenType = 22,
+    /**
+     * length token type
+     */
     LengthTokenType = 23,
+    /**
+     * angle token type
+     */
     AngleTokenType = 24,
+    /**
+     * time token type
+     */
     TimeTokenType = 25,
+    /**
+     * frequency token type
+     */
     FrequencyTokenType = 26,
+    /**
+     * resolution token type
+     */
     ResolutionTokenType = 27,
+    /**
+     * hash token type
+     */
     HashTokenType = 28,
+    /**
+     * block start token type
+     */
     BlockStartTokenType = 29,
+    /**
+     * block end token type
+     */
     BlockEndTokenType = 30,
+    /**
+     * attribute start token type
+     */
     AttrStartTokenType = 31,
+    /**
+     * attribute end token type
+     */
     AttrEndTokenType = 32,
+    /**
+     * start parentheses token type
+     */
     StartParensTokenType = 33,
+    /**
+     * end parentheses token type
+     */
     EndParensTokenType = 34,
+    /**
+     * parentheses token type
+     */
     ParensTokenType = 35,
+    /**
+     * whitespace token type
+     */
     WhitespaceTokenType = 36,
+    /**
+     * include match token type
+     */
     IncludeMatchTokenType = 37,
+    /**
+     * dash match token type
+     */
     DashMatchTokenType = 38,
+    /**
+     * equal match token type
+     */
     EqualMatchTokenType = 39,
+    /**
+     * less than token type
+     */
     LtTokenType = 40,
+    /**
+     * less than or equal to token type
+     */
     LteTokenType = 41,
+    /**
+     * greater than token type
+     */
     GtTokenType = 42,
+    /**
+     * greater than or equal to token type
+     */
     GteTokenType = 43,
+    /**
+     * pseudo-class token type
+     */
     PseudoClassTokenType = 44,
+    /**
+     * pseudo-class function token type
+     */
     PseudoClassFuncTokenType = 45,
+    /**
+     * delimiter token type
+     */
     DelimTokenType = 46,
+    /**
+     * URL token type
+     */
     UrlTokenTokenType = 47,
+    /**
+     * end of file token type
+     */
     EOFTokenType = 48,
+    /**
+     * important token type
+     */
     ImportantTokenType = 49,
+    /**
+     * color token type
+     */
     ColorTokenType = 50,
+    /**
+     * attribute token type
+     */
     AttrTokenType = 51,
+    /**
+     * bad comment token type
+     */
     BadCommentTokenType = 52,
+    /**
+     * bad cdo token type
+     */
     BadCdoTokenType = 53,
+    /**
+     * bad URL token type
+     */
     BadUrlTokenType = 54,
+    /**
+     * bad string token type
+     */
     BadStringTokenType = 55,
+    /**
+     * binary expression token type
+     */
     BinaryExpressionTokenType = 56,
+    /**
+     * unary expression token type
+     */
     UnaryExpressionTokenType = 57,
+    /**
+     * flex token type
+     */
     FlexTokenType = 58,
+    /**
+     *  token list token type
+     */
     ListToken = 59,
+    /**
+     * addition token type
+     */
     Add = 60,
+    /**
+     * multiplication token type
+     */
     Mul = 61,
+    /**
+     * division token type
+     */
     Div = 62,
+    /**
+     * subtraction token type
+     */
     Sub = 63,
+    /**
+     * column combinator token type
+     */
     ColumnCombinatorTokenType = 64,
+    /**
+     * contain match token type
+     */
     ContainMatchTokenType = 65,
+    /**
+     * start match token type
+     */
     StartMatchTokenType = 66,
+    /**
+     * end match token type
+     */
     EndMatchTokenType = 67,
+    /**
+     * match expression token type
+     */
     MatchExpressionTokenType = 68,
+    /**
+     * namespace attribute token type
+     */
     NameSpaceAttributeTokenType = 69,
+    /**
+     * fraction token type
+     */
     FractionTokenType = 70,
+    /**
+     * identifier list token type
+     */
     IdenListTokenType = 71,
+    /**
+     * grid template function token type
+     */
     GridTemplateFuncTokenType = 72,
+    /**
+     * keyframe rule node type
+     */
     KeyFrameRuleNodeType = 73,
+    /**
+     * class selector token type
+     */
     ClassSelectorTokenType = 74,
+    /**
+     * universal selector token type
+     */
     UniversalSelectorTokenType = 75,
+    /**
+     * child combinator token type
+     */
     ChildCombinatorTokenType = 76,// >
+    /**
+     * descendant combinator token type
+     */
     DescendantCombinatorTokenType = 77,// whitespace
+    /**
+     * next sibling combinator token type
+     */
     NextSiblingCombinatorTokenType = 78,// +
+    /**
+     * subsequent sibling combinator token type
+     */
     SubsequentSiblingCombinatorTokenType = 79,// ~
+    /**
+     * nesting selector token type
+     */
     NestingSelectorTokenType = 80,// &
+    /**
+     * invalid rule token type
+     */
     InvalidRuleTokenType = 81,
+    /**
+     * invalid class selector token type
+     */
     InvalidClassSelectorTokenType = 82,
+    /**
+     * invalid attribute token type
+     */
     InvalidAttrTokenType = 83,
+    /**
+     * invalid at rule token type
+     */
     InvalidAtRuleTokenType = 84,
+    /**
+     * media query condition token type
+     */
     MediaQueryConditionTokenType = 85,
+    /**
+     * media feature token type
+     */
     MediaFeatureTokenType = 86,
+    /**
+     * media feature only token type
+     */
     MediaFeatureOnlyTokenType = 87,
+    /**
+     * media feature not token type
+     */
     MediaFeatureNotTokenType = 88,
+    /**
+     * media feature and token type
+     */
     MediaFeatureAndTokenType = 89,
+    /**
+     * media feature or token type
+     */
     MediaFeatureOrTokenType = 90,
+    /**
+     * pseudo page token type
+     */
     PseudoPageTokenType = 91,
+    /**
+     * pseudo element token type
+     */
     PseudoElementTokenType = 92,
+    /**
+     * keyframe at rule node type
+     */
     KeyframeAtRuleNodeType = 93,
+    /**
+     * invalid declaration node type
+     */
     InvalidDeclarationNodeType = 94,
+    /**
+     * alias for time token type
+     */
     Time = 25,
+    /**
+     * alias for identifier token type
+     */
     Iden = 7,
+    /**
+     * alias for end of file token type
+     */
     EOF = 48,
+    /**
+     * alias for hash token type
+     */
     Hash = 28,
+    /**
+     * alias for flex token type
+     */
     Flex = 58,
+    /**
+     * alias for angle token type
+     */
     Angle = 24,
+    /**
+     * alias for color token type
+     */
     Color = 50,
+    /**
+     * alias for comma token type
+     */
     Comma = 9,
+    /**
+     * alias for string token type
+     */
     String = 20,
+    /**
+     * alias for length token type
+     */
     Length = 23,
+    /**
+     * alias for number token type
+     */
     Number = 12,
+    /**
+     * alias for percentage token type
+     */
     Perc = 14,
+    /**
+     * alias for literal token type
+     */
     Literal = 6,
+    /**
+     * alias for comment token type
+     */
     Comment = 0,
+    /**
+     * alias for url function token type
+     */
     UrlFunc = 18,
+    /**
+     * alias for dimension token type
+     */
     Dimension = 22,
+    /**
+     * alias for frequency token type
+     */
     Frequency = 26,
+    /**
+     * alias for resolution token type
+     */
     Resolution = 27,
+    /**
+     * alias for whitespace token type
+     */
     Whitespace = 36,
+    /**
+     * alias for identifier list token type
+     */
     IdenList = 71,
+    /**
+     * alias for dashed identifier token type
+     */
     DashedIden = 8,
+    /**
+     * alias for grid template function token type
+     */
     GridTemplateFunc = 72,
+    /**
+     * alias for image function token type
+     */
     ImageFunc = 19,
+    /**
+     * alias for comment node type
+     */
     CommentNodeType = 0,
+    /**
+     * alias for cdata section node type
+     */
     CDOCOMMNodeType = 1,
+    /**
+     * alias for timing function token type
+     */
     TimingFunction = 17,
+    /**
+     * alias for timeline function token type
+     */
     TimelineFunction = 16
 }
 /**
- * color types enum
+ * supported color types enum
  */
 declare enum ColorType {
     /**
@@ -257,7 +623,7 @@ declare enum ColorType {
 }
 
 /**
- * minify ast
+ * apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -299,7 +665,7 @@ declare function walkValues(values: Token[], root?: AstNode | Token | null, filt
 }, reverse?: boolean): Generator<WalkAttributesResult>;
 
 /**
- * expand nested css ast
+ * expand css nesting ast nodes
  * @param ast
  */
 declare function expand(ast: AstNode): AstNode;
@@ -323,7 +689,7 @@ declare function renderToken(token: Token, options?: RenderOptions, cache?: {
  */
 declare function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number;
 /**
- * Check if two colors are close.
+ * Check if two colors are close in okLab space.
  * @param color1
  * @param color2
  * @param threshold
@@ -1040,6 +1406,13 @@ interface ValidationToken {
  * Converts a color to another color space
  * @param token
  * @param to
+ *
+ * <code>
+ *
+ *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
+ *     const result = convertColor(token, ColorType.LCH);
+ *
+ * </code>
  */
 declare function convertColor(token: ColorToken, to: ColorType): ColorToken | null;
 
@@ -1210,6 +1583,14 @@ export declare interface PropertyListOptions {
     computeShorthand?: boolean;
 }
 
+export declare interface ParseInfo {
+
+    buffer: string;
+    stream: string;
+    position: Position;
+    currentPosition: Position;
+}
+
 declare enum FeatureWalkMode {
     Pre = 0,
     Post = 1
@@ -1297,7 +1678,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     resolveImport?: boolean;
     cwd?: string;
     removePrefix?: boolean;
-    load?: (url: string, currentUrl: string) => Promise<string>;
+    getStream?:(url: string, currentUrl: string) => Promise<ReadableStream<string>>;
     dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
         absolute: string;
@@ -1443,23 +1824,52 @@ declare function resolve(url: string, currentDirectory: string, cwd?: string): {
 };
 
 /**
- * load file
+ * load file or url as stream
  * @param url
  * @param currentFile
  */
-declare function load(url: string, currentFile?: string): Promise<string>;
+declare function getStream(url: string, currentFile?: string): Promise<ReadableStream<string>>;
 
 /**
- * render ast node
+ * render ast tree
+ * @param data
+ * @param options
  */
 declare function render(data: AstNode, options?: RenderOptions): RenderResult;
 /**
- * parse css
+ * parse css file
+ * @param file url or path
+ * @param options
  */
-declare function parse(iterator: string, opt?: ParserOptions): Promise<ParseResult>;
+declare function parseFile(file: string, options?: ParserOptions): Promise<ParseResult>;
 /**
- * parse and render css
+ * parse css
+ * @param iterator
+ * @param opt
  */
-declare function transform(css: string, options?: TransformOptions): Promise<TransformResult>;
+declare function parse(iterator: string | ReadableStream<string>, opt?: ParserOptions): Promise<ParseResult>;
+/**
+ * transform css file
+ * @param file url or path
+ * @param options
+ */
+declare function transformFile(file: string, options?: TransformOptions): Promise<TransformResult>;
+/**
+ * transform css
+ * @param css
+ * @param options
+ *
+ * ```ts
+ *     // remote file
+ *     let result = await transform('https://docs.deno.com/styles.css');
+ *     console.log(result.code);
+ *
+ *     // local file
+ *      result = await transform('./css/styles.css');
+ *     console.log(result.code);
+ * ```
+ */
+declare function transform(css: string | ReadableStream<string>, options?: TransformOptions): Promise<TransformResult>;
 
-export { ColorType, EnumToken, ValidationLevel, convertColor, dirname, expand, isOkLabClose, load, minify, okLabDistance, parse, parseString, parseTokens, render, renderToken, resolve, transform, walk, walkValues };
+export { ColorType, EnumToken, ValidationLevel, convertColor, dirname, expand, getStream, isOkLabClose, minify, okLabDistance, parse, parseFile, parseString, parseTokens, render, renderToken, resolve, transform, transformFile, walk, walkValues };
+export type { AstNode, ParseInfo, ParseResult, ParserOptions, RenderOptions, RenderResult, TransformOptions, TransformResult };

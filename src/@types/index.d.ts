@@ -73,7 +73,7 @@ export declare interface ParserOptions extends MinifyOptions, MinifyFeatureOptio
     resolveImport?: boolean;
     cwd?: string;
     removePrefix?: boolean;
-    load?: (url: string, currentUrl: string) => Promise<string>;
+    getStream?:(url: string, currentUrl: string) => Promise<ReadableStream<string>>;
     dirname?: (path: string) => string;
     resolve?: (url: string, currentUrl: string, currentWorkingDirectory?: string) => {
         absolute: string;

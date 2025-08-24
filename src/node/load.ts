@@ -1,24 +1,24 @@
-import {readFile} from "node:fs/promises";
 import {matchUrl, resolve} from "../lib/fs/index.ts";
-
-function parseResponse(response: Response) {
-
-    if (!response.ok) {
-
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`)
-    }
-
-    return response.text();
-}
+import {createReadStream} from "node:fs";
+import {Readable} from "node:stream";
 
 /**
- * load file
+ * load file or url as stream
  * @param url
  * @param currentFile
  */
-export async function load(url: string, currentFile: string = '.'): Promise<string> {
+export async function getStream(url: string, currentFile: string = '.'): Promise<ReadableStream<string>> {
 
     const resolved = resolve(url, currentFile);
 
-    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then(parseResponse) : readFile(resolved.absolute, {encoding: 'utf-8'});
+    // @ts-ignore
+    return matchUrl.test(resolved.absolute) ? fetch(resolved.absolute).then((response: Response) => {
+
+        if (!response.ok) {
+
+            throw new Error(`${response.status} ${response.statusText} ${response.url}`)
+        }
+
+        return response.body;
+    }) : Readable.toWeb(createReadStream(resolved.absolute));
 }

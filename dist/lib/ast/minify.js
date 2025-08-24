@@ -16,7 +16,7 @@ const notEndingWith = ['(', '['].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 /**
- * minify ast
+ * apply minification rules to the ast tree
  * @param ast
  * @param options
  * @param recursive
@@ -88,7 +88,6 @@ function minify(ast, options = {}, recursive = false, errors, nestingContent, co
     doMinify(ast, options, recursive, errors, nestingContent, context);
     parents = [ast];
     for (const parent of parents) {
-        // parent = parents.shift() as AstNode;
         if (parent.typ == EnumToken.CommentTokenType ||
             parent.typ == EnumToken.CDOCOMMTokenType) {
             continue;
@@ -131,17 +130,7 @@ function reduce(acc, curr, index, array) {
         if (curr[1] == ' ' && !isIdent(curr[2]) && !isFunction(curr[2])) {
             curr.splice(0, 2);
         }
-        // else if (combinators.includes(curr[1])) {
-        //
-        //     curr.shift();
-        // }
     }
-    // else { // @ts-ignore
-    //     if (this.typ == EnumToken.RuleNodeType && (isIdent(curr[0]) || isFunction(curr[0]))) {
-    //
-    //         curr.unshift('&', ' ');
-    //     }
-    // }
     acc.push(curr.join(''));
     return acc;
 }
@@ -171,13 +160,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
             }
             // @ts-ignore
             node = ast.chi[i];
-            // @ts-ignore
-            // if (previous == node) {
-            //
-            //     // @ts-ignore
-            //     ast.chi.splice(i--, 1);
-            //     continue;
-            // }
             if (node.typ == EnumToken.AtRuleNodeType && node.nam == 'font-face') {
                 continue;
             }
@@ -329,12 +311,7 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 curr.splice(0, 2);
                             }
                             else {
-                                // if (ast.typ != EnumToken.RuleNodeType && combinators.includes(curr[1])) {
-                                //
-                                //     wrap = false;
-                                // } else {
                                 curr.splice(0, 1);
-                                // }
                             }
                         }
                         else if (combinators.includes(curr[0])) {
@@ -376,11 +353,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     }
                     // @ts-ignore
                     let sel = wrap ? node.optimized.optimized.join('') + `:is(${rule})` : rule;
-                    // if (rule.includes('&')) {
-                    //
-                    //     // @ts-ignore
-                    //     rule = replaceCompound(rule, node.optimized.optimized[0]);
-                    // }
                     if (sel.length < node.sel.length) {
                         node.sel = sel;
                     }
@@ -413,13 +385,6 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                 node.chi.unshift(...previous.chi);
                                 // @ts-ignore
                                 ast.chi.splice(nodeIndex, 1);
-                                // @ts-ignore
-                                // if (!hasDeclaration(node)) {
-                                //     // @ts-ignore
-                                //     // minifyRule(node, <MinifyOptions>options, ast, context);
-                                //     // } else {
-                                //     doMinify(node, options, recursive, errors, nestingContent, context);
-                                // }
                                 i--;
                                 previous = node;
                                 nodeIndex = i;
@@ -431,13 +396,10 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                                     if (intersect.node1.chi.length == 0) {
                                         // @ts-ignore
                                         ast.chi.splice(i--, 1);
-                                        // @ts-ignore
-                                        // node = ast.chi[i];
                                     }
                                     else {
                                         // @ts-ignore
                                         ast.chi.splice(i--, 1, intersect.node1);
-                                        // node = ast.chi intersect.node1;
                                     }
                                     if (intersect.node2.chi.length == 0) {
                                         // @ts-ignore
@@ -470,33 +432,11 @@ function doMinify(ast, options = {}, recursive = false, errors, nestingContent, 
                     if (recursive && previous != node) {
                         // @ts-ignore
                         if (!hasDeclaration(previous)) {
-                            // @ts-ignore
-                            // minifyRule(previous, <MinifyOptions>options, ast, context);
-                            // } else {
                             doMinify(previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
-                // else {
-                //
-                //     if ('chi' in previous) {
-                //
-                //         // @ts-ignore
-                //         if (!hasDeclaration(previous)) {
-                //
-                //             // @ts-ignore
-                //             // minifyRule(previous, <MinifyOptions>options, ast, context);
-                //             // } else {
-                //
-                //             doMinify(previous, options, recursive, errors, nestingContent, context);
-                //         }
-                //     }
-                // }
             }
-            // else if ('chi' in node) {
-            //
-            //     doMinify(node, options, recursive, errors, nestingContent, context);
-            // }
             if (!nestingContent &&
                 // @ts-ignore
                 previous != null &&
@@ -546,9 +486,6 @@ function hasDeclaration(node) {
  * @param selector
  */
 function optimizeSelector(selector) {
-    // if (selector.length == 0) {
-    //     return null;
-    // }
     selector = selector.reduce((acc, curr) => {
         // @ts-ignore
         if (curr.length > 0 && curr.at(-1).startsWith(':is(')) {
@@ -596,11 +533,6 @@ function optimizeSelector(selector) {
         break;
     }
     selector.forEach((selector) => selector.splice(0, optimized.length));
-    // combinator
-    // if (combinators.includes(<string>optimized.at(-1))) {
-    //     const combinator: string = <string>optimized.pop();
-    //     selector.forEach((selector: string[]) => selector.unshift(combinator));
-    // }
     let reducible = optimized.length == 1;
     if (optimized[0] == '&') {
         if (optimized[1] == ' ') {
@@ -655,17 +587,6 @@ function splitRule(buffer) {
     for (let i = 0; i < buffer.length; i++) {
         let chr = buffer.charAt(i);
         if (isWhiteSpace(chr.charCodeAt(0))) {
-            // let k: number = i;
-            // while (k + 1 < buffer.length) {
-            //
-            //     if (isWhiteSpace(buffer[k + 1].charCodeAt(0))) {
-            //
-            //         k++;
-            //         continue;
-            //     }
-            //
-            //     break;
-            // }
             if (str !== '') {
                 // @ts-ignore
                 result.at(-1).push(str);
@@ -727,22 +648,6 @@ function splitRule(buffer) {
             str += buffer.charAt(++i);
             continue;
         }
-        // if (chr == '"' || chr == "'") {
-        //
-        //     let k = i;
-        //     while (++k < buffer.length) {
-        //         chr = buffer.charAt(k);
-        //         str += chr;
-        //         if (chr == '//') {
-        //             str += buffer.charAt(++k);
-        //             continue;
-        //         }
-        //         if (chr == buffer.charAt(i)) {
-        //             break;
-        //         }
-        //     }
-        //     continue;
-        // }
         if (chr == '(' || chr == '[') {
             const open = chr;
             const close = chr == '(' ? ')' : ']';
@@ -776,10 +681,6 @@ function splitRule(buffer) {
     return result;
 }
 function reduceSelector(acc, curr) {
-    // if (acc === null) {
-    //
-    //     return null;
-    // }
     let hasCompoundSelector = true;
     // @ts-ignore
     curr = curr.slice(this.match[0].length);
@@ -791,16 +692,6 @@ function reduceSelector(acc, curr) {
         }
         break;
     }
-    // invalid function match
-    // if (curr.length > 0 && curr[0].endsWith('(') && curr.at(-1) != ')') {
-    //
-    //     return null;
-    // }
-    //
-    // if (curr.length == 1 && combinators.includes(curr[0].charAt(0))) {
-    //
-    //     return null;
-    // }
     if (hasCompoundSelector && curr.length > 0) {
         hasCompoundSelector = !['&'].concat(combinators).includes(curr[0].charAt(0));
     }
@@ -810,15 +701,6 @@ function reduceSelector(acc, curr) {
             if (index == 0) {
                 canReduce = curr[1] == '&';
             }
-            // else if (token.endsWith('(')) {
-            //
-            //     if (inFunction == 0) {
-            //
-            //         canReduce = false;
-            //     }
-            //
-            //     inFunction++;
-            // }
             else if (token == ')') ;
             else if (token == ',') {
                 if (!canReduce) {
@@ -830,10 +712,6 @@ function reduceSelector(acc, curr) {
                 acc.at(-1)?.push(token);
             return acc;
         }, [[]]);
-        // if (inFunction > 0) {
-        //
-        //     canReduce = false;
-        // }
         if (canReduce) {
             curr = isCompound.reduce((acc, curr) => {
                 if (acc.length > 0) {
@@ -848,7 +726,7 @@ function reduceSelector(acc, curr) {
     acc.push(this.match.length == 0 ? ['&'] : (hasCompoundSelector && curr[0] != '&' && (curr.length == 0 || !combinators.includes(curr[0].charAt(0))) ? ['&'].concat(curr) : curr));
     return acc;
 }
-function matchSelectors(selector1, selector2, parentType, errors) {
+function matchSelectors(selector1, selector2 /*, parentType: EnumToken, errors: ErrorDescription[] */) {
     let match = [[]];
     const j = Math.min(selector1.reduce((acc, curr) => Math.min(acc, curr.length), selector1.length > 0 ? selector1[0].length : 0), selector2.reduce((acc, curr) => Math.min(acc, curr.length), selector2.length > 0 ? selector2[0].length : 0));
     let i = 0;
@@ -879,52 +757,15 @@ function matchSelectors(selector1, selector2, parentType, errors) {
         if (!matching) {
             break;
         }
-        // if (token == ',') {
-        //
-        //     match.push([]);
-        // } else {
         if (token.endsWith('(')) {
             matchFunction++;
         }
-        // if (token.endsWith('[')) {
-        //
-        //     inAttr++;
-        // } else if (token == ')') {
-        //
-        //     matchFunction--;
-        // } else if (token == ']') {
-        //
-        //     inAttr--;
-        // }
         match.at(-1).push(token);
-        // }
     }
     // invalid function
     if (matchFunction != 0 || inAttr != 0) {
         return null;
     }
-    // if (parentType != EnumToken.RuleNodeType) {
-    //
-    //     for (const part of match) {
-    //
-    //         if (part.length > 0 && combinators.includes(part[0].charAt(0))) {
-    //
-    //             return null;
-    //         }
-    //     }
-    // }
-    // if (match.length > 1) {
-    //
-    //     errors?.push({
-    //         action: 'ignore',
-    //         message: `minify: unsupported multilevel matching\n${JSON.stringify({
-    //             match,
-    //             selector1,
-    //             selector2
-    //         }, null, 1)}`
-    //     });
-    //     return null;
-    // }
     for (const part of match) {
         while (part.length > 0) {
             const token = part.at(-1);
@@ -1030,10 +871,6 @@ function diff(n1, n2, reducer, options = {}) {
     }
     let i = node1.chi.length;
     let j = node2.chi.length;
-    // if (i == 0 || j == 0) {
-    //
-    //     return null;
-    // }
     const raw1 = node1.raw;
     const raw2 = node2.raw;
     if (raw1 != null && raw2 != null) {
@@ -1104,10 +941,6 @@ function diff(n1, n2, reducer, options = {}) {
             continue;
         }
         j = node2.chi.length;
-        // if (j == 0) {
-        //
-        //     break;
-        // }
         while (j--) {
             if (node2.chi[j].typ == EnumToken.CommentNodeType) {
                 continue;
