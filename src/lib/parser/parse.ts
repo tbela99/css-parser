@@ -1548,7 +1548,7 @@ export function parseAtRulePrelude(tokens: Token[], atRule: AtRuleToken | AstAtR
  * console.log(declarations);
  * ```
  */
-export async function parseDeclarations(declaration: string) {
+export async function parseDeclarations(declaration: string): Promise<Array<AstDeclaration | AstComment>> {
 
     return doParse(tokenize({
         stream: `.x{${declaration}}`,
