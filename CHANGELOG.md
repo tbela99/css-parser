@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.2
+
+- [x] add missing return type
+
 ## v1.3.1
 
 - [x] generate documentation
