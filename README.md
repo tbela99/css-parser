@@ -97,7 +97,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.1/web';
 
 
     const css = `
