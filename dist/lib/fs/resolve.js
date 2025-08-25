@@ -2,6 +2,7 @@ const matchUrl = /^(https?:)?\/\//;
 /**
  * return the directory name of a path
  * @param path
+ * @internal
  */
 function dirname(path) {
     if (path == '/' || path === '') {
@@ -24,6 +25,11 @@ function dirname(path) {
     parts.pop();
     return parts.length == 0 ? '/' : parts.join('/');
 }
+/**
+ * split path
+ * @param result
+ * @private
+ */
 function splitPath(result) {
     const parts = [''];
     let i = 0;
@@ -53,9 +59,11 @@ function splitPath(result) {
 }
 /**
  * resolve path
- * @param url
- * @param currentDirectory
- * @param cwd
+ * @param url url or path to resolve
+ * @param currentDirectory directory used to resolve the path
+ * @param cwd current working directory
+ *
+ * @private
  */
 function resolve(url, currentDirectory, cwd) {
     if (matchUrl.test(url)) {

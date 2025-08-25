@@ -15,14 +15,33 @@ import {EnumToken} from "./types.ts";
 
 export enum WalkerOptionEnum {
 
+    /**
+     * ignore the current node and its children
+     */
     Ignore,
+    /**
+     * stop walking the tree
+     */
     Stop,
+    /**
+     * ignore node and process children
+     */
     Children,
+    /**
+     * ignore children
+     */
     IgnoreChildren
 }
 
 export enum WalkerValueEvent {
+
+    /**
+     * enter node
+     */
     Enter,
+    /**
+     * leave node
+     */
     Leave
 }
 

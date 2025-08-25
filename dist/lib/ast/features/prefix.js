@@ -9,9 +9,10 @@ import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { renderToken } from '../../renderer/render.js';
-import { funcLike } from '../../syntax/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
 import '../../validation/syntaxes/complex-selector.js';
 import { evaluateSyntax } from '../../validation/syntax.js';
+import { funcLike } from '../../syntax/color/utils/constants.js';
 
 const config = getSyntaxConfig();
 function replacePseudo(tokens) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.1
+
+- [x] generate documentation
+- [x] parse input from readable stream
+- [x] add parseFile() and transformFile()
+- 
 ## v1.3.0
 
 - [x] numerical and dimension tokens use numbers instead of string

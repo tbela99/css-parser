@@ -1,4 +1,4 @@
-import {parse, render, resolve, transform} from '../../dist/node/index.js';
+import {parse, render, resolve, transform} from '../../dist/node.js';
 import * as tests from './code/index.js';
 import {expect} from "@esm-bundle/chai";
 import {readFile} from "node:fs/promises";

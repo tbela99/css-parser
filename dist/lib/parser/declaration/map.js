@@ -7,6 +7,7 @@ import '../../ast/walk.js';
 import { parseString } from '../parse.js';
 import '../tokenize.js';
 import { renderToken } from '../../renderer/render.js';
+import '../../renderer/sourcemap/lib/encode.js';
 import '../../syntax/color/utils/constants.js';
 import { PropertySet } from './set.js';
 

@@ -1,4 +1,4 @@
-import {dirname, parse, render, resolve, transform} from '../../dist/web/index.js';
+import {dirname, parse, render, resolve, transform} from '../../dist/web.js';
 import {expect} from "@esm-bundle/chai";
 import * as tests from './code/index.js';
 

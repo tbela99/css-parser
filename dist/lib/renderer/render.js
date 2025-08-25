@@ -8,6 +8,11 @@ import { isColor, pseudoElements, mathFuncs, isNewLine } from '../syntax/syntax.
 import { minifyNumber } from '../syntax/utils.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 
+/**
+ * Update position
+ * @param position
+ * @param str
+ */
 function update(position, str) {
     let i = 0;
     for (; i < str.length; i++) {
@@ -24,6 +29,7 @@ function update(position, str) {
  * render ast
  * @param data
  * @param options
+ * @private
  */
 function doRender(data, options = {}) {
     const minify = options.minify ?? true;
@@ -91,6 +97,17 @@ function doRender(data, options = {}) {
     }
     return result;
 }
+/**
+ * Update source map
+ * @param node
+ * @param options
+ * @param cache
+ * @param sourcemap
+ * @param position
+ * @param str
+ *
+ * @internal
+ */
 function updateSourceMap(node, options, cache, sourcemap, position, str) {
     if ([
         EnumToken.RuleNodeType, EnumToken.AtRuleNodeType,
@@ -126,6 +143,8 @@ function updateSourceMap(node, options, cache, sourcemap, position, str) {
  * @param cache
  * @param level
  * @param indents
+ *
+ * @internal
  */
 function renderAstNode(data, options, sourcemap, position, errors, reducer, cache, level = 0, indents = []) {
     if (indents.length < level + 1) {
@@ -224,9 +243,6 @@ function renderAstNode(data, options, sourcemap, position, errors, reducer, cach
  * render ast token
  * @param token
  * @param options
- * @param cache
- * @param reducer
- * @param errors
  */
 function renderToken(token, options = {}, cache = Object.create(null), reducer, errors) {
     if (reducer == null) {
@@ -590,6 +606,12 @@ function renderToken(token, options = {}, cache = Object.create(null), reducer, 
     errors?.push({ action: 'ignore', message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
     return '';
 }
+/**
+ * Remove whitespace tokens that are not needed
+ * @param values
+ *
+ * @internal
+ */
 function filterValues(values) {
     let i = 0;
     for (; i < values.length; i++) {

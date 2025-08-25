@@ -21,6 +21,11 @@ const dimensionUnits = new Set([
 const fontFormat = ['collection', 'embedded-opentype', 'opentype', 'svg', 'truetype', 'woff', 'woff2'];
 const colorFontTech = ['color-colrv0', 'color-colrv1', 'color-svg', 'color-sbix', 'color-cbdt'];
 const fontFeaturesTech = ['features-opentype', 'features-aat', 'features-graphite', 'incremental-patch', 'incremental-range', 'incremental-auto', 'variations', 'palettes'];
+/**
+ * supported transform functions
+ *
+ * @internal
+ */
 const transformFunctions = [
     'translate', 'scale', 'rotate', 'skew', 'perspective',
     'translateX', 'translateY', 'translateZ',
@@ -34,6 +39,11 @@ const mediaTypes = ['all', 'print', 'screen',
     /* deprecated */
     'aural', 'braille', 'embossed', 'handheld', 'projection', 'tty', 'tv', 'speech'];
 // https://www.w3.org/TR/css-values-4/#math-function
+/**
+ * supported math functions
+ *
+ * @internal
+ */
 const mathFuncs = ['minmax', 'repeat', 'fit-content', 'calc', 'clamp', 'min', 'max', 'round', 'mod', 'rem', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp', 'abs', 'sign'];
 const wildCardFuncs = ['var', 'env'];
 const pseudoElements = [':before', ':after', ':first-line', ':first-letter'];

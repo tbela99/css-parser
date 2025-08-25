@@ -6,9 +6,10 @@ import { expand } from '../ast/expand.js';
 import './utils/config.js';
 import { parseDeclarationNode } from './utils/declaration.js';
 import { renderToken } from '../renderer/render.js';
+import '../renderer/sourcemap/lib/encode.js';
 import { funcLike, timingFunc, timelineFunc, COLORS_NAMES, systemColors, deprecatedSystemColors, colorsFunc } from '../syntax/color/utils/constants.js';
 import { buildExpression } from '../ast/math/expression.js';
-import { tokenize } from './tokenize.js';
+import { tokenize, tokenizeStream } from './tokenize.js';
 import '../validation/config.js';
 import '../validation/parser/types.js';
 import '../validation/parser/parse.js';
@@ -40,10 +41,12 @@ function reject(reason) {
 }
 /**
  * parse css string
- * @param iterator
+ * @param iter
  * @param options
+ *
+ * @private
  */
-async function doParse(iterator, options = {}) {
+async function doParse(iter, options = {}) {
     if (options.signal != null) {
         options.signal.addEventListener('abort', reject);
     }
@@ -113,12 +116,13 @@ async function doParse(iterator, options = {}) {
             src: ''
         };
     }
-    const iter = tokenize(iterator);
     let item;
     let node;
     const rawTokens = [];
     const imports = [];
-    while (item = iter.next().value) {
+    // @ts-ignore ignore error
+    const isAsync = typeof iter[Symbol.asyncIterator] === 'function';
+    while (item = isAsync ? (await iter.next()).value : iter.next().value) {
         stats.bytesIn = item.bytesIn;
         rawTokens.push(item);
         if (item.hint != null && BadTokensTypes.includes(item.hint)) {
@@ -162,7 +166,7 @@ async function doParse(iterator, options = {}) {
                 let inBlock = 1;
                 tokens = [item];
                 do {
-                    item = iter.next().value;
+                    item = isAsync ? (await iter.next()).value : iter.next().value;
                     if (item == null) {
                         break;
                     }
@@ -224,8 +228,8 @@ async function doParse(iterator, options = {}) {
             }
         }
         if (context != null && context.typ == EnumToken.InvalidRuleTokenType) {
-            // @ts-ignore
-            const index = context.chi.findIndex((node) => node == context);
+            // @ts-ignore ignore error
+            const index = context.chi.findIndex((node) => node === context);
             if (index > -1) {
                 context.chi.splice(index, 1);
             }
@@ -236,13 +240,21 @@ async function doParse(iterator, options = {}) {
             const token = node.tokens[0];
             const url = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
             try {
-                const root = await options.load(url, options.src).then((src) => {
-                    return doParse(src, Object.assign({}, options, {
+                const root = await options.getStream(url, options.src).then(async (stream) => {
+                    return doParse(tokenizeStream(stream), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
                         src: options.resolve(url, options.src).absolute
-                    }));
+                    })); // )
                 });
+                // const root: ParseResult = await options.load!(url, <string>options.src).then((src: string) => {
+                //
+                //     return doParse(src, Object.assign({}, options, {
+                //         minify: false,
+                //         setParent: false,
+                //         src: options.resolve!(url, options.src as string).absolute
+                //     }))
+                // });
                 stats.importedBytesIn += root.stats.bytesIn;
                 stats.imports.push(root.stats);
                 node.parent.chi.splice(node.parent.chi.indexOf(node), 1, ...root.ast.chi);
@@ -251,7 +263,7 @@ async function doParse(iterator, options = {}) {
                 }
             }
             catch (error) {
-                // @ts-ignore
+                // @ts-ignore ignore error
                 errors.push({ action: 'ignore', message: 'doParse: ' + error.message, error });
             }
         }));
@@ -275,28 +287,33 @@ async function doParse(iterator, options = {}) {
             if (result.node.typ == EnumToken.DeclarationNodeType &&
                 (typeof options.visitor.Declaration == 'function' || options.visitor.Declaration?.[result.node.nam] != null)) {
                 const callable = typeof options.visitor.Declaration == 'function' ? options.visitor.Declaration : options.visitor.Declaration[result.node.nam];
-                const results = await callable(result.node);
+                const isAsync = Object.getPrototypeOf(callable).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await callable(result.node) : callable(result.node);
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
                     continue;
                 }
+                // @ts-ignore
                 result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
             else if (options.visitor.Rule != null && result.node.typ == EnumToken.RuleNodeType) {
-                const results = await options.visitor.Rule(result.node);
+                const isAsync = Object.getPrototypeOf(options.visitor.Rule).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await options.visitor.Rule(result.node) : options.visitor.Rule(result.node);
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
                     continue;
                 }
+                // @ts-ignore
                 result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
             else if (options.visitor.AtRule != null &&
                 result.node.typ == EnumToken.AtRuleNodeType &&
-                // @ts-ignore
                 (typeof options.visitor.AtRule == 'function' || options.visitor.AtRule?.[result.node.nam] != null)) {
                 const callable = typeof options.visitor.AtRule == 'function' ? options.visitor.AtRule : options.visitor.AtRule[result.node.nam];
-                const results = await callable(result.node);
+                const isAsync = Object.getPrototypeOf(callable).constructor.name == 'AsyncFunction';
+                const results = isAsync ? await callable(result.node) : callable(result.node);
                 if (results == null || (Array.isArray(results) && results.length == 0)) {
                     continue;
                 }
+                // @ts-ignore
                 result.parent.chi.splice(result.parent.chi.indexOf(result.node), 1, ...(Array.isArray(results) ? results : [results]));
             }
         }
@@ -407,7 +424,13 @@ function parseNode(results, context, options, errors, src, map, rawTokens) {
                             // @ts-ignore
                             ['charset', 'layer', 'import'].includes(context.chi[i].nam))) {
                             // @ts-ignore
-                            errors.push({ action: 'drop', message: 'invalid @import', location, rawTokens: [atRule, ...tokens] });
+                            errors.push({
+                                action: 'drop',
+                                message: 'invalid @import',
+                                location,
+                                // @ts-ignore
+                                rawTokens: [atRule, ...tokens]
+                            });
                             return null;
                         }
                     }
@@ -1005,6 +1028,27 @@ function parseAtRulePrelude(tokens, atRule) {
     return tokens;
 }
 /**
+ * parse a string as an array of declaration nodes
+ * @param declaration
+ *
+ * Example:
+ * ````ts
+ *
+ * const declarations = await parseDeclarations('color: red; background: blue');
+ * console.log(declarations);
+ * ```
+ */
+async function parseDeclarations(declaration) {
+    return doParse(tokenize({
+        stream: `.x{${declaration}}`,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    }), { setParent: false, minify: false, validation: false }).then(result => {
+        return result.ast.chi[0].chi.filter(t => t.typ == EnumToken.DeclarationNodeType);
+    });
+}
+/**
  * parse selector
  * @param tokens
  */
@@ -1105,12 +1149,33 @@ function parseSelector(tokens) {
     return tokens;
 }
 /**
- * parse css string
+ * parse css string and return an array of tokens
  * @param src
  * @param options
+ *
+ * @private
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(tokens);
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(tokens);
+ * ```
  */
 function parseString(src, options = { location: false }) {
-    return parseTokens([...tokenize(src)].reduce((acc, t) => {
+    const parseInfo = {
+        stream: src,
+        buffer: '',
+        position: { ind: 0, lin: 1, col: 1 },
+        currentPosition: { ind: -1, lin: 1, col: 0 }
+    };
+    return parseTokens([...tokenize(parseInfo)].reduce((acc, t) => {
         if (t.hint == EnumToken.EOFTokenType) {
             return acc;
         }
@@ -1122,6 +1187,11 @@ function parseString(src, options = { location: false }) {
         return acc;
     }, []));
 }
+/**
+ * get token type from a string
+ * @param val
+ * @param hint
+ */
 function getTokenType(val, hint) {
     if (hint != null) {
         return enumTokenHints.has(hint) ? { typ: hint } : { typ: hint, val };
@@ -1287,9 +1357,24 @@ function getTokenType(val, hint) {
     };
 }
 /**
- * parse token array into a tree structure
+ * parse function tokens in a token array
  * @param tokens
  * @param options
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {parseString, parseTokens} from '@tbela99/css-parser';
+ *
+ * let tokens = parseString('body { color: red; }');
+ * console.log(parseTokens(tokens));
+ *
+ *  tokens = parseString('#c322c980');
+ * console.log(parseTokens(tokens));
+ * ```
+ *
+ * @private
  */
 function parseTokens(tokens, options = {}) {
     for (let i = 0; i < tokens.length; i++) {
@@ -1577,4 +1662,4 @@ function parseTokens(tokens, options = {}) {
     return tokens;
 }
 
-export { doParse, getTokenType, parseAtRulePrelude, parseSelector, parseString, parseTokens, urlTokenMatcher };
+export { doParse, getTokenType, parseAtRulePrelude, parseDeclarations, parseSelector, parseString, parseTokens, urlTokenMatcher };

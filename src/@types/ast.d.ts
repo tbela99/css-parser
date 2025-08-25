@@ -1,17 +1,41 @@
 import {EnumToken} from "../lib/index.ts";
 import {Token} from "./token.d.ts";
 
+/**
+ * Position
+ */
 export declare interface Position {
 
+    /**
+     * index in the source
+     */
     ind: number;
+    /**
+     * line number
+     */
     lin: number;
+    /**
+     * column number
+     */
     col: number;
 }
 
+/**
+ * token or node location
+ */
 export declare interface Location {
 
+    /**
+     * start position
+     */
     sta: Position;
+    /**
+     * end position
+     */
     end: Position;
+    /**
+     * source file
+     */
     src: string;
 }
 

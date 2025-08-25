@@ -128,6 +128,15 @@ import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
  * Converts a color to another color space
  * @param token
  * @param to
+ *
+ * @private
+ *
+ * <code>
+ *
+ *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
+ *     const result = convertColor(token, ColorType.LCH);
+ *
+ * </code>
  */
 export function convertColor(token: ColorToken, to: ColorType): ColorToken | null {
 

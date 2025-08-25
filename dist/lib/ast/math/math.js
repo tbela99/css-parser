@@ -4,8 +4,8 @@ import '../walk.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import '../../syntax/color/utils/constants.js';
 import '../../renderer/sourcemap/lib/encode.js';
+import '../../syntax/color/utils/constants.js';
 import { minifyNumber } from '../../syntax/utils.js';
 
 function gcd(x, y) {

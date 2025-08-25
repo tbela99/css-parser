@@ -1,6 +1,6 @@
 [![playground](https://img.shields.io/badge/playground-try%20it%20now-%230a7398
 )](https://tbela99.github.io/css-parser/playground/) [![npm](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftbela99%2Fcss-parser%2Fmaster%2Fpackage.json&query=version&logo=npm&label=npm&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![npm](https://img.shields.io/jsr/v/%40tbela99/css-parser?link=https%3A%2F%2Fjsr.io%2F%40tbela99%2Fcss-parser
-)](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![bundle size](https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs)](https://www.npmjs.com/package/@tbela99/css-parser)
+)](https://jsr.io/@tbela99/css-parser) [![cov](https://tbela99.github.io/css-parser/badges/coverage.svg)](https://github.com/tbela99/css-parser/actions) [![Doc](https://img.shields.io/badge/online-documentation-blue)](https://tbela99.github.io/css-parser/docs) [![NPM Downloads](https://img.shields.io/npm/dm/%40tbela99%2Fcss-parser)](https://www.npmjs.com/package/@tbela99/css-parser) [![bundle size](https://img.shields.io/bundlejs/size/%40tbela99/css-parser%400.9.0?exports=cjs)](https://www.npmjs.com/package/@tbela99/css-parser)
 
 # css-parser
 
@@ -97,7 +97,7 @@ Javascript module from cdn
 
 <script type="module">
 
-    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.0/web';
+    import {transform} from 'https://esm.sh/@tbela99/css-parser@1.3.1/web';
 
 
     const css = `
@@ -116,7 +116,7 @@ Javascript module
 
 ```javascript
 
-<script src="dist/web/index.js" type="module"></script>
+<script src="dist/web.js" type="module"></script>
 ```
 
 Single Javascript file
@@ -134,7 +134,9 @@ Parse and render css in a single pass.
 
 ```typescript
 
-transform(css, transformOptions: TransformOptions = {}): TransformResult
+transform(css: string | ReadableStream<string>, transformOptions: TransformOptions = {}): TransformResult
+parse(css: string | ReadableStream<string>, parseOptions: ParseOptions = {}): ParseResult;
+render(ast: AstNode, renderOptions: RenderOptions = {}): RenderResult;
 ```
 
 ### Example
@@ -144,6 +146,21 @@ transform(css, transformOptions: TransformOptions = {}): TransformResult
 import {transform} from '@tbela99/css-parser';
 
 const {ast, code, map, errors, stats} = await transform(css, {minify: true, resolveImport: true, cwd: 'files/css'});
+```
+
+### Example
+
+Read from stdin with node using readable stream
+
+```typescript
+import {transform} from "../src/node";
+import {Readable} from "node:stream";
+import type {TransformResult} from '../src/@types/index.d.ts';
+
+const readableStream: ReadableStream<string> = Readable.toWeb(process.stdin) as ReadableStream<string>;
+const result: TransformResult = await transform(readableStream, {beautify: true});
+
+console.log(result.code);
 ```
 
 ### TransformOptions
@@ -215,17 +232,17 @@ Include ParseOptions and RenderOptions
   - true: same as ColorType.HEX
   - false: no color conversion
   - ColorType.HEX
-  - ColorType.RGB/ColorType.RGBA
+  - ColorType.RGB or ColorType.RGBA
   - ColorType.HSL
   - ColorType.HWB
-  - ColorType.CMYK/ColorType.DEVICE_CMYK
+  - ColorType.CMYK or ColorType.DEVICE_CMYK
   - ColorType.SRGB
   - ColorType.SRGB_LINEAR
   - ColorType.DISPLAY_P3
   - ColorType.PROPHOTO_RGB
   - ColorType.A98_RGB
   - ColorType.REC2020
-  - ColorType.XYZ/ColorType.XYZ_D65
+  - ColorType.XYZ or ColorType.XYZ_D65
   - ColorType.XYZ_D50
   - ColorType.LAB
   - ColorType.LCH
@@ -903,8 +920,8 @@ const options: ParserOptions = {
                         nam: 'width',
                         val: [
                             <LengthToken>{
-                                typ: EnumToken.Length,
-                                val: '3',
+                                typ: EnumToken.LengthTokenType,
+                                val: 3,
                                 unit: 'px'
                             }
                         ]
@@ -989,7 +1006,8 @@ const options: ParserOptions = {
 
             media: (node: AstAtRule): AstAtRule => {
 
-                return {...node, val: 'all'}
+                node.val = 'all';
+                return node
             }
         }
     }

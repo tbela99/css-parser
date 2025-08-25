@@ -31,6 +31,13 @@ import '../../renderer/sourcemap/lib/encode.js';
  * Converts a color to another color space
  * @param token
  * @param to
+ *
+ * <code>
+ *
+ *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
+ *     const result = convertColor(token, ColorType.LCH);
+ *
+ * </code>
  */
 function convertColor(token, to) {
     if (token.kin == ColorType.SYS ||

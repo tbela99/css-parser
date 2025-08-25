@@ -3,6 +3,8 @@ export const matchUrl: RegExp = /^(https?:)?\/\//;
 /**
  * return the directory name of a path
  * @param path
+ *
+ * @private
  */
 export function dirname(path: string): string {
 
@@ -36,6 +38,11 @@ export function dirname(path: string): string {
     return parts.length == 0 ? '/' : parts.join('/');
 }
 
+/**
+ * split path
+ * @param result
+ * @private
+ */
 function splitPath(result: string): { i: number, parts: string[] } {
 
     const parts: string[] = [''];
@@ -74,9 +81,11 @@ function splitPath(result: string): { i: number, parts: string[] } {
 
 /**
  * resolve path
- * @param url
- * @param currentDirectory
- * @param cwd
+ * @param url url or path to resolve
+ * @param currentDirectory directory used to resolve the path
+ * @param cwd current working directory
+ *
+ * @private
  */
 export function resolve(url: string, currentDirectory: string, cwd?: string): { absolute: string; relative: string } {
 

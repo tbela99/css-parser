@@ -2,12 +2,12 @@ import { EnumToken } from '../types.js';
 import { walkValues, WalkerValueEvent, WalkerOptionEnum } from '../walk.js';
 import { evaluate } from '../math/expression.js';
 import { renderToken } from '../../renderer/render.js';
-import '../../syntax/color/utils/constants.js';
+import '../../renderer/sourcemap/lib/encode.js';
+import { mathFuncs } from '../../syntax/syntax.js';
 import '../minify.js';
 import '../../parser/parse.js';
 import '../../parser/tokenize.js';
 import '../../parser/utils/config.js';
-import { mathFuncs } from '../../syntax/syntax.js';
 
 class ComputeCalcExpressionFeature {
     get ordering() {

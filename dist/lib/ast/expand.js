@@ -5,30 +5,16 @@ import '../parser/utils/config.js';
 import { EnumToken } from './types.js';
 import { walkValues } from './walk.js';
 import { renderToken } from '../renderer/render.js';
+import '../renderer/sourcemap/lib/encode.js';
 import '../syntax/color/utils/constants.js';
 
 /**
- * expand nested css ast
+ * expand css nesting ast nodes
  * @param ast
+ *
+ * @private
  */
 function expand(ast) {
-    //
-    // if (![EnumToken.RuleNodeType, EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType].includes(ast.typ)) {
-    //
-    //     return ast;
-    // }
-    // if (EnumToken.RuleNodeType == ast.typ) {
-    //
-    //     return <AstRuleStyleSheet>{
-    //         typ: EnumToken.StyleSheetNodeType,
-    //         chi: expandRule(<AstRule>ast)
-    //     }
-    // }
-    //
-    // if (!('chi' in ast)) {
-    //
-    //     return ast;
-    // }
     const result = { ...ast, chi: [] };
     // @ts-ignore
     for (let i = 0; i < ast.chi.length; i++) {
@@ -52,11 +38,6 @@ function expand(ast) {
             // @ts-ignore
             result.chi.push({ ...(hasRule ? expand(node) : node) });
         }
-        // else {
-        //
-        //     // @ts-ignore
-        //     result.chi.push(node);
-        // }
     }
     return result;
 }
@@ -70,14 +51,6 @@ function expandRule(node) {
                 const rule = ast.chi[i];
                 if (!rule.sel.includes('&')) {
                     const selRule = splitRule(rule.sel);
-                    // if (selRule.length > 1) {
-                    //
-                    //     const r: string = ':is(' + selRule.map(a => a.join('')).join(',') + ')';
-                    //     rule.sel = splitRule(ast.sel).reduce((a: string[], b: string[]): string[] => a.concat([b.join('') + r]), <string[]>[]).join(',');
-                    //
-                    // }
-                    // else {
-                    // selRule = splitRule(selRule.reduce((acc, curr) => acc + (acc.length > 0 ? ',' : '') + curr.join(''), ''));
                     const arSelf = splitRule(ast.sel).filter((r) => r.every((t) => t != ':before' && t != ':after' && !t.startsWith('::'))).reduce((acc, curr) => acc.concat([curr.join('')]), []).join(',');
                     if (arSelf.length == 0) {
                         ast.chi.splice(i--, 1);
@@ -115,10 +88,6 @@ function expandRule(node) {
                                         if (s == '&' || parentSelector) {
                                             withCompound.push(s);
                                         }
-                                        // else {
-                                        //
-                                        //     withoutCompound.push(s.slice(1));
-                                        // }
                                     }
                                 }
                                 else {
@@ -129,10 +98,6 @@ function expandRule(node) {
                                 withCompound.push(s);
                             }
                         }
-                        // else {
-                        //
-                        //     withoutCompound.push(s);
-                        // }
                     }
                     const selectors = [];
                     const selector = rules.length > 1 ? ':is(' + rules.map(a => a.join('')).join(',') + ')' : rules[0].join('');
@@ -164,13 +129,6 @@ function expandRule(node) {
                         if (withCompound.length == 1) {
                             selectors.push(replaceCompound(withCompound[0], selector));
                         }
-                        // else {
-                        //
-                        //     for (const w of withCompound) {
-                        //
-                        //         selectors.push(replaceCompound(w, selector));
-                        //     }
-                        // }
                     }
                     rule.sel = selectors.reduce((acc, curr) => curr.length == 0 ? acc : acc + (acc.length > 0 ? ',' : '') + curr, '');
                 }
@@ -211,11 +169,6 @@ function expandRule(node) {
                             // @ts-ignore
                             astAtRule.chi.push(...expandRule(r));
                         }
-                        // else {
-                        //
-                        //     // @ts-ignore
-                        //     astAtRule.chi.push(r);
-                        // }
                     }
                 }
                 // @ts-ignore
@@ -242,12 +195,6 @@ function replaceCompound(input, replace) {
                     if (replacement == null) {
                         replacement = parseString(replace);
                     }
-                    // if (tokens[1].typ == EnumToken.IdenTokenType) {
-                    //
-                    //
-                    //     (t.value as LiteralToken).val = (replacement as Token[]).length == 1 || (!replace.includes(' ') && replace.charAt(0).match(/[:.]/)) ? (tokens[1] as IdentToken).val + replace : replaceCompoundLiteral((tokens[1] as IdentToken).val + '&', replace);
-                    //     tokens.splice(1, 1);
-                    // } else {
                     t.value.val = replaceCompoundLiteral(t.value.val, replace);
                     // }
                     continue;
@@ -255,10 +202,6 @@ function replaceCompound(input, replace) {
                 const rule = splitRule(replace);
                 t.value.val = rule.length > 1 ? ':is(' + replace + ')' : replace;
             }
-            // else if ((t.value as LiteralToken).val.length > 1 && (t.value as LiteralToken).val.charAt(0) == '&') {
-            //
-            //     (t.value as LiteralToken).val = replaceCompoundLiteral((t.value as LiteralToken).val, replace);
-            // }
         }
     }
     return tokens.reduce((acc, curr) => acc + renderToken(curr), '');
@@ -271,10 +214,6 @@ function replaceCompoundLiteral(selector, replace) {
             tokens.push('&');
             tokens.push('');
         }
-        // else {
-        //
-        //     tokens[tokens.length - 1] += selector.charAt(i);
-        // }
     }
     return tokens.sort((a, b) => {
         if (a == '&') {

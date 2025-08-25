@@ -28,7 +28,7 @@ import type {
 import type {Context, ValidationConfiguration, ValidationSyntaxResult} from "../../@types/validation.d.ts";
 import {ColorType, EnumToken, SyntaxValidationResult} from "../ast/index.ts";
 import {getParsedSyntax, getSyntax, getSyntaxConfig} from "./config.ts";
-import {renderToken} from "../../web/index.ts";
+import {renderToken} from "../../web.ts";
 import {colorsFunc, funcLike} from "../syntax/color/utils/index.ts";
 import {isIdentColor, mathFuncs, wildCardFuncs} from "../syntax/index.ts";
 

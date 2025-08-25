@@ -7,6 +7,8 @@ import {ColorType} from "../../../ast/index.ts";
  * Calculate the distance between two okLab colors.
  * @param okLab1
  * @param okLab2
+ *
+ * @private
  */
 export function okLabDistance(okLab1: [number, number, number], okLab2: [number, number, number]): number {
 
@@ -14,10 +16,12 @@ export function okLabDistance(okLab1: [number, number, number], okLab2: [number,
 }
 
 /**
- * Check if two colors are close.
+ * Check if two colors are close in okLab space.
  * @param color1
  * @param color2
  * @param threshold
+ *
+ * @private
  */
 export function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold: number = .01): boolean {
 
